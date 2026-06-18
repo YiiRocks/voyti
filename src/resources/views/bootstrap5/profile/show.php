@@ -1,0 +1,28 @@
+<?php
+
+declare(strict_types=1);
+
+use Yiisoft\Html\Html;
+use Yiisoft\Translator\TranslatorInterface;
+
+/**
+ * @var YiiRocks\Voyti\Entity\User $user
+ * @var YiiRocks\Voyti\Entity\Profile $profile
+ * @var TranslatorInterface $translator
+ */
+?>
+<div class="voyti-profile card">
+    <div class="card-body">
+        <h1><?= Html::encode($user->getUsername()) ?></h1>
+        <p class="card-text"><?= $translator->translate('voyti.view.profile.email_label', category: 'voyti') ?> <?= Html::encode($user->getEmail()) ?></p>
+        <?php if ($profile->getName()): ?>
+            <p class="card-text"><?= $translator->translate('voyti.view.profile.name_label', category: 'voyti') ?> <?= Html::encode($profile->getName()) ?></p>
+        <?php endif; ?>
+        <?php if ($profile->getLocation()): ?>
+            <p class="card-text"><?= $translator->translate('voyti.view.profile.location_label', category: 'voyti') ?> <?= Html::encode($profile->getLocation()) ?></p>
+        <?php endif; ?>
+        <?php if ($profile->getBio()): ?>
+            <p class="card-text"><?= $translator->translate('voyti.view.profile.bio_label', category: 'voyti') ?> <?= nl2br(Html::encode($profile->getBio())) ?></p>
+        <?php endif; ?>
+    </div>
+</div>

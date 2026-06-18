@@ -1,0 +1,26 @@
+{
+    "source": {
+        "directories": [
+            "src"
+        ],
+        "excludes": [
+            "resources",
+            "Service/ServiceResultStatus.php",
+            "Form/LoginForm.php",
+            "Form/RecoveryForm.php",
+            "Form/RegistrationForm.php",
+            "Form/ResendForm.php",
+            "Form/RuleForm.php",
+            "Helper/RecaptchaHelper.php",
+            "Helper/TimezoneHelper.php",
+            "Validator/TwoFactorEmailValidator.php",
+            "Validator/TwoFactorTextMessageValidator.php"
+        ]
+    },
+    "phpUnit": {
+        "customPath": "vendor/bin/phpunit"
+    },
+    "initialTestsPhpOptions": "-d extension=pdo_sqlite -d pcov.enabled=1",
+    "minMsi": 100,
+    "minCoveredMsi": 100
+}

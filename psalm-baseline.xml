@@ -1,0 +1,1054 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<files psalm-version="6.16.1@f1f5de594dc76faf8784e02d3dc4716c91c6f6ac">
+  <file src="src/Command/ConfirmUserCommand.php">
+    <DocblockTypeContradiction>
+      <code><![CDATA[$this->userConfirmationService->run($user)]]></code>
+    </DocblockTypeContradiction>
+    <InvalidArgument>
+      <code><![CDATA[$user]]></code>
+    </InvalidArgument>
+    <MixedArgument>
+      <code><![CDATA[$email]]></code>
+      <code><![CDATA[$username]]></code>
+    </MixedArgument>
+  </file>
+  <file src="src/Command/CreateUserCommand.php">
+    <MixedArgument>
+      <code><![CDATA[$email]]></code>
+      <code><![CDATA[$password]]></code>
+      <code><![CDATA[$role]]></code>
+      <code><![CDATA[$username]]></code>
+    </MixedArgument>
+    <PossiblyInvalidMethodCall>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+    </PossiblyInvalidMethodCall>
+    <UndefinedInterfaceMethod>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+    </UndefinedInterfaceMethod>
+  </file>
+  <file src="src/Command/DeleteUserCommand.php">
+    <MixedArgument>
+      <code><![CDATA[$email]]></code>
+      <code><![CDATA[$username]]></code>
+    </MixedArgument>
+  </file>
+  <file src="src/Command/PasswordCommand.php">
+    <MixedArgument>
+      <code><![CDATA[$email]]></code>
+      <code><![CDATA[$username]]></code>
+    </MixedArgument>
+    <PossiblyInvalidMethodCall>
+      <code><![CDATA[save]]></code>
+      <code><![CDATA[setPasswordChangedAt]]></code>
+      <code><![CDATA[setPasswordHash]]></code>
+      <code><![CDATA[setUpdatedAt]]></code>
+    </PossiblyInvalidMethodCall>
+    <UndefinedInterfaceMethod>
+      <code><![CDATA[setPasswordChangedAt]]></code>
+      <code><![CDATA[setPasswordHash]]></code>
+      <code><![CDATA[setUpdatedAt]]></code>
+    </UndefinedInterfaceMethod>
+  </file>
+  <file src="src/Controller/AbstractAuthItemController.php">
+    <MixedArgument>
+      <code><![CDATA[$filterDescription]]></code>
+      <code><![CDATA[$filterName]]></code>
+      <code><![CDATA[$item->getDescription()]]></code>
+      <code><![CDATA[$item->getName()]]></code>
+    </MixedArgument>
+    <MixedArrayAccess>
+      <code><![CDATA[$data['children']]]></code>
+      <code><![CDATA[$data['description']]]></code>
+      <code><![CDATA[$data['name']]]></code>
+      <code><![CDATA[$data['rule']]]></code>
+    </MixedArrayAccess>
+    <MixedMethodCall>
+      <code><![CDATA[getDescription]]></code>
+      <code><![CDATA[getName]]></code>
+    </MixedMethodCall>
+    <PossiblyInvalidArgument>
+      <code><![CDATA[$body]]></code>
+      <code><![CDATA[$body]]></code>
+    </PossiblyInvalidArgument>
+  </file>
+  <file src="src/Controller/AdminController.php">
+    <DocblockTypeContradiction>
+      <code><![CDATA[$this->userConfirmationService->run($user)]]></code>
+    </DocblockTypeContradiction>
+    <InvalidArgument>
+      <code><![CDATA[$user]]></code>
+      <code><![CDATA[$user]]></code>
+      <code><![CDATA[$user]]></code>
+    </InvalidArgument>
+    <InvalidOperand>
+      <code><![CDATA[$total]]></code>
+    </InvalidOperand>
+    <MixedArgument>
+      <code><![CDATA[$body['password']]]></code>
+      <code><![CDATA[$email]]></code>
+      <code><![CDATA[$items]]></code>
+      <code><![CDATA[$model->bio !== '' ? $model->bio : null]]></code>
+      <code><![CDATA[$model->name !== '' ? $model->name : null]]></code>
+      <code><![CDATA[$model->publicEmail !== '' ? $model->publicEmail : null]]></code>
+      <code><![CDATA[$password]]></code>
+      <code><![CDATA[$user->getEmail()]]></code>
+      <code><![CDATA[$username]]></code>
+    </MixedArgument>
+    <MixedMethodCall>
+      <code><![CDATA[delete]]></code>
+      <code><![CDATA[getBio]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getName]]></code>
+      <code><![CDATA[getPublicEmail]]></code>
+      <code><![CDATA[save]]></code>
+      <code><![CDATA[setBio]]></code>
+      <code><![CDATA[setName]]></code>
+      <code><![CDATA[setPublicEmail]]></code>
+    </MixedMethodCall>
+    <PossiblyInvalidMethodCall>
+      <code><![CDATA[getEmail]]></code>
+      <code><![CDATA[getEmail]]></code>
+      <code><![CDATA[getProfile]]></code>
+      <code><![CDATA[getUsername]]></code>
+      <code><![CDATA[save]]></code>
+      <code><![CDATA[setEmail]]></code>
+      <code><![CDATA[setPasswordChangedAt]]></code>
+      <code><![CDATA[setPasswordHash]]></code>
+      <code><![CDATA[setUpdatedAt]]></code>
+      <code><![CDATA[setUsername]]></code>
+    </PossiblyInvalidMethodCall>
+    <UndefinedInterfaceMethod>
+      <code><![CDATA[getEmail]]></code>
+      <code><![CDATA[getEmail]]></code>
+      <code><![CDATA[getProfile]]></code>
+      <code><![CDATA[getUsername]]></code>
+      <code><![CDATA[setEmail]]></code>
+      <code><![CDATA[setPasswordChangedAt]]></code>
+      <code><![CDATA[setPasswordHash]]></code>
+      <code><![CDATA[setUpdatedAt]]></code>
+      <code><![CDATA[setUsername]]></code>
+    </UndefinedInterfaceMethod>
+    <UndefinedMethod>
+      <code><![CDATA[load]]></code>
+    </UndefinedMethod>
+  </file>
+  <file src="src/Controller/ProfileController.php">
+    <MixedArgument>
+      <code><![CDATA[$identity]]></code>
+    </MixedArgument>
+    <MixedMethodCall>
+      <code><![CDATA[getId]]></code>
+    </MixedMethodCall>
+  </file>
+  <file src="src/Controller/RecoveryController.php">
+    <PossiblyNullArgument>
+      <code><![CDATA[$token->getUser()]]></code>
+    </PossiblyNullArgument>
+    <UndefinedMethod>
+      <code><![CDATA[load]]></code>
+      <code><![CDATA[load]]></code>
+    </UndefinedMethod>
+  </file>
+  <file src="src/Controller/RegistrationController.php">
+    <InvalidArgument>
+      <code><![CDATA[$user]]></code>
+      <code><![CDATA[$user]]></code>
+    </InvalidArgument>
+    <UndefinedMethod>
+      <code><![CDATA[load]]></code>
+      <code><![CDATA[load]]></code>
+    </UndefinedMethod>
+  </file>
+  <file src="src/Controller/RuleController.php">
+    <MixedArrayAccess>
+      <code><![CDATA[$data['class']]]></code>
+      <code><![CDATA[$data['class']]]></code>
+      <code><![CDATA[$data['name']]]></code>
+      <code><![CDATA[$data['name']]]></code>
+    </MixedArrayAccess>
+  </file>
+  <file src="src/Controller/SecurityController.php">
+    <InvalidArgument>
+      <code><![CDATA[$user]]></code>
+      <code><![CDATA[$user]]></code>
+      <code><![CDATA[$user]]></code>
+    </InvalidArgument>
+    <MixedArgument>
+      <code><![CDATA[$clientId]]></code>
+      <code><![CDATA[$clientId]]></code>
+      <code><![CDATA[$form->login]]></code>
+      <code><![CDATA[$form->password]]></code>
+      <code><![CDATA[$provider]]></code>
+      <code><![CDATA[$provider]]></code>
+      <code><![CDATA[$user->getPasswordHash()]]></code>
+      <code><![CDATA[$user->getPasswordHash()]]></code>
+    </MixedArgument>
+    <MixedArrayAccess>
+      <code><![CDATA[$credentials['login']]]></code>
+      <code><![CDATA[$credentials['pwd']]]></code>
+    </MixedArrayAccess>
+    <MixedMethodCall>
+      <code><![CDATA[getId]]></code>
+    </MixedMethodCall>
+    <PossiblyInvalidMethodCall>
+      <code><![CDATA[getPasswordHash]]></code>
+      <code><![CDATA[getPasswordHash]]></code>
+      <code><![CDATA[isAuthTfEnabled]]></code>
+      <code><![CDATA[isBlocked]]></code>
+      <code><![CDATA[isConfirmed]]></code>
+      <code><![CDATA[save]]></code>
+      <code><![CDATA[setLastLoginAt]]></code>
+      <code><![CDATA[setLastLoginIp]]></code>
+    </PossiblyInvalidMethodCall>
+    <UndefinedInterfaceMethod>
+      <code><![CDATA[getPasswordHash]]></code>
+      <code><![CDATA[getPasswordHash]]></code>
+      <code><![CDATA[isAuthTfEnabled]]></code>
+      <code><![CDATA[isBlocked]]></code>
+      <code><![CDATA[isConfirmed]]></code>
+      <code><![CDATA[setLastLoginAt]]></code>
+      <code><![CDATA[setLastLoginIp]]></code>
+    </UndefinedInterfaceMethod>
+    <UndefinedMethod>
+      <code><![CDATA[load]]></code>
+      <code><![CDATA[load]]></code>
+    </UndefinedMethod>
+  </file>
+  <file src="src/Controller/SettingsController.php">
+    <InvalidArgument>
+      <code><![CDATA[$user]]></code>
+      <code><![CDATA[$user]]></code>
+      <code><![CDATA[$user]]></code>
+      <code><![CDATA[$user]]></code>
+      <code><![CDATA[$user]]></code>
+      <code><![CDATA[$user]]></code>
+      <code><![CDATA[$user]]></code>
+    </InvalidArgument>
+    <MixedArgument>
+      <code><![CDATA[$identity->getId() ?? 0]]></code>
+      <code><![CDATA[$identity->getId() ?? 0]]></code>
+      <code><![CDATA[$identity->getId() ?? 0]]></code>
+      <code><![CDATA[$identity->getId() ?? 0]]></code>
+      <code><![CDATA[$identity->getId() ?? 0]]></code>
+      <code><![CDATA[$identity->getId() ?? 0]]></code>
+      <code><![CDATA[$identity->getId() ?? 0]]></code>
+      <code><![CDATA[$identity->getId() ?? 0]]></code>
+      <code><![CDATA[$identity->getId() ?? 0]]></code>
+      <code><![CDATA[$identity->getId() ?? 0]]></code>
+      <code><![CDATA[$property]]></code>
+      <code><![CDATA[$user->getId() ?? 0]]></code>
+      <code><![CDATA[$user->getPasswordHash()]]></code>
+    </MixedArgument>
+    <MixedMethodCall>
+      <code><![CDATA[delete]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getPropertyValue]]></code>
+      <code><![CDATA[load]]></code>
+      <code><![CDATA[save]]></code>
+    </MixedMethodCall>
+    <PossiblyInvalidMethodCall>
+      <code><![CDATA[getEmail]]></code>
+      <code><![CDATA[getEmail]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getPasswordHash]]></code>
+      <code><![CDATA[getProfile]]></code>
+      <code><![CDATA[getProfile]]></code>
+      <code><![CDATA[getPropertyValue]]></code>
+      <code><![CDATA[getUsername]]></code>
+      <code><![CDATA[save]]></code>
+      <code><![CDATA[save]]></code>
+      <code><![CDATA[save]]></code>
+      <code><![CDATA[save]]></code>
+      <code><![CDATA[save]]></code>
+      <code><![CDATA[setAuthKey]]></code>
+      <code><![CDATA[setAuthTfEnabled]]></code>
+      <code><![CDATA[setAuthTfEnabled]]></code>
+      <code><![CDATA[setAuthTfKey]]></code>
+      <code><![CDATA[setAuthTfType]]></code>
+      <code><![CDATA[setAuthTfType]]></code>
+      <code><![CDATA[setBlockedAt]]></code>
+      <code><![CDATA[setEmail]]></code>
+      <code><![CDATA[setGdprConsent]]></code>
+      <code><![CDATA[setGdprConsentDate]]></code>
+      <code><![CDATA[setGdprDeleted]]></code>
+      <code><![CDATA[setPasswordChangedAt]]></code>
+      <code><![CDATA[setPasswordHash]]></code>
+      <code><![CDATA[setUpdatedAt]]></code>
+      <code><![CDATA[setUsername]]></code>
+      <code><![CDATA[setUsername]]></code>
+    </PossiblyInvalidMethodCall>
+    <PossiblyUndefinedArrayOffset>
+      <code><![CDATA[$field]]></code>
+    </PossiblyUndefinedArrayOffset>
+    <PossiblyUndefinedMethod>
+      <code><![CDATA[load]]></code>
+    </PossiblyUndefinedMethod>
+    <UndefinedInterfaceMethod>
+      <code><![CDATA[getEmail]]></code>
+      <code><![CDATA[getEmail]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getPasswordHash]]></code>
+      <code><![CDATA[getProfile]]></code>
+      <code><![CDATA[getProfile]]></code>
+      <code><![CDATA[getPropertyValue]]></code>
+      <code><![CDATA[getUsername]]></code>
+      <code><![CDATA[setAuthKey]]></code>
+      <code><![CDATA[setAuthTfEnabled]]></code>
+      <code><![CDATA[setAuthTfEnabled]]></code>
+      <code><![CDATA[setAuthTfKey]]></code>
+      <code><![CDATA[setAuthTfType]]></code>
+      <code><![CDATA[setAuthTfType]]></code>
+      <code><![CDATA[setBlockedAt]]></code>
+      <code><![CDATA[setEmail]]></code>
+      <code><![CDATA[setGdprConsent]]></code>
+      <code><![CDATA[setGdprConsentDate]]></code>
+      <code><![CDATA[setGdprDeleted]]></code>
+      <code><![CDATA[setPasswordChangedAt]]></code>
+      <code><![CDATA[setPasswordHash]]></code>
+      <code><![CDATA[setUpdatedAt]]></code>
+      <code><![CDATA[setUsername]]></code>
+      <code><![CDATA[setUsername]]></code>
+    </UndefinedInterfaceMethod>
+    <UndefinedMethod>
+      <code><![CDATA[load]]></code>
+      <code><![CDATA[load]]></code>
+    </UndefinedMethod>
+  </file>
+  <file src="src/Controller/api/v1/AdminController.php">
+    <MixedArgument>
+      <code><![CDATA[$body['password']]]></code>
+      <code><![CDATA[$email]]></code>
+      <code><![CDATA[$password]]></code>
+      <code><![CDATA[$username]]></code>
+    </MixedArgument>
+    <MixedMethodCall>
+      <code><![CDATA[getBlockedAt]]></code>
+      <code><![CDATA[getConfirmedAt]]></code>
+      <code><![CDATA[getCreatedAt]]></code>
+      <code><![CDATA[getEmail]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getUsername]]></code>
+    </MixedMethodCall>
+    <PossiblyInvalidMethodCall>
+      <code><![CDATA[getCreatedAt]]></code>
+      <code><![CDATA[getEmail]]></code>
+      <code><![CDATA[getEmail]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getUsername]]></code>
+      <code><![CDATA[getUsername]]></code>
+      <code><![CDATA[save]]></code>
+      <code><![CDATA[setEmail]]></code>
+      <code><![CDATA[setPasswordChangedAt]]></code>
+      <code><![CDATA[setPasswordHash]]></code>
+      <code><![CDATA[setUpdatedAt]]></code>
+      <code><![CDATA[setUsername]]></code>
+    </PossiblyInvalidMethodCall>
+    <UndefinedInterfaceMethod>
+      <code><![CDATA[getCreatedAt]]></code>
+      <code><![CDATA[getEmail]]></code>
+      <code><![CDATA[getEmail]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getUsername]]></code>
+      <code><![CDATA[getUsername]]></code>
+      <code><![CDATA[setEmail]]></code>
+      <code><![CDATA[setPasswordChangedAt]]></code>
+      <code><![CDATA[setPasswordHash]]></code>
+      <code><![CDATA[setUpdatedAt]]></code>
+      <code><![CDATA[setUsername]]></code>
+    </UndefinedInterfaceMethod>
+  </file>
+  <file src="src/Entity/Profile.php">
+    <InvalidReturnStatement>
+      <code><![CDATA[$this->hasOne(User::class, ['id' => 'user_id'])]]></code>
+    </InvalidReturnStatement>
+    <RedundantCondition>
+      <code><![CDATA[$this->gravatarEmail === '']]></code>
+    </RedundantCondition>
+  </file>
+  <file src="src/Entity/SessionHistory.php">
+    <InvalidReturnStatement>
+      <code><![CDATA[$this->hasOne(User::class, ['id' => 'user_id'])]]></code>
+    </InvalidReturnStatement>
+    <MissingConstructor>
+      <code><![CDATA[$userId]]></code>
+    </MissingConstructor>
+  </file>
+  <file src="src/Entity/SocialNetworkAccount.php">
+    <InvalidNullableReturnType>
+      <code><![CDATA[bool]]></code>
+    </InvalidNullableReturnType>
+    <InvalidReturnStatement>
+      <code><![CDATA[$this->hasOne(User::class, ['id' => 'user_id'])]]></code>
+    </InvalidReturnStatement>
+    <MixedReturnStatement>
+      <code><![CDATA[$this->decodedData]]></code>
+      <code><![CDATA[$this->decodedData]]></code>
+    </MixedReturnStatement>
+    <NullableReturnStatement>
+      <code><![CDATA[$this->save()]]></code>
+    </NullableReturnStatement>
+  </file>
+  <file src="src/Entity/Token.php">
+    <InvalidReturnStatement>
+      <code><![CDATA[$this->hasOne(User::class, ['id' => 'user_id'])]]></code>
+    </InvalidReturnStatement>
+    <MissingConstructor>
+      <code><![CDATA[$type]]></code>
+      <code><![CDATA[$userId]]></code>
+    </MissingConstructor>
+  </file>
+  <file src="src/Entity/User.php">
+    <InvalidReturnStatement>
+      <code><![CDATA[$this->hasOne(Profile::class, ['user_id' => 'id'])]]></code>
+    </InvalidReturnStatement>
+    <MixedArrayAccess>
+      <code><![CDATA[$fields['authKey']]]></code>
+      <code><![CDATA[$fields['passwordHash']]]></code>
+    </MixedArrayAccess>
+    <MixedReturnStatement>
+      <code><![CDATA[$fields]]></code>
+    </MixedReturnStatement>
+    <UndefinedMethod>
+      <code><![CDATA[fields]]></code>
+    </UndefinedMethod>
+  </file>
+  <file src="src/Event/Auth/SocialNetworkAuthEvent.php">
+    <UndefinedClass>
+      <code><![CDATA[\Yiisoft\Auth\Client\ClientInterface]]></code>
+      <code><![CDATA[private]]></code>
+    </UndefinedClass>
+  </file>
+  <file src="src/Form/Auth/LoginForm.php">
+    <UndefinedInterfaceMethod>
+      <code><![CDATA[$rules['gRecaptchaResponse']]]></code>
+    </UndefinedInterfaceMethod>
+  </file>
+  <file src="src/Form/Auth/RecoveryForm.php">
+    <UndefinedInterfaceMethod>
+      <code><![CDATA[$rules['gRecaptchaResponse']]]></code>
+    </UndefinedInterfaceMethod>
+  </file>
+  <file src="src/Form/Auth/RegistrationForm.php">
+    <UndefinedInterfaceMethod>
+      <code><![CDATA[$rules['gRecaptchaResponse']]]></code>
+    </UndefinedInterfaceMethod>
+  </file>
+  <file src="src/Form/Auth/ResendForm.php">
+    <UndefinedInterfaceMethod>
+      <code><![CDATA[$rules['gRecaptchaResponse']]]></code>
+    </UndefinedInterfaceMethod>
+  </file>
+  <file src="src/Helper/TimezoneHelper.php">
+    <ArgumentTypeCoercion>
+      <code><![CDATA[$timezone]]></code>
+    </ArgumentTypeCoercion>
+  </file>
+  <file src="src/Listener/MailChangeConfirmationListener.php">
+    <MixedArgument>
+      <code><![CDATA[$token]]></code>
+    </MixedArgument>
+    <MixedMethodCall>
+      <code><![CDATA[getType]]></code>
+    </MixedMethodCall>
+  </file>
+  <file src="src/Repository/BaseRepository.php">
+    <ArgumentTypeCoercion>
+      <code><![CDATA[$class]]></code>
+      <code><![CDATA[$class]]></code>
+      <code><![CDATA[$class]]></code>
+      <code><![CDATA[$class]]></code>
+      <code><![CDATA[$class]]></code>
+    </ArgumentTypeCoercion>
+    <InvalidReturnStatement>
+      <code><![CDATA[$query->count()]]></code>
+      <code><![CDATA[(new ActiveQuery($class))
+            ->where($condition)
+            ->one() ?: null]]></code>
+    </InvalidReturnStatement>
+    <InvalidReturnType>
+      <code><![CDATA[?object]]></code>
+      <code><![CDATA[int]]></code>
+    </InvalidReturnType>
+    <MixedMethodCall>
+      <code><![CDATA[delete]]></code>
+      <code><![CDATA[save]]></code>
+    </MixedMethodCall>
+    <MixedReturnStatement>
+      <code><![CDATA[$model->save()]]></code>
+    </MixedReturnStatement>
+    <PossiblyInvalidMethodCall>
+      <code><![CDATA[delete]]></code>
+      <code><![CDATA[save]]></code>
+    </PossiblyInvalidMethodCall>
+    <UndefinedMethod>
+      <code><![CDATA[delete]]></code>
+    </UndefinedMethod>
+  </file>
+  <file src="src/Repository/ProfileRepository.php">
+    <LessSpecificReturnStatement>
+      <code><![CDATA[$this->findOne(Profile::class, ['user_id' => $userId])]]></code>
+    </LessSpecificReturnStatement>
+    <MoreSpecificReturnType>
+      <code><![CDATA[array|\Yiisoft\ActiveRecord\ActiveRecordInterface|null]]></code>
+    </MoreSpecificReturnType>
+  </file>
+  <file src="src/Repository/SocialNetworkAccountRepository.php">
+    <LessSpecificReturnStatement>
+      <code><![CDATA[$this->findOne(SocialNetworkAccount::class, ['provider' => $provider, 'client_id' => $clientId])]]></code>
+    </LessSpecificReturnStatement>
+    <MoreSpecificReturnType>
+      <code><![CDATA[?SocialNetworkAccount]]></code>
+    </MoreSpecificReturnType>
+  </file>
+  <file src="src/Repository/TokenRepository.php">
+    <InvalidReturnStatement>
+      <code><![CDATA[$this->findByUserIdAndCodeAndType($userId, $code, $type)]]></code>
+    </InvalidReturnStatement>
+    <LessSpecificReturnStatement>
+      <code><![CDATA[$this->findOne(Token::class, ['code' => $code, 'type' => $type])]]></code>
+      <code><![CDATA[$this->findOne(Token::class, ['user_id' => $userId, 'code' => $code, 'type' => $type])]]></code>
+      <code><![CDATA[$this->findOne(Token::class, ['user_id' => $userId, 'code' => $code])]]></code>
+    </LessSpecificReturnStatement>
+    <MoreSpecificReturnType>
+      <code><![CDATA[array|\Yiisoft\ActiveRecord\ActiveRecordInterface|null]]></code>
+      <code><![CDATA[array|\Yiisoft\ActiveRecord\ActiveRecordInterface|null]]></code>
+      <code><![CDATA[array|\Yiisoft\ActiveRecord\ActiveRecordInterface|null]]></code>
+    </MoreSpecificReturnType>
+  </file>
+  <file src="src/Repository/UserRepository.php">
+    <LessSpecificReturnStatement>
+      <code><![CDATA[$this->findOne(User::class, ['email' => $email])]]></code>
+      <code><![CDATA[$this->findOne(User::class, ['or', ['username' => $login], ['email' => $login]])]]></code>
+      <code><![CDATA[$this->findOne(User::class, ['username' => $username])]]></code>
+    </LessSpecificReturnStatement>
+    <MoreSpecificReturnType>
+      <code><![CDATA[array|\Yiisoft\ActiveRecord\ActiveRecordInterface|null]]></code>
+      <code><![CDATA[array|\Yiisoft\ActiveRecord\ActiveRecordInterface|null]]></code>
+      <code><![CDATA[array|\Yiisoft\ActiveRecord\ActiveRecordInterface|null]]></code>
+    </MoreSpecificReturnType>
+  </file>
+  <file src="src/Service/Auth/SocialNetworkAuthenticateService.php">
+    <InvalidArgument>
+      <code><![CDATA[$user]]></code>
+    </InvalidArgument>
+    <MixedArgument>
+      <code><![CDATA[$attributes['email'] ?? null]]></code>
+      <code><![CDATA[$attributes['username'] ?? ($attributes['name'] ?? null)]]></code>
+    </MixedArgument>
+    <PossiblyInvalidMethodCall>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[isBlocked]]></code>
+      <code><![CDATA[save]]></code>
+      <code><![CDATA[setLastLoginAt]]></code>
+      <code><![CDATA[setLastLoginIp]]></code>
+    </PossiblyInvalidMethodCall>
+    <UndefinedInterfaceMethod>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[isBlocked]]></code>
+      <code><![CDATA[setLastLoginAt]]></code>
+      <code><![CDATA[setLastLoginIp]]></code>
+    </UndefinedInterfaceMethod>
+  </file>
+  <file src="src/Service/EmailChangeService.php">
+    <PossiblyInvalidMethodCall>
+      <code><![CDATA[delete]]></code>
+      <code><![CDATA[delete]]></code>
+      <code><![CDATA[getIsExpired]]></code>
+      <code><![CDATA[getType]]></code>
+      <code><![CDATA[getType]]></code>
+      <code><![CDATA[getType]]></code>
+    </PossiblyInvalidMethodCall>
+    <RedundantCondition>
+      <code><![CDATA[$user->getUnconfirmedEmail()]]></code>
+    </RedundantCondition>
+    <TypeDoesNotContainNull>
+      <code><![CDATA[$user->getEmail()]]></code>
+    </TypeDoesNotContainNull>
+    <UndefinedInterfaceMethod>
+      <code><![CDATA[getIsExpired]]></code>
+      <code><![CDATA[getType]]></code>
+      <code><![CDATA[getType]]></code>
+      <code><![CDATA[getType]]></code>
+    </UndefinedInterfaceMethod>
+  </file>
+  <file src="src/Service/Password/ExpireService.php">
+    <InvalidNullableReturnType>
+      <code><![CDATA[bool]]></code>
+    </InvalidNullableReturnType>
+    <NullableReturnStatement>
+      <code><![CDATA[$user->save()]]></code>
+    </NullableReturnStatement>
+  </file>
+  <file src="src/Service/Password/RecoveryService.php">
+    <PossiblyInvalidMethodCall>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[isBlocked]]></code>
+    </PossiblyInvalidMethodCall>
+    <UndefinedInterfaceMethod>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[isBlocked]]></code>
+    </UndefinedInterfaceMethod>
+  </file>
+  <file src="src/Service/Password/ResetService.php">
+    <AssignmentToVoid>
+      <code><![CDATA[$result]]></code>
+    </AssignmentToVoid>
+    <InvalidNullableReturnType>
+      <code><![CDATA[bool]]></code>
+    </InvalidNullableReturnType>
+    <NullableReturnStatement>
+      <code><![CDATA[$result]]></code>
+    </NullableReturnStatement>
+  </file>
+  <file src="src/Service/Rbac/ItemEditionService.php">
+    <MixedArgument>
+      <code><![CDATA[$childName]]></code>
+    </MixedArgument>
+    <PossiblyInvalidArgument>
+      <code><![CDATA[$item]]></code>
+      <code><![CDATA[$item]]></code>
+      <code><![CDATA[$item]]></code>
+      <code><![CDATA[$item]]></code>
+    </PossiblyInvalidArgument>
+  </file>
+  <file src="src/Service/Rbac/UpdateAssignmentsService.php">
+    <MixedArgument>
+      <code><![CDATA[$itemName]]></code>
+    </MixedArgument>
+    <RedundantCondition>
+      <code><![CDATA[is_array($items)]]></code>
+    </RedundantCondition>
+    <TypeDoesNotContainType>
+      <code><![CDATA[[]]]></code>
+    </TypeDoesNotContainType>
+  </file>
+  <file src="src/Service/SessionHistory/SessionHistoryDecorator.php">
+    <PossiblyFalseArgument>
+      <code><![CDATA[$this->config->numberSessionHistory]]></code>
+    </PossiblyFalseArgument>
+    <PossiblyInvalidMethodCall>
+      <code><![CDATA[delete]]></code>
+    </PossiblyInvalidMethodCall>
+  </file>
+  <file src="src/Service/SessionHistory/TerminateUserSessionsService.php">
+    <UndefinedMethod>
+      <code><![CDATA[delete]]></code>
+    </UndefinedMethod>
+  </file>
+  <file src="src/Service/SwitchIdentityService.php">
+    <InvalidArgument>
+      <code><![CDATA[$originalUser]]></code>
+      <code><![CDATA[$targetUser]]></code>
+    </InvalidArgument>
+    <PossiblyInvalidMethodCall>
+      <code><![CDATA[isBlocked]]></code>
+    </PossiblyInvalidMethodCall>
+    <PossiblyNullArgument>
+      <code><![CDATA[$this->config->switchIdentitySessionKey]]></code>
+      <code><![CDATA[$this->config->switchIdentitySessionKey]]></code>
+    </PossiblyNullArgument>
+    <UndefinedInterfaceMethod>
+      <code><![CDATA[isBlocked]]></code>
+    </UndefinedInterfaceMethod>
+  </file>
+  <file src="src/Service/TwoFactor/QrCodeUriGeneratorService.php">
+    <DeprecatedMethod>
+      <code><![CDATA[getUri]]></code>
+    </DeprecatedMethod>
+    <MixedReturnStatement>
+      <code><![CDATA[$qrcode->render($uri)]]></code>
+    </MixedReturnStatement>
+  </file>
+  <file src="src/Service/User/AccountConfirmationService.php">
+    <PossiblyInvalidMethodCall>
+      <code><![CDATA[delete]]></code>
+      <code><![CDATA[getIsExpired]]></code>
+    </PossiblyInvalidMethodCall>
+    <RedundantConditionGivenDocblockType>
+      <code><![CDATA[!$confirmationService->run($user)]]></code>
+    </RedundantConditionGivenDocblockType>
+    <UndefinedInterfaceMethod>
+      <code><![CDATA[getIsExpired]]></code>
+    </UndefinedInterfaceMethod>
+  </file>
+  <file src="src/Service/User/BlockService.php">
+    <AssignmentToVoid>
+      <code><![CDATA[$result]]></code>
+    </AssignmentToVoid>
+    <InvalidNullableReturnType>
+      <code><![CDATA[bool]]></code>
+    </InvalidNullableReturnType>
+    <NullableReturnStatement>
+      <code><![CDATA[$result]]></code>
+    </NullableReturnStatement>
+  </file>
+  <file src="src/Service/User/ConfirmationService.php">
+    <AssignmentToVoid>
+      <code><![CDATA[$result]]></code>
+    </AssignmentToVoid>
+  </file>
+  <file src="src/Service/User/CreateService.php">
+    <NullArgument>
+      <code><![CDATA[null]]></code>
+    </NullArgument>
+  </file>
+  <file src="src/Service/User/RegisterService.php">
+    <MixedArgument>
+      <code><![CDATA[$data['email']]]></code>
+      <code><![CDATA[$data['username']]]></code>
+      <code><![CDATA[$password]]></code>
+    </MixedArgument>
+    <NullArgument>
+      <code><![CDATA[null]]></code>
+    </NullArgument>
+  </file>
+  <file src="src/Strategy/DefaultEmailChangeStrategy.php">
+    <ImplementedReturnTypeMismatch>
+      <code><![CDATA[false|null]]></code>
+    </ImplementedReturnTypeMismatch>
+    <MethodSignatureMismatch>
+      <code><![CDATA[DefaultEmailChangeStrategy]]></code>
+    </MethodSignatureMismatch>
+    <PossiblyInvalidArgument>
+      <code><![CDATA[$user->getId() ?? 0]]></code>
+    </PossiblyInvalidArgument>
+    <PossiblyNullReference>
+      <code><![CDATA[setUnconfirmedEmail]]></code>
+    </PossiblyNullReference>
+  </file>
+  <file src="src/Strategy/InsecureEmailChangeStrategy.php">
+    <InvalidNullableReturnType>
+      <code><![CDATA[bool]]></code>
+    </InvalidNullableReturnType>
+    <NullableReturnStatement>
+      <code><![CDATA[$user->save()]]></code>
+    </NullableReturnStatement>
+    <PossiblyNullReference>
+      <code><![CDATA[setEmail]]></code>
+    </PossiblyNullReference>
+  </file>
+  <file src="src/Strategy/SecureEmailChangeStrategy.php">
+    <ImplementedReturnTypeMismatch>
+      <code><![CDATA[false|null]]></code>
+    </ImplementedReturnTypeMismatch>
+    <MethodSignatureMismatch>
+      <code><![CDATA[SecureEmailChangeStrategy]]></code>
+    </MethodSignatureMismatch>
+    <PossiblyInvalidArgument>
+      <code><![CDATA[$user->getId() ?? 0]]></code>
+    </PossiblyInvalidArgument>
+    <PossiblyNullArgument>
+      <code><![CDATA[$user]]></code>
+    </PossiblyNullArgument>
+    <PossiblyNullReference>
+      <code><![CDATA[getId]]></code>
+    </PossiblyNullReference>
+    <RedundantConditionGivenDocblockType>
+      <code><![CDATA[!$this->defaultStrategy->run()]]></code>
+    </RedundantConditionGivenDocblockType>
+  </file>
+  <file src="src/Validator/Rbac/ItemsValidator.php">
+    <MixedArgument>
+      <code><![CDATA[$itemName]]></code>
+    </MixedArgument>
+  </file>
+  <file src="src/Widget/ConnectWidget.php">
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[['authclient' => $client]]]></code>
+    </MixedArgumentTypeCoercion>
+  </file>
+  <file src="src/resources/mail/text/confirmation.php">
+    <MixedArgument>
+      <code><![CDATA[$confirmationUrl]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.click_to_confirm_account', category: 'voyti')]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.confirm_account_heading', category: 'voyti')]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.hello_username', ['username' => $username], category: 'voyti')]]></code>
+    </MixedArgument>
+    <MixedMethodCall>
+      <code><![CDATA[translate]]></code>
+      <code><![CDATA[translate]]></code>
+      <code><![CDATA[translate]]></code>
+    </MixedMethodCall>
+    <UndefinedGlobalVariable>
+      <code><![CDATA[$confirmationUrl]]></code>
+      <code><![CDATA[$translator]]></code>
+      <code><![CDATA[$translator]]></code>
+      <code><![CDATA[$translator]]></code>
+      <code><![CDATA[$username]]></code>
+    </UndefinedGlobalVariable>
+  </file>
+  <file src="src/resources/mail/text/reconfirmation.php">
+    <MixedArgument>
+      <code><![CDATA[$confirmationUrl]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.click_to_confirm_email', category: 'voyti')]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.email_change_heading', category: 'voyti')]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.hello_username', ['username' => $username], category: 'voyti')]]></code>
+    </MixedArgument>
+    <MixedMethodCall>
+      <code><![CDATA[translate]]></code>
+      <code><![CDATA[translate]]></code>
+      <code><![CDATA[translate]]></code>
+    </MixedMethodCall>
+    <UndefinedGlobalVariable>
+      <code><![CDATA[$confirmationUrl]]></code>
+      <code><![CDATA[$translator]]></code>
+      <code><![CDATA[$translator]]></code>
+      <code><![CDATA[$translator]]></code>
+      <code><![CDATA[$username]]></code>
+    </UndefinedGlobalVariable>
+  </file>
+  <file src="src/resources/mail/text/recovery.php">
+    <MixedArgument>
+      <code><![CDATA[$recoveryUrl]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.click_to_reset_password', category: 'voyti')]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.hello_username', ['username' => $username], category: 'voyti')]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.password_recovery_heading', category: 'voyti')]]></code>
+    </MixedArgument>
+    <MixedMethodCall>
+      <code><![CDATA[translate]]></code>
+      <code><![CDATA[translate]]></code>
+      <code><![CDATA[translate]]></code>
+    </MixedMethodCall>
+    <UndefinedGlobalVariable>
+      <code><![CDATA[$recoveryUrl]]></code>
+      <code><![CDATA[$translator]]></code>
+      <code><![CDATA[$translator]]></code>
+      <code><![CDATA[$translator]]></code>
+      <code><![CDATA[$username]]></code>
+    </UndefinedGlobalVariable>
+  </file>
+  <file src="src/resources/mail/text/twofactorcode.php">
+    <MixedArgument>
+      <code><![CDATA[$code]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.twofactor_heading', category: 'voyti')]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.your_twofactor_code', category: 'voyti')]]></code>
+    </MixedArgument>
+    <MixedMethodCall>
+      <code><![CDATA[translate]]></code>
+      <code><![CDATA[translate]]></code>
+    </MixedMethodCall>
+    <UndefinedGlobalVariable>
+      <code><![CDATA[$code]]></code>
+      <code><![CDATA[$translator]]></code>
+      <code><![CDATA[$translator]]></code>
+    </UndefinedGlobalVariable>
+  </file>
+  <file src="src/resources/mail/text/welcome.php">
+    <MixedArgument>
+      <code><![CDATA[$translator->translate('voyti.mail.account_created_successfully', category: 'voyti')]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.hello_username', ['username' => $username], category: 'voyti')]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.welcome_heading', category: 'voyti')]]></code>
+    </MixedArgument>
+    <MixedMethodCall>
+      <code><![CDATA[translate]]></code>
+      <code><![CDATA[translate]]></code>
+      <code><![CDATA[translate]]></code>
+    </MixedMethodCall>
+    <UndefinedGlobalVariable>
+      <code><![CDATA[$translator]]></code>
+      <code><![CDATA[$translator]]></code>
+      <code><![CDATA[$translator]]></code>
+      <code><![CDATA[$username]]></code>
+    </UndefinedGlobalVariable>
+  </file>
+  <file src="src/resources/views/bootstrap5/admin/_account.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/admin/_assignments.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/admin/_info.php">
+    <MixedArgument>
+      <code><![CDATA[$form->begin()]]></code>
+      <code><![CDATA[$form->begin()]]></code>
+      <code><![CDATA[$form->begin()]]></code>
+      <code><![CDATA[$form->begin()]]></code>
+      <code><![CDATA[$form->begin()]]></code>
+      <code><![CDATA[$form->end()]]></code>
+      <code><![CDATA[$form->end()]]></code>
+      <code><![CDATA[$form->end()]]></code>
+      <code><![CDATA[$form->end()]]></code>
+      <code><![CDATA[$form->end()]]></code>
+    </MixedArgument>
+    <RedundantConditionGivenDocblockType>
+      <code><![CDATA[$profile]]></code>
+    </RedundantConditionGivenDocblockType>
+    <UndefinedMethod>
+      <code><![CDATA[begin]]></code>
+      <code><![CDATA[begin]]></code>
+      <code><![CDATA[begin]]></code>
+      <code><![CDATA[begin]]></code>
+      <code><![CDATA[begin]]></code>
+      <code><![CDATA[end]]></code>
+      <code><![CDATA[end]]></code>
+      <code><![CDATA[end]]></code>
+      <code><![CDATA[end]]></code>
+      <code><![CDATA[end]]></code>
+    </UndefinedMethod>
+  </file>
+  <file src="src/resources/views/bootstrap5/admin/_profile.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/admin/_session-history.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/admin/create.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/admin/index.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/rbac/_assignments.php">
+    <MixedMethodCall>
+      <code><![CDATA[getName]]></code>
+    </MixedMethodCall>
+  </file>
+  <file src="src/resources/views/bootstrap5/rbac/permission/create.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/rbac/permission/index.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/rbac/permission/update.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/rbac/role/create.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/rbac/role/index.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/rbac/role/update.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/rbac/rule/create.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/rbac/rule/index.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/rbac/rule/update.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/recovery/request.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/recovery/reset.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/registration/connect.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/registration/register.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/registration/resend.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/security/confirm.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/security/login.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/settings/_menu.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/settings/account.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/settings/gdpr-consent.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/settings/networks.php">
+    <MixedMethodCall>
+      <code><![CDATA[getProvider]]></code>
+    </MixedMethodCall>
+  </file>
+  <file src="src/resources/views/bootstrap5/settings/profile.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/settings/session-history.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/shared/admin_layout.php">
+    <MixedArgument>
+      <code><![CDATA[$content ?? '']]></code>
+    </MixedArgument>
+  </file>
+</files>

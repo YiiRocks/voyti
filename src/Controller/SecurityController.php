@@ -1,0 +1,164 @@
+<?php
+
+declare(strict_types=1);
+
+namespace YiiRocks\Voyti\Controller;
+
+use Psr\EventDispatcher\EventDispatcherInterface;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
+use YiiRocks\Voyti\Event\User\FormEvent;
+use YiiRocks\Voyti\Form\Auth\LoginForm;
+use YiiRocks\Voyti\Helper\SecurityHelper;
+use YiiRocks\Voyti\IdentityServiceInterface;
+use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Repository\SocialNetworkAccountRepository;
+use YiiRocks\Voyti\Repository\UserRepository;
+use YiiRocks\Voyti\Service\Auth\SocialNetworkAccountConnectService;
+use YiiRocks\Voyti\Service\Auth\SocialNetworkAuthenticateService;
+use Yiisoft\Auth\IdentityInterface;
+use Yiisoft\Http\Method;
+use Yiisoft\Router\UrlGeneratorInterface;
+use Yiisoft\Session\SessionInterface;
+use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\Validator\ValidatorInterface;
+use Yiisoft\Yii\View\Renderer\WebViewRenderer;
+
+final class SecurityController
+{
+    use RenderTrait;
+
+    public function __construct(
+        private readonly TranslatorInterface $translator,
+        private readonly WebViewRenderer $viewRenderer,
+        private readonly UserRepository $userRepository,
+        private readonly IdentityServiceInterface $identityService,
+        private readonly SecurityHelper $securityHelper,
+        private readonly ValidatorInterface $validator,
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly UrlGeneratorInterface $url,
+        private readonly SessionInterface $session,
+        private readonly ModuleConfig $config,
+        private readonly SocialNetworkAuthenticateService $socialNetworkAuthenticateService,
+        private readonly SocialNetworkAccountConnectService $socialNetworkAccountConnectService,
+        private readonly SocialNetworkAccountRepository $socialNetworkAccountRepository,
+    ) {
+    }
+
+    public function auth(ServerRequestInterface $request): ResponseInterface
+    {
+        $provider = $request->getAttribute('provider', '');
+        $clientId = $request->getAttribute('client_id', '');
+        $userAttributes = $request->getQueryParams();
+
+        $result = $this->socialNetworkAuthenticateService->run($provider, $clientId, $userAttributes);
+
+        if ($result->isSuccess()) {
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.security.authenticated', category: 'voyti'), 'translator' => $this->translator]);
+        }
+
+        return $this->renderView('shared/message', ['title' => $result->getMessage(), 'translator' => $this->translator]);
+    }
+
+    public function confirm(ServerRequestInterface $request): ResponseInterface
+    {
+        $credentials = $this->session->get('credentials');
+        if ($credentials === null) {
+            return $this->renderView('security/login', ['model' => new LoginForm($this->config, $this->translator), 'config' => $this->config]);
+        }
+
+        $form = new LoginForm($this->config, $this->translator);
+        $form->login = $credentials['login'];
+        $form->password = $credentials['pwd'];
+
+        if ($request->getMethod() === Method::POST) {
+            $body = $request->getParsedBody();
+            $form->load($body, 'login');
+
+            $user = $this->userRepository->findByUsernameOrEmail($form->login);
+
+            if ($user !== null && $this->securityHelper->validatePassword($form->password, $user->getPasswordHash())) {
+                $this->session->remove('credentials');
+                $this->identityService->login($user);
+                return $this->renderSuccess('voyti.security.authenticated');
+            }
+        }
+
+        return $this->renderView('security/confirm', ['model' => $form, 'config' => $this->config]);
+    }
+
+    public function connect(ServerRequestInterface $request): ResponseInterface
+    {
+        $identity = $request->getAttribute(IdentityInterface::class);
+        if ($identity === null) {
+            return $this->renderError('voyti.settings.not_authenticated');
+        }
+
+        $provider = $request->getAttribute('provider', '');
+        $clientId = $request->getAttribute('client_id', '');
+        $userAttributes = $request->getQueryParams();
+
+        $result = $this->socialNetworkAccountConnectService->run(
+            $provider,
+            $clientId,
+            $userAttributes,
+            (int) ($identity->getId() ?? 0),
+        );
+
+        return $this->renderView('shared/message', ['title' => $result->getMessage(), 'translator' => $this->translator]);
+    }
+
+    public function login(ServerRequestInterface $request): ResponseInterface
+    {
+        $form = new LoginForm($this->config, $this->translator);
+        $errors = [];
+
+        if ($request->getMethod() === Method::POST) {
+            $body = $request->getParsedBody();
+            $form->load($body, 'login');
+            $result = $this->validator->validate($form);
+
+            if ($result->isValid()) {
+                $user = $this->userRepository->findByUsernameOrEmail($form->login);
+
+                if ($user === null || !$this->securityHelper->validatePassword($form->password, $user->getPasswordHash())) {
+                    $errors['login'] = $this->translator->translate('voyti.security.invalid_login', category: 'voyti');
+                } elseif ($user->isBlocked()) {
+                    $errors['login'] = $this->translator->translate('voyti.security.account_blocked', category: 'voyti');
+                } elseif ($this->config->enableEmailConfirmation && !$user->isConfirmed()) {
+                    $errors['login'] = $this->translator->translate('voyti.security.need_email_confirmation', category: 'voyti');
+                } else {
+                    if ($this->config->enableTwoFactorAuthentication && $user->isAuthTfEnabled()) {
+                        $this->session->set('credentials', ['login' => $form->login, 'pwd' => $form->password]);
+                        return $this->renderView('security/confirm', ['model' => $form, 'config' => $this->config]);
+                    }
+
+                    $this->identityService->login($user, $form->rememberMe ? $this->config->rememberLoginLifespan : null);
+                    $user->setLastLoginAt(time());
+                    $user->setLastLoginIp($this->config->disableIpLogging ? '127.0.0.1' : ($request->getServerParams()['REMOTE_ADDR'] ?? '127.0.0.1'));
+                    $user->save();
+
+                    $this->eventDispatcher->dispatch(new FormEvent($form));
+                    $this->eventDispatcher->dispatch(new AfterLoginEvent($user));
+
+                    return $this->renderSuccess('voyti.security.logged_in');
+                }
+            } else {
+                $errors = $result->getErrorMessages();
+            }
+        }
+
+        return $this->renderView('security/login', [
+            'model' => $form,
+            'config' => $this->config,
+            'errors' => $errors,
+        ]);
+    }
+
+    public function logout(): ResponseInterface
+    {
+        $this->identityService->logout();
+        return $this->renderSuccess('voyti.security.logged_out');
+    }
+}
