@@ -9,7 +9,6 @@ use Yiisoft\View\View;
 use Yiisoft\View\ViewInterface;
 use Yiisoft\Translator\Message\Php\MessageSource;
 use Yiisoft\Translator\SimpleMessageFormatter;
-use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Rbac\ItemsStorageInterface;
 use Yiisoft\Rbac\AssignmentsStorageInterface;
 use YiiRocks\Voyti\Helper\AuthHelper;
@@ -138,12 +137,10 @@ return [
     ViewInterface::class => View::class,
 
     'voyti.translator' => [
-        'definition' => static fn (TranslatorInterface $translator) => $translator->addCategorySources(
-            new CategorySource(
-                'voyti',
-                new MessageSource(dirname(__DIR__) . '/src/resources/messages'),
-                new SimpleMessageFormatter(),
-            )
+        'definition' => static fn () => new CategorySource(
+            'voyti',
+            new MessageSource(dirname(__DIR__) . '/src/resources/messages'),
+            new SimpleMessageFormatter(),
         ),
         'tags' => ['translation.categorySource'],
     ],
