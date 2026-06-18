@@ -26,7 +26,7 @@ final class TwoFactorCodeValidator
 
     private function t(string $id, array $parameters = []): string
     {
-        return $this->translator?->translate($id, $parameters, 'voyti') ?? $id;
+        return $this->translator?->translate($id, $parameters) ?? $id;
     }
 
     public function validate(): bool

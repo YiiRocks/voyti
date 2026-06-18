@@ -90,10 +90,10 @@ abstract class TestCase extends BaseTestCase
 
     protected function createTranslator(): TranslatorInterface
     {
-        $translator = new Translator('en', null, 'voyti');
+        $translator = new Translator('en', null, 'app');
         $translator->addCategorySources(
             new CategorySource(
-                'voyti',
+                'app',
                 new MessageSource(dirname(__DIR__) . '/src/resources/messages'),
                 new SimpleMessageFormatter(),
             ),
