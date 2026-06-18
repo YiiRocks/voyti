@@ -32,7 +32,7 @@ final class ModuleConfigTest extends TestCase
         $this->assertSame('GDPR', $config->gdprAnonymizePrefix);
         $this->assertFalse($config->gdprRequireConsentToAll);
         $this->assertNull($config->gdprConsentMessage);
-        $this->assertSame(['voyti/settings/*'], $config->gdprConsentExcludedUrls);
+        $this->assertSame(['user/settings/*'], $config->gdprConsentExcludedUrls);
         $this->assertFalse($config->enableTwoFactorAuthentication);
         $this->assertSame([], $config->twoFactorAuthenticationForcedPermissions);
         $this->assertSame([], $config->twoFactorAuthenticationValidators);

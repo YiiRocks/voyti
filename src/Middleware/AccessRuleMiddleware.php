@@ -30,7 +30,7 @@ final class AccessRuleMiddleware implements MiddlewareInterface
 
         if ($user === null) {
             $response = $this->responseFactory->createResponse(302);
-            return $response->withHeader('Location', '/voyti/login');
+            return $response->withHeader('Location', '/user/login');
         }
 
         $userId = $user->getId() ?? 0;

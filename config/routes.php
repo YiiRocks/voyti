@@ -8,7 +8,7 @@ use YiiRocks\Voyti\Controller;
 use YiiRocks\Voyti\ModuleConfig;
 
 $routes = [
-    Group::create('/voyti')
+    Group::create('/user')
         ->routes(
             // Security
             Route::methods(['GET', 'POST'], '/login')->name('voyti/login')->action([Controller\SecurityController::class, 'login']),
@@ -78,7 +78,7 @@ $routes = [
 ];
 
 if ($params[ModuleConfig::class]->enableRestApi ?? false) {
-    $routes[] = Group::create('/voyti/' . $params[ModuleConfig::class]->adminRestPrefix)
+    $routes[] = Group::create('/user/' . $params[ModuleConfig::class]->adminRestPrefix)
         ->routes(
             Route::get('/users')->name('voyti/api-users-index')->action([Controller\api\v1\AdminController::class, 'index']),
             Route::get('/users/{id:\d+}')->name('voyti/api-users-view')->action([Controller\api\v1\AdminController::class, 'view']),

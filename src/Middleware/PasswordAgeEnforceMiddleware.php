@@ -38,7 +38,7 @@ final class PasswordAgeEnforceMiddleware implements MiddlewareInterface
         $passwordChangedAt = $user->getPasswordChangedAt();
         if ($passwordChangedAt !== null && (time() - $passwordChangedAt) >= $maxPasswordAge * 86400) {
             $response = $this->responseFactory->createResponse(302);
-            return $response->withHeader('Location', '/voyti/settings/account');
+            return $response->withHeader('Location', '/user/settings/account');
         }
 
         return $handler->handle($request);

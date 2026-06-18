@@ -2,4 +2,7 @@
 
 declare(strict_types=1);
 
-return [];
+/** @var array $params */
+return [
+    'routes' => require __DIR__ . '/routes.php',
+];

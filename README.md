@@ -86,7 +86,7 @@ return [
 
 Routes, DI bindings, event listeners, and console commands are all auto-registered via the config plugin. The package works out of the box under the `/voyti` URL prefix.
 
-Web routes cover security, registration, recovery, profile, settings, admin, and RBAC. REST API routes (under `/voyti/api/v1`) are enabled when `enableRestApi` is `true`.
+Web routes cover security, registration, recovery, profile, settings, admin, and RBAC. REST API routes (under `/user/api/v1`) are enabled when `enableRestApi` is `true`.
 
 Console commands:
 

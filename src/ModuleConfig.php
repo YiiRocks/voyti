@@ -26,7 +26,7 @@ final class ModuleConfig
         public readonly string $gdprAnonymizePrefix = 'GDPR',
         public readonly bool $gdprRequireConsentToAll = false,
         public readonly ?string $gdprConsentMessage = null,
-        public readonly array $gdprConsentExcludedUrls = ['voyti/settings/*'],
+        public readonly array $gdprConsentExcludedUrls = ['user/settings/*'],
         public readonly bool $enableTwoFactorAuthentication = false,
         public readonly array $twoFactorAuthenticationForcedPermissions = [],
         public readonly array $twoFactorAuthenticationValidators = [],
