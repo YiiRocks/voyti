@@ -18,13 +18,13 @@ use Yiisoft\Router\UrlGeneratorInterface;
 $url = $this->get('url');
 ?>
 <div class="voyti-assignments">
-    <h3 class="mb-3"><?= $translator->translate('voyti.view.assignments.title') ?></h3>
+    <h3 class="mb-3"><?= $translator->translate('voyti.view.assignments.title', category: 'voyti') ?></h3>
     <form method="post" action="<?= $url->generate('voyti/admin-assignments', ['id' => $user->getId()]) ?>">
         <table class="table">
             <thead>
                 <tr>
-                    <th><?= $translator->translate('voyti.view.assignments.assigned') ?></th>
-                    <th><?= $translator->translate('voyti.view.assignments.available') ?></th>
+                    <th><?= $translator->translate('voyti.view.assignments.assigned', category: 'voyti') ?></th>
+                    <th><?= $translator->translate('voyti.view.assignments.available', category: 'voyti') ?></th>
                 </tr>
             </thead>
             <tbody>
@@ -48,6 +48,6 @@ $url = $this->get('url');
                 </tr>
             </tbody>
         </table>
-        <button type="submit" class="btn btn-primary"><?= $translator->translate('voyti.view.assignments.update') ?></button>
+        <button type="submit" class="btn btn-primary"><?= $translator->translate('voyti.view.assignments.update', category: 'voyti') ?></button>
     </form>
 </div>

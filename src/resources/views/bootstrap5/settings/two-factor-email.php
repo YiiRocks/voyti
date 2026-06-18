@@ -10,7 +10,7 @@ use Yiisoft\Html\Html;
  */
 ?>
 <div class="voyti-two-factor-email">
-    <h3 class="mb-3"><?= $translator->translate('voyti.view.two_factor_email.title') ?></h3>
+    <h3 class="mb-3"><?= $translator->translate('voyti.view.two_factor_email.title', category: 'voyti') ?></h3>
 
     <?php if (!empty($errors)): ?>
         <div class="alert alert-danger">
@@ -22,11 +22,11 @@ use Yiisoft\Html\Html;
         </div>
     <?php endif; ?>
 
-    <p><?= $translator->translate('voyti.view.two_factor_email.enter_code') ?></p>
+    <p><?= $translator->translate('voyti.view.two_factor_email.enter_code', category: 'voyti') ?></p>
     <form method="post">
         <div class="mb-3">
             <input type="text" class="form-control" name="code" required>
         </div>
-        <button type="submit" class="btn btn-primary"><?= $translator->translate('voyti.view.two_factor.verify') ?></button>
+        <button type="submit" class="btn btn-primary"><?= $translator->translate('voyti.view.two_factor.verify', category: 'voyti') ?></button>
     </form>
 </div>

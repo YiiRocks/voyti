@@ -246,20 +246,20 @@
             'id' => $user->getId(),
             'username' => $user->getUsername(),
             'email' => $user->getEmail(),
-            'message' => $this->translator->translate('voyti.api.user_created'),
+            'message' => $this->translator->translate('voyti.api.user_created', category: 'voyti'),
         ], 201)]]></code>
       <code><![CDATA[$this->responseFactory->createResponse([
             'id' => $user->getId(),
             'username' => $user->getUsername(),
             'email' => $user->getEmail(),
-            'message' => $this->translator->translate('voyti.api.user_updated'),
+            'message' => $this->translator->translate('voyti.api.user_updated', category: 'voyti'),
         ])]]></code>
-      <code><![CDATA[$this->responseFactory->createResponse(['error' => $this->translator->translate('voyti.api.not_found')], 404)]]></code>
-      <code><![CDATA[$this->responseFactory->createResponse(['error' => $this->translator->translate('voyti.api.not_found')], 404)]]></code>
-      <code><![CDATA[$this->responseFactory->createResponse(['error' => $this->translator->translate('voyti.api.not_found')], 404)]]></code>
+      <code><![CDATA[$this->responseFactory->createResponse(['error' => $this->translator->translate('voyti.api.not_found', category: 'voyti')], 404)]]></code>
+      <code><![CDATA[$this->responseFactory->createResponse(['error' => $this->translator->translate('voyti.api.not_found', category: 'voyti')], 404)]]></code>
+      <code><![CDATA[$this->responseFactory->createResponse(['error' => $this->translator->translate('voyti.api.not_found', category: 'voyti')], 404)]]></code>
       <code><![CDATA[$this->responseFactory->createResponse(['error' => 'Email already exists'], 400)]]></code>
       <code><![CDATA[$this->responseFactory->createResponse(['error' => 'Username already exists'], 400)]]></code>
-      <code><![CDATA[$this->responseFactory->createResponse(['message' => $this->translator->translate('voyti.api.user_deleted')])]]></code>
+      <code><![CDATA[$this->responseFactory->createResponse(['message' => $this->translator->translate('voyti.api.user_deleted', category: 'voyti')])]]></code>
     </MixedReturnStatement>
     <UndefinedClass>
       <code><![CDATA[$this->responseFactory]]></code>
@@ -815,9 +815,9 @@
   <file src="src/resources/mail/text/confirmation.php">
     <MixedArgument>
       <code><![CDATA[$confirmationUrl]]></code>
-      <code><![CDATA[$translator->translate('voyti.mail.click_to_confirm_account')]]></code>
-      <code><![CDATA[$translator->translate('voyti.mail.confirm_account_heading')]]></code>
-      <code><![CDATA[$translator->translate('voyti.mail.hello_username', ['username' => $username])]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.click_to_confirm_account', category: 'voyti')]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.confirm_account_heading', category: 'voyti')]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.hello_username', ['username' => $username], category: 'voyti')]]></code>
     </MixedArgument>
     <MixedMethodCall>
       <code><![CDATA[translate]]></code>
@@ -835,9 +835,9 @@
   <file src="src/resources/mail/text/reconfirmation.php">
     <MixedArgument>
       <code><![CDATA[$confirmationUrl]]></code>
-      <code><![CDATA[$translator->translate('voyti.mail.click_to_confirm_email')]]></code>
-      <code><![CDATA[$translator->translate('voyti.mail.email_change_heading')]]></code>
-      <code><![CDATA[$translator->translate('voyti.mail.hello_username', ['username' => $username])]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.click_to_confirm_email', category: 'voyti')]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.email_change_heading', category: 'voyti')]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.hello_username', ['username' => $username], category: 'voyti')]]></code>
     </MixedArgument>
     <MixedMethodCall>
       <code><![CDATA[translate]]></code>
@@ -855,9 +855,9 @@
   <file src="src/resources/mail/text/recovery.php">
     <MixedArgument>
       <code><![CDATA[$recoveryUrl]]></code>
-      <code><![CDATA[$translator->translate('voyti.mail.click_to_reset_password')]]></code>
-      <code><![CDATA[$translator->translate('voyti.mail.hello_username', ['username' => $username])]]></code>
-      <code><![CDATA[$translator->translate('voyti.mail.password_recovery_heading')]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.click_to_reset_password', category: 'voyti')]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.hello_username', ['username' => $username], category: 'voyti')]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.password_recovery_heading', category: 'voyti')]]></code>
     </MixedArgument>
     <MixedMethodCall>
       <code><![CDATA[translate]]></code>
@@ -875,8 +875,8 @@
   <file src="src/resources/mail/text/twofactorcode.php">
     <MixedArgument>
       <code><![CDATA[$code]]></code>
-      <code><![CDATA[$translator->translate('voyti.mail.twofactor_heading')]]></code>
-      <code><![CDATA[$translator->translate('voyti.mail.your_twofactor_code')]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.twofactor_heading', category: 'voyti')]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.your_twofactor_code', category: 'voyti')]]></code>
     </MixedArgument>
     <MixedMethodCall>
       <code><![CDATA[translate]]></code>
@@ -890,9 +890,9 @@
   </file>
   <file src="src/resources/mail/text/welcome.php">
     <MixedArgument>
-      <code><![CDATA[$translator->translate('voyti.mail.account_created_successfully')]]></code>
-      <code><![CDATA[$translator->translate('voyti.mail.hello_username', ['username' => $username])]]></code>
-      <code><![CDATA[$translator->translate('voyti.mail.welcome_heading')]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.account_created_successfully', category: 'voyti')]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.hello_username', ['username' => $username], category: 'voyti')]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.welcome_heading', category: 'voyti')]]></code>
     </MixedArgument>
     <MixedMethodCall>
       <code><![CDATA[translate]]></code>

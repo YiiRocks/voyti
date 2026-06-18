@@ -66,11 +66,11 @@ final class SecurityController
                 $user = $this->userRepository->findByUsernameOrEmail($form->login);
 
                 if ($user === null || !$this->securityHelper->validatePassword($form->password, $user->getPasswordHash())) {
-                    $errors['login'] = $this->translator->translate('voyti.security.invalid_login');
+                    $errors['login'] = $this->translator->translate('voyti.security.invalid_login', category: 'voyti');
                 } elseif ($user->isBlocked()) {
-                    $errors['login'] = $this->translator->translate('voyti.security.account_blocked');
+                    $errors['login'] = $this->translator->translate('voyti.security.account_blocked', category: 'voyti');
                 } elseif ($this->config->enableEmailConfirmation && !$user->isConfirmed()) {
-                    $errors['login'] = $this->translator->translate('voyti.security.need_email_confirmation');
+                    $errors['login'] = $this->translator->translate('voyti.security.need_email_confirmation', category: 'voyti');
                 } else {
                     if ($this->config->enableTwoFactorAuthentication && $user->isAuthTfEnabled()) {
                         $this->session->set('credentials', ['login' => $form->login, 'pwd' => $form->password]);
@@ -85,7 +85,7 @@ final class SecurityController
                     $this->eventDispatcher->dispatch(new FormEvent($form));
                     $this->eventDispatcher->dispatch(new AfterLoginEvent($user));
 
-                    return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.security.logged_in'), 'translator' => $this->translator]);
+                    return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.security.logged_in', category: 'voyti'), 'translator' => $this->translator]);
                 }
             } else {
                 $errors = $result->getErrorMessages();
@@ -102,7 +102,7 @@ final class SecurityController
     public function logout(): ResponseInterface
     {
         $this->identityService->logout();
-        return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.security.logged_out'), 'translator' => $this->translator]);
+        return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.security.logged_out', category: 'voyti'), 'translator' => $this->translator]);
     }
 
     public function confirm(ServerRequestInterface $request): ResponseInterface
@@ -125,7 +125,7 @@ final class SecurityController
             if ($user !== null && $this->securityHelper->validatePassword($form->password, $user->getPasswordHash())) {
                 $this->session->remove('credentials');
                 $this->identityService->login($user);
-                return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.security.authenticated'), 'translator' => $this->translator]);
+                return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.security.authenticated', category: 'voyti'), 'translator' => $this->translator]);
             }
         }
 
@@ -141,7 +141,7 @@ final class SecurityController
         $result = $this->socialNetworkAuthenticateService->run($provider, $clientId, $userAttributes);
 
         if ($result->isSuccess()) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.security.authenticated'), 'translator' => $this->translator]);
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.security.authenticated', category: 'voyti'), 'translator' => $this->translator]);
         }
 
         return $this->renderView('shared/message', ['title' => $result->getMessage(), 'translator' => $this->translator]);
@@ -151,7 +151,7 @@ final class SecurityController
     {
         $identity = $request->getAttribute(\Yiisoft\Auth\IdentityInterface::class);
         if ($identity === null) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated'), 'translator' => $this->translator]);
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated', category: 'voyti'), 'translator' => $this->translator]);
         }
 
         $provider = $request->getAttribute('provider', '');

@@ -18,7 +18,7 @@ use Yiisoft\Router\UrlGeneratorInterface;
 $url = $this->get('url');
 ?>
 <div class="voyti-rbac-update">
-    <h2 class="mb-4"><?= $translator->translate('voyti.view.rule.update_title') ?></h2>
+    <h2 class="mb-4"><?= $translator->translate('voyti.view.rule.update_title', category: 'voyti') ?></h2>
     <form method="post" novalidate>
         <?php if (!empty($errors)): ?>
             <div class="alert alert-danger">
@@ -29,8 +29,8 @@ $url = $this->get('url');
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
-        <?= Text::widget()->name('rule[name]')->value($model->name)->label($translator->translate('voyti.view.name_label')) ?>
-        <?= Text::widget()->name('rule[class]')->value($model->class)->label($translator->translate('voyti.view.rule.class_label')) ?>
-        <?= SubmitButton::widget()->label($translator->translate('voyti.view.update_button')) ?>
+        <?= Text::widget()->name('rule[name]')->value($model->name)->label($translator->translate('voyti.view.name_label', category: 'voyti')) ?>
+        <?= Text::widget()->name('rule[class]')->value($model->class)->label($translator->translate('voyti.view.rule.class_label', category: 'voyti')) ?>
+        <?= SubmitButton::widget()->label($translator->translate('voyti.view.update_button', category: 'voyti')) ?>
     </form>
 </div>

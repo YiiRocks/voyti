@@ -11,9 +11,9 @@ use Yiisoft\Html\Html;
 ?>
 <div class="voyti-networks">
     <?php include dirname(__DIR__) . '/shared/_menu.php'; ?>
-    <h2 class="mb-4"><?= $translator->translate('voyti.view.networks.title') ?></h2>
+    <h2 class="mb-4"><?= $translator->translate('voyti.view.networks.title', category: 'voyti') ?></h2>
     <?php if (empty($accounts)): ?>
-        <p><?= $translator->translate('voyti.view.networks.no_networks') ?></p>
+        <p><?= $translator->translate('voyti.view.networks.no_networks', category: 'voyti') ?></p>
     <?php else: ?>
         <ul class="list-group">
             <?php foreach ($accounts as $account): ?>

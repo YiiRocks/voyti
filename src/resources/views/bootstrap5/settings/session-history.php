@@ -17,14 +17,14 @@ use Yiisoft\Router\UrlGeneratorInterface;
 $url = $this->get('url');
 ?>
 <div class="voyti-session-history">
-    <h3 class="mb-3"><?= $translator->translate('voyti.view.session_history.title') ?></h3>
+    <h3 class="mb-3"><?= $translator->translate('voyti.view.session_history.title', category: 'voyti') ?></h3>
     <div class="table-responsive">
         <table class="table table-striped">
             <thead>
                 <tr>
-                    <th><?= $translator->translate('voyti.view.session_history.ip') ?></th>
-                    <th><?= $translator->translate('voyti.view.session_history.user_agent') ?></th>
-                    <th><?= $translator->translate('voyti.view.session_history.created') ?></th>
+                    <th><?= $translator->translate('voyti.view.session_history.ip', category: 'voyti') ?></th>
+                    <th><?= $translator->translate('voyti.view.session_history.user_agent', category: 'voyti') ?></th>
+                    <th><?= $translator->translate('voyti.view.session_history.created', category: 'voyti') ?></th>
                 </tr>
             </thead>
             <tbody>

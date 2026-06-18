@@ -138,7 +138,7 @@ return [
 
     'voyti.translator' => [
         'definition' => static fn () => new CategorySource(
-            'app',
+            'voyti',
             new MessageSource(dirname(__DIR__) . '/src/resources/messages'),
             new SimpleMessageFormatter(),
         ),

@@ -59,11 +59,11 @@ final class RuleController
             if ($result->isValid()) {
                 if ($this->authRuleEditionService->create($form)) {
                     return $this->renderView('shared/message', [
-                        'title' => $this->translator->translate('voyti.rule.added'),
+                        'title' => $this->translator->translate('voyti.rule.added', category: 'voyti'),
                         'translator' => $this->translator,
                     ]);
                 }
-                $errors['class'] = [$this->translator->translate('voyti.rule.invalid_class')];
+                $errors['class'] = [$this->translator->translate('voyti.rule.invalid_class', category: 'voyti')];
             } else {
                 $errors = $result->getErrorMessagesIndexedByProperty();
             }
@@ -95,11 +95,11 @@ final class RuleController
             if ($result->isValid()) {
                 if ($this->authRuleEditionService->update($form)) {
                     return $this->renderView('shared/message', [
-                        'title' => $this->translator->translate('voyti.rule.updated'),
+                        'title' => $this->translator->translate('voyti.rule.updated', category: 'voyti'),
                         'translator' => $this->translator,
                     ]);
                 }
-                $errors['class'] = [$this->translator->translate('voyti.rule.invalid_class')];
+                $errors['class'] = [$this->translator->translate('voyti.rule.invalid_class', category: 'voyti')];
             } else {
                 $errors = $result->getErrorMessagesIndexedByProperty();
             }
@@ -116,7 +116,7 @@ final class RuleController
         $this->authRuleEditionService->remove($name);
 
         return $this->renderView('shared/message', [
-            'title' => $this->translator->translate('voyti.rule.removed'),
+            'title' => $this->translator->translate('voyti.rule.removed', category: 'voyti'),
             'translator' => $this->translator,
         ]);
     }

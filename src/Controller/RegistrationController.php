@@ -51,7 +51,7 @@ final class RegistrationController
     public function register(ServerRequestInterface $request): ResponseInterface
     {
         if (!$this->config->enableRegistration) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.registration.disabled'), 'translator' => $this->translator]);
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.registration.disabled', category: 'voyti'), 'translator' => $this->translator]);
         }
 
         $form = new RegistrationForm($this->config);
@@ -92,20 +92,20 @@ final class RegistrationController
         $user = $this->userRepository->findById($id);
 
         if ($user === null || !$this->config->enableEmailConfirmation) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.registration.invalid_confirmation_link'), 'translator' => $this->translator]);
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.registration.invalid_confirmation_link', category: 'voyti'), 'translator' => $this->translator]);
         }
 
         if ($this->accountConfirmationService->run($code, $user, $this->userConfirmationService)) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.registration.complete'), 'translator' => $this->translator]);
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.registration.complete', category: 'voyti'), 'translator' => $this->translator]);
         }
 
-        return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.registration.confirmation_link_invalid'), 'translator' => $this->translator]);
+        return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.registration.confirmation_link_invalid', category: 'voyti'), 'translator' => $this->translator]);
     }
 
     public function resend(ServerRequestInterface $request): ResponseInterface
     {
         if (!$this->config->enableEmailConfirmation) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.registration.email_confirmation_disabled'), 'translator' => $this->translator]);
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.registration.email_confirmation_disabled', category: 'voyti'), 'translator' => $this->translator]);
         }
 
         $form = new ResendForm($this->config);
@@ -118,7 +118,7 @@ final class RegistrationController
             if ($result->isValid()) {
                 $user = $this->userRepository->findByEmail($form->email);
                 if ($user !== null && $this->resendConfirmationService->run($user)) {
-                    return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.registration.new_confirmation_sent'), 'translator' => $this->translator]);
+                    return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.registration.new_confirmation_sent', category: 'voyti'), 'translator' => $this->translator]);
                 }
             }
         }

@@ -43,7 +43,7 @@ final class AdminController
     {
         $user = $this->userRepository->findById($id);
         if ($user === null) {
-            return $this->responseFactory->createResponse(['error' => $this->translator->translate('voyti.api.not_found')], 404);
+            return $this->responseFactory->createResponse(['error' => $this->translator->translate('voyti.api.not_found', category: 'voyti')], 404);
         }
 
         return $this->responseFactory->createResponse([
@@ -85,7 +85,7 @@ final class AdminController
             'id' => $user->getId(),
             'username' => $user->getUsername(),
             'email' => $user->getEmail(),
-            'message' => $this->translator->translate('voyti.api.user_created'),
+            'message' => $this->translator->translate('voyti.api.user_created', category: 'voyti'),
         ], 201);
     }
 
@@ -93,7 +93,7 @@ final class AdminController
     {
         $user = $this->userRepository->findById($id);
         if ($user === null) {
-            return $this->responseFactory->createResponse(['error' => $this->translator->translate('voyti.api.not_found')], 404);
+            return $this->responseFactory->createResponse(['error' => $this->translator->translate('voyti.api.not_found', category: 'voyti')], 404);
         }
 
         $body = $request->getParsedBody();
@@ -114,7 +114,7 @@ final class AdminController
             'id' => $user->getId(),
             'username' => $user->getUsername(),
             'email' => $user->getEmail(),
-            'message' => $this->translator->translate('voyti.api.user_updated'),
+            'message' => $this->translator->translate('voyti.api.user_updated', category: 'voyti'),
         ]);
     }
 
@@ -122,10 +122,10 @@ final class AdminController
     {
         $user = $this->userRepository->findById($id);
         if ($user === null) {
-            return $this->responseFactory->createResponse(['error' => $this->translator->translate('voyti.api.not_found')], 404);
+            return $this->responseFactory->createResponse(['error' => $this->translator->translate('voyti.api.not_found', category: 'voyti')], 404);
         }
 
         $this->userRepository->delete($user);
-        return $this->responseFactory->createResponse(['message' => $this->translator->translate('voyti.api.user_deleted')]);
+        return $this->responseFactory->createResponse(['message' => $this->translator->translate('voyti.api.user_deleted', category: 'voyti')]);
     }
 }

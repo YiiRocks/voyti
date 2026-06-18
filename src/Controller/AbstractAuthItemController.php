@@ -75,7 +75,7 @@ abstract class AbstractAuthItemController
             if ($result->isValid()) {
                 if ($this->authItemEditionService->create($form)) {
                     return $this->renderView('shared/message', [
-                        'title' => $this->translator->translate('voyti.auth_item.' . $this->getItemType() . '_created'),
+                        'title' => $this->translator->translate('voyti.auth_item.' . $this->getItemType() . '_created', category: 'voyti'),
                         'translator' => $this->translator,
                     ]);
                 }
@@ -99,7 +99,7 @@ abstract class AbstractAuthItemController
 
         if ($item === null) {
             return $this->renderView('shared/message', [
-                'title' => $this->translator->translate('voyti.auth_item.not_found'),
+                'title' => $this->translator->translate('voyti.auth_item.not_found', category: 'voyti'),
                 'translator' => $this->translator,
             ]);
         }
@@ -120,7 +120,7 @@ abstract class AbstractAuthItemController
             if ($result->isValid()) {
                 if ($this->authItemEditionService->update($form)) {
                     return $this->renderView('shared/message', [
-                        'title' => $this->translator->translate('voyti.auth_item.' . $this->getItemType() . '_updated'),
+                        'title' => $this->translator->translate('voyti.auth_item.' . $this->getItemType() . '_updated', category: 'voyti'),
                         'translator' => $this->translator,
                     ]);
                 }
@@ -140,7 +140,7 @@ abstract class AbstractAuthItemController
         $this->authItemEditionService->delete($name, $this->getItemType());
 
         return $this->renderView('shared/message', [
-            'title' => $this->translator->translate('voyti.auth_item.' . $this->getItemType() . '_deleted'),
+            'title' => $this->translator->translate('voyti.auth_item.' . $this->getItemType() . '_deleted', category: 'voyti'),
             'translator' => $this->translator,
         ]);
     }

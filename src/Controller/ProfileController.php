@@ -46,17 +46,17 @@ final class ProfileController
         switch ($this->config->profileVisibility) {
             case self::PROFILE_VISIBILITY_OWNER:
                 if ($userId === null || $id !== $userId) {
-                    return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.profile.forbidden'), 'translator' => $this->translator]);
+                    return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.profile.forbidden', category: 'voyti'), 'translator' => $this->translator]);
                 }
                 break;
             case self::PROFILE_VISIBILITY_ADMIN:
                 if ($id !== $userId && !$this->isAdmin($identity)) {
-                    return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.profile.forbidden'), 'translator' => $this->translator]);
+                    return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.profile.forbidden', category: 'voyti'), 'translator' => $this->translator]);
                 }
                 break;
             case self::PROFILE_VISIBILITY_USERS:
                 if ($userId === null) {
-                    return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.profile.forbidden'), 'translator' => $this->translator]);
+                    return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.profile.forbidden', category: 'voyti'), 'translator' => $this->translator]);
                 }
                 break;
             case self::PROFILE_VISIBILITY_PUBLIC:
@@ -66,7 +66,7 @@ final class ProfileController
         $profile = $this->profileRepository->findByUserId($id);
 
         if ($profile === null) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.profile.not_found'), 'translator' => $this->translator]);
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.profile.not_found', category: 'voyti'), 'translator' => $this->translator]);
         }
 
         return $this->renderView('profile/show', ['profile' => $profile]);

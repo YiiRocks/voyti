@@ -22,24 +22,24 @@ use Yiisoft\Router\UrlGeneratorInterface;
 ?>
 <div class="voyti-account">
     <?php include dirname(__DIR__) . '/shared/_menu.php'; ?>
-    <h2 class="mb-4"><?= $translator->translate('voyti.view.account.title') ?></h2>
+    <h2 class="mb-4"><?= $translator->translate('voyti.view.account.title', category: 'voyti') ?></h2>
     <form method="post" novalidate>
         <?= ErrorSummary::widget()->errors($errors) ?>
-        <?= Text::widget()->name('settings[username]')->value($model->username)->label($translator->translate('voyti.view.username_label')) ?>
-        <?= Email::widget()->name('settings[email]')->value($model->email)->label($translator->translate('voyti.view.email_label')) ?>
-        <?= Password::widget()->name('settings[password]')->label($translator->translate('voyti.view.new_password_label')) ?>
-        <?= Password::widget()->name('settings[currentPassword]')->label($translator->translate('voyti.view.current_password_label')) ?>
+        <?= Text::widget()->name('settings[username]')->value($model->username)->label($translator->translate('voyti.view.username_label', category: 'voyti')) ?>
+        <?= Email::widget()->name('settings[email]')->value($model->email)->label($translator->translate('voyti.view.email_label', category: 'voyti')) ?>
+        <?= Password::widget()->name('settings[password]')->label($translator->translate('voyti.view.new_password_label', category: 'voyti')) ?>
+        <?= Password::widget()->name('settings[currentPassword]')->label($translator->translate('voyti.view.current_password_label', category: 'voyti')) ?>
         <?php if ($config->enableTwoFactorAuth): ?>
             <fieldset>
-                <legend class="h5"><?= $translator->translate('voyti.view.account.two_factor_title') ?></legend>
+                <legend class="h5"><?= $translator->translate('voyti.view.account.two_factor_title', category: 'voyti') ?></legend>
                 <?php if ($user->isAuthTfEnabled()): ?>
-                    <p><?= $translator->translate('voyti.view.account.two_factor_enabled') ?></p>
-                    <?= Checkbox::widget()->name('settings[authTfEnabled]')->inputValue('0')->label($translator->translate('voyti.view.account.disable_two_factor')) ?>
+                    <p><?= $translator->translate('voyti.view.account.two_factor_enabled', category: 'voyti') ?></p>
+                    <?= Checkbox::widget()->name('settings[authTfEnabled]')->inputValue('0')->label($translator->translate('voyti.view.account.disable_two_factor', category: 'voyti')) ?>
                 <?php else: ?>
-                    <?= Checkbox::widget()->name('settings[authTfEnabled]')->inputValue('1')->label($translator->translate('voyti.view.account.enable_two_factor')) ?>
+                    <?= Checkbox::widget()->name('settings[authTfEnabled]')->inputValue('1')->label($translator->translate('voyti.view.account.enable_two_factor', category: 'voyti')) ?>
                 <?php endif; ?>
             </fieldset>
         <?php endif; ?>
-        <?= SubmitButton::widget()->label($translator->translate('voyti.view.save_button')) ?>
+        <?= SubmitButton::widget()->label($translator->translate('voyti.view.save_button', category: 'voyti')) ?>
     </form>
 </div>

@@ -11,7 +11,7 @@ use Yiisoft\Html\Html;
  */
 ?>
 <div class="voyti-assignments">
-    <h3 class="mb-3"><?= $translator->translate('voyti.view.assignments.title') ?></h3>
+    <h3 class="mb-3"><?= $translator->translate('voyti.view.assignments.title', category: 'voyti') ?></h3>
     <ul class="list-group">
         <?php foreach ($assignments as $item): ?>
             <li class="list-group-item"><?= Html::encode($item->getName()) ?></li>

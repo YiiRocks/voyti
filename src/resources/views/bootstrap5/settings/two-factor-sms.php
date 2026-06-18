@@ -10,7 +10,7 @@ use Yiisoft\Html\Html;
  */
 ?>
 <div class="voyti-two-factor-sms">
-    <h3 class="mb-3"><?= $translator->translate('voyti.view.two_factor_sms.title') ?></h3>
+    <h3 class="mb-3"><?= $translator->translate('voyti.view.two_factor_sms.title', category: 'voyti') ?></h3>
 
     <?php if (!empty($errors)): ?>
         <div class="alert alert-danger">
@@ -24,9 +24,9 @@ use Yiisoft\Html\Html;
 
     <form method="post">
         <div class="mb-3">
-            <label class="form-label"><?= $translator->translate('voyti.view.two_factor_sms.phone') ?></label>
+            <label class="form-label"><?= $translator->translate('voyti.view.two_factor_sms.phone', category: 'voyti') ?></label>
             <input type="text" class="form-control" name="phone" required>
         </div>
-        <button type="submit" class="btn btn-primary"><?= $translator->translate('voyti.view.two_factor_sms.send') ?></button>
+        <button type="submit" class="btn btn-primary"><?= $translator->translate('voyti.view.two_factor_sms.send', category: 'voyti') ?></button>
     </form>
 </div>

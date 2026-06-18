@@ -16,12 +16,12 @@ use Yiisoft\Router\UrlGeneratorInterface;
  */
 ?>
 <div class="voyti-recovery">
-    <h2 class="mb-4"><?= $translator->translate('voyti.view.recovery.request_title') ?></h2>
+    <h2 class="mb-4"><?= $translator->translate('voyti.view.recovery.request_title', category: 'voyti') ?></h2>
     <form action="<?= Html::encode($url->generate('voyti/forgot')) ?>" method="post" novalidate>
         <?= ErrorSummary::widget()->errors($errors) ?>
-        <?= Email::widget()->name('recovery[email]')->value($model->email)->label($translator->translate('voyti.view.email_label')) ?>
+        <?= Email::widget()->name('recovery[email]')->value($model->email)->label($translator->translate('voyti.view.email_label', category: 'voyti')) ?>
         <?= \YiiRocks\Voyti\Helper\RecaptchaHelper::render($model, $config) ?>
-        <?= SubmitButton::widget()->label($translator->translate('voyti.view.recovery.send_link_button')) ?>
-        <p class="mt-3"><a href="<?= Html::encode($url->generate('voyti/login')) ?>"><?= $translator->translate('voyti.view.recovery.back_to_login') ?></a></p>
+        <?= SubmitButton::widget()->label($translator->translate('voyti.view.recovery.send_link_button', category: 'voyti')) ?>
+        <p class="mt-3"><a href="<?= Html::encode($url->generate('voyti/login')) ?>"><?= $translator->translate('voyti.view.recovery.back_to_login', category: 'voyti') ?></a></p>
     </form>
 </div>

@@ -16,12 +16,12 @@ use Yiisoft\Router\UrlGeneratorInterface;
  */
 ?>
 <div class="voyti-admin-create">
-    <h2 class="mb-4"><?= $translator->translate('voyti.view.admin.create_user_title') ?></h2>
+    <h2 class="mb-4"><?= $translator->translate('voyti.view.admin.create_user_title', category: 'voyti') ?></h2>
     <form action="<?= Html::encode($url->generate('voyti/admin-create')) ?>" method="post" novalidate>
         <?= ErrorSummary::widget()->errors($errors) ?>
-        <?= Text::widget()->name('user[username]')->value($model->username)->label($translator->translate('voyti.view.username_label')) ?>
-        <?= \Yiisoft\Form\Field\Email::widget()->name('user[email]')->value($model->email)->label($translator->translate('voyti.view.email_label')) ?>
-        <?= \Yiisoft\Form\Field\Password::widget()->name('user[password]')->label($translator->translate('voyti.view.password_label')) ?>
-        <?= SubmitButton::widget()->label($translator->translate('voyti.view.create_button')) ?>
+        <?= Text::widget()->name('user[username]')->value($model->username)->label($translator->translate('voyti.view.username_label', category: 'voyti')) ?>
+        <?= \Yiisoft\Form\Field\Email::widget()->name('user[email]')->value($model->email)->label($translator->translate('voyti.view.email_label', category: 'voyti')) ?>
+        <?= \Yiisoft\Form\Field\Password::widget()->name('user[password]')->label($translator->translate('voyti.view.password_label', category: 'voyti')) ?>
+        <?= SubmitButton::widget()->label($translator->translate('voyti.view.create_button', category: 'voyti')) ?>
     </form>
 </div>

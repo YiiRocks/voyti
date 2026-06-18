@@ -45,7 +45,7 @@ final class RecoveryController
     public function request(ServerRequestInterface $request): ResponseInterface
     {
         if (!$this->config->allowPasswordRecovery) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.recovery.disabled'), 'translator' => $this->translator]);
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.recovery.disabled', category: 'voyti'), 'translator' => $this->translator]);
         }
 
         $form = new RecoveryForm($this->config, RecoveryForm::SCENARIO_REQUEST);
@@ -73,13 +73,13 @@ final class RecoveryController
     public function reset(ServerRequestInterface $request, int $id, string $code): ResponseInterface
     {
         if (!$this->config->allowPasswordRecovery && !$this->config->allowAdminPasswordRecovery) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.recovery.reset_disabled'), 'translator' => $this->translator]);
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.recovery.reset_disabled', category: 'voyti'), 'translator' => $this->translator]);
         }
 
         $token = $this->tokenRepository->findByUserIdTypeAndCode($id, \YiiRocks\Voyti\Entity\Token::TYPE_RECOVERY, $code);
 
         if ($token === null || $token->getIsExpired() || $token->getUser() === null) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.recovery.link_invalid'), 'translator' => $this->translator]);
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.recovery.link_invalid', category: 'voyti'), 'translator' => $this->translator]);
         }
 
         $form = new RecoveryForm($this->config, RecoveryForm::SCENARIO_RESET);
@@ -92,7 +92,7 @@ final class RecoveryController
 
             if ($result->isValid()) {
                 $this->resetPasswordService->run($form->password, $token->getUser(), $token);
-                return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.recovery.password_changed'), 'translator' => $this->translator]);
+                return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.recovery.password_changed', category: 'voyti'), 'translator' => $this->translator]);
             }
             $errors = $result->getErrorMessages();
         }

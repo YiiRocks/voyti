@@ -14,9 +14,9 @@ use Yiisoft\Router\UrlGeneratorInterface;
  */
 ?>
 <div class="voyti-gdpr-consent">
-    <h2 class="mb-4"><?= $translator->translate('voyti.view.gdpr.consent_title') ?></h2>
+    <h2 class="mb-4"><?= $translator->translate('voyti.view.gdpr.consent_title', category: 'voyti') ?></h2>
     <form method="post" novalidate>
-        <?= Checkbox::widget()->name('gdprDelete[consent]')->inputValue('1')->label($translator->translate('voyti.view.gdpr.consent_label')) ?>
-        <?= SubmitButton::widget()->label($translator->translate('voyti.view.save_button')) ?>
+        <?= Checkbox::widget()->name('gdprDelete[consent]')->inputValue('1')->label($translator->translate('voyti.view.gdpr.consent_label', category: 'voyti')) ?>
+        <?= SubmitButton::widget()->label($translator->translate('voyti.view.save_button', category: 'voyti')) ?>
     </form>
 </div>

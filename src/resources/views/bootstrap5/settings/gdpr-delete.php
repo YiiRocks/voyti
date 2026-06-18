@@ -14,10 +14,10 @@ use Yiisoft\Router\UrlGeneratorInterface;
  */
 ?>
 <div class="voyti-gdpr-delete">
-    <h2 class="mb-4"><?= $translator->translate('voyti.view.gdpr.delete_title') ?></h2>
-    <p class="alert alert-warning"><?= $translator->translate('voyti.view.gdpr.delete_warning') ?></p>
+    <h2 class="mb-4"><?= $translator->translate('voyti.view.gdpr.delete_title', category: 'voyti') ?></h2>
+    <p class="alert alert-warning"><?= $translator->translate('voyti.view.gdpr.delete_warning', category: 'voyti') ?></p>
     <form method="post" novalidate>
-        <?= Checkbox::widget()->name('gdprDelete[consent]')->inputValue('1')->label($translator->translate('voyti.view.gdpr.delete_confirm_label')) ?>
-        <?= SubmitButton::widget()->label($translator->translate('voyti.view.gdpr.delete_button')) ?>
+        <?= Checkbox::widget()->name('gdprDelete[consent]')->inputValue('1')->label($translator->translate('voyti.view.gdpr.delete_confirm_label', category: 'voyti')) ?>
+        <?= SubmitButton::widget()->label($translator->translate('voyti.view.gdpr.delete_button', category: 'voyti')) ?>
     </form>
 </div>

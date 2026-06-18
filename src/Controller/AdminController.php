@@ -96,7 +96,7 @@ final class AdminController
 
             $result = $this->userCreateService->run($email, $username, $password);
             if ($result->isSuccess()) {
-                return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.user_created'), 'translator' => $this->translator]);
+                return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.user_created', category: 'voyti'), 'translator' => $this->translator]);
             }
             $errors = $result->getErrors();
         }
@@ -108,7 +108,7 @@ final class AdminController
     {
         $user = $this->userRepository->findById($id);
         if ($user === null) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found'), 'translator' => $this->translator]);
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found', category: 'voyti'), 'translator' => $this->translator]);
         }
 
         if ($request->getMethod() === Method::POST) {
@@ -121,7 +121,7 @@ final class AdminController
             }
             $user->setUpdatedAt(time());
             $user->save();
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.account_details_updated'), 'translator' => $this->translator]);
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.account_details_updated', category: 'voyti'), 'translator' => $this->translator]);
         }
 
         return $this->renderView('admin/_account', ['user' => $user, 'config' => $this->config]);
@@ -131,7 +131,7 @@ final class AdminController
     {
         $user = $this->userRepository->findById($id);
         if ($user === null) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found'), 'translator' => $this->translator]);
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found', category: 'voyti'), 'translator' => $this->translator]);
         }
 
         $profile = $user->getProfile();
@@ -144,7 +144,7 @@ final class AdminController
             $body = $request->getParsedBody();
             $profile->load($body, 'profile');
             $profile->save();
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.profile_details_updated'), 'translator' => $this->translator]);
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.profile_details_updated', category: 'voyti'), 'translator' => $this->translator]);
         }
 
         return $this->renderView('admin/_profile', ['user' => $user, 'profile' => $profile, 'config' => $this->config]);
@@ -154,7 +154,7 @@ final class AdminController
     {
         $user = $this->userRepository->findById($id);
         if ($user === null) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found'), 'translator' => $this->translator]);
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found', category: 'voyti'), 'translator' => $this->translator]);
         }
         return $this->renderView('admin/_info', ['user' => $user, 'config' => $this->config]);
     }
@@ -163,7 +163,7 @@ final class AdminController
     {
         $user = $this->userRepository->findById($id);
         if ($user === null) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found'), 'translator' => $this->translator]);
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found', category: 'voyti'), 'translator' => $this->translator]);
         }
 
         if ($request->getMethod() === Method::POST) {
@@ -188,32 +188,32 @@ final class AdminController
     {
         $user = $this->userRepository->findById($id);
         if ($user !== null && $this->userConfirmationService->run($user)) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.user_confirmed'), 'translator' => $this->translator]);
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.user_confirmed', category: 'voyti'), 'translator' => $this->translator]);
         }
-        return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.unable_to_confirm'), 'translator' => $this->translator]);
+        return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.unable_to_confirm', category: 'voyti'), 'translator' => $this->translator]);
     }
 
     public function delete(ServerRequestInterface $request, int $id): ResponseInterface
     {
         $identity = $request->getAttribute(\Yiisoft\Auth\IdentityInterface::class);
         if ($identity !== null && $id === (int) $identity->getId()) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.cannot_delete_self'), 'translator' => $this->translator]);
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.cannot_delete_self', category: 'voyti'), 'translator' => $this->translator]);
         }
         $user = $this->userRepository->findById($id);
         if ($user !== null) {
             $this->userRepository->delete($user);
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.user_deleted'), 'translator' => $this->translator]);
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.user_deleted', category: 'voyti'), 'translator' => $this->translator]);
         }
-        return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found'), 'translator' => $this->translator]);
+        return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found', category: 'voyti'), 'translator' => $this->translator]);
     }
 
     public function block(int $id): ResponseInterface
     {
         $user = $this->userRepository->findById($id);
         if ($user !== null && $this->userBlockService->run($user)) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.block_status_updated'), 'translator' => $this->translator]);
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.block_status_updated', category: 'voyti'), 'translator' => $this->translator]);
         }
-        return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.unable_to_update_block'), 'translator' => $this->translator]);
+        return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.unable_to_update_block', category: 'voyti'), 'translator' => $this->translator]);
     }
 
     public function switchIdentity(int $id): ResponseInterface
@@ -229,23 +229,23 @@ final class AdminController
             $result = $this->passwordRecoveryService->run($user->getEmail());
             return $this->renderView('shared/message', ['title' => $result->getMessage()]);
         }
-        return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found'), 'translator' => $this->translator]);
+        return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found', category: 'voyti'), 'translator' => $this->translator]);
     }
 
     public function forcePasswordChange(int $id): ResponseInterface
     {
         $user = $this->userRepository->findById($id);
         if ($user !== null && $this->passwordExpireService->run($user)) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.password_change_required'), 'translator' => $this->translator]);
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.password_change_required', category: 'voyti'), 'translator' => $this->translator]);
         }
-        return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.error_occurred'), 'translator' => $this->translator]);
+        return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.error_occurred', category: 'voyti'), 'translator' => $this->translator]);
     }
 
     public function sessionHistory(int $id): ResponseInterface
     {
         $user = $this->userRepository->findById($id);
         if ($user === null) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found'), 'translator' => $this->translator]);
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found', category: 'voyti'), 'translator' => $this->translator]);
         }
 
         $sessions = $this->sessionHistoryRepository->findByUserId($id);
@@ -260,7 +260,7 @@ final class AdminController
     {
         $user = $this->userRepository->findById($id);
         if ($user === null) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found'), 'translator' => $this->translator]);
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found', category: 'voyti'), 'translator' => $this->translator]);
         }
 
         $sessions = $this->sessionHistoryRepository->findByUserId($id);
@@ -268,6 +268,6 @@ final class AdminController
             $session->delete();
         }
 
-        return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.sessions_terminated'), 'translator' => $this->translator]);
+        return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.admin.sessions_terminated', category: 'voyti'), 'translator' => $this->translator]);
     }
 }

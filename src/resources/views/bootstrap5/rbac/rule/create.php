@@ -18,7 +18,7 @@ use Yiisoft\Router\UrlGeneratorInterface;
 $url = $this->get('url');
 ?>
 <div class="voyti-rbac-create">
-    <h2 class="mb-4"><?= $translator->translate('voyti.view.rule.create_title') ?></h2>
+    <h2 class="mb-4"><?= $translator->translate('voyti.view.rule.create_title', category: 'voyti') ?></h2>
     <form action="<?= Html::encode($url->generate('voyti/rules-create')) ?>" method="post" novalidate>
         <?php if (!empty($errors)): ?>
             <div class="alert alert-danger">
@@ -29,8 +29,8 @@ $url = $this->get('url');
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
-        <?= Text::widget()->name('rule[name]')->label($translator->translate('voyti.view.name_label'))->value($model->name) ?>
-        <?= Text::widget()->name('rule[class]')->label($translator->translate('voyti.view.rule.class_label'))->value($model->class) ?>
-        <?= SubmitButton::widget()->label($translator->translate('voyti.view.create_button')) ?>
+        <?= Text::widget()->name('rule[name]')->label($translator->translate('voyti.view.name_label', category: 'voyti'))->value($model->name) ?>
+        <?= Text::widget()->name('rule[class]')->label($translator->translate('voyti.view.rule.class_label', category: 'voyti'))->value($model->class) ?>
+        <?= SubmitButton::widget()->label($translator->translate('voyti.view.create_button', category: 'voyti')) ?>
     </form>
 </div>

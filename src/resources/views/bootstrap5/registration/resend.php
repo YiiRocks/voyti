@@ -14,10 +14,10 @@ use Yiisoft\Router\UrlGeneratorInterface;
  */
 ?>
 <div class="voyti-resend">
-    <h2 class="mb-4"><?= $translator->translate('voyti.view.registration.resend_title') ?></h2>
+    <h2 class="mb-4"><?= $translator->translate('voyti.view.registration.resend_title', category: 'voyti') ?></h2>
     <form action="<?= Html::encode($url->generate('voyti/resend')) ?>" method="post" novalidate>
-        <?= Email::widget()->name('resend[email]')->value($model->email)->label($translator->translate('voyti.view.email_label')) ?>
+        <?= Email::widget()->name('resend[email]')->value($model->email)->label($translator->translate('voyti.view.email_label', category: 'voyti')) ?>
         <?= \YiiRocks\Voyti\Helper\RecaptchaHelper::render($model, $config) ?>
-        <?= SubmitButton::widget()->label($translator->translate('voyti.view.send_button')) ?>
+        <?= SubmitButton::widget()->label($translator->translate('voyti.view.send_button', category: 'voyti')) ?>
     </form>
 </div>

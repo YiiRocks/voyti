@@ -22,12 +22,12 @@ use Yiisoft\Router\UrlGeneratorInterface;
 ?>
 <div class="voyti-settings">
     <?php include dirname(__DIR__) . '/shared/_menu.php'; ?>
-    <h2 class="mb-4"><?= $translator->translate('voyti.view.settings.title') ?></h2>
+    <h2 class="mb-4"><?= $translator->translate('voyti.view.settings.title', category: 'voyti') ?></h2>
     <form method="post" novalidate>
         <?= ErrorSummary::widget()->errors($errors) ?>
-        <?= Text::widget()->name('settings[name]')->value($model->name)->label($translator->translate('voyti.view.name_label')) ?>
-        <?= Email::widget()->name('settings[publicEmail]')->value($model->publicEmail)->label($translator->translate('voyti.view.public_email_label')) ?>
-        <?= Textarea::widget()->name('settings[bio]')->value($model->bio)->rows(3)->label($translator->translate('voyti.view.bio_label')) ?>
-        <?= SubmitButton::widget()->label($translator->translate('voyti.view.save_button')) ?>
+        <?= Text::widget()->name('settings[name]')->value($model->name)->label($translator->translate('voyti.view.name_label', category: 'voyti')) ?>
+        <?= Email::widget()->name('settings[publicEmail]')->value($model->publicEmail)->label($translator->translate('voyti.view.public_email_label', category: 'voyti')) ?>
+        <?= Textarea::widget()->name('settings[bio]')->value($model->bio)->rows(3)->label($translator->translate('voyti.view.bio_label', category: 'voyti')) ?>
+        <?= SubmitButton::widget()->label($translator->translate('voyti.view.save_button', category: 'voyti')) ?>
     </form>
 </div>

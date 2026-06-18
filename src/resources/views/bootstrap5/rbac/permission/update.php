@@ -19,7 +19,7 @@ use Yiisoft\Router\UrlGeneratorInterface;
 $url = $this->get('url');
 ?>
 <div class="voyti-rbac-update">
-    <h2 class="mb-4"><?= $translator->translate('voyti.view.permission.update_title', ['name' => Html::encode($model->itemName)]) ?></h2>
+    <h2 class="mb-4"><?= $translator->translate('voyti.view.permission.update_title', ['name' => Html::encode($model->itemName)], category: 'voyti') ?></h2>
     <form method="post" novalidate>
         <?php if (!empty($errors)): ?>
             <div class="alert alert-danger">
@@ -30,8 +30,8 @@ $url = $this->get('url');
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
-        <?= Text::widget()->name('permission[name]')->value($model->name)->label($translator->translate('voyti.view.name_label')) ?>
-        <?= Text::widget()->name('permission[description]')->value($model->description)->label($translator->translate('voyti.view.description_label')) ?>
-        <?= SubmitButton::widget()->label($translator->translate('voyti.view.update_button')) ?>
+        <?= Text::widget()->name('permission[name]')->value($model->name)->label($translator->translate('voyti.view.name_label', category: 'voyti')) ?>
+        <?= Text::widget()->name('permission[description]')->value($model->description)->label($translator->translate('voyti.view.description_label', category: 'voyti')) ?>
+        <?= SubmitButton::widget()->label($translator->translate('voyti.view.update_button', category: 'voyti')) ?>
     </form>
 </div>

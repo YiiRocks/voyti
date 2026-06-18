@@ -28,11 +28,11 @@ final class PasswordRecoveryService
     {
         $user = $this->userRepository->findByEmail($email);
         if ($user === null) {
-            return ServiceResult::success($this->translator->translate('voyti.recovery.message_sent_if_exists'));
+            return ServiceResult::success($this->translator->translate('voyti.recovery.message_sent_if_exists', category: 'voyti'));
         }
 
         if ($user->isBlocked()) {
-            return ServiceResult::success($this->translator->translate('voyti.recovery.message_sent_if_exists'));
+            return ServiceResult::success($this->translator->translate('voyti.recovery.message_sent_if_exists', category: 'voyti'));
         }
 
         $token = new Token();
@@ -44,6 +44,6 @@ final class PasswordRecoveryService
 
         $this->mailService->sendRecovery($email, $token);
 
-        return ServiceResult::success($this->translator->translate('voyti.recovery.message_sent'));
+        return ServiceResult::success($this->translator->translate('voyti.recovery.message_sent', category: 'voyti'));
     }
 }
