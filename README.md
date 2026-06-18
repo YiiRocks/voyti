@@ -82,11 +82,44 @@ return [
 ];
 ```
 
-### 3. That's it
+### 3. Register routes
 
-Routes, DI bindings, event listeners, and console commands are all auto-registered via the config plugin. The package works out of the box under the `/voyti` URL prefix.
+The package exposes its routes under the `voyti-routes` config group. In your
+application's router DI definition, include them alongside your own routes:
 
-Web routes cover security, registration, recovery, profile, settings, admin, and RBAC. REST API routes (under `/user/api/v1`) are enabled when `enableRestApi` is `true`.
+```php
+// config/common/di/router.php
+use Yiisoft\Config\Config;
+use Yiisoft\Definitions\DynamicReference;
+use Yiisoft\Router\RouteCollection;
+use Yiisoft\Router\RouteCollectionInterface;
+use Yiisoft\Router\RouteCollector;
+
+/** @var Config $config */
+
+return [
+    RouteCollectionInterface::class => [
+        'class' => RouteCollection::class,
+        '__construct()' => [
+            'collector' => DynamicReference::to(
+                static fn() => (new RouteCollector())->addRoute(
+                    ...$config->get('voyti-routes'),
+                    // ...your own routes
+                ),
+            ),
+        ],
+    ],
+];
+```
+
+Routes are prefixed with `user/` and are available at URLs like `/user/login`,
+`/user/register`, `/user/settings`, etc. REST API routes (under `/user/api/v1`)
+are enabled when `enableRestApi` is `true`.
+
+### 4. That's it
+
+DI bindings, event listeners, and console commands are all auto-registered via
+the config plugin.
 
 Console commands:
 

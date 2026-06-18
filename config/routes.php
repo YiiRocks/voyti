@@ -8,14 +8,14 @@ use YiiRocks\Voyti\Controller;
 use YiiRocks\Voyti\ModuleConfig;
 
 $routes = [
-    Group::create('/user')
+    Group::create('user')
         ->routes(
             // Security
             Route::methods(['GET', 'POST'], '/login')->name('voyti/login')->action([Controller\SecurityController::class, 'login']),
             Route::post('/logout')->name('voyti/logout')->action([Controller\SecurityController::class, 'logout']),
             Route::methods(['GET', 'POST'], '/confirm')->name('voyti/confirm')->action([Controller\SecurityController::class, 'confirm']),
             Route::get('/auth/{provider}')->name('voyti/auth')->action([Controller\SecurityController::class, 'auth']),
-            Route::get('/connect/{provider}')->name('voyti/connect')->action([Controller\SecurityController::class, 'connect']),
+            Route::get('/auth/connect/{provider}')->name('voyti/connect')->action([Controller\SecurityController::class, 'connect']),
 
             // Registration
             Route::methods(['GET', 'POST'], '/register')->name('voyti/register')->action([Controller\RegistrationController::class, 'register']),
@@ -78,7 +78,7 @@ $routes = [
 ];
 
 if ($params[ModuleConfig::class]->enableRestApi ?? false) {
-    $routes[] = Group::create('/user/' . $params[ModuleConfig::class]->adminRestPrefix)
+    $routes[] = Group::create('user/' . $params[ModuleConfig::class]->adminRestPrefix)
         ->routes(
             Route::get('/users')->name('voyti/api-users-index')->action([Controller\api\v1\AdminController::class, 'index']),
             Route::get('/users/{id:\d+}')->name('voyti/api-users-view')->action([Controller\api\v1\AdminController::class, 'view']),

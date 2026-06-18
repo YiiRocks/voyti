@@ -125,7 +125,7 @@
             "console": "console.php",
             "di": "di.php",
             "rbac": "rbac.php",
-            "routes": "routes.php"
+            "voyti-routes": "routes.php"
         }
     },
     "config": {
