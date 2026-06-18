@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service;
 
-use Yiisoft\Auth\IdentityServiceInterface;
+use YiiRocks\Voyti\IdentityServiceInterface;
 use Yiisoft\Session\SessionInterface;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\UserRepository;

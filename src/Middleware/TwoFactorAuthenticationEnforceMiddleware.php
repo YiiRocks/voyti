@@ -9,8 +9,9 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use Yiisoft\Auth\IdentityServiceInterface;
+use YiiRocks\Voyti\IdentityServiceInterface;
 use Yiisoft\Rbac\ManagerInterface;
+use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\ModuleConfig;
 
 final class TwoFactorAuthenticationEnforceMiddleware implements MiddlewareInterface
@@ -30,7 +31,7 @@ final class TwoFactorAuthenticationEnforceMiddleware implements MiddlewareInterf
         }
 
         $user = $this->identityService->getIdentity();
-        if ($user === null) {
+        if ($user === null || !$user instanceof User) {
             return $handler->handle($request);
         }
 

@@ -49,6 +49,7 @@
         "yiisoft/session": "^3.0",
         "yiisoft/translator": "^3.2",
         "yiisoft/translator-message-php": "^1.0",
+        "yiisoft/user": "^2.3",
         "yiisoft/validator": "^2.6",
         "yiisoft/view": "^12.2"
     },

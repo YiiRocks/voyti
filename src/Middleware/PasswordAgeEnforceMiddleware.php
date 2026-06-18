@@ -9,8 +9,9 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use Yiisoft\Auth\IdentityServiceInterface;
+use YiiRocks\Voyti\IdentityServiceInterface;
 use Yiisoft\Translator\TranslatorInterface;
+use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\ModuleConfig;
 
 final class PasswordAgeEnforceMiddleware implements MiddlewareInterface
@@ -31,7 +32,7 @@ final class PasswordAgeEnforceMiddleware implements MiddlewareInterface
         }
 
         $user = $this->identityService->getIdentity();
-        if ($user === null) {
+        if ($user === null || !$user instanceof User) {
             return $handler->handle($request);
         }
 

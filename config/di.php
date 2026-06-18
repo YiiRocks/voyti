@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use Yiisoft\ActiveRecord\ActiveRecordFactory;
 use Yiisoft\Aliases\Aliases;
-use Yiisoft\Auth\IdentityServiceInterface;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\Translator\CategorySource;
 use Yiisoft\View\View;
@@ -18,6 +17,8 @@ use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Helper\GravatarHelper;
 use YiiRocks\Voyti\Helper\SecurityHelper;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
+use YiiRocks\Voyti\IdentityService\CurrentUserIdentityService;
+use YiiRocks\Voyti\IdentityServiceInterface;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\ProfileRepository;
 use YiiRocks\Voyti\Repository\SocialNetworkAccountRepository;
@@ -27,6 +28,8 @@ use YiiRocks\Voyti\Repository\SessionHistoryRepository;
 
 return [
     ModuleConfig::class => ModuleConfig::class,
+
+    IdentityServiceInterface::class => CurrentUserIdentityService::class,
 
     UserRepository::class => fn(ActiveRecordFactory $arFactory) => new UserRepository($arFactory),
     ProfileRepository::class => fn(ActiveRecordFactory $arFactory) => new ProfileRepository($arFactory),

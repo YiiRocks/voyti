@@ -8,7 +8,7 @@ use YiiRocks\Voyti\Entity\SocialNetworkAccount;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\SocialNetworkAccountRepository;
 use YiiRocks\Voyti\Repository\UserRepository;
-use Yiisoft\Auth\IdentityServiceInterface;
+use YiiRocks\Voyti\IdentityServiceInterface;
 use Yiisoft\Session\SessionInterface;
 
 final class SocialNetworkAuthenticateService

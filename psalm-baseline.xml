@@ -166,12 +166,6 @@
     <MixedMethodCall>
       <code><![CDATA[getId]]></code>
     </MixedMethodCall>
-    <UndefinedClass>
-      <code><![CDATA[$this->identityService]]></code>
-      <code><![CDATA[$this->identityService]]></code>
-      <code><![CDATA[$this->identityService]]></code>
-      <code><![CDATA[private]]></code>
-    </UndefinedClass>
     <UndefinedMethod>
       <code><![CDATA[load]]></code>
       <code><![CDATA[load]]></code>
@@ -474,47 +468,16 @@
     <MissingOverrideAttribute>
       <code><![CDATA[public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface]]></code>
     </MissingOverrideAttribute>
-    <MixedArgument>
-      <code><![CDATA[$userId]]></code>
-    </MixedArgument>
-    <MixedMethodCall>
-      <code><![CDATA[getId]]></code>
-    </MixedMethodCall>
-    <UndefinedClass>
-      <code><![CDATA[$this->identityService]]></code>
-      <code><![CDATA[private]]></code>
-    </UndefinedClass>
   </file>
   <file src="src/Middleware/PasswordAgeEnforceMiddleware.php">
     <MissingOverrideAttribute>
       <code><![CDATA[public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface]]></code>
     </MissingOverrideAttribute>
-    <MixedMethodCall>
-      <code><![CDATA[getPasswordChangedAt]]></code>
-    </MixedMethodCall>
-    <MixedOperand>
-      <code><![CDATA[$passwordChangedAt]]></code>
-    </MixedOperand>
-    <UndefinedClass>
-      <code><![CDATA[$this->identityService]]></code>
-      <code><![CDATA[private]]></code>
-    </UndefinedClass>
   </file>
   <file src="src/Middleware/TwoFactorAuthenticationEnforceMiddleware.php">
     <MissingOverrideAttribute>
       <code><![CDATA[public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface]]></code>
     </MissingOverrideAttribute>
-    <MixedArgument>
-      <code><![CDATA[$userId]]></code>
-    </MixedArgument>
-    <MixedMethodCall>
-      <code><![CDATA[getId]]></code>
-      <code><![CDATA[isAuthTfEnabled]]></code>
-    </MixedMethodCall>
-    <UndefinedClass>
-      <code><![CDATA[$this->identityService]]></code>
-      <code><![CDATA[private]]></code>
-    </UndefinedClass>
   </file>
   <file src="src/Migration/M000001CreateUserTable.php">
     <MissingOverrideAttribute>
@@ -743,27 +706,12 @@
       <code><![CDATA[$attributes['email'] ?? null]]></code>
       <code><![CDATA[$attributes['username'] ?? ($attributes['name'] ?? null)]]></code>
     </MixedArgument>
-    <UndefinedClass>
-      <code><![CDATA[$this->identityService]]></code>
-      <code><![CDATA[private]]></code>
-    </UndefinedClass>
   </file>
   <file src="src/Service/SwitchIdentityService.php">
-    <MixedMethodCall>
-      <code><![CDATA[getId]]></code>
-    </MixedMethodCall>
     <PossiblyNullArgument>
       <code><![CDATA[$this->config->switchIdentitySessionKey]]></code>
       <code><![CDATA[$this->config->switchIdentitySessionKey]]></code>
     </PossiblyNullArgument>
-    <UndefinedClass>
-      <code><![CDATA[$this->identityService]]></code>
-      <code><![CDATA[$this->identityService]]></code>
-      <code><![CDATA[$this->identityService]]></code>
-      <code><![CDATA[$this->identityService]]></code>
-      <code><![CDATA[$this->identityService]]></code>
-      <code><![CDATA[private]]></code>
-    </UndefinedClass>
   </file>
   <file src="src/Service/TwoFactorQrCodeUriGeneratorService.php">
     <DeprecatedMethod>
