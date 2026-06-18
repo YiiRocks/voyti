@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Yiisoft\Router\Group;
 use Yiisoft\Router\Route;
 use YiiRocks\Voyti\Controller;
+use YiiRocks\Voyti\ModuleConfig;
 
 $routes = [
     Group::create('/voyti')
@@ -76,8 +77,8 @@ $routes = [
         ),
 ];
 
-if (class_exists(Controller\api\v1\AdminController::class)) {
-    $routes[] = Group::create('/voyti/api/v1')
+if ($params[ModuleConfig::class]->enableRestApi ?? false) {
+    $routes[] = Group::create('/voyti/' . $params[ModuleConfig::class]->adminRestPrefix)
         ->routes(
             Route::get('/users')->name('voyti/api-users-index')->action([Controller\api\v1\AdminController::class, 'index']),
             Route::get('/users/{id:\d+}')->name('voyti/api-users-view')->action([Controller\api\v1\AdminController::class, 'view']),
