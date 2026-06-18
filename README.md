@@ -70,14 +70,14 @@ use YiiRocks\Voyti\ModuleConfig;
 
 return [
     YiiRocks\Voyti\ModuleConfig::class => new ModuleConfig(
-        enableRegistration: true,            // default: true
-        enablePasswordRecovery: true,        // default: true
-        enableTwoFactorAuthentication: true, // default: false
-        recaptchaVersion: 'v3',              // default: null ('v2', 'v3', or null to disable)
-        emailChangeStrategy: 1,              // default: 1 (0 = insecure, 1 = default, 2 = secure)
-        enableGdprCompliance: true,          // default: false
-        maxPasswordAge: 90,                  // default: null (days, null to disable)
-        enableRestApi: true,                 // default: false (enables /voyti/api/v1/users)
+        enableRegistration: true,
+        enablePasswordRecovery: true,
+        enableTwoFactorAuthentication: true,
+        recaptchaVersion: 'v3',
+        emailChangeStrategy: 1,
+        enableGdprCompliance: true,
+        maxPasswordAge: 90,
+        enableRestApi: true,
     ),
 ];
 ```
@@ -156,10 +156,19 @@ Web views are in `src/resources/views/bootstrap5/` and use the `@voytiViews` ali
 ],
 ```
 
-To add support for another CSS framework (e.g. Tailwind), create a `src/resources/views/tailwind/` directory and set:
+To use a different CSS framework (e.g. Tailwind), create your view files and point `@voytiViews` at them via `pathMap`, falling back to the bundled Bootstrap 5 views:
 
 ```php
-'@voytiViews' => ['@voyti/resources/views/tailwind'],
+'yiisoft/view' => [
+    'theme' => [
+        'pathMap' => [
+            '@voytiViews' => [
+                '/path/to/your/tailwind/views',
+                '@voyti/resources/views/bootstrap5',
+            ],
+        ],
+    ],
+],
 ```
 
 ### Mail Views
@@ -269,7 +278,7 @@ src/
 
 ## Credits
 
-Originally based on [2amigos/yii2-usuario](https://github.com/2amigos/yii2-usuario) by 2amigOS!, which itself was inspired by [Dektrium](https://dektrium.com/)'s Yii2 User and RBAC modules.
+Originally based on [2amigos/yii2-usuario](https://github.com/2amigos/yii2-usuario) by 2amigOS.
 
 ## License
 
