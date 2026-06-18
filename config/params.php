@@ -7,7 +7,7 @@ use YiiRocks\Voyti\ModuleConfig;
 return [
     'yiisoft/aliases' => [
         'aliases' => [
-            '@voyti' => '@root/src',
+            '@voyti' => dirname(__DIR__) . '/src',
             '@voytiViews' => '@voyti/resources/views/bootstrap5',
             '@voytiMail' => '@voyti/resources/mail',
         ],
