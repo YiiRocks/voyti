@@ -4,17 +4,12 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Repository;
 
-use Yiisoft\ActiveRecord\ActiveRecordFactory;
+use Yiisoft\ActiveRecord\ActiveQuery;
 use YiiRocks\Voyti\Entity\SessionHistory;
 
 final class SessionHistoryRepository
 {
     use RepositoryTrait;
-
-    public function __construct(ActiveRecordFactory $arFactory)
-    {
-        $this->arFactory = $arFactory;
-    }
 
     public function findByUserId(int $userId): array
     {
@@ -23,13 +18,12 @@ final class SessionHistoryRepository
 
     public function findAllSessionHistory(): array
     {
-        $query = $this->arFactory->createQueryTo(SessionHistory::class);
-        return $query->all();
+        return (new ActiveQuery(SessionHistory::class))->all();
     }
 
     public function search(array $filters = []): array
     {
-        $query = $this->arFactory->createQueryTo(SessionHistory::class);
+        $query = new ActiveQuery(SessionHistory::class);
         if (!empty($filters['user_id'])) {
             $query = $query->where(['user_id' => $filters['user_id']]);
         }

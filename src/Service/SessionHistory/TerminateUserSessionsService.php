@@ -4,18 +4,19 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service\SessionHistory;
 
-use Yiisoft\ActiveRecord\ActiveRecordFactory;
+use Yiisoft\ActiveRecord\ActiveQuery;
+use YiiRocks\Voyti\Entity\SessionHistory;
 
 final class TerminateUserSessionsService
 {
-    public function __construct(
-        private readonly ActiveRecordFactory $arFactory,
-    ) {
+    public function __construct()
+    {
     }
 
     public function run(int $userId): void
     {
-        $query = $this->arFactory->createQuery(\YiiRocks\Voyti\Entity\SessionHistory::class);
-        $query->where(['user_id' => $userId])->delete();
+        (new ActiveQuery(SessionHistory::class))
+            ->where(['user_id' => $userId])
+            ->delete();
     }
 }

@@ -4,26 +4,22 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Repository;
 
-use Yiisoft\ActiveRecord\ActiveRecordFactory;
+use Yiisoft\ActiveRecord\ActiveQuery;
 
 trait RepositoryTrait
 {
-    protected ActiveRecordFactory $arFactory;
-
     protected function findOne(string $class, array $condition): ?object
     {
-        $query = $this->arFactory->createQueryTo($class);
-        foreach ($condition as $col => $val) {
-            $query = $query->where([$col => $val]);
-        }
-        return $query->one() ?: null;
+        return (new ActiveQuery($class))
+            ->where($condition)
+            ->one() ?: null;
     }
 
     protected function findAll(string $class, array $condition = []): array
     {
-        $query = $this->arFactory->createQueryTo($class);
-        foreach ($condition as $col => $val) {
-            $query = $query->where([$col => $val]);
+        $query = new ActiveQuery($class);
+        if (!empty($condition)) {
+            $query = $query->where($condition);
         }
         return $query->all();
     }

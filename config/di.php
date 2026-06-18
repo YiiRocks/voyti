@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Yiisoft\ActiveRecord\ActiveRecordFactory;
 use Yiisoft\Aliases\Aliases;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\Translator\CategorySource;
@@ -31,11 +30,11 @@ return [
 
     IdentityServiceInterface::class => CurrentUserIdentityService::class,
 
-    UserRepository::class => fn(ActiveRecordFactory $arFactory) => new UserRepository($arFactory),
-    ProfileRepository::class => fn(ActiveRecordFactory $arFactory) => new ProfileRepository($arFactory),
+    UserRepository::class => UserRepository::class,
+    ProfileRepository::class => ProfileRepository::class,
     TokenRepository::class => TokenRepository::class,
-    SocialNetworkAccountRepository::class => fn(ActiveRecordFactory $arFactory) => new SocialNetworkAccountRepository($arFactory),
-    SessionHistoryRepository::class => fn(ActiveRecordFactory $arFactory) => new SessionHistoryRepository($arFactory),
+    SocialNetworkAccountRepository::class => SocialNetworkAccountRepository::class,
+    SessionHistoryRepository::class => SessionHistoryRepository::class,
 
     SecurityHelper::class => SecurityHelper::class,
     AuthHelper::class => fn(

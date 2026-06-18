@@ -518,34 +518,10 @@
     </InvalidReturnType>
   </file>
   <file src="src/Repository/RepositoryTrait.php">
-    <MixedMethodCall>
-      <code><![CDATA[all]]></code>
-      <code><![CDATA[one]]></code>
-      <code><![CDATA[where]]></code>
-      <code><![CDATA[where]]></code>
-    </MixedMethodCall>
-    <UndefinedClass>
-      <code><![CDATA[$this->arFactory]]></code>
-      <code><![CDATA[$this->arFactory]]></code>
-      <code><![CDATA[ActiveRecordFactory]]></code>
-    </UndefinedClass>
-  </file>
-  <file src="src/Repository/SessionHistoryRepository.php">
-    <MixedMethodCall>
-      <code><![CDATA[all]]></code>
-      <code><![CDATA[all]]></code>
-      <code><![CDATA[where]]></code>
-      <code><![CDATA[where]]></code>
-    </MixedMethodCall>
-    <MixedReturnStatement>
-      <code><![CDATA[$query->all()]]></code>
-      <code><![CDATA[$query->all()]]></code>
-    </MixedReturnStatement>
-    <UndefinedClass>
-      <code><![CDATA[$this->arFactory]]></code>
-      <code><![CDATA[$this->arFactory]]></code>
-      <code><![CDATA[ActiveRecordFactory]]></code>
-    </UndefinedClass>
+    <ArgumentTypeCoercion>
+      <code><![CDATA[$class]]></code>
+      <code><![CDATA[$class]]></code>
+    </ArgumentTypeCoercion>
   </file>
   <file src="src/Repository/SocialNetworkAccountRepository.php">
     <InvalidNullableReturnType>
@@ -560,9 +536,6 @@
     <NullableReturnStatement>
       <code><![CDATA[$account->save()]]></code>
     </NullableReturnStatement>
-    <UndefinedClass>
-      <code><![CDATA[ActiveRecordFactory]]></code>
-    </UndefinedClass>
   </file>
   <file src="src/Repository/TokenRepository.php">
     <InvalidReturnStatement>
@@ -692,14 +665,9 @@
     </MissingOverrideAttribute>
   </file>
   <file src="src/Service/SessionHistory/TerminateUserSessionsService.php">
-    <MixedMethodCall>
+    <UndefinedMethod>
       <code><![CDATA[delete]]></code>
-      <code><![CDATA[where]]></code>
-    </MixedMethodCall>
-    <UndefinedClass>
-      <code><![CDATA[$this->arFactory]]></code>
-      <code><![CDATA[private]]></code>
-    </UndefinedClass>
+    </UndefinedMethod>
   </file>
   <file src="src/Service/SocialNetworkAuthenticateService.php">
     <MixedArgument>
