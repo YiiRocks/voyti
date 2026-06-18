@@ -1,0 +1,7 @@
+<?= $translator->translate('voyti.mail.email_change_heading') ?>
+
+<?= $translator->translate('voyti.mail.hello_username', ['username' => $username]) ?>
+
+<?= $translator->translate('voyti.mail.click_to_confirm_email') ?>
+
+<?= $confirmationUrl ?>

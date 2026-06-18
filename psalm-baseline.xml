@@ -1,0 +1,1518 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<files psalm-version="6.16.1@f1f5de594dc76faf8784e02d3dc4716c91c6f6ac">
+  <file src="src/Command/ConfirmUserCommand.php">
+    <MissingOverrideAttribute>
+      <code><![CDATA[protected function configure(): void]]></code>
+      <code><![CDATA[protected function execute(InputInterface $input, OutputInterface $output): int]]></code>
+    </MissingOverrideAttribute>
+    <MixedArgument>
+      <code><![CDATA[$email]]></code>
+      <code><![CDATA[$username]]></code>
+    </MixedArgument>
+  </file>
+  <file src="src/Command/CreateUserCommand.php">
+    <MissingOverrideAttribute>
+      <code><![CDATA[protected function configure(): void]]></code>
+      <code><![CDATA[protected function execute(InputInterface $input, OutputInterface $output): int]]></code>
+    </MissingOverrideAttribute>
+    <MixedArgument>
+      <code><![CDATA[$email]]></code>
+      <code><![CDATA[$password]]></code>
+      <code><![CDATA[$role]]></code>
+      <code><![CDATA[$username]]></code>
+    </MixedArgument>
+  </file>
+  <file src="src/Command/DeleteUserCommand.php">
+    <MissingOverrideAttribute>
+      <code><![CDATA[protected function configure(): void]]></code>
+      <code><![CDATA[protected function execute(InputInterface $input, OutputInterface $output): int]]></code>
+    </MissingOverrideAttribute>
+    <MixedArgument>
+      <code><![CDATA[$email]]></code>
+      <code><![CDATA[$username]]></code>
+    </MixedArgument>
+  </file>
+  <file src="src/Command/PasswordCommand.php">
+    <MissingOverrideAttribute>
+      <code><![CDATA[protected function configure(): void]]></code>
+      <code><![CDATA[protected function execute(InputInterface $input, OutputInterface $output): int]]></code>
+    </MissingOverrideAttribute>
+    <MixedArgument>
+      <code><![CDATA[$email]]></code>
+      <code><![CDATA[$username]]></code>
+    </MixedArgument>
+  </file>
+  <file src="src/Controller/AbstractAuthItemController.php">
+    <MixedArgument>
+      <code><![CDATA[$filterDescription]]></code>
+      <code><![CDATA[$filterName]]></code>
+      <code><![CDATA[$item->getDescription()]]></code>
+      <code><![CDATA[$item->getName()]]></code>
+    </MixedArgument>
+    <MixedArrayAccess>
+      <code><![CDATA[$data['children']]]></code>
+      <code><![CDATA[$data['description']]]></code>
+      <code><![CDATA[$data['name']]]></code>
+      <code><![CDATA[$data['rule']]]></code>
+    </MixedArrayAccess>
+    <MixedMethodCall>
+      <code><![CDATA[getDescription]]></code>
+      <code><![CDATA[getName]]></code>
+    </MixedMethodCall>
+    <MixedReturnStatement>
+      <code><![CDATA[$this->viewRenderer->render($this->getItemType() . '/create', [
+            'model' => $form,
+            'errors' => $errors,
+            'unassignedItems' => $this->authHelper->getAllItems(),
+        ])]]></code>
+      <code><![CDATA[$this->viewRenderer->render($this->getItemType() . '/index', [
+            'items' => $items,
+            'filterName' => $filterName,
+            'filterDescription' => $filterDescription,
+        ])]]></code>
+      <code><![CDATA[$this->viewRenderer->render($this->getItemType() . '/update', [
+            'model' => $form,
+            'errors' => $errors,
+            'unassignedItems' => $this->authHelper->getAllItems(),
+        ])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', [
+                        'title' => $this->translator->translate('voyti.auth_item.' . $this->getItemType() . '_created'),
+                        'translator' => $this->translator,
+                    ])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', [
+                        'title' => $this->translator->translate('voyti.auth_item.' . $this->getItemType() . '_updated'),
+                        'translator' => $this->translator,
+                    ])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', [
+                'title' => $this->translator->translate('voyti.auth_item.not_found'),
+                'translator' => $this->translator,
+            ])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', [
+            'title' => $this->translator->translate('voyti.auth_item.' . $this->getItemType() . '_deleted'),
+            'translator' => $this->translator,
+        ])]]></code>
+    </MixedReturnStatement>
+    <PossiblyInvalidArgument>
+      <code><![CDATA[$body]]></code>
+      <code><![CDATA[$body]]></code>
+    </PossiblyInvalidArgument>
+    <UndefinedClass>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[protected]]></code>
+    </UndefinedClass>
+  </file>
+  <file src="src/Controller/AdminController.php">
+    <MixedArgument>
+      <code><![CDATA[$body['email'] ?? $user->getEmail()]]></code>
+      <code><![CDATA[$body['password']]]></code>
+      <code><![CDATA[$body['username'] ?? $user->getUsername()]]></code>
+      <code><![CDATA[$email]]></code>
+      <code><![CDATA[$items]]></code>
+      <code><![CDATA[$password]]></code>
+      <code><![CDATA[$username]]></code>
+    </MixedArgument>
+    <MixedMethodCall>
+      <code><![CDATA[delete]]></code>
+      <code><![CDATA[getId]]></code>
+    </MixedMethodCall>
+    <MixedReturnStatement>
+      <code><![CDATA[$this->viewRenderer->render('admin/_account', ['user' => $user, 'config' => $this->config])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('admin/_assignments', [
+            'user' => $user,
+            'config' => $this->config,
+            'assignments' => $assignedNames,
+            'available' => $available,
+        ])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('admin/_info', ['user' => $user, 'config' => $this->config])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('admin/_profile', ['user' => $user, 'profile' => $profile, 'config' => $this->config])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('admin/_session-history', [
+            'user' => $user,
+            'sessions' => $sessions,
+            'config' => $this->config,
+        ])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('admin/create', ['errors' => $errors])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('admin/index', [
+            'users' => $users,
+            'config' => $this->config,
+            'filters' => $filters,
+            'totalPages' => $totalPages,
+            'currentPage' => $currentPage,
+        ])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $result->getMessage()])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $result->getMessage()])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.account_details_updated'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.block_status_updated'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.cannot_delete_self'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.error_occurred'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.password_change_required'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.profile_details_updated'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.sessions_terminated'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.unable_to_confirm'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.unable_to_update_block'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.user_confirmed'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.user_created'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.user_deleted'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found'), 'translator' => $this->translator])]]></code>
+    </MixedReturnStatement>
+    <UndefinedClass>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[private]]></code>
+    </UndefinedClass>
+    <UndefinedMethod>
+      <code><![CDATA[load]]></code>
+    </UndefinedMethod>
+  </file>
+  <file src="src/Controller/PermissionController.php">
+    <InvalidReturnStatement>
+      <code><![CDATA[new PermissionForm()]]></code>
+    </InvalidReturnStatement>
+    <InvalidReturnType>
+      <code><![CDATA[AbstractAuthItemForm]]></code>
+    </InvalidReturnType>
+    <MethodSignatureMismatch>
+      <code><![CDATA[protected function createForm(): AbstractAuthItemForm]]></code>
+    </MethodSignatureMismatch>
+    <MissingOverrideAttribute>
+      <code><![CDATA[protected function createForm(): AbstractAuthItemForm]]></code>
+      <code><![CDATA[protected function getItemType(): string]]></code>
+    </MissingOverrideAttribute>
+    <UndefinedClass>
+      <code><![CDATA[AbstractAuthItemForm]]></code>
+      <code><![CDATA[ViewRenderer]]></code>
+    </UndefinedClass>
+  </file>
+  <file src="src/Controller/ProfileController.php">
+    <MixedArgument>
+      <code><![CDATA[$identity]]></code>
+    </MixedArgument>
+    <MixedMethodCall>
+      <code><![CDATA[getId]]></code>
+    </MixedMethodCall>
+    <MixedReturnStatement>
+      <code><![CDATA[$this->viewRenderer->render('profile/show', ['profile' => $profile])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.profile.forbidden'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.profile.forbidden'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.profile.forbidden'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.profile.not_found'), 'translator' => $this->translator])]]></code>
+    </MixedReturnStatement>
+    <UndefinedClass>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[private]]></code>
+    </UndefinedClass>
+  </file>
+  <file src="src/Controller/RecoveryController.php">
+    <MixedReturnStatement>
+      <code><![CDATA[$this->viewRenderer->render('recovery/request', [
+            'model' => $form,
+            'config' => $this->config,
+            'errors' => $errors,
+        ])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('recovery/reset', ['model' => $form, 'errors' => $errors])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $serviceResult->getMessage()])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.recovery.disabled'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.recovery.link_invalid'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.recovery.password_changed'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.recovery.reset_disabled'), 'translator' => $this->translator])]]></code>
+    </MixedReturnStatement>
+    <PossiblyNullArgument>
+      <code><![CDATA[$token->getUser()]]></code>
+    </PossiblyNullArgument>
+    <UndefinedClass>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[private]]></code>
+    </UndefinedClass>
+    <UndefinedMethod>
+      <code><![CDATA[load]]></code>
+      <code><![CDATA[load]]></code>
+    </UndefinedMethod>
+  </file>
+  <file src="src/Controller/RegistrationController.php">
+    <MixedReturnStatement>
+      <code><![CDATA[$this->viewRenderer->render('registration/connect', ['code' => $code, 'config' => $this->config])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('registration/register', [
+            'model' => $form,
+            'config' => $this->config,
+            'errors' => $errors,
+        ])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('registration/resend', ['model' => $form, 'config' => $this->config])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $serviceResult->getMessage()])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.registration.complete'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.registration.confirmation_link_invalid'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.registration.disabled'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.registration.email_confirmation_disabled'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.registration.invalid_confirmation_link'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.registration.new_confirmation_sent'), 'translator' => $this->translator])]]></code>
+    </MixedReturnStatement>
+    <UndefinedClass>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[private]]></code>
+    </UndefinedClass>
+    <UndefinedMethod>
+      <code><![CDATA[load]]></code>
+      <code><![CDATA[load]]></code>
+    </UndefinedMethod>
+  </file>
+  <file src="src/Controller/RoleController.php">
+    <InvalidReturnStatement>
+      <code><![CDATA[new RoleForm()]]></code>
+    </InvalidReturnStatement>
+    <InvalidReturnType>
+      <code><![CDATA[AbstractAuthItemForm]]></code>
+    </InvalidReturnType>
+    <MethodSignatureMismatch>
+      <code><![CDATA[protected function createForm(): AbstractAuthItemForm]]></code>
+    </MethodSignatureMismatch>
+    <MissingOverrideAttribute>
+      <code><![CDATA[protected function createForm(): AbstractAuthItemForm]]></code>
+      <code><![CDATA[protected function getItemType(): string]]></code>
+    </MissingOverrideAttribute>
+    <UndefinedClass>
+      <code><![CDATA[AbstractAuthItemForm]]></code>
+      <code><![CDATA[ViewRenderer]]></code>
+    </UndefinedClass>
+  </file>
+  <file src="src/Controller/RuleController.php">
+    <MixedArrayAccess>
+      <code><![CDATA[$data['class']]]></code>
+      <code><![CDATA[$data['class']]]></code>
+      <code><![CDATA[$data['name']]]></code>
+      <code><![CDATA[$data['name']]]></code>
+    </MixedArrayAccess>
+    <MixedReturnStatement>
+      <code><![CDATA[$this->viewRenderer->render('rule/create', [
+            'model' => $form,
+            'errors' => $errors,
+        ])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('rule/index', [
+            'rules' => $rules,
+        ])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('rule/update', [
+            'model' => $form,
+            'errors' => $errors,
+        ])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', [
+                        'title' => $this->translator->translate('voyti.rule.added'),
+                        'translator' => $this->translator,
+                    ])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', [
+                        'title' => $this->translator->translate('voyti.rule.updated'),
+                        'translator' => $this->translator,
+                    ])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', [
+            'title' => $this->translator->translate('voyti.rule.removed'),
+            'translator' => $this->translator,
+        ])]]></code>
+    </MixedReturnStatement>
+    <UndefinedClass>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[private]]></code>
+    </UndefinedClass>
+  </file>
+  <file src="src/Controller/SecurityController.php">
+    <MixedArgument>
+      <code><![CDATA[$clientId]]></code>
+      <code><![CDATA[$clientId]]></code>
+      <code><![CDATA[$form->login]]></code>
+      <code><![CDATA[$form->password]]></code>
+      <code><![CDATA[$provider]]></code>
+      <code><![CDATA[$provider]]></code>
+      <code><![CDATA[$this->config->disableIpLogging ? '127.0.0.1' : ($request->getServerParams()['REMOTE_ADDR'] ?? '127.0.0.1')]]></code>
+    </MixedArgument>
+    <MixedArrayAccess>
+      <code><![CDATA[$credentials['login']]]></code>
+      <code><![CDATA[$credentials['pwd']]]></code>
+    </MixedArrayAccess>
+    <MixedMethodCall>
+      <code><![CDATA[getId]]></code>
+    </MixedMethodCall>
+    <MixedReturnStatement>
+      <code><![CDATA[$this->viewRenderer->render('security/confirm', ['model' => $form, 'config' => $this->config])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('security/confirm', ['model' => $form, 'config' => $this->config])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('security/login', [
+            'model' => $form,
+            'config' => $this->config,
+            'errors' => $errors,
+        ])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('security/login', ['model' => new LoginForm($this->config), 'config' => $this->config])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $result->getMessage(), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $result->getMessage(), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.security.authenticated'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.security.authenticated'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.security.logged_in'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.security.logged_out'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated'), 'translator' => $this->translator])]]></code>
+    </MixedReturnStatement>
+    <UndefinedClass>
+      <code><![CDATA[$this->identityService]]></code>
+      <code><![CDATA[$this->identityService]]></code>
+      <code><![CDATA[$this->identityService]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[private]]></code>
+      <code><![CDATA[private]]></code>
+    </UndefinedClass>
+    <UndefinedMethod>
+      <code><![CDATA[load]]></code>
+      <code><![CDATA[load]]></code>
+    </UndefinedMethod>
+  </file>
+  <file src="src/Controller/SettingsController.php">
+    <MixedArgument>
+      <code><![CDATA[$identity->getId() ?? 0]]></code>
+      <code><![CDATA[$identity->getId() ?? 0]]></code>
+      <code><![CDATA[$identity->getId() ?? 0]]></code>
+      <code><![CDATA[$identity->getId() ?? 0]]></code>
+      <code><![CDATA[$identity->getId() ?? 0]]></code>
+      <code><![CDATA[$identity->getId() ?? 0]]></code>
+      <code><![CDATA[$identity->getId() ?? 0]]></code>
+      <code><![CDATA[$identity->getId() ?? 0]]></code>
+      <code><![CDATA[$identity->getId() ?? 0]]></code>
+      <code><![CDATA[$identity->getId() ?? 0]]></code>
+      <code><![CDATA[$property]]></code>
+    </MixedArgument>
+    <MixedMethodCall>
+      <code><![CDATA[delete]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getId]]></code>
+    </MixedMethodCall>
+    <MixedReturnStatement>
+      <code><![CDATA[$response]]></code>
+      <code><![CDATA[$this->viewRenderer->render('settings/account', ['model' => $form])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('settings/gdpr-consent', ['config' => $this->config])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('settings/gdpr-delete', ['model' => $form])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('settings/networks', ['user' => $identity])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('settings/privacy', ['config' => $this->config])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('settings/profile', ['model' => $profile, 'config' => $this->config])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('settings/two-factor', [
+            'user' => $user,
+            'qrCodeUri' => $qrCodeSvg,
+            'config' => $this->config,
+            'errors' => [],
+        ])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.account_deleted'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.account_deletion_disabled'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.account_details_updated'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.email_change_failed'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.email_changed'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.gdpr_consent_saved'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.network_disconnected'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.network_not_found'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_available'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_available'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_available'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_available'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_available'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_available'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_available'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.personal_info_removed'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.profile_updated'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.two_factor_disabled'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.two_factor_enabled'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found'), 'translator' => $this->translator])]]></code>
+      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found'), 'translator' => $this->translator])]]></code>
+    </MixedReturnStatement>
+    <PossiblyInvalidArgument>
+      <code><![CDATA[$user->getId() ?? 0]]></code>
+    </PossiblyInvalidArgument>
+    <PossiblyNullOperand>
+      <code><![CDATA[$user->getId()]]></code>
+    </PossiblyNullOperand>
+    <PossiblyUndefinedArrayOffset>
+      <code><![CDATA[$field]]></code>
+    </PossiblyUndefinedArrayOffset>
+    <UndefinedClass>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[$this->viewRenderer]]></code>
+      <code><![CDATA[private]]></code>
+    </UndefinedClass>
+    <UndefinedMethod>
+      <code><![CDATA[getPropertyValue]]></code>
+      <code><![CDATA[getPropertyValue]]></code>
+      <code><![CDATA[load]]></code>
+      <code><![CDATA[load]]></code>
+      <code><![CDATA[load]]></code>
+    </UndefinedMethod>
+  </file>
+  <file src="src/Controller/api/v1/AdminController.php">
+    <MixedArgument>
+      <code><![CDATA[$body['email']]]></code>
+      <code><![CDATA[$body['password']]]></code>
+      <code><![CDATA[$body['username']]]></code>
+      <code><![CDATA[$email]]></code>
+      <code><![CDATA[$password]]></code>
+      <code><![CDATA[$username]]></code>
+    </MixedArgument>
+    <MixedMethodCall>
+      <code><![CDATA[getBlockedAt]]></code>
+      <code><![CDATA[getConfirmedAt]]></code>
+      <code><![CDATA[getCreatedAt]]></code>
+      <code><![CDATA[getEmail]]></code>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[getUsername]]></code>
+    </MixedMethodCall>
+    <MixedReturnStatement>
+      <code><![CDATA[$this->responseFactory->createResponse($data)]]></code>
+      <code><![CDATA[$this->responseFactory->createResponse([
+            'id' => $user->getId(),
+            'username' => $user->getUsername(),
+            'email' => $user->getEmail(),
+            'createdAt' => $user->getCreatedAt(),
+        ])]]></code>
+      <code><![CDATA[$this->responseFactory->createResponse([
+            'id' => $user->getId(),
+            'username' => $user->getUsername(),
+            'email' => $user->getEmail(),
+            'message' => $this->translator->translate('voyti.api.user_created'),
+        ], 201)]]></code>
+      <code><![CDATA[$this->responseFactory->createResponse([
+            'id' => $user->getId(),
+            'username' => $user->getUsername(),
+            'email' => $user->getEmail(),
+            'message' => $this->translator->translate('voyti.api.user_updated'),
+        ])]]></code>
+      <code><![CDATA[$this->responseFactory->createResponse(['error' => $this->translator->translate('voyti.api.not_found')], 404)]]></code>
+      <code><![CDATA[$this->responseFactory->createResponse(['error' => $this->translator->translate('voyti.api.not_found')], 404)]]></code>
+      <code><![CDATA[$this->responseFactory->createResponse(['error' => $this->translator->translate('voyti.api.not_found')], 404)]]></code>
+      <code><![CDATA[$this->responseFactory->createResponse(['error' => 'Email already exists'], 400)]]></code>
+      <code><![CDATA[$this->responseFactory->createResponse(['error' => 'Username already exists'], 400)]]></code>
+      <code><![CDATA[$this->responseFactory->createResponse(['message' => $this->translator->translate('voyti.api.user_deleted')])]]></code>
+    </MixedReturnStatement>
+    <UndefinedClass>
+      <code><![CDATA[$this->responseFactory]]></code>
+      <code><![CDATA[$this->responseFactory]]></code>
+      <code><![CDATA[$this->responseFactory]]></code>
+      <code><![CDATA[$this->responseFactory]]></code>
+      <code><![CDATA[$this->responseFactory]]></code>
+      <code><![CDATA[$this->responseFactory]]></code>
+      <code><![CDATA[$this->responseFactory]]></code>
+      <code><![CDATA[$this->responseFactory]]></code>
+      <code><![CDATA[$this->responseFactory]]></code>
+      <code><![CDATA[$this->responseFactory]]></code>
+      <code><![CDATA[private]]></code>
+    </UndefinedClass>
+  </file>
+  <file src="src/Entity/Profile.php">
+    <InvalidReturnStatement>
+      <code><![CDATA[$this->hasOne(User::class, ['id' => 'user_id'])]]></code>
+    </InvalidReturnStatement>
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function save(?array $properties = null): void]]></code>
+      <code><![CDATA[public function tableName(): string]]></code>
+    </MissingOverrideAttribute>
+    <RedundantCondition>
+      <code><![CDATA[$this->gravatarEmail === '']]></code>
+    </RedundantCondition>
+  </file>
+  <file src="src/Entity/SessionHistory.php">
+    <InvalidReturnStatement>
+      <code><![CDATA[$this->hasOne(User::class, ['id' => 'user_id'])]]></code>
+    </InvalidReturnStatement>
+    <MissingConstructor>
+      <code><![CDATA[$userId]]></code>
+    </MissingConstructor>
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function primaryKey(): array]]></code>
+      <code><![CDATA[public function tableName(): string]]></code>
+    </MissingOverrideAttribute>
+  </file>
+  <file src="src/Entity/SocialNetworkAccount.php">
+    <InvalidNullableReturnType>
+      <code><![CDATA[bool]]></code>
+    </InvalidNullableReturnType>
+    <InvalidReturnStatement>
+      <code><![CDATA[$this->hasOne(User::class, ['id' => 'user_id'])]]></code>
+    </InvalidReturnStatement>
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function tableName(): string]]></code>
+    </MissingOverrideAttribute>
+    <MixedReturnStatement>
+      <code><![CDATA[$this->decodedData]]></code>
+      <code><![CDATA[$this->decodedData]]></code>
+    </MixedReturnStatement>
+    <NullableReturnStatement>
+      <code><![CDATA[$this->save()]]></code>
+    </NullableReturnStatement>
+  </file>
+  <file src="src/Entity/Token.php">
+    <InvalidReturnStatement>
+      <code><![CDATA[$this->hasOne(User::class, ['id' => 'user_id'])]]></code>
+    </InvalidReturnStatement>
+    <MissingConstructor>
+      <code><![CDATA[$type]]></code>
+      <code><![CDATA[$userId]]></code>
+    </MissingConstructor>
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function primaryKey(): array]]></code>
+      <code><![CDATA[public function tableName(): string]]></code>
+    </MissingOverrideAttribute>
+  </file>
+  <file src="src/Entity/User.php">
+    <InvalidReturnStatement>
+      <code><![CDATA[$this->hasMany(SocialNetworkAccount::class, ['user_id' => 'id'])]]></code>
+      <code><![CDATA[$this->hasOne(Profile::class, ['user_id' => 'id'])]]></code>
+    </InvalidReturnStatement>
+    <InvalidReturnType>
+      <code><![CDATA[array]]></code>
+    </InvalidReturnType>
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function getId(): ?string]]></code>
+      <code><![CDATA[public function tableName(): string]]></code>
+    </MissingOverrideAttribute>
+    <MixedArrayAccess>
+      <code><![CDATA[$fields['authKey']]]></code>
+      <code><![CDATA[$fields['passwordHash']]]></code>
+    </MixedArrayAccess>
+    <MixedReturnStatement>
+      <code><![CDATA[$fields]]></code>
+    </MixedReturnStatement>
+    <UndefinedMethod>
+      <code><![CDATA[fields]]></code>
+    </UndefinedMethod>
+  </file>
+  <file src="src/Event/SocialNetworkAuthEvent.php">
+    <UndefinedClass>
+      <code><![CDATA[\Yiisoft\Auth\Client\ClientInterface]]></code>
+      <code><![CDATA[private]]></code>
+    </UndefinedClass>
+  </file>
+  <file src="src/Factory/MailFactory.php">
+    <InvalidArgument>
+      <code><![CDATA[$token]]></code>
+      <code><![CDATA[$token]]></code>
+      <code><![CDATA[$token]]></code>
+      <code><![CDATA[$user]]></code>
+      <code><![CDATA[$user]]></code>
+      <code><![CDATA[$user]]></code>
+    </InvalidArgument>
+  </file>
+  <file src="src/Form/AbstractAuthItemForm.php">
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function getFormName(): string]]></code>
+      <code><![CDATA[public function getRules(): iterable]]></code>
+    </MissingOverrideAttribute>
+  </file>
+  <file src="src/Form/AssignmentForm.php">
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function getFormName(): string]]></code>
+    </MissingOverrideAttribute>
+  </file>
+  <file src="src/Form/GdprDeleteForm.php">
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function getFormName(): string]]></code>
+    </MissingOverrideAttribute>
+  </file>
+  <file src="src/Form/LoginForm.php">
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function getRules(): iterable]]></code>
+    </MissingOverrideAttribute>
+    <UndefinedInterfaceMethod>
+      <code><![CDATA[$rules['gRecaptchaResponse']]]></code>
+    </UndefinedInterfaceMethod>
+  </file>
+  <file src="src/Form/PermissionForm.php">
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function getFormName(): string]]></code>
+      <code><![CDATA[public function getType(): string]]></code>
+    </MissingOverrideAttribute>
+  </file>
+  <file src="src/Form/RecoveryForm.php">
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function getFormName(): string]]></code>
+      <code><![CDATA[public function getRules(): iterable]]></code>
+    </MissingOverrideAttribute>
+    <UndefinedInterfaceMethod>
+      <code><![CDATA[$rules['gRecaptchaResponse']]]></code>
+    </UndefinedInterfaceMethod>
+  </file>
+  <file src="src/Form/RegistrationForm.php">
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function getFormName(): string]]></code>
+      <code><![CDATA[public function getRules(): iterable]]></code>
+    </MissingOverrideAttribute>
+    <UndefinedInterfaceMethod>
+      <code><![CDATA[$rules['gRecaptchaResponse']]]></code>
+    </UndefinedInterfaceMethod>
+  </file>
+  <file src="src/Form/ResendForm.php">
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function getFormName(): string]]></code>
+      <code><![CDATA[public function getRules(): iterable]]></code>
+    </MissingOverrideAttribute>
+    <UndefinedInterfaceMethod>
+      <code><![CDATA[$rules['gRecaptchaResponse']]]></code>
+    </UndefinedInterfaceMethod>
+  </file>
+  <file src="src/Form/RoleForm.php">
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function getFormName(): string]]></code>
+      <code><![CDATA[public function getType(): string]]></code>
+    </MissingOverrideAttribute>
+  </file>
+  <file src="src/Form/RuleForm.php">
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function getFormName(): string]]></code>
+      <code><![CDATA[public function getRules(): iterable]]></code>
+    </MissingOverrideAttribute>
+  </file>
+  <file src="src/Form/SettingsForm.php">
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function getFormName(): string]]></code>
+    </MissingOverrideAttribute>
+  </file>
+  <file src="src/Helper/TimezoneHelper.php">
+    <ArgumentTypeCoercion>
+      <code><![CDATA[$timezone]]></code>
+    </ArgumentTypeCoercion>
+  </file>
+  <file src="src/Listener/AdminNotificationListener.php">
+    <InvalidArgument>
+      <code><![CDATA[$event->getUser()]]></code>
+    </InvalidArgument>
+  </file>
+  <file src="src/Listener/MailChangeConfirmationListener.php">
+    <InvalidArgument>
+      <code><![CDATA[$user]]></code>
+    </InvalidArgument>
+    <MixedArgument>
+      <code><![CDATA[$token]]></code>
+    </MixedArgument>
+    <MixedMethodCall>
+      <code><![CDATA[getType]]></code>
+    </MixedMethodCall>
+  </file>
+  <file src="src/Middleware/AccessRuleMiddleware.php">
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface]]></code>
+    </MissingOverrideAttribute>
+    <MixedArgument>
+      <code><![CDATA[$userId]]></code>
+    </MixedArgument>
+    <MixedMethodCall>
+      <code><![CDATA[getId]]></code>
+    </MixedMethodCall>
+    <UndefinedClass>
+      <code><![CDATA[$this->identityService]]></code>
+      <code><![CDATA[private]]></code>
+    </UndefinedClass>
+  </file>
+  <file src="src/Middleware/PasswordAgeEnforceMiddleware.php">
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface]]></code>
+    </MissingOverrideAttribute>
+    <MixedMethodCall>
+      <code><![CDATA[getPasswordChangedAt]]></code>
+    </MixedMethodCall>
+    <MixedOperand>
+      <code><![CDATA[$passwordChangedAt]]></code>
+    </MixedOperand>
+    <UndefinedClass>
+      <code><![CDATA[$this->identityService]]></code>
+      <code><![CDATA[private]]></code>
+    </UndefinedClass>
+  </file>
+  <file src="src/Middleware/TwoFactorAuthenticationEnforceMiddleware.php">
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface]]></code>
+    </MissingOverrideAttribute>
+    <MixedArgument>
+      <code><![CDATA[$userId]]></code>
+    </MixedArgument>
+    <MixedMethodCall>
+      <code><![CDATA[getId]]></code>
+      <code><![CDATA[isAuthTfEnabled]]></code>
+    </MixedMethodCall>
+    <UndefinedClass>
+      <code><![CDATA[$this->identityService]]></code>
+      <code><![CDATA[private]]></code>
+    </UndefinedClass>
+  </file>
+  <file src="src/Migration/M000001CreateUserTable.php">
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function down(MigrationBuilder $b): void]]></code>
+      <code><![CDATA[public function up(MigrationBuilder $b): void]]></code>
+    </MissingOverrideAttribute>
+  </file>
+  <file src="src/Migration/M000002CreateProfileTable.php">
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function down(MigrationBuilder $b): void]]></code>
+      <code><![CDATA[public function up(MigrationBuilder $b): void]]></code>
+    </MissingOverrideAttribute>
+  </file>
+  <file src="src/Migration/M000003CreateSocialAccountTable.php">
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function down(MigrationBuilder $b): void]]></code>
+      <code><![CDATA[public function up(MigrationBuilder $b): void]]></code>
+    </MissingOverrideAttribute>
+  </file>
+  <file src="src/Migration/M000004CreateTokenTable.php">
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function down(MigrationBuilder $b): void]]></code>
+      <code><![CDATA[public function up(MigrationBuilder $b): void]]></code>
+    </MissingOverrideAttribute>
+  </file>
+  <file src="src/Migration/M000005CreateSessionHistoryTable.php">
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function down(MigrationBuilder $b): void]]></code>
+      <code><![CDATA[public function up(MigrationBuilder $b): void]]></code>
+    </MissingOverrideAttribute>
+  </file>
+  <file src="src/Repository/ProfileRepository.php">
+    <InvalidReturnStatement>
+      <code><![CDATA[Profile::query()->where(['user_id' => $userId])->one()]]></code>
+    </InvalidReturnStatement>
+    <InvalidReturnType>
+      <code><![CDATA[?Profile]]></code>
+    </InvalidReturnType>
+  </file>
+  <file src="src/Repository/RepositoryTrait.php">
+    <MixedMethodCall>
+      <code><![CDATA[all]]></code>
+      <code><![CDATA[one]]></code>
+      <code><![CDATA[where]]></code>
+      <code><![CDATA[where]]></code>
+    </MixedMethodCall>
+    <UndefinedClass>
+      <code><![CDATA[$this->arFactory]]></code>
+      <code><![CDATA[$this->arFactory]]></code>
+      <code><![CDATA[ActiveRecordFactory]]></code>
+    </UndefinedClass>
+  </file>
+  <file src="src/Repository/SessionHistoryRepository.php">
+    <MixedMethodCall>
+      <code><![CDATA[all]]></code>
+      <code><![CDATA[all]]></code>
+      <code><![CDATA[where]]></code>
+      <code><![CDATA[where]]></code>
+    </MixedMethodCall>
+    <MixedReturnStatement>
+      <code><![CDATA[$query->all()]]></code>
+      <code><![CDATA[$query->all()]]></code>
+    </MixedReturnStatement>
+    <UndefinedClass>
+      <code><![CDATA[$this->arFactory]]></code>
+      <code><![CDATA[$this->arFactory]]></code>
+      <code><![CDATA[ActiveRecordFactory]]></code>
+    </UndefinedClass>
+  </file>
+  <file src="src/Repository/SocialNetworkAccountRepository.php">
+    <InvalidNullableReturnType>
+      <code><![CDATA[bool]]></code>
+    </InvalidNullableReturnType>
+    <LessSpecificReturnStatement>
+      <code><![CDATA[$this->findOne(SocialNetworkAccount::class, ['provider' => $provider, 'client_id' => $clientId])]]></code>
+    </LessSpecificReturnStatement>
+    <MoreSpecificReturnType>
+      <code><![CDATA[?SocialNetworkAccount]]></code>
+    </MoreSpecificReturnType>
+    <NullableReturnStatement>
+      <code><![CDATA[$account->save()]]></code>
+    </NullableReturnStatement>
+    <UndefinedClass>
+      <code><![CDATA[ActiveRecordFactory]]></code>
+    </UndefinedClass>
+  </file>
+  <file src="src/Repository/TokenRepository.php">
+    <InvalidReturnStatement>
+      <code><![CDATA[Token::query()
+            ->where(['user_id' => $userId, 'code' => $code, 'type' => $type])
+            ->one()]]></code>
+      <code><![CDATA[Token::query()
+            ->where(['user_id' => $userId, 'code' => $code])
+            ->one()]]></code>
+      <code><![CDATA[Token::query()->where(['code' => $code, 'type' => $type])->one()]]></code>
+    </InvalidReturnStatement>
+    <InvalidReturnType>
+      <code><![CDATA[?Token]]></code>
+      <code><![CDATA[?Token]]></code>
+      <code><![CDATA[?Token]]></code>
+    </InvalidReturnType>
+  </file>
+  <file src="src/Repository/UserRepository.php">
+    <InvalidReturnStatement>
+      <code><![CDATA[$query->count()]]></code>
+      <code><![CDATA[User::query()
+            ->where(['or', ['username' => $login], ['email' => $login]])
+            ->one()]]></code>
+      <code><![CDATA[User::query()->findByPk($id)]]></code>
+      <code><![CDATA[User::query()->where(['email' => $email])->one()]]></code>
+      <code><![CDATA[User::query()->where(['username' => $username])->one()]]></code>
+    </InvalidReturnStatement>
+    <InvalidReturnType>
+      <code><![CDATA[?User]]></code>
+      <code><![CDATA[?User]]></code>
+      <code><![CDATA[?User]]></code>
+      <code><![CDATA[?User]]></code>
+      <code><![CDATA[int]]></code>
+    </InvalidReturnType>
+  </file>
+  <file src="src/Service/AuthItemEditionService.php">
+    <MixedArgument>
+      <code><![CDATA[$childName]]></code>
+    </MixedArgument>
+    <PossiblyInvalidArgument>
+      <code><![CDATA[$item]]></code>
+      <code><![CDATA[$item]]></code>
+      <code><![CDATA[$item]]></code>
+      <code><![CDATA[$item]]></code>
+    </PossiblyInvalidArgument>
+  </file>
+  <file src="src/Service/EmailChangeService.php">
+    <InvalidNullableReturnType>
+      <code><![CDATA[bool]]></code>
+    </InvalidNullableReturnType>
+    <NullableReturnStatement>
+      <code><![CDATA[$user->save()]]></code>
+      <code><![CDATA[$user->save()]]></code>
+    </NullableReturnStatement>
+    <RedundantCondition>
+      <code><![CDATA[$user->getUnconfirmedEmail()]]></code>
+    </RedundantCondition>
+    <TypeDoesNotContainNull>
+      <code><![CDATA[$user->getEmail()]]></code>
+    </TypeDoesNotContainNull>
+  </file>
+  <file src="src/Service/MailService.php">
+    <FalsableReturnStatement>
+      <code><![CDATA[ob_get_clean()]]></code>
+    </FalsableReturnStatement>
+    <InvalidFalsableReturnType>
+      <code><![CDATA[?string]]></code>
+    </InvalidFalsableReturnType>
+    <MixedArgument>
+      <code><![CDATA[$this->mailParams['twoFactorMailSubject'] ?? '2FA Code']]></code>
+    </MixedArgument>
+    <MixedMethodCall>
+      <code><![CDATA[from]]></code>
+      <code><![CDATA[html]]></code>
+      <code><![CDATA[subject]]></code>
+      <code><![CDATA[text]]></code>
+      <code><![CDATA[to]]></code>
+    </MixedMethodCall>
+    <PossiblyInvalidArgument>
+      <code><![CDATA[str_replace('{app}', '', $this->mailParams['twoFactorMailSubject'] ?? '2FA Code')]]></code>
+    </PossiblyInvalidArgument>
+    <UndefinedClass>
+      <code><![CDATA[$this->mailer]]></code>
+      <code><![CDATA[Message]]></code>
+      <code><![CDATA[Token]]></code>
+      <code><![CDATA[Token]]></code>
+      <code><![CDATA[Token]]></code>
+      <code><![CDATA[User]]></code>
+      <code><![CDATA[User]]></code>
+      <code><![CDATA[User]]></code>
+      <code><![CDATA[User]]></code>
+      <code><![CDATA[private]]></code>
+    </UndefinedClass>
+  </file>
+  <file src="src/Service/PasswordExpireService.php">
+    <InvalidNullableReturnType>
+      <code><![CDATA[bool]]></code>
+    </InvalidNullableReturnType>
+    <NullableReturnStatement>
+      <code><![CDATA[$user->save()]]></code>
+    </NullableReturnStatement>
+  </file>
+  <file src="src/Service/PasswordRecoveryService.php">
+    <InvalidArgument>
+      <code><![CDATA[$token]]></code>
+    </InvalidArgument>
+  </file>
+  <file src="src/Service/ResendConfirmationService.php">
+    <InvalidArgument>
+      <code><![CDATA[$token]]></code>
+      <code><![CDATA[$user]]></code>
+    </InvalidArgument>
+  </file>
+  <file src="src/Service/ResetPasswordService.php">
+    <AssignmentToVoid>
+      <code><![CDATA[$result]]></code>
+    </AssignmentToVoid>
+    <InvalidNullableReturnType>
+      <code><![CDATA[bool]]></code>
+    </InvalidNullableReturnType>
+    <NullableReturnStatement>
+      <code><![CDATA[$result]]></code>
+    </NullableReturnStatement>
+  </file>
+  <file src="src/Service/SessionHistory/SessionHistoryDecorator.php">
+    <PossiblyFalseArgument>
+      <code><![CDATA[$this->config->numberSessionHistory]]></code>
+    </PossiblyFalseArgument>
+    <PossiblyInvalidMethodCall>
+      <code><![CDATA[delete]]></code>
+    </PossiblyInvalidMethodCall>
+  </file>
+  <file src="src/Service/SessionHistory/TerminateSessionsService.php">
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function run(): void]]></code>
+    </MissingOverrideAttribute>
+  </file>
+  <file src="src/Service/SessionHistory/TerminateUserSessionsService.php">
+    <MixedMethodCall>
+      <code><![CDATA[delete]]></code>
+      <code><![CDATA[where]]></code>
+    </MixedMethodCall>
+    <UndefinedClass>
+      <code><![CDATA[$this->arFactory]]></code>
+      <code><![CDATA[private]]></code>
+    </UndefinedClass>
+  </file>
+  <file src="src/Service/SocialNetworkAuthenticateService.php">
+    <MixedArgument>
+      <code><![CDATA[$attributes['email'] ?? null]]></code>
+      <code><![CDATA[$attributes['username'] ?? ($attributes['name'] ?? null)]]></code>
+    </MixedArgument>
+    <UndefinedClass>
+      <code><![CDATA[$this->identityService]]></code>
+      <code><![CDATA[private]]></code>
+    </UndefinedClass>
+  </file>
+  <file src="src/Service/SwitchIdentityService.php">
+    <MixedMethodCall>
+      <code><![CDATA[getId]]></code>
+    </MixedMethodCall>
+    <PossiblyNullArgument>
+      <code><![CDATA[$this->config->switchIdentitySessionKey]]></code>
+      <code><![CDATA[$this->config->switchIdentitySessionKey]]></code>
+    </PossiblyNullArgument>
+    <UndefinedClass>
+      <code><![CDATA[$this->identityService]]></code>
+      <code><![CDATA[$this->identityService]]></code>
+      <code><![CDATA[$this->identityService]]></code>
+      <code><![CDATA[$this->identityService]]></code>
+      <code><![CDATA[$this->identityService]]></code>
+      <code><![CDATA[private]]></code>
+    </UndefinedClass>
+  </file>
+  <file src="src/Service/TwoFactorQrCodeUriGeneratorService.php">
+    <DeprecatedMethod>
+      <code><![CDATA[getUri]]></code>
+    </DeprecatedMethod>
+    <InaccessibleProperty>
+      <code><![CDATA[$options->outputBase64]]></code>
+      <code><![CDATA[$options->scale]]></code>
+    </InaccessibleProperty>
+    <MixedReturnStatement>
+      <code><![CDATA[$qrcode->render($uri)]]></code>
+    </MixedReturnStatement>
+  </file>
+  <file src="src/Service/UpdateAuthAssignmentsService.php">
+    <MixedArgument>
+      <code><![CDATA[$itemName]]></code>
+    </MixedArgument>
+    <RedundantCondition>
+      <code><![CDATA[is_array($items)]]></code>
+    </RedundantCondition>
+    <TypeDoesNotContainType>
+      <code><![CDATA[[]]]></code>
+    </TypeDoesNotContainType>
+  </file>
+  <file src="src/Service/UserBlockService.php">
+    <AssignmentToVoid>
+      <code><![CDATA[$result]]></code>
+    </AssignmentToVoid>
+    <InvalidNullableReturnType>
+      <code><![CDATA[bool]]></code>
+    </InvalidNullableReturnType>
+    <NullableReturnStatement>
+      <code><![CDATA[$result]]></code>
+    </NullableReturnStatement>
+  </file>
+  <file src="src/Service/UserConfirmationService.php">
+    <AssignmentToVoid>
+      <code><![CDATA[$result]]></code>
+    </AssignmentToVoid>
+    <InvalidNullableReturnType>
+      <code><![CDATA[bool]]></code>
+    </InvalidNullableReturnType>
+    <NullableReturnStatement>
+      <code><![CDATA[$result]]></code>
+    </NullableReturnStatement>
+  </file>
+  <file src="src/Service/UserCreateService.php">
+    <InvalidArgument>
+      <code><![CDATA[$token]]></code>
+      <code><![CDATA[$user]]></code>
+      <code><![CDATA[$user]]></code>
+    </InvalidArgument>
+    <NullArgument>
+      <code><![CDATA[null]]></code>
+    </NullArgument>
+  </file>
+  <file src="src/Service/UserRegisterService.php">
+    <InvalidArgument>
+      <code><![CDATA[$token]]></code>
+      <code><![CDATA[$user]]></code>
+      <code><![CDATA[$user]]></code>
+    </InvalidArgument>
+    <MixedArgument>
+      <code><![CDATA[$data['email']]]></code>
+      <code><![CDATA[$data['username']]]></code>
+      <code><![CDATA[$password]]></code>
+    </MixedArgument>
+    <NullArgument>
+      <code><![CDATA[null]]></code>
+    </NullArgument>
+  </file>
+  <file src="src/Strategy/DefaultEmailChangeStrategy.php">
+    <InvalidNullableReturnType>
+      <code><![CDATA[bool]]></code>
+    </InvalidNullableReturnType>
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function run(): bool]]></code>
+    </MissingOverrideAttribute>
+    <NullableReturnStatement>
+      <code><![CDATA[$user->save()]]></code>
+    </NullableReturnStatement>
+    <PossiblyInvalidArgument>
+      <code><![CDATA[$user->getId() ?? 0]]></code>
+    </PossiblyInvalidArgument>
+    <PossiblyNullReference>
+      <code><![CDATA[setUnconfirmedEmail]]></code>
+    </PossiblyNullReference>
+  </file>
+  <file src="src/Strategy/InsecureEmailChangeStrategy.php">
+    <InvalidNullableReturnType>
+      <code><![CDATA[bool]]></code>
+    </InvalidNullableReturnType>
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function run(): bool]]></code>
+    </MissingOverrideAttribute>
+    <NullableReturnStatement>
+      <code><![CDATA[$user->save()]]></code>
+    </NullableReturnStatement>
+    <PossiblyNullReference>
+      <code><![CDATA[setEmail]]></code>
+    </PossiblyNullReference>
+  </file>
+  <file src="src/Strategy/SecureEmailChangeStrategy.php">
+    <InvalidNullableReturnType>
+      <code><![CDATA[bool]]></code>
+    </InvalidNullableReturnType>
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function run(): bool]]></code>
+    </MissingOverrideAttribute>
+    <NullableReturnStatement>
+      <code><![CDATA[$user->save()]]></code>
+    </NullableReturnStatement>
+    <PossiblyInvalidArgument>
+      <code><![CDATA[$user->getId() ?? 0]]></code>
+    </PossiblyInvalidArgument>
+    <PossiblyNullArgument>
+      <code><![CDATA[$user]]></code>
+    </PossiblyNullArgument>
+    <PossiblyNullReference>
+      <code><![CDATA[getId]]></code>
+    </PossiblyNullReference>
+  </file>
+  <file src="src/Validator/RbacItemsValidator.php">
+    <MixedArgument>
+      <code><![CDATA[$itemName]]></code>
+    </MixedArgument>
+  </file>
+  <file src="src/Widget/ConnectWidget.php">
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[['authclient' => $client]]]></code>
+    </MixedArgumentTypeCoercion>
+  </file>
+  <file src="src/resources/mail/text/confirmation.php">
+    <MixedArgument>
+      <code><![CDATA[$confirmationUrl]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.click_to_confirm_account')]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.confirm_account_heading')]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.hello_username', ['username' => $username])]]></code>
+    </MixedArgument>
+    <MixedMethodCall>
+      <code><![CDATA[translate]]></code>
+      <code><![CDATA[translate]]></code>
+      <code><![CDATA[translate]]></code>
+    </MixedMethodCall>
+    <UndefinedGlobalVariable>
+      <code><![CDATA[$confirmationUrl]]></code>
+      <code><![CDATA[$translator]]></code>
+      <code><![CDATA[$translator]]></code>
+      <code><![CDATA[$translator]]></code>
+      <code><![CDATA[$username]]></code>
+    </UndefinedGlobalVariable>
+  </file>
+  <file src="src/resources/mail/text/reconfirmation.php">
+    <MixedArgument>
+      <code><![CDATA[$confirmationUrl]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.click_to_confirm_email')]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.email_change_heading')]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.hello_username', ['username' => $username])]]></code>
+    </MixedArgument>
+    <MixedMethodCall>
+      <code><![CDATA[translate]]></code>
+      <code><![CDATA[translate]]></code>
+      <code><![CDATA[translate]]></code>
+    </MixedMethodCall>
+    <UndefinedGlobalVariable>
+      <code><![CDATA[$confirmationUrl]]></code>
+      <code><![CDATA[$translator]]></code>
+      <code><![CDATA[$translator]]></code>
+      <code><![CDATA[$translator]]></code>
+      <code><![CDATA[$username]]></code>
+    </UndefinedGlobalVariable>
+  </file>
+  <file src="src/resources/mail/text/recovery.php">
+    <MixedArgument>
+      <code><![CDATA[$recoveryUrl]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.click_to_reset_password')]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.hello_username', ['username' => $username])]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.password_recovery_heading')]]></code>
+    </MixedArgument>
+    <MixedMethodCall>
+      <code><![CDATA[translate]]></code>
+      <code><![CDATA[translate]]></code>
+      <code><![CDATA[translate]]></code>
+    </MixedMethodCall>
+    <UndefinedGlobalVariable>
+      <code><![CDATA[$recoveryUrl]]></code>
+      <code><![CDATA[$translator]]></code>
+      <code><![CDATA[$translator]]></code>
+      <code><![CDATA[$translator]]></code>
+      <code><![CDATA[$username]]></code>
+    </UndefinedGlobalVariable>
+  </file>
+  <file src="src/resources/mail/text/twofactorcode.php">
+    <MixedArgument>
+      <code><![CDATA[$code]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.twofactor_heading')]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.your_twofactor_code')]]></code>
+    </MixedArgument>
+    <MixedMethodCall>
+      <code><![CDATA[translate]]></code>
+      <code><![CDATA[translate]]></code>
+    </MixedMethodCall>
+    <UndefinedGlobalVariable>
+      <code><![CDATA[$code]]></code>
+      <code><![CDATA[$translator]]></code>
+      <code><![CDATA[$translator]]></code>
+    </UndefinedGlobalVariable>
+  </file>
+  <file src="src/resources/mail/text/welcome.php">
+    <MixedArgument>
+      <code><![CDATA[$translator->translate('voyti.mail.account_created_successfully')]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.hello_username', ['username' => $username])]]></code>
+      <code><![CDATA[$translator->translate('voyti.mail.welcome_heading')]]></code>
+    </MixedArgument>
+    <MixedMethodCall>
+      <code><![CDATA[translate]]></code>
+      <code><![CDATA[translate]]></code>
+      <code><![CDATA[translate]]></code>
+    </MixedMethodCall>
+    <UndefinedGlobalVariable>
+      <code><![CDATA[$translator]]></code>
+      <code><![CDATA[$translator]]></code>
+      <code><![CDATA[$translator]]></code>
+      <code><![CDATA[$username]]></code>
+    </UndefinedGlobalVariable>
+  </file>
+  <file src="src/resources/views/bootstrap5/admin/_account.php">
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$errors]]></code>
+    </MixedArgumentTypeCoercion>
+  </file>
+  <file src="src/resources/views/bootstrap5/admin/_assignments.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/admin/_info.php">
+    <RedundantConditionGivenDocblockType>
+      <code><![CDATA[$profile]]></code>
+    </RedundantConditionGivenDocblockType>
+  </file>
+  <file src="src/resources/views/bootstrap5/admin/_profile.php">
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$errors]]></code>
+    </MixedArgumentTypeCoercion>
+    <UndefinedPropertyFetch>
+      <code><![CDATA[$model->bio]]></code>
+      <code><![CDATA[$model->name]]></code>
+      <code><![CDATA[$model->publicEmail]]></code>
+    </UndefinedPropertyFetch>
+  </file>
+  <file src="src/resources/views/bootstrap5/admin/_session-history.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/admin/create.php">
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$errors]]></code>
+    </MixedArgumentTypeCoercion>
+  </file>
+  <file src="src/resources/views/bootstrap5/admin/index.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/rbac/_assignments.php">
+    <MixedMethodCall>
+      <code><![CDATA[getName]]></code>
+    </MixedMethodCall>
+  </file>
+  <file src="src/resources/views/bootstrap5/rbac/permission/create.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/rbac/permission/index.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/rbac/permission/update.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/rbac/role/create.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/rbac/role/index.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/rbac/role/update.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/rbac/rule/create.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/rbac/rule/index.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/rbac/rule/update.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/recovery/request.php">
+    <MixedArgument>
+      <code><![CDATA[$config]]></code>
+    </MixedArgument>
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$errors]]></code>
+    </MixedArgumentTypeCoercion>
+    <UndefinedGlobalVariable>
+      <code><![CDATA[$config]]></code>
+    </UndefinedGlobalVariable>
+  </file>
+  <file src="src/resources/views/bootstrap5/registration/connect.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/registration/register.php">
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$errors]]></code>
+    </MixedArgumentTypeCoercion>
+  </file>
+  <file src="src/resources/views/bootstrap5/registration/resend.php">
+    <MixedArgument>
+      <code><![CDATA[$config]]></code>
+    </MixedArgument>
+    <UndefinedGlobalVariable>
+      <code><![CDATA[$config]]></code>
+    </UndefinedGlobalVariable>
+  </file>
+  <file src="src/resources/views/bootstrap5/security/login.php">
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$errors]]></code>
+    </MixedArgumentTypeCoercion>
+  </file>
+  <file src="src/resources/views/bootstrap5/settings/_menu.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/settings/account.php">
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$errors]]></code>
+    </MixedArgumentTypeCoercion>
+    <UndefinedPropertyFetch>
+      <code><![CDATA[$config->enableTwoFactorAuth]]></code>
+    </UndefinedPropertyFetch>
+  </file>
+  <file src="src/resources/views/bootstrap5/settings/networks.php">
+    <MixedMethodCall>
+      <code><![CDATA[getProvider]]></code>
+    </MixedMethodCall>
+  </file>
+  <file src="src/resources/views/bootstrap5/settings/profile.php">
+    <MixedArgumentTypeCoercion>
+      <code><![CDATA[$errors]]></code>
+    </MixedArgumentTypeCoercion>
+    <UndefinedPropertyFetch>
+      <code><![CDATA[$model->bio]]></code>
+      <code><![CDATA[$model->name]]></code>
+      <code><![CDATA[$model->publicEmail]]></code>
+    </UndefinedPropertyFetch>
+  </file>
+  <file src="src/resources/views/bootstrap5/settings/session-history.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/settings/two-factor.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/shared/admin_layout.php">
+    <MixedArgument>
+      <code><![CDATA[$content ?? '']]></code>
+    </MixedArgument>
+  </file>
+</files>
