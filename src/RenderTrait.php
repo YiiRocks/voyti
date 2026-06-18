@@ -13,6 +13,9 @@ trait RenderTrait
 {
     private function renderView(string $view, array $params = []): ResponseInterface
     {
+        $params['translator'] ??= $this->translator;
+        $params['url'] ??= $this->url;
+
         $content = $this->view->render(
             $this->aliases->get('@voytiViews') . '/' . $view,
             $params,

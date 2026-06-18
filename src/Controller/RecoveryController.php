@@ -10,6 +10,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Yiisoft\Aliases\Aliases;
 use Yiisoft\Http\Method;
+use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\View\ViewInterface;
@@ -30,6 +31,7 @@ final class RecoveryController
         private readonly ViewInterface $view,
         private readonly ResponseFactoryInterface $responseFactory,
         private readonly Aliases $aliases,
+        private readonly UrlGeneratorInterface $url,
         private readonly PasswordRecoveryService $passwordRecoveryService,
         private readonly ResetPasswordService $resetPasswordService,
         private readonly UserRepository $userRepository,

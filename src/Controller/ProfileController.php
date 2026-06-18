@@ -9,6 +9,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Yiisoft\Aliases\Aliases;
 use Yiisoft\Auth\IdentityInterface;
+use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\View\ViewInterface;
 use YiiRocks\Voyti\Helper\AuthHelper;
@@ -30,6 +31,7 @@ final class ProfileController
         private readonly ViewInterface $view,
         private readonly ResponseFactoryInterface $responseFactory,
         private readonly Aliases $aliases,
+        private readonly UrlGeneratorInterface $url,
         private readonly ProfileRepository $profileRepository,
         private readonly AuthHelper $authHelper,
         private readonly ModuleConfig $config,
