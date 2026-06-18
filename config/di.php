@@ -5,7 +5,6 @@ declare(strict_types=1);
 use Yiisoft\ActiveRecord\ActiveRecordFactory;
 use Yiisoft\Aliases\Aliases;
 use Yiisoft\Auth\IdentityServiceInterface;
-use Yiisoft\Session\Session;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\Translator\CategorySource;
 use Yiisoft\Translator\Message\Php\MessageSource;
@@ -26,7 +25,6 @@ use YiiRocks\Voyti\Repository\SessionHistoryRepository;
 
 return [
     ModuleConfig::class => ModuleConfig::class,
-    SessionInterface::class => Session::class,
 
     UserRepository::class => fn(ActiveRecordFactory $arFactory) => new UserRepository($arFactory),
     ProfileRepository::class => fn(ActiveRecordFactory $arFactory) => new ProfileRepository($arFactory),
@@ -112,7 +110,7 @@ return [
     \YiiRocks\Voyti\Service\SessionHistory\SessionHistoryDecorator::class => fn(
         \Psr\EventDispatcher\EventDispatcherInterface $eventDispatcher,
         ModuleConfig $config,
-        SessionInterface $session
+        ?SessionInterface $session = null
     ) => new \YiiRocks\Voyti\Service\SessionHistory\SessionHistoryDecorator($eventDispatcher, $config, $session),
 
     \YiiRocks\Voyti\Service\SocialNetworkAuthenticateService::class => fn(

@@ -16,7 +16,7 @@ final class SessionHistoryDecorator
     public function __construct(
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly ModuleConfig $config,
-        private readonly SessionInterface $session,
+        private readonly ?SessionInterface $session = null,
     ) {
     }
 
@@ -28,7 +28,7 @@ final class SessionHistoryDecorator
 
         $sessionHistory = new SessionHistory();
         $sessionHistory->setUserId($user->getId() !== null ? (int) $user->getId() : 0);
-        $sessionHistory->setSessionId($this->session->getId() ?? '');
+        $sessionHistory->setSessionId($this->session?->getId() ?? '');
         $sessionHistory->setIp($this->config->disableIpLogging ? '127.0.0.1' : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1'));
         $sessionHistory->setUserAgent($_SERVER['HTTP_USER_AGENT'] ?? null);
         $sessionHistory->setCreatedAt(time());
