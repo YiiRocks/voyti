@@ -145,6 +145,6 @@ return [
                 new SimpleMessageFormatter(),
             )
         ),
-        'tags' => ['translator.category'],
+        'tags' => ['translation.categorySource'],
     ],
 ];
