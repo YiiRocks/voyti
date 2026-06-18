@@ -59,53 +59,10 @@
       <code><![CDATA[getDescription]]></code>
       <code><![CDATA[getName]]></code>
     </MixedMethodCall>
-    <MixedReturnStatement>
-      <code><![CDATA[$this->viewRenderer->render($this->getItemType() . '/create', [
-            'model' => $form,
-            'errors' => $errors,
-            'unassignedItems' => $this->authHelper->getAllItems(),
-        ])]]></code>
-      <code><![CDATA[$this->viewRenderer->render($this->getItemType() . '/index', [
-            'items' => $items,
-            'filterName' => $filterName,
-            'filterDescription' => $filterDescription,
-        ])]]></code>
-      <code><![CDATA[$this->viewRenderer->render($this->getItemType() . '/update', [
-            'model' => $form,
-            'errors' => $errors,
-            'unassignedItems' => $this->authHelper->getAllItems(),
-        ])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', [
-                        'title' => $this->translator->translate('voyti.auth_item.' . $this->getItemType() . '_created'),
-                        'translator' => $this->translator,
-                    ])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', [
-                        'title' => $this->translator->translate('voyti.auth_item.' . $this->getItemType() . '_updated'),
-                        'translator' => $this->translator,
-                    ])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', [
-                'title' => $this->translator->translate('voyti.auth_item.not_found'),
-                'translator' => $this->translator,
-            ])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', [
-            'title' => $this->translator->translate('voyti.auth_item.' . $this->getItemType() . '_deleted'),
-            'translator' => $this->translator,
-        ])]]></code>
-    </MixedReturnStatement>
     <PossiblyInvalidArgument>
       <code><![CDATA[$body]]></code>
       <code><![CDATA[$body]]></code>
     </PossiblyInvalidArgument>
-    <UndefinedClass>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[protected]]></code>
-    </UndefinedClass>
   </file>
   <file src="src/Controller/AdminController.php">
     <MixedArgument>
@@ -121,84 +78,6 @@
       <code><![CDATA[delete]]></code>
       <code><![CDATA[getId]]></code>
     </MixedMethodCall>
-    <MixedReturnStatement>
-      <code><![CDATA[$this->viewRenderer->render('admin/_account', ['user' => $user, 'config' => $this->config])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('admin/_assignments', [
-            'user' => $user,
-            'config' => $this->config,
-            'assignments' => $assignedNames,
-            'available' => $available,
-        ])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('admin/_info', ['user' => $user, 'config' => $this->config])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('admin/_profile', ['user' => $user, 'profile' => $profile, 'config' => $this->config])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('admin/_session-history', [
-            'user' => $user,
-            'sessions' => $sessions,
-            'config' => $this->config,
-        ])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('admin/create', ['errors' => $errors])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('admin/index', [
-            'users' => $users,
-            'config' => $this->config,
-            'filters' => $filters,
-            'totalPages' => $totalPages,
-            'currentPage' => $currentPage,
-        ])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $result->getMessage()])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $result->getMessage()])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.account_details_updated'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.block_status_updated'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.cannot_delete_self'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.error_occurred'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.password_change_required'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.profile_details_updated'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.sessions_terminated'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.unable_to_confirm'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.unable_to_update_block'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.user_confirmed'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.user_created'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.user_deleted'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.admin.user_not_found'), 'translator' => $this->translator])]]></code>
-    </MixedReturnStatement>
-    <UndefinedClass>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[private]]></code>
-    </UndefinedClass>
     <UndefinedMethod>
       <code><![CDATA[load]]></code>
     </UndefinedMethod>
@@ -219,7 +98,6 @@
     </MissingOverrideAttribute>
     <UndefinedClass>
       <code><![CDATA[AbstractAuthItemForm]]></code>
-      <code><![CDATA[ViewRenderer]]></code>
     </UndefinedClass>
   </file>
   <file src="src/Controller/ProfileController.php">
@@ -229,84 +107,17 @@
     <MixedMethodCall>
       <code><![CDATA[getId]]></code>
     </MixedMethodCall>
-    <MixedReturnStatement>
-      <code><![CDATA[$this->viewRenderer->render('profile/show', ['profile' => $profile])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.profile.forbidden'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.profile.forbidden'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.profile.forbidden'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.profile.not_found'), 'translator' => $this->translator])]]></code>
-    </MixedReturnStatement>
-    <UndefinedClass>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[private]]></code>
-    </UndefinedClass>
   </file>
   <file src="src/Controller/RecoveryController.php">
-    <MixedReturnStatement>
-      <code><![CDATA[$this->viewRenderer->render('recovery/request', [
-            'model' => $form,
-            'config' => $this->config,
-            'errors' => $errors,
-        ])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('recovery/reset', ['model' => $form, 'errors' => $errors])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $serviceResult->getMessage()])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.recovery.disabled'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.recovery.link_invalid'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.recovery.password_changed'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.recovery.reset_disabled'), 'translator' => $this->translator])]]></code>
-    </MixedReturnStatement>
     <PossiblyNullArgument>
       <code><![CDATA[$token->getUser()]]></code>
     </PossiblyNullArgument>
-    <UndefinedClass>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[private]]></code>
-    </UndefinedClass>
     <UndefinedMethod>
       <code><![CDATA[load]]></code>
       <code><![CDATA[load]]></code>
     </UndefinedMethod>
   </file>
   <file src="src/Controller/RegistrationController.php">
-    <MixedReturnStatement>
-      <code><![CDATA[$this->viewRenderer->render('registration/connect', ['code' => $code, 'config' => $this->config])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('registration/register', [
-            'model' => $form,
-            'config' => $this->config,
-            'errors' => $errors,
-        ])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('registration/resend', ['model' => $form, 'config' => $this->config])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $serviceResult->getMessage()])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.registration.complete'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.registration.confirmation_link_invalid'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.registration.disabled'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.registration.email_confirmation_disabled'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.registration.invalid_confirmation_link'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.registration.new_confirmation_sent'), 'translator' => $this->translator])]]></code>
-    </MixedReturnStatement>
-    <UndefinedClass>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[private]]></code>
-    </UndefinedClass>
     <UndefinedMethod>
       <code><![CDATA[load]]></code>
       <code><![CDATA[load]]></code>
@@ -328,7 +139,6 @@
     </MissingOverrideAttribute>
     <UndefinedClass>
       <code><![CDATA[AbstractAuthItemForm]]></code>
-      <code><![CDATA[ViewRenderer]]></code>
     </UndefinedClass>
   </file>
   <file src="src/Controller/RuleController.php">
@@ -338,40 +148,6 @@
       <code><![CDATA[$data['name']]]></code>
       <code><![CDATA[$data['name']]]></code>
     </MixedArrayAccess>
-    <MixedReturnStatement>
-      <code><![CDATA[$this->viewRenderer->render('rule/create', [
-            'model' => $form,
-            'errors' => $errors,
-        ])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('rule/index', [
-            'rules' => $rules,
-        ])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('rule/update', [
-            'model' => $form,
-            'errors' => $errors,
-        ])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', [
-                        'title' => $this->translator->translate('voyti.rule.added'),
-                        'translator' => $this->translator,
-                    ])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', [
-                        'title' => $this->translator->translate('voyti.rule.updated'),
-                        'translator' => $this->translator,
-                    ])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', [
-            'title' => $this->translator->translate('voyti.rule.removed'),
-            'translator' => $this->translator,
-        ])]]></code>
-    </MixedReturnStatement>
-    <UndefinedClass>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[private]]></code>
-    </UndefinedClass>
   </file>
   <file src="src/Controller/SecurityController.php">
     <MixedArgument>
@@ -390,39 +166,10 @@
     <MixedMethodCall>
       <code><![CDATA[getId]]></code>
     </MixedMethodCall>
-    <MixedReturnStatement>
-      <code><![CDATA[$this->viewRenderer->render('security/confirm', ['model' => $form, 'config' => $this->config])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('security/confirm', ['model' => $form, 'config' => $this->config])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('security/login', [
-            'model' => $form,
-            'config' => $this->config,
-            'errors' => $errors,
-        ])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('security/login', ['model' => new LoginForm($this->config), 'config' => $this->config])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $result->getMessage(), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $result->getMessage(), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.security.authenticated'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.security.authenticated'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.security.logged_in'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.security.logged_out'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated'), 'translator' => $this->translator])]]></code>
-    </MixedReturnStatement>
     <UndefinedClass>
       <code><![CDATA[$this->identityService]]></code>
       <code><![CDATA[$this->identityService]]></code>
       <code><![CDATA[$this->identityService]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[private]]></code>
       <code><![CDATA[private]]></code>
     </UndefinedClass>
     <UndefinedMethod>
@@ -459,56 +206,6 @@
       <code><![CDATA[getId]]></code>
       <code><![CDATA[getId]]></code>
     </MixedMethodCall>
-    <MixedReturnStatement>
-      <code><![CDATA[$response]]></code>
-      <code><![CDATA[$this->viewRenderer->render('settings/account', ['model' => $form])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('settings/gdpr-consent', ['config' => $this->config])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('settings/gdpr-delete', ['model' => $form])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('settings/networks', ['user' => $identity])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('settings/privacy', ['config' => $this->config])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('settings/profile', ['model' => $profile, 'config' => $this->config])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('settings/two-factor', [
-            'user' => $user,
-            'qrCodeUri' => $qrCodeSvg,
-            'config' => $this->config,
-            'errors' => [],
-        ])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.account_deleted'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.account_deletion_disabled'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.account_details_updated'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.email_change_failed'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.email_changed'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.gdpr_consent_saved'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.network_disconnected'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.network_not_found'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_available'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_available'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_available'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_available'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_available'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_available'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.not_available'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.personal_info_removed'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.profile_updated'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.two_factor_disabled'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.two_factor_enabled'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found'), 'translator' => $this->translator])]]></code>
-      <code><![CDATA[$this->viewRenderer->render('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found'), 'translator' => $this->translator])]]></code>
-    </MixedReturnStatement>
     <PossiblyInvalidArgument>
       <code><![CDATA[$user->getId() ?? 0]]></code>
     </PossiblyInvalidArgument>
@@ -518,52 +215,6 @@
     <PossiblyUndefinedArrayOffset>
       <code><![CDATA[$field]]></code>
     </PossiblyUndefinedArrayOffset>
-    <UndefinedClass>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[$this->viewRenderer]]></code>
-      <code><![CDATA[private]]></code>
-    </UndefinedClass>
     <UndefinedMethod>
       <code><![CDATA[getPropertyValue]]></code>
       <code><![CDATA[getPropertyValue]]></code>

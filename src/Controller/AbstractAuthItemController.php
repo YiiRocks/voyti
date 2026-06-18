@@ -4,22 +4,29 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Controller;
 
+use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Yiisoft\Aliases\Aliases;
 use Yiisoft\Http\Method;
 use Yiisoft\Translator\TranslatorInterface;
-use Yiisoft\View\ViewRenderer;
+use Yiisoft\View\ViewInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Validator\ValidatorInterface;
 use YiiRocks\Voyti\Form\AbstractAuthItemForm;
 use YiiRocks\Voyti\Helper\AuthHelper;
+use YiiRocks\Voyti\RenderTrait;
 use YiiRocks\Voyti\Service\AuthItemEditionService;
 
 abstract class AbstractAuthItemController
 {
+    use RenderTrait;
+
     public function __construct(
         protected readonly TranslatorInterface $translator,
-        protected readonly ViewRenderer $viewRenderer,
+        protected readonly ViewInterface $view,
+        protected readonly ResponseFactoryInterface $responseFactory,
+        protected readonly Aliases $aliases,
         protected readonly AuthHelper $authHelper,
         protected readonly UrlGeneratorInterface $url,
         protected readonly ValidatorInterface $validator,
@@ -48,7 +55,7 @@ abstract class AbstractAuthItemController
             $items = array_filter($items, fn($item) => str_contains($item->getDescription(), $filterDescription));
         }
 
-        return $this->viewRenderer->render($this->getItemType() . '/index', [
+        return $this->renderView($this->getItemType() . '/index', [
             'items' => $items,
             'filterName' => $filterName,
             'filterDescription' => $filterDescription,
@@ -67,7 +74,7 @@ abstract class AbstractAuthItemController
 
             if ($result->isValid()) {
                 if ($this->authItemEditionService->create($form)) {
-                    return $this->viewRenderer->render('shared/message', [
+                    return $this->renderView('shared/message', [
                         'title' => $this->translator->translate('voyti.auth_item.' . $this->getItemType() . '_created'),
                         'translator' => $this->translator,
                     ]);
@@ -76,7 +83,7 @@ abstract class AbstractAuthItemController
             $errors = $result->getErrorMessagesIndexedByProperty();
         }
 
-        return $this->viewRenderer->render($this->getItemType() . '/create', [
+        return $this->renderView($this->getItemType() . '/create', [
             'model' => $form,
             'errors' => $errors,
             'unassignedItems' => $this->authHelper->getAllItems(),
@@ -91,7 +98,7 @@ abstract class AbstractAuthItemController
             : $this->authHelper->getPermission($name);
 
         if ($item === null) {
-            return $this->viewRenderer->render('shared/message', [
+            return $this->renderView('shared/message', [
                 'title' => $this->translator->translate('voyti.auth_item.not_found'),
                 'translator' => $this->translator,
             ]);
@@ -112,7 +119,7 @@ abstract class AbstractAuthItemController
 
             if ($result->isValid()) {
                 if ($this->authItemEditionService->update($form)) {
-                    return $this->viewRenderer->render('shared/message', [
+                    return $this->renderView('shared/message', [
                         'title' => $this->translator->translate('voyti.auth_item.' . $this->getItemType() . '_updated'),
                         'translator' => $this->translator,
                     ]);
@@ -121,7 +128,7 @@ abstract class AbstractAuthItemController
             $errors = $result->getErrorMessagesIndexedByProperty();
         }
 
-        return $this->viewRenderer->render($this->getItemType() . '/update', [
+        return $this->renderView($this->getItemType() . '/update', [
             'model' => $form,
             'errors' => $errors,
             'unassignedItems' => $this->authHelper->getAllItems(),
@@ -132,7 +139,7 @@ abstract class AbstractAuthItemController
     {
         $this->authItemEditionService->delete($name, $this->getItemType());
 
-        return $this->viewRenderer->render('shared/message', [
+        return $this->renderView('shared/message', [
             'title' => $this->translator->translate('voyti.auth_item.' . $this->getItemType() . '_deleted'),
             'translator' => $this->translator,
         ]);

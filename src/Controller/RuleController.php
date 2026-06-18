@@ -4,22 +4,29 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Controller;
 
+use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Yiisoft\Aliases\Aliases;
 use Yiisoft\Http\Method;
 use Yiisoft\Translator\TranslatorInterface;
-use Yiisoft\View\ViewRenderer;
+use Yiisoft\View\ViewInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Validator\ValidatorInterface;
 use YiiRocks\Voyti\Form\RuleForm;
 use YiiRocks\Voyti\Helper\AuthHelper;
+use YiiRocks\Voyti\RenderTrait;
 use YiiRocks\Voyti\Service\AuthRuleEditionService;
 
 final class RuleController
 {
+    use RenderTrait;
+
     public function __construct(
         private readonly TranslatorInterface $translator,
-        private readonly ViewRenderer $viewRenderer,
+        private readonly ViewInterface $view,
+        private readonly ResponseFactoryInterface $responseFactory,
+        private readonly Aliases $aliases,
         private readonly AuthHelper $authHelper,
         private readonly UrlGeneratorInterface $url,
         private readonly ValidatorInterface $validator,
@@ -31,7 +38,7 @@ final class RuleController
     {
         $rules = $this->authHelper->getRuleNames();
 
-        return $this->viewRenderer->render('rule/index', [
+        return $this->renderView('rule/index', [
             'rules' => $rules,
         ]);
     }
@@ -51,7 +58,7 @@ final class RuleController
 
             if ($result->isValid()) {
                 if ($this->authRuleEditionService->create($form)) {
-                    return $this->viewRenderer->render('shared/message', [
+                    return $this->renderView('shared/message', [
                         'title' => $this->translator->translate('voyti.rule.added'),
                         'translator' => $this->translator,
                     ]);
@@ -62,7 +69,7 @@ final class RuleController
             }
         }
 
-        return $this->viewRenderer->render('rule/create', [
+        return $this->renderView('rule/create', [
             'model' => $form,
             'errors' => $errors,
         ]);
@@ -87,7 +94,7 @@ final class RuleController
 
             if ($result->isValid()) {
                 if ($this->authRuleEditionService->update($form)) {
-                    return $this->viewRenderer->render('shared/message', [
+                    return $this->renderView('shared/message', [
                         'title' => $this->translator->translate('voyti.rule.updated'),
                         'translator' => $this->translator,
                     ]);
@@ -98,7 +105,7 @@ final class RuleController
             }
         }
 
-        return $this->viewRenderer->render('rule/update', [
+        return $this->renderView('rule/update', [
             'model' => $form,
             'errors' => $errors,
         ]);
@@ -108,7 +115,7 @@ final class RuleController
     {
         $this->authRuleEditionService->remove($name);
 
-        return $this->viewRenderer->render('shared/message', [
+        return $this->renderView('shared/message', [
             'title' => $this->translator->translate('voyti.rule.removed'),
             'translator' => $this->translator,
         ]);

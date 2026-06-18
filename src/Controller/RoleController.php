@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Controller;
 
+use Psr\Http\Message\ResponseFactoryInterface;
+use Yiisoft\Aliases\Aliases;
 use Yiisoft\Translator\TranslatorInterface;
-use Yiisoft\View\ViewRenderer;
+use Yiisoft\View\ViewInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Validator\ValidatorInterface;
 use YiiRocks\Voyti\Form\RoleForm;
@@ -16,13 +18,15 @@ final class RoleController extends AbstractAuthItemController
 {
     public function __construct(
         TranslatorInterface $translator,
-        ViewRenderer $viewRenderer,
+        ViewInterface $view,
+        ResponseFactoryInterface $responseFactory,
+        Aliases $aliases,
         AuthHelper $authHelper,
         UrlGeneratorInterface $url,
         ValidatorInterface $validator,
         AuthItemEditionService $authItemEditionService,
     ) {
-        parent::__construct($translator, $viewRenderer, $authHelper, $url, $validator, $authItemEditionService);
+        parent::__construct($translator, $view, $responseFactory, $aliases, $authHelper, $url, $validator, $authItemEditionService);
     }
 
     protected function getItemType(): string
