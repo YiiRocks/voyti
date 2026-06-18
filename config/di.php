@@ -54,7 +54,7 @@ return [
         AssignmentsStorageInterface $assignmentsStorage
     ) => new \YiiRocks\Voyti\Service\UpdateAuthAssignmentsService($authManager, $assignmentsStorage),
     \YiiRocks\Voyti\Service\MailService::class => fn(
-        \Yiisoft\Mail\MailerInterface $mailer,
+        \Yiisoft\Mailer\MailerInterface $mailer,
         ModuleConfig $config,
         Aliases $aliases
     ) => new \YiiRocks\Voyti\Service\MailService($mailer, $config->mailParams, $aliases),

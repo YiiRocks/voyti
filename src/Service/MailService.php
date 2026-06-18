@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Service;
 
 use Yiisoft\Aliases\Aliases;
-use Yiisoft\Mail\MailerInterface;
-use Yiisoft\Mail\Message;
+use Yiisoft\Mailer\MailerInterface;
+use Yiisoft\Mailer\Message;
 
 final class MailService
 {
@@ -21,19 +21,20 @@ final class MailService
     {
         $from = $this->mailParams['fromEmail'] ?? 'no-reply@example.com';
 
-        $message = (new Message())
-            ->from($from)
-            ->to($to)
-            ->subject($subject);
+        $message = new Message(
+            from: $from,
+            to: $to,
+            subject: $subject,
+        );
 
         $htmlBody = $this->renderView("{$view}.php", $params);
         $textBody = $this->renderView("text/{$view}.php", $params);
 
         if ($htmlBody !== null) {
-            $message = $message->html($htmlBody);
+            $message = $message->withHtmlBody($htmlBody);
         }
         if ($textBody !== null) {
-            $message = $message->text($textBody);
+            $message = $message->withTextBody($textBody);
         }
 
         $this->mailer->send($message);

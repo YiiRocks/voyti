@@ -1018,21 +1018,13 @@
       <code><![CDATA[?string]]></code>
     </InvalidFalsableReturnType>
     <MixedArgument>
+      <code><![CDATA[$from]]></code>
       <code><![CDATA[$this->mailParams['twoFactorMailSubject'] ?? '2FA Code']]></code>
     </MixedArgument>
-    <MixedMethodCall>
-      <code><![CDATA[from]]></code>
-      <code><![CDATA[html]]></code>
-      <code><![CDATA[subject]]></code>
-      <code><![CDATA[text]]></code>
-      <code><![CDATA[to]]></code>
-    </MixedMethodCall>
     <PossiblyInvalidArgument>
       <code><![CDATA[str_replace('{app}', '', $this->mailParams['twoFactorMailSubject'] ?? '2FA Code')]]></code>
     </PossiblyInvalidArgument>
     <UndefinedClass>
-      <code><![CDATA[$this->mailer]]></code>
-      <code><![CDATA[Message]]></code>
       <code><![CDATA[Token]]></code>
       <code><![CDATA[Token]]></code>
       <code><![CDATA[Token]]></code>
@@ -1040,7 +1032,6 @@
       <code><![CDATA[User]]></code>
       <code><![CDATA[User]]></code>
       <code><![CDATA[User]]></code>
-      <code><![CDATA[private]]></code>
     </UndefinedClass>
   </file>
   <file src="src/Service/PasswordExpireService.php">
