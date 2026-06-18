@@ -7,6 +7,8 @@ use Yiisoft\Aliases\Aliases;
 use Yiisoft\Auth\IdentityServiceInterface;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\Translator\CategorySource;
+use Yiisoft\View\View;
+use Yiisoft\View\ViewInterface;
 use Yiisoft\Translator\Message\Php\MessageSource;
 use Yiisoft\Translator\SimpleMessageFormatter;
 use Yiisoft\Translator\TranslatorInterface;
@@ -130,6 +132,8 @@ return [
     \YiiRocks\Voyti\Factory\TokenFactory::class => \YiiRocks\Voyti\Factory\TokenFactory::class,
     \YiiRocks\Voyti\Factory\MailFactory::class => \YiiRocks\Voyti\Factory\MailFactory::class,
     \YiiRocks\Voyti\Strategy\EmailChangeStrategyFactory::class => \YiiRocks\Voyti\Strategy\EmailChangeStrategyFactory::class,
+
+    ViewInterface::class => View::class,
 
     'voyti.translator' => [
         'definition' => static fn (TranslatorInterface $translator) => $translator->addCategorySources(
