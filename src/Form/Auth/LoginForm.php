@@ -57,12 +57,13 @@ final class LoginForm extends FormModel implements RulesProviderInterface
                 ? RecaptchaV2Rule::class
                 : RecaptchaV3Rule::class;
 
-            $params = $this->config->recaptchaVersion === 'v3'
-                ? ['threshold' => 0.5, 'action' => 'voyti_' . $this->getFormName()]
-                : [];
+            $params = [];
+            if ($this->config->recaptchaVersion === 'v3') {
+                $params['threshold'] = 0.5;
+                $params['action'] = 'voyti_' . $this->getFormName();
+            }
 
-            $rules['gRecaptchaResponse'] ??= [];
-            $rules['gRecaptchaResponse'][] = new $ruleClass(...$params);
+            $rules['gRecaptchaResponse'] = [new $ruleClass(...$params)];
         }
 
         return $rules;

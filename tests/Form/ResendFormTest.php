@@ -48,7 +48,23 @@ final class ResendFormTest extends TestCase
         $this->assertSame('resend', $form->getFormName());
     }
 
-    public function testGetRulesWithRecaptchaEnabled(): void
+    public function testGetRulesWithRecaptchaV2(): void
+    {
+        $config = new ModuleConfig(recaptchaVersion: 'v2');
+        $form = $this->createForm($config);
+        $rules = $form->getRules();
+        /** @var array<string, mixed> $rules */
+        $this->assertArrayHasKey('gRecaptchaResponse', $rules);
+        /** @var list<mixed> $gRecaptchaResponse */
+        $gRecaptchaResponse = $rules['gRecaptchaResponse'];
+        $this->assertCount(1, $gRecaptchaResponse);
+        $this->assertInstanceOf(
+            \YiiRocks\Recaptcha\RecaptchaV2Rule::class,
+            $gRecaptchaResponse[0],
+        );
+    }
+
+    public function testGetRulesWithRecaptchaV3(): void
     {
         $config = new ModuleConfig(recaptchaVersion: 'v3');
         $form = $this->createForm($config);
@@ -62,6 +78,8 @@ final class ResendFormTest extends TestCase
             \YiiRocks\Recaptcha\RecaptchaV3Rule::class,
             $gRecaptchaResponse[0],
         );
+        $this->assertSame('voyti_resend', $gRecaptchaResponse[0]->getAction());
+        $this->assertSame(0.5, $gRecaptchaResponse[0]->getThreshold());
     }
 
     public function testInvalidEmail(): void

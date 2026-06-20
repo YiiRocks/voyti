@@ -118,6 +118,8 @@ final class RecoveryFormTest extends TestCase
             \YiiRocks\Recaptcha\RecaptchaV3Rule::class,
             $gRecaptchaResponse[0],
         );
+        $this->assertSame('voyti_recovery', $gRecaptchaResponse[0]->getAction());
+        $this->assertSame(0.5, $gRecaptchaResponse[0]->getThreshold());
     }
 
     public function testGetRulesWithResetScenario(): void

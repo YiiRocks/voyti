@@ -5,12 +5,6 @@
         ],
         "excludes": [
             "resources",
-            "Service/ServiceResultStatus.php",
-            "Form/Auth/LoginForm.php",
-            "Form/Auth/RecoveryForm.php",
-            "Form/Auth/RegistrationForm.php",
-            "Form/Auth/ResendForm.php",
-            "Form/Rbac/RuleForm.php",
             "Helper/RecaptchaHelper.php",
             "Helper/TimezoneHelper.php",
             "Validator/TwoFactor/EmailValidator.php",
