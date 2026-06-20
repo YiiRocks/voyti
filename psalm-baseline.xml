@@ -212,6 +212,46 @@
       <code><![CDATA[private]]></code>
     </UndefinedClass>
   </file>
+  <file src="src/Form/Auth/LoginForm.php">
+    <MixedReturnStatement>
+      <code><![CDATA[$labels[$property]]]></code>
+    </MixedReturnStatement>
+  </file>
+  <file src="src/Form/Auth/RecoveryForm.php">
+    <MixedReturnStatement>
+      <code><![CDATA[$labels[$property]]]></code>
+    </MixedReturnStatement>
+  </file>
+  <file src="src/Form/Auth/RegistrationForm.php">
+    <MixedReturnStatement>
+      <code><![CDATA[$labels[$property]]]></code>
+    </MixedReturnStatement>
+  </file>
+  <file src="src/Form/Rbac/AbstractAuthItemForm.php">
+    <MixedReturnStatement>
+      <code><![CDATA[$labels[$property]]]></code>
+    </MixedReturnStatement>
+  </file>
+  <file src="src/Form/Rbac/RuleForm.php">
+    <MixedReturnStatement>
+      <code><![CDATA[$labels[$property]]]></code>
+    </MixedReturnStatement>
+  </file>
+  <file src="src/Form/Settings/GdprDeleteForm.php">
+    <MixedReturnStatement>
+      <code><![CDATA[$labels[$property]]]></code>
+    </MixedReturnStatement>
+  </file>
+  <file src="src/Form/Settings/ProfileForm.php">
+    <MixedReturnStatement>
+      <code><![CDATA[$labels[$property]]]></code>
+    </MixedReturnStatement>
+  </file>
+  <file src="src/Form/Settings/SettingsForm.php">
+    <MixedReturnStatement>
+      <code><![CDATA[$labels[$property]]]></code>
+    </MixedReturnStatement>
+  </file>
   <file src="src/Helper/TimezoneHelper.php">
     <ArgumentTypeCoercion>
       <code><![CDATA[$timezone]]></code>
@@ -227,16 +267,6 @@
     <InvalidNullableReturnType>
       <code><![CDATA[bool]]></code>
     </InvalidNullableReturnType>
-    <InvalidReturnStatement>
-      <code><![CDATA[$query->count()]]></code>
-      <code><![CDATA[(new ActiveQuery($class))
-            ->where($condition)
-            ->one() ?: null]]></code>
-    </InvalidReturnStatement>
-    <InvalidReturnType>
-      <code><![CDATA[TEntity|null]]></code>
-      <code><![CDATA[int]]></code>
-    </InvalidReturnType>
     <NullableReturnStatement>
       <code><![CDATA[$model->save()]]></code>
     </NullableReturnStatement>
@@ -244,7 +274,22 @@
       <code><![CDATA[delete]]></code>
     </UndefinedMethod>
   </file>
+  <file src="src/Repository/ProfileRepository.php">
+    <InvalidReturnStatement>
+      <code><![CDATA[$this->findOne(Profile::class, ['user_id' => $userId])]]></code>
+    </InvalidReturnStatement>
+  </file>
+  <file src="src/Repository/SocialNetworkAccountRepository.php">
+    <InvalidReturnStatement>
+      <code><![CDATA[$this->findOne(SocialNetworkAccount::class, ['provider' => $provider, 'client_id' => $clientId])]]></code>
+    </InvalidReturnStatement>
+  </file>
   <file src="src/Repository/TokenRepository.php">
+    <InvalidReturnStatement>
+      <code><![CDATA[$this->findOne(Token::class, ['code' => $code, 'type' => $type])]]></code>
+      <code><![CDATA[$this->findOne(Token::class, ['user_id' => $userId, 'code' => $code, 'type' => $type])]]></code>
+      <code><![CDATA[$this->findOne(Token::class, ['user_id' => $userId, 'code' => $code])]]></code>
+    </InvalidReturnStatement>
     <MixedReturnTypeCoercion>
       <code><![CDATA[$this->findAll(Token::class, ['user_id' => $userId])]]></code>
       <code><![CDATA[Token[]]]></code>
@@ -252,12 +297,11 @@
   </file>
   <file src="src/Repository/UserRepository.php">
     <InvalidReturnStatement>
-      <code><![CDATA[$query->limit($limit)->offset($offset)->all()]]></code>
+      <code><![CDATA[$this->findOne(User::class, ['email' => $email])]]></code>
+      <code><![CDATA[$this->findOne(User::class, ['or', ['username' => $login], ['email' => $login]])]]></code>
+      <code><![CDATA[$this->findOne(User::class, ['username' => $username])]]></code>
       <code><![CDATA[User::query()->findByPk($id)]]></code>
     </InvalidReturnStatement>
-    <InvalidReturnType>
-      <code><![CDATA[User[]]]></code>
-    </InvalidReturnType>
     <MixedReturnTypeCoercion>
       <code><![CDATA[$this->findAll(User::class)]]></code>
       <code><![CDATA[User[]]]></code>
