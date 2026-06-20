@@ -123,8 +123,8 @@ return [
     'voyti.menu.networks' => 'Сети',
 
     // Login view
-    'voyti.view.login.title' => 'Вход',
-    'voyti.view.login.login_label' => 'Имя пользователя или Email',
+    'voyti.view.login.title' => 'Войти',
+    'voyti.view.login.login_label' => 'Имя пользователя или электронной почте',
     'voyti.view.login.remember_me' => 'Запомнить меня',
     'voyti.view.login.sign_in_button' => 'Войти',
     'voyti.view.login.forgot_password' => 'Забыли пароль?',
