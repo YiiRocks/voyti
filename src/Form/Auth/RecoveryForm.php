@@ -45,6 +45,12 @@ final class RecoveryForm extends FormModel implements RulesProviderInterface
         ];
     }
 
+    public function getPropertyLabel(string $property): string
+    {
+        $labels = $this->getAttributeLabels();
+        return $labels[$property] ?? parent::getPropertyLabel($property);
+    }
+
     #[\Override]
     public function getFormName(): string
     {
