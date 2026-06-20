@@ -60,7 +60,7 @@ final class RegistrationForm extends FormModel implements RulesProviderInterface
         if (isset($labels[$property])) {
             return $labels[$property];
         }
-        return (string) parent::getPropertyLabel($property);
+        return parent::getPropertyLabel($property);
     }
 
     #[\Override]

@@ -33,7 +33,7 @@ final class GdprDeleteForm extends FormModel
         if (isset($labels[$property])) {
             return $labels[$property];
         }
-        return (string) parent::getPropertyLabel($property);
+        return parent::getPropertyLabel($property);
     }
 
     #[\Override]
