@@ -17,19 +17,20 @@ final class DefaultEmailChangeStrategy implements MailChangeStrategyInterface
     ) {
     }
 
-    /**
-     * @return false|null
-     */
     #[\Override]
-    public function run(): bool|null
+    public function run(): bool
     {
         $user = $this->form->getUser();
+        if ($user === null) {
+            return false;
+        }
         $user->setUnconfirmedEmail($this->form->email);
 
-        $token = $this->tokenFactory->makeConfirmNewMailToken($user->getId() ?? 0);
+        $token = $this->tokenFactory->makeConfirmNewMailToken((int) ($user->getId() ?? 0));
 
         if ($this->mailFactory->sendReconfirmation($user, $token)) {
-            return $user->save();
+            $user->save();
+            return true;
         }
 
         return false;

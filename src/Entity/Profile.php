@@ -57,6 +57,7 @@ final class Profile extends ActiveRecord
 
     public function getUser(): ?User
     {
+        /** @var ?User */
         return $this->hasOne(User::class, ['id' => 'user_id']);
     }
 

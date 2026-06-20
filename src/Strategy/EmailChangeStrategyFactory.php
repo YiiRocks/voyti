@@ -27,7 +27,11 @@ final class EmailChangeStrategyFactory
     {
         return match ($strategy) {
             MailChangeStrategyInterface::TYPE_INSECURE => new InsecureEmailChangeStrategy($form),
-            MailChangeStrategyInterface::TYPE_DEFAULT => new DefaultEmailChangeStrategy($form, $this->tokenFactory, $this->mailFactory),
+            MailChangeStrategyInterface::TYPE_DEFAULT => new DefaultEmailChangeStrategy(
+                $form,
+                $this->tokenFactory,
+                $this->mailFactory,
+            ),
             MailChangeStrategyInterface::TYPE_SECURE => new SecureEmailChangeStrategy(
                 $form,
                 $this->tokenFactory,

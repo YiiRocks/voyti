@@ -27,7 +27,8 @@ final class BlockService
             $user->setBlockedAt(time());
         }
 
-        $result = $user->save();
+        $user->save();
+        $result = true;
         $this->eventDispatcher->dispatch(new UserEvent($user));
         return $result;
     }

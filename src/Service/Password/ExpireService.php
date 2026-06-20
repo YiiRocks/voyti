@@ -33,6 +33,7 @@ final class ExpireService
     public function run(User $user): bool
     {
         $user->setPasswordChangedAt(0);
-        return $user->save();
+        $user->save();
+        return true;
     }
 }

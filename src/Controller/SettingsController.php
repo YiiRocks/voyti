@@ -234,9 +234,9 @@ final class SettingsController
             $identity = $request->getAttribute(IdentityInterface::class);
             if ($identity !== null) {
                 $user = $this->userRepository->findById($identity->getId() ?? 0);
-                if ($user !== null && $this->securityHelper->validatePassword($form->password, $user->getPasswordHash())) {
+                if ($user !== null &&         $this->securityHelper->validatePassword($form->password, $user->getPasswordHash())) {
                     $this->eventDispatcher->dispatch(new GdprEvent($user));
-                    $prefix = $this->config->gdprAnonymizePrefix . $user->getId();
+                    $prefix = $this->config->gdprAnonymizePrefix . ($user->getId() ?? '');
                     $user->setEmail($prefix . '@example.com');
                     $user->setUsername($prefix);
                     $user->setGdprDeleted(true);
@@ -284,7 +284,7 @@ final class SettingsController
         $profile = $user->getProfile();
         if ($profile === null) {
             $profile = new Profile();
-            $profile->setUserId($user->getId() ?? 0);
+            $profile->setUserId((int) ($user->getId() ?? 0));
         }
 
         if ($request->getMethod() === Method::POST) {

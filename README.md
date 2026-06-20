@@ -267,10 +267,10 @@ The `SocialNetworkAuthenticateService` handles account lookup, creation, and use
 ## Testing
 
 ```bash
-# Unit tests (265 tests, 3507 assertions)
+# Unit tests
 composer phpunit
 
-# Mutation testing (288 mutations, 100% MSI)
+# Mutation testing
 composer infection
 
 # Static analysis

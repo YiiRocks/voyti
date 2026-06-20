@@ -18,21 +18,22 @@ final class SecureEmailChangeStrategy implements MailChangeStrategyInterface
     ) {
     }
 
-    /**
-     * @return false|null
-     */
     #[\Override]
-    public function run(): bool|null
+    public function run(): bool
     {
         if (!$this->defaultStrategy->run()) {
             return false;
         }
 
         $user = $this->form->getUser();
-        $token = $this->tokenFactory->makeConfirmOldMailToken($user->getId() ?? 0);
+        if ($user === null) {
+            return false;
+        }
+        $token = $this->tokenFactory->makeConfirmOldMailToken((int) ($user->getId() ?? 0));
 
         if ($this->mailFactory->sendReconfirmation($user, $token)) {
-            return $user->save();
+            $user->save();
+            return true;
         }
 
         return false;

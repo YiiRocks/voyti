@@ -6,6 +6,7 @@ namespace YiiRocks\Voyti\Repository;
 
 use YiiRocks\Voyti\Entity\SocialNetworkAccount;
 
+/** @extends BaseRepository<SocialNetworkAccount> */
 final class SocialNetworkAccountRepository extends BaseRepository
 {
     public function findByProviderAndClientId(string $provider, string $clientId): ?SocialNetworkAccount
@@ -19,7 +20,7 @@ final class SocialNetworkAccountRepository extends BaseRepository
     }
 
     #[\Override]
-    public function save(object|array $model): bool
+    public function save(\Yiisoft\ActiveRecord\ActiveRecordInterface $model): bool
     {
         return parent::save($model);
     }

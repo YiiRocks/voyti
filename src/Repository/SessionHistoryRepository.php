@@ -6,6 +6,7 @@ namespace YiiRocks\Voyti\Repository;
 
 use YiiRocks\Voyti\Entity\SessionHistory;
 
+/** @extends BaseRepository<SessionHistory> */
 final class SessionHistoryRepository extends BaseRepository
 {
     public function findAllSessionHistory(): array

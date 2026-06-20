@@ -28,7 +28,8 @@ final class SocialNetworkAccount extends ActiveRecord
         $this->setUsername(null);
         $this->setEmail(null);
         $this->setCode(null);
-        return $this->save();
+        $this->save();
+        return true;
     }
 
     public function getClientId(): string
@@ -54,6 +55,7 @@ final class SocialNetworkAccount extends ActiveRecord
     public function getDecodedData(): ?array
     {
         if ($this->data !== null && $this->decodedData === null) {
+            /** @var ?array $this->decodedData */
             $this->decodedData = json_decode($this->data, true);
         }
         return $this->decodedData;
@@ -76,6 +78,7 @@ final class SocialNetworkAccount extends ActiveRecord
 
     public function getUser(): ?User
     {
+        /** @var ?User */
         return $this->hasOne(User::class, ['id' => 'user_id']);
     }
 

@@ -30,7 +30,8 @@ final class ResetService
         $user->setPasswordHash($this->securityHelper->hashPassword($password, $this->config->blowfishCost));
         $user->setPasswordChangedAt(time());
         $user->setUpdatedAt(time());
-        $result = $user->save();
+        $user->save();
+        $result = true;
 
         $this->handleToken($token);
 

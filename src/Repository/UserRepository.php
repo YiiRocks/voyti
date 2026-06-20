@@ -8,12 +8,9 @@ use YiiRocks\Voyti\Entity\Profile;
 use YiiRocks\Voyti\Entity\Token;
 use YiiRocks\Voyti\Entity\User;
 
+/** @extends BaseRepository<User> */
 final class UserRepository extends BaseRepository
 {
-    public function __construct()
-    {
-    }
-
     /**
      * @psalm-return int<0, max>|string
      */
@@ -32,7 +29,7 @@ final class UserRepository extends BaseRepository
     }
 
     #[\Override]
-    public function delete(object|array $model): void
+    public function delete(\Yiisoft\ActiveRecord\ActiveRecordInterface $model): void
     {
         if ($model instanceof User) {
             $profile = $model->getProfile();
@@ -43,33 +40,36 @@ final class UserRepository extends BaseRepository
         parent::delete($model);
     }
 
+    /**
+     * @return User[]
+     */
     public function findAllUsers(): array
     {
         return $this->findAll(User::class);
     }
 
-    public function findByEmail(string $email): array|\Yiisoft\ActiveRecord\ActiveRecordInterface|null
+    public function findByEmail(string $email): ?User
     {
         return $this->findOne(User::class, ['email' => $email]);
     }
 
-    public function findById(int $id): array|\Yiisoft\ActiveRecord\ActiveRecordInterface|null
+    public function findById(int $id): ?User
     {
         return User::query()->findByPk($id);
     }
 
-    public function findByUsername(string $username): array|\Yiisoft\ActiveRecord\ActiveRecordInterface|null
+    public function findByUsername(string $username): ?User
     {
         return $this->findOne(User::class, ['username' => $username]);
     }
 
-    public function findByUsernameOrEmail(string $login): array|\Yiisoft\ActiveRecord\ActiveRecordInterface|null
+    public function findByUsernameOrEmail(string $login): ?User
     {
         return $this->findOne(User::class, ['or', ['username' => $login], ['email' => $login]]);
     }
 
     #[\Override]
-    public function save(object|array $model): bool
+    public function save(\Yiisoft\ActiveRecord\ActiveRecordInterface $model): bool
     {
         return parent::save($model);
     }
@@ -90,6 +90,9 @@ final class UserRepository extends BaseRepository
         $this->save($token);
     }
 
+    /**
+     * @return User[]
+     */
     public function search(array $filters = []): array
     {
         $query = $this->query(User::class);

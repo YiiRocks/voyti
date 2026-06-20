@@ -74,6 +74,9 @@ final class SocialNetworkAuthenticateService
         return ServiceResult::success();
     }
 
+    /**
+     * @param array $attributes
+     */
     private function createAccount(string $provider, string $clientId, array $attributes): ?SocialNetworkAccount
     {
         $account = new SocialNetworkAccount();

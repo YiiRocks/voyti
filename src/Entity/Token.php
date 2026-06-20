@@ -49,6 +49,7 @@ final class Token extends ActiveRecord
 
     public function getUser(): ?User
     {
+        /** @var ?User */
         return $this->hasOne(User::class, ['id' => 'user_id']);
     }
 
