@@ -91,7 +91,9 @@ final class UserRepository extends BaseRepository
     }
 
     /**
-     * @return User[]
+     * @return (array|object)[]
+     *
+     * @psalm-return array<array|object>
      */
     public function search(array $filters = []): array
     {

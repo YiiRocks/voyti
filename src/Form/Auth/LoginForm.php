@@ -42,6 +42,7 @@ final class LoginForm extends FormModel implements RulesProviderInterface
         ];
     }
 
+    #[\Override]
     public function getPropertyLabel(string $property): string
     {
         $labels = $this->getAttributeLabels();

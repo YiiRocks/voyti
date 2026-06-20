@@ -26,6 +26,7 @@ final class GdprDeleteForm extends FormModel
         ];
     }
 
+    #[\Override]
     public function getPropertyLabel(string $property): string
     {
         $labels = $this->getAttributeLabels();

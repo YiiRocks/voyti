@@ -53,6 +53,7 @@ final class RegistrationForm extends FormModel implements RulesProviderInterface
         ];
     }
 
+    #[\Override]
     public function getPropertyLabel(string $property): string
     {
         $labels = $this->getAttributeLabels();

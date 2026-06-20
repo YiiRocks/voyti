@@ -38,6 +38,7 @@ final class SettingsForm extends FormModel
         ];
     }
 
+    #[\Override]
     public function getPropertyLabel(string $property): string
     {
         $labels = $this->getAttributeLabels();

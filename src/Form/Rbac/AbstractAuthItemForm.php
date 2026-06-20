@@ -38,6 +38,7 @@ abstract class AbstractAuthItemForm extends FormModel implements RulesProviderIn
         ];
     }
 
+    #[\Override]
     public function getPropertyLabel(string $property): string
     {
         $labels = $this->getAttributeLabels();

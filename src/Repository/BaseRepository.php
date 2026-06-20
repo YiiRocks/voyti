@@ -14,8 +14,10 @@ abstract class BaseRepository
 {
     /**
      * @param class-string $class
+     *
+     * @psalm-return int<0, max>|string
      */
-    protected function count(string $class, array $condition = []): int
+    protected function count(string $class, array $condition = []): int|string
     {
         $query = new ActiveQuery($class);
         if (!empty($condition)) {
@@ -53,10 +55,12 @@ abstract class BaseRepository
 
     /**
      * @template TEntity of ActiveRecordInterface
+     *
      * @param class-string<TEntity> $class
-     * @return TEntity|null
+     *
+     * @return ActiveRecordInterface|array|null
      */
-    protected function findOne(string $class, array $condition): ?object
+    protected function findOne(string $class, array $condition): array|ActiveRecordInterface|null
     {
         return (new ActiveQuery($class))
             ->where($condition)
