@@ -34,8 +34,8 @@ final class LoginForm extends FormModel implements RulesProviderInterface
     {
         return [
             'login' => $this->translator->translate('voyti.view.login.login_label', category: 'voyti'),
-            'password' => $this->translator->translate('voyti.view.password_label', category: 'voyti'),
-            'rememberMe' => $this->translator->translate('voyti.view.login.remember_me', category: 'voyti'),
+            'password' => $this->translator->translate('voyti.view.login.password_label', category: 'voyti'),
+            'rememberMe' => $this->translator->translate('voyti.view.login.remember_me_label', category: 'voyti'),
             'twoFactorAuthenticationCode' => $this->translator->translate('voyti.view.two_factor.code_label', category: 'voyti'),
         ];
     }
