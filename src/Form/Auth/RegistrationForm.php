@@ -18,7 +18,6 @@ use Yiisoft\Validator\RulesProviderInterface;
 
 final class RegistrationForm extends FormModel implements RulesProviderInterface
 {
-
     #[Required]
     #[Email]
     #[Length(max: 255)]
@@ -47,7 +46,10 @@ final class RegistrationForm extends FormModel implements RulesProviderInterface
             'username' => $this->translator->translate('voyti.view.username_label', category: 'voyti'),
             'email' => $this->translator->translate('voyti.view.email_label', category: 'voyti'),
             'password' => $this->translator->translate('voyti.view.password_label', category: 'voyti'),
-            'gdprConsent' => $this->translator->translate('voyti.view.registration.gdpr_consent_label', category: 'voyti'),
+            'gdprConsent' => $this->translator->translate(
+                'voyti.view.registration.gdpr_consent_label',
+                category: 'voyti',
+            ),
         ];
     }
 

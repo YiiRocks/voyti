@@ -15,7 +15,6 @@ use Yiisoft\Validator\RulesProviderInterface;
 
 final class LoginForm extends FormModel implements RulesProviderInterface
 {
-
     public string $gRecaptchaResponse = '';
     #[Required]
     public string $login = '';
@@ -36,7 +35,10 @@ final class LoginForm extends FormModel implements RulesProviderInterface
             'login' => $this->translator->translate('voyti.view.login.login_label', category: 'voyti'),
             'password' => $this->translator->translate('voyti.view.login.password_label', category: 'voyti'),
             'rememberMe' => $this->translator->translate('voyti.view.login.remember_me_label', category: 'voyti'),
-            'twoFactorAuthenticationCode' => $this->translator->translate('voyti.view.two_factor.code_label', category: 'voyti'),
+            'twoFactorAuthenticationCode' => $this->translator->translate(
+                'voyti.view.two_factor.code_label',
+                category: 'voyti',
+            ),
         ];
     }
 
