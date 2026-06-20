@@ -123,10 +123,10 @@ return [
     'voyti.menu.networks' => 'Networks',
 
     // Login view
-    'voyti.view.login.title' => 'Sign in',
+    'voyti.view.login.title' => 'Log In',
     'voyti.view.login.login_label' => 'Username or Email',
     'voyti.view.login.remember_me' => 'Remember me next time',
-    'voyti.view.login.sign_in_button' => 'Sign in',
+    'voyti.view.login.sign_in_button' => 'Log In',
     'voyti.view.login.forgot_password' => 'Forgot password?',
     'voyti.view.login.register_link' => 'Register',
     'voyti.view.login.password_label' => 'Password',
