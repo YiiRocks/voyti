@@ -129,6 +129,8 @@ return [
     'voyti.view.login.sign_in_button' => 'Inloggen',
     'voyti.view.login.forgot_password' => 'Wachtwoord vergeten?',
     'voyti.view.login.register_link' => 'Registreren',
+    'voyti.view.login.password_label' => 'Wachtwoord',
+    'voyti.view.login.remember_me_label' => 'Onthoud mij',
 
     // Two-factor confirm view
     'voyti.view.two_factor.title' => 'Tweefactorauthenticatie',

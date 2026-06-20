@@ -129,6 +129,8 @@ return [
     'voyti.view.login.sign_in_button' => 'Anmelden',
     'voyti.view.login.forgot_password' => 'Passwort vergessen?',
     'voyti.view.login.register_link' => 'Registrieren',
+    'voyti.view.login.password_label' => 'Passwort',
+    'voyti.view.login.remember_me_label' => 'Erinnern Sie sich an mich',
 
     // Two-factor confirm view
     'voyti.view.two_factor.title' => 'Zwei-Faktor-Authentifizierung',
