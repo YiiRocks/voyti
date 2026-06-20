@@ -230,6 +230,7 @@ return [
     'voyti.view.assignments.assigned' => 'Zugewiesen',
     'voyti.view.assignments.available' => 'Verfügbar',
     'voyti.view.assignments.update' => 'Zuweisungen aktualisieren',
+    'voyti.view.info_link' => 'Info',
 
     // Session history
     'voyti.view.session_history.title' => 'Sitzungsverlauf',

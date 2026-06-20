@@ -230,6 +230,7 @@ return [
     'voyti.view.assignments.assigned' => 'Toegewezen',
     'voyti.view.assignments.available' => 'Beschikbaar',
     'voyti.view.assignments.update' => 'Toewijzingen bijwerken',
+    'voyti.view.info_link' => 'Info',
 
     // Session history
     'voyti.view.session_history.title' => 'Sessiegeschiedenis',

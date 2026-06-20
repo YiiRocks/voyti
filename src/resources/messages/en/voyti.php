@@ -230,6 +230,7 @@ return [
     'voyti.view.assignments.assigned' => 'Assigned',
     'voyti.view.assignments.available' => 'Available',
     'voyti.view.assignments.update' => 'Update assignments',
+    'voyti.view.info_link' => 'Info',
 
     // Session history
     'voyti.view.session_history.title' => 'Session history',

@@ -230,6 +230,7 @@ return [
     'voyti.view.assignments.assigned' => 'Назначено',
     'voyti.view.assignments.available' => 'Доступно',
     'voyti.view.assignments.update' => 'Обновить назначения',
+    'voyti.view.info_link' => 'Info',
 
     // Session history
     'voyti.view.session_history.title' => 'История сессий',
