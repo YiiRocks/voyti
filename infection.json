@@ -6,15 +6,15 @@
         "excludes": [
             "resources",
             "Service/ServiceResultStatus.php",
-            "Form/LoginForm.php",
-            "Form/RecoveryForm.php",
-            "Form/RegistrationForm.php",
-            "Form/ResendForm.php",
-            "Form/RuleForm.php",
+            "Form/Auth/LoginForm.php",
+            "Form/Auth/RecoveryForm.php",
+            "Form/Auth/RegistrationForm.php",
+            "Form/Auth/ResendForm.php",
+            "Form/Rbac/RuleForm.php",
             "Helper/RecaptchaHelper.php",
             "Helper/TimezoneHelper.php",
-            "Validator/TwoFactorEmailValidator.php",
-            "Validator/TwoFactorTextMessageValidator.php"
+            "Validator/TwoFactor/EmailValidator.php",
+            "Validator/TwoFactor/TextMessageValidator.php"
         ]
     },
     "phpUnit": {
