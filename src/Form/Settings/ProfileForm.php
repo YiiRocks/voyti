@@ -31,7 +31,10 @@ final class ProfileForm extends FormModel
     public function getPropertyLabel(string $property): string
     {
         $labels = $this->getAttributeLabels();
-        return $labels[$property] ?? parent::getPropertyLabel($property);
+        if (isset($labels[$property])) {
+            return $labels[$property];
+        }
+        return (string) parent::getPropertyLabel($property);
     }
 
     #[\Override]
