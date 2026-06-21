@@ -40,7 +40,6 @@ final class CreateService
         $this->eventDispatcher->dispatch(new UserEvent($user));
 
         $userProfile = new UserProfile();
-        $userProfile->setUserId(null);
 
         if ($this->config->enableEmailConfirmation) {
             $userToken = new UserToken();
