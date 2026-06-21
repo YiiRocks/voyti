@@ -20,7 +20,7 @@ use Yiisoft\Translator\TranslatorInterface;
 $this->setTitle($translator->translate('voyti.view.permission.create_title', category: 'voyti'));
 
 echo Html::div()->class('voyti-rbac-create')->open();
-    Html::H1($translator->translate('voyti.view.permission.create_title', category: 'voyti'));
+    echo Html::H1($translator->translate('voyti.view.permission.create_title', category: 'voyti'));
 
     echo Html::form()
         ->post($url->generate('voyti/permissions-create'))

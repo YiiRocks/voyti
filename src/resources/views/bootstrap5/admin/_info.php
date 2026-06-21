@@ -18,7 +18,7 @@ use Yiisoft\Translator\TranslatorInterface;
 
 echo Html::div()->class('voyti-admin-info')->open();
     echo Html::div()->class('d-flex justify-content-between align-items-center mb-3')->open();
-        Html::H1(Html::encode($user->getUsername()));
+        echo Html::H1(Html::encode($user->getUsername()));
 
         echo Html::div()->open();
             echo Html::a($translator->translate('voyti.view.update_link', category: 'voyti'), $url->generate('voyti/admin-update', ['id' => $user->getId()]))->class('btn', 'btn-outline-secondary', 'btn-sm');

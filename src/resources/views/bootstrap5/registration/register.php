@@ -20,7 +20,7 @@ use Yiisoft\Translator\TranslatorInterface;
 $this->setTitle($translator->translate('voyti.view.registration.register_title', category: 'voyti'));
 
 echo Html::div()->class('voyti-register')->open();
-    Html::H1($translator->translate('voyti.view.registration.register_title', category: 'voyti'));
+    echo Html::H1($translator->translate('voyti.view.registration.register_title', category: 'voyti'));
 
     echo Html::form()
         ->post($url->generate('voyti/register'))

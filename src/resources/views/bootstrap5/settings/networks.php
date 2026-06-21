@@ -13,7 +13,7 @@ use Yiisoft\Translator\TranslatorInterface;
 echo Html::div()->class('voyti-networks')->open();
     include dirname(__DIR__) . '/shared/_menu.php';
 
-    Html::H1($translator->translate('voyti.view.networks.title', category: 'voyti'));
+    echo Html::H1($translator->translate('voyti.view.networks.title', category: 'voyti'));
 
     if (empty($accounts)) {
         echo Html::p($translator->translate('voyti.view.networks.no_networks', category: 'voyti'));

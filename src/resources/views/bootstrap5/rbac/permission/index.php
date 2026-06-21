@@ -20,7 +20,7 @@ $this->setTitle($translator->translate('voyti.view.permission.title', category: 
 
 echo Html::div()->class('voyti-rbac-index')->open();
     echo Html::div()->class('d-flex justify-content-between align-items-center mb-3')->open();
-        Html::H1($translator->translate('voyti.view.permission.title', category: 'voyti'));
+        echo Html::H1($translator->translate('voyti.view.permission.title', category: 'voyti'));
         echo Html::a($translator->translate('voyti.view.permission.create_link', category: 'voyti'), $url->generate('voyti/permissions-create'))->class('btn', 'btn-primary');
     echo Html::div()->close();
 

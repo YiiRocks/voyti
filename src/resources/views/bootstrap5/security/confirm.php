@@ -18,7 +18,7 @@ use Yiisoft\Translator\TranslatorInterface;
 $this->setTitle($translator->translate('voyti.view.two_factor.title', category: 'voyti'));
 
 echo Html::div()->class('voyti-2fa')->open();
-    Html::H1($translator->translate('voyti.view.two_factor.title', category: 'voyti'));
+    echo Html::H1($translator->translate('voyti.view.two_factor.title', category: 'voyti'));
 
     echo Html::form()
         ->post($url->generate('voyti/confirm'))

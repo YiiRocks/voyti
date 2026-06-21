@@ -20,7 +20,7 @@ use Yiisoft\Translator\TranslatorInterface;
 $this->setTitle($translator->translate('voyti.view.permission.update_title', ['name' => Html::encode($model->itemName)], category: 'voyti'));
 
 echo Html::div()->class('voyti-rbac-update')->open();
-    Html::H1($translator->translate('voyti.view.permission.update_title', ['name' => Html::encode($model->itemName)], category: 'voyti'));
+    echo Html::H1($translator->translate('voyti.view.permission.update_title', ['name' => Html::encode($model->itemName)], category: 'voyti'));
 
     echo Html::form()
         ->post($url->generate('voyti/permissions-update', ['name' => $model->itemName]))

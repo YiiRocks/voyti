@@ -19,7 +19,7 @@ use Yiisoft\Translator\TranslatorInterface;
 $this->setTitle($translator->translate('voyti.view.admin.update_user_title', category: 'voyti'));
 
 echo Html::div()->class('voyti-admin-update')->open();
-    Html::H1($translator->translate('voyti.view.admin.update_user_title', ['username' => Html::encode($user->getUsername())], category: 'voyti'));
+    echo Html::H1($translator->translate('voyti.view.admin.update_user_title', ['username' => Html::encode($user->getUsername())], category: 'voyti'));
 
     echo Html::form()
         ->post($url->generate('voyti/admin-update', ['id' => $user->getId()]))

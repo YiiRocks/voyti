@@ -15,7 +15,7 @@ use Yiisoft\Translator\TranslatorInterface;
  */
 
 echo Html::div()->class('voyti-gdpr-delete')->open();
-    Html::H1($translator->translate('voyti.view.gdpr.delete_title', category: 'voyti'));
+    echo Html::H1($translator->translate('voyti.view.gdpr.delete_title', category: 'voyti'));
 
     echo Html::p()->class('alert alert-warning')->open();
         echo $translator->translate('voyti.view.gdpr.delete_warning', category: 'voyti');

@@ -17,7 +17,7 @@ use Yiisoft\Translator\TranslatorInterface;
 $this->setTitle($translator->translate('voyti.view.recovery.reset_title', category: 'voyti'));
 
 echo Html::div()->class('voyti-reset')->open();
-    Html::H1($translator->translate('voyti.view.recovery.reset_title', category: 'voyti'));
+    echo Html::H1($translator->translate('voyti.view.recovery.reset_title', category: 'voyti'));
 
     echo Html::form()
         ->post()

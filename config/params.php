@@ -13,6 +13,10 @@ return [
         ],
     ],
 
+    'yiisoft/db-migration' => [
+        'sourcePaths' => [dirname(__DIR__) . '/config/migrations'],
+    ],
+
     'yiisoft/view' => [
         'theme' => [
             'pathMap' => [

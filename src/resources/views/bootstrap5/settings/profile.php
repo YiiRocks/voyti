@@ -23,7 +23,7 @@ $this->setTitle($translator->translate('voyti.view.settings.title', category: 'v
 echo Html::div()->class('voyti-settings')->open();
     include dirname(__DIR__) . '/shared/_menu.php';
 
-    Html::H1($translator->translate('voyti.view.settings.title', category: 'voyti'));
+    echo Html::H1($translator->translate('voyti.view.settings.title', category: 'voyti'));
 
     echo Html::form()
         ->post($url->generate('voyti/settings'))

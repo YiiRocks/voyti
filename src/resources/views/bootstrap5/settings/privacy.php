@@ -12,7 +12,7 @@ use Yiisoft\Translator\TranslatorInterface;
  */
 
 echo Html::div()->class('voyti-privacy')->open();
-    Html::H1($translator->translate('voyti.view.privacy.title', category: 'voyti'));
+    echo Html::H1($translator->translate('voyti.view.privacy.title', category: 'voyti'));
 
     echo Html::div()->class('list-group')->open();
         echo Html::a($translator->translate('voyti.view.privacy.manage_gdpr_consent', category: 'voyti'), $url->generate('voyti/gdpr-consent'))->class('list-group-item', 'list-group-item-action');

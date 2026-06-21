@@ -13,7 +13,7 @@ use Yiisoft\Translator\TranslatorInterface;
 
 echo Html::div()->class('voyti-profile card')->open();
     echo Html::div()->class('card-body')->open();
-        Html::H1(Html::encode($user->getUsername()));
+        echo Html::H1(Html::encode($user->getUsername()));
 
         echo Html::p()->class('card-text')->open();
             echo $translator->translate('voyti.view.profile.email_label', category: 'voyti') . ' ' . Html::encode($user->getEmail());

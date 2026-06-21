@@ -21,7 +21,7 @@ $this->setTitle($translator->translate('voyti.view.admin.title', category: 'voyt
 
 echo Html::div()->class('voyti-admin-index')->open();
     echo Html::div()->class('d-flex justify-content-between align-items-center mb-3')->open();
-        Html::H1($translator->translate('voyti.view.admin.title', category: 'voyti'));
+        echo Html::H1($translator->translate('voyti.view.admin.title', category: 'voyti'));
         echo Html::a($translator->translate('voyti.view.admin.create_user_link', category: 'voyti'), $url->generate('voyti/admin-create'))->class('btn', 'btn-primary');
     echo Html::div()->close();
 
