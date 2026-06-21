@@ -58,7 +58,7 @@ composer require chillerlan/php-authenticator chillerlan/php-qrcode
 ### 1. Run migrations
 
 ```bash
-php yii migrate:up
+./yii migrate:up
 ```
 
 Five migrations create the `user`, `profile`, `social_account`, `token`, and `session_history` tables with all columns (2FA, GDPR, password expiration, last login IP, etc.) included.

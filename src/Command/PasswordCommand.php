@@ -36,17 +36,32 @@ final class PasswordCommand extends Command
     #[\Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $id = $input->getOption('id');
+        $email = $input->getOption('email');
+        $username = $input->getOption('username');
+
         $user = null;
-        if ($id = $input->getOption('id')) {
+        if ($id !== null) {
             $user = $this->userRepository->findById((int)$id);
-        } elseif ($email = $input->getOption('email')) {
+        } elseif ($email !== null) {
             $user = $this->userRepository->findByEmail($email);
-        } elseif ($username = $input->getOption('username')) {
+        } elseif ($username !== null) {
             $user = $this->userRepository->findByUsername($username);
         }
 
         if ($user === null) {
-            $output->writeln('<error>User not found</error>');
+            if ($id === null && $email === null && $username === null) {
+                $output->writeln('<error>No identifying option provided.</error>');
+                $output->writeln('');
+                $output->writeln('Usage: voyti:password [options]');
+                $output->writeln('');
+                $output->writeln('Options:');
+                $output->writeln('  --email=<email>        Email');
+                $output->writeln('  --username=<username>  Username');
+                $output->writeln('  --id=<id>              ID');
+            } else {
+                $output->writeln('<error>User not found.</error>');
+            }
             return Command::FAILURE;
         }
 
@@ -56,7 +71,7 @@ final class PasswordCommand extends Command
         $user->setUpdatedAt(time());
         $user->save();
 
-        $output->writeln('<info>Password reset</info>');
+        $output->writeln('<info>Password reset.</info>');
         $output->writeln("<comment>New password: {$password}</comment>");
         return Command::SUCCESS;
     }

@@ -8,7 +8,7 @@ use YiiRocks\Voyti\Entity\UserSocialAccount;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Db\Connection\ConnectionProvider;
 
-final class SocialNetworkAccountTest extends TestCase
+final class UserSocialAccountTest extends TestCase
 {
     #[\Override]
     protected function setUp(): void

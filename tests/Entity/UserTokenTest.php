@@ -8,7 +8,7 @@ use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Db\Connection\ConnectionProvider;
 
-final class TokenTest extends TestCase
+final class UserTokenTest extends TestCase
 {
     #[\Override]
     protected function setUp(): void

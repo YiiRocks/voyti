@@ -8,7 +8,7 @@ use YiiRocks\Voyti\Entity\UserSessionHistory;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Db\Connection\ConnectionProvider;
 
-final class SessionHistoryTest extends TestCase
+final class UserSessionHistoryTest extends TestCase
 {
     #[\Override]
     protected function setUp(): void

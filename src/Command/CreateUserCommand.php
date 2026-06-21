@@ -29,8 +29,8 @@ final class CreateUserCommand extends Command
         $this
             ->setName('voyti:create')
             ->setDescription('Create a new user')
-            ->addArgument('email', InputArgument::REQUIRED, 'Email')
-            ->addArgument('username', InputArgument::REQUIRED, 'Username')
+            ->addArgument('email', InputArgument::OPTIONAL, 'Email')
+            ->addArgument('username', InputArgument::OPTIONAL, 'Username')
             ->addOption('password', 'p', InputOption::VALUE_OPTIONAL, 'Password')
             ->addOption('role', 'r', InputOption::VALUE_OPTIONAL, 'Role');
     }
@@ -40,6 +40,21 @@ final class CreateUserCommand extends Command
     {
         $email = $input->getArgument('email');
         $username = $input->getArgument('username');
+
+        if ($email === null || $username === null) {
+            $output->writeln('<error>Missing required arguments.</error>');
+            $output->writeln('');
+            $output->writeln('Usage: voyti:create [options] [--] <email> <username>');
+            $output->writeln('');
+            $output->writeln('  email      Email');
+            $output->writeln('  username   Username');
+            $output->writeln('');
+            $output->writeln('Options:');
+            $output->writeln('  -p, --password   Password (auto-generated if omitted)');
+            $output->writeln('  -r, --role       Role to assign');
+            return Command::INVALID;
+        }
+
         $password = $input->getOption('password') ?? bin2hex(random_bytes(8));
 
         $result = $this->userCreateService->run($email, $username, $password);
