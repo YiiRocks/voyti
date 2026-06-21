@@ -42,7 +42,7 @@ final class User extends ActiveRecord implements IdentityInterface
     public function fields(): array
     {
         $fields = parent::fields();
-        unset($fields['authKey'], $fields['passwordHash']);
+        unset($fields['authKey']);
         return $fields;
     }
 
