@@ -126,7 +126,7 @@
             "events": "events.php",
             "console": "console.php",
             "di": "di.php",
-            "di-console": "di-console.php",
+            "bootstrap-console": "bootstrap-console.php",
             "rbac": "rbac.php",
             "voyti-routes": "routes.php"
         }
