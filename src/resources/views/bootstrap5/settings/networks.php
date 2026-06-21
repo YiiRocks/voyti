@@ -9,17 +9,21 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var array $accounts
  * @var TranslatorInterface $translator
  */
-?>
-<div class="voyti-networks">
-    <?php include dirname(__DIR__) . '/shared/_menu.php'; ?>
-    <h1><?= $translator->translate('voyti.view.networks.title', category: 'voyti') ?></h1>
-    <?php if (empty($accounts)): ?>
-        <p><?= $translator->translate('voyti.view.networks.no_networks', category: 'voyti') ?></p>
-    <?php else: ?>
-        <ul class="list-group">
-            <?php foreach ($accounts as $account): ?>
-                <li class="list-group-item"><?= Html::encode($account->getProvider()) ?></li>
-            <?php endforeach; ?>
-        </ul>
-    <?php endif; ?>
-</div>
+
+echo Html::div()->class('voyti-networks')->open();
+    include dirname(__DIR__) . '/shared/_menu.php';
+
+    Html::H1($translator->translate('voyti.view.networks.title', category: 'voyti'));
+
+    if (empty($accounts)) {
+        echo Html::p($translator->translate('voyti.view.networks.no_networks', category: 'voyti'));
+    } else {
+        echo Html::ul()->class('list-group')->open();
+
+        foreach ($accounts as $account) {
+            echo Html::tag('li', Html::encode($account->getProvider()))->class('list-group-item');
+        }
+
+        echo Html::ul()->close();
+    }
+echo Html::div()->close();

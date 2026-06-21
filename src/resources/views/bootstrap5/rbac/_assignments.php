@@ -10,12 +10,17 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var array $available
  * @var TranslatorInterface $translator
  */
-?>
-<div class="voyti-assignments">
-    <h3 class="mb-3"><?= $translator->translate('voyti.view.assignments.title', category: 'voyti') ?></h3>
-    <ul class="list-group">
-        <?php foreach ($assignments as $item): ?>
-            <li class="list-group-item"><?= Html::encode($item->getName()) ?></li>
-        <?php endforeach; ?>
-    </ul>
-</div>
+
+echo Html::div()->class('voyti-assignments')->open();
+    Html::H3()->class('mb-3')->open();
+        echo $translator->translate('voyti.view.assignments.title', category: 'voyti');
+    echo Html::H3()->close();
+
+    echo Html::ul()->class('list-group')->open();
+
+    foreach ($assignments as $item) {
+        echo Html::tag('li', Html::encode($item->getName()))->class('list-group-item');
+    }
+
+    echo Html::ul()->close();
+echo Html::div()->close();

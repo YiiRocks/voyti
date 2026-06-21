@@ -10,20 +10,30 @@ use Yiisoft\Translator\TranslatorInterface;
 
 /**
  * @var YiiRocks\Voyti\Form\Auth\ResendForm $model
+ * @var YiiRocks\Voyti\ModuleConfig $config
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
+ * @var string $csrf
  */
-?>
-<?php $this->setTitle($translator->translate('voyti.view.registration.resend_title', category: 'voyti')); ?>
-<div class="voyti-resend">
-    <h1><?= $translator->translate('voyti.view.registration.resend_title', category: 'voyti') ?></h1>
-    <form action="<?= Html::encode($url->generate('voyti/resend')) ?>" method="post" novalidate>
-        <?= Field::email($model, 'email') ?>
-        <?= RecaptchaHelper::render($model, $config) ?>
-        <?= Field::buttonGroup()
-            ->buttons(
-                Html::submitButton($translator->translate('voyti.view.send_button', category: 'voyti'))
-            )
-?>
-    </form>
-</div>
+
+$this->setTitle($translator->translate('voyti.view.registration.resend_title', category: 'voyti'));
+
+echo Html::div()->class('voyti-resend')->open();
+    Html::H1($translator->translate('voyti.view.registration.resend_title', category: 'voyti'));
+
+    echo Html::form()
+        ->post($url->generate('voyti/resend'))
+        ->csrf($csrf)
+        ->open();
+
+    echo Field::email($model, 'email');
+
+    echo RecaptchaHelper::render($model, $config);
+
+    echo Field::buttonGroup()
+        ->buttons(
+            Html::submitButton($translator->translate('voyti.view.send_button', category: 'voyti'))
+        );
+
+    echo Html::form()->close();
+echo Html::div()->close();

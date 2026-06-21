@@ -1,11 +1,10 @@
 <?php
 
 declare(strict_types=1);
-use YiiRocks\Voyti\Form\Rbac\RuleForm;
 
+use YiiRocks\Voyti\Form\Rbac\RuleForm;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
-use Yiisoft\Html\Tag\Button;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 
@@ -14,38 +13,37 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var array $errors
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
+ * @var string $csrf
  */
 
-/** @var UrlGeneratorInterface $url */
-$url = $this->get('url');
-?>
-<?php $this->setTitle($translator->translate('voyti.view.rule.update_title', category: 'voyti')); ?>
-<div class="voyti-rbac-update">
-    <h1><?= $translator->translate('voyti.view.rule.update_title', category: 'voyti') ?></h1>
-<?php
-$form = Html::form(
-    $url->generate('voyti/rules-update', ['name' => $model->itemName]),
-    'post',
-    ['novalidate' => true]
-);
-?>
-<?= $form->begin() ?>
-    <?php if (!empty($errors)): ?>
-        <div class="alert alert-danger">
-            <?php foreach ($errors as $field => $fieldErrors): ?>
-                <?php foreach ((array) $fieldErrors as $error): ?>
-                    <div><?= Html::encode($error) ?></div>
-                <?php endforeach; ?>
-            <?php endforeach; ?>
-        </div>
-    <?php endif; ?>
-    <?= Field::text($model, 'name') ?>
-    <?= Field::text($model, 'class') ?>
-    <?= Field::buttonGroup()
+$this->setTitle($translator->translate('voyti.view.rule.update_title', category: 'voyti'));
+
+echo Html::div()->class('voyti-rbac-update')->open();
+    Html::H1($translator->translate('voyti.view.rule.update_title', category: 'voyti'));
+
+    echo Html::form()
+        ->post($url->generate('voyti/rules-update', ['name' => $model->itemName]))
+        ->csrf($csrf)
+        ->open();
+
+    if (!empty($errors)) {
+        echo Html::div()->class('alert alert-danger')->open();
+            foreach ($errors as $field => $fieldErrors) {
+                foreach ((array) $fieldErrors as $error) {
+                    echo Html::div(Html::encode($error));
+                }
+            }
+        echo Html::div()->close();
+    }
+
+    echo Field::text($model, 'name');
+
+    echo Field::text($model, 'class');
+
+    echo Field::buttonGroup()
         ->buttons(
-            Button::submit($translator->translate('voyti.view.update_button', category: 'voyti'))
-        )
-?>
-    <?= $form->end() ?>
-</div>
-</div>
+            Html::submitButton($translator->translate('voyti.view.update_button', category: 'voyti'))
+        );
+
+    echo Html::form()->close();
+echo Html::div()->close();

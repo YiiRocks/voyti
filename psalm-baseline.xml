@@ -510,33 +510,9 @@
     </InvalidScope>
   </file>
   <file src="src/resources/views/bootstrap5/admin/_info.php">
-    <MixedArgument>
-      <code><![CDATA[$form->begin()]]></code>
-      <code><![CDATA[$form->begin()]]></code>
-      <code><![CDATA[$form->begin()]]></code>
-      <code><![CDATA[$form->begin()]]></code>
-      <code><![CDATA[$form->begin()]]></code>
-      <code><![CDATA[$form->end()]]></code>
-      <code><![CDATA[$form->end()]]></code>
-      <code><![CDATA[$form->end()]]></code>
-      <code><![CDATA[$form->end()]]></code>
-      <code><![CDATA[$form->end()]]></code>
-    </MixedArgument>
     <RedundantConditionGivenDocblockType>
       <code><![CDATA[$profile]]></code>
     </RedundantConditionGivenDocblockType>
-    <UndefinedMethod>
-      <code><![CDATA[begin]]></code>
-      <code><![CDATA[begin]]></code>
-      <code><![CDATA[begin]]></code>
-      <code><![CDATA[begin]]></code>
-      <code><![CDATA[begin]]></code>
-      <code><![CDATA[end]]></code>
-      <code><![CDATA[end]]></code>
-      <code><![CDATA[end]]></code>
-      <code><![CDATA[end]]></code>
-      <code><![CDATA[end]]></code>
-    </UndefinedMethod>
   </file>
   <file src="src/resources/views/bootstrap5/admin/_profile.php">
     <InvalidScope>

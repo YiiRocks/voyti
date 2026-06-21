@@ -1,10 +1,9 @@
 <?php
 
 declare(strict_types=1);
-use Yiisoft\FormModel\Field;
 
+use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
-use Yiisoft\Html\Tag\Button;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 
@@ -15,157 +14,131 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var int $currentPage
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
+ * @var string $csrf
  */
 
-/** @var UrlGeneratorInterface $url */
-$url = $this->get('url');
-?>
-<?php $this->setTitle($translator->translate('voyti.view.admin.title', category: 'voyti')); ?>
-<div class="voyti-admin-index">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1><?= $translator->translate('voyti.view.admin.title', category: 'voyti') ?></h1>
-        <a href="<?= Html::encode($url->generate('voyti/admin-create')) ?>" class="btn btn-primary"><?= $translator->translate('voyti.view.admin.create_user_link', category: 'voyti') ?></a>
-    </div>
+$this->setTitle($translator->translate('voyti.view.admin.title', category: 'voyti'));
 
-<?php
-$form = Html::form(
-    $url->generate('voyti/admin-index'),
-    'get',
-    ['class' => 'mb-3']
-);
-?>
-<?= $form->begin() ?>
-    <div class="row g-2">
-        <div class="col">
-            <input type="text" class="form-control" name="username" value="<?= Html::encode($filters['username'] ?? '') ?>" placeholder="<?= $translator->translate('voyti.view.username_header', category: 'voyti') ?>">
-        </div>
-        <div class="col">
-            <input type="text" class="form-control" name="email" value="<?= Html::encode($filters['email'] ?? '') ?>" placeholder="<?= $translator->translate('voyti.view.email_header', category: 'voyti') ?>">
-        </div>
-        <div class="col">
-            <select class="form-select" name="status">
-                <option value=""><?= $translator->translate('voyti.view.status_header', category: 'voyti') ?></option>
-                <option value="confirmed" <?= ($filters['status'] ?? '') === 'confirmed' ? 'selected' : '' ?>><?= $translator->translate('voyti.view.status_active', category: 'voyti') ?></option>
-                <option value="unconfirmed" <?= ($filters['status'] ?? '') === 'unconfirmed' ? 'selected' : '' ?>><?= $translator->translate('voyti.view.status_pending', category: 'voyti') ?></option>
-                <option value="blocked" <?= ($filters['status'] ?? '') === 'blocked' ? 'selected' : '' ?>><?= $translator->translate('voyti.view.status_blocked', category: 'voyti') ?></option>
-            </select>
-        </div>
-        <div class="col-auto">
-            <?= Field::buttonGroup()
+echo Html::div()->class('voyti-admin-index')->open();
+    echo Html::div()->class('d-flex justify-content-between align-items-center mb-3')->open();
+        Html::H1($translator->translate('voyti.view.admin.title', category: 'voyti'));
+        echo Html::a($translator->translate('voyti.view.admin.create_user_link', category: 'voyti'), $url->generate('voyti/admin-create'))->class('btn', 'btn-primary');
+    echo Html::div()->close();
+
+    echo Html::form()
+        ->action($url->generate('voyti/admin-index'))
+        ->method('get')
+        ->open();
+
+    echo Html::div()->class('row g-2')->open();
+        echo Html::div()->class('col')->open();
+            echo Html::input('text')->class('form-control')->name('username')->value(Html::encode($filters['username'] ?? ''))->placeholder($translator->translate('voyti.view.username_header', category: 'voyti'));
+        echo Html::div()->close();
+
+        echo Html::div()->class('col')->open();
+            echo Html::input('text')->class('form-control')->name('email')->value(Html::encode($filters['email'] ?? ''))->placeholder($translator->translate('voyti.view.email_header', category: 'voyti'));
+        echo Html::div()->close();
+
+        echo Html::div()->class('col')->open();
+            echo '<select class="form-select" name="status">' . "\n";
+            echo '    <option value="">' . $translator->translate('voyti.view.status_header', category: 'voyti') . '</option>' . "\n";
+            echo '    <option value="confirmed"' . (($filters['status'] ?? '') === 'confirmed' ? ' selected' : '') . '>' . $translator->translate('voyti.view.status_active', category: 'voyti') . '</option>' . "\n";
+            echo '    <option value="unconfirmed"' . (($filters['status'] ?? '') === 'unconfirmed' ? ' selected' : '') . '>' . $translator->translate('voyti.view.status_pending', category: 'voyti') . '</option>' . "\n";
+            echo '    <option value="blocked"' . (($filters['status'] ?? '') === 'blocked' ? ' selected' : '') . '>' . $translator->translate('voyti.view.status_blocked', category: 'voyti') . '</option>' . "\n";
+            echo '</select>' . "\n";
+        echo Html::div()->close();
+
+        echo Html::div()->class('col-auto')->open();
+            echo Field::buttonGroup()
                 ->buttons(
-                    Button::submit($translator->translate('voyti.view.filter_button', category: 'voyti'))->class('btn', 'btn-outline-secondary')
-                )
-?>
-        </div>
-    </div>
-    <?= $form->end() ?>
-    <div class="table-responsive">
-        <table class="table table-striped table-hover">
-            <thead class="table-light">
-                <tr>
-                    <th scope="col"><?= $translator->translate('voyti.view.id_header', category: 'voyti') ?></th>
-                    <th scope="col"><?= $translator->translate('voyti.view.username_header', category: 'voyti') ?></th>
-                    <th scope="col"><?= $translator->translate('voyti.view.email_header', category: 'voyti') ?></th>
-                    <th scope="col"><?= $translator->translate('voyti.view.status_header', category: 'voyti') ?></th>
-                    <th scope="col" class="text-end"><?= $translator->translate('voyti.view.actions_header', category: 'voyti') ?></th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($users as $user): ?>
-                    <tr>
-                        <td><?= Html::encode($user->getId()) ?></td>
-                        <td><?= Html::encode($user->getUsername()) ?></td>
-                        <td><?= Html::encode($user->getEmail()) ?></td>
-                        <td>
-                            <?php if ($user->isBlocked()): ?>
-                                <span class="badge bg-danger"><?= $translator->translate('voyti.view.status_blocked', category: 'voyti') ?></span>
-                            <?php elseif ($user->isConfirmed()): ?>
-                                <span class="badge bg-success"><?= $translator->translate('voyti.view.status_active', category: 'voyti') ?></span>
-                            <?php else: ?>
-                                <span class="badge bg-warning text-dark"><?= $translator->translate('voyti.view.status_pending', category: 'voyti') ?></span>
-                            <?php endif; ?>
-                        </td>
-                        <td class="text-end">
-                            <a href="<?= Html::encode($url->generate('voyti/admin-info', ['id' => $user->getId()])) ?>" class="btn btn-sm btn-outline-secondary"><?= $translator->translate('voyti.view.info_link', category: 'voyti') ?></a>
-                            <a href="<?= Html::encode($url->generate('voyti/admin-update', ['id' => $user->getId()])) ?>" class="btn btn-sm btn-outline-secondary"><?= $translator->translate('voyti.view.update_link', category: 'voyti') ?></a>
-                            <?php
-                $deleteForm = Html::form(
-                    $url->generate('voyti/admin-delete', ['id' => $user->getId()]),
-                    'post',
-                    ['class' => 'd-inline']
+                    Html::submitButton($translator->translate('voyti.view.filter_button', category: 'voyti'))->class('btn', 'btn-outline-secondary')
                 );
-                    ?>
-                            <?= $deleteForm->begin() ?>
-                                <?= Field::buttonGroup()
-                            ->buttons(
-                                Button::submit($translator->translate('voyti.view.delete_button', category: 'voyti'))->class('btn', 'btn-sm', 'btn-outline-danger')
-                            )
-                    ?>
-                                <?= $deleteForm->end() ?>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
+        echo Html::div()->close();
+    echo Html::div()->close();
 
-    <div class="table-responsive">
-        <table class="table table-striped table-hover">
-            <thead class="table-light">
-                <tr>
-                    <th scope="col"><?= $translator->translate('voyti.view.id_header', category: 'voyti') ?></th>
-                    <th scope="col"><?= $translator->translate('voyti.view.username_header', category: 'voyti') ?></th>
-                    <th scope="col"><?= $translator->translate('voyti.view.email_header', category: 'voyti') ?></th>
-                    <th scope="col"><?= $translator->translate('voyti.view.status_header', category: 'voyti') ?></th>
-                    <th scope="col" class="text-end"><?= $translator->translate('voyti.view.actions_header', category: 'voyti') ?></th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($users as $user): ?>
-                    <tr>
-                        <td><?= Html::encode((string)$user->getId()) ?></td>
-                        <td><?= Html::encode($user->getUsername()) ?></td>
-                        <td><?= Html::encode($user->getEmail()) ?></td>
-                        <td>
-                            <?php if ($user->isBlocked()): ?>
-                                <span class="badge bg-danger"><?= $translator->translate('voyti.view.status_blocked', category: 'voyti') ?></span>
-                            <?php elseif ($user->isConfirmed()): ?>
-                                <span class="badge bg-success"><?= $translator->translate('voyti.view.status_active', category: 'voyti') ?></span>
-                            <?php else: ?>
-                                <span class="badge bg-warning text-dark"><?= $translator->translate('voyti.view.status_pending', category: 'voyti') ?></span>
-                            <?php endif; ?>
-                        </td>
-                        <td class="text-end">
-                            <a href="<?= Html::encode($url->generate('voyti/admin-update', ['id' => $user->getId()])) ?>" class="btn btn-sm btn-outline-secondary"><?= $translator->translate('voyti.view.update_link', category: 'voyti') ?></a>
-                            <a href="<?= Html::encode($url->generate('voyti/admin-info', ['id' => $user->getId()])) ?>" class="btn btn-sm btn-outline-info"><?= $translator->translate('voyti.view.admin.info_link', category: 'voyti') ?></a>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
+    echo Html::form()->close();
 
-    <?php if ($totalPages > 1): ?>
-    <nav aria-label="Page navigation">
-        <ul class="pagination justify-content-center">
-            <?php if ($currentPage > 1): ?>
-                <li class="page-item">
-                    <a class="page-link" href="<?= Html::encode($url->generate('voyti/admin', [], ['page' => $currentPage - 1, 'username' => $filters['username'] ?? '', 'email' => $filters['email'] ?? '', 'status' => $filters['status'] ?? ''])) ?>"><?= $translator->translate('voyti.view.previous', category: 'voyti') ?></a>
-                </li>
-            <?php endif; ?>
-            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                <li class="page-item <?= $i === $currentPage ? 'active' : '' ?>">
-                    <a class="page-link" href="<?= Html::encode($url->generate('voyti/admin', [], ['page' => $i, 'username' => $filters['username'] ?? '', 'email' => $filters['email'] ?? '', 'status' => $filters['status'] ?? ''])) ?>"><?= $i ?></a>
-                </li>
-            <?php endfor; ?>
-            <?php if ($currentPage < $totalPages): ?>
-                <li class="page-item">
-                    <a class="page-link" href="<?= Html::encode($url->generate('voyti/admin', [], ['page' => $currentPage + 1, 'username' => $filters['username'] ?? '', 'email' => $filters['email'] ?? '', 'status' => $filters['status'] ?? ''])) ?>"><?= $translator->translate('voyti.view.next', category: 'voyti') ?></a>
-                </li>
-            <?php endif; ?>
-        </ul>
-    </nav>
-    <?php endif; ?>
-</div>
+    echo Html::div()->class('table-responsive')->open();
+        echo Html::table()->class('table table-striped table-hover')->open();
+
+        echo Html::tag('thead')->class('table-light')->open();
+            echo Html::tag('tr')->open();
+                echo Html::tag('th', $translator->translate('voyti.view.id_header', category: 'voyti'))->scope('col');
+                echo Html::tag('th', $translator->translate('voyti.view.username_header', category: 'voyti'))->scope('col');
+                echo Html::tag('th', $translator->translate('voyti.view.email_header', category: 'voyti'))->scope('col');
+                echo Html::tag('th', $translator->translate('voyti.view.status_header', category: 'voyti'))->scope('col');
+                echo Html::tag('th', $translator->translate('voyti.view.actions_header', category: 'voyti'))->class('text-end')->scope('col');
+            echo Html::tag('tr')->close();
+        echo Html::tag('thead')->close();
+
+        echo Html::tag('tbody')->open();
+
+        foreach ($users as $user) {
+            echo Html::tag('tr')->open();
+                echo Html::tag('td', Html::encode($user->getId()));
+                echo Html::tag('td', Html::encode($user->getUsername()));
+                echo Html::tag('td', Html::encode($user->getEmail()));
+                echo Html::tag('td')->open();
+
+                if ($user->isBlocked()) {
+                    echo Html::tag('span', $translator->translate('voyti.view.status_blocked', category: 'voyti'))->class('badge bg-danger');
+                } elseif ($user->isConfirmed()) {
+                    echo Html::tag('span', $translator->translate('voyti.view.status_active', category: 'voyti'))->class('badge bg-success');
+                } else {
+                    echo Html::tag('span', $translator->translate('voyti.view.status_pending', category: 'voyti'))->class('badge bg-warning text-dark');
+                }
+
+                echo Html::tag('td')->close();
+
+                echo Html::tag('td')->class('text-end')->open();
+                    echo Html::a($translator->translate('voyti.view.info_link', category: 'voyti'), $url->generate('voyti/admin-info', ['id' => $user->getId()]))->class('btn', 'btn-sm', 'btn-outline-secondary');
+                    echo ' ';
+                    echo Html::a($translator->translate('voyti.view.update_link', category: 'voyti'), $url->generate('voyti/admin-update', ['id' => $user->getId()]))->class('btn', 'btn-sm', 'btn-outline-secondary');
+                    echo ' ';
+
+                    echo Html::form()
+                        ->post($url->generate('voyti/admin-delete', ['id' => $user->getId()]))
+                        ->csrf($csrf)
+                        ->class('d-inline')
+                        ->open();
+
+                    echo Field::buttonGroup()
+                        ->buttons(
+                            Html::submitButton($translator->translate('voyti.view.delete_button', category: 'voyti'))->class('btn', 'btn-sm', 'btn-outline-danger')
+                        );
+
+                    echo Html::form()->close();
+                echo Html::tag('td')->close();
+            echo Html::tag('tr')->close();
+        }
+
+        echo Html::tag('tbody')->close();
+        echo Html::table()->close();
+    echo Html::div()->close();
+
+    if ($totalPages > 1) {
+        echo '<nav aria-label="Page navigation">' . "\n";
+        echo '    <ul class="pagination justify-content-center">' . "\n";
+
+        if ($currentPage > 1) {
+            echo '        <li class="page-item">' . "\n";
+            echo '            <a class="page-link" href="' . Html::encode($url->generate('voyti/admin', [], ['page' => $currentPage - 1, 'username' => $filters['username'] ?? '', 'email' => $filters['email'] ?? '', 'status' => $filters['status'] ?? ''])) . '">' . $translator->translate('voyti.view.previous', category: 'voyti') . '</a>' . "\n";
+            echo '        </li>' . "\n";
+        }
+
+        for ($i = 1; $i <= $totalPages; $i++) {
+            echo '        <li class="page-item' . ($i === $currentPage ? ' active' : '') . '">' . "\n";
+            echo '            <a class="page-link" href="' . Html::encode($url->generate('voyti/admin', [], ['page' => $i, 'username' => $filters['username'] ?? '', 'email' => $filters['email'] ?? '', 'status' => $filters['status'] ?? ''])) . '">' . $i . '</a>' . "\n";
+            echo '        </li>' . "\n";
+        }
+
+        if ($currentPage < $totalPages) {
+            echo '        <li class="page-item">' . "\n";
+            echo '            <a class="page-link" href="' . Html::encode($url->generate('voyti/admin', [], ['page' => $currentPage + 1, 'username' => $filters['username'] ?? '', 'email' => $filters['email'] ?? '', 'status' => $filters['status'] ?? ''])) . '">' . $translator->translate('voyti.view.next', category: 'voyti') . '</a>' . "\n";
+            echo '        </li>' . "\n";
+        }
+
+        echo '    </ul>' . "\n";
+        echo '</nav>' . "\n";
+    }
+echo Html::div()->close();
