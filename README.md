@@ -93,6 +93,7 @@ application's router DI definition, include them alongside your own routes:
 // config/common/di/router.php
 use Yiisoft\Config\Config;
 use Yiisoft\Definitions\DynamicReference;
+use Yiisoft\Router\Group;
 use Yiisoft\Router\RouteCollection;
 use Yiisoft\Router\RouteCollectionInterface;
 use Yiisoft\Router\RouteCollector;
@@ -105,8 +106,9 @@ return [
         '__construct()' => [
             'collector' => DynamicReference::to(
                 static fn() => (new RouteCollector())->addRoute(
-                    ...$config->get('voyti-routes'),
                     // ...your own routes
+                    Group::create('/user/') // choose your prefix
+                        ->routes(...$config->get('voyti-routes')),
                 ),
             ),
         ],
@@ -114,9 +116,9 @@ return [
 ];
 ```
 
-Routes are prefixed with `user/` and are available at URLs like `/user/login`,
-`/user/register`, `/user/settings`, etc. REST API routes (under `/user/api/v1`)
-are enabled when `enableRestApi` is `true`.
+Routes are not prefixed and are available at URLs like `login`, `register`,
+`settings`, etc. REST API routes (under `api/v1`) are enabled when
+`enableRestApi` is `true`.
 
 ### 4. That's it
 
