@@ -124,7 +124,7 @@
             "params": "params.php",
             "web": "web.php",
             "events": "events.php",
-            "console": "console.php",
+            "di-console": "di-console.php",
             "di": "di.php",
             "bootstrap-console": "bootstrap-console.php",
             "rbac": "rbac.php",
