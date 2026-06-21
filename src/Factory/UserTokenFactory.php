@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Factory;
 
 use YiiRocks\Voyti\Entity\UserToken;
-use YiiRocks\Voyti\Repository\UserUserTokenRepository;
+use YiiRocks\Voyti\Repository\UserTokenRepository;
 
 final class UserTokenFactory
 {

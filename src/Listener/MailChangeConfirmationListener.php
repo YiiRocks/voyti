@@ -6,7 +6,7 @@ namespace YiiRocks\Voyti\Listener;
 
 use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Event\Security\EmailChangeEvent;
-use YiiRocks\Voyti\Repository\UserUserTokenRepository;
+use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\MailService;
 
 final class MailChangeConfirmationListener

@@ -7,7 +7,7 @@ namespace YiiRocks\Voyti\Service\User;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Event\User\UserEvent;
-use YiiRocks\Voyti\Repository\UserUserTokenRepository;
+use YiiRocks\Voyti\Repository\UserTokenRepository;
 
 final class ConfirmationService
 {

@@ -10,7 +10,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Form\Auth\RecoveryForm;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserUserTokenRepository;
+use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
 use YiiRocks\Voyti\Service\Password\ResetService;

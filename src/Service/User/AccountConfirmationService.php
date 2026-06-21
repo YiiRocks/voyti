@@ -6,7 +6,7 @@ namespace YiiRocks\Voyti\Service\User;
 
 use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Entity\User;
-use YiiRocks\Voyti\Repository\UserUserTokenRepository;
+use YiiRocks\Voyti\Repository\UserTokenRepository;
 
 final class AccountConfirmationService
 {
