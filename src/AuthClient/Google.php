@@ -18,7 +18,7 @@ final class Google
 
     public function getScope(): string
     {
-        return 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile';
+        return 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.userProfile';
     }
 
     public function getTitle(): string
@@ -28,6 +28,6 @@ final class Google
 
     public function getTokenUrl(): string
     {
-        return 'https://accounts.google.com/o/oauth2/token';
+        return 'https://accounts.google.com/o/oauth2/userToken';
     }
 }

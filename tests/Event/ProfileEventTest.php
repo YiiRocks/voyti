@@ -6,15 +6,15 @@ namespace YiiRocks\Voyti\tests\Event;
 
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
-use YiiRocks\Voyti\Event\User\ProfileEvent;
+use YiiRocks\Voyti\Event\User\UserProfileEvent;
 
-final class ProfileEventTest extends TestCase
+final class UserProfileEventTest extends TestCase
 {
     public function testConstructAndGetters(): void
     {
-        $profile = (new ReflectionClass(\YiiRocks\Voyti\Entity\Profile::class))->newInstanceWithoutConstructor();
-        $event = new ProfileEvent($profile);
+        $userProfile = (new ReflectionClass(\YiiRocks\Voyti\Entity\UserProfile::class))->newInstanceWithoutConstructor();
+        $event = new UserProfileEvent($userProfile);
 
-        $this->assertSame($profile, $event->getProfile());
+        $this->assertSame($userProfile, $event->getProfile());
     }
 }

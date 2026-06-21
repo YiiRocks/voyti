@@ -161,11 +161,11 @@ final class RecoveryFormTest extends TestCase
         $form = $this->createForm();
         $form->email = 'user@example.com';
         $form->password = 'secret123';
-        $form->gRecaptchaResponse = 'test-token';
+        $form->gRecaptchaResponse = 'test-userToken';
 
         $this->assertSame('user@example.com', $form->getPropertyValue('email'));
         $this->assertSame('secret123', $form->getPropertyValue('password'));
-        $this->assertSame('test-token', $form->getPropertyValue('gRecaptchaResponse'));
+        $this->assertSame('test-userToken', $form->getPropertyValue('gRecaptchaResponse'));
     }
 
     public function testResetScenarioDefaults(): void

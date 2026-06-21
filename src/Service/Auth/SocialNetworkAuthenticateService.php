@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service\Auth;
 
-use YiiRocks\Voyti\Entity\SocialNetworkAccount;
+use YiiRocks\Voyti\Entity\UserSocialAccount;
 use YiiRocks\Voyti\IdentityServiceInterface;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\SocialNetworkAccountRepository;
+use YiiRocks\Voyti\Repository\UserSocialAccountRepository;
 use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\ServiceResult;
 use Yiisoft\Session\SessionInterface;
 
-final class SocialNetworkAuthenticateService
+final class UserSocialAuthenticateService
 {
     public function __construct(
         private readonly ModuleConfig $config,
-        private readonly SocialNetworkAccountRepository $socialNetworkAccountRepository,
+        private readonly UserSocialAccountRepository $userSocialAccountRepository,
         private readonly UserRepository $userRepository,
         private readonly IdentityServiceInterface $identityService,
         private readonly SessionInterface $session,
@@ -41,7 +41,7 @@ final class SocialNetworkAuthenticateService
             return ServiceResult::failure('Unable to determine social network client ID');
         }
 
-        $account = $this->socialNetworkAccountRepository->findByProviderAndClientId($provider, $clientId);
+        $account = $this->userSocialAccountRepository->findByProviderAndClientId($provider, $clientId);
 
         if ($account === null) {
             $account = $this->createAccount($provider, $clientId, $userAttributes);
@@ -77,9 +77,9 @@ final class SocialNetworkAuthenticateService
     /**
      * @param array $attributes
      */
-    private function createAccount(string $provider, string $clientId, array $attributes): ?SocialNetworkAccount
+    private function createAccount(string $provider, string $clientId, array $attributes): ?UserSocialAccount
     {
-        $account = new SocialNetworkAccount();
+        $account = new UserSocialAccount();
         $account->setProvider($provider);
         $account->setClientId($clientId);
         $account->setUsername($attributes['username'] ?? ($attributes['name'] ?? null));
@@ -95,7 +95,7 @@ final class SocialNetworkAuthenticateService
             }
         }
 
-        if (!$this->socialNetworkAccountRepository->save($account)) {
+        if (!$this->userSocialAccountRepository->save($account)) {
             return null;
         }
 

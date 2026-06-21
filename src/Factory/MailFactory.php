@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Factory;
 
-use YiiRocks\Voyti\Entity\Token;
+use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Service\MailService;
 
@@ -20,19 +20,19 @@ final class MailFactory
         return $this->mailService;
     }
 
-    public function sendConfirmation(User $user, Token $token): bool
+    public function sendConfirmation(User $user, UserToken $userToken): bool
     {
-        return $this->mailService->sendConfirmation($user, $token);
+        return $this->mailService->sendConfirmation($user, $userToken);
     }
 
-    public function sendReconfirmation(User $user, Token $token): bool
+    public function sendReconfirmation(User $user, UserToken $userToken): bool
     {
-        return $this->mailService->sendReconfirmation($user, $token);
+        return $this->mailService->sendReconfirmation($user, $userToken);
     }
 
-    public function sendRecovery(string $email, Token $token): bool
+    public function sendRecovery(string $email, UserToken $userToken): bool
     {
-        return $this->mailService->sendRecovery($email, $token);
+        return $this->mailService->sendRecovery($email, $userToken);
     }
 
     public function sendTwoFactorCode(string $email, string $code): bool

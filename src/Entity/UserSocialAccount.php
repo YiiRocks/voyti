@@ -7,7 +7,7 @@ namespace YiiRocks\Voyti\Entity;
 use Yiisoft\ActiveRecord\ActiveRecord;
 use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
 
-final class SocialNetworkAccount extends ActiveRecord
+final class UserSocialAccount extends ActiveRecord
 {
     use PrivatePropertiesTrait;
     private string $clientId = '';
@@ -141,6 +141,6 @@ final class SocialNetworkAccount extends ActiveRecord
     #[\Override]
     public function tableName(): string
     {
-        return '{{%social_account}}';
+        return '{{%user_social_account}}';
     }
 }

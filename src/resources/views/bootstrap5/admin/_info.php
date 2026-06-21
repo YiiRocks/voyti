@@ -9,7 +9,7 @@ use Yiisoft\Translator\TranslatorInterface;
 
 /**
  * @var YiiRocks\Voyti\Entity\User $user
- * @var YiiRocks\Voyti\Entity\Profile $profile
+ * @var YiiRocks\Voyti\Entity\UserProfile $userProfile
  * @var YiiRocks\Voyti\ModuleConfig $config
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
@@ -23,7 +23,7 @@ echo Html::div()->class('voyti-admin-info')->open();
         echo Html::div()->open();
             echo Html::a($translator->translate('voyti.view.update_link', category: 'voyti'), $url->generate('voyti/admin-update', ['id' => $user->getId()]))->class('btn', 'btn-outline-secondary', 'btn-sm');
             echo ' ';
-            echo Html::a($translator->translate('voyti.view.update_profile_link', category: 'voyti'), $url->generate('voyti/admin-update-profile', ['id' => $user->getId()]))->class('btn', 'btn-outline-secondary', 'btn-sm');
+            echo Html::a($translator->translate('voyti.view.update_profile_link', category: 'voyti'), $url->generate('voyti/admin-update-userProfile', ['id' => $user->getId()]))->class('btn', 'btn-outline-secondary', 'btn-sm');
         echo Html::div()->close();
     echo Html::div()->close();
 
@@ -45,11 +45,11 @@ echo Html::div()->class('voyti-admin-info')->open();
 
     echo '    </dd>' . "\n";
 
-    if ($profile) {
+    if ($userProfile) {
         echo '    <dt class="col-sm-3">' . $translator->translate('voyti.view.name_label', category: 'voyti') . '</dt>' . "\n";
-        echo '    <dd class="col-sm-9">' . Html::encode($profile->getName() ?? '') . '</dd>' . "\n";
+        echo '    <dd class="col-sm-9">' . Html::encode($userProfile->getName() ?? '') . '</dd>' . "\n";
         echo '    <dt class="col-sm-3">' . $translator->translate('voyti.view.bio_label', category: 'voyti') . '</dt>' . "\n";
-        echo '    <dd class="col-sm-9">' . Html::encode($profile->getBio() ?? '') . '</dd>' . "\n";
+        echo '    <dd class="col-sm-9">' . Html::encode($userProfile->getBio() ?? '') . '</dd>' . "\n";
     }
 
     echo '</dl>' . "\n";

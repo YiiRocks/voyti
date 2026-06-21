@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Service\Password;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
-use YiiRocks\Voyti\Entity\Token;
+use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Helper\SecurityHelper;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\UserRepository;
@@ -36,14 +36,14 @@ final class RecoveryService
             return ServiceResult::success($this->translator->translate('voyti.recovery.message_sent_if_exists', category: 'voyti'));
         }
 
-        $token = new Token();
-        $token->setUserId($user->getId() !== null ? (int) $user->getId() : 0);
-        $token->setType(Token::TYPE_RECOVERY);
-        $token->setCreatedAt(time());
-        $token->setCode($this->securityHelper->generateRandomString(32));
-        $token->save();
+        $userToken = new UserToken();
+        $userToken->setUserId($user->getId() !== null ? (int) $user->getId() : 0);
+        $userToken->setType(UserToken::TYPE_RECOVERY);
+        $userToken->setCreatedAt(time());
+        $userToken->setCode($this->securityHelper->generateRandomString(32));
+        $userToken->save();
 
-        $this->mailService->sendRecovery($email, $token);
+        $this->mailService->sendRecovery($email, $userToken);
 
         return ServiceResult::success($this->translator->translate('voyti.recovery.message_sent', category: 'voyti'));
     }

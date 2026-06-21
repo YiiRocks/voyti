@@ -16,7 +16,7 @@ $url = $this->get('url');
 
 echo Html::ul()->class('nav nav-tabs mb-3')->open();
     echo Html::tag('li')->class('nav-item')->open();
-        echo Html::a($translator->translate('voyti.view.settings.profile', category: 'voyti'), $url->generate('voyti/settings'))->class('nav-link');
+        echo Html::a($translator->translate('voyti.view.settings.userProfile', category: 'voyti'), $url->generate('voyti/settings'))->class('nav-link');
     echo Html::tag('li')->close();
 
     echo Html::tag('li')->class('nav-item')->open();

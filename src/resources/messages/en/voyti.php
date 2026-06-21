@@ -44,8 +44,8 @@ return [
     'voyti.settings.data_exported' => 'Your data has been exported',
 
     // ProfileController
-    'voyti.profile.forbidden' => 'Forbidden',
-    'voyti.profile.not_found' => 'Profile not found',
+    'voyti.userProfile.forbidden' => 'Forbidden',
+    'voyti.userProfile.not_found' => 'Profile not found',
 
     // AdminController
     'voyti.admin.user_created' => 'User has been created',
@@ -118,7 +118,7 @@ return [
     'voyti.mail.your_twofactor_code' => 'Your two-factor authentication code is:',
 
     // Navigation / Menu
-    'voyti.menu.profile' => 'Profile',
+    'voyti.menu.userProfile' => 'Profile',
     'voyti.menu.account' => 'Account',
     'voyti.menu.networks' => 'Networks',
 
@@ -168,21 +168,21 @@ return [
     'voyti.view.recovery.reset_title' => 'Reset password',
     'voyti.view.recovery.reset_button' => 'Reset password',
 
-    // Profile view
-    'voyti.view.profile.email_label' => 'Email:',
-    'voyti.view.profile.name_label' => 'Name:',
-    'voyti.view.profile.location_label' => 'Location:',
-    'voyti.view.profile.bio_label' => 'Bio:',
+    // UserProfile view
+    'voyti.view.userProfile.email_label' => 'Email:',
+    'voyti.view.userProfile.name_label' => 'Name:',
+    'voyti.view.userProfile.location_label' => 'Location:',
+    'voyti.view.userProfile.bio_label' => 'Bio:',
 
     // Settings views
-    'voyti.view.profile.title' => 'Profile settings',
+    'voyti.view.userProfile.title' => 'Profile settings',
     'voyti.view.account.title' => 'Account settings',
     'voyti.view.networks.title' => 'Networks',
     'voyti.view.privacy.title' => 'Privacy',
     'voyti.view.privacy.manage_gdpr_consent' => 'Manage GDPR consent',
     'voyti.view.privacy.delete_data' => 'Delete my data',
     'voyti.view.settings.title' => 'Settings',
-    'voyti.view.settings.profile' => 'Profile',
+    'voyti.view.settings.userProfile' => 'Profile',
     'voyti.view.settings.account' => 'Account',
     'voyti.view.settings.networks' => 'Networks',
     'voyti.view.settings.privacy' => 'Privacy',

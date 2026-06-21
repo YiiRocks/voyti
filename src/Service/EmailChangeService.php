@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service;
 
-use YiiRocks\Voyti\Entity\Token;
+use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\TokenRepository;
+use YiiRocks\Voyti\Repository\UserUserTokenRepository;
 use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Strategy\MailChangeStrategyInterface;
 
@@ -15,28 +15,28 @@ final class EmailChangeService
 {
     public function __construct(
         private readonly ModuleConfig $config,
-        private readonly TokenRepository $tokenRepository,
+        private readonly UserTokenRepository $userTokenRepository,
         private readonly UserRepository $userRepository,
     ) {
     }
 
     public function run(string $code, User $user): bool|null
     {
-        $token = $this->tokenRepository->findByUserIdAndCode(
+        $userToken = $this->userTokenRepository->findByUserIdAndCode(
             $user->getId() !== null ? (int) $user->getId() : 0,
             $code,
         );
 
-        if ($token === null || !in_array($token->getType(), [Token::TYPE_CONFIRM_NEW_EMAIL, Token::TYPE_CONFIRM_OLD_EMAIL], true)) {
+        if ($userToken === null || !in_array($userToken->getType(), [UserToken::TYPE_CONFIRM_NEW_EMAIL, UserToken::TYPE_CONFIRM_OLD_EMAIL], true)) {
             return false;
         }
 
-        if ($token->getIsExpired()) {
-            $token->delete();
+        if ($userToken->getIsExpired()) {
+            $userToken->delete();
             return false;
         }
 
-        $token->delete();
+        $userToken->delete();
 
         if ($user->getUnconfirmedEmail() === null) {
             return false;
@@ -48,12 +48,12 @@ final class EmailChangeService
         }
 
         if ($this->config->emailChangeStrategy === MailChangeStrategyInterface::TYPE_SECURE) {
-            if ($token->getType() === Token::TYPE_CONFIRM_NEW_EMAIL) {
+            if ($userToken->getType() === UserToken::TYPE_CONFIRM_NEW_EMAIL) {
                 $user->setFlags($user->getFlags() | User::NEW_EMAIL_CONFIRMED);
                 $user->save();
                 return true;
             }
-            if ($token->getType() === Token::TYPE_CONFIRM_OLD_EMAIL) {
+            if ($userToken->getType() === UserToken::TYPE_CONFIRM_OLD_EMAIL) {
                 $user->setFlags($user->getFlags() | User::OLD_EMAIL_CONFIRMED);
             }
         }

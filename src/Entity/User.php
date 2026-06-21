@@ -130,10 +130,10 @@ final class User extends ActiveRecord implements IdentityInterface
         return $this->passwordHash;
     }
 
-    public function getProfile(): ?Profile
+    public function getProfile(): ?UserProfile
     {
-        /** @var ?Profile */
-        return $this->hasOne(Profile::class, ['user_id' => 'id']);
+        /** @var ?UserProfile */
+        return $this->hasOne(UserProfile::class, ['user_id' => 'id']);
     }
 
     public function getRegistrationIp(): ?string
@@ -143,12 +143,12 @@ final class User extends ActiveRecord implements IdentityInterface
 
     public function getSocialNetworkAccounts(): \Yiisoft\ActiveRecord\ActiveQueryInterface
     {
-        return $this->hasMany(SocialNetworkAccount::class, ['user_id' => 'id']);
+        return $this->hasMany(UserSocialAccount::class, ['user_id' => 'id']);
     }
 
     public function getTokens(): array
     {
-        return $this->hasMany(Token::class, ['user_id' => 'id'])->all();
+        return $this->hasMany(UserToken::class, ['user_id' => 'id'])->all();
     }
 
     public function getUnconfirmedEmail(): ?string

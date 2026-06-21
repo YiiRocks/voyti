@@ -6,7 +6,7 @@ namespace YiiRocks\Voyti\Strategy;
 
 use InvalidArgumentException;
 use YiiRocks\Voyti\Factory\MailFactory;
-use YiiRocks\Voyti\Factory\TokenFactory;
+use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
 
 final class EmailChangeStrategyFactory
@@ -18,7 +18,7 @@ final class EmailChangeStrategyFactory
     ];
 
     public function __construct(
-        private readonly TokenFactory $tokenFactory,
+        private readonly UserTokenFactory $tokenFactory,
         private readonly MailFactory $mailFactory,
     ) {
     }

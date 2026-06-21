@@ -11,7 +11,7 @@ use YiiRocks\Voyti\Event\User\FormEvent;
 use YiiRocks\Voyti\Form\Auth\RegistrationForm;
 use YiiRocks\Voyti\Form\Auth\ResendForm;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\TokenRepository;
+use YiiRocks\Voyti\Repository\UserUserTokenRepository;
 use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\User\AccountConfirmationService;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
@@ -32,7 +32,7 @@ final class RegistrationController
         private readonly WebViewRenderer $viewRenderer,
         private readonly RegisterService $userRegisterService,
         private readonly UserRepository $userRepository,
-        private readonly TokenRepository $tokenRepository,
+        private readonly UserTokenRepository $userTokenRepository,
         private readonly ConfirmationService $userConfirmationService,
         private readonly AccountConfirmationService $accountConfirmationService,
         private readonly ResendConfirmationService $resendConfirmationService,

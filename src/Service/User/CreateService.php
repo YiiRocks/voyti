@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Service\User;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
-use YiiRocks\Voyti\Entity\Profile;
-use YiiRocks\Voyti\Entity\Token;
+use YiiRocks\Voyti\Entity\UserProfile;
+use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Event\Auth\AfterRegisterEvent;
 use YiiRocks\Voyti\Event\User\UserEvent;
@@ -39,20 +39,20 @@ final class CreateService
 
         $this->eventDispatcher->dispatch(new UserEvent($user));
 
-        $profile = new Profile();
-        $profile->setUserId(null);
+        $userProfile = new UserProfile();
+        $userProfile->setUserId(null);
 
         if ($this->config->enableEmailConfirmation) {
-            $token = new Token();
-            $token->setType(Token::TYPE_CONFIRMATION);
-            $token->setCreatedAt(time());
-            $token->setCode($this->securityHelper->generateRandomString(32));
+            $userToken = new UserToken();
+            $userToken->setType(UserToken::TYPE_CONFIRMATION);
+            $userToken->setCreatedAt(time());
+            $userToken->setCode($this->securityHelper->generateRandomString(32));
 
-            $this->userRepository->saveWithProfileAndToken($user, $profile, $token);
-            $this->mailService->sendConfirmation($user, $token);
+            $this->userRepository->saveWithProfileAndToken($user, $userProfile, $userToken);
+            $this->mailService->sendConfirmation($user, $userToken);
         } else {
             $user->setConfirmedAt(time());
-            $this->userRepository->saveWithProfile($user, $profile);
+            $this->userRepository->saveWithProfile($user, $userProfile);
             $this->mailService->sendWelcome($user, $password);
         }
 

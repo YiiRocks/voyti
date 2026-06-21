@@ -8,7 +8,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\ProfileRepository;
+use YiiRocks\Voyti\Repository\UserUserProfileRepository;
 use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -27,7 +27,7 @@ final class ProfileController
         private readonly TranslatorInterface $translator,
         private readonly WebViewRenderer $viewRenderer,
         private readonly UrlGeneratorInterface $url,
-        private readonly ProfileRepository $profileRepository,
+        private readonly UserProfileRepository $userProfileRepository,
         private readonly AuthHelper $authHelper,
         private readonly ModuleConfig $config,
     ) {
@@ -41,30 +41,30 @@ final class ProfileController
         switch ($this->config->profileVisibility) {
             case self::PROFILE_VISIBILITY_OWNER:
                 if ($userId === null || $id !== $userId) {
-                    return $this->renderError('voyti.profile.forbidden');
+                    return $this->renderError('voyti.userProfile.forbidden');
                 }
                 break;
             case self::PROFILE_VISIBILITY_ADMIN:
                 if ($id !== $userId && !$this->isAdmin($identity)) {
-                    return $this->renderError('voyti.profile.forbidden');
+                    return $this->renderError('voyti.userProfile.forbidden');
                 }
                 break;
             case self::PROFILE_VISIBILITY_USERS:
                 if ($userId === null) {
-                    return $this->renderError('voyti.profile.forbidden');
+                    return $this->renderError('voyti.userProfile.forbidden');
                 }
                 break;
             case self::PROFILE_VISIBILITY_PUBLIC:
                 break;
         }
 
-        $profile = $this->profileRepository->findByUserId($id);
+        $userProfile = $this->userProfileRepository->findByUserId($id);
 
-        if ($profile === null) {
-            return $this->renderError('voyti.profile.not_found');
+        if ($userProfile === null) {
+            return $this->renderError('voyti.userProfile.not_found');
         }
 
-        return $this->renderView('profile/show', ['profile' => $profile]);
+        return $this->renderView('userProfile/show', ['userProfile' => $userProfile]);
     }
 
     private function isAdmin(?IdentityInterface $identity): bool

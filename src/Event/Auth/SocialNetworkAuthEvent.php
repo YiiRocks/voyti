@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Event\Auth;
 
-use YiiRocks\Voyti\Entity\SocialNetworkAccount;
+use YiiRocks\Voyti\Entity\UserSocialAccount;
 
-final class SocialNetworkAuthEvent
+final class UserSocialAuthEvent
 {
     public const AFTER_AUTHENTICATE = 'afterAuthenticate';
     public const AFTER_CONNECT = 'afterConnect';
@@ -14,12 +14,12 @@ final class SocialNetworkAuthEvent
     public const BEFORE_CONNECT = 'beforeConnect';
 
     public function __construct(
-        private readonly SocialNetworkAccount $account,
+        private readonly UserSocialAccount $account,
         private readonly \Yiisoft\Auth\Client\ClientInterface $client,
     ) {
     }
 
-    public function getAccount(): SocialNetworkAccount
+    public function getAccount(): UserSocialAccount
     {
         return $this->account;
     }

@@ -28,6 +28,6 @@ final class Yandex
 
     public function getTokenUrl(): string
     {
-        return 'https://oauth.yandex.com/token';
+        return 'https://oauth.yandex.com/userToken';
     }
 }

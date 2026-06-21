@@ -4,27 +4,27 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service\Auth;
 
-use YiiRocks\Voyti\Entity\SocialNetworkAccount;
-use YiiRocks\Voyti\Repository\SocialNetworkAccountRepository;
+use YiiRocks\Voyti\Entity\UserSocialAccount;
+use YiiRocks\Voyti\Repository\UserSocialAccountRepository;
 use YiiRocks\Voyti\Service\ServiceResult;
 
-final class SocialNetworkAccountConnectService
+final class UserSocialAccountConnectService
 {
     public function __construct(
-        private readonly SocialNetworkAccountRepository $socialNetworkAccountRepository,
+        private readonly UserSocialAccountRepository $userSocialAccountRepository,
     ) {
     }
 
     public function run(string $provider, string $clientId, array $userAttributes, int $userId): ServiceResult
     {
-        $account = $this->socialNetworkAccountRepository->findByProviderAndClientId($provider, $clientId);
+        $account = $this->userSocialAccountRepository->findByProviderAndClientId($provider, $clientId);
 
         if ($account !== null && $account->getUserId() !== null) {
             return ServiceResult::failure('This account has already been connected to another user');
         }
 
         if ($account === null) {
-            $account = new SocialNetworkAccount();
+            $account = new UserSocialAccount();
             $account->setProvider($provider);
             $account->setClientId($clientId);
             $account->setCode(json_encode($userAttributes, JSON_THROW_ON_ERROR));
@@ -35,7 +35,7 @@ final class SocialNetworkAccountConnectService
         $account->setEmail(null);
         $account->setCode(null);
 
-        if (!$this->socialNetworkAccountRepository->save($account)) {
+        if (!$this->userSocialAccountRepository->save($account)) {
             return ServiceResult::failure('Unable to connect social network account');
         }
 

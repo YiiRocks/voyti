@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace YiiRocks\Voyti\Service\SessionHistory;
+namespace YiiRocks\Voyti\Service\UserSessionHistory;
 
-use YiiRocks\Voyti\Entity\SessionHistory;
+use YiiRocks\Voyti\Entity\UserSessionHistory;
 use Yiisoft\ActiveRecord\ActiveQuery;
 
 final class TerminateUserSessionsService
@@ -15,7 +15,7 @@ final class TerminateUserSessionsService
 
     public function run(int $userId): void
     {
-        (new ActiveQuery(SessionHistory::class))
+        (new ActiveQuery(UserSessionHistory::class))
             ->where(['user_id' => $userId])
             ->delete();
     }

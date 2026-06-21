@@ -13,10 +13,10 @@ use YiiRocks\Voyti\Form\Auth\LoginForm;
 use YiiRocks\Voyti\Helper\SecurityHelper;
 use YiiRocks\Voyti\IdentityServiceInterface;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\SocialNetworkAccountRepository;
+use YiiRocks\Voyti\Repository\UserSocialAccountRepository;
 use YiiRocks\Voyti\Repository\UserRepository;
-use YiiRocks\Voyti\Service\Auth\SocialNetworkAccountConnectService;
-use YiiRocks\Voyti\Service\Auth\SocialNetworkAuthenticateService;
+use YiiRocks\Voyti\Service\Auth\UserSocialAccountConnectService;
+use YiiRocks\Voyti\Service\Auth\UserSocialAuthenticateService;
 use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\Http\Method;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -40,9 +40,9 @@ final class SecurityController
         private readonly UrlGeneratorInterface $url,
         private readonly SessionInterface $session,
         private readonly ModuleConfig $config,
-        private readonly SocialNetworkAuthenticateService $socialNetworkAuthenticateService,
-        private readonly SocialNetworkAccountConnectService $socialNetworkAccountConnectService,
-        private readonly SocialNetworkAccountRepository $socialNetworkAccountRepository,
+        private readonly UserSocialAuthenticateService $socialNetworkAuthenticateService,
+        private readonly UserSocialAccountConnectService $socialNetworkAccountConnectService,
+        private readonly UserSocialAccountRepository $userSocialAccountRepository,
     ) {
     }
 

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-use YiiRocks\Voyti\Entity\SocialNetworkAccount;
+use YiiRocks\Voyti\Entity\UserSocialAccount;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 
 /**
- * @var SocialNetworkAccount $account
+ * @var UserSocialAccount $account
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
  */

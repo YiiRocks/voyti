@@ -9,10 +9,10 @@ use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\IdentityService\CurrentUserIdentityService;
 use YiiRocks\Voyti\IdentityServiceInterface;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\ProfileRepository;
-use YiiRocks\Voyti\Repository\SessionHistoryRepository;
-use YiiRocks\Voyti\Repository\SocialNetworkAccountRepository;
-use YiiRocks\Voyti\Repository\TokenRepository;
+use YiiRocks\Voyti\Repository\UserProfileRepository;
+use YiiRocks\Voyti\Repository\UserSessionHistoryRepository;
+use YiiRocks\Voyti\Repository\UserSocialAccountRepository;
+use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Repository\UserRepository;
 use Yiisoft\Aliases\Aliases;
 use Yiisoft\Rbac\AssignmentsStorageInterface;
@@ -28,10 +28,10 @@ return [
     IdentityServiceInterface::class => CurrentUserIdentityService::class,
 
     UserRepository::class => UserRepository::class,
-    ProfileRepository::class => ProfileRepository::class,
-    TokenRepository::class => TokenRepository::class,
-    SocialNetworkAccountRepository::class => SocialNetworkAccountRepository::class,
-    SessionHistoryRepository::class => SessionHistoryRepository::class,
+    UserProfileRepository::class => UserProfileRepository::class,
+    UserTokenRepository::class => UserTokenRepository::class,
+    UserSocialAccountRepository::class => UserSocialAccountRepository::class,
+    UserSessionHistoryRepository::class => UserSessionHistoryRepository::class,
 
     SecurityHelper::class => SecurityHelper::class,
     AuthHelper::class => fn (
@@ -68,10 +68,10 @@ return [
         Aliases $aliases
     ) => new \YiiRocks\Voyti\Service\MailService($mailer, $config->mailParams, $aliases),
     \YiiRocks\Voyti\Service\User\AccountConfirmationService::class => fn (
-        TokenRepository $tokenRepository
+        UserTokenRepository $tokenRepository
     ) => new \YiiRocks\Voyti\Service\User\AccountConfirmationService($tokenRepository),
     \YiiRocks\Voyti\Service\User\ResendConfirmationService::class => fn (
-        TokenRepository $tokenRepository,
+        UserTokenRepository $tokenRepository,
         \YiiRocks\Voyti\Service\MailService $mailService,
         SecurityHelper $securityHelper
     ) => new \YiiRocks\Voyti\Service\User\ResendConfirmationService($tokenRepository, $mailService, $securityHelper),
@@ -89,7 +89,7 @@ return [
         SecurityHelper $securityHelper,
         ModuleConfig $config,
         \Psr\EventDispatcher\EventDispatcherInterface $eventDispatcher,
-        TokenRepository $tokenRepository
+        UserTokenRepository $tokenRepository
     ) => new \YiiRocks\Voyti\Service\Password\ResetService($securityHelper, $config, $eventDispatcher, $tokenRepository),
     \YiiRocks\Voyti\Service\User\CreateService::class => \YiiRocks\Voyti\Service\User\CreateService::class,
     \YiiRocks\Voyti\Service\User\RegisterService::class => \YiiRocks\Voyti\Service\User\RegisterService::class,
@@ -99,11 +99,11 @@ return [
     ) => new \YiiRocks\Voyti\Service\User\BlockService($securityHelper, $eventDispatcher),
     \YiiRocks\Voyti\Service\User\ConfirmationService::class => fn (
         \Psr\EventDispatcher\EventDispatcherInterface $eventDispatcher,
-        TokenRepository $tokenRepository
+        UserTokenRepository $tokenRepository
     ) => new \YiiRocks\Voyti\Service\User\ConfirmationService($eventDispatcher, $tokenRepository),
     \YiiRocks\Voyti\Service\EmailChangeService::class => fn (
         ModuleConfig $config,
-        TokenRepository $tokenRepository,
+        UserTokenRepository $tokenRepository,
         UserRepository $userRepository
     ) => new \YiiRocks\Voyti\Service\EmailChangeService($config, $tokenRepository, $userRepository),
     \YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService::class => fn (
@@ -124,7 +124,7 @@ return [
 
     \YiiRocks\Voyti\Service\Auth\SocialNetworkAuthenticateService::class => fn (
         ModuleConfig $config,
-        SocialNetworkAccountRepository $socialNetworkAccountRepository,
+        UserSocialAccountRepository $socialNetworkAccountRepository,
         UserRepository $userRepository,
         IdentityServiceInterface $identityService,
         SessionInterface $session

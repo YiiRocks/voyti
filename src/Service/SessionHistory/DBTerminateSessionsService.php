@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace YiiRocks\Voyti\Service\SessionHistory;
+namespace YiiRocks\Voyti\Service\UserSessionHistory;
 
 use Yiisoft\Db\Connection\ConnectionInterface;
 
-final class DBTerminateSessionsService
+final class DBTerminateUserSessionsService
 {
     public function __construct(
         private readonly ConnectionInterface $db,
@@ -15,7 +15,7 @@ final class DBTerminateSessionsService
 
     public function run(int $userId): void
     {
-        $this->db->createCommand('DELETE FROM {{%session_history}} WHERE user_id = :userId', [
+        $this->db->createCommand('DELETE FROM {{%user_session_history}} WHERE user_id = :userId', [
             ':userId' => $userId,
         ])->execute();
     }

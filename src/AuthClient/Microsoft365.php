@@ -18,7 +18,7 @@ final class Microsoft365
 
     public function getScope(): string
     {
-        return 'openid profile email';
+        return 'openid userProfile email';
     }
 
     public function getTitle(): string
@@ -28,6 +28,6 @@ final class Microsoft365
 
     public function getTokenUrl(): string
     {
-        return 'https://login.microsoftonline.com/common/oauth2/v2.0/token';
+        return 'https://login.microsoftonline.com/common/oauth2/v2.0/userToken';
     }
 }

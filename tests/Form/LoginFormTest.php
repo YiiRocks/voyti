@@ -113,13 +113,13 @@ final class LoginFormTest extends TestCase
         $form->password = 'secret123';
         $form->rememberMe = true;
         $form->twoFactorAuthenticationCode = '654321';
-        $form->gRecaptchaResponse = 'test-token';
+        $form->gRecaptchaResponse = 'test-userToken';
 
         $this->assertSame('testuser', $form->getPropertyValue('login'));
         $this->assertSame('secret123', $form->getPropertyValue('password'));
         $this->assertTrue($form->getPropertyValue('rememberMe'));
         $this->assertSame('654321', $form->getPropertyValue('twoFactorAuthenticationCode'));
-        $this->assertSame('test-token', $form->getPropertyValue('gRecaptchaResponse'));
+        $this->assertSame('test-userToken', $form->getPropertyValue('gRecaptchaResponse'));
     }
 
     public function testPropertyLabels(): void

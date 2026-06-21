@@ -44,8 +44,8 @@ return [
     'voyti.settings.data_exported' => 'Ваши данные экспортированы',
 
     // ProfileController
-    'voyti.profile.forbidden' => 'Доступ запрещён',
-    'voyti.profile.not_found' => 'Профиль не найден',
+    'voyti.userProfile.forbidden' => 'Доступ запрещён',
+    'voyti.userProfile.not_found' => 'Профиль не найден',
 
     // AdminController
     'voyti.admin.user_created' => 'Пользователь создан',
@@ -118,7 +118,7 @@ return [
     'voyti.mail.your_twofactor_code' => 'Ваш код двухфакторной аутентификации:',
 
     // Navigation / Menu
-    'voyti.menu.profile' => 'Профиль',
+    'voyti.menu.userProfile' => 'Профиль',
     'voyti.menu.account' => 'Аккаунт',
     'voyti.menu.networks' => 'Сети',
 
@@ -168,21 +168,21 @@ return [
     'voyti.view.recovery.reset_title' => 'Сброс пароля',
     'voyti.view.recovery.reset_button' => 'Сбросить пароль',
 
-    // Profile view
-    'voyti.view.profile.email_label' => 'Email:',
-    'voyti.view.profile.name_label' => 'Имя:',
-    'voyti.view.profile.location_label' => 'Местоположение:',
-    'voyti.view.profile.bio_label' => 'О себе:',
+    // UserProfile view
+    'voyti.view.userProfile.email_label' => 'Email:',
+    'voyti.view.userProfile.name_label' => 'Имя:',
+    'voyti.view.userProfile.location_label' => 'Местоположение:',
+    'voyti.view.userProfile.bio_label' => 'О себе:',
 
     // Settings views
-    'voyti.view.profile.title' => 'Настройки профиля',
+    'voyti.view.userProfile.title' => 'Настройки профиля',
     'voyti.view.account.title' => 'Настройки аккаунта',
     'voyti.view.networks.title' => 'Сети',
     'voyti.view.privacy.title' => 'Конфиденциальность',
     'voyti.view.privacy.manage_gdpr_consent' => 'Управление согласием GDPR',
     'voyti.view.privacy.delete_data' => 'Удалить мои данные',
     'voyti.view.settings.title' => 'Настройки',
-    'voyti.view.settings.profile' => 'Профиль',
+    'voyti.view.settings.userProfile' => 'Профиль',
     'voyti.view.settings.account' => 'Аккаунт',
     'voyti.view.settings.networks' => 'Сети',
     'voyti.view.settings.privacy' => 'Конфиденциальность',

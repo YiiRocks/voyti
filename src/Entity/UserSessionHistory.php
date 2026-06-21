@@ -7,7 +7,7 @@ namespace YiiRocks\Voyti\Entity;
 use Yiisoft\ActiveRecord\ActiveRecord;
 use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
 
-final class SessionHistory extends ActiveRecord
+final class UserSessionHistory extends ActiveRecord
 {
     use PrivatePropertiesTrait;
     private int $createdAt = 0;
@@ -92,6 +92,6 @@ final class SessionHistory extends ActiveRecord
     #[\Override]
     public function tableName(): string
     {
-        return '{{%session_history}}';
+        return '{{%user_session_history}}';
     }
 }

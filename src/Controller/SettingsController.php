@@ -7,16 +7,16 @@ namespace YiiRocks\Voyti\Controller;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use YiiRocks\Voyti\Entity\Profile;
+use YiiRocks\Voyti\Entity\UserProfile;
 use YiiRocks\Voyti\Event\Gdpr\GdprEvent;
 use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Form\Settings\GdprDeleteForm;
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Helper\SecurityHelper;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\ProfileRepository;
-use YiiRocks\Voyti\Repository\SocialNetworkAccountRepository;
-use YiiRocks\Voyti\Repository\TokenRepository;
+use YiiRocks\Voyti\Repository\UserProfileRepository;
+use YiiRocks\Voyti\Repository\UserSocialAccountRepository;
+use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\EmailChangeService;
 use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
@@ -36,8 +36,8 @@ final class SettingsController
         private readonly TranslatorInterface $translator,
         private readonly WebViewRenderer $viewRenderer,
         private readonly UserRepository $userRepository,
-        private readonly ProfileRepository $profileRepository,
-        private readonly SocialNetworkAccountRepository $socialNetworkAccountRepository,
+        private readonly UserProfileRepository $userProfileRepository,
+        private readonly UserSocialAccountRepository $userSocialAccountRepository,
         private readonly SecurityHelper $securityHelper,
         private readonly ValidatorInterface $validator,
         private readonly EventDispatcherInterface $eventDispatcher,
@@ -46,7 +46,7 @@ final class SettingsController
         private readonly EmailChangeStrategyFactory $emailChangeStrategyFactory,
         private readonly QrCodeUriGeneratorService $twoFactorQrCodeService,
         private readonly EmailChangeService $emailChangeService,
-        private readonly TokenRepository $tokenRepository,
+        private readonly UserTokenRepository $userTokenRepository,
     ) {
     }
 
@@ -143,9 +143,9 @@ final class SettingsController
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated', category: 'voyti'), 'translator' => $this->translator]);
         }
 
-        $account = $this->socialNetworkAccountRepository->findByProviderAndClientId('', '');
+        $account = $this->userSocialAccountRepository->findByProviderAndClientId('', '');
         if ($account === null) {
-            $accounts = $this->socialNetworkAccountRepository->findByUserId((int) ($identity->getId() ?? 0));
+            $accounts = $this->userSocialAccountRepository->findByUserId((int) ($identity->getId() ?? 0));
             foreach ($accounts as $a) {
                 if ($a->getId() === $id) {
                     $account = $a;
@@ -182,10 +182,10 @@ final class SettingsController
         foreach ($this->config->gdprExportProperties as $property) {
             if (str_contains($property, '.')) {
                 [$relation, $field] = explode('.', $property, 2);
-                if ($relation === 'profile') {
-                    $profile = $user->getProfile();
-                    if ($profile !== null) {
-                        $data[$property] = $profile->getPropertyValue($field);
+                if ($relation === 'userProfile') {
+                    $userProfile = $user->getProfile();
+                    if ($userProfile !== null) {
+                        $data[$property] = $userProfile->getPropertyValue($field);
                     }
                 }
             } else {
@@ -269,7 +269,7 @@ final class SettingsController
         return $this->renderView('settings/privacy', ['config' => $this->config]);
     }
 
-    public function profile(ServerRequestInterface $request): ResponseInterface
+    public function userProfile(ServerRequestInterface $request): ResponseInterface
     {
         $identity = $request->getAttribute(IdentityInterface::class);
         if ($identity === null) {
@@ -281,21 +281,21 @@ final class SettingsController
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found', category: 'voyti'), 'translator' => $this->translator]);
         }
 
-        $profile = $user->getProfile();
-        if ($profile === null) {
-            $profile = new Profile();
-            $profile->setUserId((int) ($user->getId() ?? 0));
+        $userProfile = $user->getProfile();
+        if ($userProfile === null) {
+            $userProfile = new UserProfile();
+            $userProfile->setUserId((int) ($user->getId() ?? 0));
         }
 
         if ($request->getMethod() === Method::POST) {
             $body = $request->getParsedBody();
-            $profile->load($body, 'profile');
-            if ($profile->save()) {
+            $userProfile->load($body, 'userProfile');
+            if ($userProfile->save()) {
                 return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.profile_updated', category: 'voyti'), 'translator' => $this->translator]);
             }
         }
 
-        return $this->renderView('settings/profile', ['model' => $profile, 'config' => $this->config]);
+        return $this->renderView('settings/userProfile', ['model' => $userProfile, 'config' => $this->config]);
     }
 
     public function twoFactor(ServerRequestInterface $request): ResponseInterface

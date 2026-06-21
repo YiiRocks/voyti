@@ -7,7 +7,7 @@ namespace YiiRocks\Voyti\Entity;
 use Yiisoft\ActiveRecord\ActiveRecord;
 use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
 
-final class Token extends ActiveRecord
+final class UserToken extends ActiveRecord
 {
     use PrivatePropertiesTrait;
     public const TYPE_CONFIRM_NEW_EMAIL = 2;
@@ -87,6 +87,6 @@ final class Token extends ActiveRecord
     #[\Override]
     public function tableName(): string
     {
-        return '{{%token}}';
+        return '{{%user_token}}';
     }
 }

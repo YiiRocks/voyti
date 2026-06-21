@@ -44,8 +44,8 @@ return [
     'voyti.settings.data_exported' => 'Uw gegevens zijn geëxporteerd',
 
     // ProfileController
-    'voyti.profile.forbidden' => 'Verboden',
-    'voyti.profile.not_found' => 'Profiel niet gevonden',
+    'voyti.userProfile.forbidden' => 'Verboden',
+    'voyti.userProfile.not_found' => 'Profiel niet gevonden',
 
     // AdminController
     'voyti.admin.user_created' => 'Gebruiker is aangemaakt',
@@ -118,7 +118,7 @@ return [
     'voyti.mail.your_twofactor_code' => 'Uw tweefactorauthenticatiecode is:',
 
     // Navigation / Menu
-    'voyti.menu.profile' => 'Profiel',
+    'voyti.menu.userProfile' => 'Profiel',
     'voyti.menu.account' => 'Account',
     'voyti.menu.networks' => 'Netwerken',
 
@@ -168,21 +168,21 @@ return [
     'voyti.view.recovery.reset_title' => 'Wachtwoord resetten',
     'voyti.view.recovery.reset_button' => 'Wachtwoord resetten',
 
-    // Profile view
-    'voyti.view.profile.email_label' => 'E-mail:',
-    'voyti.view.profile.name_label' => 'Naam:',
-    'voyti.view.profile.location_label' => 'Locatie:',
-    'voyti.view.profile.bio_label' => 'Bio:',
+    // UserProfile view
+    'voyti.view.userProfile.email_label' => 'E-mail:',
+    'voyti.view.userProfile.name_label' => 'Naam:',
+    'voyti.view.userProfile.location_label' => 'Locatie:',
+    'voyti.view.userProfile.bio_label' => 'Bio:',
 
     // Settings views
-    'voyti.view.profile.title' => 'Profielinstellingen',
+    'voyti.view.userProfile.title' => 'Profielinstellingen',
     'voyti.view.account.title' => 'Accountinstellingen',
     'voyti.view.networks.title' => 'Netwerken',
     'voyti.view.privacy.title' => 'Privacy',
     'voyti.view.privacy.manage_gdpr_consent' => 'AVG-toestemming beheren',
     'voyti.view.privacy.delete_data' => 'Mijn gegevens verwijderen',
     'voyti.view.settings.title' => 'Instellingen',
-    'voyti.view.settings.profile' => 'Profiel',
+    'voyti.view.settings.userProfile' => 'Profiel',
     'voyti.view.settings.account' => 'Account',
     'voyti.view.settings.networks' => 'Netwerken',
     'voyti.view.settings.privacy' => 'Privacy',

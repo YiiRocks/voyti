@@ -123,12 +123,12 @@ final class ModuleConfigTest extends TestCase
         $this->assertSame([
             'email',
             'username',
-            'profile.public_email',
-            'profile.name',
-            'profile.gravatar_email',
-            'profile.location',
-            'profile.website',
-            'profile.bio',
+            'userProfile.public_email',
+            'userProfile.name',
+            'userProfile.gravatar_email',
+            'userProfile.location',
+            'userProfile.website',
+            'userProfile.bio',
         ], $config->gdprExportProperties);
         $this->assertSame('GDPR', $config->gdprAnonymizePrefix);
         $this->assertFalse($config->gdprRequireConsentToAll);

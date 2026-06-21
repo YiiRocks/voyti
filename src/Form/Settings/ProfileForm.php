@@ -7,7 +7,7 @@ namespace YiiRocks\Voyti\Form\Settings;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
 
-final class ProfileForm extends FormModel
+final class UserProfileForm extends FormModel
 {
     public string $bio = '';
     public string $name = '';
@@ -40,6 +40,6 @@ final class ProfileForm extends FormModel
     #[\Override]
     public function getFormName(): string
     {
-        return 'profile';
+        return 'userProfile';
     }
 }

@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Event\User;
 
-use YiiRocks\Voyti\Entity\Profile;
+use YiiRocks\Voyti\Entity\UserProfile;
 
-final class ProfileEvent
+final class UserProfileEvent
 {
     public function __construct(
-        private readonly Profile $profile,
+        private readonly UserProfile $userProfile,
     ) {
     }
 
-    public function getProfile(): Profile
+    public function getProfile(): UserProfile
     {
-        return $this->profile;
+        return $this->userProfile;
     }
 }

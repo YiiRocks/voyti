@@ -27,7 +27,7 @@ final class Keycloak
 
     public function getScope(): string
     {
-        return 'openid profile email';
+        return 'openid userProfile email';
     }
 
     public function getTitle(): string
@@ -37,6 +37,6 @@ final class Keycloak
 
     public function getTokenUrl(): string
     {
-        return "{$this->baseUrl}/realms/{$this->realm}/protocol/openid-connect/token";
+        return "{$this->baseUrl}/realms/{$this->realm}/protocol/openid-connect/userToken";
     }
 }

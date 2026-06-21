@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace YiiRocks\Voyti\Service\SessionHistory;
+namespace YiiRocks\Voyti\Service\UserSessionHistory;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
-use YiiRocks\Voyti\Entity\SessionHistory;
+use YiiRocks\Voyti\Entity\UserSessionHistory;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Session\SessionInterface;
 
-final class SessionHistoryDecorator
+final class UserSessionHistoryDecorator
 {
     public function __construct(
         private readonly EventDispatcherInterface $eventDispatcher,
@@ -25,14 +25,14 @@ final class SessionHistoryDecorator
             return;
         }
 
-        $sessionHistory = new SessionHistory();
-        $sessionHistory->setUserId($user->getId() !== null ? (int) $user->getId() : 0);
-        $sessionHistory->setSessionId($this->session?->getId() ?? '');
-        $sessionHistory->setIp($this->config->disableIpLogging ? '127.0.0.1' : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1'));
-        $sessionHistory->setUserAgent($_SERVER['HTTP_USER_AGENT'] ?? null);
-        $sessionHistory->setCreatedAt(time());
-        $sessionHistory->setUpdatedAt(time());
-        $sessionHistory->save();
+        $userSessionHistory = new UserSessionHistory();
+        $userSessionHistory->setUserId($user->getId() !== null ? (int) $user->getId() : 0);
+        $userSessionHistory->setSessionId($this->session?->getId() ?? '');
+        $userSessionHistory->setIp($this->config->disableIpLogging ? '127.0.0.1' : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1'));
+        $userSessionHistory->setUserAgent($_SERVER['HTTP_USER_AGENT'] ?? null);
+        $userSessionHistory->setCreatedAt(time());
+        $userSessionHistory->setUpdatedAt(time());
+        $userSessionHistory->save();
 
         $this->pruneOldSessions($user);
     }
@@ -41,7 +41,7 @@ final class SessionHistoryDecorator
     {
         if ($this->config->hasNumberSessionHistory()) {
             $userId = $user->getId() !== null ? (int) $user->getId() : 0;
-            $sessions = SessionHistory::query()
+            $sessions = UserSessionHistory::query()
                 ->where(['user_id' => $userId])
                 ->orderBy(['created_at' => 'DESC'])
                 ->all();

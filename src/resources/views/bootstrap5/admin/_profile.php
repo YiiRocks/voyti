@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-use YiiRocks\Voyti\Form\Settings\ProfileForm;
+use YiiRocks\Voyti\Form\Settings\UserProfileForm;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 
 /**
- * @var ProfileForm $model
+ * @var UserProfileForm $model
  * @var YiiRocks\Voyti\Entity\User $user
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
@@ -19,11 +19,11 @@ use Yiisoft\Translator\TranslatorInterface;
 
 $this->setTitle($translator->translate('voyti.view.admin.update_profile_title', category: 'voyti'));
 
-echo Html::div()->class('voyti-admin-update-profile')->open();
+echo Html::div()->class('voyti-admin-update-userProfile')->open();
     echo Html::H1($translator->translate('voyti.view.admin.update_profile_title', category: 'voyti'));
 
     echo Html::form()
-        ->post($url->generate('voyti/admin-update-profile', ['id' => $user->getId()]))
+        ->post($url->generate('voyti/admin-update-userProfile', ['id' => $user->getId()]))
         ->csrf($csrf)
         ->open();
 

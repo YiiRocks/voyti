@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Repository;
 
-use YiiRocks\Voyti\Entity\Profile;
-use YiiRocks\Voyti\Entity\Token;
+use YiiRocks\Voyti\Entity\UserProfile;
+use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Entity\User;
 
 /** @extends BaseRepository<User> */
@@ -32,9 +32,9 @@ final class UserRepository extends BaseRepository
     public function delete(\Yiisoft\ActiveRecord\ActiveRecordInterface $model): void
     {
         if ($model instanceof User) {
-            $profile = $model->getProfile();
-            if ($profile !== null) {
-                $profile->delete();
+            $userProfile = $model->getProfile();
+            if ($userProfile !== null) {
+                $userProfile->delete();
             }
         }
         parent::delete($model);
@@ -74,20 +74,20 @@ final class UserRepository extends BaseRepository
         return parent::save($model);
     }
 
-    public function saveWithProfile(User $user, Profile $profile): void
+    public function saveWithProfile(User $user, UserProfile $userProfile): void
     {
         $this->save($user);
-        $profile->setUserId($user->getId() !== null ? (int) $user->getId() : 0);
-        $this->save($profile);
+        $userProfile->setUserId($user->getId() !== null ? (int) $user->getId() : 0);
+        $this->save($userProfile);
     }
 
-    public function saveWithProfileAndToken(User $user, Profile $profile, Token $token): void
+    public function saveWithProfileAndToken(User $user, UserProfile $userProfile, UserToken $userToken): void
     {
         $this->save($user);
-        $profile->setUserId($user->getId() !== null ? (int) $user->getId() : 0);
-        $this->save($profile);
-        $token->setUserId($user->getId() !== null ? (int) $user->getId() : 0);
-        $this->save($token);
+        $userProfile->setUserId($user->getId() !== null ? (int) $user->getId() : 0);
+        $this->save($userProfile);
+        $userToken->setUserId($user->getId() !== null ? (int) $user->getId() : 0);
+        $this->save($userToken);
     }
 
     /**

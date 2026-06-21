@@ -7,7 +7,7 @@ namespace YiiRocks\Voyti\Entity;
 use Yiisoft\ActiveRecord\ActiveRecord;
 use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
 
-final class Profile extends ActiveRecord
+final class UserProfile extends ActiveRecord
 {
     use PrivatePropertiesTrait;
     private ?string $bio = null;
@@ -131,6 +131,6 @@ final class Profile extends ActiveRecord
     #[\Override]
     public function tableName(): string
     {
-        return '{{%profile}}';
+        return '{{%user_profile}}';
     }
 }

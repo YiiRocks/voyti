@@ -4,34 +4,34 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Factory;
 
-use YiiRocks\Voyti\Entity\Token;
-use YiiRocks\Voyti\Repository\TokenRepository;
+use YiiRocks\Voyti\Entity\UserToken;
+use YiiRocks\Voyti\Repository\UserUserTokenRepository;
 
-final class TokenFactory
+final class UserTokenFactory
 {
     public function __construct(
-        private readonly TokenRepository $tokenRepository,
+        private readonly UserTokenRepository $userTokenRepository,
     ) {
     }
 
-    public function makeConfirmationToken(int $userId): Token
+    public function makeConfirmationToken(int $userId): UserToken
     {
-        return $this->make($userId, Token::TYPE_CONFIRMATION);
+        return $this->make($userId, UserToken::TYPE_CONFIRMATION);
     }
 
-    public function makeConfirmNewMailToken(int $userId): Token
+    public function makeConfirmNewMailToken(int $userId): UserToken
     {
-        return $this->make($userId, Token::TYPE_CONFIRM_NEW_EMAIL);
+        return $this->make($userId, UserToken::TYPE_CONFIRM_NEW_EMAIL);
     }
 
-    public function makeConfirmOldMailToken(int $userId): Token
+    public function makeConfirmOldMailToken(int $userId): UserToken
     {
-        return $this->make($userId, Token::TYPE_CONFIRM_OLD_EMAIL);
+        return $this->make($userId, UserToken::TYPE_CONFIRM_OLD_EMAIL);
     }
 
-    public function makeRecoveryToken(int $userId): Token
+    public function makeRecoveryToken(int $userId): UserToken
     {
-        return $this->make($userId, Token::TYPE_RECOVERY);
+        return $this->make($userId, UserToken::TYPE_RECOVERY);
     }
 
     private function generateCode(): string
@@ -39,14 +39,14 @@ final class TokenFactory
         return bin2hex(random_bytes(16));
     }
 
-    private function make(int $userId, int $type): Token
+    private function make(int $userId, int $type): UserToken
     {
-        $token = new Token();
-        $token->setUserId($userId);
-        $token->setType($type);
-        $token->setCode($this->generateCode());
-        $token->setCreatedAt(time());
-        $token->save();
-        return $token;
+        $userToken = new UserToken();
+        $userToken->setUserId($userId);
+        $userToken->setType($type);
+        $userToken->setCode($this->generateCode());
+        $userToken->setCreatedAt(time());
+        $userToken->save();
+        return $userToken;
     }
 }

@@ -7,13 +7,13 @@ namespace YiiRocks\Voyti\Controller;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use YiiRocks\Voyti\Entity\Profile;
-use YiiRocks\Voyti\Form\Settings\ProfileForm;
+use YiiRocks\Voyti\Entity\UserProfile;
+use YiiRocks\Voyti\Form\Settings\UserProfileForm;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Helper\SecurityHelper;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\ProfileRepository;
-use YiiRocks\Voyti\Repository\SessionHistoryRepository;
+use YiiRocks\Voyti\Repository\UserProfileRepository;
+use YiiRocks\Voyti\Repository\UserSessionHistoryRepository;
 use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\Password\ExpireService;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
@@ -38,7 +38,7 @@ final class AdminController
         private readonly TranslatorInterface $translator,
         private readonly WebViewRenderer $viewRenderer,
         private readonly UserRepository $userRepository,
-        private readonly ProfileRepository $profileRepository,
+        private readonly UserProfileRepository $userProfileRepository,
         private readonly CreateService $userCreateService,
         private readonly BlockService $userBlockService,
         private readonly ConfirmationService $userConfirmationService,
@@ -46,7 +46,7 @@ final class AdminController
         private readonly ExpireService $passwordExpireService,
         private readonly SwitchIdentityService $switchIdentityService,
         private readonly UpdateAssignmentsService $updateAuthAssignmentsService,
-        private readonly SessionHistoryRepository $sessionHistoryRepository,
+        private readonly UserSessionHistoryRepository $userSessionHistoryRepository,
         private readonly AuthHelper $authHelper,
         private readonly SecurityHelper $securityHelper,
         private readonly ValidatorInterface $validator,
@@ -186,14 +186,14 @@ final class AdminController
         return $this->renderError('voyti.admin.user_not_found');
     }
 
-    public function sessionHistory(int $id): ResponseInterface
+    public function userSessionHistory(int $id): ResponseInterface
     {
         $user = $this->userRepository->findById($id);
         if ($user === null) {
             return $this->renderError('voyti.admin.user_not_found');
         }
 
-        $sessions = $this->sessionHistoryRepository->findByUserId($id);
+        $sessions = $this->userSessionHistoryRepository->findByUserId($id);
         return $this->renderView('admin/_session-history', [
             'user' => $user,
             'sessions' => $sessions,
@@ -214,7 +214,7 @@ final class AdminController
             return $this->renderError('voyti.admin.user_not_found');
         }
 
-        $sessions = $this->sessionHistoryRepository->findByUserId($id);
+        $sessions = $this->userSessionHistoryRepository->findByUserId($id);
         foreach ($sessions as $session) {
             $session->delete();
         }
@@ -252,25 +252,25 @@ final class AdminController
             return $this->renderError('voyti.admin.user_not_found');
         }
 
-        $profile = $user->getProfile();
-        if ($profile === null) {
-            $profile = new Profile();
-            $profile->setUserId($id);
+        $userProfile = $user->getProfile();
+        if ($userProfile === null) {
+            $userProfile = new UserProfile();
+            $userProfile->setUserId($id);
         }
 
-        $model = new ProfileForm($this->translator);
-        $model->name = $profile->getName() ?? '';
-        $model->bio = $profile->getBio() ?? '';
-        $model->publicEmail = $profile->getPublicEmail() ?? '';
+        $model = new UserProfileForm($this->translator);
+        $model->name = $userProfile->getName() ?? '';
+        $model->bio = $userProfile->getBio() ?? '';
+        $model->publicEmail = $userProfile->getPublicEmail() ?? '';
 
         if ($request->getMethod() === Method::POST) {
             $body = $request->getParsedBody();
-            $model->load($body, 'profile');
+            $model->load($body, 'userProfile');
             if ($model->isValidated() && $model->isValid()) {
-                $profile->setName($model->name !== '' ? $model->name : null);
-                $profile->setBio($model->bio !== '' ? $model->bio : null);
-                $profile->setPublicEmail($model->publicEmail !== '' ? $model->publicEmail : null);
-                $profile->save();
+                $userProfile->setName($model->name !== '' ? $model->name : null);
+                $userProfile->setBio($model->bio !== '' ? $model->bio : null);
+                $userProfile->setPublicEmail($model->publicEmail !== '' ? $model->publicEmail : null);
+                $userProfile->save();
                 return $this->renderSuccess('voyti.admin.profile_details_updated');
             }
         }

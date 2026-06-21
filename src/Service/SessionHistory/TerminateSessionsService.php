@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace YiiRocks\Voyti\Service\SessionHistory;
+namespace YiiRocks\Voyti\Service\UserSessionHistory;
 
 use Yiisoft\Db\Connection\ConnectionInterface;
 

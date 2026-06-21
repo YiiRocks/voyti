@@ -7,10 +7,10 @@ namespace YiiRocks\Voyti\Controller;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use YiiRocks\Voyti\Entity\Token;
+use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Form\Auth\RecoveryForm;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\TokenRepository;
+use YiiRocks\Voyti\Repository\UserUserTokenRepository;
 use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
 use YiiRocks\Voyti\Service\Password\ResetService;
@@ -31,7 +31,7 @@ final class RecoveryController
         private readonly RecoveryService $passwordRecoveryService,
         private readonly ResetService $resetPasswordService,
         private readonly UserRepository $userRepository,
-        private readonly TokenRepository $tokenRepository,
+        private readonly UserTokenRepository $userTokenRepository,
         private readonly ValidatorInterface $validator,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly ModuleConfig $config,
@@ -72,9 +72,9 @@ final class RecoveryController
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.recovery.reset_disabled', category: 'voyti'), 'translator' => $this->translator]);
         }
 
-        $token = $this->tokenRepository->findByUserIdTypeAndCode($id, Token::TYPE_RECOVERY, $code);
+        $userToken = $this->userTokenRepository->findByUserIdTypeAndCode($id, UserToken::TYPE_RECOVERY, $code);
 
-        if ($token === null || $token->getIsExpired() || $token->getUser() === null) {
+        if ($userToken === null || $userToken->getIsExpired() || $userToken->getUser() === null) {
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.recovery.link_invalid', category: 'voyti'), 'translator' => $this->translator]);
         }
 
@@ -87,7 +87,7 @@ final class RecoveryController
             $result = $this->validator->validate($form);
 
             if ($result->isValid()) {
-                $this->resetPasswordService->run($form->password, $token->getUser(), $token);
+                $this->resetPasswordService->run($form->password, $userToken->getUser(), $userToken);
                 return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.recovery.password_changed', category: 'voyti'), 'translator' => $this->translator]);
             }
             $errors = $result->getErrorMessages();

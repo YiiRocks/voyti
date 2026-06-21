@@ -7,7 +7,7 @@ namespace YiiRocks\Voyti\Service;
 use Yiisoft\Aliases\Aliases;
 use Yiisoft\Mailer\MailerInterface;
 use Yiisoft\Mailer\Message;
-use YiiRocks\Voyti\Entity\Token;
+use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Entity\User;
 
 final class MailService
@@ -63,7 +63,7 @@ final class MailService
         );
     }
 
-    public function sendConfirmation(User $user, Token $token): bool
+    public function sendConfirmation(User $user, UserToken $userToken): bool
     {
         $subject = $this->getMailSubject('confirmationMailSubject', 'Confirm account');
         return $this->send(
@@ -71,11 +71,11 @@ final class MailService
             $user->getEmail(),
             $subject,
             'confirmation',
-            ['user' => $user, 'token' => $token],
+            ['user' => $user, 'userToken' => $userToken],
         );
     }
 
-    public function sendReconfirmation(User $user, Token $token): bool
+    public function sendReconfirmation(User $user, UserToken $userToken): bool
     {
         $subject = $this->getMailSubject('reconfirmationMailSubject', 'Confirm email change');
         return $this->send(
@@ -83,11 +83,11 @@ final class MailService
             $user->getEmail(),
             $subject,
             'reconfirmation',
-            ['user' => $user, 'token' => $token],
+            ['user' => $user, 'userToken' => $userToken],
         );
     }
 
-    public function sendRecovery(string $email, Token $token): bool
+    public function sendRecovery(string $email, UserToken $userToken): bool
     {
         $subject = $this->getMailSubject('recoveryMailSubject', 'Password reset');
         return $this->send(
@@ -95,7 +95,7 @@ final class MailService
             $email,
             $subject,
             'recovery',
-            ['token' => $token],
+            ['userToken' => $userToken],
         );
     }
 

@@ -35,7 +35,7 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
             'updated_at' => ColumnBuilder::integer()->notNull(),
         ]);
 
-        $b->createTable('{{%profile}}', [
+        $b->createTable('{{%user_profile}}', [
             'user_id' => ColumnBuilder::integer()->notNull(),
             'bio' => ColumnBuilder::text(),
             'gravatar_email' => ColumnBuilder::string(255),
@@ -47,7 +47,7 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
             'website' => ColumnBuilder::string(255),
         ]);
 
-        $b->createTable('{{%social_account}}', [
+        $b->createTable('{{%user_social_account}}', [
             'id' => ColumnBuilder::primaryKey(),
             'user_id' => ColumnBuilder::integer(),
             'provider' => ColumnBuilder::string(255)->notNull(),
@@ -59,14 +59,14 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
             'created_at' => ColumnBuilder::integer()->notNull(),
         ]);
 
-        $b->createTable('{{%token}}', [
+        $b->createTable('{{%user_token}}', [
             'user_id' => ColumnBuilder::integer()->notNull(),
             'code' => ColumnBuilder::string(32)->notNull(),
             'type' => ColumnBuilder::smallint()->notNull(),
             'created_at' => ColumnBuilder::integer()->notNull(),
         ]);
 
-        $b->createTable('{{%session_history}}', [
+        $b->createTable('{{%user_session_history}}', [
             'user_id' => ColumnBuilder::integer()->notNull(),
             'session_id' => ColumnBuilder::string(255)->notNull(),
             'user_agent' => ColumnBuilder::text(),
@@ -75,32 +75,32 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
             'updated_at' => ColumnBuilder::integer()->notNull(),
         ]);
 
-        $b->addPrimaryKey('{{%token}}', 'pk-token-user-id-code-type', ['user_id', 'code', 'type']);
-        $b->addPrimaryKey('{{%session_history}}', 'pk-session-history-user-id-session-id', ['user_id', 'session_id']);
+        $b->addPrimaryKey('{{%user_token}}', 'pk-user-token-user-id-code-type', ['user_id', 'code', 'type']);
+        $b->addPrimaryKey('{{%user_session_history}}', 'pk-user-session-history-user-id-session-id', ['user_id', 'session_id']);
 
         $b->createIndex('{{%user}}', 'idx-user-email', ['email'], 'UNIQUE');
         $b->createIndex('{{%user}}', 'idx-user-username', ['username'], 'UNIQUE');
-        $b->createIndex('{{%profile}}', 'idx-profile-user-id', ['user_id'], 'UNIQUE');
-        $b->createIndex('{{%social_account}}', 'idx-social-account-user-id', ['user_id']);
-        $b->createIndex('{{%social_account}}', 'idx-social-account-provider-client-id', ['provider', 'client_id'], 'UNIQUE');
-        $b->createIndex('{{%social_account}}', 'idx-social-account-code', ['code'], 'UNIQUE');
-        $b->createIndex('{{%token}}', 'idx-token-user-id', ['user_id']);
-        $b->createIndex('{{%session_history}}', 'idx-session-history-user-id', ['user_id']);
-        $b->createIndex('{{%session_history}}', 'idx-session-history-session-id', ['session_id']);
-        $b->createIndex('{{%session_history}}', 'idx-session-history-updated-at', ['updated_at']);
+        $b->createIndex('{{%user_profile}}', 'idx-user-profile-user-id', ['user_id'], 'UNIQUE');
+        $b->createIndex('{{%user_social_account}}', 'idx-user-social-account-user-id', ['user_id']);
+        $b->createIndex('{{%user_social_account}}', 'idx-user-social-account-provider-client-id', ['provider', 'client_id'], 'UNIQUE');
+        $b->createIndex('{{%user_social_account}}', 'idx-user-social-account-code', ['code'], 'UNIQUE');
+        $b->createIndex('{{%user_token}}', 'idx-user-token-user-id', ['user_id']);
+        $b->createIndex('{{%user_session_history}}', 'idx-user-session-history-user-id', ['user_id']);
+        $b->createIndex('{{%user_session_history}}', 'idx-user-session-history-session-id', ['session_id']);
+        $b->createIndex('{{%user_session_history}}', 'idx-user-session-history-updated-at', ['updated_at']);
 
-        $b->addForeignKey('{{%profile}}', 'fk-profile-user-id', ['user_id'], '{{%user}}', ['id'], 'CASCADE', 'RESTRICT');
-        $b->addForeignKey('{{%social_account}}', 'fk-social-account-user-id', ['user_id'], '{{%user}}', ['id'], 'CASCADE', 'RESTRICT');
-        $b->addForeignKey('{{%token}}', 'fk-token-user-id', ['user_id'], '{{%user}}', ['id'], 'CASCADE', 'RESTRICT');
-        $b->addForeignKey('{{%session_history}}', 'fk-session-history-user-id', ['user_id'], '{{%user}}', ['id'], 'CASCADE', 'RESTRICT');
+        $b->addForeignKey('{{%user_profile}}', 'fk-user-profile-user-id', ['user_id'], '{{%user}}', ['id'], 'CASCADE', 'RESTRICT');
+        $b->addForeignKey('{{%user_social_account}}', 'fk-user-social-account-user-id', ['user_id'], '{{%user}}', ['id'], 'CASCADE', 'RESTRICT');
+        $b->addForeignKey('{{%user_token}}', 'fk-user-token-user-id', ['user_id'], '{{%user}}', ['id'], 'CASCADE', 'RESTRICT');
+        $b->addForeignKey('{{%user_session_history}}', 'fk-user-session-history-user-id', ['user_id'], '{{%user}}', ['id'], 'CASCADE', 'RESTRICT');
     }
 
     public function down(MigrationBuilder $b): void
     {
-        $b->dropTable('{{%session_history}}');
-        $b->dropTable('{{%token}}');
-        $b->dropTable('{{%social_account}}');
-        $b->dropTable('{{%profile}}');
+        $b->dropTable('{{%user_session_history}}');
+        $b->dropTable('{{%user_token}}');
+        $b->dropTable('{{%user_social_account}}');
+        $b->dropTable('{{%user_profile}}');
         $b->dropTable('{{%user}}');
     }
 }

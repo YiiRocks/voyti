@@ -97,10 +97,10 @@ final class ResendFormTest extends TestCase
     {
         $form = $this->createForm();
         $form->email = 'test@example.com';
-        $form->gRecaptchaResponse = 'test-token';
+        $form->gRecaptchaResponse = 'test-userToken';
 
         $this->assertSame('test@example.com', $form->getPropertyValue('email'));
-        $this->assertSame('test-token', $form->getPropertyValue('gRecaptchaResponse'));
+        $this->assertSame('test-userToken', $form->getPropertyValue('gRecaptchaResponse'));
     }
 
     public function testValidData(): void

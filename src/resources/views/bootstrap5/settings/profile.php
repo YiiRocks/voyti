@@ -11,7 +11,7 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var YiiRocks\Voyti\Form\Settings\SettingsForm $model
  * @var YiiRocks\Voyti\ModuleConfig $config
  * @var YiiRocks\Voyti\Entity\User $user
- * @var YiiRocks\Voyti\Entity\Profile $profile
+ * @var YiiRocks\Voyti\Entity\UserProfile $userProfile
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
  * @var array $errors

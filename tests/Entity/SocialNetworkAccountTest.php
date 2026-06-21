@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Entity;
 
-use YiiRocks\Voyti\Entity\SocialNetworkAccount;
+use YiiRocks\Voyti\Entity\UserSocialAccount;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Db\Connection\ConnectionProvider;
 
@@ -16,7 +16,7 @@ final class SocialNetworkAccountTest extends TestCase
         parent::setUp();
         ConnectionProvider::set($this->getDb());
         $db = $this->getDb();
-        $db->createCommand('CREATE TABLE {{%social_account}} (
+        $db->createCommand('CREATE TABLE {{%user_social_account}} (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             userId INTEGER,
             provider VARCHAR(255) NOT NULL,
@@ -33,14 +33,14 @@ final class SocialNetworkAccountTest extends TestCase
     protected function tearDown(): void
     {
         $db = $this->getDb();
-        $db->createCommand('DROP TABLE IF EXISTS {{%social_account}}')->execute();
+        $db->createCommand('DROP TABLE IF EXISTS {{%user_social_account}}')->execute();
         ConnectionProvider::clear();
         parent::tearDown();
     }
 
     public function testCode(): void
     {
-        $account = new SocialNetworkAccount();
+        $account = new UserSocialAccount();
         $this->assertNull($account->getCode());
 
         $account->setCode('oauth_code_xyz');
@@ -50,7 +50,7 @@ final class SocialNetworkAccountTest extends TestCase
 
     public function testCreateAndFind(): void
     {
-        $account = new SocialNetworkAccount();
+        $account = new UserSocialAccount();
         $account->setUserId(1);
         $account->setProvider('github');
         $account->setClientId('gh_client_123');
@@ -59,8 +59,8 @@ final class SocialNetworkAccountTest extends TestCase
         $account->setCreatedAt(time());
         $account->save();
 
-        $found = SocialNetworkAccount::query()->where(['provider' => 'github', 'clientId' => 'gh_client_123'])->one();
-        $this->assertInstanceOf(SocialNetworkAccount::class, $found);
+        $found = UserSocialAccount::query()->where(['provider' => 'github', 'clientId' => 'gh_client_123'])->one();
+        $this->assertInstanceOf(UserSocialAccount::class, $found);
         $this->assertSame(1, $found->getUserId());
         $this->assertSame('github', $found->getProvider());
         $this->assertSame('gh_client_123', $found->getClientId());
@@ -70,7 +70,7 @@ final class SocialNetworkAccountTest extends TestCase
 
     public function testDecodedData(): void
     {
-        $account = new SocialNetworkAccount();
+        $account = new UserSocialAccount();
         $this->assertNull($account->getData());
         $this->assertNull($account->getDecodedData());
 
@@ -84,7 +84,7 @@ final class SocialNetworkAccountTest extends TestCase
 
     public function testDeleteSocialAccount(): void
     {
-        $account = new SocialNetworkAccount();
+        $account = new UserSocialAccount();
         $account->setUserId(4);
         $account->setProvider('delete_test');
         $account->setClientId('del_client');
@@ -94,13 +94,13 @@ final class SocialNetworkAccountTest extends TestCase
         $id = $account->getId();
         $account->delete();
 
-        $found = SocialNetworkAccount::query()->where(['id' => $id])->one();
+        $found = UserSocialAccount::query()->where(['id' => $id])->one();
         $this->assertNull($found);
     }
 
     public function testIsConnected(): void
     {
-        $account = new SocialNetworkAccount();
+        $account = new UserSocialAccount();
         $this->assertFalse($account->isConnected());
 
         $account->setUserId(2);
@@ -109,7 +109,7 @@ final class SocialNetworkAccountTest extends TestCase
 
     public function testNullUserId(): void
     {
-        $account = new SocialNetworkAccount();
+        $account = new UserSocialAccount();
         $this->assertNull($account->getUserId());
 
         $account->setUserId(null);
@@ -118,7 +118,7 @@ final class SocialNetworkAccountTest extends TestCase
 
     public function testUpdateSocialAccount(): void
     {
-        $account = new SocialNetworkAccount();
+        $account = new UserSocialAccount();
         $account->setUserId(3);
         $account->setProvider('twitter');
         $account->setClientId('tw_client');
@@ -129,8 +129,8 @@ final class SocialNetworkAccountTest extends TestCase
         $account->setUsername('newhandle');
         $account->save();
 
-        $found = SocialNetworkAccount::query()->where(['provider' => 'twitter'])->one();
-        $this->assertInstanceOf(SocialNetworkAccount::class, $found);
+        $found = UserSocialAccount::query()->where(['provider' => 'twitter'])->one();
+        $this->assertInstanceOf(UserSocialAccount::class, $found);
         $this->assertSame('newhandle', $found->getUsername());
     }
 }
