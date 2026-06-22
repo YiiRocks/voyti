@@ -301,7 +301,13 @@ final class SettingsController
             }
         }
 
-        return $this->renderView('settings/profile', ['model' => $userProfile, 'config' => $this->config]);
+        return $this->renderView('settings/profile', [
+            'model' => $userProfile,
+            'user' => $user,
+            'userProfile' => $userProfile,
+            'errors' => [],
+            'config' => $this->config,
+        ]);
     }
 
     public function twoFactor(ServerRequestInterface $request): ResponseInterface
