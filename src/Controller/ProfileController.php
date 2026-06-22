@@ -66,7 +66,7 @@ final class ProfileController
             return $this->renderError('voyti.userProfile.not_found');
         }
 
-        return $this->renderView('userProfile/show', ['userProfile' => $userProfile]);
+        return $this->renderView('profile/show', ['userProfile' => $userProfile]);
     }
 
     private function isAdmin(?IdentityInterface $identity): bool
