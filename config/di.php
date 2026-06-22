@@ -5,6 +5,7 @@ declare(strict_types=1);
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Helper\GravatarHelper;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
+use YiiRocks\Voyti\Middleware\RouteParametersResolver;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\UserProfileRepository;
 use YiiRocks\Voyti\Repository\UserSessionHistoryRepository;
@@ -12,6 +13,7 @@ use YiiRocks\Voyti\Repository\UserSocialAccountRepository;
 use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Repository\UserRepository;
 use Yiisoft\Aliases\Aliases;
+use Yiisoft\Middleware\Dispatcher\ParametersResolverInterface;
 use Yiisoft\Rbac\AssignmentsStorageInterface;
 use Yiisoft\Rbac\ItemsStorageInterface;
 use Yiisoft\Session\SessionInterface;
@@ -20,6 +22,8 @@ use Yiisoft\Translator\Message\Php\MessageSource;
 use Yiisoft\Translator\SimpleMessageFormatter;
 
 return [
+    ParametersResolverInterface::class => RouteParametersResolver::class,
+
     ModuleConfig::class => ModuleConfig::class,
 
     UserRepository::class => UserRepository::class,
