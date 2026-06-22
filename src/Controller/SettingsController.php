@@ -62,7 +62,7 @@ final class SettingsController
             return $this->renderError('voyti.settings.not_authenticated');
         }
 
-        $user = $this->userRepository->findById($identity->getId() ?? 0);
+        $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
         if ($user === null) {
             return $this->renderError('voyti.settings.user_not_found');
         }
@@ -111,7 +111,7 @@ final class SettingsController
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated', category: 'voyti'), 'translator' => $this->translator]);
         }
 
-        $user = $this->userRepository->findById($identity->getId() ?? 0);
+        $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
         if ($user === null) {
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found', category: 'voyti'), 'translator' => $this->translator]);
         }
@@ -131,7 +131,7 @@ final class SettingsController
 
         $identity = $this->currentUser->getIdentity();
         if ($identity !== null) {
-            $user = $this->userRepository->findById($identity->getId() ?? 0);
+            $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
             if ($user !== null) {
                 $this->eventDispatcher->dispatch(new UserEvent($user));
                 $this->userRepository->delete($user);
@@ -179,7 +179,7 @@ final class SettingsController
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated', category: 'voyti'), 'translator' => $this->translator]);
         }
 
-        $user = $this->userRepository->findById($identity->getId() ?? 0);
+        $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
         if ($user === null) {
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found', category: 'voyti'), 'translator' => $this->translator]);
         }
@@ -213,7 +213,7 @@ final class SettingsController
 
         $identity = $this->currentUser->getIdentity();
         if ($identity !== null && $request->getMethod() === Method::POST) {
-            $user = $this->userRepository->findById($identity->getId() ?? 0);
+            $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
             if ($user !== null) {
                 $user->setGdprConsent(true);
                 $user->setGdprConsentDate(time());
@@ -239,7 +239,7 @@ final class SettingsController
 
             $identity = $this->currentUser->getIdentity();
             if ($identity !== null) {
-                $user = $this->userRepository->findById($identity->getId() ?? 0);
+                $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
                 if ($user !== null &&         $this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
                     $this->eventDispatcher->dispatch(new GdprEvent($user));
                     $prefix = $this->config->gdprAnonymizePrefix . ($user->getId() ?? '');
@@ -282,7 +282,7 @@ final class SettingsController
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated', category: 'voyti'), 'translator' => $this->translator]);
         }
 
-        $user = $this->userRepository->findById($identity->getId() ?? 0);
+        $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
         if ($user === null) {
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found', category: 'voyti'), 'translator' => $this->translator]);
         }
@@ -315,7 +315,7 @@ final class SettingsController
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated', category: 'voyti'), 'translator' => $this->translator]);
         }
 
-        $user = $this->userRepository->findById($identity->getId() ?? 0);
+        $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
         if ($user === null) {
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found', category: 'voyti'), 'translator' => $this->translator]);
         }
@@ -341,7 +341,7 @@ final class SettingsController
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated', category: 'voyti'), 'translator' => $this->translator]);
         }
 
-        $user = $this->userRepository->findById($identity->getId() ?? 0);
+        $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
         if ($user === null) {
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found', category: 'voyti'), 'translator' => $this->translator]);
         }
@@ -365,7 +365,7 @@ final class SettingsController
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated', category: 'voyti'), 'translator' => $this->translator]);
         }
 
-        $user = $this->userRepository->findById($identity->getId() ?? 0);
+        $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
         if ($user === null) {
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found', category: 'voyti'), 'translator' => $this->translator]);
         }
