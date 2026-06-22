@@ -53,6 +53,10 @@ final class RegistrationController
             return $this->renderError('voyti.registration.invalid_confirmation_link');
         }
 
+        if ($user->isConfirmed()) {
+            return $this->renderSuccess('voyti.registration.complete');
+        }
+
         if ($this->accountConfirmationService->run($code, $user, $this->userConfirmationService)) {
             return $this->renderSuccess('voyti.registration.complete');
         }
