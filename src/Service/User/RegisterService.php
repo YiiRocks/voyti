@@ -49,7 +49,6 @@ final class RegisterService
         $user->setUpdatedAt(time());
 
         $userProfile = new UserProfile();
-        $userProfile->setUserId(null);
 
         $this->eventDispatcher->dispatch(new UserEvent($user));
 
