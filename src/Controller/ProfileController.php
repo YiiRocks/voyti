@@ -12,6 +12,7 @@ use YiiRocks\Voyti\Repository\UserProfileRepository;
 use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\User\CurrentUser;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 final class ProfileController
@@ -30,22 +31,23 @@ final class ProfileController
         private readonly UserProfileRepository $userProfileRepository,
         private readonly AuthHelper $authHelper,
         private readonly ModuleConfig $config,
+        private readonly CurrentUser $currentUser,
     ) {
     }
 
     public function show(ServerRequestInterface $request, int $id): ResponseInterface
     {
-        $identity = $request->getAttribute(IdentityInterface::class);
-        $userId = $identity?->getId();
+        $identity = $this->currentUser->getIdentity();
+        $userId = $identity instanceof IdentityInterface ? $identity->getId() : null;
 
         switch ($this->config->profileVisibility) {
             case self::PROFILE_VISIBILITY_OWNER:
-                if ($userId === null || $id !== $userId) {
+                if ($userId === null || (string) $id !== $userId) {
                     return $this->renderError('voyti.userProfile.forbidden');
                 }
                 break;
             case self::PROFILE_VISIBILITY_ADMIN:
-                if ($id !== $userId && !$this->isAdmin($identity)) {
+                if ((string) $id !== $userId && !$this->isAdmin($identity)) {
                     return $this->renderError('voyti.userProfile.forbidden');
                 }
                 break;

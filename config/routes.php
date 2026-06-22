@@ -10,7 +10,7 @@ use Yiisoft\Router\Route;
 $routes = [
     // Security
     Route::methods(['GET', 'POST'], 'login')->name('voyti/login')->action([Controller\SecurityController::class, 'login']),
-    Route::post('logout')->name('voyti/logout')->action([Controller\SecurityController::class, 'logout']),
+    Route::methods(['GET', 'POST'], 'logout')->name('voyti/logout')->action([Controller\SecurityController::class, 'logout']),
     Route::methods(['GET', 'POST'], 'confirm')->name('voyti/confirm')->action([Controller\SecurityController::class, 'confirm']),
     Route::get('auth/{provider}')->name('voyti/auth')->action([Controller\SecurityController::class, 'auth']),
     Route::get('auth/connect/{provider}')->name('voyti/connect')->action([Controller\SecurityController::class, 'connect']),
