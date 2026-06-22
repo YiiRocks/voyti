@@ -114,22 +114,22 @@ final class SecurityController
     public function login(ServerRequestInterface $request): ResponseInterface
     {
         $form = new LoginForm($this->config, $this->translator);
-        $errors = [];
 
         if ($request->getMethod() === Method::POST) {
             $body = $request->getParsedBody();
             $this->hydrator->hydrate($form, $body[$form->getFormName()] ?? $body);
             $result = $this->validator->validate($form);
+            $form->processValidationResult($result);
 
             if ($result->isValid()) {
                 $user = $this->userRepository->findByUsernameOrEmail($form->login);
 
                 if ($user === null || !$this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
-                    $errors['login'][] = $this->translator->translate('voyti.security.invalid_login', category: 'voyti');
+                    $form->addError($this->translator->translate('voyti.security.invalid_login', category: 'voyti'), ['login']);
                 } elseif ($user->isBlocked()) {
-                    $errors['login'][] = $this->translator->translate('voyti.security.account_blocked', category: 'voyti');
+                    $form->addError($this->translator->translate('voyti.security.account_blocked', category: 'voyti'), ['login']);
                 } elseif ($this->config->enableEmailConfirmation && !$user->isConfirmed()) {
-                    $errors['login'][] = $this->translator->translate('voyti.security.need_email_confirmation', category: 'voyti');
+                    $form->addError($this->translator->translate('voyti.security.need_email_confirmation', category: 'voyti'), ['login']);
                 } else {
                     if ($this->config->enableTwoFactorAuthentication && $user->isAuthTfEnabled()) {
                         $this->session->set('credentials', ['login' => $form->login, 'pwd' => $form->password]);
@@ -150,15 +150,12 @@ final class SecurityController
 
                     return $this->renderSuccess('voyti.security.logged_in');
                 }
-            } else {
-                $errors = $result->getErrorMessages();
             }
         }
 
         return $this->renderView('security/login', [
             'model' => $form,
             'config' => $this->config,
-            'errors' => $errors,
         ]);
     }
 

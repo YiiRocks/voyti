@@ -13,7 +13,6 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var YiiRocks\Voyti\ModuleConfig $config
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
- * @var array $errors
  * @var string $csrf
  */
 
@@ -27,7 +26,7 @@ echo Html::div()->class('voyti-recovery')->open();
         ->csrf($csrf)
         ->open();
 
-    echo Field::errorSummary(null)->errors($errors);
+    echo Field::errorSummary($model);
 
     echo Field::email($model, 'email');
 

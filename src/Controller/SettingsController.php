@@ -73,6 +73,7 @@ final class SettingsController
             $body = $request->getParsedBody();
             $this->hydrator->hydrate($form, $body[$form->getFormName()] ?? $body);
             $result = $this->validator->validate($form);
+            $form->processValidationResult($result);
 
             if ($result->isValid()) {
                 $user->setUsername($form->username);

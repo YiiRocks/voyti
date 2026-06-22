@@ -13,7 +13,6 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var YiiRocks\Voyti\Entity\User $user
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
- * @var array $errors
  * @var string $csrf
  */
 
@@ -29,7 +28,7 @@ echo Html::div()->class('voyti-account')->open();
         ->csrf($csrf)
         ->open();
 
-    echo Field::errorSummary(null)->errors($errors);
+    echo Field::errorSummary($model);
 
     echo Field::text($model, 'username');
 

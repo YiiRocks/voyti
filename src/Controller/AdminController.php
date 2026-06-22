@@ -269,7 +269,9 @@ final class AdminController
         if ($request->getMethod() === Method::POST) {
             $body = $request->getParsedBody();
             $this->hydrator->hydrate($model, $body[$model->getFormName()] ?? $body);
-            if ($model->isValidated() && $model->isValid()) {
+            $result = $this->validator->validate($model);
+            $model->processValidationResult($result);
+            if ($result->isValid()) {
                 $userProfile->setName($model->name !== '' ? $model->name : null);
                 $userProfile->setBio($model->bio !== '' ? $model->bio : null);
                 $userProfile->setPublicEmail($model->publicEmail !== '' ? $model->publicEmail : null);

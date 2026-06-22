@@ -72,12 +72,12 @@ final class RegistrationController
         }
 
         $form = new RegistrationForm($this->config, $this->translator);
-        $errors = [];
 
         if ($request->getMethod() === Method::POST) {
             $body = $request->getParsedBody();
             $this->hydrator->hydrate($form, $body[$form->getFormName()] ?? $body);
             $result = $this->validator->validate($form);
+            $form->processValidationResult($result);
 
             if ($result->isValid()) {
                 $serviceResult = $this->userRegisterService->run([
@@ -91,16 +91,15 @@ final class RegistrationController
                     $this->eventDispatcher->dispatch(new FormEvent($form));
                     return $this->renderView('shared/message', ['title' => $serviceResult->getMessage()]);
                 }
-                $errors = $serviceResult->getErrors();
-            } else {
-                $errors = $result->getErrorMessages();
+                foreach ($serviceResult->getErrors() as $error) {
+                    $form->addError($error, []);
+                }
             }
         }
 
         return $this->renderView('registration/register', [
             'model' => $form,
             'config' => $this->config,
-            'errors' => $errors,
         ]);
     }
 

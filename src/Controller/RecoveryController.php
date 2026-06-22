@@ -47,24 +47,22 @@ final class RecoveryController
         }
 
         $form = new RecoveryForm($this->config, $this->translator, RecoveryForm::SCENARIO_REQUEST);
-        $errors = [];
 
         if ($request->getMethod() === Method::POST) {
             $body = $request->getParsedBody();
             $this->hydrator->hydrate($form, $body[$form->getFormName()] ?? $body);
             $result = $this->validator->validate($form);
+            $form->processValidationResult($result);
 
             if ($result->isValid()) {
                 $serviceResult = $this->passwordRecoveryService->run($form->email);
                 return $this->renderView('shared/message', ['title' => $serviceResult->getMessage()]);
             }
-            $errors = $result->getErrorMessages();
         }
 
         return $this->renderView('recovery/request', [
             'model' => $form,
             'config' => $this->config,
-            'errors' => $errors,
         ]);
     }
 
