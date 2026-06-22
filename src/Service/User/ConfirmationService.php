@@ -17,10 +17,7 @@ final class ConfirmationService
     ) {
     }
 
-    /**
-     * @return false|null
-     */
-    public function run(User $user): bool|null
+    public function run(User $user): bool
     {
         if ($user->isConfirmed()) {
             return false;
@@ -29,13 +26,13 @@ final class ConfirmationService
         $this->eventDispatcher->dispatch(new UserEvent($user));
 
         $user->setConfirmedAt(time());
-        $result = $user->save();
+        $user->save();
 
         $userId = $this->getUserId($user);
         $this->userTokenRepository->deleteAllByUserId($userId);
 
         $this->eventDispatcher->dispatch(new UserEvent($user));
-        return $result;
+        return true;
     }
 
     private function getUserId(User $user): int
