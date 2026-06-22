@@ -17,6 +17,8 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var string $csrf
  */
 
+$this->setTitle($translator->translate('voyti.view.two_factor.title', category: 'voyti'));
+
 echo Html::div()->class('voyti-two-factor')->open();
     Html::H3()->class('mb-3')->open();
         echo $translator->translate('voyti.view.two_factor.title', category: 'voyti');

@@ -19,6 +19,8 @@ use Yiisoft\Translator\TranslatorInterface;
 /** @var UrlGeneratorInterface $url */
 $url = $this->get('url');
 
+$this->setTitle($translator->translate('voyti.view.session_history.title', category: 'voyti'));
+
 echo Html::div()->class('voyti-session-history')->open();
     Html::H3()->class('mb-3')->open();
         echo $translator->translate('voyti.view.session_history.title', category: 'voyti');

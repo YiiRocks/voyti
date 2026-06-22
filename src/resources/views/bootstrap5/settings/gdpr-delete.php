@@ -14,6 +14,8 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var string $csrf
  */
 
+$this->setTitle($translator->translate('voyti.view.gdpr.delete_title', category: 'voyti'));
+
 echo Html::div()->class('voyti-gdpr-delete')->open();
     echo Html::H1($translator->translate('voyti.view.gdpr.delete_title', category: 'voyti'));
 

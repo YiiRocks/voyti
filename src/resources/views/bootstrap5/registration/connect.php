@@ -16,6 +16,8 @@ use Yiisoft\Translator\TranslatorInterface;
 /** @var UrlGeneratorInterface $url */
 $url = $this->get('url');
 
+$this->setTitle($translator->translate('voyti.view.registration.connect_title', category: 'voyti'));
+
 echo Html::div()->class('voyti-registration-connect')->open();
     echo Html::H1($translator->translate('voyti.view.registration.connect_title', category: 'voyti'));
 

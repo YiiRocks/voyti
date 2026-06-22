@@ -10,6 +10,8 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var TranslatorInterface $translator
  */
 
+$this->setTitle($translator->translate('voyti.view.networks.title', category: 'voyti'));
+
 echo Html::div()->class('voyti-networks')->open();
     include dirname(__DIR__) . '/shared/_menu.php';
 

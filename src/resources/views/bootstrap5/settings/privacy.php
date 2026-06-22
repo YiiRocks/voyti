@@ -11,6 +11,8 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var TranslatorInterface $translator
  */
 
+$this->setTitle($translator->translate('voyti.view.privacy.title', category: 'voyti'));
+
 echo Html::div()->class('voyti-privacy')->open();
     echo Html::H1($translator->translate('voyti.view.privacy.title', category: 'voyti'));
 

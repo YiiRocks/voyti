@@ -11,6 +11,8 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var TranslatorInterface $translator
  */
 
+$this->setTitle($user->getUsername());
+
 echo Html::div()->class('voyti-userProfile card')->open();
     echo Html::div()->class('card-body')->open();
         echo Html::H1(Html::encode($user->getUsername()));
