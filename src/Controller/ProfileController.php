@@ -14,6 +14,7 @@ use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
+use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 final class ProfileController
@@ -73,9 +74,9 @@ final class ProfileController
         return $this->renderView('profile/show', ['user' => $user, 'userProfile' => $userProfile]);
     }
 
-    private function isAdmin(?IdentityInterface $identity): bool
+    private function isAdmin(IdentityInterface $identity): bool
     {
-        if ($identity === null) {
+        if ($identity instanceof GuestIdentityInterface) {
             return false;
         }
         $id = $identity->getId();

@@ -78,7 +78,7 @@ final class RegistrationController
         $form = new RegistrationForm($this->config, $this->translator);
 
         if ($request->getMethod() === Method::POST) {
-            $body = $request->getParsedBody();
+            $body = (array) $request->getParsedBody();
             $this->hydrator->hydrate($form, $body[$form->getFormName()] ?? $body);
             $result = $this->validator->validate($form);
             $form->processValidationResult($result);
@@ -118,7 +118,7 @@ final class RegistrationController
         $form = new ResendForm($this->config, $this->translator);
 
         if ($request->getMethod() === Method::POST) {
-            $body = $request->getParsedBody();
+            $body = (array) $request->getParsedBody();
             $this->hydrator->hydrate($form, $body[$form->getFormName()] ?? $body);
             $result = $this->validator->validate($form);
 

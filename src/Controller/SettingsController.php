@@ -29,6 +29,7 @@ use Yiisoft\Http\Method;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
+use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
@@ -59,7 +60,7 @@ final class SettingsController
     public function account(ServerRequestInterface $request): ResponseInterface
     {
         $identity = $this->currentUser->getIdentity();
-        if ($identity === null) {
+        if ($identity instanceof GuestIdentityInterface) {
             return $this->renderError('voyti.settings.not_authenticated');
         }
 
@@ -73,7 +74,7 @@ final class SettingsController
         $form->email = $user->getEmail();
 
         if ($request->getMethod() === Method::POST) {
-            $body = $request->getParsedBody();
+            $body = (array) $request->getParsedBody();
             $this->hydrator->hydrate($form, $body[$form->getFormName()] ?? $body);
             $result = $this->validator->validate($form);
             $form->processValidationResult($result);
@@ -108,7 +109,7 @@ final class SettingsController
     public function confirm(ServerRequestInterface $request, string $code): ResponseInterface
     {
         $identity = $this->currentUser->getIdentity();
-        if ($identity === null) {
+        if ($identity instanceof GuestIdentityInterface) {
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated', category: 'voyti'), 'translator' => $this->translator]);
         }
 
@@ -131,7 +132,7 @@ final class SettingsController
         }
 
         $identity = $this->currentUser->getIdentity();
-        if ($identity !== null) {
+        if (!($identity instanceof GuestIdentityInterface)) {
             $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
             if ($user !== null) {
                 $this->eventDispatcher->dispatch(new UserEvent($user));
@@ -146,7 +147,7 @@ final class SettingsController
     public function disconnect(ServerRequestInterface $request, int $id): ResponseInterface
     {
         $identity = $this->currentUser->getIdentity();
-        if ($identity === null) {
+        if ($identity instanceof GuestIdentityInterface) {
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated', category: 'voyti'), 'translator' => $this->translator]);
         }
 
@@ -176,7 +177,7 @@ final class SettingsController
         }
 
         $identity = $this->currentUser->getIdentity();
-        if ($identity === null) {
+        if ($identity instanceof GuestIdentityInterface) {
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated', category: 'voyti'), 'translator' => $this->translator]);
         }
 
@@ -213,7 +214,7 @@ final class SettingsController
         }
 
         $identity = $this->currentUser->getIdentity();
-        if ($identity !== null && $request->getMethod() === Method::POST) {
+        if (!($identity instanceof GuestIdentityInterface) && $request->getMethod() === Method::POST) {
             $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
             if ($user !== null) {
                 $user->setGdprConsent(true);
@@ -235,11 +236,11 @@ final class SettingsController
         $form = new GdprDeleteForm($this->translator);
 
         if ($request->getMethod() === Method::POST) {
-            $body = $request->getParsedBody();
+            $body = (array) $request->getParsedBody();
             $this->hydrator->hydrate($form, $body[$form->getFormName()] ?? $body);
 
             $identity = $this->currentUser->getIdentity();
-            if ($identity !== null) {
+            if (!($identity instanceof GuestIdentityInterface)) {
                 $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
                 if ($user !== null &&         $this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
                     $this->eventDispatcher->dispatch(new GdprEvent($user));
@@ -262,7 +263,7 @@ final class SettingsController
     public function networks(ServerRequestInterface $request): ResponseInterface
     {
         $identity = $this->currentUser->getIdentity();
-        if ($identity === null) {
+        if ($identity instanceof GuestIdentityInterface) {
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated', category: 'voyti'), 'translator' => $this->translator]);
         }
         return $this->renderView('settings/networks', ['user' => $identity]);
@@ -279,7 +280,7 @@ final class SettingsController
     public function userProfile(ServerRequestInterface $request): ResponseInterface
     {
         $identity = $this->currentUser->getIdentity();
-        if ($identity === null) {
+        if ($identity instanceof GuestIdentityInterface) {
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated', category: 'voyti'), 'translator' => $this->translator]);
         }
 
@@ -300,7 +301,7 @@ final class SettingsController
         $form->publicEmail = $userProfile->getPublicEmail() ?? '';
 
         if ($request->getMethod() === Method::POST) {
-            $body = $request->getParsedBody();
+            $body = (array) $request->getParsedBody();
             $this->hydrator->hydrate($form, $body[$form->getFormName()] ?? $body);
 
             $userProfile->setName($form->name);
@@ -328,7 +329,7 @@ final class SettingsController
         }
 
         $identity = $this->currentUser->getIdentity();
-        if ($identity === null) {
+        if ($identity instanceof GuestIdentityInterface) {
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated', category: 'voyti'), 'translator' => $this->translator]);
         }
 
@@ -354,7 +355,7 @@ final class SettingsController
         }
 
         $identity = $this->currentUser->getIdentity();
-        if ($identity === null) {
+        if ($identity instanceof GuestIdentityInterface) {
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated', category: 'voyti'), 'translator' => $this->translator]);
         }
 
@@ -378,7 +379,7 @@ final class SettingsController
         }
 
         $identity = $this->currentUser->getIdentity();
-        if ($identity === null) {
+        if ($identity instanceof GuestIdentityInterface) {
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated', category: 'voyti'), 'translator' => $this->translator]);
         }
 

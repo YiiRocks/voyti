@@ -23,6 +23,8 @@ use Yiisoft\Http\Method;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\User\CurrentUser;
+use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
@@ -75,7 +77,7 @@ final class SecurityController
         $form->password = $credentials['pwd'];
 
         if ($request->getMethod() === Method::POST) {
-            $body = $request->getParsedBody();
+            $body = (array) $request->getParsedBody();
             $this->hydrator->hydrate($form, $body[$form->getFormName()] ?? $body);
 
             $user = $this->userRepository->findByUsernameOrEmail($form->login);
@@ -93,7 +95,7 @@ final class SecurityController
     public function connect(ServerRequestInterface $request): ResponseInterface
     {
         $identity = $this->currentUser->getIdentity();
-        if ($identity === null) {
+        if ($identity instanceof GuestIdentityInterface) {
             return $this->renderError('voyti.settings.not_authenticated');
         }
 
@@ -116,7 +118,7 @@ final class SecurityController
         $form = new LoginForm($this->config, $this->translator);
 
         if ($request->getMethod() === Method::POST) {
-            $body = $request->getParsedBody();
+            $body = (array) $request->getParsedBody();
             $this->hydrator->hydrate($form, $body[$form->getFormName()] ?? $body);
             $result = $this->validator->validate($form);
             $form->processValidationResult($result);

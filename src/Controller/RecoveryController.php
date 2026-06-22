@@ -49,8 +49,9 @@ final class RecoveryController
         $form = new RecoveryForm($this->config, $this->translator, RecoveryForm::SCENARIO_REQUEST);
 
         if ($request->getMethod() === Method::POST) {
-            $body = $request->getParsedBody();
-            $this->hydrator->hydrate($form, $body[$form->getFormName()] ?? $body);
+            $body = (array) $request->getParsedBody();
+            $formData = $body[$form->getFormName()] ?? $body;
+            $this->hydrator->hydrate($form, (array) $formData);
             $result = $this->validator->validate($form);
             $form->processValidationResult($result);
 
@@ -78,16 +79,20 @@ final class RecoveryController
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.recovery.link_invalid', category: 'voyti'), 'translator' => $this->translator]);
         }
 
+        $user = $userToken->getUser();
+        assert($user !== null);
+
         $form = new RecoveryForm($this->config, $this->translator, RecoveryForm::SCENARIO_RESET);
         $errors = [];
 
         if ($request->getMethod() === Method::POST) {
-            $body = $request->getParsedBody();
-            $this->hydrator->hydrate($form, $body[$form->getFormName()] ?? $body);
+            $body = (array) $request->getParsedBody();
+            $formData = $body[$form->getFormName()] ?? $body;
+            $this->hydrator->hydrate($form, (array) $formData);
             $result = $this->validator->validate($form);
 
             if ($result->isValid()) {
-                $this->resetPasswordService->run($form->password, $userToken->getUser(), $userToken);
+                $this->resetPasswordService->run($form->password, $user, $userToken);
                 return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.recovery.password_changed', category: 'voyti'), 'translator' => $this->translator]);
             }
             $errors = $result->getErrorMessages();

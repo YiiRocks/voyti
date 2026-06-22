@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <files psalm-version="6.16.1@f1f5de594dc76faf8784e02d3dc4716c91c6f6ac">
   <file src="src/Command/ConfirmUserCommand.php">
-    <DocblockTypeContradiction>
-      <code><![CDATA[$this->userConfirmationService->run($user)]]></code>
-    </DocblockTypeContradiction>
     <MixedArgument>
       <code><![CDATA[$email]]></code>
       <code><![CDATA[$username]]></code>
@@ -46,15 +43,8 @@
       <code><![CDATA[getDescription]]></code>
       <code><![CDATA[getName]]></code>
     </MixedMethodCall>
-    <PossiblyInvalidArgument>
-      <code><![CDATA[$body]]></code>
-      <code><![CDATA[$body]]></code>
-    </PossiblyInvalidArgument>
   </file>
   <file src="src/Controller/AdminController.php">
-    <DocblockTypeContradiction>
-      <code><![CDATA[$this->userConfirmationService->run($user)]]></code>
-    </DocblockTypeContradiction>
     <InvalidOperand>
       <code><![CDATA[$total]]></code>
     </InvalidOperand>
@@ -69,34 +59,14 @@
     </MixedArgument>
     <MixedMethodCall>
       <code><![CDATA[delete]]></code>
-      <code><![CDATA[getId]]></code>
     </MixedMethodCall>
-    <UndefinedMethod>
-      <code><![CDATA[load]]></code>
-    </UndefinedMethod>
-  </file>
-  <file src="src/Controller/ProfileController.php">
-    <MixedArgument>
-      <code><![CDATA[$identity]]></code>
-    </MixedArgument>
-    <MixedMethodCall>
-      <code><![CDATA[getId]]></code>
-    </MixedMethodCall>
-  </file>
-  <file src="src/Controller/RecoveryController.php">
-    <PossiblyNullArgument>
-      <code><![CDATA[$token->getUser()]]></code>
-    </PossiblyNullArgument>
-    <UndefinedMethod>
-      <code><![CDATA[load]]></code>
-      <code><![CDATA[load]]></code>
-    </UndefinedMethod>
   </file>
   <file src="src/Controller/RegistrationController.php">
-    <UndefinedMethod>
-      <code><![CDATA[load]]></code>
-      <code><![CDATA[load]]></code>
-    </UndefinedMethod>
+    <MixedArgument>
+      <code><![CDATA[$body[$form->getFormName()] ?? $body]]></code>
+      <code><![CDATA[$body[$form->getFormName()] ?? $body]]></code>
+      <code><![CDATA[$error]]></code>
+    </MixedArgument>
   </file>
   <file src="src/Controller/RuleController.php">
     <MixedArrayAccess>
@@ -108,6 +78,8 @@
   </file>
   <file src="src/Controller/SecurityController.php">
     <MixedArgument>
+      <code><![CDATA[$body[$form->getFormName()] ?? $body]]></code>
+      <code><![CDATA[$body[$form->getFormName()] ?? $body]]></code>
       <code><![CDATA[$clientId]]></code>
       <code><![CDATA[$clientId]]></code>
       <code><![CDATA[$form->login]]></code>
@@ -120,41 +92,16 @@
       <code><![CDATA[$credentials['login']]]></code>
       <code><![CDATA[$credentials['pwd']]]></code>
     </MixedArrayAccess>
-    <MixedMethodCall>
-      <code><![CDATA[getId]]></code>
-    </MixedMethodCall>
-    <UndefinedMethod>
-      <code><![CDATA[load]]></code>
-      <code><![CDATA[load]]></code>
-    </UndefinedMethod>
   </file>
   <file src="src/Controller/SettingsController.php">
     <MixedArgument>
-      <code><![CDATA[$identity->getId() ?? 0]]></code>
-      <code><![CDATA[$identity->getId() ?? 0]]></code>
-      <code><![CDATA[$identity->getId() ?? 0]]></code>
-      <code><![CDATA[$identity->getId() ?? 0]]></code>
-      <code><![CDATA[$identity->getId() ?? 0]]></code>
-      <code><![CDATA[$identity->getId() ?? 0]]></code>
-      <code><![CDATA[$identity->getId() ?? 0]]></code>
-      <code><![CDATA[$identity->getId() ?? 0]]></code>
-      <code><![CDATA[$identity->getId() ?? 0]]></code>
-      <code><![CDATA[$identity->getId() ?? 0]]></code>
+      <code><![CDATA[$body[$form->getFormName()] ?? $body]]></code>
+      <code><![CDATA[$body[$form->getFormName()] ?? $body]]></code>
+      <code><![CDATA[$body[$form->getFormName()] ?? $body]]></code>
       <code><![CDATA[$property]]></code>
     </MixedArgument>
     <MixedMethodCall>
       <code><![CDATA[delete]]></code>
-      <code><![CDATA[getId]]></code>
-      <code><![CDATA[getId]]></code>
-      <code><![CDATA[getId]]></code>
-      <code><![CDATA[getId]]></code>
-      <code><![CDATA[getId]]></code>
-      <code><![CDATA[getId]]></code>
-      <code><![CDATA[getId]]></code>
-      <code><![CDATA[getId]]></code>
-      <code><![CDATA[getId]]></code>
-      <code><![CDATA[getId]]></code>
-      <code><![CDATA[getId]]></code>
       <code><![CDATA[getId]]></code>
     </MixedMethodCall>
     <PossiblyUndefinedArrayOffset>
@@ -163,9 +110,6 @@
     <UndefinedMethod>
       <code><![CDATA[getPropertyValue]]></code>
       <code><![CDATA[getPropertyValue]]></code>
-      <code><![CDATA[load]]></code>
-      <code><![CDATA[load]]></code>
-      <code><![CDATA[load]]></code>
     </UndefinedMethod>
   </file>
   <file src="src/Controller/api/v1/AdminController.php">
@@ -178,26 +122,9 @@
       <code><![CDATA[$username]]></code>
     </MixedArgument>
   </file>
-  <file src="src/Entity/Profile.php">
-    <RedundantCondition>
-      <code><![CDATA[$this->gravatarEmail === '']]></code>
-    </RedundantCondition>
-  </file>
-  <file src="src/Entity/SessionHistory.php">
-    <MissingConstructor>
-      <code><![CDATA[$userId]]></code>
-    </MissingConstructor>
-  </file>
-  <file src="src/Entity/Token.php">
-    <MissingConstructor>
-      <code><![CDATA[$type]]></code>
-      <code><![CDATA[$userId]]></code>
-    </MissingConstructor>
-  </file>
   <file src="src/Entity/User.php">
     <MixedArrayAccess>
-      <code><![CDATA[$fields['authKey']]]></code>
-      <code><![CDATA[$fields['passwordHash']]]></code>
+      <code><![CDATA[$fields['auth_key']]]></code>
     </MixedArrayAccess>
     <MixedReturnStatement>
       <code><![CDATA[$fields]]></code>
@@ -206,7 +133,23 @@
       <code><![CDATA[fields]]></code>
     </UndefinedMethod>
   </file>
-  <file src="src/Event/Auth/SocialNetworkAuthEvent.php">
+  <file src="src/Entity/UserProfile.php">
+    <RedundantCondition>
+      <code><![CDATA[$this->gravatar_email === '']]></code>
+    </RedundantCondition>
+  </file>
+  <file src="src/Entity/UserSessionHistory.php">
+    <MissingConstructor>
+      <code><![CDATA[$user_id]]></code>
+    </MissingConstructor>
+  </file>
+  <file src="src/Entity/UserToken.php">
+    <MissingConstructor>
+      <code><![CDATA[$type]]></code>
+      <code><![CDATA[$user_id]]></code>
+    </MissingConstructor>
+  </file>
+  <file src="src/Event/Auth/UserSocialAuthEvent.php">
     <UndefinedClass>
       <code><![CDATA[\Yiisoft\Auth\Client\ClientInterface]]></code>
       <code><![CDATA[private]]></code>
@@ -242,12 +185,12 @@
       <code><![CDATA[$labels[$property]]]></code>
     </MixedReturnStatement>
   </file>
-  <file src="src/Form/Settings/ProfileForm.php">
+  <file src="src/Form/Settings/SettingsForm.php">
     <MixedReturnStatement>
       <code><![CDATA[$labels[$property]]]></code>
     </MixedReturnStatement>
   </file>
-  <file src="src/Form/Settings/SettingsForm.php">
+  <file src="src/Form/Settings/UserProfileForm.php">
     <MixedReturnStatement>
       <code><![CDATA[$labels[$property]]]></code>
     </MixedReturnStatement>
@@ -257,43 +200,33 @@
       <code><![CDATA[$timezone]]></code>
     </ArgumentTypeCoercion>
   </file>
+  <file src="src/Middleware/RouteParametersResolver.php">
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function resolve(array $parameters, ServerRequestInterface $request): array]]></code>
+    </MissingOverrideAttribute>
+    <RedundantCastGivenDocblockType>
+      <code><![CDATA[(string) $value]]></code>
+    </RedundantCastGivenDocblockType>
+    <UndefinedMethod>
+      <code><![CDATA[isBuiltin]]></code>
+    </UndefinedMethod>
+  </file>
   <file src="src/Repository/BaseRepository.php">
     <ArgumentTypeCoercion>
       <code><![CDATA[$class]]></code>
       <code><![CDATA[$class]]></code>
       <code><![CDATA[$class]]></code>
-      <code><![CDATA[$class]]></code>
     </ArgumentTypeCoercion>
-    <InvalidNullableReturnType>
-      <code><![CDATA[bool]]></code>
-    </InvalidNullableReturnType>
-    <NullableReturnStatement>
-      <code><![CDATA[$model->save()]]></code>
-    </NullableReturnStatement>
-    <UndefinedMethod>
-      <code><![CDATA[delete]]></code>
-    </UndefinedMethod>
   </file>
-  <file src="src/Repository/ProfileRepository.php">
-    <InvalidReturnStatement>
-      <code><![CDATA[$this->findOne(Profile::class, ['user_id' => $userId])]]></code>
-    </InvalidReturnStatement>
+  <file src="src/Repository/IdentityRepository.php">
+    <MissingOverrideAttribute>
+      <code><![CDATA[public function findIdentity(string $id): ?IdentityInterface]]></code>
+    </MissingOverrideAttribute>
   </file>
-  <file src="src/Repository/SocialNetworkAccountRepository.php">
+  <file src="src/Repository/UserProfileRepository.php">
     <InvalidReturnStatement>
-      <code><![CDATA[$this->findOne(SocialNetworkAccount::class, ['provider' => $provider, 'client_id' => $clientId])]]></code>
+      <code><![CDATA[$this->findOne(UserProfile::class, ['user_id' => $userId])]]></code>
     </InvalidReturnStatement>
-  </file>
-  <file src="src/Repository/TokenRepository.php">
-    <InvalidReturnStatement>
-      <code><![CDATA[$this->findOne(Token::class, ['code' => $code, 'type' => $type])]]></code>
-      <code><![CDATA[$this->findOne(Token::class, ['user_id' => $userId, 'code' => $code, 'type' => $type])]]></code>
-      <code><![CDATA[$this->findOne(Token::class, ['user_id' => $userId, 'code' => $code])]]></code>
-    </InvalidReturnStatement>
-    <MixedReturnTypeCoercion>
-      <code><![CDATA[$this->findAll(Token::class, ['user_id' => $userId])]]></code>
-      <code><![CDATA[Token[]]]></code>
-    </MixedReturnTypeCoercion>
   </file>
   <file src="src/Repository/UserRepository.php">
     <InvalidReturnStatement>
@@ -307,7 +240,23 @@
       <code><![CDATA[User[]]]></code>
     </MixedReturnTypeCoercion>
   </file>
-  <file src="src/Service/Auth/SocialNetworkAuthenticateService.php">
+  <file src="src/Repository/UserSocialAccountRepository.php">
+    <InvalidReturnStatement>
+      <code><![CDATA[$this->findOne(UserSocialAccount::class, ['provider' => $provider, 'client_id' => $clientId])]]></code>
+    </InvalidReturnStatement>
+  </file>
+  <file src="src/Repository/UserTokenRepository.php">
+    <InvalidReturnStatement>
+      <code><![CDATA[$this->findOne(UserToken::class, ['code' => $code, 'type' => $type])]]></code>
+      <code><![CDATA[$this->findOne(UserToken::class, ['user_id' => $userId, 'code' => $code, 'type' => $type])]]></code>
+      <code><![CDATA[$this->findOne(UserToken::class, ['user_id' => $userId, 'code' => $code])]]></code>
+    </InvalidReturnStatement>
+    <MixedReturnTypeCoercion>
+      <code><![CDATA[$this->findAll(UserToken::class, ['user_id' => $userId])]]></code>
+      <code><![CDATA[UserToken[]]]></code>
+    </MixedReturnTypeCoercion>
+  </file>
+  <file src="src/Service/Auth/UserSocialAuthenticateService.php">
     <MixedArgument>
       <code><![CDATA[$attributes['email'] ?? null]]></code>
       <code><![CDATA[$attributes['username'] ?? ($attributes['name'] ?? null)]]></code>
@@ -343,19 +292,6 @@
       <code><![CDATA[[]]]></code>
     </TypeDoesNotContainType>
   </file>
-  <file src="src/Service/SessionHistory/SessionHistoryDecorator.php">
-    <PossiblyFalseArgument>
-      <code><![CDATA[$this->config->numberSessionHistory]]></code>
-    </PossiblyFalseArgument>
-    <PossiblyInvalidMethodCall>
-      <code><![CDATA[delete]]></code>
-    </PossiblyInvalidMethodCall>
-  </file>
-  <file src="src/Service/SessionHistory/TerminateUserSessionsService.php">
-    <UndefinedMethod>
-      <code><![CDATA[delete]]></code>
-    </UndefinedMethod>
-  </file>
   <file src="src/Service/SwitchIdentityService.php">
     <PossiblyNullArgument>
       <code><![CDATA[$this->config->switchIdentitySessionKey]]></code>
@@ -370,30 +306,25 @@
       <code><![CDATA[$qrcode->render($uri)]]></code>
     </MixedReturnStatement>
   </file>
-  <file src="src/Service/User/AccountConfirmationService.php">
-    <RedundantConditionGivenDocblockType>
-      <code><![CDATA[!$confirmationService->run($user)]]></code>
-    </RedundantConditionGivenDocblockType>
-  </file>
-  <file src="src/Service/User/ConfirmationService.php">
-    <AssignmentToVoid>
-      <code><![CDATA[$result]]></code>
-    </AssignmentToVoid>
-  </file>
-  <file src="src/Service/User/CreateService.php">
-    <NullArgument>
-      <code><![CDATA[null]]></code>
-    </NullArgument>
-  </file>
   <file src="src/Service/User/RegisterService.php">
     <MixedArgument>
       <code><![CDATA[$data['email']]]></code>
       <code><![CDATA[$data['username']]]></code>
       <code><![CDATA[$password]]></code>
     </MixedArgument>
-    <NullArgument>
-      <code><![CDATA[null]]></code>
-    </NullArgument>
+  </file>
+  <file src="src/Service/UserSessionHistory/TerminateUserSessionsService.php">
+    <UndefinedMethod>
+      <code><![CDATA[delete]]></code>
+    </UndefinedMethod>
+  </file>
+  <file src="src/Service/UserSessionHistory/UserSessionHistoryDecorator.php">
+    <PossiblyFalseArgument>
+      <code><![CDATA[$this->config->numberSessionHistory]]></code>
+    </PossiblyFalseArgument>
+    <PossiblyInvalidMethodCall>
+      <code><![CDATA[delete]]></code>
+    </PossiblyInvalidMethodCall>
   </file>
   <file src="src/Validator/Rbac/ItemsValidator.php">
     <MixedArgument>
@@ -511,7 +442,7 @@
   </file>
   <file src="src/resources/views/bootstrap5/admin/_info.php">
     <RedundantConditionGivenDocblockType>
-      <code><![CDATA[$profile]]></code>
+      <code><![CDATA[$userProfile]]></code>
     </RedundantConditionGivenDocblockType>
   </file>
   <file src="src/resources/views/bootstrap5/admin/_profile.php">
@@ -530,6 +461,11 @@
     </InvalidScope>
   </file>
   <file src="src/resources/views/bootstrap5/admin/index.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/profile/show.php">
     <InvalidScope>
       <code><![CDATA[$this]]></code>
     </InvalidScope>
@@ -634,10 +570,20 @@
       <code><![CDATA[$this]]></code>
     </InvalidScope>
   </file>
+  <file src="src/resources/views/bootstrap5/settings/gdpr-delete.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
   <file src="src/resources/views/bootstrap5/settings/networks.php">
-    <MixedMethodCall>
-      <code><![CDATA[getProvider]]></code>
-    </MixedMethodCall>
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/settings/privacy.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
   </file>
   <file src="src/resources/views/bootstrap5/settings/profile.php">
     <InvalidScope>
@@ -649,9 +595,29 @@
       <code><![CDATA[$this]]></code>
     </InvalidScope>
   </file>
+  <file src="src/resources/views/bootstrap5/settings/two-factor-email.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/settings/two-factor-sms.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
+  <file src="src/resources/views/bootstrap5/settings/two-factor.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
+  </file>
   <file src="src/resources/views/bootstrap5/shared/admin_layout.php">
     <MixedArgument>
       <code><![CDATA[$content ?? '']]></code>
     </MixedArgument>
+  </file>
+  <file src="src/resources/views/bootstrap5/shared/message.php">
+    <InvalidScope>
+      <code><![CDATA[$this]]></code>
+    </InvalidScope>
   </file>
 </files>

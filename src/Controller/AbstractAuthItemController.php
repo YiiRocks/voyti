@@ -35,7 +35,7 @@ abstract class AbstractAuthItemController
         $errors = [];
 
         if ($request->getMethod() === Method::POST) {
-            $body = $request->getParsedBody();
+            $body = (array) $request->getParsedBody();
             $this->loadForm($form, $body);
             $result = $this->validator->validate($form);
 
@@ -105,7 +105,7 @@ abstract class AbstractAuthItemController
         $errors = [];
 
         if ($request->getMethod() === Method::POST) {
-            $body = $request->getParsedBody();
+            $body = (array) $request->getParsedBody();
             $this->loadForm($form, $body);
             $result = $this->validator->validate($form);
 

@@ -69,7 +69,7 @@ final class AdminController
         }
 
         if ($request->getMethod() === Method::POST) {
-            $body = $request->getParsedBody();
+            $body = (array) $request->getParsedBody();
             $items = $body['items'] ?? [];
             $this->updateAuthAssignmentsService->run($id, $items);
         }
@@ -109,7 +109,7 @@ final class AdminController
         $errors = [];
 
         if ($request->getMethod() === Method::POST) {
-            $body = $request->getParsedBody();
+            $body = (array) $request->getParsedBody();
             $email = $body['email'] ?? '';
             $username = $body['username'] ?? '';
             $password = $body['password'] ?? Random::string(12);
@@ -127,7 +127,7 @@ final class AdminController
     public function delete(ServerRequestInterface $request, int $id): ResponseInterface
     {
         $identity = $this->currentUser->getIdentity();
-        if ($identity !== null && $id === (int) $identity->getId()) {
+        if ($id === (int) $identity->getId()) {
             return $this->renderError('voyti.admin.cannot_delete_self');
         }
         $user = $this->userRepository->findById($id);
@@ -235,7 +235,7 @@ final class AdminController
         }
 
         if ($request->getMethod() === Method::POST) {
-            $body = $request->getParsedBody();
+            $body = (array) $request->getParsedBody();
             $user->setUsername($body['username'] ?? $user->getUsername());
             $user->setEmail($body['email'] ?? $user->getEmail());
             if (!empty($body['password'])) {
@@ -269,8 +269,9 @@ final class AdminController
         $model->publicEmail = $userProfile->getPublicEmail() ?? '';
 
         if ($request->getMethod() === Method::POST) {
-            $body = $request->getParsedBody();
-            $this->hydrator->hydrate($model, $body[$model->getFormName()] ?? $body);
+            $body = (array) $request->getParsedBody();
+            $formData = $body[$model->getFormName()] ?? $body;
+            $this->hydrator->hydrate($model, (array) $formData);
             $result = $this->validator->validate($model);
             $model->processValidationResult($result);
             if ($result->isValid()) {

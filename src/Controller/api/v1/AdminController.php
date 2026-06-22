@@ -27,7 +27,7 @@ final class AdminController
 
     public function create(ServerRequestInterface $request): ResponseInterface
     {
-        $body = $request->getParsedBody();
+        $body = (array) $request->getParsedBody();
         $email = $body['email'] ?? '';
         $username = $body['username'] ?? '';
         $password = $body['password'] ?? Random::string(12);
@@ -93,7 +93,7 @@ final class AdminController
             return $this->responseFactory->createResponse(['error' => $this->translator->translate('voyti.api.not_found', category: 'voyti')], 404);
         }
 
-        $body = $request->getParsedBody();
+        $body = (array) $request->getParsedBody();
         if (isset($body['username'])) {
             $user->setUsername($body['username']);
         }
