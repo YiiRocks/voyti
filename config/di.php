@@ -20,15 +20,9 @@ use Yiisoft\Session\SessionInterface;
 use Yiisoft\Translator\CategorySource;
 use Yiisoft\Translator\Message\Php\MessageSource;
 use Yiisoft\Translator\SimpleMessageFormatter;
-use Yiisoft\User\CurrentUser;
 
 return [
     ParametersResolverInterface::class => RouteParametersResolver::class,
-
-    CurrentUser::class => [
-        'class' => CurrentUser::class,
-        'withSession()' => [SessionInterface::class],
-    ],
 
     ModuleConfig::class => ModuleConfig::class,
 

@@ -122,6 +122,7 @@
             "web": "web.php",
             "events": "events.php",
             "di": "di.php",
+            "di-web": "di-web.php",
             "bootstrap-console": "bootstrap-console.php",
             "rbac": "rbac.php",
             "voyti-routes": "routes.php"
