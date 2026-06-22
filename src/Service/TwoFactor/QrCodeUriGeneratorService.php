@@ -11,9 +11,6 @@ use Yiisoft\Security\Random;
 
 final class QrCodeUriGeneratorService
 {
-
-    }
-
     public function generateQrCodeSvg(User $user): string
     {
         $uri = $this->run($user);
