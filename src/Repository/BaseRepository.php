@@ -75,8 +75,8 @@ abstract class BaseRepository
         return new ActiveQuery($class);
     }
 
-    protected function save(ActiveRecordInterface $model): bool
+    protected function save(ActiveRecordInterface $model): void
     {
-        return $model->save();
+        $model->save();
     }
 }

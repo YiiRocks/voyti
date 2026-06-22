@@ -20,8 +20,8 @@ final class UserSocialAccountRepository extends BaseRepository
     }
 
     #[\Override]
-    public function save(\Yiisoft\ActiveRecord\ActiveRecordInterface $model): bool
+    public function save(\Yiisoft\ActiveRecord\ActiveRecordInterface $model): void
     {
-        return parent::save($model);
+        parent::save($model);
     }
 }
