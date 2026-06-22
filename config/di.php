@@ -59,8 +59,10 @@ return [
     \YiiRocks\Voyti\Service\MailService::class => fn (
         \Yiisoft\Mailer\MailerInterface $mailer,
         ModuleConfig $config,
-        Aliases $aliases
-    ) => new \YiiRocks\Voyti\Service\MailService($mailer, $config->mailParams, $aliases),
+        Aliases $aliases,
+        \Yiisoft\Translator\TranslatorInterface $translator,
+        \Yiisoft\Router\UrlGeneratorInterface $url
+    ) => new \YiiRocks\Voyti\Service\MailService($mailer, $config->mailParams, $aliases, $translator, $url),
     \YiiRocks\Voyti\Service\User\AccountConfirmationService::class => fn (
         UserTokenRepository $tokenRepository
     ) => new \YiiRocks\Voyti\Service\User\AccountConfirmationService($tokenRepository),

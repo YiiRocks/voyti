@@ -30,9 +30,9 @@ final class MailFactory
         return $this->mailService->sendReconfirmation($user, $userToken);
     }
 
-    public function sendRecovery(string $email, UserToken $userToken): bool
+    public function sendRecovery(string $username, string $email, UserToken $userToken): bool
     {
-        return $this->mailService->sendRecovery($email, $userToken);
+        return $this->mailService->sendRecovery($username, $email, $userToken);
     }
 
     public function sendTwoFactorCode(string $email, string $code): bool

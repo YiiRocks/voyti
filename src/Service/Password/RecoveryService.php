@@ -42,7 +42,7 @@ final class RecoveryService
         $userToken->setCode(Random::string(32));
         $userToken->save();
 
-        $this->mailService->sendRecovery($email, $userToken);
+        $this->mailService->sendRecovery($user->getUsername(), $email, $userToken);
 
         return ServiceResult::success($this->translator->translate('voyti.recovery.message_sent', category: 'voyti'));
     }

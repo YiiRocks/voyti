@@ -7,6 +7,8 @@ namespace YiiRocks\Voyti\Service;
 use Yiisoft\Aliases\Aliases;
 use Yiisoft\Mailer\MailerInterface;
 use Yiisoft\Mailer\Message;
+use Yiisoft\Router\UrlGeneratorInterface;
+use Yiisoft\Translator\TranslatorInterface;
 use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Entity\User;
 
@@ -19,6 +21,8 @@ final class MailService
         private readonly MailerInterface $mailer,
         private readonly array $mailParams,
         private readonly Aliases $aliases,
+        private readonly TranslatorInterface $translator,
+        private readonly UrlGeneratorInterface $url,
     ) {
     }
 
@@ -59,7 +63,10 @@ final class MailService
             $adminEmail,
             'New user registration',
             'welcome',
-            ['user' => $user],
+            [
+                'username' => $user->getUsername(),
+                'translator' => $this->translator,
+            ],
         );
     }
 
@@ -71,7 +78,11 @@ final class MailService
             $user->getEmail(),
             $subject,
             'confirmation',
-            ['user' => $user, 'userToken' => $userToken],
+            [
+                'username' => $user->getUsername(),
+                'confirmationUrl' => $this->url->generateAbsolute('voyti/registration-confirm', ['id' => $user->getId(), 'code' => $userToken->getCode()]),
+                'translator' => $this->translator,
+            ],
         );
     }
 
@@ -83,11 +94,15 @@ final class MailService
             $user->getEmail(),
             $subject,
             'reconfirmation',
-            ['user' => $user, 'userToken' => $userToken],
+            [
+                'username' => $user->getUsername(),
+                'confirmationUrl' => $this->url->generateAbsolute('voyti/settings-confirm', ['code' => $userToken->getCode()]),
+                'translator' => $this->translator,
+            ],
         );
     }
 
-    public function sendRecovery(string $email, UserToken $userToken): bool
+    public function sendRecovery(string $username, string $email, UserToken $userToken): bool
     {
         $subject = $this->getMailSubject('recoveryMailSubject', 'Password reset');
         return $this->send(
@@ -95,7 +110,11 @@ final class MailService
             $email,
             $subject,
             'recovery',
-            ['userToken' => $userToken],
+            [
+                'username' => $username,
+                'recoveryUrl' => $this->url->generateAbsolute('voyti/recover', ['id' => $userToken->getUserId(), 'code' => $userToken->getCode()]),
+                'translator' => $this->translator,
+            ],
         );
     }
 
@@ -107,7 +126,10 @@ final class MailService
             $email,
             $subject,
             'twofactorcode',
-            ['code' => $code],
+            [
+                'code' => $code,
+                'translator' => $this->translator,
+            ],
         );
     }
 
@@ -119,7 +141,10 @@ final class MailService
             $user->getEmail(),
             $subject,
             'welcome',
-            ['user' => $user, 'password' => $password],
+            [
+                'username' => $user->getUsername(),
+                'translator' => $this->translator,
+            ],
         );
     }
 
