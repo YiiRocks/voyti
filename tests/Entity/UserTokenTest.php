@@ -17,11 +17,11 @@ final class UserTokenTest extends TestCase
         ConnectionProvider::set($this->getDb());
         $db = $this->getDb();
         $db->createCommand('CREATE TABLE {{%user_token}} (
-            userId INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
             code VARCHAR(32) NOT NULL,
             type SMALLINT NOT NULL,
-            createdAt INTEGER NOT NULL,
-            PRIMARY KEY (userId, code, type)
+            created_at INTEGER NOT NULL,
+            PRIMARY KEY (user_id, code, type)
         )')->execute();
     }
 
@@ -43,7 +43,7 @@ final class UserTokenTest extends TestCase
         $userToken->setCreatedAt(time());
         $userToken->save();
 
-        $found = UserToken::query()->where(['userId' => 1, 'code' => 'abc123def456', 'type' => UserToken::TYPE_CONFIRMATION])->one();
+        $found = UserToken::query()->where(['user_id' => 1, 'code' => 'abc123def456', 'type' => UserToken::TYPE_CONFIRMATION])->one();
         $this->assertInstanceOf(UserToken::class, $found);
         $this->assertSame(1, $found->getUserId());
         $this->assertSame('abc123def456', $found->getCode());
@@ -76,7 +76,7 @@ final class UserTokenTest extends TestCase
 
         $userToken->delete();
 
-        $found = UserToken::query()->where(['userId' => 4, 'code' => 'delete_me', 'type' => UserToken::TYPE_CONFIRMATION])->one();
+        $found = UserToken::query()->where(['user_id' => 4, 'code' => 'delete_me', 'type' => UserToken::TYPE_CONFIRMATION])->one();
         $this->assertNull($found);
     }
 
@@ -89,10 +89,10 @@ final class UserTokenTest extends TestCase
         $userToken->setCreatedAt(time());
         $userToken->save();
 
-        $notFound = UserToken::query()->where(['userId' => 3, 'code' => 'wrong_code', 'type' => UserToken::TYPE_CONFIRMATION])->one();
+        $notFound = UserToken::query()->where(['user_id' => 3, 'code' => 'wrong_code', 'type' => UserToken::TYPE_CONFIRMATION])->one();
         $this->assertNull($notFound);
 
-        $notFound2 = UserToken::query()->where(['userId' => 99, 'code' => 'unique_code', 'type' => UserToken::TYPE_CONFIRMATION])->one();
+        $notFound2 = UserToken::query()->where(['user_id' => 99, 'code' => 'unique_code', 'type' => UserToken::TYPE_CONFIRMATION])->one();
         $this->assertNull($notFound2);
     }
 
@@ -123,6 +123,6 @@ final class UserTokenTest extends TestCase
         $token3->setCreatedAt(time());
         $token3->save();
 
-        $this->assertSame(3, UserToken::query()->where(['userId' => 2])->count());
+        $this->assertSame(3, UserToken::query()->where(['user_id' => 2])->count());
     }
 }

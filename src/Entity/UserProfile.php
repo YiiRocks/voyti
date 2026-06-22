@@ -11,13 +11,13 @@ final class UserProfile extends ActiveRecord
 {
     use PrivatePropertiesTrait;
     private ?string $bio = null;
-    private ?string $gravatarEmail = null;
-    private ?string $gravatarId = null;
+    private ?string $gravatar_email = null;
+    private ?string $gravatar_id = null;
     private ?string $location = null;
     private ?string $name = null;
-    private ?string $publicEmail = null;
+    private ?string $public_email = null;
     private ?string $timezone = null;
-    private ?int $userId = null;
+    private ?int $user_id = null;
     private ?string $website = null;
 
     public function getBio(): ?string
@@ -27,12 +27,12 @@ final class UserProfile extends ActiveRecord
 
     public function getGravatarEmail(): ?string
     {
-        return $this->gravatarEmail;
+        return $this->gravatar_email;
     }
 
     public function getGravatarId(): ?string
     {
-        return $this->gravatarId;
+        return $this->gravatar_id;
     }
 
     public function getLocation(): ?string
@@ -47,7 +47,7 @@ final class UserProfile extends ActiveRecord
 
     public function getPublicEmail(): ?string
     {
-        return $this->publicEmail;
+        return $this->public_email;
     }
 
     public function getTimezone(): ?string
@@ -63,7 +63,7 @@ final class UserProfile extends ActiveRecord
 
     public function getUserId(): ?int
     {
-        return $this->userId;
+        return $this->user_id;
     }
 
     public function getWebsite(): ?string
@@ -74,10 +74,10 @@ final class UserProfile extends ActiveRecord
     #[\Override]
     public function save(?array $properties = null): void
     {
-        if ($this->gravatarEmail !== null && $this->gravatarEmail !== '') {
-            $this->gravatarId = md5(strtolower(trim($this->gravatarEmail)));
-        } elseif ($this->gravatarEmail === null || $this->gravatarEmail === '') {
-            $this->gravatarId = null;
+        if ($this->gravatar_email !== null && $this->gravatar_email !== '') {
+            $this->gravatar_id = md5(strtolower(trim($this->gravatar_email)));
+        } elseif ($this->gravatar_email === null || $this->gravatar_email === '') {
+            $this->gravatar_id = null;
         }
 
         parent::save($properties);
@@ -90,12 +90,12 @@ final class UserProfile extends ActiveRecord
 
     public function setGravatarEmail(?string $gravatarEmail): void
     {
-        $this->gravatarEmail = $gravatarEmail;
+        $this->gravatar_email = $gravatarEmail;
     }
 
     public function setGravatarId(?string $gravatarId): void
     {
-        $this->gravatarId = $gravatarId;
+        $this->gravatar_id = $gravatarId;
     }
 
     public function setLocation(?string $location): void
@@ -110,7 +110,7 @@ final class UserProfile extends ActiveRecord
 
     public function setPublicEmail(?string $publicEmail): void
     {
-        $this->publicEmail = $publicEmail;
+        $this->public_email = $publicEmail;
     }
 
     public function setTimezone(?string $timezone): void
@@ -120,7 +120,7 @@ final class UserProfile extends ActiveRecord
 
     public function setUserId(int $userId): void
     {
-        $this->userId = $userId;
+        $this->user_id = $userId;
     }
 
     public function setWebsite(?string $website): void

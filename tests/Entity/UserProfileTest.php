@@ -17,16 +17,16 @@ final class UserProfileTest extends TestCase
         ConnectionProvider::set($this->getDb());
         $db = $this->getDb();
         $db->createCommand('CREATE TABLE {{%user_profile}} (
-            userId INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
             name VARCHAR(255),
-            publicEmail VARCHAR(255),
-            gravatarEmail VARCHAR(255),
-            gravatarId VARCHAR(32),
+            public_email VARCHAR(255),
+            gravatar_email VARCHAR(255),
+            gravatar_id VARCHAR(32),
             location VARCHAR(255),
             website VARCHAR(255),
             bio TEXT,
             timezone VARCHAR(40),
-            PRIMARY KEY (userId)
+            PRIMARY KEY (user_id)
         )')->execute();
     }
 
@@ -53,7 +53,7 @@ final class UserProfileTest extends TestCase
         $userProfile->setTimezone('America/New_York');
         $userProfile->save();
 
-        $found = UserProfile::query()->where(['userId' => 1])->one();
+        $found = UserProfile::query()->where(['user_id' => 1])->one();
         $this->assertInstanceOf(UserProfile::class, $found);
         $this->assertSame(1, $found->getUserId());
         $this->assertSame('John Doe', $found->getName());
@@ -75,7 +75,7 @@ final class UserProfileTest extends TestCase
 
         $userProfile->delete();
 
-        $found = UserProfile::query()->where(['userId' => 3])->one();
+        $found = UserProfile::query()->where(['user_id' => 3])->one();
         $this->assertNull($found);
     }
 
@@ -87,7 +87,7 @@ final class UserProfileTest extends TestCase
         $userProfile->setGravatarEmail('test@gravatar.com');
         $userProfile->save();
 
-        $found = UserProfile::query()->where(['userId' => 5])->one();
+        $found = UserProfile::query()->where(['user_id' => 5])->one();
         $this->assertInstanceOf(UserProfile::class, $found);
         $this->assertSame(md5(trim('test@gravatar.com')), $found->getGravatarId());
     }
@@ -102,7 +102,7 @@ final class UserProfileTest extends TestCase
         $userProfile->setGravatarEmail('');
         $userProfile->save();
 
-        $found = UserProfile::query()->where(['userId' => 6])->one();
+        $found = UserProfile::query()->where(['user_id' => 6])->one();
         $this->assertInstanceOf(UserProfile::class, $found);
         $this->assertNull($found->getGravatarId());
     }
@@ -127,7 +127,7 @@ final class UserProfileTest extends TestCase
         $userProfile->setName('Partial');
         $userProfile->save();
 
-        $found = UserProfile::query()->where(['userId' => 4])->one();
+        $found = UserProfile::query()->where(['user_id' => 4])->one();
         $this->assertInstanceOf(UserProfile::class, $found);
         $this->assertSame('Partial', $found->getName());
         $this->assertNull($found->getWebsite());
@@ -145,7 +145,7 @@ final class UserProfileTest extends TestCase
         $userProfile->setLocation('Los Angeles');
         $userProfile->save();
 
-        $found = UserProfile::query()->where(['userId' => 2])->one();
+        $found = UserProfile::query()->where(['user_id' => 2])->one();
         $this->assertInstanceOf(UserProfile::class, $found);
         $this->assertSame('Jane Smith', $found->getName());
         $this->assertSame('Los Angeles', $found->getLocation());

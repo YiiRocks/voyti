@@ -10,16 +10,17 @@ use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
 final class UserSessionHistory extends ActiveRecord
 {
     use PrivatePropertiesTrait;
-    private int $createdAt = 0;
+
+    private int $created_at = 0;
     private ?string $ip = null;
-    private string $sessionId = '';
-    private int $updatedAt = 0;
-    private ?string $userAgent = null;
-    private int $userId;
+    private string $session_id = '';
+    private int $updated_at = 0;
+    private ?string $user_agent = null;
+    private int $user_id;
 
     public function getCreatedAt(): int
     {
-        return $this->createdAt;
+        return $this->created_at;
     }
 
     public function getIp(): ?string
@@ -29,39 +30,27 @@ final class UserSessionHistory extends ActiveRecord
 
     public function getSessionId(): string
     {
-        return $this->sessionId;
+        return $this->session_id;
     }
 
     public function getUpdatedAt(): int
     {
-        return $this->updatedAt;
-    }
-
-    public function getUser(): ?User
-    {
-        /** @var ?User */
-        return $this->hasOne(User::class, ['id' => 'user_id']);
+        return $this->updated_at;
     }
 
     public function getUserAgent(): ?string
     {
-        return $this->userAgent;
+        return $this->user_agent;
     }
 
     public function getUserId(): int
     {
-        return $this->userId;
-    }
-
-    #[\Override]
-    public function primaryKey(): array
-    {
-        return ['userId', 'sessionId'];
+        return $this->user_id;
     }
 
     public function setCreatedAt(int $createdAt): void
     {
-        $this->createdAt = $createdAt;
+        $this->created_at = $createdAt;
     }
 
     public function setIp(?string $ip): void
@@ -71,22 +60,22 @@ final class UserSessionHistory extends ActiveRecord
 
     public function setSessionId(string $sessionId): void
     {
-        $this->sessionId = $sessionId;
+        $this->session_id = $sessionId;
     }
 
     public function setUpdatedAt(int $updatedAt): void
     {
-        $this->updatedAt = $updatedAt;
+        $this->updated_at = $updatedAt;
     }
 
     public function setUserAgent(?string $userAgent): void
     {
-        $this->userAgent = $userAgent;
+        $this->user_agent = $userAgent;
     }
 
     public function setUserId(int $userId): void
     {
-        $this->userId = $userId;
+        $this->user_id = $userId;
     }
 
     #[\Override]

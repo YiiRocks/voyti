@@ -18,14 +18,14 @@ final class UserSocialAccountTest extends TestCase
         $db = $this->getDb();
         $db->createCommand('CREATE TABLE {{%user_social_account}} (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            userId INTEGER,
+            user_id INTEGER,
             provider VARCHAR(255) NOT NULL,
-            clientId VARCHAR(255) NOT NULL,
+            client_id VARCHAR(255) NOT NULL,
             data TEXT,
             code VARCHAR(32),
             email VARCHAR(255),
             username VARCHAR(255),
-            createdAt INTEGER NOT NULL
+            created_at INTEGER NOT NULL
         )')->execute();
     }
 
@@ -59,7 +59,7 @@ final class UserSocialAccountTest extends TestCase
         $account->setCreatedAt(time());
         $account->save();
 
-        $found = UserSocialAccount::query()->where(['provider' => 'github', 'clientId' => 'gh_client_123'])->one();
+        $found = UserSocialAccount::query()->where(['provider' => 'github', 'client_id' => 'gh_client_123'])->one();
         $this->assertInstanceOf(UserSocialAccount::class, $found);
         $this->assertSame(1, $found->getUserId());
         $this->assertSame('github', $found->getProvider());

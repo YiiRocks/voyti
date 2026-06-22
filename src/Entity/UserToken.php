@@ -15,10 +15,9 @@ final class UserToken extends ActiveRecord
     public const TYPE_CONFIRMATION = 0;
     public const TYPE_RECOVERY = 1;
     private string $code = '';
-    private int $createdAt = 0;
+    private int $created_at = 0;
     private int $type;
-
-    private int $userId;
+    private int $user_id;
 
     public function getCode(): string
     {
@@ -27,7 +26,7 @@ final class UserToken extends ActiveRecord
 
     public function getCreatedAt(): int
     {
-        return $this->createdAt;
+        return $this->created_at;
     }
 
     public function getIsExpired(?int $lifespan = null): bool
@@ -39,7 +38,7 @@ final class UserToken extends ActiveRecord
             };
         }
 
-        return (time() - $this->createdAt) > $lifespan;
+        return (time() - $this->created_at) > $lifespan;
     }
 
     public function getType(): int
@@ -55,13 +54,13 @@ final class UserToken extends ActiveRecord
 
     public function getUserId(): int
     {
-        return $this->userId;
+        return $this->user_id;
     }
 
     #[\Override]
     public function primaryKey(): array
     {
-        return ['userId', 'code', 'type'];
+        return ['user_id', 'code', 'type'];
     }
 
     public function setCode(string $code): void
@@ -71,7 +70,7 @@ final class UserToken extends ActiveRecord
 
     public function setCreatedAt(int $createdAt): void
     {
-        $this->createdAt = $createdAt;
+        $this->created_at = $createdAt;
     }
 
     public function setType(int $type): void
@@ -81,7 +80,7 @@ final class UserToken extends ActiveRecord
 
     public function setUserId(int $userId): void
     {
-        $this->userId = $userId;
+        $this->user_id = $userId;
     }
 
     #[\Override]

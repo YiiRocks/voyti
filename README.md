@@ -106,9 +106,13 @@ return [
         '__construct()' => [
             'collector' => DynamicReference::to(
                 static fn() => (new RouteCollector())->addRoute(
-                    // ...your own routes
-                    Group::create('/user/') // choose your prefix
-                        ->routes(...$config->get('voyti-routes')),
+                    Group::create('/')
+                        ->routes(...[
+                            ...$config->get("routes"), // your own routes
+                            Group::create('user/')
+                                ->routes(...$config->get("voyti-routes"))
+                        ],
+                    ),
                 ),
             ),
         ],

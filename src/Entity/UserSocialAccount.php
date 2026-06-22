@@ -10,16 +10,16 @@ use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
 final class UserSocialAccount extends ActiveRecord
 {
     use PrivatePropertiesTrait;
-    private string $clientId = '';
+    private string $client_id = '';
     private ?string $code = null;
-    private int $createdAt = 0;
+    private int $created_at = 0;
     private ?string $data = null;
 
     private ?array $decodedData = null;
     private ?string $email = null;
     private ?int $id = null;
     private string $provider = '';
-    private ?int $userId = null;
+    private ?int $user_id = null;
     private ?string $username = null;
 
     public function connect(User $user): bool
@@ -34,7 +34,7 @@ final class UserSocialAccount extends ActiveRecord
 
     public function getClientId(): string
     {
-        return $this->clientId;
+        return $this->client_id;
     }
 
     public function getCode(): ?string
@@ -44,7 +44,7 @@ final class UserSocialAccount extends ActiveRecord
 
     public function getCreatedAt(): int
     {
-        return $this->createdAt;
+        return $this->created_at;
     }
 
     public function getData(): ?string
@@ -84,7 +84,7 @@ final class UserSocialAccount extends ActiveRecord
 
     public function getUserId(): ?int
     {
-        return $this->userId;
+        return $this->user_id;
     }
 
     public function getUsername(): ?string
@@ -94,12 +94,12 @@ final class UserSocialAccount extends ActiveRecord
 
     public function isConnected(): bool
     {
-        return $this->userId !== null;
+        return $this->user_id !== null;
     }
 
     public function setClientId(string $clientId): void
     {
-        $this->clientId = $clientId;
+        $this->client_id = $clientId;
     }
 
     public function setCode(?string $code): void
@@ -109,7 +109,7 @@ final class UserSocialAccount extends ActiveRecord
 
     public function setCreatedAt(int $createdAt): void
     {
-        $this->createdAt = $createdAt;
+        $this->created_at = $createdAt;
     }
 
     public function setData(?string $data): void
@@ -130,7 +130,7 @@ final class UserSocialAccount extends ActiveRecord
 
     public function setUserId(?int $userId): void
     {
-        $this->userId = $userId;
+        $this->user_id = $userId;
     }
 
     public function setUsername(?string $username): void

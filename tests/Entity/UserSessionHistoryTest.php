@@ -17,13 +17,13 @@ final class UserSessionHistoryTest extends TestCase
         ConnectionProvider::set($this->getDb());
         $db = $this->getDb();
         $db->createCommand('CREATE TABLE {{%user_session_history}} (
-            userId INTEGER NOT NULL,
-            sessionId VARCHAR(255) NOT NULL,
-            userAgent TEXT,
+            user_id INTEGER NOT NULL,
+            session_id VARCHAR(255) NOT NULL,
+            user_agent TEXT,
             ip VARCHAR(45),
-            createdAt INTEGER NOT NULL,
-            updatedAt INTEGER NOT NULL,
-            PRIMARY KEY (userId, sessionId)
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL,
+            PRIMARY KEY (user_id, session_id)
         )')->execute();
     }
 
@@ -59,8 +59,8 @@ final class UserSessionHistoryTest extends TestCase
         $session3->setUpdatedAt(time());
         $session3->save();
 
-        $this->assertSame(2, UserSessionHistory::query()->where(['userId' => 1])->count());
-        $this->assertSame(1, UserSessionHistory::query()->where(['sessionId' => 'sess_two'])->count());
+        $this->assertSame(2, UserSessionHistory::query()->where(['user_id' => 1])->count());
+        $this->assertSame(1, UserSessionHistory::query()->where(['session_id' => 'sess_two'])->count());
     }
 
     public function testCreateAndFind(): void
@@ -74,7 +74,7 @@ final class UserSessionHistoryTest extends TestCase
         $session->setUpdatedAt(time());
         $session->save();
 
-        $found = UserSessionHistory::query()->where(['userId' => 1, 'sessionId' => 'sess_abc123'])->one();
+        $found = UserSessionHistory::query()->where(['user_id' => 1, 'session_id' => 'sess_abc123'])->one();
         $this->assertInstanceOf(UserSessionHistory::class, $found);
         $this->assertSame(1, $found->getUserId());
         $this->assertSame('sess_abc123', $found->getSessionId());
@@ -93,7 +93,7 @@ final class UserSessionHistoryTest extends TestCase
 
         $session->delete();
 
-        $found = UserSessionHistory::query()->where(['userId' => 5, 'sessionId' => 'delete_test'])->one();
+        $found = UserSessionHistory::query()->where(['user_id' => 5, 'session_id' => 'delete_test'])->one();
         $this->assertNull($found);
     }
 
@@ -109,7 +109,7 @@ final class UserSessionHistoryTest extends TestCase
         $session->setUpdatedAt(time());
         $session->save();
 
-        $found = UserSessionHistory::query()->where(['sessionId' => 'null_test'])->one();
+        $found = UserSessionHistory::query()->where(['session_id' => 'null_test'])->one();
         $this->assertInstanceOf(UserSessionHistory::class, $found);
         $this->assertNull($found->getUserAgent());
         $this->assertNull($found->getIp());
@@ -130,7 +130,7 @@ final class UserSessionHistoryTest extends TestCase
         $session->setUpdatedAt($later);
         $session->save();
 
-        $found = UserSessionHistory::query()->where(['sessionId' => 'time_test'])->one();
+        $found = UserSessionHistory::query()->where(['session_id' => 'time_test'])->one();
         $this->assertInstanceOf(UserSessionHistory::class, $found);
         $this->assertEquals($now, $found->getCreatedAt());
         $this->assertEquals($later, $found->getUpdatedAt());
@@ -151,7 +151,7 @@ final class UserSessionHistoryTest extends TestCase
         $session->setUpdatedAt(time());
         $session->save();
 
-        $found = UserSessionHistory::query()->where(['userId' => 4, 'sessionId' => 'update_test'])->one();
+        $found = UserSessionHistory::query()->where(['user_id' => 4, 'session_id' => 'update_test'])->one();
         $this->assertInstanceOf(UserSessionHistory::class, $found);
         $this->assertSame('10.0.0.2', $found->getIp());
         $this->assertSame('NewBrowser/1.0', $found->getUserAgent());
