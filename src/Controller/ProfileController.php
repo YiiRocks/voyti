@@ -9,6 +9,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\UserProfileRepository;
+use YiiRocks\Voyti\Repository\UserRepository;
 use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -29,6 +30,7 @@ final class ProfileController
         private readonly WebViewRenderer $viewRenderer,
         private readonly UrlGeneratorInterface $url,
         private readonly UserProfileRepository $userProfileRepository,
+        private readonly UserRepository $userRepository,
         private readonly AuthHelper $authHelper,
         private readonly ModuleConfig $config,
         private readonly CurrentUser $currentUser,
@@ -66,7 +68,9 @@ final class ProfileController
             return $this->renderError('voyti.userProfile.not_found');
         }
 
-        return $this->renderView('profile/show', ['userProfile' => $userProfile]);
+        $user = $this->userRepository->findById($id);
+
+        return $this->renderView('profile/show', ['user' => $user, 'userProfile' => $userProfile]);
     }
 
     private function isAdmin(?IdentityInterface $identity): bool
