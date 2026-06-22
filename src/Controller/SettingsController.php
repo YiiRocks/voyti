@@ -12,6 +12,7 @@ use YiiRocks\Voyti\Event\Gdpr\GdprEvent;
 use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Form\Settings\GdprDeleteForm;
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
+use YiiRocks\Voyti\Form\Settings\UserProfileForm;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Security\Random;
@@ -293,16 +294,26 @@ final class SettingsController
             $userProfile->setUserId((int) ($user->getId() ?? 0));
         }
 
+        $form = new UserProfileForm($this->translator);
+        $form->name = $userProfile->getName() ?? '';
+        $form->bio = $userProfile->getBio() ?? '';
+        $form->publicEmail = $userProfile->getPublicEmail() ?? '';
+
         if ($request->getMethod() === Method::POST) {
             $body = $request->getParsedBody();
-            $this->hydrator->hydrate($userProfile, $body['userProfile'] ?? $body);
+            $this->hydrator->hydrate($form, $body[$form->getFormName()] ?? $body);
+
+            $userProfile->setName($form->name);
+            $userProfile->setBio($form->bio);
+            $userProfile->setPublicEmail($form->publicEmail);
+
             if ($userProfile->save()) {
                 return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.profile_updated', category: 'voyti'), 'translator' => $this->translator]);
             }
         }
 
         return $this->renderView('settings/profile', [
-            'model' => $userProfile,
+            'model' => $form,
             'user' => $user,
             'userProfile' => $userProfile,
             'errors' => [],
