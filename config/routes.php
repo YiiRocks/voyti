@@ -29,7 +29,7 @@ $routes = [
     Route::get('profile/{id:\d+}')->name('voyti/profile')->action([Controller\ProfileController::class, 'show']),
 
     // Settings
-    Route::methods(['GET', 'POST'], 'settings')->name('voyti/settings')->action([Controller\SettingsController::class, 'profile']),
+    Route::methods(['GET', 'POST'], 'settings')->name('voyti/settings')->action([Controller\SettingsController::class, 'userProfile']),
     Route::methods(['GET', 'POST'], 'settings/account')->name('voyti/settings-account')->action([Controller\SettingsController::class, 'account']),
     Route::get('settings/networks')->name('voyti/settings-networks')->action([Controller\SettingsController::class, 'networks']),
     Route::get('settings/privacy')->name('voyti/settings-privacy')->action([Controller\SettingsController::class, 'privacy']),
@@ -56,7 +56,7 @@ $routes = [
     Route::post('admin/password-reset/{id:\d+}')->name('voyti/admin-password-reset')->action([Controller\AdminController::class, 'passwordReset']),
     Route::post('admin/force-password-change/{id:\d+}')->name('voyti/admin-force-password')->action([Controller\AdminController::class, 'forcePasswordChange']),
     Route::methods(['GET', 'POST'], 'admin/assignments/{id:\d+}')->name('voyti/admin-assignments')->action([Controller\AdminController::class, 'assignments']),
-    Route::get('admin/session-history/{id:\d+}')->name('voyti/admin-session-history')->action([Controller\AdminController::class, 'sessionHistory']),
+    Route::get('admin/session-history/{id:\d+}')->name('voyti/admin-session-history')->action([Controller\AdminController::class, 'userSessionHistory']),
     Route::post('admin/terminate-sessions/{id:\d+}')->name('voyti/admin-terminate-sessions')->action([Controller\AdminController::class, 'terminateSessions']),
 
     // RBAC
