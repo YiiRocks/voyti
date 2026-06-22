@@ -14,6 +14,7 @@ use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
 use YiiRocks\Voyti\Service\Password\ResetService;
+use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Http\Method;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -35,6 +36,7 @@ final class RecoveryController
         private readonly ValidatorInterface $validator,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly ModuleConfig $config,
+        private readonly HydratorInterface $hydrator,
     ) {
     }
 
@@ -49,7 +51,7 @@ final class RecoveryController
 
         if ($request->getMethod() === Method::POST) {
             $body = $request->getParsedBody();
-            $form->load($body, 'recovery');
+            $this->hydrator->hydrate($form, $body[$form->getFormName()] ?? $body);
             $result = $this->validator->validate($form);
 
             if ($result->isValid()) {
@@ -83,7 +85,7 @@ final class RecoveryController
 
         if ($request->getMethod() === Method::POST) {
             $body = $request->getParsedBody();
-            $form->load($body, 'recovery');
+            $this->hydrator->hydrate($form, $body[$form->getFormName()] ?? $body);
             $result = $this->validator->validate($form);
 
             if ($result->isValid()) {

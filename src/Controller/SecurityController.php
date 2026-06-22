@@ -18,6 +18,7 @@ use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\Auth\UserSocialAccountConnectService;
 use YiiRocks\Voyti\Service\Auth\UserSocialAuthenticateService;
 use Yiisoft\Auth\IdentityInterface;
+use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Http\Method;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\SessionInterface;
@@ -43,6 +44,7 @@ final class SecurityController
         private readonly UserSocialAuthenticateService $socialNetworkAuthenticateService,
         private readonly UserSocialAccountConnectService $socialNetworkAccountConnectService,
         private readonly UserSocialAccountRepository $userSocialAccountRepository,
+        private readonly HydratorInterface $hydrator,
     ) {
     }
 
@@ -74,7 +76,7 @@ final class SecurityController
 
         if ($request->getMethod() === Method::POST) {
             $body = $request->getParsedBody();
-            $form->load($body, 'login');
+            $this->hydrator->hydrate($form, $body[$form->getFormName()] ?? $body);
 
             $user = $this->userRepository->findByUsernameOrEmail($form->login);
 
@@ -116,7 +118,7 @@ final class SecurityController
 
         if ($request->getMethod() === Method::POST) {
             $body = $request->getParsedBody();
-            $form->load($body, 'login');
+            $this->hydrator->hydrate($form, $body[$form->getFormName()] ?? $body);
             $result = $this->validator->validate($form);
 
             if ($result->isValid()) {

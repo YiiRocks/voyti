@@ -17,6 +17,7 @@ use YiiRocks\Voyti\Service\User\AccountConfirmationService;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\RegisterService;
 use YiiRocks\Voyti\Service\User\ResendConfirmationService;
+use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Http\Method;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -40,6 +41,7 @@ final class RegistrationController
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly UrlGeneratorInterface $url,
         private readonly ModuleConfig $config,
+        private readonly HydratorInterface $hydrator,
     ) {
     }
 
@@ -74,7 +76,7 @@ final class RegistrationController
 
         if ($request->getMethod() === Method::POST) {
             $body = $request->getParsedBody();
-            $form->load($body, 'register');
+            $this->hydrator->hydrate($form, $body[$form->getFormName()] ?? $body);
             $result = $this->validator->validate($form);
 
             if ($result->isValid()) {
@@ -112,7 +114,7 @@ final class RegistrationController
 
         if ($request->getMethod() === Method::POST) {
             $body = $request->getParsedBody();
-            $form->load($body, 'resend');
+            $this->hydrator->hydrate($form, $body[$form->getFormName()] ?? $body);
             $result = $this->validator->validate($form);
 
             if ($result->isValid()) {

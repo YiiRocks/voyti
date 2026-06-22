@@ -23,6 +23,7 @@ use YiiRocks\Voyti\Service\EmailChangeService;
 use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
 use YiiRocks\Voyti\Strategy\EmailChangeStrategyFactory;
 use Yiisoft\Auth\IdentityInterface;
+use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Http\Method;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -48,6 +49,7 @@ final class SettingsController
         private readonly QrCodeUriGeneratorService $twoFactorQrCodeService,
         private readonly EmailChangeService $emailChangeService,
         private readonly UserTokenRepository $userTokenRepository,
+        private readonly HydratorInterface $hydrator,
     ) {
     }
 
@@ -69,7 +71,7 @@ final class SettingsController
 
         if ($request->getMethod() === Method::POST) {
             $body = $request->getParsedBody();
-            $form->load($body, 'settings');
+            $this->hydrator->hydrate($form, $body[$form->getFormName()] ?? $body);
             $result = $this->validator->validate($form);
 
             if ($result->isValid()) {
@@ -230,7 +232,7 @@ final class SettingsController
 
         if ($request->getMethod() === Method::POST) {
             $body = $request->getParsedBody();
-            $form->load($body, 'gdpr-delete');
+            $this->hydrator->hydrate($form, $body[$form->getFormName()] ?? $body);
 
             $identity = $request->getAttribute(IdentityInterface::class);
             if ($identity !== null) {
@@ -290,7 +292,7 @@ final class SettingsController
 
         if ($request->getMethod() === Method::POST) {
             $body = $request->getParsedBody();
-            $userProfile->load($body, 'userProfile');
+            $this->hydrator->hydrate($userProfile, $body['userProfile'] ?? $body);
             if ($userProfile->save()) {
                 return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.profile_updated', category: 'voyti'), 'translator' => $this->translator]);
             }

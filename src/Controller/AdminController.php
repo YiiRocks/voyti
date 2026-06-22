@@ -24,6 +24,7 @@ use YiiRocks\Voyti\Service\User\BlockService;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\CreateService;
 use Yiisoft\Auth\IdentityInterface;
+use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Http\Method;
 use Yiisoft\Rbac\Assignment;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -54,6 +55,7 @@ final class AdminController
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly UrlGeneratorInterface $url,
         private readonly ModuleConfig $config,
+        private readonly HydratorInterface $hydrator,
     ) {
     }
 
@@ -266,7 +268,7 @@ final class AdminController
 
         if ($request->getMethod() === Method::POST) {
             $body = $request->getParsedBody();
-            $model->load($body, 'userProfile');
+            $this->hydrator->hydrate($model, $body[$model->getFormName()] ?? $body);
             if ($model->isValidated() && $model->isValid()) {
                 $userProfile->setName($model->name !== '' ? $model->name : null);
                 $userProfile->setBio($model->bio !== '' ? $model->bio : null);
