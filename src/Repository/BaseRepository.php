@@ -32,12 +32,11 @@ abstract class BaseRepository
     }
 
     /**
-     * @param class-string $class
+     * @param class-string<ActiveRecordInterface> $class
      */
     protected function deleteAll(string $class, array $condition): void
     {
-        $query = new ActiveQuery($class);
-        $query->where($condition)->delete();
+        (new $class())->deleteAll($condition);
     }
 
     /**
