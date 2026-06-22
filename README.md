@@ -1,6 +1,10 @@
 # Voyti — Yii3 User Management Extension
 
-## войти /vɐjˈtʲi/ — “to enter” or “to log in"
+> **войти**  
+> ***/vɐjˈtʲi/***  
+> *verb*
+>
+> “to enter” or “to log in"
 
 Highly customizable and extensible user management, authentication, and authorization extension for Yii3.
 
@@ -58,7 +62,7 @@ composer require chillerlan/php-authenticator chillerlan/php-qrcode
 ### 1. Run migrations
 
 ```bash
-php yii migrate
+./yii migrate:up
 ```
 
 Five migrations create the `user`, `profile`, `social_account`, `token`, and `session_history` tables with all columns (2FA, GDPR, password expiration, last login IP, etc.) included.
@@ -93,6 +97,7 @@ application's router DI definition, include them alongside your own routes:
 // config/common/di/router.php
 use Yiisoft\Config\Config;
 use Yiisoft\Definitions\DynamicReference;
+use Yiisoft\Router\Group;
 use Yiisoft\Router\RouteCollection;
 use Yiisoft\Router\RouteCollectionInterface;
 use Yiisoft\Router\RouteCollector;
@@ -105,8 +110,13 @@ return [
         '__construct()' => [
             'collector' => DynamicReference::to(
                 static fn() => (new RouteCollector())->addRoute(
-                    ...$config->get('voyti-routes'),
-                    // ...your own routes
+                    Group::create('/')
+                        ->routes(...[
+                            ...$config->get("routes"), // your own routes
+                            Group::create('user/')
+                                ->routes(...$config->get("voyti-routes"))
+                        ],
+                    ),
                 ),
             ),
         ],
@@ -114,9 +124,9 @@ return [
 ];
 ```
 
-Routes are prefixed with `user/` and are available at URLs like `/user/login`,
-`/user/register`, `/user/settings`, etc. REST API routes (under `/user/api/v1`)
-are enabled when `enableRestApi` is `true`.
+Routes are not prefixed and are available at URLs like `login`, `register`,
+`settings`, etc. REST API routes (under `api/v1`) are enabled when
+`enableRestApi` is `true`.
 
 ### 4. That's it
 
@@ -163,7 +173,6 @@ Console commands:
 | `tokenRecoveryLifespan` | `int` | `21600` | Recovery token validity |
 | `administrators` | `array` | `[]` | Admin user IDs/usernames |
 | `administratorPermissionName` | `?string` | `null` | Permission name for admin access |
-| `blowfishCost` | `int` | `10` | Bcrypt cost factor |
 | `maxPasswordAge` | `?int` | `null` | Max password age in days |
 | `disableIpLogging` | `bool` | `false` | Disable IP address logging |
 | `minPasswordRequirements` | `array` | `['lower'=>1,'digit'=>1,'upper'=>1]` | Min character types |
@@ -185,21 +194,6 @@ Web views are in `src/resources/views/bootstrap5/` and use the `@voytiViews` ali
             '@voytiViews' => [
                 '/path/to/your/custom/views',
                 '@voyti/resources/views/bootstrap5',  // fallback
-            ],
-        ],
-    ],
-],
-```
-
-To use a different CSS framework (e.g. Tailwind), create your view files and point `@voytiViews` at them via `pathMap`, falling back to the bundled Bootstrap 5 views:
-
-```php
-'yiisoft/view' => [
-    'theme' => [
-        'pathMap' => [
-            '@voytiViews' => [
-                '/path/to/your/tailwind/views',
-                '@voyti/resources/views/bootstrap5',
             ],
         ],
     ],
@@ -267,10 +261,10 @@ The `SocialNetworkAuthenticateService` handles account lookup, creation, and use
 ## Testing
 
 ```bash
-# Unit tests (265 tests, 3507 assertions)
+# Unit tests
 composer phpunit
 
-# Mutation testing (288 mutations, 100% MSI)
+# Mutation testing
 composer infection
 
 # Static analysis

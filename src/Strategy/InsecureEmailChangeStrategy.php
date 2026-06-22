@@ -17,8 +17,12 @@ final class InsecureEmailChangeStrategy implements MailChangeStrategyInterface
     public function run(): bool
     {
         $user = $this->form->getUser();
+        if ($user === null) {
+            return false;
+        }
         $user->setEmail($this->form->email);
+        $user->save();
 
-        return $user->save();
+        return true;
     }
 }

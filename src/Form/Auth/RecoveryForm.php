@@ -46,6 +46,16 @@ final class RecoveryForm extends FormModel implements RulesProviderInterface
     }
 
     #[\Override]
+    public function getPropertyLabel(string $property): string
+    {
+        $labels = $this->getAttributeLabels();
+        if (isset($labels[$property])) {
+            return $labels[$property];
+        }
+        return parent::getPropertyLabel($property);
+    }
+
+    #[\Override]
     public function getFormName(): string
     {
         return 'recovery';
@@ -65,12 +75,13 @@ final class RecoveryForm extends FormModel implements RulesProviderInterface
                 ? RecaptchaV2Rule::class
                 : RecaptchaV3Rule::class;
 
-            $params = $this->config->recaptchaVersion === 'v3'
-                ? ['threshold' => 0.5, 'action' => 'voyti_' . $this->getFormName()]
-                : [];
+            $params = [];
+            if ($this->config->recaptchaVersion === 'v3') {
+                $params['threshold'] = 0.5;
+                $params['action'] = 'voyti_' . $this->getFormName();
+            }
 
-            $rules['gRecaptchaResponse'] ??= [];
-            $rules['gRecaptchaResponse'][] = new $ruleClass(...$params);
+            $rules['gRecaptchaResponse'] = [new $ruleClass(...$params)];
         }
 
         return $rules;

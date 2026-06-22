@@ -35,7 +35,7 @@ final class RuleController
         $errors = [];
 
         if ($request->getMethod() === Method::POST) {
-            $body = $request->getParsedBody();
+            $body = (array) $request->getParsedBody();
             $data = $body['rule'] ?? [];
             $form->name = $data['name'] ?? '';
             $form->class = $data['class'] ?? '';
@@ -87,7 +87,7 @@ final class RuleController
         $errors = [];
 
         if ($request->getMethod() === Method::POST) {
-            $body = $request->getParsedBody();
+            $body = (array) $request->getParsedBody();
             $data = $body['rule'] ?? [];
             $form->name = $data['name'] ?? $form->name;
             $form->class = $data['class'] ?? $form->class;

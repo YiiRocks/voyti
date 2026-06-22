@@ -13,29 +13,42 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var YiiRocks\Voyti\ModuleConfig $config
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
- * @var array $errors
  */
 
 $this->setTitle($translator->translate('voyti.view.login.title', category: 'voyti'));
-?>
-<div class="voyti-login">
-    <h1><?= $translator->translate('voyti.view.login.title', category: 'voyti') ?></h1>
-    <form action="<?= Html::encode($url->generate('voyti/login')) ?>" method="post" novalidate>
-        <?= Field::errorSummary(null)->errors($errors) ?>
-        <?= Field::text($model, 'login') ?>
-        <?= Field::password($model, 'password') ?>
-        <?= Field::checkbox($model, 'rememberMe') ?>
-        <?= RecaptchaHelper::render($model, $config) ?>
-        <?= Field::buttonGroup()
-            ->buttons(
-                Html::submitButton($translator->translate('voyti.view.login.sign_in_button', category: 'voyti'))
-            )
-?>
-        <p class="mt-3">
-            <a href="<?= Html::encode($url->generate('voyti/forgot')) ?>"><?= $translator->translate('voyti.view.login.forgot_password', category: 'voyti') ?></a>
-            <?php if ($config->enableRegistration): ?>
-                | <a href="<?= Html::encode($url->generate('voyti/register')) ?>"><?= $translator->translate('voyti.view.login.register_link', category: 'voyti') ?></a>
-            <?php endif; ?>
-        </p>
-    </form>
-</div>
+
+echo Html::div()->class('voyti-login')->open();
+    echo Html::H1($translator->translate('voyti.view.login.title', category: 'voyti'));
+
+    echo Html::form()
+        ->post($url->generate('voyti/login'))
+        ->csrf($csrf)
+        ->enctypeMultipartFormData()
+        ->open();
+
+    echo Field::errorSummary($model);
+
+    echo Field::text($model, 'login');
+
+    echo Field::password($model, 'password');
+
+    echo Field::checkbox($model, 'rememberMe');
+
+    echo RecaptchaHelper::render($model, $config);
+
+    echo Field::buttonGroup()
+        ->buttons(
+            Html::submitButton($translator->translate('voyti.view.login.sign_in_button', category: 'voyti'))
+        );
+
+    echo Html::div()->class('mt-3')->open();
+        echo Html::a($translator->translate('voyti.view.login.forgot_password', category: 'voyti'), $url->generate('voyti/forgot'));
+
+        if ($config->enableRegistration) {
+            echo ' | ';
+            echo Html::a($translator->translate('voyti.view.login.register_link', category: 'voyti'), $url->generate('voyti/register'));
+        }
+    echo Html::div()->close();
+
+    echo Html::form()->close();
+echo Html::div()->close();

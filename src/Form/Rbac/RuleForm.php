@@ -33,6 +33,16 @@ final class RuleForm extends FormModel implements RulesProviderInterface
     }
 
     #[\Override]
+    public function getPropertyLabel(string $property): string
+    {
+        $labels = $this->getAttributeLabels();
+        if (isset($labels[$property])) {
+            return $labels[$property];
+        }
+        return parent::getPropertyLabel($property);
+    }
+
+    #[\Override]
     public function getFormName(): string
     {
         return 'rule';

@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service\User;
 
-use YiiRocks\Voyti\Entity\Token;
+use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Entity\User;
-use YiiRocks\Voyti\Repository\TokenRepository;
+use YiiRocks\Voyti\Repository\UserTokenRepository;
 
 final class AccountConfirmationService
 {
     public function __construct(
-        private readonly TokenRepository $tokenRepository,
+        private readonly UserTokenRepository $userTokenRepository,
     ) {
     }
 
@@ -21,13 +21,13 @@ final class AccountConfirmationService
             return false;
         }
 
-        $token = $this->tokenRepository->findByUserIdAndCodeAndType(
+        $userToken = $this->userTokenRepository->findByUserIdAndCodeAndType(
             $user->getId() !== null ? (int) $user->getId() : 0,
             $code,
-            Token::TYPE_CONFIRMATION,
+            UserToken::TYPE_CONFIRMATION,
         );
 
-        if ($token === null || $token->getIsExpired()) {
+        if ($userToken === null || $userToken->getIsExpired()) {
             return false;
         }
 
@@ -35,7 +35,7 @@ final class AccountConfirmationService
             return false;
         }
 
-        $token->delete();
+        $userToken->delete();
         return true;
     }
 }

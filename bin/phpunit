@@ -1,2 +1,0 @@
-#!/bin/bash
-php -d extension=pdo_sqlite "$(dirname "$0")/../vendor/bin/phpunit" "$@"

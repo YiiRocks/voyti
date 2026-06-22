@@ -13,21 +13,21 @@ final class M000004CreateTokenTable implements RevertibleMigrationInterface
     #[\Override]
     public function down(MigrationBuilder $b): void
     {
-        $b->dropForeignKey('{{%token}}', 'fk_token_user');
-        $b->dropPrimaryKey('{{%token}}', 'pk_token');
-        $b->dropTable('{{%token}}');
+        $b->dropForeignKey('{{%user_token}}', 'fk_user_token_user');
+        $b->dropPrimaryKey('{{%user_token}}', 'pk_user_token');
+        $b->dropTable('{{%user_token}}');
     }
     #[\Override]
     public function up(MigrationBuilder $b): void
     {
         $c = $b->columnBuilder();
-        $b->createTable('{{%token}}', [
+        $b->createTable('{{%user_token}}', [
             'user_id' => $c::integer()->notNull(),
             'code' => $c::string(32)->notNull(),
             'type' => $c::smallint()->notNull(),
             'created_at' => $c::integer()->notNull(),
         ]);
-        $b->addPrimaryKey('{{%token}}', 'pk_token', ['user_id', 'code', 'type']);
-        $b->addForeignKey('{{%token}}', 'fk_token_user', 'user_id', '{{%user}}', 'id', 'CASCADE', 'CASCADE');
+        $b->addPrimaryKey('{{%user_token}}', 'pk_user_token', ['user_id', 'code', 'type']);
+        $b->addForeignKey('{{%user_token}}', 'fk_user_token_user', 'user_id', '{{%user}}', 'id', 'CASCADE', 'CASCADE');
     }
 }

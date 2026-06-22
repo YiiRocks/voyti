@@ -1,11 +1,10 @@
 <?php
 
 declare(strict_types=1);
-use YiiRocks\Voyti\Form\Rbac\RoleForm;
 
+use YiiRocks\Voyti\Form\Rbac\RoleForm;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
-use Yiisoft\Html\Tag\Button;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 
@@ -15,38 +14,37 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var array $unassignedItems
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
+ * @var string $csrf
  */
 
-/** @var UrlGeneratorInterface $url */
-$url = $this->get('url');
-?>
-<?php $this->setTitle($translator->translate('voyti.view.role.create_title', category: 'voyti')); ?>
-<div class="voyti-rbac-create">
-    <h1><?= $translator->translate('voyti.view.role.create_title', category: 'voyti') ?></h1>
-<?php
-$form = Html::form(
-    $url->generate('voyti/roles-create'),
-    'post',
-    ['novalidate' => true]
-);
-?>
-<?= $form->begin() ?>
-    <?php if (!empty($errors)): ?>
-        <div class="alert alert-danger">
-            <?php foreach ($errors as $field => $fieldErrors): ?>
-                <?php foreach ((array) $fieldErrors as $error): ?>
-                    <div><?= Html::encode($error) ?></div>
-                <?php endforeach; ?>
-            <?php endforeach; ?>
-        </div>
-    <?php endif; ?>
-    <?= Field::text($model, 'name') ?>
-    <?= Field::text($model, 'description') ?>
-    <?= Field::buttonGroup()
+$this->setTitle($translator->translate('voyti.view.role.create_title', category: 'voyti'));
+
+echo Html::div()->class('voyti-rbac-create')->open();
+    echo Html::H1($translator->translate('voyti.view.role.create_title', category: 'voyti'));
+
+    echo Html::form()
+        ->post($url->generate('voyti/roles-create'))
+        ->csrf($csrf)
+        ->open();
+
+    if (!empty($errors)) {
+        echo Html::div()->class('alert alert-danger')->open();
+            foreach ($errors as $field => $fieldErrors) {
+                foreach ((array) $fieldErrors as $error) {
+                    echo Html::div(Html::encode($error));
+                }
+            }
+        echo Html::div()->close();
+    }
+
+    echo Field::text($model, 'name');
+
+    echo Field::text($model, 'description');
+
+    echo Field::buttonGroup()
         ->buttons(
-            Button::submit($translator->translate('voyti.view.create_button', category: 'voyti'))
-        )
-?>
-    <?= $form->end() ?>
-</div>
-</div>
+            Html::submitButton($translator->translate('voyti.view.create_button', category: 'voyti'))
+        );
+
+    echo Html::form()->close();
+echo Html::div()->close();

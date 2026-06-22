@@ -37,7 +37,7 @@
         "yiisoft/aliases": "^3.1",
         "yiisoft/auth": "^3.2",
         "yiisoft/data": "^2.0",
-        "yiisoft/db": "^2.0",
+        "yiisoft/db-implementation": "*",
         "yiisoft/db-migration": "^2.0",
         "yiisoft/form": "^1.5",
         "yiisoft/form-model": "^1.1",
@@ -57,11 +57,8 @@
     "suggest": {
         "chillerlan/php-authenticator": "Needed to enable Time-based One-Time Password (TOTP) 2 Factor Authentication",
         "chillerlan/php-qrcode": "Needed to generate QR codes for 2FA setup with an authenticator app",
-        "yiisoft/yii-runner": "For running the application",
-        "yiisoft/db-sqlite": "SQLite driver for Yii Database",
-        "yiisoft/db-mysql": "MySQL/MariaDB driver for Yii Database",
-        "yiisoft/db-pgsql": "PostgreSQL driver for Yii Database",
-        "yiisoft/data-response": "Needed for the optional REST API controllers",
+        "yiisoft/yii-runner-console": "Allows to run console application",
+        "yiisoft/yii-runner-http": "Allows to run HTTP application",
         "yiirocks/recaptcha": "Google reCAPTCHA v2 and v3 field + server-side validator for Yii3"
     },
     "require-dev": {
@@ -124,10 +121,11 @@
             "params": "params.php",
             "web": "web.php",
             "events": "events.php",
-            "console": "console.php",
             "di": "di.php",
+            "bootstrap-console": "bootstrap-console.php",
             "rbac": "rbac.php",
-            "voyti-routes": "routes.php"
+            "voyti-routes": "routes.php",
+            "bootstrap": "bootstrap.php"
         }
     },
     "config": {

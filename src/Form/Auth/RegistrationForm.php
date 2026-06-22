@@ -18,7 +18,6 @@ use Yiisoft\Validator\RulesProviderInterface;
 
 final class RegistrationForm extends FormModel implements RulesProviderInterface
 {
-
     #[Required]
     #[Email]
     #[Length(max: 255)]
@@ -47,8 +46,21 @@ final class RegistrationForm extends FormModel implements RulesProviderInterface
             'username' => $this->translator->translate('voyti.view.username_label', category: 'voyti'),
             'email' => $this->translator->translate('voyti.view.email_label', category: 'voyti'),
             'password' => $this->translator->translate('voyti.view.password_label', category: 'voyti'),
-            'gdprConsent' => $this->translator->translate('voyti.view.registration.gdpr_consent_label', category: 'voyti'),
+            'gdprConsent' => $this->translator->translate(
+                'voyti.view.registration.gdpr_consent_label',
+                category: 'voyti',
+            ),
         ];
+    }
+
+    #[\Override]
+    public function getPropertyLabel(string $property): string
+    {
+        $labels = $this->getAttributeLabels();
+        if (isset($labels[$property])) {
+            return $labels[$property];
+        }
+        return parent::getPropertyLabel($property);
     }
 
     #[\Override]
@@ -68,12 +80,13 @@ final class RegistrationForm extends FormModel implements RulesProviderInterface
                 ? RecaptchaV2Rule::class
                 : RecaptchaV3Rule::class;
 
-            $params = $this->config->recaptchaVersion === 'v3'
-                ? ['threshold' => 0.5, 'action' => 'voyti_' . $this->getFormName()]
-                : [];
+            $params = [];
+            if ($this->config->recaptchaVersion === 'v3') {
+                $params['threshold'] = 0.5;
+                $params['action'] = 'voyti_' . $this->getFormName();
+            }
 
-            $rules['gRecaptchaResponse'] ??= [];
-            $rules['gRecaptchaResponse'][] = new $ruleClass(...$params);
+            $rules['gRecaptchaResponse'] = [new $ruleClass(...$params)];
         }
 
         return $rules;

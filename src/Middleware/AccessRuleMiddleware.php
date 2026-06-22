@@ -10,13 +10,14 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use YiiRocks\Voyti\Helper\AuthHelper;
-use YiiRocks\Voyti\IdentityServiceInterface;
 use YiiRocks\Voyti\ModuleConfig;
+use Yiisoft\User\CurrentUser;
+use Yiisoft\User\Guest\GuestIdentityInterface;
 
 final class AccessRuleMiddleware implements MiddlewareInterface
 {
     public function __construct(
-        private readonly IdentityServiceInterface $identityService,
+        private readonly CurrentUser $currentUser,
         private readonly ModuleConfig $config,
         private readonly AuthHelper $authHelper,
         private readonly ResponseFactoryInterface $responseFactory,
@@ -26,7 +27,8 @@ final class AccessRuleMiddleware implements MiddlewareInterface
     #[\Override]
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $user = $this->identityService->getIdentity();
+        $user = $this->currentUser->getIdentity();
+        $user = $user instanceof GuestIdentityInterface ? null : $user;
 
         if ($user === null) {
             $response = $this->responseFactory->createResponse(302);

@@ -4,16 +4,13 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Repository;
 
-use YiiRocks\Voyti\Entity\Profile;
-use YiiRocks\Voyti\Entity\Token;
+use YiiRocks\Voyti\Entity\UserProfile;
+use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Entity\User;
 
+/** @extends BaseRepository<User> */
 final class UserRepository extends BaseRepository
 {
-    public function __construct()
-    {
-    }
-
     /**
      * @psalm-return int<0, max>|string
      */
@@ -32,64 +29,72 @@ final class UserRepository extends BaseRepository
     }
 
     #[\Override]
-    public function delete(object|array $model): void
+    public function delete(\Yiisoft\ActiveRecord\ActiveRecordInterface $model): void
     {
         if ($model instanceof User) {
-            $profile = $model->getProfile();
-            if ($profile !== null) {
-                $profile->delete();
+            $userProfile = $model->getProfile();
+            if ($userProfile !== null) {
+                $userProfile->delete();
             }
         }
         parent::delete($model);
     }
 
+    /**
+     * @return User[]
+     */
     public function findAllUsers(): array
     {
         return $this->findAll(User::class);
     }
 
-    public function findByEmail(string $email): array|\Yiisoft\ActiveRecord\ActiveRecordInterface|null
+    public function findByEmail(string $email): ?User
     {
         return $this->findOne(User::class, ['email' => $email]);
     }
 
-    public function findById(int $id): array|\Yiisoft\ActiveRecord\ActiveRecordInterface|null
+    public function findById(int $id): ?User
     {
         return User::query()->findByPk($id);
     }
 
-    public function findByUsername(string $username): array|\Yiisoft\ActiveRecord\ActiveRecordInterface|null
+    public function findByUsername(string $username): ?User
     {
         return $this->findOne(User::class, ['username' => $username]);
     }
 
-    public function findByUsernameOrEmail(string $login): array|\Yiisoft\ActiveRecord\ActiveRecordInterface|null
+    public function findByUsernameOrEmail(string $login): ?User
     {
         return $this->findOne(User::class, ['or', ['username' => $login], ['email' => $login]]);
     }
 
     #[\Override]
-    public function save(object|array $model): bool
+    public function save(\Yiisoft\ActiveRecord\ActiveRecordInterface $model): void
     {
-        return parent::save($model);
+        parent::save($model);
     }
 
-    public function saveWithProfile(User $user, Profile $profile): void
-    {
-        $this->save($user);
-        $profile->setUserId($user->getId() !== null ? (int) $user->getId() : 0);
-        $this->save($profile);
-    }
-
-    public function saveWithProfileAndToken(User $user, Profile $profile, Token $token): void
+    public function saveWithProfile(User $user, UserProfile $userProfile): void
     {
         $this->save($user);
-        $profile->setUserId($user->getId() !== null ? (int) $user->getId() : 0);
-        $this->save($profile);
-        $token->setUserId($user->getId() !== null ? (int) $user->getId() : 0);
-        $this->save($token);
+        $userProfile->setUserId($user->getId() !== null ? (int) $user->getId() : 0);
+        $this->save($userProfile);
     }
 
+    public function saveWithProfileAndToken(User $user, UserProfile $userProfile, UserToken $userToken): void
+    {
+        $this->save($user);
+        $userProfile->setUserId($user->getId() !== null ? (int) $user->getId() : 0);
+        $this->save($userProfile);
+        $userToken->setUserId($user->getId() !== null ? (int) $user->getId() : 0);
+        $this->save($userToken);
+    }
+
+    /**
+     * @return (array|object)[]
+     *
+     * @psalm-return array<array|object>
+     */
     public function search(array $filters = []): array
     {
         $query = $this->query(User::class);

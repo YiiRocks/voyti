@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Event\Security;
 
-use YiiRocks\Voyti\Entity\Token;
+use YiiRocks\Voyti\Entity\UserToken;
 use Yiisoft\FormModel\FormModel;
 
 final class ResetPasswordEvent
@@ -13,7 +13,7 @@ final class ResetPasswordEvent
     public const BEFORE_TOKEN_VALIDATE = 'beforeTokenValidate';
 
     public function __construct(
-        private readonly Token $token,
+        private readonly UserToken $userToken,
         private ?FormModel $form = null,
     ) {
     }
@@ -23,9 +23,9 @@ final class ResetPasswordEvent
         return $this->form;
     }
 
-    public function getToken(): Token
+    public function getToken(): UserToken
     {
-        return $this->token;
+        return $this->userToken;
     }
 
     public function updateForm(FormModel $form): self

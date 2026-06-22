@@ -7,12 +7,10 @@ namespace YiiRocks\Voyti\Service\User;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Event\User\UserEvent;
-use YiiRocks\Voyti\Helper\SecurityHelper;
 
 final class BlockService
 {
     public function __construct(
-        private readonly SecurityHelper $securityHelper,
         private readonly EventDispatcherInterface $eventDispatcher,
     ) {
     }
@@ -27,7 +25,8 @@ final class BlockService
             $user->setBlockedAt(time());
         }
 
-        $result = $user->save();
+        $user->save();
+        $result = true;
         $this->eventDispatcher->dispatch(new UserEvent($user));
         return $result;
     }

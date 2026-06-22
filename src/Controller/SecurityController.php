@@ -10,18 +10,20 @@ use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
 use YiiRocks\Voyti\Event\User\FormEvent;
 use YiiRocks\Voyti\Form\Auth\LoginForm;
-use YiiRocks\Voyti\Helper\SecurityHelper;
-use YiiRocks\Voyti\IdentityServiceInterface;
+use Yiisoft\Security\PasswordHasher;
+use Yiisoft\User\CurrentUser;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\SocialNetworkAccountRepository;
+use YiiRocks\Voyti\Repository\UserSocialAccountRepository;
 use YiiRocks\Voyti\Repository\UserRepository;
-use YiiRocks\Voyti\Service\Auth\SocialNetworkAccountConnectService;
-use YiiRocks\Voyti\Service\Auth\SocialNetworkAuthenticateService;
+use YiiRocks\Voyti\Service\Auth\UserSocialAccountConnectService;
+use YiiRocks\Voyti\Service\Auth\UserSocialAuthenticateService;
 use Yiisoft\Auth\IdentityInterface;
+use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Http\Method;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
@@ -33,16 +35,17 @@ final class SecurityController
         private readonly TranslatorInterface $translator,
         private readonly WebViewRenderer $viewRenderer,
         private readonly UserRepository $userRepository,
-        private readonly IdentityServiceInterface $identityService,
-        private readonly SecurityHelper $securityHelper,
+        private readonly CurrentUser $currentUser,
+        private readonly PasswordHasher $passwordHasher,
         private readonly ValidatorInterface $validator,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly UrlGeneratorInterface $url,
         private readonly SessionInterface $session,
         private readonly ModuleConfig $config,
-        private readonly SocialNetworkAuthenticateService $socialNetworkAuthenticateService,
-        private readonly SocialNetworkAccountConnectService $socialNetworkAccountConnectService,
-        private readonly SocialNetworkAccountRepository $socialNetworkAccountRepository,
+        private readonly UserSocialAuthenticateService $socialNetworkAuthenticateService,
+        private readonly UserSocialAccountConnectService $socialNetworkAccountConnectService,
+        private readonly UserSocialAccountRepository $userSocialAccountRepository,
+        private readonly HydratorInterface $hydrator,
     ) {
     }
 
@@ -73,14 +76,14 @@ final class SecurityController
         $form->password = $credentials['pwd'];
 
         if ($request->getMethod() === Method::POST) {
-            $body = $request->getParsedBody();
-            $form->load($body, 'login');
+            $body = (array) $request->getParsedBody();
+            $this->hydrator->hydrate($form, $body[$form->getFormName()] ?? $body);
 
             $user = $this->userRepository->findByUsernameOrEmail($form->login);
 
-            if ($user !== null && $this->securityHelper->validatePassword($form->password, $user->getPasswordHash())) {
+            if ($user !== null && $this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
                 $this->session->remove('credentials');
-                $this->identityService->login($user);
+                $this->currentUser->login($user);
                 return $this->renderSuccess('voyti.security.authenticated');
             }
         }
@@ -90,8 +93,8 @@ final class SecurityController
 
     public function connect(ServerRequestInterface $request): ResponseInterface
     {
-        $identity = $request->getAttribute(IdentityInterface::class);
-        if ($identity === null) {
+        $identity = $this->currentUser->getIdentity();
+        if ($identity instanceof GuestIdentityInterface) {
             return $this->renderError('voyti.settings.not_authenticated');
         }
 
@@ -112,29 +115,33 @@ final class SecurityController
     public function login(ServerRequestInterface $request): ResponseInterface
     {
         $form = new LoginForm($this->config, $this->translator);
-        $errors = [];
 
         if ($request->getMethod() === Method::POST) {
-            $body = $request->getParsedBody();
-            $form->load($body, 'login');
+            $body = (array) $request->getParsedBody();
+            $this->hydrator->hydrate($form, $body[$form->getFormName()] ?? $body);
             $result = $this->validator->validate($form);
+            $form->processValidationResult($result);
 
             if ($result->isValid()) {
                 $user = $this->userRepository->findByUsernameOrEmail($form->login);
 
-                if ($user === null || !$this->securityHelper->validatePassword($form->password, $user->getPasswordHash())) {
-                    $errors['login'] = $this->translator->translate('voyti.security.invalid_login', category: 'voyti');
+                if ($user === null || !$this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
+                    $form->addError($this->translator->translate('voyti.security.invalid_login', category: 'voyti'), ['login']);
                 } elseif ($user->isBlocked()) {
-                    $errors['login'] = $this->translator->translate('voyti.security.account_blocked', category: 'voyti');
+                    $form->addError($this->translator->translate('voyti.security.account_blocked', category: 'voyti'), ['login']);
                 } elseif ($this->config->enableEmailConfirmation && !$user->isConfirmed()) {
-                    $errors['login'] = $this->translator->translate('voyti.security.need_email_confirmation', category: 'voyti');
+                    $form->addError($this->translator->translate('voyti.security.need_email_confirmation', category: 'voyti'), ['login']);
                 } else {
                     if ($this->config->enableTwoFactorAuthentication && $user->isAuthTfEnabled()) {
                         $this->session->set('credentials', ['login' => $form->login, 'pwd' => $form->password]);
                         return $this->renderView('security/confirm', ['model' => $form, 'config' => $this->config]);
                     }
 
-                    $this->identityService->login($user, $form->rememberMe ? $this->config->rememberLoginLifespan : null);
+                    $userToLogin = $this->currentUser;
+                    if ($form->rememberMe) {
+                        $userToLogin = $userToLogin->withAuthTimeout($this->config->rememberLoginLifespan);
+                    }
+                    $userToLogin->login($user);
                     $user->setLastLoginAt(time());
                     $user->setLastLoginIp($this->config->disableIpLogging ? '127.0.0.1' : ($request->getServerParams()['REMOTE_ADDR'] ?? '127.0.0.1'));
                     $user->save();
@@ -144,21 +151,18 @@ final class SecurityController
 
                     return $this->renderSuccess('voyti.security.logged_in');
                 }
-            } else {
-                $errors = $result->getErrorMessages();
             }
         }
 
         return $this->renderView('security/login', [
             'model' => $form,
             'config' => $this->config,
-            'errors' => $errors,
         ]);
     }
 
     public function logout(): ResponseInterface
     {
-        $this->identityService->logout();
+        $this->currentUser->logout();
         return $this->renderSuccess('voyti.security.logged_out');
     }
 }

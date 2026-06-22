@@ -20,25 +20,25 @@ final class UserTest extends TestCase
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username VARCHAR(255) NOT NULL,
             email VARCHAR(255) NOT NULL,
-            passwordHash VARCHAR(60) NOT NULL,
-            authKey VARCHAR(32) NOT NULL,
-            unconfirmedEmail VARCHAR(255),
-            registrationIp VARCHAR(45),
+            password_hash VARCHAR(60) NOT NULL,
+            auth_key VARCHAR(32) NOT NULL,
+            unconfirmed_email VARCHAR(255),
+            registration_ip VARCHAR(45),
             flags INTEGER NOT NULL DEFAULT 0,
-            confirmedAt INTEGER,
-            blockedAt INTEGER,
-            updatedAt INTEGER NOT NULL,
-            createdAt INTEGER NOT NULL,
-            lastLoginAt INTEGER,
-            authTfKey VARCHAR(32),
-            authTfEnabled INTEGER DEFAULT 0,
-            passwordChangedAt INTEGER,
-            lastLoginIp VARCHAR(45),
-            gdprDeleted INTEGER DEFAULT 0,
-            gdprConsent INTEGER DEFAULT 0,
-            gdprConsentDate INTEGER,
-            authTfType VARCHAR(20),
-            authTfMobilePhone VARCHAR(20)
+            confirmed_at INTEGER,
+            blocked_at INTEGER,
+            updated_at INTEGER NOT NULL,
+            created_at INTEGER NOT NULL,
+            last_login_at INTEGER,
+            auth_tf_key VARCHAR(32),
+            auth_tf_enabled INTEGER DEFAULT 0,
+            password_changed_at INTEGER,
+            last_login_ip VARCHAR(45),
+            gdpr_deleted INTEGER DEFAULT 0,
+            gdpr_consent INTEGER DEFAULT 0,
+            gdpr_consent_date INTEGER,
+            auth_tf_type VARCHAR(20),
+            auth_tf_mobile_phone VARCHAR(20)
         )')->execute();
     }
 
@@ -194,6 +194,30 @@ final class UserTest extends TestCase
         $found = User::query()->where(['username' => 'updateuser'])->one();
         $this->assertInstanceOf(User::class, $found);
         $this->assertSame('updated@example.com', $found->getEmail());
+    }
+
+    public function testConfirmUserLoadedFromDb(): void
+    {
+        $user = new User();
+        $user->setUsername('confirmuser');
+        $user->setEmail('confirm@example.com');
+        $user->setPasswordHash('hash1');
+        $user->setAuthKey('auth1');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $user->save();
+
+        $loaded = User::query()->findByPk($user->getId());
+        $this->assertInstanceOf(User::class, $loaded);
+        $this->assertFalse($loaded->isConfirmed());
+
+        $loaded->setConfirmedAt(time());
+        $loaded->save();
+
+        $found = User::query()->where(['username' => 'confirmuser'])->one();
+        $this->assertInstanceOf(User::class, $found);
+        $this->assertTrue($found->isConfirmed());
+        $this->assertNotNull($found->getConfirmedAt());
     }
 
     public function testValidateAuthKey(): void

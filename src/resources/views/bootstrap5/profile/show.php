@@ -7,22 +7,36 @@ use Yiisoft\Translator\TranslatorInterface;
 
 /**
  * @var YiiRocks\Voyti\Entity\User $user
- * @var YiiRocks\Voyti\Entity\Profile $profile
+ * @var YiiRocks\Voyti\Entity\UserProfile $userProfile
  * @var TranslatorInterface $translator
  */
-?>
-<div class="voyti-profile card">
-    <div class="card-body">
-        <h1><?= Html::encode($user->getUsername()) ?></h1>
-        <p class="card-text"><?= $translator->translate('voyti.view.profile.email_label', category: 'voyti') ?> <?= Html::encode($user->getEmail()) ?></p>
-        <?php if ($profile->getName()): ?>
-            <p class="card-text"><?= $translator->translate('voyti.view.profile.name_label', category: 'voyti') ?> <?= Html::encode($profile->getName()) ?></p>
-        <?php endif; ?>
-        <?php if ($profile->getLocation()): ?>
-            <p class="card-text"><?= $translator->translate('voyti.view.profile.location_label', category: 'voyti') ?> <?= Html::encode($profile->getLocation()) ?></p>
-        <?php endif; ?>
-        <?php if ($profile->getBio()): ?>
-            <p class="card-text"><?= $translator->translate('voyti.view.profile.bio_label', category: 'voyti') ?> <?= nl2br(Html::encode($profile->getBio())) ?></p>
-        <?php endif; ?>
-    </div>
-</div>
+
+$this->setTitle($user->getUsername());
+
+echo Html::div()->class('voyti-userProfile card')->open();
+    echo Html::div()->class('card-body')->open();
+        echo Html::H1(Html::encode($user->getUsername()));
+
+        echo Html::p()->class('card-text')->open();
+            echo $translator->translate('voyti.view.userProfile.email_label', category: 'voyti') . ' ' . Html::encode($user->getEmail());
+        echo Html::p()->close();
+
+        if ($userProfile->getName()) {
+            echo Html::p()->class('card-text')->open();
+                echo $translator->translate('voyti.view.userProfile.name_label', category: 'voyti') . ' ' . Html::encode($userProfile->getName());
+            echo Html::p()->close();
+        }
+
+        if ($userProfile->getLocation()) {
+            echo Html::p()->class('card-text')->open();
+                echo $translator->translate('voyti.view.userProfile.location_label', category: 'voyti') . ' ' . Html::encode($userProfile->getLocation());
+            echo Html::p()->close();
+        }
+
+        if ($userProfile->getBio()) {
+            echo Html::p()->class('card-text')->open();
+                echo $translator->translate('voyti.view.userProfile.bio_label', category: 'voyti') . ' ' . nl2br(Html::encode($userProfile->getBio()));
+            echo Html::p()->close();
+        }
+    echo Html::div()->close();
+echo Html::div()->close();

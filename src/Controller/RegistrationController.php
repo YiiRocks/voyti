@@ -11,12 +11,13 @@ use YiiRocks\Voyti\Event\User\FormEvent;
 use YiiRocks\Voyti\Form\Auth\RegistrationForm;
 use YiiRocks\Voyti\Form\Auth\ResendForm;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\TokenRepository;
+use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\User\AccountConfirmationService;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\RegisterService;
 use YiiRocks\Voyti\Service\User\ResendConfirmationService;
+use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Http\Method;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -32,7 +33,7 @@ final class RegistrationController
         private readonly WebViewRenderer $viewRenderer,
         private readonly RegisterService $userRegisterService,
         private readonly UserRepository $userRepository,
-        private readonly TokenRepository $tokenRepository,
+        private readonly UserTokenRepository $userTokenRepository,
         private readonly ConfirmationService $userConfirmationService,
         private readonly AccountConfirmationService $accountConfirmationService,
         private readonly ResendConfirmationService $resendConfirmationService,
@@ -40,6 +41,7 @@ final class RegistrationController
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly UrlGeneratorInterface $url,
         private readonly ModuleConfig $config,
+        private readonly HydratorInterface $hydrator,
     ) {
     }
 
@@ -49,6 +51,10 @@ final class RegistrationController
 
         if ($user === null || !$this->config->enableEmailConfirmation) {
             return $this->renderError('voyti.registration.invalid_confirmation_link');
+        }
+
+        if ($user->isConfirmed()) {
+            return $this->renderSuccess('voyti.registration.complete');
         }
 
         if ($this->accountConfirmationService->run($code, $user, $this->userConfirmationService)) {
@@ -70,12 +76,12 @@ final class RegistrationController
         }
 
         $form = new RegistrationForm($this->config, $this->translator);
-        $errors = [];
 
         if ($request->getMethod() === Method::POST) {
-            $body = $request->getParsedBody();
-            $form->load($body, 'register');
+            $body = (array) $request->getParsedBody();
+            $this->hydrator->hydrate($form, $body[$form->getFormName()] ?? $body);
             $result = $this->validator->validate($form);
+            $form->processValidationResult($result);
 
             if ($result->isValid()) {
                 $serviceResult = $this->userRegisterService->run([
@@ -87,18 +93,19 @@ final class RegistrationController
 
                 if ($serviceResult->isSuccess()) {
                     $this->eventDispatcher->dispatch(new FormEvent($form));
-                    return $this->renderView('shared/message', ['title' => $serviceResult->getMessage()]);
+                    return $this->renderView('shared/message', [
+                        'title' => $this->translator->translate($serviceResult->getMessage(), category: 'voyti'),
+                    ]);
                 }
-                $errors = $serviceResult->getErrors();
-            } else {
-                $errors = $result->getErrorMessages();
+                foreach ($serviceResult->getErrors() as $error) {
+                    $form->addError($error, []);
+                }
             }
         }
 
         return $this->renderView('registration/register', [
             'model' => $form,
             'config' => $this->config,
-            'errors' => $errors,
         ]);
     }
 
@@ -111,8 +118,8 @@ final class RegistrationController
         $form = new ResendForm($this->config, $this->translator);
 
         if ($request->getMethod() === Method::POST) {
-            $body = $request->getParsedBody();
-            $form->load($body, 'resend');
+            $body = (array) $request->getParsedBody();
+            $this->hydrator->hydrate($form, $body[$form->getFormName()] ?? $body);
             $result = $this->validator->validate($form);
 
             if ($result->isValid()) {

@@ -50,7 +50,6 @@ final class ModuleConfigTest extends TestCase
             administrators: ['admin'],
             administratorPermissionName: 'admin',
             profileVisibility: 1,
-            blowfishCost: 12,
             maxPasswordAge: 90,
             restrictUserPermissionAssignment: true,
             disableIpLogging: true,
@@ -99,7 +98,6 @@ final class ModuleConfigTest extends TestCase
         $this->assertSame(['admin'], $config->administrators);
         $this->assertSame('admin', $config->administratorPermissionName);
         $this->assertSame(1, $config->profileVisibility);
-        $this->assertSame(12, $config->blowfishCost);
         $this->assertSame(90, $config->maxPasswordAge);
         $this->assertTrue($config->restrictUserPermissionAssignment);
         $this->assertTrue($config->disableIpLogging);
@@ -123,12 +121,12 @@ final class ModuleConfigTest extends TestCase
         $this->assertSame([
             'email',
             'username',
-            'profile.public_email',
-            'profile.name',
-            'profile.gravatar_email',
-            'profile.location',
-            'profile.website',
-            'profile.bio',
+            'userProfile.public_email',
+            'userProfile.name',
+            'userProfile.gravatar_email',
+            'userProfile.location',
+            'userProfile.website',
+            'userProfile.bio',
         ], $config->gdprExportProperties);
         $this->assertSame('GDPR', $config->gdprAnonymizePrefix);
         $this->assertFalse($config->gdprRequireConsentToAll);
@@ -160,7 +158,6 @@ final class ModuleConfigTest extends TestCase
         $this->assertSame([], $config->administrators);
         $this->assertNull($config->administratorPermissionName);
         $this->assertSame(0, $config->profileVisibility);
-        $this->assertSame(10, $config->blowfishCost);
         $this->assertNull($config->maxPasswordAge);
         $this->assertFalse($config->restrictUserPermissionAssignment);
         $this->assertFalse($config->disableIpLogging);

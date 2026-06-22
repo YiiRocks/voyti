@@ -10,14 +10,15 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use YiiRocks\Voyti\Entity\User;
-use YiiRocks\Voyti\IdentityServiceInterface;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Rbac\ManagerInterface;
+use Yiisoft\User\CurrentUser;
+use Yiisoft\User\Guest\GuestIdentityInterface;
 
 final class TwoFactorAuthenticationEnforceMiddleware implements MiddlewareInterface
 {
     public function __construct(
-        private readonly IdentityServiceInterface $identityService,
+        private readonly CurrentUser $currentUser,
         private readonly ModuleConfig $config,
         private readonly ManagerInterface $authManager,
         private readonly ResponseFactoryInterface $responseFactory,
@@ -31,7 +32,8 @@ final class TwoFactorAuthenticationEnforceMiddleware implements MiddlewareInterf
             return $handler->handle($request);
         }
 
-        $user = $this->identityService->getIdentity();
+        $user = $this->currentUser->getIdentity();
+        $user = $user instanceof GuestIdentityInterface ? null : $user;
         if ($user === null || !$user instanceof User) {
             return $handler->handle($request);
         }

@@ -13,14 +13,14 @@ final class M000003CreateSocialAccountTable implements RevertibleMigrationInterf
     #[\Override]
     public function down(MigrationBuilder $b): void
     {
-        $b->dropForeignKey('{{%social_account}}', 'fk_social_account_user');
-        $b->dropTable('{{%social_account}}');
+        $b->dropForeignKey('{{%user_social_account}}', 'fk_user_social_account_user');
+        $b->dropTable('{{%user_social_account}}');
     }
     #[\Override]
     public function up(MigrationBuilder $b): void
     {
         $c = $b->columnBuilder();
-        $b->createTable('{{%social_account}}', [
+        $b->createTable('{{%user_social_account}}', [
             'id' => $c::primaryKey(),
             'user_id' => $c::integer(),
             'provider' => $c::string(255)->notNull(),
@@ -31,6 +31,6 @@ final class M000003CreateSocialAccountTable implements RevertibleMigrationInterf
             'username' => $c::string(255),
             'created_at' => $c::integer()->notNull(),
         ]);
-        $b->addForeignKey('{{%social_account}}', 'fk_social_account_user', 'user_id', '{{%user}}', 'id', 'CASCADE', 'CASCADE');
+        $b->addForeignKey('{{%user_social_account}}', 'fk_user_social_account_user', 'user_id', '{{%user}}', 'id', 'CASCADE', 'CASCADE');
     }
 }

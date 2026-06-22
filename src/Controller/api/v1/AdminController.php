@@ -7,8 +7,9 @@ namespace YiiRocks\Voyti\Controller\api\v1;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Entity\User;
-use YiiRocks\Voyti\Helper\SecurityHelper;
 use YiiRocks\Voyti\ModuleConfig;
+use Yiisoft\Security\PasswordHasher;
+use Yiisoft\Security\Random;
 use YiiRocks\Voyti\Repository\UserRepository;
 use Yiisoft\DataResponse\ResponseFactory\DataResponseFactoryInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -18,7 +19,7 @@ final class AdminController
     public function __construct(
         private readonly TranslatorInterface $translator,
         private readonly UserRepository $userRepository,
-        private readonly SecurityHelper $securityHelper,
+        private readonly PasswordHasher $passwordHasher,
         private readonly ModuleConfig $config,
         private readonly DataResponseFactoryInterface $responseFactory,
     ) {
@@ -26,10 +27,10 @@ final class AdminController
 
     public function create(ServerRequestInterface $request): ResponseInterface
     {
-        $body = $request->getParsedBody();
+        $body = (array) $request->getParsedBody();
         $email = $body['email'] ?? '';
         $username = $body['username'] ?? '';
-        $password = $body['password'] ?? $this->securityHelper->generateRandomString(12);
+        $password = $body['password'] ?? Random::string(12);
 
         $existingUser = $this->userRepository->findByEmail($email);
         if ($existingUser !== null) {
@@ -44,8 +45,8 @@ final class AdminController
         $user = new User();
         $user->setUsername($username);
         $user->setEmail($email);
-        $user->setPasswordHash($this->securityHelper->hashPassword($password, $this->config->blowfishCost));
-        $user->setAuthKey($this->securityHelper->generateRandomString());
+        $user->setPasswordHash($this->passwordHasher->hash($password));
+        $user->setAuthKey(Random::string());
         $user->setConfirmedAt(time());
         $user->setCreatedAt(time());
         $user->setUpdatedAt(time());
@@ -92,7 +93,7 @@ final class AdminController
             return $this->responseFactory->createResponse(['error' => $this->translator->translate('voyti.api.not_found', category: 'voyti')], 404);
         }
 
-        $body = $request->getParsedBody();
+        $body = (array) $request->getParsedBody();
         if (isset($body['username'])) {
             $user->setUsername($body['username']);
         }
@@ -100,7 +101,7 @@ final class AdminController
             $user->setEmail($body['email']);
         }
         if (!empty($body['password'])) {
-            $user->setPasswordHash($this->securityHelper->hashPassword($body['password'], $this->config->blowfishCost));
+            $user->setPasswordHash($this->passwordHasher->hash($body['password']));
             $user->setPasswordChangedAt(time());
         }
         $user->setUpdatedAt(time());

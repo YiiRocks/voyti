@@ -59,7 +59,23 @@ final class LoginFormTest extends TestCase
         $this->assertFalse($result->isPropertyValid('password'));
     }
 
-    public function testGetRulesWithRecaptchaEnabled(): void
+    public function testGetRulesWithRecaptchaV2(): void
+    {
+        $config = new ModuleConfig(recaptchaVersion: 'v2');
+        $form = $this->createForm($config);
+        $rules = $form->getRules();
+        /** @var array<string, mixed> $rules */
+        $this->assertArrayHasKey('gRecaptchaResponse', $rules);
+        /** @var list<mixed> $gRecaptchaResponse */
+        $gRecaptchaResponse = $rules['gRecaptchaResponse'];
+        $this->assertCount(1, $gRecaptchaResponse);
+        $this->assertInstanceOf(
+            \YiiRocks\Recaptcha\RecaptchaV2Rule::class,
+            $gRecaptchaResponse[0],
+        );
+    }
+
+    public function testGetRulesWithRecaptchaV3(): void
     {
         $config = new ModuleConfig(recaptchaVersion: 'v3');
         $form = $this->createForm($config);
@@ -73,6 +89,8 @@ final class LoginFormTest extends TestCase
             \YiiRocks\Recaptcha\RecaptchaV3Rule::class,
             $gRecaptchaResponse[0],
         );
+        $this->assertSame('voyti_login', $gRecaptchaResponse[0]->getAction());
+        $this->assertSame(0.5, $gRecaptchaResponse[0]->getThreshold());
     }
 
     public function testOptionalFields(): void
@@ -95,13 +113,13 @@ final class LoginFormTest extends TestCase
         $form->password = 'secret123';
         $form->rememberMe = true;
         $form->twoFactorAuthenticationCode = '654321';
-        $form->gRecaptchaResponse = 'test-token';
+        $form->gRecaptchaResponse = 'test-userToken';
 
         $this->assertSame('testuser', $form->getPropertyValue('login'));
         $this->assertSame('secret123', $form->getPropertyValue('password'));
         $this->assertTrue($form->getPropertyValue('rememberMe'));
         $this->assertSame('654321', $form->getPropertyValue('twoFactorAuthenticationCode'));
-        $this->assertSame('test-token', $form->getPropertyValue('gRecaptchaResponse'));
+        $this->assertSame('test-userToken', $form->getPropertyValue('gRecaptchaResponse'));
     }
 
     public function testPropertyLabels(): void

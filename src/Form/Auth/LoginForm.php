@@ -15,7 +15,6 @@ use Yiisoft\Validator\RulesProviderInterface;
 
 final class LoginForm extends FormModel implements RulesProviderInterface
 {
-
     public string $gRecaptchaResponse = '';
     #[Required]
     public string $login = '';
@@ -34,10 +33,23 @@ final class LoginForm extends FormModel implements RulesProviderInterface
     {
         return [
             'login' => $this->translator->translate('voyti.view.login.login_label', category: 'voyti'),
-            'password' => $this->translator->translate('voyti.view.password_label', category: 'voyti'),
-            'rememberMe' => $this->translator->translate('voyti.view.login.remember_me', category: 'voyti'),
-            'twoFactorAuthenticationCode' => $this->translator->translate('voyti.view.two_factor.code_label', category: 'voyti'),
+            'password' => $this->translator->translate('voyti.view.login.password_label', category: 'voyti'),
+            'rememberMe' => $this->translator->translate('voyti.view.login.remember_me_label', category: 'voyti'),
+            'twoFactorAuthenticationCode' => $this->translator->translate(
+                'voyti.view.two_factor.code_label',
+                category: 'voyti',
+            ),
         ];
+    }
+
+    #[\Override]
+    public function getPropertyLabel(string $property): string
+    {
+        $labels = $this->getAttributeLabels();
+        if (isset($labels[$property])) {
+            return $labels[$property];
+        }
+        return parent::getPropertyLabel($property);
     }
 
     #[\Override]
@@ -57,12 +69,13 @@ final class LoginForm extends FormModel implements RulesProviderInterface
                 ? RecaptchaV2Rule::class
                 : RecaptchaV3Rule::class;
 
-            $params = $this->config->recaptchaVersion === 'v3'
-                ? ['threshold' => 0.5, 'action' => 'voyti_' . $this->getFormName()]
-                : [];
+            $params = [];
+            if ($this->config->recaptchaVersion === 'v3') {
+                $params['threshold'] = 0.5;
+                $params['action'] = 'voyti_' . $this->getFormName();
+            }
 
-            $rules['gRecaptchaResponse'] ??= [];
-            $rules['gRecaptchaResponse'][] = new $ruleClass(...$params);
+            $rules['gRecaptchaResponse'] = [new $ruleClass(...$params)];
         }
 
         return $rules;

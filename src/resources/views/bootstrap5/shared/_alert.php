@@ -8,8 +8,8 @@ use Yiisoft\Html\Html;
  * @var string $type
  * @var string $message
  */
-?>
-<div class="alert alert-<?= Html::encode($type) ?> alert-dismissible fade show shadow-sm" role="alert">
-    <?= Html::encode($message) ?>
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-</div>
+
+echo Html::div()->class('alert alert-' . Html::encode($type) . ' alert-dismissible fade show shadow-sm')->attribute('role', 'alert')->open();
+    echo Html::encode($message);
+    echo Html::button('')->class('btn-close')->attribute('data-bs-dismiss', 'alert')->attribute('aria-label', 'Close');
+echo Html::div()->close();

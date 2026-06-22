@@ -7,7 +7,9 @@ namespace YiiRocks\Voyti\Service;
 use Yiisoft\Aliases\Aliases;
 use Yiisoft\Mailer\MailerInterface;
 use Yiisoft\Mailer\Message;
-use YiiRocks\Voyti\Entity\Token;
+use Yiisoft\Router\UrlGeneratorInterface;
+use Yiisoft\Translator\TranslatorInterface;
+use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Entity\User;
 
 final class MailService
@@ -19,13 +21,15 @@ final class MailService
         private readonly MailerInterface $mailer,
         private readonly array $mailParams,
         private readonly Aliases $aliases,
+        private readonly TranslatorInterface $translator,
+        private readonly UrlGeneratorInterface $url,
     ) {
     }
 
     private function getMailSubject(string $key, string $default): string
     {
         $subject = $this->mailParams[$key] ?? $default;
-        return str_replace('{app}', '', $subject);
+        return trim(str_replace('{app}', '', $subject));
     }
 
     public function send(string $type, string $to, string $subject, string $view, array $params = []): bool
@@ -59,23 +63,34 @@ final class MailService
             $adminEmail,
             'New user registration',
             'welcome',
-            ['user' => $user],
+            [
+                'username' => $user->getUsername(),
+                'translator' => $this->translator,
+            ],
         );
     }
 
-    public function sendConfirmation(User $user, Token $token): bool
+    public function sendConfirmation(User $user, UserToken $userToken): bool
     {
         $subject = $this->getMailSubject('confirmationMailSubject', 'Confirm account');
+        $userId = $user->getId();
+        if ($userId === null) {
+            return false;
+        }
         return $this->send(
             'confirmation',
             $user->getEmail(),
             $subject,
             'confirmation',
-            ['user' => $user, 'token' => $token],
+            [
+                'username' => $user->getUsername(),
+                'confirmationUrl' => $this->url->generateAbsolute('voyti/registration-confirm', ['id' => $userId, 'code' => $userToken->getCode()]),
+                'translator' => $this->translator,
+            ],
         );
     }
 
-    public function sendReconfirmation(User $user, Token $token): bool
+    public function sendReconfirmation(User $user, UserToken $userToken): bool
     {
         $subject = $this->getMailSubject('reconfirmationMailSubject', 'Confirm email change');
         return $this->send(
@@ -83,11 +98,15 @@ final class MailService
             $user->getEmail(),
             $subject,
             'reconfirmation',
-            ['user' => $user, 'token' => $token],
+            [
+                'username' => $user->getUsername(),
+                'confirmationUrl' => $this->url->generateAbsolute('voyti/settings-confirm', ['code' => $userToken->getCode()]),
+                'translator' => $this->translator,
+            ],
         );
     }
 
-    public function sendRecovery(string $email, Token $token): bool
+    public function sendRecovery(string $username, string $email, UserToken $userToken): bool
     {
         $subject = $this->getMailSubject('recoveryMailSubject', 'Password reset');
         return $this->send(
@@ -95,7 +114,11 @@ final class MailService
             $email,
             $subject,
             'recovery',
-            ['token' => $token],
+            [
+                'username' => $username,
+                'recoveryUrl' => $this->url->generateAbsolute('voyti/recover', ['id' => $userToken->getUserId(), 'code' => $userToken->getCode()]),
+                'translator' => $this->translator,
+            ],
         );
     }
 
@@ -107,7 +130,10 @@ final class MailService
             $email,
             $subject,
             'twofactorcode',
-            ['code' => $code],
+            [
+                'code' => $code,
+                'translator' => $this->translator,
+            ],
         );
     }
 
@@ -119,7 +145,10 @@ final class MailService
             $user->getEmail(),
             $subject,
             'welcome',
-            ['user' => $user, 'password' => $password],
+            [
+                'username' => $user->getUsername(),
+                'translator' => $this->translator,
+            ],
         );
     }
 

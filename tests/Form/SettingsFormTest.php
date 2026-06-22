@@ -54,9 +54,19 @@ final class SettingsFormTest extends TestCase
         $this->assertArrayHasKey('username', $labels);
         $this->assertArrayHasKey('email', $labels);
         $this->assertArrayHasKey('password', $labels);
+        $this->assertArrayHasKey('publicEmail', $labels);
+        $this->assertArrayHasKey('name', $labels);
+        $this->assertArrayHasKey('bio', $labels);
+        $this->assertArrayHasKey('currentPassword', $labels);
+        $this->assertArrayHasKey('authTfEnabled', $labels);
         $this->assertSame('voyti.view.username_label', $labels['username']);
         $this->assertSame('voyti.view.email_label', $labels['email']);
         $this->assertSame('voyti.view.new_password_label', $labels['password']);
+        $this->assertSame('voyti.view.public_email_label', $labels['publicEmail']);
+        $this->assertSame('voyti.view.name_label', $labels['name']);
+        $this->assertSame('voyti.view.bio_label', $labels['bio']);
+        $this->assertSame('voyti.view.current_password_label', $labels['currentPassword']);
+        $this->assertSame('voyti.view.account.two_factor_title', $labels['authTfEnabled']);
     }
 
     public function testGetFormName(): void

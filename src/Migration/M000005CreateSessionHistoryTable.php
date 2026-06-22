@@ -13,15 +13,15 @@ final class M000005CreateSessionHistoryTable implements RevertibleMigrationInter
     #[\Override]
     public function down(MigrationBuilder $b): void
     {
-        $b->dropForeignKey('{{%session_history}}', 'fk_session_history_user');
-        $b->dropPrimaryKey('{{%session_history}}', 'pk_session_history');
-        $b->dropTable('{{%session_history}}');
+        $b->dropForeignKey('{{%user_session_history}}', 'fk_user_session_history_user');
+        $b->dropPrimaryKey('{{%user_session_history}}', 'pk_user_session_history');
+        $b->dropTable('{{%user_session_history}}');
     }
     #[\Override]
     public function up(MigrationBuilder $b): void
     {
         $c = $b->columnBuilder();
-        $b->createTable('{{%session_history}}', [
+        $b->createTable('{{%user_session_history}}', [
             'user_id' => $c::integer()->notNull(),
             'session_id' => $c::string(255)->notNull(),
             'user_agent' => $c::text(),
@@ -29,7 +29,7 @@ final class M000005CreateSessionHistoryTable implements RevertibleMigrationInter
             'created_at' => $c::integer()->notNull(),
             'updated_at' => $c::integer()->notNull(),
         ]);
-        $b->addPrimaryKey('{{%session_history}}', 'pk_session_history', ['user_id', 'session_id']);
-        $b->addForeignKey('{{%session_history}}', 'fk_session_history_user', 'user_id', '{{%user}}', 'id', 'CASCADE', 'CASCADE');
+        $b->addPrimaryKey('{{%user_session_history}}', 'pk_user_session_history', ['user_id', 'session_id']);
+        $b->addForeignKey('{{%user_session_history}}', 'fk_user_session_history_user', 'user_id', '{{%user}}', 'id', 'CASCADE', 'CASCADE');
     }
 }

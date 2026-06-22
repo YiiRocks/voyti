@@ -9,6 +9,8 @@ use Stringable;
 use YiiRocks\Voyti\Form\Rbac\RuleForm;
 use Yiisoft\Translator\CategorySource;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\Validator\Rule\Regex;
+use Yiisoft\Validator\Rule\Required;
 use Yiisoft\Validator\Validator;
 
 final class RuleFormTest extends TestCase
@@ -53,6 +55,20 @@ final class RuleFormTest extends TestCase
         $result = $validator->validate($form);
         $this->assertFalse($result->isValid());
         $this->assertFalse($result->isPropertyValid('name'));
+    }
+
+    public function testGetRules(): void
+    {
+        $form = $this->createForm();
+        $rules = $form->getRules();
+
+        $this->assertArrayHasKey('name', $rules);
+        $this->assertArrayHasKey('class', $rules);
+        $this->assertCount(2, $rules['name']);
+        $this->assertInstanceOf(Required::class, $rules['name'][0]);
+        $this->assertInstanceOf(Regex::class, $rules['name'][1]);
+        $this->assertCount(1, $rules['class']);
+        $this->assertInstanceOf(Required::class, $rules['class'][0]);
     }
 
     public function testPropertyAccess(): void

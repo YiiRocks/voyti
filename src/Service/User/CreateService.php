@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Service\User;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
-use YiiRocks\Voyti\Entity\Profile;
-use YiiRocks\Voyti\Entity\Token;
+use YiiRocks\Voyti\Entity\UserProfile;
+use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Event\Auth\AfterRegisterEvent;
 use YiiRocks\Voyti\Event\User\UserEvent;
-use YiiRocks\Voyti\Helper\SecurityHelper;
 use YiiRocks\Voyti\ModuleConfig;
+use Yiisoft\Security\PasswordHasher;
+use Yiisoft\Security\Random;
 use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\ServiceResult;
@@ -22,7 +23,7 @@ final class CreateService
         private readonly UserRepository $userRepository,
         private readonly MailService $mailService,
         private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly SecurityHelper $securityHelper,
+        private readonly PasswordHasher $passwordHasher,
         private readonly ModuleConfig $config,
     ) {
     }
@@ -32,27 +33,26 @@ final class CreateService
         $user = new User();
         $user->setUsername($username);
         $user->setEmail($email);
-        $user->setPasswordHash($this->securityHelper->hashPassword($password, $this->config->blowfishCost));
-        $user->setAuthKey($this->securityHelper->generateRandomString());
+        $user->setPasswordHash($this->passwordHasher->hash($password));
+        $user->setAuthKey(Random::string());
         $user->setCreatedAt(time());
         $user->setUpdatedAt(time());
 
         $this->eventDispatcher->dispatch(new UserEvent($user));
 
-        $profile = new Profile();
-        $profile->setUserId(null);
+        $userProfile = new UserProfile();
 
         if ($this->config->enableEmailConfirmation) {
-            $token = new Token();
-            $token->setType(Token::TYPE_CONFIRMATION);
-            $token->setCreatedAt(time());
-            $token->setCode($this->securityHelper->generateRandomString(32));
+            $userToken = new UserToken();
+            $userToken->setType(UserToken::TYPE_CONFIRMATION);
+            $userToken->setCreatedAt(time());
+            $userToken->setCode(Random::string(32));
 
-            $this->userRepository->saveWithProfileAndToken($user, $profile, $token);
-            $this->mailService->sendConfirmation($user, $token);
+            $this->userRepository->saveWithProfileAndToken($user, $userProfile, $userToken);
+            $this->mailService->sendConfirmation($user, $userToken);
         } else {
             $user->setConfirmedAt(time());
-            $this->userRepository->saveWithProfile($user, $profile);
+            $this->userRepository->saveWithProfile($user, $userProfile);
             $this->mailService->sendWelcome($user, $password);
         }
 

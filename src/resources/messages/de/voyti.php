@@ -44,8 +44,8 @@ return [
     'voyti.settings.data_exported' => 'Ihre Daten wurden exportiert',
 
     // ProfileController
-    'voyti.profile.forbidden' => 'Verboten',
-    'voyti.profile.not_found' => 'Profil nicht gefunden',
+    'voyti.userProfile.forbidden' => 'Verboten',
+    'voyti.userProfile.not_found' => 'Profil nicht gefunden',
 
     // AdminController
     'voyti.admin.user_created' => 'Benutzer wurde erstellt',
@@ -118,7 +118,7 @@ return [
     'voyti.mail.your_twofactor_code' => 'Ihr Zwei-Faktor-Authentifizierungscode lautet:',
 
     // Navigation / Menu
-    'voyti.menu.profile' => 'Profil',
+    'voyti.menu.userProfile' => 'Profil',
     'voyti.menu.account' => 'Konto',
     'voyti.menu.networks' => 'Netzwerke',
 
@@ -129,6 +129,8 @@ return [
     'voyti.view.login.sign_in_button' => 'Anmelden',
     'voyti.view.login.forgot_password' => 'Passwort vergessen?',
     'voyti.view.login.register_link' => 'Registrieren',
+    'voyti.view.login.password_label' => 'Passwort',
+    'voyti.view.login.remember_me_label' => 'Erinnern Sie sich an mich',
 
     // Two-factor confirm view
     'voyti.view.two_factor.title' => 'Zwei-Faktor-Authentifizierung',
@@ -166,21 +168,21 @@ return [
     'voyti.view.recovery.reset_title' => 'Passwort zurücksetzen',
     'voyti.view.recovery.reset_button' => 'Passwort zurücksetzen',
 
-    // Profile view
-    'voyti.view.profile.email_label' => 'E-Mail:',
-    'voyti.view.profile.name_label' => 'Name:',
-    'voyti.view.profile.location_label' => 'Ort:',
-    'voyti.view.profile.bio_label' => 'Bio:',
+    // UserProfile view
+    'voyti.view.userProfile.email_label' => 'E-Mail:',
+    'voyti.view.userProfile.name_label' => 'Name:',
+    'voyti.view.userProfile.location_label' => 'Ort:',
+    'voyti.view.userProfile.bio_label' => 'Bio:',
 
     // Settings views
-    'voyti.view.profile.title' => 'Profileinstellungen',
+    'voyti.view.userProfile.title' => 'Profileinstellungen',
     'voyti.view.account.title' => 'Kontoeinstellungen',
     'voyti.view.networks.title' => 'Netzwerke',
     'voyti.view.privacy.title' => 'Datenschutz',
     'voyti.view.privacy.manage_gdpr_consent' => 'DSGVO-Einwilligung verwalten',
     'voyti.view.privacy.delete_data' => 'Meine Daten löschen',
     'voyti.view.settings.title' => 'Einstellungen',
-    'voyti.view.settings.profile' => 'Profil',
+    'voyti.view.settings.userProfile' => 'Profil',
     'voyti.view.settings.account' => 'Konto',
     'voyti.view.settings.networks' => 'Netzwerke',
     'voyti.view.settings.privacy' => 'Datenschutz',
@@ -230,6 +232,7 @@ return [
     'voyti.view.assignments.assigned' => 'Zugewiesen',
     'voyti.view.assignments.available' => 'Verfügbar',
     'voyti.view.assignments.update' => 'Zuweisungen aktualisieren',
+    'voyti.view.info_link' => 'Info',
 
     // Session history
     'voyti.view.session_history.title' => 'Sitzungsverlauf',

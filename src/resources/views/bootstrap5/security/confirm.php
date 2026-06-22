@@ -12,17 +12,25 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var YiiRocks\Voyti\ModuleConfig $config
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
+ * @var string $csrf
  */
-?>
-<?php $this->setTitle($translator->translate('voyti.view.two_factor.title', category: 'voyti')); ?>
-<div class="voyti-2fa">
-    <h1><?= $translator->translate('voyti.view.two_factor.title', category: 'voyti') ?></h1>
-    <form action="<?= Html::encode($url->generate('voyti/confirm')) ?>" method="post" novalidate>
-        <?= Field::text($model, 'twoFactorAuthenticationCode')->inputAttributes(['autocomplete' => 'one-time-code']) ?>
-        <?= Field::buttonGroup()
-            ->buttons(
-                Html::submitButton($translator->translate('voyti.view.two_factor.verify_button', category: 'voyti'))
-            )
-?>
-    </form>
-</div>
+
+$this->setTitle($translator->translate('voyti.view.two_factor.title', category: 'voyti'));
+
+echo Html::div()->class('voyti-2fa')->open();
+    echo Html::H1($translator->translate('voyti.view.two_factor.title', category: 'voyti'));
+
+    echo Html::form()
+        ->post($url->generate('voyti/confirm'))
+        ->csrf($csrf)
+        ->open();
+
+    echo Field::text($model, 'twoFactorAuthenticationCode')->inputAttributes(['autocomplete' => 'one-time-code']);
+
+    echo Field::buttonGroup()
+        ->buttons(
+            Html::submitButton($translator->translate('voyti.view.two_factor.verify_button', category: 'voyti'))
+        );
+
+    echo Html::form()->close();
+echo Html::div()->close();

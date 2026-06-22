@@ -13,26 +13,26 @@ final class ResetPasswordEventTest extends TestCase
 
     public function testConstructAndGettersWithForm(): void
     {
-        $token = (new ReflectionClass(\YiiRocks\Voyti\Entity\Token::class))->newInstanceWithoutConstructor();
+        $userToken = (new ReflectionClass(\YiiRocks\Voyti\Entity\UserToken::class))->newInstanceWithoutConstructor();
         $form = $this->createStub(\Yiisoft\FormModel\FormModel::class);
-        $event = new ResetPasswordEvent($token, $form);
+        $event = new ResetPasswordEvent($userToken, $form);
 
-        $this->assertSame($token, $event->getToken());
+        $this->assertSame($userToken, $event->getToken());
         $this->assertSame($form, $event->getForm());
     }
     public function testConstructAndGettersWithNullForm(): void
     {
-        $token = (new ReflectionClass(\YiiRocks\Voyti\Entity\Token::class))->newInstanceWithoutConstructor();
-        $event = new ResetPasswordEvent($token);
+        $userToken = (new ReflectionClass(\YiiRocks\Voyti\Entity\UserToken::class))->newInstanceWithoutConstructor();
+        $event = new ResetPasswordEvent($userToken);
 
-        $this->assertSame($token, $event->getToken());
+        $this->assertSame($userToken, $event->getToken());
         $this->assertNull($event->getForm());
     }
 
     public function testUpdateForm(): void
     {
-        $token = (new ReflectionClass(\YiiRocks\Voyti\Entity\Token::class))->newInstanceWithoutConstructor();
-        $event = new ResetPasswordEvent($token);
+        $userToken = (new ReflectionClass(\YiiRocks\Voyti\Entity\UserToken::class))->newInstanceWithoutConstructor();
+        $event = new ResetPasswordEvent($userToken);
 
         $form = $this->createStub(\Yiisoft\FormModel\FormModel::class);
         $result = $event->updateForm($form);
