@@ -62,7 +62,7 @@ final class RegisterService
             $this->mailService->sendConfirmation($user, $userToken);
 
             $this->eventDispatcher->dispatch(new AfterRegisterEvent($user));
-            return ServiceResult::success('account_created_check_email');
+            return ServiceResult::success('voyti.registration.account_created_check_email');
         }
 
         $user->setConfirmedAt(time());
@@ -70,6 +70,6 @@ final class RegisterService
         $this->mailService->sendWelcome($user, $password);
 
         $this->eventDispatcher->dispatch(new AfterRegisterEvent($user));
-        return ServiceResult::success('account_created');
+        return ServiceResult::success('voyti.registration.account_created');
     }
 }

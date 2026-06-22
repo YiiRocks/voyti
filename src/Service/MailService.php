@@ -29,7 +29,7 @@ final class MailService
     private function getMailSubject(string $key, string $default): string
     {
         $subject = $this->mailParams[$key] ?? $default;
-        return str_replace('{app}', '', $subject);
+        return trim(str_replace('{app}', '', $subject));
     }
 
     public function send(string $type, string $to, string $subject, string $view, array $params = []): bool
@@ -73,6 +73,10 @@ final class MailService
     public function sendConfirmation(User $user, UserToken $userToken): bool
     {
         $subject = $this->getMailSubject('confirmationMailSubject', 'Confirm account');
+        $userId = $user->getId();
+        if ($userId === null) {
+            return false;
+        }
         return $this->send(
             'confirmation',
             $user->getEmail(),
@@ -80,7 +84,7 @@ final class MailService
             'confirmation',
             [
                 'username' => $user->getUsername(),
-                'confirmationUrl' => $this->url->generateAbsolute('voyti/registration-confirm', ['id' => $user->getId(), 'code' => $userToken->getCode()]),
+                'confirmationUrl' => $this->url->generateAbsolute('voyti/registration-confirm', ['id' => $userId, 'code' => $userToken->getCode()]),
                 'translator' => $this->translator,
             ],
         );

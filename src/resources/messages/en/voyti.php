@@ -18,6 +18,8 @@ return [
     'voyti.registration.confirmation_link_invalid' => 'The confirmation link is invalid or expired.',
     'voyti.registration.email_confirmation_disabled' => 'Email confirmation is disabled',
     'voyti.registration.new_confirmation_sent' => 'A new confirmation link has been sent',
+    'voyti.registration.account_created' => 'Account created.',
+    'voyti.registration.account_created_check_email' => 'Account created. Check your email for the confirmation link.',
 
     // RecoveryController
     'voyti.recovery.disabled' => 'Password recovery is disabled',

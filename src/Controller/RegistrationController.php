@@ -89,7 +89,9 @@ final class RegistrationController
 
                 if ($serviceResult->isSuccess()) {
                     $this->eventDispatcher->dispatch(new FormEvent($form));
-                    return $this->renderView('shared/message', ['title' => $serviceResult->getMessage()]);
+                    return $this->renderView('shared/message', [
+                        'title' => $this->translator->translate($serviceResult->getMessage(), category: 'voyti'),
+                    ]);
                 }
                 foreach ($serviceResult->getErrors() as $error) {
                     $form->addError($error, []);
