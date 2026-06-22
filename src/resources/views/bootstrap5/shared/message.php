@@ -10,6 +10,8 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var TranslatorInterface $translator
  */
 
+$this->setTitle($title);
+
 echo Html::div()->class('card shadow-sm')->open();
     echo Html::div()->class('card-body text-center py-5')->open();
         echo Html::H1(Html::encode($title));
