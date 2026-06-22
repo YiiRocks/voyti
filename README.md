@@ -165,7 +165,6 @@ Console commands:
 | `tokenRecoveryLifespan` | `int` | `21600` | Recovery token validity |
 | `administrators` | `array` | `[]` | Admin user IDs/usernames |
 | `administratorPermissionName` | `?string` | `null` | Permission name for admin access |
-| `blowfishCost` | `int` | `10` | Bcrypt cost factor |
 | `maxPasswordAge` | `?int` | `null` | Max password age in days |
 | `disableIpLogging` | `bool` | `false` | Disable IP address logging |
 | `minPasswordRequirements` | `array` | `['lower'=>1,'digit'=>1,'upper'=>1]` | Min character types |

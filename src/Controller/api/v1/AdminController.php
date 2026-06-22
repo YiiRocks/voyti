@@ -101,7 +101,7 @@ final class AdminController
             $user->setEmail($body['email']);
         }
         if (!empty($body['password'])) {
-            $user->setPasswordHash($this->securityHelper->hashPassword($body['password'], $this->config->blowfishCost));
+            $user->setPasswordHash($this->passwordHasher->hash($body['password']));
             $user->setPasswordChangedAt(time());
         }
         $user->setUpdatedAt(time());

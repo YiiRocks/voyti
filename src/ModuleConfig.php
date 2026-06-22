@@ -53,7 +53,6 @@ final class ModuleConfig
         public readonly array $administrators = [],
         public readonly ?string $administratorPermissionName = null,
         public readonly int $profileVisibility = 0,
-        public readonly int $blowfishCost = 10,
         public readonly ?int $maxPasswordAge = null,
         public readonly bool $restrictUserPermissionAssignment = false,
         public readonly bool $disableIpLogging = false,
