@@ -125,11 +125,11 @@ final class SecurityController
                 $user = $this->userRepository->findByUsernameOrEmail($form->login);
 
                 if ($user === null || !$this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
-                    $errors['login'] = $this->translator->translate('voyti.security.invalid_login', category: 'voyti');
+                    $errors['login'][] = $this->translator->translate('voyti.security.invalid_login', category: 'voyti');
                 } elseif ($user->isBlocked()) {
-                    $errors['login'] = $this->translator->translate('voyti.security.account_blocked', category: 'voyti');
+                    $errors['login'][] = $this->translator->translate('voyti.security.account_blocked', category: 'voyti');
                 } elseif ($this->config->enableEmailConfirmation && !$user->isConfirmed()) {
-                    $errors['login'] = $this->translator->translate('voyti.security.need_email_confirmation', category: 'voyti');
+                    $errors['login'][] = $this->translator->translate('voyti.security.need_email_confirmation', category: 'voyti');
                 } else {
                     if ($this->config->enableTwoFactorAuthentication && $user->isAuthTfEnabled()) {
                         $this->session->set('credentials', ['login' => $form->login, 'pwd' => $form->password]);
