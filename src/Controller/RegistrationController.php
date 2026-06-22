@@ -49,19 +49,37 @@ final class RegistrationController
     {
         $user = $this->userRepository->findById($id);
 
-        if ($user === null || !$this->config->enableEmailConfirmation) {
-            return $this->renderError('voyti.registration.invalid_confirmation_link');
+        if ($user === null) {
+            return $this->renderError('voyti.registration.invalid_confirmation_link - user not found');
+        }
+
+        if (!$this->config->enableEmailConfirmation) {
+            return $this->renderError('voyti.registration.invalid_confirmation_link - email confirmation disabled');
         }
 
         if ($user->isConfirmed()) {
             return $this->renderSuccess('voyti.registration.complete');
         }
 
+        $token = $this->userTokenRepository->findByUserIdAndCodeAndType(
+            $user->getId() !== null ? (int) $user->getId() : 0,
+            $code,
+            \YiiRocks\Voyti\Entity\UserToken::TYPE_CONFIRMATION,
+        );
+
+        if ($token === null) {
+            return $this->renderError('voyti.registration.confirmation_link_invalid - token not found');
+        }
+
+        if ($token->getIsExpired()) {
+            return $this->renderError('voyti.registration.confirmation_link_invalid - token expired');
+        }
+
         if ($this->accountConfirmationService->run($code, $user, $this->userConfirmationService)) {
             return $this->renderSuccess('voyti.registration.complete');
         }
 
-        return $this->renderError('voyti.registration.confirmation_link_invalid');
+        return $this->renderError('voyti.registration.confirmation_link_invalid - confirmation service failed');
     }
 
     public function connect(ServerRequestInterface $request, string $code): ResponseInterface
