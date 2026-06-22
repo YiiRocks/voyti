@@ -26,7 +26,7 @@ jobs:
 
     steps:
       - name: Checkout.
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           persist-credentials: false
 
@@ -39,10 +39,11 @@ jobs:
           php-version: ${{ matrix.php }}
 
       - name: Determine composer cache directory.
+        shell: bash
         run: echo "COMPOSER_CACHE_DIR=$(composer config cache-dir)" >> $GITHUB_ENV
 
       - name: Cache dependencies.
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ env.COMPOSER_CACHE_DIR }}
           key: php${{ matrix.php }}-composer-${{ hashFiles('composer.json') }}
