@@ -6,8 +6,8 @@ namespace YiiRocks\Voyti\Service\User;
 
 use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Entity\User;
-use YiiRocks\Voyti\Helper\SecurityHelper;
 use YiiRocks\Voyti\Repository\UserTokenRepository;
+use Yiisoft\Security\Random;
 use YiiRocks\Voyti\Service\MailService;
 
 final class ResendConfirmationService
@@ -15,7 +15,6 @@ final class ResendConfirmationService
     public function __construct(
         private readonly UserTokenRepository $userTokenRepository,
         private readonly MailService $mailService,
-        private readonly SecurityHelper $securityHelper,
     ) {
     }
 
@@ -42,7 +41,7 @@ final class ResendConfirmationService
         $userToken->setUserId($userId);
         $userToken->setType(UserToken::TYPE_CONFIRMATION);
         $userToken->setCreatedAt(time());
-        $userToken->setCode($this->securityHelper->generateRandomString(32));
+        $userToken->setCode(Random::string(32));
         return $userToken;
     }
 

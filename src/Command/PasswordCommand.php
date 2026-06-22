@@ -8,15 +8,15 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use YiiRocks\Voyti\Helper\SecurityHelper;
 use YiiRocks\Voyti\ModuleConfig;
+use Yiisoft\Security\PasswordHasher;
 use YiiRocks\Voyti\Repository\UserRepository;
 
 final class PasswordCommand extends Command
 {
     public function __construct(
         private readonly UserRepository $userRepository,
-        private readonly SecurityHelper $securityHelper,
+        private readonly PasswordHasher $passwordHasher,
         private readonly ModuleConfig $config,
     ) {
         parent::__construct();
@@ -66,7 +66,7 @@ final class PasswordCommand extends Command
         }
 
         $password = bin2hex(random_bytes(8));
-        $user->setPasswordHash($this->securityHelper->hashPassword($password, $this->config->blowfishCost));
+        $user->setPasswordHash($this->passwordHasher->hash($password));
         $user->setPasswordChangedAt(time());
         $user->setUpdatedAt(time());
         $user->save();

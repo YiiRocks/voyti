@@ -10,8 +10,9 @@ use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Event\Auth\AfterRegisterEvent;
 use YiiRocks\Voyti\Event\User\UserEvent;
-use YiiRocks\Voyti\Helper\SecurityHelper;
 use YiiRocks\Voyti\ModuleConfig;
+use Yiisoft\Security\PasswordHasher;
+use Yiisoft\Security\Random;
 use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\ServiceResult;
@@ -22,21 +23,21 @@ final class RegisterService
         private readonly UserRepository $userRepository,
         private readonly MailService $mailService,
         private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly SecurityHelper $securityHelper,
+        private readonly PasswordHasher $passwordHasher,
         private readonly ModuleConfig $config,
     ) {
     }
 
     public function run(array $data): ServiceResult
     {
-        $password = $data['password'] ?? $this->securityHelper->generateRandomString(12);
+        $password = $data['password'] ?? Random::string(12);
         $gdprConsent = (bool)($data['gdprConsent'] ?? false);
 
         $user = new User();
         $user->setUsername($data['username']);
         $user->setEmail($data['email']);
-        $user->setPasswordHash($this->securityHelper->hashPassword($password, $this->config->blowfishCost));
-        $user->setAuthKey($this->securityHelper->generateRandomString());
+        $user->setPasswordHash($this->passwordHasher->hash($password));
+        $user->setAuthKey(Random::string());
         $user->setRegistrationIp(
             $this->config->disableIpLogging ? '127.0.0.1' : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1')
         );
@@ -56,7 +57,7 @@ final class RegisterService
             $userToken = new UserToken();
             $userToken->setType(UserToken::TYPE_CONFIRMATION);
             $userToken->setCreatedAt(time());
-            $userToken->setCode($this->securityHelper->generateRandomString(32));
+            $userToken->setCode(Random::string(32));
 
             $this->userRepository->saveWithProfileAndToken($user, $userProfile, $userToken);
             $this->mailService->sendConfirmation($user, $userToken);

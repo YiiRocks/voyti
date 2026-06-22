@@ -31,7 +31,7 @@ final class EmailChangeService
             return false;
         }
 
-        if ($userToken->getIsExpired()) {
+        if ($userToken->getIsExpired($this->config->tokenConfirmationLifespan)) {
             $userToken->delete();
             return false;
         }

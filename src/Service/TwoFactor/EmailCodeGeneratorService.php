@@ -5,13 +5,11 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Service\TwoFactor;
 
 use YiiRocks\Voyti\Entity\User;
-use YiiRocks\Voyti\Helper\SecurityHelper;
 use YiiRocks\Voyti\Service\MailService;
 
 final class EmailCodeGeneratorService
 {
     public function __construct(
-        private readonly SecurityHelper $securityHelper,
         private readonly MailService $mailService,
     ) {
     }

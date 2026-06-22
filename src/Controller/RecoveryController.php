@@ -74,7 +74,7 @@ final class RecoveryController
 
         $userToken = $this->userTokenRepository->findByUserIdTypeAndCode($id, UserToken::TYPE_RECOVERY, $code);
 
-        if ($userToken === null || $userToken->getIsExpired() || $userToken->getUser() === null) {
+        if ($userToken === null || $userToken->getIsExpired($this->config->tokenRecoveryLifespan) || $userToken->getUser() === null) {
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.recovery.link_invalid', category: 'voyti'), 'translator' => $this->translator]);
         }
 

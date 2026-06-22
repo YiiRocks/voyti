@@ -12,8 +12,9 @@ use YiiRocks\Voyti\Event\Gdpr\GdprEvent;
 use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Form\Settings\GdprDeleteForm;
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
-use YiiRocks\Voyti\Helper\SecurityHelper;
 use YiiRocks\Voyti\ModuleConfig;
+use Yiisoft\Security\PasswordHasher;
+use Yiisoft\Security\Random;
 use YiiRocks\Voyti\Repository\UserProfileRepository;
 use YiiRocks\Voyti\Repository\UserSocialAccountRepository;
 use YiiRocks\Voyti\Repository\UserTokenRepository;
@@ -38,7 +39,7 @@ final class SettingsController
         private readonly UserRepository $userRepository,
         private readonly UserProfileRepository $userProfileRepository,
         private readonly UserSocialAccountRepository $userSocialAccountRepository,
-        private readonly SecurityHelper $securityHelper,
+        private readonly PasswordHasher $passwordHasher,
         private readonly ValidatorInterface $validator,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly UrlGeneratorInterface $url,
@@ -84,7 +85,7 @@ final class SettingsController
                 }
 
                 if ($form->password !== '') {
-                    $user->setPasswordHash($this->securityHelper->hashPassword($form->password, $this->config->blowfishCost));
+                    $user->setPasswordHash($this->passwordHasher->hash($form->password));
                     $user->setPasswordChangedAt(time());
                 }
 
@@ -234,14 +235,14 @@ final class SettingsController
             $identity = $request->getAttribute(IdentityInterface::class);
             if ($identity !== null) {
                 $user = $this->userRepository->findById($identity->getId() ?? 0);
-                if ($user !== null &&         $this->securityHelper->validatePassword($form->password, $user->getPasswordHash())) {
+                if ($user !== null &&         $this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
                     $this->eventDispatcher->dispatch(new GdprEvent($user));
                     $prefix = $this->config->gdprAnonymizePrefix . ($user->getId() ?? '');
                     $user->setEmail($prefix . '@example.com');
                     $user->setUsername($prefix);
                     $user->setGdprDeleted(true);
                     $user->setBlockedAt(time());
-                    $user->setAuthKey($this->securityHelper->generateRandomString());
+                    $user->setAuthKey(Random::string());
                     $user->save();
                     $this->eventDispatcher->dispatch(new GdprEvent($user));
                     return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.personal_info_removed', category: 'voyti'), 'translator' => $this->translator]);

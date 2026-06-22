@@ -4,17 +4,18 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service;
 
-use YiiRocks\Voyti\IdentityServiceInterface;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\UserRepository;
 use Yiisoft\Session\SessionInterface;
+use Yiisoft\User\CurrentUser;
+use Yiisoft\User\Guest\GuestIdentityInterface;
 
 final class SwitchIdentityService
 {
     public function __construct(
         private readonly ModuleConfig $config,
         private readonly UserRepository $userRepository,
-        private readonly IdentityServiceInterface $identityService,
+        private readonly CurrentUser $currentUser,
         private readonly SessionInterface $session,
     ) {
     }
@@ -31,8 +32,8 @@ final class SwitchIdentityService
             return ServiceResult::failure('Original user not found');
         }
 
-        $this->identityService->logout();
-        $this->identityService->login($originalUser);
+        $this->currentUser->logout();
+        $this->currentUser->login($originalUser);
         $this->session->remove($this->config->switchIdentitySessionKey);
 
         return ServiceResult::success();
@@ -53,13 +54,14 @@ final class SwitchIdentityService
             return ServiceResult::failure('Cannot switch to a blocked user');
         }
 
-        $currentIdentity = $this->identityService->getIdentity();
+        $currentIdentity = $this->currentUser->getIdentity();
+        $currentIdentity = $currentIdentity instanceof GuestIdentityInterface ? null : $currentIdentity;
         if ($currentIdentity !== null) {
             $this->session->set($this->config->switchIdentitySessionKey, $currentIdentity->getId());
         }
 
-        $this->identityService->logout();
-        $this->identityService->login($targetUser);
+        $this->currentUser->logout();
+        $this->currentUser->login($targetUser);
 
         return ServiceResult::success();
     }

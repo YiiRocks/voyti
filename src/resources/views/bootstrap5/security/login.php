@@ -46,7 +46,7 @@ echo Html::div()->class('voyti-login')->open();
         echo Html::a($translator->translate('voyti.view.login.forgot_password', category: 'voyti'), $url->generate('voyti/forgot'));
 
         if ($config->enableRegistration) {
-            echo " | ";
+            echo ' | ';
             echo Html::a($translator->translate('voyti.view.login.register_link', category: 'voyti'), $url->generate('voyti/register'));
         }
     echo Html::div()->close();

@@ -9,14 +9,14 @@ use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Event\Security\ResetPasswordEvent;
 use YiiRocks\Voyti\Event\User\UserEvent;
-use YiiRocks\Voyti\Helper\SecurityHelper;
 use YiiRocks\Voyti\ModuleConfig;
+use Yiisoft\Security\PasswordHasher;
 use YiiRocks\Voyti\Repository\UserTokenRepository;
 
 final class ResetService
 {
     public function __construct(
-        private readonly SecurityHelper $securityHelper,
+        private readonly PasswordHasher $passwordHasher,
         private readonly ModuleConfig $config,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly UserTokenRepository $userTokenRepository,
@@ -27,7 +27,7 @@ final class ResetService
     {
         $this->eventDispatcher->dispatch(new UserEvent($user));
 
-        $user->setPasswordHash($this->securityHelper->hashPassword($password, $this->config->blowfishCost));
+        $user->setPasswordHash($this->passwordHasher->hash($password));
         $user->setPasswordChangedAt(time());
         $user->setUpdatedAt(time());
         $user->save();

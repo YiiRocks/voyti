@@ -30,14 +30,14 @@ final class UserToken extends ActiveRecord
         return $this->createdAt;
     }
 
-    public function getIsExpired(): bool
+    public function getIsExpired(?int $lifespan = null): bool
     {
-        $lifespan = match ($this->type) {
-            self::TYPE_CONFIRMATION => 86400,
-            self::TYPE_RECOVERY => 21600,
-            self::TYPE_CONFIRM_NEW_EMAIL, self::TYPE_CONFIRM_OLD_EMAIL => 86400,
-            default => 86400,
-        };
+        if ($lifespan === null) {
+            $lifespan = match ($this->type) {
+                self::TYPE_RECOVERY => 21600,
+                default => 86400,
+            };
+        }
 
         return (time() - $this->createdAt) > $lifespan;
     }

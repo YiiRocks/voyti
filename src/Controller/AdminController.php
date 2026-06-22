@@ -10,8 +10,9 @@ use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Entity\UserProfile;
 use YiiRocks\Voyti\Form\Settings\UserProfileForm;
 use YiiRocks\Voyti\Helper\AuthHelper;
-use YiiRocks\Voyti\Helper\SecurityHelper;
 use YiiRocks\Voyti\ModuleConfig;
+use Yiisoft\Security\PasswordHasher;
+use Yiisoft\Security\Random;
 use YiiRocks\Voyti\Repository\UserProfileRepository;
 use YiiRocks\Voyti\Repository\UserSessionHistoryRepository;
 use YiiRocks\Voyti\Repository\UserRepository;
@@ -48,7 +49,7 @@ final class AdminController
         private readonly UpdateAssignmentsService $updateAuthAssignmentsService,
         private readonly UserSessionHistoryRepository $userSessionHistoryRepository,
         private readonly AuthHelper $authHelper,
-        private readonly SecurityHelper $securityHelper,
+        private readonly PasswordHasher $passwordHasher,
         private readonly ValidatorInterface $validator,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly UrlGeneratorInterface $url,
@@ -107,7 +108,7 @@ final class AdminController
             $body = $request->getParsedBody();
             $email = $body['email'] ?? '';
             $username = $body['username'] ?? '';
-            $password = $body['password'] ?? $this->securityHelper->generateRandomString(12);
+            $password = $body['password'] ?? Random::string(12);
 
             $result = $this->userCreateService->run($email, $username, $password);
             if ($result->isSuccess()) {
@@ -234,7 +235,7 @@ final class AdminController
             $user->setUsername($body['username'] ?? $user->getUsername());
             $user->setEmail($body['email'] ?? $user->getEmail());
             if (!empty($body['password'])) {
-                $user->setPasswordHash($this->securityHelper->hashPassword($body['password'], $this->config->blowfishCost));
+                $user->setPasswordHash($this->passwordHasher->hash($body['password']));
                 $user->setPasswordChangedAt(time());
             }
             $user->setUpdatedAt(time());

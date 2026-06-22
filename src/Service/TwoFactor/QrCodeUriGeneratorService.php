@@ -7,13 +7,11 @@ namespace YiiRocks\Voyti\Service\TwoFactor;
 use chillerlan\Authenticator\Authenticator;
 use chillerlan\QRCode\QRCode;
 use YiiRocks\Voyti\Entity\User;
-use YiiRocks\Voyti\Helper\SecurityHelper;
+use Yiisoft\Security\Random;
 
 final class QrCodeUriGeneratorService
 {
-    public function __construct(
-        private readonly SecurityHelper $securityHelper,
-    ) {
+
     }
 
     public function generateQrCodeSvg(User $user): string
@@ -38,7 +36,7 @@ final class QrCodeUriGeneratorService
     {
         $secret = $user->getAuthTfKey();
         if ($secret === null || $secret === '') {
-            $secret = $this->securityHelper->generateRandomString(32);
+            $secret = Random::string(32);
             $user->setAuthTfKey($secret);
             $user->save();
         }

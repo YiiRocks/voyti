@@ -6,6 +6,7 @@ namespace YiiRocks\Voyti\Factory;
 
 use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Repository\UserTokenRepository;
+use Yiisoft\Security\Random;
 
 final class UserTokenFactory
 {
@@ -36,7 +37,7 @@ final class UserTokenFactory
 
     private function generateCode(): string
     {
-        return bin2hex(random_bytes(16));
+        return Random::string(32);
     }
 
     private function make(int $userId, int $type): UserToken

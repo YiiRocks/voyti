@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Service\Auth;
 
 use YiiRocks\Voyti\Entity\UserSocialAccount;
-use YiiRocks\Voyti\IdentityServiceInterface;
 use YiiRocks\Voyti\ModuleConfig;
+use Yiisoft\User\CurrentUser;
 use YiiRocks\Voyti\Repository\UserSocialAccountRepository;
 use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\ServiceResult;
@@ -18,7 +18,7 @@ final class UserSocialAuthenticateService
         private readonly ModuleConfig $config,
         private readonly UserSocialAccountRepository $userSocialAccountRepository,
         private readonly UserRepository $userRepository,
-        private readonly IdentityServiceInterface $identityService,
+        private readonly CurrentUser $currentUser,
         private readonly SessionInterface $session,
     ) {
     }
@@ -59,7 +59,7 @@ final class UserSocialAuthenticateService
                 return ServiceResult::failure('Your account has been blocked');
             }
 
-            $this->identityService->login($user);
+            $this->currentUser->login($user);
             $user->setLastLoginAt(time());
             $user->setLastLoginIp($this->config->disableIpLogging ? '127.0.0.1' : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1'));
             $user->save();
