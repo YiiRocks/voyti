@@ -29,6 +29,7 @@ use Yiisoft\Http\Method;
 use Yiisoft\Rbac\Assignment;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\User\CurrentUser;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
@@ -56,6 +57,7 @@ final class AdminController
         private readonly UrlGeneratorInterface $url,
         private readonly ModuleConfig $config,
         private readonly HydratorInterface $hydrator,
+        private readonly CurrentUser $currentUser,
     ) {
     }
 
@@ -124,7 +126,7 @@ final class AdminController
 
     public function delete(ServerRequestInterface $request, int $id): ResponseInterface
     {
-        $identity = $request->getAttribute(IdentityInterface::class);
+        $identity = $this->currentUser->getIdentity();
         if ($identity !== null && $id === (int) $identity->getId()) {
             return $this->renderError('voyti.admin.cannot_delete_self');
         }

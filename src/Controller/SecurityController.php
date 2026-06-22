@@ -92,7 +92,7 @@ final class SecurityController
 
     public function connect(ServerRequestInterface $request): ResponseInterface
     {
-        $identity = $request->getAttribute(IdentityInterface::class);
+        $identity = $this->currentUser->getIdentity();
         if ($identity === null) {
             return $this->renderError('voyti.settings.not_authenticated');
         }
