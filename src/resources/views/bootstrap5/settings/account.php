@@ -36,22 +36,6 @@ echo Html::div()->class('voyti-account')->open();
 
     echo Field::password($model, 'password');
 
-    echo Field::password($model, 'currentPassword');
-
-    if ($config->enableTwoFactorAuth) {
-        echo '<fieldset>' . "\n";
-        echo '    <legend class="h5">' . $translator->translate('voyti.view.account.two_factor_title', category: 'voyti') . '</legend>' . "\n";
-
-        if ($user->isAuthTfEnabled()) {
-            echo '    <p>' . $translator->translate('voyti.view.account.two_factor_enabled', category: 'voyti') . '</p>' . "\n";
-            echo Field::checkbox($model, 'authTfEnabled')->label($translator->translate('voyti.view.account.disable_two_factor', category: 'voyti'));
-        } else {
-            echo Field::checkbox($model, 'authTfEnabled')->label($translator->translate('voyti.view.account.enable_two_factor', category: 'voyti'));
-        }
-
-        echo '</fieldset>' . "\n";
-    }
-
     echo Field::buttonGroup()
         ->buttons(
             Html::submitButton($translator->translate('voyti.view.save_button', category: 'voyti'))

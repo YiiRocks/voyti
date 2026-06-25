@@ -286,6 +286,15 @@ final class WorkflowTest extends TestCase
         $user = $this->registerAndConfirmUser('bob', 'bob@example.test', 'secret123');
         $this->harness->currentUser->overrideIdentity($user);
 
+        $accountViewResponse = $this->harness->settingsController->account(
+            $this->harness->request(Method::GET),
+        );
+        $accountViewHtml = $this->harness->responseBody($accountViewResponse);
+        $this->assertStringContainsString('Account settings', $accountViewHtml);
+        $this->assertStringNotContainsString('currentPassword', $accountViewHtml);
+        $this->assertStringNotContainsString('authTfEnabled', $accountViewHtml);
+        $this->assertStringNotContainsString('Undefined variable', $accountViewHtml);
+
         $profileResponse = $this->harness->settingsController->userProfile(
             $this->harness->request(
                 Method::POST,
