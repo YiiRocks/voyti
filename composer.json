@@ -1,0 +1,135 @@
+{
+    "name": "yiirocks/voyti",
+    "description": "Highly customizable and extensible user management, authentication, and authorization Yii3 extension",
+    "type": "library",
+    "keywords": [
+        "yii",
+        "yii3",
+        "user",
+        "auth",
+        "rbac",
+        "management",
+        "extension"
+    ],
+    "homepage": "https://www.yii.rocks/voyti/",
+    "license": "MIT",
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "authors": [
+        {
+            "name": "Mr.42",
+            "homepage": "https://mr42.me/",
+            "role": "Developer"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/YiiRocks/voyti/issues",
+        "source": "https://github.com/YiiRocks/voyti"
+    },
+    "require": {
+        "php": ">=8.3",
+        "psr/event-dispatcher": "^1.0",
+        "psr/http-factory": "^1.0",
+        "psr/http-message": "^1.0 || ^2.0",
+        "psr/http-server-middleware": "^1.0",
+        "symfony/console": "^5.4 || ^6.0 || ^7.0 || ^8.0",
+        "yiisoft/active-record": "^1.0",
+        "yiisoft/aliases": "^3.1",
+        "yiisoft/auth": "^3.2",
+        "yiisoft/db-implementation": "*",
+        "yiisoft/db-migration": "^2.0",
+        "yiisoft/form-model": "^1.1",
+        "yiisoft/html": "^4.0",
+        "yiisoft/mailer": "^6.1",
+        "yiisoft/rbac": "^2.1",
+        "yiisoft/router": "^4.0",
+        "yiisoft/security": "^1.2",
+        "yiisoft/session": "^3.0",
+        "yiisoft/translator-message-php": "^1.0",
+        "yiisoft/user": "^2.3",
+        "yiisoft/validator": "^2.6",
+        "yiisoft/yii-view-renderer": "^7.1"
+    },
+    "suggest": {
+        "chillerlan/php-authenticator": "Needed to enable Time-based One-Time Password (TOTP) 2 Factor Authentication",
+        "chillerlan/php-qrcode": "Needed to generate QR codes for 2FA setup with an authenticator app",
+        "yiisoft/yii-runner-console": "Allows to run console application",
+        "yiisoft/yii-runner-http": "Allows to run HTTP application",
+        "yiirocks/recaptcha": "Google reCAPTCHA v2 and v3 field + server-side validator for Yii3"
+    },
+    "require-dev": {
+        "yiirocks/recaptcha": "^1.0",
+        "chillerlan/php-authenticator": "^5.4",
+        "chillerlan/php-qrcode": "^6.0",
+        "friendsofphp/php-cs-fixer": "@stable",
+        "infection/infection": "^0.33.2",
+        "nyholm/psr7": "^1.8",
+        "phpmd/phpmd": "@stable",
+        "phpunit/phpunit": "@stable",
+        "squizlabs/php_codesniffer": "@stable",
+        "vimeo/psalm": "@stable",
+        "yiisoft/config": "^1.6",
+        "yiisoft/db-sqlite": "^2.0",
+        "yiisoft/di": "*",
+        "yiisoft/router-fastroute": "^4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "YiiRocks\\Voyti\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "YiiRocks\\Voyti\\tests\\": "tests"
+        }
+    },
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://asset-packagist.org"
+        }
+    ],
+    "scripts": {
+        "test": "@php vendor/bin/phpunit -c phpunit.xml.dist",
+        "php-cs-fixer": "@php vendor/bin/php-cs-fixer fix",
+        "phpcs": "@php vendor/bin/phpcs",
+        "phpmd": "@php vendor/bin/phpmd src/ text tests/data/phpmd_ruleset.xml",
+        "phpunit": "@php -d extension=pdo_sqlite vendor/bin/phpunit",
+        "psalm": "@php vendor/bin/psalm",
+        "infection": "@php -d extension=pdo_sqlite -d pcov.enabled=1 vendor/bin/infection --configuration=infection.json --initial-tests-php-options='-d extension=pdo_sqlite -d pcov.enabled=1' --min-msi=100 --min-covered-msi=100"
+    },
+    "scripts-descriptions": {
+        "php-cs-fixer": "Cleans to code with PHP Coding Standards Fixer.",
+        "phpcs": "PHP_CodeSniffer tokenizes PHP, JavaScript and CSS files and detects violations of a defined set of coding standards.",
+        "phpmd": "PHP Mess Detector.",
+        "phpunit": "PHPUnit - programmer-oriented testing framework.",
+        "psalm": "Psalm - static analysis tool for finding errors in PHP applications.",
+        "infection": "Infection - PHP Mutation Testing Framework."
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.0.x-dev"
+        },
+        "config-plugin-options": {
+            "source-directory": "config"
+        },
+        "config-plugin": {
+            "params": "params.php",
+            "web": "web.php",
+            "events": "events.php",
+            "di": "di.php",
+            "bootstrap-console": "bootstrap-console.php",
+            "rbac": "rbac.php",
+            "voyti-routes": "routes.php",
+            "bootstrap": "bootstrap.php"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "yiisoft/config": true,
+            "yiisoft/factory": true,
+            "infection/extension-installer": true
+        }
+    }
+}

@@ -1,0 +1,6 @@
+/config/.merge-plan.php
+/.idea/
+/vendor/
+/composer.lock
+
+

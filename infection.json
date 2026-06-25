@@ -1,0 +1,20 @@
+{
+    "source": {
+        "directories": [
+            "src"
+        ],
+        "excludes": [
+            "resources",
+            "Helper/RecaptchaHelper.php",
+            "Helper/TimezoneHelper.php",
+            "Validator/TwoFactor/EmailValidator.php",
+            "Validator/TwoFactor/TextMessageValidator.php"
+        ]
+    },
+    "phpUnit": {
+        "customPath": "vendor/bin/phpunit"
+    },
+    "initialTestsPhpOptions": "-d extension=pdo_sqlite -d pcov.enabled=1",
+    "minMsi": 100,
+    "minCoveredMsi": 100
+}

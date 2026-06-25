@@ -1,0 +1,49 @@
+<?php
+
+declare(strict_types=1);
+
+use YiiRocks\Voyti\Form\Rbac\RuleForm;
+use Yiisoft\FormModel\Field;
+use Yiisoft\Html\Html;
+use Yiisoft\Router\UrlGeneratorInterface;
+use Yiisoft\Translator\TranslatorInterface;
+
+/**
+ * @var RuleForm $model
+ * @var array $errors
+ * @var UrlGeneratorInterface $url
+ * @var TranslatorInterface $translator
+ * @var string $csrf
+ */
+
+$this->setTitle($translator->translate('voyti.view.rule.create_title', category: 'voyti'));
+
+echo Html::div()->class('voyti-rbac-create')->open();
+    echo Html::H1($translator->translate('voyti.view.rule.create_title', category: 'voyti'));
+
+    echo Html::form()
+        ->post($url->generate('voyti/rules-create'))
+        ->csrf($csrf)
+        ->open();
+
+    if (!empty($errors)) {
+        echo Html::div()->class('alert alert-danger')->open();
+            foreach ($errors as $field => $fieldErrors) {
+                foreach ((array) $fieldErrors as $error) {
+                    echo Html::div(Html::encode($error));
+                }
+            }
+        echo Html::div()->close();
+    }
+
+    echo Field::text($model, 'name');
+
+    echo Field::text($model, 'class');
+
+    echo Field::buttonGroup()
+        ->buttons(
+            Html::submitButton($translator->translate('voyti.view.create_button', category: 'voyti'))
+        );
+
+    echo Html::form()->close();
+echo Html::div()->close();
