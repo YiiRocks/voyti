@@ -59,13 +59,36 @@ composer require chillerlan/php-authenticator chillerlan/php-qrcode
 
 ## Quick Start
 
-### 1. Run migrations
+### 1. Wire migrations in the host app
+
+Voyti exposes its migration defaults in the package-specific `voyti-migration`
+config group. In your application, merge that into the console migration service:
+
+```php
+// config/di-console.php
+use Yiisoft\Db\Migration\Service\MigrationService;
+
+return [
+    MigrationService::class => [
+        'class' => MigrationService::class,
+        'setNewMigrationPath()' => [$config->get('voyti-migration')['newMigrationPath']],
+        'setSourcePaths()' => [$config->get('voyti-migration')['sourcePaths']],
+    ],
+];
+```
+
+If you have multiple packages that ship migrations, merge each package-specific
+config block into the same `MigrationService` definition here.
+
+After that, run:
 
 ```bash
 ./yii migrate:up
 ```
 
-Five migrations create the `user`, `profile`, `social_account`, `token`, and `session_history` tables with all columns (2FA, GDPR, password expiration, last login IP, etc.) included.
+Five migrations create the `user`, `profile`, `social_account`, `token`, and
+`session_history` tables with all columns (2FA, GDPR, password expiration, last
+login IP, etc.) included.
 
 ### 2. Configure the module (optional)
 

@@ -119,8 +119,8 @@
             "web": "web.php",
             "events": "events.php",
             "di": "di.php",
-            "bootstrap-console": "bootstrap-console.php",
             "rbac": "rbac.php",
+            "voyti-migration": "voyti-migration.php",
             "voyti-routes": "routes.php",
             "bootstrap": "bootstrap.php"
         }

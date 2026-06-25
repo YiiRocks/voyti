@@ -81,11 +81,6 @@ return [
                 'params.php',
             ],
         ],
-        'di-console' => [
-            'yiisoft/db-migration' => [
-                'config/di-console.php',
-            ],
-        ],
         'di' => [
             'yiisoft/mailer' => [
                 'config/di.php',
@@ -128,6 +123,11 @@ return [
             ],
             '/' => [
                 'di.php',
+            ],
+        ],
+        'voyti-migration' => [
+            '/' => [
+                'voyti-migration.php',
             ],
         ],
         'di-web' => [
