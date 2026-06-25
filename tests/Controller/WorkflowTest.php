@@ -83,6 +83,17 @@ final class WorkflowTest extends TestCase
         $this->assertCount(1, $this->harness->mailer->messages());
     }
 
+    public function testLoginViewIncludesCsrfToken(): void
+    {
+        $response = $this->harness->securityController->login(
+            $this->harness->request(Method::GET),
+        );
+
+        $html = $this->harness->responseBody($response);
+
+        $this->assertMatchesRegularExpression('/name="_csrf" value="[^"]+"/', $html);
+    }
+
     public function testProfileUpdateAndEmailChangeFlow(): void
     {
         $user = $this->registerAndConfirmUser('bob', 'bob@example.test', 'secret123');

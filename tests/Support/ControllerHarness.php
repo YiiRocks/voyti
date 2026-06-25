@@ -34,6 +34,9 @@ use YiiRocks\Voyti\Service\User\RegisterService;
 use YiiRocks\Voyti\Service\User\ResendConfirmationService;
 use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
 use YiiRocks\Voyti\Strategy\EmailChangeStrategyFactory;
+use Yiisoft\Csrf\CsrfTokenMiddleware;
+use Yiisoft\Csrf\MaskedCsrfToken;
+use Yiisoft\Csrf\StubCsrfToken;
 use Yiisoft\Aliases\Aliases;
 use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\Auth\IdentityRepositoryInterface;
@@ -141,11 +144,16 @@ final class ControllerHarness
             new IdentityRepository($this->users),
             $this->eventDispatcher,
         );
+        $csrfToken = new MaskedCsrfToken(new StubCsrfToken('test-csrf-token'));
+        $csrfMiddleware = new CsrfTokenMiddleware(new Psr17Factory(), $csrfToken);
         $this->webViewRenderer = new WebViewRenderer(
             responseFactory: new Psr17Factory(),
             streamFactory: new Psr17Factory(),
             aliases: $this->aliases,
             view: new WebView($this->moduleConfig->viewPath),
+            injections: [
+                new \Yiisoft\Yii\View\Renderer\CsrfViewInjection($csrfToken, $csrfMiddleware),
+            ],
         );
         $this->userRegisterService = new RegisterService(
             $this->users,

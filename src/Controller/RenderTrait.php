@@ -36,7 +36,6 @@ trait RenderTrait
     {
         $params['translator'] ??= $this->translator;
         $params['url'] ??= $this->url;
-        $params['csrf'] ??= '';
 
         return $this->viewRenderer
             ->withViewPath($this->viewPath())

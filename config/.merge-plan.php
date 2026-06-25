@@ -50,6 +50,12 @@ return [
             'yiisoft/auth' => [
                 'config/params.php',
             ],
+            'yiisoft/csrf' => [
+                'config/params.php',
+            ],
+            'yiisoft/session' => [
+                'config/params.php',
+            ],
             'yiisoft/form' => [
                 'config/params.php',
             ],
@@ -57,9 +63,6 @@ return [
                 'config/params.php',
             ],
             'yiisoft/router' => [
-                'config/params.php',
-            ],
-            'yiisoft/csrf' => [
                 'config/params.php',
             ],
             'yiisoft/data-response' => [
@@ -72,9 +75,6 @@ return [
                 'config/params.php',
             ],
             'yiisoft/translator' => [
-                'config/params.php',
-            ],
-            'yiisoft/session' => [
                 'config/params.php',
             ],
             '/' => [
@@ -143,6 +143,9 @@ return [
             'yiisoft/csrf' => [
                 'config/di-web.php',
             ],
+            'yiisoft/session' => [
+                'config/di-web.php',
+            ],
             'yiisoft/data-response' => [
                 'config/di-web.php',
             ],
@@ -150,9 +153,6 @@ return [
                 'config/di-web.php',
             ],
             'yiisoft/request-provider' => [
-                'config/di-web.php',
-            ],
-            'yiisoft/session' => [
                 'config/di-web.php',
             ],
         ],
