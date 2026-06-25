@@ -19,9 +19,6 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var string $csrf
  */
 
-/** @var UrlGeneratorInterface $url */
-$url = $this->get('url');
-
 echo Html::div()->class('voyti-assignments')->open();
     Html::H3()->class('mb-3')->open();
         echo $translator->translate('voyti.view.assignments.title', category: 'voyti');
@@ -44,7 +41,7 @@ echo Html::div()->class('voyti-assignments')->open();
                 echo Html::tag('td')->open();
                     foreach ($assignments as $itemName) {
                         echo Html::div()->class('form-check')->open();
-                            echo Html::input('checkbox')->class('form-check-input')->name('items[]')->value($itemName)->checked();
+                            echo Html::input('checkbox')->class('form-check-input')->name('items[]')->value($itemName)->addAttributes(['checked' => true]);
                             echo Html::label($itemName)->class('form-check-label');
                         echo Html::div()->close();
                     }

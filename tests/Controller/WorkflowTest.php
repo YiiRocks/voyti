@@ -8,8 +8,8 @@ use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Form\Auth\LoginForm;
 use YiiRocks\Voyti\Form\Auth\RecoveryForm;
-use YiiRocks\Voyti\Form\Settings\GdprDeleteForm;
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
+use YiiRocks\Voyti\Form\Settings\GdprDeleteForm;
 use YiiRocks\Voyti\Form\Settings\UserProfileForm;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\TestCase;
@@ -110,6 +110,163 @@ final class WorkflowTest extends TestCase
 
         $this->assertStringContainsString('voyti-admin-index', $html);
         $this->assertStringContainsString('voyti/admin', $html);
+    }
+
+    public function testAdminCreateActionCreatesUserAndConfirmationToken(): void
+    {
+        $response = $this->harness->adminController->create(
+            $this->harness->request(
+                Method::POST,
+                [
+                    'username' => 'grace',
+                    'email' => 'grace@example.test',
+                    'password' => 'secret123',
+                ],
+            ),
+        );
+
+        $this->assertResponseContains($response, 'User has been created');
+
+        $user = $this->harness->users->findByEmail('grace@example.test');
+        $this->assertInstanceOf(User::class, $user);
+        $this->assertFalse($user->isConfirmed());
+        $this->assertCount(1, $this->harness->userTokens->findByUserId((int) $user->getId()));
+        $this->assertCount(1, $this->harness->mailer->messages());
+    }
+
+    public function testAdminInfoViewRendersWithoutUndefinedUserProfile(): void
+    {
+        $user = $this->registerAndConfirmUser('eve', 'eve@example.test', 'secret123');
+
+        $response = $this->harness->adminController->info((int) $user->getId());
+        $html = $this->harness->responseBody($response);
+
+        $this->assertStringContainsString($user->getUsername(), $html);
+        $this->assertStringNotContainsString('Undefined variable', $html);
+    }
+
+    public function testAdminUpdateViewRendersUsernameInTitle(): void
+    {
+        $user = $this->registerAndConfirmUser('frank', 'frank@example.test', 'secret123');
+
+        $response = $this->harness->adminController->update(
+            $this->harness->request(Method::GET),
+            (int) $user->getId(),
+        );
+        $html = $this->harness->responseBody($response);
+
+        $this->assertStringContainsString('Update user:', $html);
+        $this->assertStringContainsString($user->getUsername(), $html);
+    }
+
+    public function testAdminAssignmentsAndSessionHistoryAndDeleteFlow(): void
+    {
+        $user = $this->registerAndConfirmUser('helen', 'helen@example.test', 'secret123');
+        $this->harness->seedRbacRole('manager');
+        $this->harness->addSessionHistory($user, 'session-1', '198.51.100.10', 'Test Agent/1.0');
+
+        $assignmentsResponse = $this->harness->adminController->assignments(
+            $this->harness->request(Method::GET),
+            (int) $user->getId(),
+        );
+        $this->assertResponseContains($assignmentsResponse, 'Assignments');
+        $this->assertStringContainsString('manager', $this->harness->responseBody($assignmentsResponse));
+
+        $assignmentsPostResponse = $this->harness->adminController->assignments(
+            $this->harness->request(
+                Method::POST,
+                ['items' => ['manager']],
+            ),
+            (int) $user->getId(),
+        );
+        $this->assertResponseContains($assignmentsPostResponse, 'Assignments');
+        $this->assertTrue($this->harness->authHelper->hasRole((int) $user->getId(), 'manager'));
+
+        $historyResponse = $this->harness->adminController->userSessionHistory((int) $user->getId());
+        $this->assertResponseContains($historyResponse, 'Session history');
+        $historyHtml = $this->harness->responseBody($historyResponse);
+        $this->assertStringContainsString('198.51.100.10', $historyHtml);
+        $this->assertStringContainsString('Test Agent/1.0', $historyHtml);
+
+        $terminateResponse = $this->harness->adminController->terminateSessions((int) $user->getId());
+        $this->assertResponseContains($terminateResponse, 'Sessions have been terminated');
+        $this->assertSame([], $this->harness->userSessionHistory->findByUserId((int) $user->getId()));
+
+        $deleteResponse = $this->harness->adminController->delete(
+            $this->harness->request(Method::POST),
+            (int) $user->getId(),
+        );
+        $this->assertResponseContains($deleteResponse, 'User has been deleted');
+        $this->assertNull($this->harness->users->findById((int) $user->getId()));
+    }
+
+    public function testAdminBlockConfirmPasswordResetAndPasswordChangeActions(): void
+    {
+        $response = $this->harness->adminController->create(
+            $this->harness->request(
+                Method::POST,
+                [
+                    'username' => 'ivan',
+                    'email' => 'ivan@example.test',
+                    'password' => 'secret123',
+                ],
+            ),
+        );
+        $this->assertResponseContains($response, 'User has been created');
+
+        $user = $this->harness->users->findByEmail('ivan@example.test');
+        $this->assertInstanceOf(User::class, $user);
+        $userId = (int) $user->getId();
+
+        $confirmResponse = $this->harness->adminController->confirm($userId);
+        $this->assertResponseContains($confirmResponse, 'User has been confirmed');
+        $confirmedUser = $this->harness->users->findById($userId);
+        $this->assertTrue($confirmedUser->isConfirmed());
+
+        $forcePasswordChangeResponse = $this->harness->adminController->forcePasswordChange($userId);
+        $this->assertResponseContains($forcePasswordChangeResponse, 'User will be required to change password at next login');
+        $expiredUser = $this->harness->users->findById($userId);
+        $this->assertSame(0, $expiredUser->getPasswordChangedAt());
+
+        $passwordResetResponse = $this->harness->adminController->passwordReset($userId);
+        $this->assertResponseContains($passwordResetResponse, 'Recovery message sent');
+        $recoveryTokens = $this->harness->userTokens->findByUserId($userId);
+        $this->assertCount(1, $recoveryTokens);
+        $recoveryToken = $recoveryTokens[array_key_first($recoveryTokens)];
+        $this->assertInstanceOf(UserToken::class, $recoveryToken);
+        $this->assertSame(UserToken::TYPE_RECOVERY, $recoveryToken->getType());
+
+        $blockResponse = $this->harness->adminController->block($userId);
+        $this->assertResponseContains($blockResponse, 'User block status has been updated');
+        $blockedUser = $this->harness->users->findById($userId);
+        $this->assertTrue($blockedUser->isBlocked());
+    }
+
+    public function testAdminDeleteActionPreventsDeletingSelf(): void
+    {
+        $user = $this->registerAndConfirmUser('laura', 'laura@example.test', 'secret123');
+        $this->harness->currentUser->overrideIdentity($user);
+
+        $response = $this->harness->adminController->delete(
+            $this->harness->request(Method::POST),
+            (int) $user->getId(),
+        );
+
+        $this->assertResponseContains($response, 'You cannot delete your own account');
+        $this->assertNotNull($this->harness->users->findById((int) $user->getId()));
+    }
+
+    public function testAdminSwitchIdentityActionSwitchesCurrentUser(): void
+    {
+        $admin = $this->registerAndConfirmUser('jane', 'jane@example.test', 'secret123');
+        $target = $this->registerAndConfirmUser('kate', 'kate@example.test', 'secret123');
+
+        $this->harness->currentUser->login($admin);
+        $response = $this->harness->adminController->switchIdentity((int) $target->getId());
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame((string) $target->getId(), $this->harness->currentUser->getId());
+        $this->assertSame((string) $admin->getId(), $this->harness->session->get($this->harness->moduleConfig->switchIdentitySessionKey));
     }
 
     public function testProfileUpdateAndEmailChangeFlow(): void

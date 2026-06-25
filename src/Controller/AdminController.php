@@ -8,6 +8,7 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Entity\UserProfile;
+use YiiRocks\Voyti\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Form\Settings\UserProfileForm;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Helper\InputDataTrait;
@@ -185,7 +186,11 @@ final class AdminController
         if ($user === null) {
             return $this->renderError('voyti.admin.user_not_found');
         }
-        return $this->renderView('admin/_info', ['user' => $user, 'config' => $this->config]);
+        return $this->renderView('admin/_info', [
+            'user' => $user,
+            'userProfile' => $user->getProfile(),
+            'config' => $this->config,
+        ]);
     }
 
     public function passwordReset(int $id): ResponseInterface
@@ -243,6 +248,10 @@ final class AdminController
             return $this->renderError('voyti.admin.user_not_found');
         }
 
+        $model = new SettingsForm($this->translator);
+        $model->username = $user->getUsername();
+        $model->email = $user->getEmail();
+
         if ($request->getMethod() === Method::POST) {
             $body = $this->parsedBody($request);
             $user->setUsername($this->stringValue($body, 'username', $user->getUsername()));
@@ -257,7 +266,12 @@ final class AdminController
             return $this->renderSuccess('voyti.admin.account_details_updated');
         }
 
-        return $this->renderView('admin/_account', ['user' => $user, 'config' => $this->config]);
+        return $this->renderView('admin/_account', [
+            'user' => $user,
+            'model' => $model,
+            'errors' => [],
+            'config' => $this->config,
+        ]);
     }
 
     public function updateProfile(ServerRequestInterface $request, int $id): ResponseInterface

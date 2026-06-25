@@ -9,6 +9,7 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Stringable;
+use YiiRocks\Voyti\Controller\AdminController;
 use YiiRocks\Voyti\Controller\RecoveryController;
 use YiiRocks\Voyti\Controller\RegistrationController;
 use YiiRocks\Voyti\Controller\SecurityController;
@@ -28,11 +29,19 @@ use YiiRocks\Voyti\Service\EmailChangeService;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
 use YiiRocks\Voyti\Service\Password\ResetService;
+use YiiRocks\Voyti\Service\Rbac\UpdateAssignmentsService;
 use YiiRocks\Voyti\Service\User\AccountConfirmationService;
+use YiiRocks\Voyti\Service\User\BlockService;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
+use YiiRocks\Voyti\Service\User\CreateService;
+use YiiRocks\Voyti\Service\Password\ExpireService;
 use YiiRocks\Voyti\Service\User\RegisterService;
 use YiiRocks\Voyti\Service\User\ResendConfirmationService;
+use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
+use YiiRocks\Voyti\Helper\AuthHelper;
+use YiiRocks\Voyti\Repository\UserSessionHistoryRepository;
+use YiiRocks\Voyti\Validator\Rbac\ItemsValidator;
 use YiiRocks\Voyti\Strategy\EmailChangeStrategyFactory;
 use Yiisoft\Csrf\CsrfTokenMiddleware;
 use Yiisoft\Csrf\MaskedCsrfToken;
@@ -57,6 +66,11 @@ use Yiisoft\Validator\Result;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\View\WebView;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
+use Yiisoft\Rbac\Manager;
+use Yiisoft\Rbac\Permission;
+use Yiisoft\Rbac\Role;
+use Yiisoft\Rbac\SimpleAssignmentsStorage;
+use Yiisoft\Rbac\SimpleItemsStorage;
 use Yiisoft\User\CurrentUser;
 
 final class ControllerHarness
@@ -74,6 +88,11 @@ final class ControllerHarness
     public readonly MailService $mailService;
     public readonly ModuleConfig $moduleConfig;
     public readonly PasswordHasher $passwordHasher;
+    public readonly AdminController $adminController;
+    public readonly AuthHelper $authHelper;
+    public readonly HarnessRbacAssignmentsStorage $rbacAssignmentsStorage;
+    public readonly HarnessRbacItemsStorage $rbacItemsStorage;
+    public readonly Manager $rbacManager;
     public readonly QrCodeUriGeneratorService $qrCodeUriGeneratorService;
     public readonly RegistrationController $registrationController;
     public readonly RecoveryController $recoveryController;
@@ -89,6 +108,7 @@ final class ControllerHarness
     public readonly UserSocialAccountRepository $socialAccounts;
     public readonly UserTokenFactory $userTokenFactory;
     public readonly UserTokenRepository $userTokens;
+    public readonly UserSessionHistoryRepository $userSessionHistory;
     public readonly WebViewRenderer $webViewRenderer;
     public readonly RegisterService $userRegisterService;
     public readonly ConfirmationService $userConfirmationService;
@@ -128,6 +148,7 @@ final class ControllerHarness
         $this->users = new UserRepository();
         $this->socialAccounts = new UserSocialAccountRepository();
         $this->userTokens = new UserTokenRepository();
+        $this->userSessionHistory = new UserSessionHistoryRepository();
         $this->userTokenFactory = new UserTokenFactory($this->userTokens);
         $this->mailService = new MailService(
             $this->mailer,
@@ -170,6 +191,31 @@ final class ControllerHarness
             $this->moduleConfig,
             $this->eventDispatcher,
             $this->userTokens,
+        );
+        $this->rbacItemsStorage = new HarnessRbacItemsStorage();
+        $this->rbacAssignmentsStorage = new HarnessRbacAssignmentsStorage();
+        $this->rbacManager = new Manager($this->rbacItemsStorage, $this->rbacAssignmentsStorage);
+        $this->authHelper = new AuthHelper($this->rbacManager, $this->rbacItemsStorage, $this->rbacAssignmentsStorage, $this->moduleConfig);
+        $itemsValidator = new ItemsValidator($this->rbacItemsStorage);
+        $createService = new CreateService(
+            $this->users,
+            $this->mailService,
+            $this->eventDispatcher,
+            $this->passwordHasher,
+            $this->moduleConfig,
+        );
+        $blockService = new BlockService($this->eventDispatcher);
+        $expireService = new ExpireService($this->moduleConfig);
+        $switchIdentityService = new SwitchIdentityService(
+            $this->moduleConfig,
+            $this->users,
+            $this->currentUser,
+            $this->session,
+        );
+        $updateAssignmentsService = new UpdateAssignmentsService(
+            $this->rbacManager,
+            $this->rbacAssignmentsStorage,
+            $itemsValidator,
         );
 
         $this->registrationFormPrototype = new RegistrationForm($this->moduleConfig, $this->translator);
@@ -247,6 +293,29 @@ final class ControllerHarness
             $this->moduleConfig,
             $this->hydrator,
         );
+
+        $this->adminController = new AdminController(
+            $this->translator,
+            $this->webViewRenderer,
+            $this->users,
+            $this->userProfiles,
+            $createService,
+            $blockService,
+            $this->userConfirmationService,
+            $this->recoveryService(),
+            $expireService,
+            $switchIdentityService,
+            $updateAssignmentsService,
+            $this->userSessionHistory,
+            $this->authHelper,
+            $this->passwordHasher,
+            $this->validator(),
+            $this->eventDispatcher,
+            $this->url,
+            $this->moduleConfig,
+            $this->hydrator,
+            $this->currentUser,
+        );
     }
 
     public function request(string $method, array $parsedBody = [], array $queryParams = [], array $attributes = [], array $serverParams = []): ServerRequestInterface
@@ -278,6 +347,28 @@ final class ControllerHarness
     public function formPayload(FormModel $form, array $data): array
     {
         return [$form->getFormName() => $data];
+    }
+
+    public function seedRbacRole(string $name): void
+    {
+        $this->rbacItemsStorage->add(new Role($name));
+    }
+
+    public function seedRbacPermission(string $name): void
+    {
+        $this->rbacItemsStorage->add(new Permission($name));
+    }
+
+    public function addSessionHistory(\YiiRocks\Voyti\Entity\User $user, string $sessionId, ?string $ip = null, ?string $userAgent = null): void
+    {
+        $history = new \YiiRocks\Voyti\Entity\UserSessionHistory();
+        $history->setUserId((int) ($user->getId() ?? 0));
+        $history->setSessionId($sessionId);
+        $history->setIp($ip);
+        $history->setUserAgent($userAgent);
+        $history->setCreatedAt(time());
+        $history->setUpdatedAt(time());
+        $history->save();
     }
 
     private function validator(): ValidatorInterface
@@ -539,4 +630,12 @@ final class IdentityRepository implements IdentityRepositoryInterface
     {
         return $this->users->findById((int) $id);
     }
+}
+
+final class HarnessRbacItemsStorage extends SimpleItemsStorage
+{
+}
+
+final class HarnessRbacAssignmentsStorage extends SimpleAssignmentsStorage
+{
 }

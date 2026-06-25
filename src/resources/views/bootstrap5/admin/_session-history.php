@@ -15,9 +15,6 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var string $csrf
  */
 
-/** @var UrlGeneratorInterface $url */
-$url = $this->get('url');
-
 echo Html::div()->class('voyti-admin-session-history')->open();
     Html::H3()->class('mb-3')->open();
         echo $translator->translate('voyti.view.admin.session_history', category: 'voyti');

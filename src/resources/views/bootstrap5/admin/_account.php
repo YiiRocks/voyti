@@ -8,7 +8,7 @@ use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 
 /**
- * @var YiiRocks\Voyti\Form\Auth\RegistrationForm $model
+ * @var YiiRocks\Voyti\Form\Settings\SettingsForm $model
  * @var YiiRocks\Voyti\Entity\User $user
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
@@ -16,10 +16,12 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var string $csrf
  */
 
-$this->setTitle($translator->translate('voyti.view.admin.update_user_title', category: 'voyti'));
+$username = $user->getUsername();
+
+$this->setTitle($translator->translate('voyti.view.admin.update_user_title', ['username' => $username], category: 'voyti'));
 
 echo Html::div()->class('voyti-admin-update')->open();
-    echo Html::H1($translator->translate('voyti.view.admin.update_user_title', ['username' => Html::encode($user->getUsername())], category: 'voyti'));
+    echo Html::H1($translator->translate('voyti.view.admin.update_user_title', ['username' => Html::encode($username)], category: 'voyti'));
 
     echo Html::form()
         ->post($url->generate('voyti/admin-update', ['id' => $user->getId()]))
