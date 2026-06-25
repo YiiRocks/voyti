@@ -27,8 +27,8 @@ echo Html::div()->class('voyti-rbac-index')->open();
 
         echo Html::tag('thead')->class('table-light')->open();
             echo Html::tag('tr')->open();
-                echo Html::tag('th', $translator->translate('voyti.view.name_header', category: 'voyti'))->scope('col');
-                echo Html::tag('th', $translator->translate('voyti.view.actions_header', category: 'voyti'))->class('text-end')->scope('col');
+                echo Html::tag('th', $translator->translate('voyti.view.name_header', category: 'voyti'))->addAttributes(['scope' => 'col']);
+                echo Html::tag('th', $translator->translate('voyti.view.actions_header', category: 'voyti'))->class('text-end')->addAttributes(['scope' => 'col']);
             echo Html::tag('tr')->close();
         echo Html::tag('thead')->close();
 

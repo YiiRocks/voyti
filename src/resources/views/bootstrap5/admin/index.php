@@ -26,17 +26,17 @@ echo Html::div()->class('voyti-admin-index')->open();
     echo Html::div()->close();
 
     echo Html::form()
-        ->action($url->generate('voyti/admin-index'))
+        ->action($url->generate('voyti/admin'))
         ->method('get')
         ->open();
 
     echo Html::div()->class('row g-2')->open();
         echo Html::div()->class('col')->open();
-            echo Html::input('text')->class('form-control')->name('username')->value(Html::encode($filters['username'] ?? ''))->placeholder($translator->translate('voyti.view.username_header', category: 'voyti'));
+            echo Html::input('text')->class('form-control')->name('username')->value(Html::encode($filters['username'] ?? ''))->addAttributes(['placeholder' => $translator->translate('voyti.view.username_header', category: 'voyti')]);
         echo Html::div()->close();
 
         echo Html::div()->class('col')->open();
-            echo Html::input('text')->class('form-control')->name('email')->value(Html::encode($filters['email'] ?? ''))->placeholder($translator->translate('voyti.view.email_header', category: 'voyti'));
+            echo Html::input('text')->class('form-control')->name('email')->value(Html::encode($filters['email'] ?? ''))->addAttributes(['placeholder' => $translator->translate('voyti.view.email_header', category: 'voyti')]);
         echo Html::div()->close();
 
         echo Html::div()->class('col')->open();
@@ -63,11 +63,11 @@ echo Html::div()->class('voyti-admin-index')->open();
 
         echo Html::tag('thead')->class('table-light')->open();
             echo Html::tag('tr')->open();
-                echo Html::tag('th', $translator->translate('voyti.view.id_header', category: 'voyti'))->scope('col');
-                echo Html::tag('th', $translator->translate('voyti.view.username_header', category: 'voyti'))->scope('col');
-                echo Html::tag('th', $translator->translate('voyti.view.email_header', category: 'voyti'))->scope('col');
-                echo Html::tag('th', $translator->translate('voyti.view.status_header', category: 'voyti'))->scope('col');
-                echo Html::tag('th', $translator->translate('voyti.view.actions_header', category: 'voyti'))->class('text-end')->scope('col');
+                echo Html::tag('th', $translator->translate('voyti.view.id_header', category: 'voyti'))->addAttributes(['scope' => 'col']);
+                echo Html::tag('th', $translator->translate('voyti.view.username_header', category: 'voyti'))->addAttributes(['scope' => 'col']);
+                echo Html::tag('th', $translator->translate('voyti.view.email_header', category: 'voyti'))->addAttributes(['scope' => 'col']);
+                echo Html::tag('th', $translator->translate('voyti.view.status_header', category: 'voyti'))->addAttributes(['scope' => 'col']);
+                echo Html::tag('th', $translator->translate('voyti.view.actions_header', category: 'voyti'))->class('text-end')->addAttributes(['scope' => 'col']);
             echo Html::tag('tr')->close();
         echo Html::tag('thead')->close();
 

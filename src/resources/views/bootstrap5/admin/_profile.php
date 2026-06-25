@@ -22,7 +22,7 @@ echo Html::div()->class('voyti-admin-update-userProfile')->open();
     echo Html::H1($translator->translate('voyti.view.admin.update_profile_title', category: 'voyti'));
 
     echo Html::form()
-        ->post($url->generate('voyti/admin-update-userProfile', ['id' => $user->getId()]))
+        ->post($url->generate('voyti/admin-update-profile', ['id' => $user->getId()]))
         ->csrf($csrf)
         ->open();
 

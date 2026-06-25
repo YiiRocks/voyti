@@ -129,6 +129,69 @@ Routes are not prefixed and are available at URLs like `login`, `register`,
 `settings`, etc. REST API routes (under `api/v1`) are enabled when
 `enableRestApi` is `true`.
 
+### Available Routes
+
+The library does not provide a menu model or navigation contract. It only exposes
+named routes that the host application can use in its own menu, sidebar, or access
+rules. The core route set is:
+
+| Route name | Method | Path | Purpose |
+|------------|--------|------|---------|
+| `voyti/login` | `GET`, `POST` | `login` | User login |
+| `voyti/logout` | `GET`, `POST` | `logout` | User logout |
+| `voyti/confirm` | `GET`, `POST` | `confirm` | Two-factor confirmation step |
+| `voyti/auth` | `GET` | `auth/{provider}` | Social auth callback |
+| `voyti/connect` | `GET` | `auth/connect/{provider}` | Social account connect callback |
+| `voyti/register` | `GET`, `POST` | `register` | New user registration |
+| `voyti/registration-confirm` | `GET`, `POST` | `confirm/{id}/{code}` | Email confirmation link |
+| `voyti/resend` | `GET`, `POST` | `resend` | Resend confirmation email |
+| `voyti/registration-connect` | `GET` | `connect/{code}` | Social registration link |
+| `voyti/forgot` | `GET`, `POST` | `forgot` | Password recovery request |
+| `voyti/recover` | `GET`, `POST` | `recover/{id}/{code}` | Password reset |
+| `voyti/profile` | `GET` | `profile/{id}` | Public user profile |
+| `voyti/settings` | `GET`, `POST` | `settings` | Profile settings |
+| `voyti/settings-account` | `GET`, `POST` | `settings/account` | Account settings |
+| `voyti/settings-networks` | `GET` | `settings/networks` | Linked social networks |
+| `voyti/settings-privacy` | `GET` | `settings/privacy` | Privacy settings |
+| `voyti/gdpr-consent` | `GET`, `POST` | `settings/gdpr-consent` | GDPR consent |
+| `voyti/gdpr-delete` | `GET`, `POST` | `settings/gdpr-delete` | GDPR data removal |
+| `voyti/settings-delete` | `POST` | `settings/delete` | Account deletion |
+| `voyti/settings-two-factor` | `GET`, `POST` | `settings/two-factor` | Two-factor setup |
+| `voyti/settings-two-factor-enable` | `POST` | `settings/two-factor-enable` | Enable 2FA |
+| `voyti/settings-two-factor-disable` | `POST` | `settings/two-factor-disable` | Disable 2FA |
+| `voyti/settings-confirm` | `GET` | `settings/confirm/{code}` | Confirm account changes |
+| `voyti/settings-disconnect` | `POST` | `settings/disconnect/{id}` | Disconnect social account |
+| `voyti/settings-export` | `GET` | `settings/export` | Export user data |
+| `voyti/admin` | `GET` | `admin` | Admin dashboard |
+| `voyti/admin-create` | `GET`, `POST` | `admin/create` | Create user |
+| `voyti/admin-update` | `GET`, `POST` | `admin/update/{id}` | Update user |
+| `voyti/admin-update-profile` | `GET`, `POST` | `admin/update-profile/{id}` | Update user profile |
+| `voyti/admin-info` | `GET` | `admin/info/{id}` | User details |
+| `voyti/admin-confirm` | `POST` | `admin/confirm/{id}` | Confirm user |
+| `voyti/admin-delete` | `POST` | `admin/delete/{id}` | Delete user |
+| `voyti/admin-block` | `POST` | `admin/block/{id}` | Block user |
+| `voyti/admin-switch` | `POST` | `admin/switch-identity/{id}` | Switch identity |
+| `voyti/admin-password-reset` | `POST` | `admin/password-reset/{id}` | Send password reset |
+| `voyti/admin-force-password` | `POST` | `admin/force-password-change/{id}` | Force password change |
+| `voyti/admin-assignments` | `GET`, `POST` | `admin/assignments/{id}` | Manage RBAC assignments |
+| `voyti/admin-session-history` | `GET` | `admin/session-history/{id}` | Session history |
+| `voyti/admin-terminate-sessions` | `POST` | `admin/terminate-sessions/{id}` | Terminate sessions |
+| `voyti/permissions` | `GET` | `permissions` | List permissions |
+| `voyti/permissions-create` | `GET`, `POST` | `permissions/create` | Create permission |
+| `voyti/permissions-update` | `GET`, `POST` | `permissions/update/{name}` | Update permission |
+| `voyti/permissions-delete` | `POST` | `permissions/delete/{name}` | Delete permission |
+| `voyti/roles` | `GET` | `roles` | List roles |
+| `voyti/roles-create` | `GET`, `POST` | `roles/create` | Create role |
+| `voyti/roles-update` | `GET`, `POST` | `roles/update/{name}` | Update role |
+| `voyti/roles-delete` | `POST` | `roles/delete/{name}` | Delete role |
+| `voyti/rules` | `GET` | `rules` | List rules |
+| `voyti/rules-create` | `GET`, `POST` | `rules/create` | Create rule |
+| `voyti/rules-update` | `GET`, `POST` | `rules/update/{name}` | Update rule |
+| `voyti/rules-delete` | `POST` | `rules/delete/{name}` | Delete rule |
+
+When `enableRestApi` is `true`, the API routes are mounted under `adminRestPrefix`
+and expose user CRUD endpoints for list, view, create, update, and delete.
+
 ### 4. That's it
 
 DI bindings, event listeners, and console commands are all auto-registered via

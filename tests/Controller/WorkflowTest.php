@@ -94,6 +94,24 @@ final class WorkflowTest extends TestCase
         $this->assertMatchesRegularExpression('/name="_csrf" value="[^"]+"/', $html);
     }
 
+    public function testAdminIndexRouteActionRendersWithoutMissingRouteNames(): void
+    {
+        $html = $this->harness->webViewRenderer
+            ->withViewPath($this->harness->moduleConfig->viewPath)
+            ->renderAsString('admin/index', [
+            'users' => [],
+            'filters' => ['username' => '', 'email' => '', 'status' => ''],
+            'totalPages' => 1,
+            'currentPage' => 1,
+            'config' => $this->harness->moduleConfig,
+            'translator' => $this->harness->translator,
+            'url' => $this->harness->url,
+        ]);
+
+        $this->assertStringContainsString('voyti-admin-index', $html);
+        $this->assertStringContainsString('voyti/admin', $html);
+    }
+
     public function testProfileUpdateAndEmailChangeFlow(): void
     {
         $user = $this->registerAndConfirmUser('bob', 'bob@example.test', 'secret123');

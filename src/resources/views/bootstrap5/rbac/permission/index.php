@@ -25,18 +25,18 @@ echo Html::div()->class('voyti-rbac-index')->open();
     echo Html::div()->close();
 
     echo Html::form()
-        ->action($url->generate('voyti/permissions-index'))
+        ->action($url->generate('voyti/permissions'))
         ->method('get')
         ->class('mb-3')
         ->open();
 
     echo Html::div()->class('row g-2')->open();
         echo Html::div()->class('col')->open();
-            echo Html::input('text')->class('form-control')->name('name')->value(Html::encode($filterName))->placeholder($translator->translate('voyti.view.name_label', category: 'voyti'));
+            echo Html::input('text')->class('form-control')->name('name')->value(Html::encode($filterName))->addAttributes(['placeholder' => $translator->translate('voyti.view.name_label', category: 'voyti')]);
         echo Html::div()->close();
 
         echo Html::div()->class('col')->open();
-            echo Html::input('text')->class('form-control')->name('description')->value(Html::encode($filterDescription))->placeholder($translator->translate('voyti.view.description_label', category: 'voyti'));
+            echo Html::input('text')->class('form-control')->name('description')->value(Html::encode($filterDescription))->addAttributes(['placeholder' => $translator->translate('voyti.view.description_label', category: 'voyti')]);
         echo Html::div()->close();
 
         echo Html::div()->class('col-auto')->open();
@@ -54,9 +54,9 @@ echo Html::div()->class('voyti-rbac-index')->open();
 
         echo Html::tag('thead')->class('table-light')->open();
             echo Html::tag('tr')->open();
-                echo Html::tag('th', $translator->translate('voyti.view.name_header', category: 'voyti'))->scope('col');
-                echo Html::tag('th', $translator->translate('voyti.view.description_header', category: 'voyti'))->scope('col');
-                echo Html::tag('th', $translator->translate('voyti.view.actions_header', category: 'voyti'))->class('text-end')->scope('col');
+                echo Html::tag('th', $translator->translate('voyti.view.name_header', category: 'voyti'))->addAttributes(['scope' => 'col']);
+                echo Html::tag('th', $translator->translate('voyti.view.description_header', category: 'voyti'))->addAttributes(['scope' => 'col']);
+                echo Html::tag('th', $translator->translate('voyti.view.actions_header', category: 'voyti'))->class('text-end')->addAttributes(['scope' => 'col']);
             echo Html::tag('tr')->close();
         echo Html::tag('thead')->close();
 

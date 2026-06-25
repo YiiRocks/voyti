@@ -23,7 +23,7 @@ echo Html::div()->class('voyti-admin-info')->open();
         echo Html::div()->open();
             echo Html::a($translator->translate('voyti.view.update_link', category: 'voyti'), $url->generate('voyti/admin-update', ['id' => $user->getId()]))->class('btn', 'btn-outline-secondary', 'btn-sm');
             echo ' ';
-            echo Html::a($translator->translate('voyti.view.update_profile_link', category: 'voyti'), $url->generate('voyti/admin-update-userProfile', ['id' => $user->getId()]))->class('btn', 'btn-outline-secondary', 'btn-sm');
+            echo Html::a($translator->translate('voyti.view.update_profile_link', category: 'voyti'), $url->generate('voyti/admin-update-profile', ['id' => $user->getId()]))->class('btn', 'btn-outline-secondary', 'btn-sm');
         echo Html::div()->close();
     echo Html::div()->close();
 
