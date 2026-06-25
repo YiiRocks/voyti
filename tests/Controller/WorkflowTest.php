@@ -134,6 +134,18 @@ final class WorkflowTest extends TestCase
         $this->assertCount(1, $this->harness->mailer->messages());
     }
 
+    public function testAdminCreateViewRendersWithoutMissingModel(): void
+    {
+        $response = $this->harness->adminController->create(
+            $this->harness->request(Method::GET),
+        );
+
+        $html = $this->harness->responseBody($response);
+
+        $this->assertStringContainsString('Create user', $html);
+        $this->assertStringNotContainsString('Undefined variable', $html);
+    }
+
     public function testAdminInfoViewRendersWithoutUndefinedUserProfile(): void
     {
         $user = $this->registerAndConfirmUser('eve', 'eve@example.test', 'secret123');

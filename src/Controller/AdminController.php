@@ -8,6 +8,7 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Entity\UserProfile;
+use YiiRocks\Voyti\Form\Auth\RegistrationForm;
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Form\Settings\UserProfileForm;
 use YiiRocks\Voyti\Helper\AuthHelper;
@@ -115,12 +116,14 @@ final class AdminController
     public function create(ServerRequestInterface $request): ResponseInterface
     {
         $errors = [];
+        $model = new RegistrationForm($this->config, $this->translator);
 
         if ($request->getMethod() === Method::POST) {
             $body = $this->parsedBody($request);
-            $email = $this->stringValue($body, 'email');
-            $username = $this->stringValue($body, 'username');
-            $password = $this->stringValue($body, 'password', Random::string(12));
+            $this->hydrator->hydrate($model, $this->formData($body, $model->getFormName()));
+            $email = $model->email;
+            $username = $model->username;
+            $password = $model->password !== '' ? $model->password : Random::string(12);
 
             $result = $this->userCreateService->run($email, $username, $password);
             if ($result->isSuccess()) {
@@ -129,7 +132,10 @@ final class AdminController
             $errors = $result->getErrors();
         }
 
-        return $this->renderView('admin/create', ['errors' => $errors]);
+        return $this->renderView('admin/create', [
+            'model' => $model,
+            'errors' => $errors,
+        ]);
     }
 
     public function delete(ServerRequestInterface $request, int $id): ResponseInterface
