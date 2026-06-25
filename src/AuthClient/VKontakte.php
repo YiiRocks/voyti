@@ -4,30 +4,16 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\AuthClient;
 
-final class VKontakte
+final class VKontakte extends AbstractAuthClient
 {
-
-    public function getAuthUrl(): string
+    public function __construct()
     {
-        return 'https://oauth.vk.com/authorize';
-    }
-    public function getName(): string
-    {
-        return 'vkontakte';
-    }
-
-    public function getScope(): string
-    {
-        return 'email';
-    }
-
-    public function getTitle(): string
-    {
-        return 'VKontakte';
-    }
-
-    public function getTokenUrl(): string
-    {
-        return 'https://oauth.vk.com/access_token';
+        parent::__construct(
+            'https://oauth.vk.com/authorize',
+            'vkontakte',
+            'email',
+            'VKontakte',
+            'https://oauth.vk.com/access_token',
+        );
     }
 }

@@ -14,7 +14,7 @@ Ported from [2amigos/yii2-usuario](https://github.com/2amigos/yii2-usuario) and 
 [![PHP from Packagist](https://img.shields.io/packagist/php-v/yiirocks/voyti.svg)](https://php.net/)
 [![Packagist](https://img.shields.io/packagist/dt/yiirocks/voyti.svg)](https://packagist.org/packages/yiirocks/voyti)
 [![GitHub](https://img.shields.io/github/license/yiirocks/voyti.svg)](https://github.com/yiirocks/voyti/blob/master/LICENSE)
-[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/yiirocks/voyti/phpunit)](https://github.com/yiirocks/voyti/actions)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/yiirocks/voyti/build.yml?branch=main)](https://github.com/yiirocks/voyti/actions)
 
 ---
 
@@ -86,9 +86,9 @@ After that, run:
 ./yii migrate:up
 ```
 
-Five migrations create the `user`, `profile`, `social_account`, `token`, and
-`session_history` tables with all columns (2FA, GDPR, password expiration, last
-login IP, etc.) included.
+One migration creates the `user`, `user_profile`, `user_social_account`,
+`user_token`, and `user_session_history` tables with all columns (2FA, GDPR,
+password expiration, last login IP, etc.) included.
 
 ### 2. Configure the module (optional)
 

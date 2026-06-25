@@ -4,30 +4,16 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\AuthClient;
 
-final class Twitter
+final class Twitter extends AbstractAuthClient
 {
-
-    public function getAuthUrl(): string
+    public function __construct()
     {
-        return 'https://api.twitter.com/oauth/authenticate';
-    }
-    public function getName(): string
-    {
-        return 'twitter';
-    }
-
-    public function getScope(): string
-    {
-        return '';
-    }
-
-    public function getTitle(): string
-    {
-        return 'Twitter';
-    }
-
-    public function getTokenUrl(): string
-    {
-        return 'https://api.twitter.com/oauth/access_token';
+        parent::__construct(
+            'https://api.twitter.com/oauth/authenticate',
+            'twitter',
+            '',
+            'Twitter',
+            'https://api.twitter.com/oauth/access_token',
+        );
     }
 }

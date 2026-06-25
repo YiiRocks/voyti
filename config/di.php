@@ -3,6 +3,16 @@
 declare(strict_types=1);
 
 use YiiRocks\Voyti\Helper\AuthHelper;
+use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
+use YiiRocks\Voyti\AuthClient\Facebook;
+use YiiRocks\Voyti\AuthClient\GitHub;
+use YiiRocks\Voyti\AuthClient\Google;
+use YiiRocks\Voyti\AuthClient\Keycloak;
+use YiiRocks\Voyti\AuthClient\LinkedIn;
+use YiiRocks\Voyti\AuthClient\Microsoft365;
+use YiiRocks\Voyti\AuthClient\Twitter;
+use YiiRocks\Voyti\AuthClient\VKontakte;
+use YiiRocks\Voyti\AuthClient\Yandex;
 use YiiRocks\Voyti\Helper\GravatarHelper;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\Listener;
@@ -41,6 +51,17 @@ return [
     ) => new AuthHelper($authManager, $itemsStorage, $assignmentsStorage, $config),
     GravatarHelper::class => GravatarHelper::class,
     TimezoneHelper::class => TimezoneHelper::class,
+    AuthClientRegistry::class => fn () => new AuthClientRegistry(
+        new Facebook(),
+        new GitHub(),
+        new Google(),
+        new Keycloak(),
+        new LinkedIn(),
+        new Microsoft365(),
+        new Twitter(),
+        new VKontakte(),
+        new Yandex(),
+    ),
 
     \YiiRocks\Voyti\Validator\Rbac\ItemsValidator::class => fn (
         ItemsStorageInterface $itemsStorage

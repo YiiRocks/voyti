@@ -4,30 +4,16 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\AuthClient;
 
-final class Yandex
+final class Yandex extends AbstractAuthClient
 {
-
-    public function getAuthUrl(): string
+    public function __construct()
     {
-        return 'https://oauth.yandex.com/authorize';
-    }
-    public function getName(): string
-    {
-        return 'yandex';
-    }
-
-    public function getScope(): string
-    {
-        return '';
-    }
-
-    public function getTitle(): string
-    {
-        return 'Yandex';
-    }
-
-    public function getTokenUrl(): string
-    {
-        return 'https://oauth.yandex.com/userToken';
+        parent::__construct(
+            'https://oauth.yandex.com/authorize',
+            'yandex',
+            '',
+            'Yandex',
+            'https://oauth.yandex.com/userToken',
+        );
     }
 }
