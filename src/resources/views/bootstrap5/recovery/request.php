@@ -2,15 +2,17 @@
 
 declare(strict_types=1);
 
+use YiiRocks\Voyti\Form\Auth\RecoveryForm;
 use YiiRocks\Voyti\Helper\RecaptchaHelper;
+use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 
 /**
- * @var YiiRocks\Voyti\Form\Auth\RecoveryForm $model
- * @var YiiRocks\Voyti\ModuleConfig $config
+ * @var RecoveryForm $model
+ * @var ModuleConfig $config
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
  * @var string $csrf
@@ -19,27 +21,27 @@ use Yiisoft\Translator\TranslatorInterface;
 $this->setTitle($translator->translate('voyti.view.recovery.request_title', category: 'voyti'));
 
 echo Html::div()->class('voyti-recovery')->open();
-    echo Html::H1($translator->translate('voyti.view.recovery.request_title', category: 'voyti'));
+echo Html::H1($translator->translate('voyti.view.recovery.request_title', category: 'voyti'));
 
-    echo Html::form()
-        ->post($url->generate('voyti/forgot'))
-        ->csrf($csrf)
-        ->open();
+echo Html::form()
+    ->post($url->generate('voyti/forgot'))
+    ->csrf($csrf)
+    ->open();
 
-    echo Field::errorSummary($model);
+echo Field::errorSummary($model);
 
-    echo Field::email($model, 'email');
+echo Field::email($model, 'email');
 
-    echo RecaptchaHelper::render($model, $config);
+echo RecaptchaHelper::render($model, $config);
 
-    echo Field::buttonGroup()
-        ->buttons(
-            Html::submitButton($translator->translate('voyti.view.recovery.send_link_button', category: 'voyti'))
-        );
+echo Field::buttonGroup()
+    ->buttons(
+        Html::submitButton($translator->translate('voyti.view.recovery.send_link_button', category: 'voyti'))
+    );
 
-    echo Html::div()->class('mt-3')->open();
-        echo Html::a($translator->translate('voyti.view.recovery.back_to_login', category: 'voyti'), $url->generate('voyti/login'));
-    echo Html::div()->close();
+echo Html::div()->class('mt-3')->open();
+echo Html::a($translator->translate('voyti.view.recovery.back_to_login', category: 'voyti'), $url->generate('voyti/login'));
+echo Html::div()->close();
 
-    echo Html::form()->close();
+echo Html::form()->close();
 echo Html::div()->close();

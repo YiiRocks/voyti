@@ -2,15 +2,17 @@
 
 declare(strict_types=1);
 
+use YiiRocks\Voyti\Form\Auth\RegistrationForm;
 use YiiRocks\Voyti\Helper\RecaptchaHelper;
+use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 
 /**
- * @var YiiRocks\Voyti\Form\Auth\RegistrationForm $model
- * @var YiiRocks\Voyti\ModuleConfig $config
+ * @var RegistrationForm $model
+ * @var ModuleConfig $config
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
  * @var string $csrf
@@ -19,35 +21,35 @@ use Yiisoft\Translator\TranslatorInterface;
 $this->setTitle($translator->translate('voyti.view.registration.register_title', category: 'voyti'));
 
 echo Html::div()->class('voyti-register')->open();
-    echo Html::H1($translator->translate('voyti.view.registration.register_title', category: 'voyti'));
+echo Html::H1($translator->translate('voyti.view.registration.register_title', category: 'voyti'));
 
-    echo Html::form()
-        ->post($url->generate('voyti/register'))
-        ->csrf($csrf)
-        ->open();
+echo Html::form()
+    ->post($url->generate('voyti/register'))
+    ->csrf($csrf)
+    ->open();
 
-    echo Field::errorSummary($model);
+echo Field::errorSummary($model);
 
-    echo Field::text($model, 'username');
+echo Field::text($model, 'username');
 
-    echo Field::email($model, 'email');
+echo Field::email($model, 'email');
 
-    echo Field::password($model, 'password');
+echo Field::password($model, 'password');
 
-    if ($config->enableGdprCompliance) {
-        echo Field::checkbox($model, 'gdprConsent');
-    }
+if ($config->enableGdprCompliance) {
+    echo Field::checkbox($model, 'gdprConsent');
+}
 
-    echo RecaptchaHelper::render($model, $config);
+echo RecaptchaHelper::render($model, $config);
 
-    echo Field::buttonGroup()
-        ->buttons(
-            Html::submitButton($translator->translate('voyti.view.registration.register_button', category: 'voyti'))
-        );
+echo Field::buttonGroup()
+    ->buttons(
+        Html::submitButton($translator->translate('voyti.view.registration.register_button', category: 'voyti'))
+    );
 
-    echo Html::div()->class('mt-3')->open();
-        echo Html::a($translator->translate('voyti.view.registration.already_have_account', category: 'voyti'), $url->generate('voyti/login'));
-    echo Html::div()->close();
+echo Html::div()->class('mt-3')->open();
+echo Html::a($translator->translate('voyti.view.registration.already_have_account', category: 'voyti'), $url->generate('voyti/login'));
+echo Html::div()->close();
 
-    echo Html::form()->close();
+echo Html::form()->close();
 echo Html::div()->close();

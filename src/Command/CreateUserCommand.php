@@ -35,6 +35,11 @@ final class CreateUserCommand extends Command
             ->addOption('role', 'r', InputOption::VALUE_OPTIONAL, 'Role');
     }
 
+    /**
+     * @return int
+     *
+     * @psalm-return 0|1|2
+     */
     #[\Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {

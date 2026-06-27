@@ -18,8 +18,8 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 final class RuleController
 {
-    use RenderTrait;
     use InputDataTrait;
+    use RenderTrait;
 
     public function __construct(
         private readonly TranslatorInterface $translator,

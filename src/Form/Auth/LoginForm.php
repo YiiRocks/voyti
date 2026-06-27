@@ -30,7 +30,9 @@ final class LoginForm extends FormModel implements RulesProviderInterface
     }
 
     /**
-     * @return array<string, string>
+     * @return string[]
+     *
+     * @psalm-return array{login: string, password: string, rememberMe: string, twoFactorAuthenticationCode: string}
      */
     public function getAttributeLabels(): array
     {
@@ -45,6 +47,17 @@ final class LoginForm extends FormModel implements RulesProviderInterface
         ];
     }
 
+    /**
+     * @return string
+     *
+     * @psalm-return 'login'
+     */
+    #[\Override]
+    public function getFormName(): string
+    {
+        return 'login';
+    }
+
     #[\Override]
     public function getPropertyLabel(string $property): string
     {
@@ -54,12 +67,6 @@ final class LoginForm extends FormModel implements RulesProviderInterface
             return $labels[$property];
         }
         return parent::getPropertyLabel($property);
-    }
-
-    #[\Override]
-    public function getFormName(): string
-    {
-        return 'login';
     }
 
     #[\Override]

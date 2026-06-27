@@ -6,12 +6,12 @@ namespace YiiRocks\Voyti\Controller;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Form\Rbac\AbstractAuthItemForm;
 use YiiRocks\Voyti\Helper\AuthHelper;
+use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Service\Rbac\ItemEditionService;
-use Yiisoft\Rbac\Item;
 use Yiisoft\Http\Method;
+use Yiisoft\Rbac\Item;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\ValidatorInterface;
@@ -19,8 +19,8 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 abstract class AbstractAuthItemController
 {
-    use RenderTrait;
     use InputDataTrait;
+    use RenderTrait;
 
     public function __construct(
         protected readonly TranslatorInterface $translator,

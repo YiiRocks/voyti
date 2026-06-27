@@ -18,6 +18,9 @@ final class RouteParametersResolver implements ParametersResolverInterface
     ) {
     }
 
+    /**
+     * @psalm-return array<string, scalar>
+     */
     #[\Override]
     public function resolve(array $parameters, ServerRequestInterface $request): array
     {
@@ -48,6 +51,7 @@ final class RouteParametersResolver implements ParametersResolverInterface
             }
         }
 
+        /** @var array<string, scalar> $resolved */
         return $resolved;
     }
 }

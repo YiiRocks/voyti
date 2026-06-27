@@ -10,8 +10,13 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var string $recoveryUrl
  * @var TranslatorInterface $translator
  */
-?>
-<h2><?= $translator->translate('voyti.mail.password_recovery_heading', category: 'voyti') ?></h2>
-<p><?= $translator->translate('voyti.mail.hello_username', ['username' => Html::encode($username)], category: 'voyti') ?></p>
-<p><?= $translator->translate('voyti.mail.click_to_reset_password', category: 'voyti') ?></p>
-<p><a href="<?= Html::encode($recoveryUrl) ?>"><?= Html::encode($recoveryUrl) ?></a></p>
+
+echo Html::H2($translator->translate('voyti.mail.password_recovery_heading', category: 'voyti'));
+
+echo Html::p($translator->translate('voyti.mail.hello_username', ['username' => $username], category: 'voyti'));
+
+echo Html::p($translator->translate('voyti.mail.click_to_reset_password', category: 'voyti'));
+
+echo Html::p(
+    Html::a($recoveryUrl, $recoveryUrl)
+);

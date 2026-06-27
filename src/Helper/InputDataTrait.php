@@ -9,15 +9,6 @@ use Yiisoft\Session\SessionInterface;
 
 trait InputDataTrait
 {
-    /**
-     * @return array<array-key, mixed>
-     */
-    protected function parsedBody(ServerRequestInterface $request): array
-    {
-        $body = $request->getParsedBody();
-
-        return is_array($body) ? $body : [];
-    }
 
     /**
      * @param array<array-key, mixed> $body
@@ -33,22 +24,31 @@ trait InputDataTrait
 
     /**
      * @param array<array-key, mixed> $data
+     *
+     * @return null|string
      */
-    protected function stringValue(array $data, string $key, string $default = ''): string
-    {
-        $value = $data[$key] ?? $default;
-
-        return is_string($value) ? $value : $default;
-    }
-
-    /**
-     * @param array<array-key, mixed> $data
-     */
-    protected function nullableStringValue(array $data, string $key): ?string
+    protected function nullableStringValue(array $data, string $key): string|null
     {
         $value = $data[$key] ?? null;
 
         return is_string($value) && $value !== '' ? $value : null;
+    }
+    /**
+     * @return array<array-key, mixed>
+     */
+    protected function parsedBody(ServerRequestInterface $request): array
+    {
+        $body = $request->getParsedBody();
+
+        return is_array($body) ? $body : [];
+    }
+
+    /**
+     * @return array<array-key, mixed>
+     */
+    protected function queryParams(ServerRequestInterface $request): array
+    {
+        return $request->getQueryParams();
     }
 
     protected function requestAttributeString(ServerRequestInterface $request, string $name, string $default = ''): string
@@ -61,18 +61,20 @@ trait InputDataTrait
     /**
      * @return array<array-key, mixed>
      */
-    protected function queryParams(ServerRequestInterface $request): array
-    {
-        return $request->getQueryParams();
-    }
-
-    /**
-     * @return array<array-key, mixed>
-     */
     protected function sessionArray(SessionInterface $session, string $key): array
     {
         $value = $session->get($key);
 
         return is_array($value) ? $value : [];
+    }
+
+    /**
+     * @param array<array-key, mixed> $data
+     */
+    protected function stringValue(array $data, string $key, string $default = ''): string
+    {
+        $value = $data[$key] ?? $default;
+
+        return is_string($value) ? $value : $default;
     }
 }

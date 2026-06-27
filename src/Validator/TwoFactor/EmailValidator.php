@@ -17,6 +17,9 @@ final class EmailValidator
     ) {
     }
 
+    /**
+     * @return numeric-string
+     */
     public function generateCode(): string
     {
         $this->generatedCode = (string)random_int(100000, 999999);

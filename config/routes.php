@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use YiiRocks\Voyti\Controller;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Middleware\AccessRuleMiddleware;
+use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Router\Group;
 use Yiisoft\Router\Route;
 
@@ -77,8 +77,10 @@ $routes = [
         ),
 ];
 
-if ($params[ModuleConfig::class]->enableRestApi ?? false) {
-    $routes[] = Group::create($params[ModuleConfig::class]->adminRestPrefix . '/')
+$moduleConfig = ModuleConfig::fromArray($params['yiirocks/voyti'] ?? []);
+
+if ($moduleConfig->enableRestApi) {
+    $routes[] = Group::create($moduleConfig->adminRestPrefix . '/')
         ->middleware(AccessRuleMiddleware::class)
         ->routes(
             Route::get('users')->name('voyti/api-users-index')->action([Controller\api\v1\AdminController::class, 'index']),

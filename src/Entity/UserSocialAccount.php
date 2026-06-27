@@ -22,6 +22,9 @@ final class UserSocialAccount extends ActiveRecord
     private ?int $user_id = null;
     private ?string $username = null;
 
+    /**
+     * @return true
+     */
     public function connect(User $user): bool
     {
         $this->setUserId($user->getId() !== null ? (int) $user->getId() : 0);
@@ -138,6 +141,11 @@ final class UserSocialAccount extends ActiveRecord
         $this->username = $username;
     }
 
+    /**
+     * @return string
+     *
+     * @psalm-return '{{%user_social_account}}'
+     */
     #[\Override]
     public function tableName(): string
     {

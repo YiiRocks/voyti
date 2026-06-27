@@ -14,12 +14,22 @@ final class PermissionForm extends AbstractAuthItemForm
         parent::__construct($translator);
     }
 
+    /**
+     * @return string
+     *
+     * @psalm-return 'permission'
+     */
     #[\Override]
     public function getFormName(): string
     {
         return 'permission';
     }
 
+    /**
+     * @return string
+     *
+     * @psalm-return 'permission'
+     */
     #[\Override]
     public function getType(): string
     {

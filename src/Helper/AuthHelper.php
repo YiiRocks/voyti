@@ -29,7 +29,9 @@ final class AuthHelper
     }
 
     /**
-     * @return array<string, Item>
+     * @return (Permission|Role)[]
+     *
+     * @psalm-return array<string, Permission|Role>
      */
     public function getAllItems(): array
     {
@@ -45,7 +47,9 @@ final class AuthHelper
     }
 
     /**
-     * @return array<string, Item>
+     * @return (Permission|Role)[]
+     *
+     * @psalm-return array<string, Permission|Role>
      */
     public function getChildren(string $parentName): array
     {
@@ -94,7 +98,9 @@ final class AuthHelper
     }
 
     /**
-     * @return array<string, Item>
+     * @return (Permission|Role)[]
+     *
+     * @psalm-return array<string, Permission|Role>
      */
     public function getUnassignedItems(int $userId): array
     {
@@ -125,6 +131,9 @@ final class AuthHelper
         return false;
     }
 
+    /**
+     * @return true
+     */
     public function removeItem(Item $item): bool
     {
         if ($item instanceof Role) {

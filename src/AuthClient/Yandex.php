@@ -6,14 +6,53 @@ namespace YiiRocks\Voyti\AuthClient;
 
 final class Yandex extends AbstractAuthClient
 {
-    public function __construct()
+    /**
+     * @param array<string, mixed> $config
+     */
+    public function __construct(array $config = [])
     {
         parent::__construct(
-            'https://oauth.yandex.com/authorize',
             'yandex',
-            '',
             'Yandex',
-            'https://oauth.yandex.com/userToken',
+            'https://oauth.yandex.com/authorize',
+            'https://oauth.yandex.com/token',
+            'https://login.yandex.ru/info',
+            'login:email login:info',
+            $config,
         );
+    }
+
+    /**
+     * @param array<string, mixed> $tokenData
+     *
+     * @return string[]
+     *
+     * @psalm-return array{format: 'json'}
+     */
+    #[\Override]
+    protected function userInfoQuery(array $tokenData): array
+    {
+        return [
+            'format' => 'json',
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $attributes
+     * @param array<string, mixed> $tokenData
+     *
+     * @return (null|string)[]
+     *
+     * @psalm-return array{id: string, email: null|string, username: null|string, name: null|string}
+     */
+    #[\Override]
+    protected function normalizeUserAttributes(array $attributes, array $tokenData): array
+    {
+        return [
+            'id' => $this->firstString($attributes, ['id']) ?? '',
+            'email' => $this->firstString($attributes, ['default_email', 'email']),
+            'username' => $this->firstString($attributes, ['login', 'display_name']),
+            'name' => $this->firstString($attributes, ['real_name', 'display_name']),
+        ];
     }
 }

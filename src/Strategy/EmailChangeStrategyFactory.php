@@ -23,7 +23,7 @@ final class EmailChangeStrategyFactory
     ) {
     }
 
-    public function makeByStrategyType(int $strategy, SettingsForm $form): MailChangeStrategyInterface
+    public function makeByStrategyType(int $strategy, SettingsForm $form): InsecureEmailChangeStrategy|DefaultEmailChangeStrategy|SecureEmailChangeStrategy
     {
         return match ($strategy) {
             MailChangeStrategyInterface::TYPE_INSECURE => new InsecureEmailChangeStrategy($form),

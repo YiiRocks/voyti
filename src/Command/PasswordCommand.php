@@ -9,8 +9,8 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\ModuleConfig;
-use Yiisoft\Security\PasswordHasher;
 use YiiRocks\Voyti\Repository\UserRepository;
+use Yiisoft\Security\PasswordHasher;
 
 final class PasswordCommand extends Command
 {
@@ -33,6 +33,11 @@ final class PasswordCommand extends Command
             ->addOption('id', null, InputOption::VALUE_OPTIONAL, 'ID');
     }
 
+    /**
+     * @return int
+     *
+     * @psalm-return 0|1
+     */
     #[\Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {

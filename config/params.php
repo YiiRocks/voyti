@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Command;
+use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Yii\View\Renderer\CsrfViewInjection;
 
 return [
-    YiiRocks\Voyti\ModuleConfig::class => new ModuleConfig(),
+    'yiirocks/voyti' => ModuleConfig::defaults(),
 
     'yiisoft/yii-view-renderer' => [
         'injections' => [

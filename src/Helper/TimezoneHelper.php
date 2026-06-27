@@ -9,6 +9,11 @@ use DateTimeZone;
 
 final class TimezoneHelper
 {
+    /**
+     * @return string[]
+     *
+     * @psalm-return array<string, string>
+     */
     public static function getAll(): array
     {
         $timezones = [];

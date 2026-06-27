@@ -27,7 +27,8 @@ final class UserSocialAccountConnectService
             $account = new UserSocialAccount();
             $account->setProvider($provider);
             $account->setClientId($clientId);
-            $account->setCode(json_encode($userAttributes, JSON_THROW_ON_ERROR));
+            $account->setData(json_encode($userAttributes, JSON_THROW_ON_ERROR));
+            $account->setCreatedAt(time());
         }
 
         $account->setUserId($userId);
@@ -35,9 +36,7 @@ final class UserSocialAccountConnectService
         $account->setEmail(null);
         $account->setCode(null);
 
-        if (!$this->userSocialAccountRepository->save($account)) {
-            return ServiceResult::failure('Unable to connect social network account');
-        }
+        $this->userSocialAccountRepository->save($account);
 
         return ServiceResult::success();
     }

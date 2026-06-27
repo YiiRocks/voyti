@@ -2,13 +2,14 @@
 
 declare(strict_types=1);
 
+use YiiRocks\Voyti\Form\Auth\RegistrationForm;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 
 /**
- * @var YiiRocks\Voyti\Form\Auth\RegistrationForm $model
+ * @var RegistrationForm $model
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
  * @var array $errors
@@ -18,25 +19,25 @@ use Yiisoft\Translator\TranslatorInterface;
 $this->setTitle($translator->translate('voyti.view.admin.create_user_title', category: 'voyti'));
 
 echo Html::div()->class('voyti-admin-create')->open();
-    echo Html::H1($translator->translate('voyti.view.admin.create_user_title', category: 'voyti'));
+echo Html::H1($translator->translate('voyti.view.admin.create_user_title', category: 'voyti'));
 
-    echo Html::form()
-        ->post($url->generate('voyti/admin-create'))
-        ->csrf($csrf)
-        ->open();
+echo Html::form()
+    ->post($url->generate('voyti/admin-create'))
+    ->csrf($csrf)
+    ->open();
 
-    echo Field::errorSummary(null)->errors($errors);
+echo Field::errorSummary(null)->errors($errors);
 
-    echo Field::text($model, 'username')->name('user[username]')->value($model->username);
+echo Field::text($model, 'username')->name('user[username]')->value($model->username);
 
-    echo Field::email($model, 'email')->name('user[email]')->value($model->email);
+echo Field::email($model, 'email')->name('user[email]')->value($model->email);
 
-    echo Field::password($model, 'password')->name('user[password]');
+echo Field::password($model, 'password')->name('user[password]');
 
-    echo Field::buttonGroup()
-        ->buttons(
-            Html::submitButton($translator->translate('voyti.view.create_button', category: 'voyti'))
-        );
+echo Field::buttonGroup()
+    ->buttons(
+        Html::submitButton($translator->translate('voyti.view.create_button', category: 'voyti'))
+    );
 
-    echo Html::form()->close();
+echo Html::form()->close();
 echo Html::div()->close();

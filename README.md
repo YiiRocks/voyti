@@ -4,7 +4,7 @@
 > ***/vɐjˈtʲi/***  
 > *verb*
 >
-> “to enter” or “to log in"
+> "to enter" or "to log in"
 
 Highly customizable and extensible user management, authentication, and authorization extension for Yii3.
 
@@ -17,6 +17,19 @@ Ported from [2amigos/yii2-usuario](https://github.com/2amigos/yii2-usuario) and 
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/yiirocks/voyti/build.yml?branch=main)](https://github.com/yiirocks/voyti/actions)
 
 ---
+
+## Table of Contents
+
+1. [Features](#features)
+2. [Quick Start](#quick-start)
+3. [Configuration](#configuration)
+4. [Social Authentication](#social-authentication)
+5. [Middleware](#middleware)
+6. [RBAC](#rbac)
+7. [Routes](#routes)
+8. [Views](#views)
+9. [Testing](#testing)
+10. [Project Structure](#project-structure)
 
 ## Features
 
@@ -39,7 +52,9 @@ Ported from [2amigos/yii2-usuario](https://github.com/2amigos/yii2-usuario) and 
 - PHP >= 8.3
 - Yii3 packages (yiisoft/db, yiisoft/rbac, yiisoft/view, yiisoft/validator, etc.)
 
-## Installation
+## Quick Start
+
+### 1. Install
 
 ```bash
 composer require yiirocks/voyti
@@ -57,30 +72,11 @@ For 2FA TOTP support (optional):
 composer require chillerlan/php-authenticator chillerlan/php-qrcode
 ```
 
-## Quick Start
+### 2. Run migrations
 
-### 1. Wire migrations in the host app
-
-Voyti exposes its migration defaults in the package-specific `voyti-migration`
-config group. In your application, merge that into the console migration service:
-
-```php
-// config/di-console.php
-use Yiisoft\Db\Migration\Service\MigrationService;
-
-return [
-    MigrationService::class => [
-        'class' => MigrationService::class,
-        'setNewMigrationPath()' => [$config->get('voyti-migration')['newMigrationPath']],
-        'setSourcePaths()' => [$config->get('voyti-migration')['sourcePaths']],
-    ],
-];
-```
-
-If you have multiple packages that ship migrations, merge each package-specific
-config block into the same `MigrationService` definition here.
-
-After that, run:
+Voyti provides its migration path through `config/params-console.php` using the
+standard `yiisoft/db-migration` configuration keys. With `yiisoft/db-migration`
+enabled in your console app, run:
 
 ```bash
 ./yii migrate:up
@@ -90,73 +86,252 @@ One migration creates the `user`, `user_profile`, `user_social_account`,
 `user_token`, and `user_session_history` tables with all columns (2FA, GDPR,
 password expiration, last login IP, etc.) included.
 
-### 2. Configure the module (optional)
+### 3. Done
 
-Sensible defaults are auto-registered via the [Yii3 config plugin](https://github.com/yiisoft/config) — no manual setup required. To customize, override `ModuleConfig` in your application's `config/params.php`:
+DI bindings, event listeners, and console commands are auto-registered via the
+[Yii3 config plugin](https://github.com/yiisoft/config). No manual wiring needed.
 
-```php
-use YiiRocks\Voyti\ModuleConfig;
+Console commands:
 
-return [
-    YiiRocks\Voyti\ModuleConfig::class => new ModuleConfig(
-        enableRegistration: true,
-        enablePasswordRecovery: true,
-        enableTwoFactorAuthentication: true,
-        recaptchaVersion: 'v3',
-        emailChangeStrategy: 1,
-        enableGdprCompliance: true,
-        maxPasswordAge: 90,
-        viewPath: '/path/to/your/custom/views',
-        enableRestApi: true,
-    ),
-];
-```
+| Command | Description |
+|---------|-------------|
+| `voyti:create` | Create a new user |
+| `voyti:delete` | Delete a user |
+| `voyti:confirm` | Confirm a user's email |
+| `voyti:password` | Change a user's password |
 
-### 3. Register routes
+To customize behaviour, see [Configuration](#configuration). To mount routes
+under a prefix, see [Router Setup](#router-setup).
 
-The package exposes its routes under the `voyti-routes` config group. In your
-application's router DI definition, include them alongside your own routes:
+## Configuration
+
+Override Voyti params in your app's `config/params.php` using the
+`yiirocks/voyti` key:
 
 ```php
-// config/common/di/router.php
-use Yiisoft\Config\Config;
-use Yiisoft\Definitions\DynamicReference;
-use Yiisoft\Router\Group;
-use Yiisoft\Router\RouteCollection;
-use Yiisoft\Router\RouteCollectionInterface;
-use Yiisoft\Router\RouteCollector;
-
-/** @var Config $config */
-
 return [
-    RouteCollectionInterface::class => [
-        'class' => RouteCollection::class,
-        '__construct()' => [
-            'collector' => DynamicReference::to(
-                static fn() => (new RouteCollector())->addRoute(
-                    Group::create('/')
-                        ->routes(...[
-                            ...$config->get("routes"), // your own routes
-                            Group::create('user/')
-                                ->routes(...$config->get("voyti-routes"))
-                        ],
-                    ),
-                ),
-            ),
-        ],
+    'yiirocks/voyti' => [
+        'enableTwoFactorAuthentication' => true,
+        'recaptchaVersion' => 'v3',
     ],
 ];
 ```
 
-Routes are not prefixed and are available at URLs like `login`, `register`,
-`settings`, etc. REST API routes (under `api/v1`) are enabled when
-`enableRestApi` is `true`.
+Below are all 35 options grouped by concern.
 
-### Available Routes
+### Authentication & Registration
 
-The library does not provide a menu model or navigation contract. It only exposes
-named routes that the host application can use in its own menu, sidebar, or access
-rules. The core route set is:
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `loginRoute` | `string` | `'voyti/login'` | Login route name |
+| `accountSettingsRoute` | `string` | `'voyti/settings-account'` | Route for account settings redirects |
+| `enableRegistration` | `bool` | `true` | Allow new user registration |
+| `enableSocialNetworkRegistration` | `bool` | `true` | Allow social network registration |
+| `socialNetworkClients` | `array` | `[]` | OAuth client IDs, secrets, and provider-specific options |
+| `enableEmailConfirmation` | `bool` | `true` | Require email confirmation |
+| `generatePasswords` | `bool` | `false` | Auto-generate passwords on registration |
+| `allowPasswordRecovery` | `bool` | `true` | Allow password recovery |
+| `allowAdminPasswordRecovery` | `bool` | `true` | Allow admin-initiated password recovery |
+| `allowAccountDelete` | `bool` | `false` | Allow users to delete their account |
+| `emailChangeStrategy` | `int` | `1` | 0=insecure, 1=default, 2=secure |
+| `rememberLoginLifespan` | `int` | `1209600` | Remember-me duration (seconds) |
+| `tokenConfirmationLifespan` | `int` | `86400` | Confirmation token validity |
+| `tokenRecoveryLifespan` | `int` | `21600` | Recovery token validity |
+| `enableSwitchIdentities` | `bool` | `true` | Allow admin to switch user identities |
+| `switchIdentitySessionKey` | `?string` | `'voyti_original_user'` | Session key for switched identity |
+| `mailAdminOnRegister` | `?string` | `null` | Email notified on new registration |
+| `recaptchaVersion` | `?string` | `null` | `'v2'`, `'v3'`, or `null` to disable |
+
+### Two-Factor Authentication
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `enableTwoFactorAuthentication` | `bool` | `false` | Enable 2FA |
+| `twoFactorAuthenticationForcedPermissions` | `array` | `[]` | Permissions that require 2FA |
+
+```php
+'yiirocks/voyti' => [
+    'enableTwoFactorAuthentication' => true,
+    'twoFactorAuthenticationForcedPermissions' => ['admin'],
+],
+```
+
+### GDPR
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `enableGdprCompliance` | `bool` | `false` | Enable GDPR features |
+| `gdprAnonymizePrefix` | `string` | `'GDPR'` | Prefix for anonymized usernames |
+| `gdprExportProperties` | `array` | `['email', 'username', 'userProfile.public_email', 'userProfile.name', 'userProfile.gravatar_email', 'userProfile.location', 'userProfile.website', 'userProfile.bio']` | Properties included in data export |
+
+```php
+'yiirocks/voyti' => [
+    'enableGdprCompliance' => true,
+    'gdprAnonymizePrefix' => 'ANON-',
+],
+```
+
+### Session & Security
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `enableSessionHistory` | `bool` | `false` | Track session history |
+| `numberSessionHistory` | `int\|false` | `false` | Max sessions to keep per user |
+| `disableIpLogging` | `bool` | `false` | Disable IP address logging |
+| `enablePasswordExpiration` | `bool` | `false` | Enable password expiration |
+| `maxPasswordAge` | `?int` | `null` | Max password age in days |
+| `administratorPermissionName` | `?string` | `null` | Permission name for admin access |
+| `profileVisibility` | `int` | `0` | Profile visibility level |
+
+### Mail & Views
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `viewPath` | `string` | `(bundled views)` | Base path for web templates |
+| `mailPath` | `string` | `(bundled mail)` | Base path for mail templates |
+| `mailParams` | `array` | see below | Mail from address and subjects |
+
+Mail params defaults:
+
+```php
+[
+    'fromEmail' => 'no-reply@example.com',
+    'welcomeMailSubject' => 'Welcome to {app}',
+    'confirmationMailSubject' => 'Confirm account on {app}',
+    'reconfirmationMailSubject' => 'Confirm email change on {app}',
+    'recoveryMailSubject' => 'Complete password reset on {app}',
+    'twoFactorMailSubject' => 'Code for two factor authentication on {app}',
+]
+```
+
+### REST API
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `enableRestApi` | `bool` | `false` | Enable REST API |
+| `adminRestPrefix` | `string` | `'api/v1'` | REST API URL prefix |
+
+## Social Authentication
+
+Nine auth clients are included. Each implements the auth client interface and maps provider attributes to the `SocialNetworkAccount` entity:
+
+- Facebook, GitHub, Google, Keycloak, LinkedIn, Microsoft365, Twitter, VKontakte, Yandex
+
+The `SocialAuthProviderService` handles the OAuth redirect/callback flow. The `UserSocialAuthenticateService` handles account lookup, creation, and user login. The `UserSocialAccountConnectService` links a social account to an existing user.
+
+### Common configuration options
+
+Every provider accepts the following options unless noted otherwise:
+
+| Option | Type | Required | Default | Description |
+|---|---|---|---:|---|
+| `clientId` | `string` | yes | none | OAuth client/application ID issued by the provider. |
+| `clientSecret` | `string` | yes | none | OAuth client secret issued by the provider. |
+| `redirectUri` | `string` | no | generated absolute callback URL | Overrides the callback URL. If omitted, Voyti uses the absolute route URL for `voyti/auth` or `voyti/connect`. |
+| `scope` | `string` | no | provider default | Replaces the built-in default scope string for that provider. |
+| `enabled` | `bool` | no | `true` | If `false`, the provider is not registered and no button is rendered. |
+| `authorizationParams` | `array<string, scalar>` | no | `[]` | Extra query parameters appended to the authorization request. |
+| `tokenParams` | `array<string, scalar>` | no | `[]` | Extra fields merged into the token exchange request body. |
+| `userInfoQuery` | `array<string, scalar>` | no | `[]` | Extra query parameters added to the user-info request. These merge with provider-specific defaults, not replace them. |
+
+### Provider-specific options
+
+Only Keycloak adds extra recognized options beyond the common set:
+
+| Provider key | Extra option | Type | Required | Description |
+|---|---|---|---:|---|
+| `keycloak` | `baseUrl` | `string` | yes | Base Keycloak URL, for example `https://sso.example.com`. |
+| `keycloak` | `realm` | `string` | yes | Keycloak realm name used to build auth, token, and userinfo endpoints. |
+
+### Built-in defaults by provider
+
+The following table shows Voyti's built-in endpoints and scopes. These are used unless you override `scope` or `redirectUri`.
+
+| Provider key | Default scope | Authorization URL | Token URL | User info URL |
+|---|---|---|---|---|
+| `facebook` | `email` | `https://www.facebook.com/v19.0/dialog/oauth` | `https://graph.facebook.com/v19.0/oauth/access_token` | `https://graph.facebook.com/me` |
+| `github` | `user:email` | `https://github.com/login/oauth/authorize` | `https://github.com/login/oauth/access_token` | `https://api.github.com/user` |
+| `google` | `openid email profile` | `https://accounts.google.com/o/oauth2/v2/auth` | `https://oauth2.googleapis.com/token` | `https://openidconnect.googleapis.com/v1/userinfo` |
+| `keycloak` | `openid email profile` | `{baseUrl}/realms/{realm}/protocol/openid-connect/auth` | `{baseUrl}/realms/{realm}/protocol/openid-connect/token` | `{baseUrl}/realms/{realm}/protocol/openid-connect/userinfo` |
+| `linkedin` | `openid profile email` | `https://www.linkedin.com/oauth/v2/authorization` | `https://www.linkedin.com/oauth/v2/accessToken` | `https://api.linkedin.com/v2/userinfo` |
+| `microsoft365` | `openid profile email User.Read` | `https://login.microsoftonline.com/common/oauth2/v2.0/authorize` | `https://login.microsoftonline.com/common/oauth2/v2.0/token` | `https://graph.microsoft.com/oidc/userinfo` |
+| `twitter` | `tweet.read users.read offline.access` | `https://twitter.com/i/oauth2/authorize` | `https://api.twitter.com/2/oauth2/token` | `https://api.twitter.com/2/users/me` |
+| `vkontakte` | `email` | `https://oauth.vk.com/authorize` | `https://oauth.vk.com/access_token` | `https://api.vk.com/method/users.get` |
+| `yandex` | `login:email login:info` | `https://oauth.yandex.com/authorize` | `https://oauth.yandex.com/token` | `https://login.yandex.ru/info` |
+
+### Provider-specific built-in request behavior
+
+Voyti also applies a few provider-specific defaults during the user-info step:
+
+| Provider key | Built-in behavior |
+|---|---|
+| `facebook` | Sends `access_token` and `fields=id,name,email` on the user-info request. |
+| `github` | If `/user` does not include an email, Voyti also requests `https://api.github.com/user/emails` and picks the first primary or verified address. |
+| `twitter` | Sends `user.fields=id,name,username,profile_image_url`; normalized social identity does **not** include email. |
+| `vkontakte` | Sends `access_token`, `fields=screen_name`, and `v=5.199`; email is read from the token response when present. |
+| `yandex` | Sends `format=json` on the user-info request. |
+
+### Example
+
+```php
+return [
+    'yiirocks/voyti' => [
+        'socialNetworkClients' => [
+            'github' => [
+                'clientId' => $_ENV['GITHUB_CLIENT_ID'] ?? '',
+                'clientSecret' => $_ENV['GITHUB_CLIENT_SECRET'] ?? '',
+            ],
+            'google' => [
+                'clientId' => $_ENV['GOOGLE_CLIENT_ID'] ?? '',
+                'clientSecret' => $_ENV['GOOGLE_CLIENT_SECRET'] ?? '',
+            ],
+    ],
+];
+```
+
+With credentials configured:
+
+1. The login page shows social login buttons for configured providers.
+2. `settings/networks` lists connected providers and renders connect buttons for the remaining configured providers.
+3. New social identities redirect to the registration connect screen, where users can log in to an existing account or register a new one before the identity is linked.
+
+## Middleware
+
+The extension ships three PSR-15 middleware classes for access control:
+
+| Middleware | Description |
+|-----------|-------------|
+| `AccessRuleMiddleware` | Redirects guests to `loginRoute`; checks `administratorPermissionName` for admin access |
+| `PasswordAgeEnforceMiddleware` | Redirects to `accountSettingsRoute` when `maxPasswordAge` is exceeded |
+| `TwoFactorAuthenticationEnforceMiddleware` | Redirects to `accountSettingsRoute` when required permissions are assigned |
+
+Register them in your application's middleware pipeline as needed.
+Both redirect targets are configurable via `ModuleConfig`, so you can map them to your own route structure.
+
+## RBAC
+
+Built on [`yiisoft/rbac`](https://github.com/yiisoft/rbac). The extension provides:
+
+- **Admin UI** for managing permissions, roles, and rules (create, update, delete, filter)
+- **Assignment management** — assign/revoke roles and permissions per user from the admin panel
+- **Parent-child hierarchy** — roles can have child permissions/roles
+- **Rule management** — register and manage custom `RuleInterface` classes
+
+Default roles are configured in `config/rbac.php`:
+
+```php
+return [
+    'rbac' => [
+        'guest' => [],
+        'user' => [],
+        'admin' => [],
+    ],
+];
+```
+
+## Routes
+
+The library does not provide a menu model or navigation contract. It only exposes named routes that the host application can use in its own menu, sidebar, or access rules.
 
 | Route name | Method | Path | Purpose |
 |------------|--------|------|---------|
@@ -212,137 +387,71 @@ rules. The core route set is:
 | `voyti/rules-update` | `GET`, `POST` | `rules/update/{name}` | Update rule |
 | `voyti/rules-delete` | `POST` | `rules/delete/{name}` | Delete rule |
 
-When `enableRestApi` is `true`, the API routes are mounted under `adminRestPrefix`
-and expose user CRUD endpoints for list, view, create, update, and delete.
+When `enableRestApi` is `true`, the API routes are mounted under `adminRestPrefix` and expose user CRUD endpoints for list, view, create, update, and delete.
 
-### 4. That's it
+### Router Setup
 
-DI bindings, event listeners, and console commands are all auto-registered via
-the config plugin.
+To mount Voyti routes under a prefix (e.g. `/user`), configure your router DI definition to include the `voyti-routes` config group:
 
-Console commands:
+```php
+// config/common/di/router.php
+use Yiisoft\Config\Config;
+use Yiisoft\Definitions\DynamicReference;
+use Yiisoft\Router\Group;
+use Yiisoft\Router\RouteCollection;
+use Yiisoft\Router\RouteCollectionInterface;
+use Yiisoft\Router\RouteCollector;
 
-| Command | Description |
-|---------|-------------|
-| `voyti:create` | Create a new user |
-| `voyti:delete` | Delete a user |
-| `voyti:confirm` | Confirm a user's email |
-| `voyti:password` | Change a user's password |
+/** @var Config $config */
 
-## Configuration Reference
+return [
+    RouteCollectionInterface::class => [
+        'class' => RouteCollection::class,
+        '__construct()' => [
+            'collector' => DynamicReference::to(
+                static fn() => (new RouteCollector())->addRoute(
+                    Group::create('/')
+                        ->routes(...[
+                            ...$config->get("routes"), // your own routes
+                            Group::create('user/')
+                                ->routes(...$config->get("voyti-routes"))
+                        ],
+                    ),
+                ),
+            ),
+        ],
+    ],
+];
+```
 
-`ModuleConfig` provides 40+ options:
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `recaptchaVersion` | `?string` | `null` | `'v2'`, `'v3'`, or `null` to disable |
-| `enableSessionHistory` | `bool` | `false` | Track session history |
-| `numberSessionHistory` | `int\|false` | `false` | Max sessions to keep per user |
-| `timeoutSessionHistory` | `int\|false` | `false` | Session timeout in seconds |
-| `enableGdprCompliance` | `bool` | `false` | Enable GDPR features |
-| `gdprPrivacyPolicyUrl` | `?string` | `null` | URL to privacy policy |
-| `gdprAnonymizePrefix` | `string` | `'GDPR'` | Prefix for anonymized usernames |
-| `gdprRequireConsentToAll` | `bool` | `false` | Require consent on all pages |
-| `enableTwoFactorAuthentication` | `bool` | `false` | Enable 2FA |
-| `twoFactorAuthenticationForcedPermissions` | `array` | `[]` | Permissions that require 2FA |
-| `twoFactorAuthenticationCycles` | `int` | `1` | 2FA code generation cycles |
-| `enableAutoLogin` | `bool` | `true` | Auto-login after registration |
-| `enableRegistration` | `bool` | `true` | Allow new user registration |
-| `enableSocialNetworkRegistration` | `bool` | `true` | Allow social network registration |
-| `enableEmailConfirmation` | `bool` | `true` | Require email confirmation |
-| `generatePasswords` | `bool` | `false` | Auto-generate passwords on registration |
-| `allowUnconfirmedEmailLogin` | `bool` | `false` | Allow login without email confirmation |
-| `allowPasswordRecovery` | `bool` | `true` | Allow password recovery |
-| `allowAccountDelete` | `bool` | `false` | Allow users to delete their account |
-| `emailChangeStrategy` | `int` | `1` | 0=insecure, 1=default, 2=secure |
-| `rememberLoginLifespan` | `int` | `1209600` | Remember-me duration (seconds) |
-| `tokenConfirmationLifespan` | `int` | `86400` | Confirmation token validity |
-| `tokenRecoveryLifespan` | `int` | `21600` | Recovery token validity |
-| `administrators` | `array` | `[]` | Admin user IDs/usernames |
-| `administratorPermissionName` | `?string` | `null` | Permission name for admin access |
-| `maxPasswordAge` | `?int` | `null` | Max password age in days |
-| `disableIpLogging` | `bool` | `false` | Disable IP address logging |
-| `minPasswordRequirements` | `array` | `['lower'=>1,'digit'=>1,'upper'=>1]` | Min character types |
-| `loginPath` | `string` | `'/user/login'` | Redirect target for unauthenticated access |
-| `accountSettingsPath` | `string` | `'/user/settings/account'` | Redirect target for password age and 2FA enforcement |
-| `viewPath` | `string` | `src/resources/views/bootstrap5` | Base path for bundled web templates |
-| `mailPath` | `string` | `src/resources/mail` | Base path for bundled mail templates |
-| `enableRestApi` | `bool` | `false` | Enable REST API |
-| `adminRestPrefix` | `string` | `'api/v1'` | REST API URL prefix |
-| `mailParams` | `array` | (see below) | Mail from address and subjects |
+Without this setup, routes are registered at the root (`/login`, `/register`, etc.).
 
 ## Views
 
 ### Web Views
 
-Web views are in `src/resources/views/bootstrap5/`. Override them by setting `viewPath` in `ModuleConfig`:
+Web views are in `src/resources/views/bootstrap5/`. Override them by setting `viewPath` in `yiirocks/voyti`:
 
 ```php
 // config/params.php
-use YiiRocks\Voyti\ModuleConfig;
-
 return [
-    ModuleConfig::class => new ModuleConfig(
-        viewPath: '/path/to/your/custom/views',
-    ),
+    'yiirocks/voyti' => [
+        'viewPath' => '/path/to/your/custom/views',
+    ],
 ];
 ```
 
 ### Mail Views
 
-Mail templates are in `src/resources/mail/`. Override them by setting `mailPath` in `ModuleConfig`:
-
-```php
-use YiiRocks\Voyti\ModuleConfig;
-
-return [
-    ModuleConfig::class => new ModuleConfig(
-        mailPath: '/path/to/your/custom/mail',
-    ),
-];
-```
-
-## Middleware
-
-The extension ships three PSR-15 middleware classes for access control:
-
-| Middleware | Description |
-|-----------|-------------|
-| `AccessRuleMiddleware` | Redirects guests to `loginPath`; checks `administratorPermissionName` for admin access |
-| `PasswordAgeEnforceMiddleware` | Redirects to `accountSettingsPath` when `maxPasswordAge` is exceeded |
-| `TwoFactorAuthenticationEnforceMiddleware` | Redirects to `accountSettingsPath` when required permissions are assigned |
-
-Register them in your application's middleware pipeline as needed.
-Both redirect targets are configurable in `ModuleConfig`, so you can map them to your own route structure.
-
-## RBAC
-
-Built on [`yiisoft/rbac`](https://github.com/yiisoft/rbac). The extension provides:
-
-- **Admin UI** for managing permissions, roles, and rules (create, update, delete, filter)
-- **Assignment management** — assign/revoke roles and permissions per user from the admin panel
-- **Parent-child hierarchy** — roles can have child permissions/roles
-- **Rule management** — register and manage custom `RuleInterface` classes
-
-Default roles are configured in `config/rbac.php`:
+Mail templates are in `src/resources/mail/`. Override them by setting `mailPath` in `yiirocks/voyti`:
 
 ```php
 return [
-    'rbac' => [
-        'guest' => [],
-        'user' => [],
-        'admin' => [],
+    'yiirocks/voyti' => [
+        'mailPath' => '/path/to/your/custom/mail',
     ],
 ];
 ```
-
-## Social Authentication
-
-Nine auth clients are included. Each implements the auth client interface and maps provider attributes to the `SocialNetworkAccount` entity:
-
-- Facebook, GitHub, Google, Keycloak, LinkedIn, Microsoft365, Twitter, VKontakte, Yandex
-
-The `SocialNetworkAuthenticateService` handles account lookup, creation, and user login. The `SocialNetworkAccountConnectService` links a social account to an existing user.
 
 ## Testing
 
@@ -361,28 +470,27 @@ composer psalm
 
 ```
 src/
-├── AuthClient/          9 social auth clients
-├── Command/             4 console commands
-├── Controller/          11 web controllers + 1 API controller
-├── Entity/              5 ActiveRecord entities (User, Profile, Token, SocialNetworkAccount, SessionHistory)
-├── Event/               11 event classes
+├── AuthClient/          social auth clients
+├── Command/             console commands
+├── Controller/          web controllers & API controller
+├── Entity/              ActiveRecord entities
+├── Event/               event classes
 ├── Factory/             TokenFactory, MailFactory
-├── Form/                11 form models (Login, Registration, Recovery, Resend, Settings, Profile, GdprDelete, Rule, Permission, Role, AbstractAuthItem)
-├── Helper/              5 helpers (Auth, Gravatar, Recaptcha, Security, Timezone)
-├── Listener/            4 event listeners
-├── Middleware/          3 PSR-15 middleware
-├── Migration/           5 table-creation migrations
-├── Repository/          6 repositories (User, Profile, Token, SocialNetworkAccount, SessionHistory + BaseRepository)
-├── Service/             22 services + 5 session history services
-├── Strategy/            5 email-change strategies + factory + interface
-├── Validator/           9 validators (Ajax, Rbac, Timezone, TwoFactor)
-├── Widget/              4 widgets
+├── Form/                form models
+├── Helper/              helpers
+├── Listener/            event listeners
+├── Middleware/          PSR-15 middleware
+├── Migration/           table-creation migrations
+├── Repository/          repositories
+├── Service/             services
+├── Strategy/            email-change strategies + factory + interface
+├── Validator/           validators
 ├── resources/
-│   ├── mail/            10 mail templates (5 HTML + 5 text, independently overridable)
-│   ├── messages/        4 locales (en, de, nl, ru)
+│   ├── mail/            mail templates
+│   ├── messages/        locales
 │   └── views/
-│       └── bootstrap5/  40 web views
-└── ModuleConfig.php     40+ configuration options
+│       └── bootstrap5/  web views
+└── ModuleConfig.php     configuration options
 ```
 
 ## Credits

@@ -91,7 +91,6 @@
         }
     ],
     "scripts": {
-        "test": "@php vendor/bin/phpunit -c phpunit.xml.dist",
         "php-cs-fixer": "@php vendor/bin/php-cs-fixer fix",
         "phpcs": "@php vendor/bin/phpcs",
         "phpmd": "@php vendor/bin/phpmd src/ text tests/data/phpmd_ruleset.xml",
@@ -116,11 +115,10 @@
         },
         "config-plugin": {
             "params": "params.php",
-            "web": "web.php",
+            "params-console": "params-console.php",
             "events": "events.php",
             "di": "di.php",
             "rbac": "rbac.php",
-            "voyti-migration": "voyti-migration.php",
             "voyti-routes": "routes.php",
             "bootstrap": "bootstrap.php"
         }

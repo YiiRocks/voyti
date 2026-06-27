@@ -12,6 +12,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Rbac\ManagerInterface;
+use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
 
@@ -22,6 +23,7 @@ final class TwoFactorAuthenticationEnforceMiddleware implements MiddlewareInterf
         private readonly ModuleConfig $config,
         private readonly ManagerInterface $authManager,
         private readonly ResponseFactoryInterface $responseFactory,
+        private readonly UrlGeneratorInterface $url,
     ) {
     }
 
@@ -50,7 +52,7 @@ final class TwoFactorAuthenticationEnforceMiddleware implements MiddlewareInterf
         if (!empty(array_intersect($permissions, $userPermissionNames))) {
             if (!$user->isAuthTfEnabled()) {
                 $response = $this->responseFactory->createResponse(302);
-                return $response->withHeader('Location', $this->config->accountSettingsPath);
+                return $response->withHeader('Location', $this->url->generate($this->config->accountSettingsRoute));
             }
         }
 

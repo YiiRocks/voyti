@@ -2,14 +2,16 @@
 
 declare(strict_types=1);
 
+use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\Form\Settings\SettingsForm;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 
 /**
- * @var YiiRocks\Voyti\Form\Settings\SettingsForm $model
- * @var YiiRocks\Voyti\Entity\User $user
+ * @var SettingsForm $model
+ * @var User $user
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
  * @var array $errors
@@ -21,7 +23,7 @@ $username = $user->getUsername();
 $this->setTitle($translator->translate('voyti.view.admin.update_user_title', ['username' => $username], category: 'voyti'));
 
 echo Html::div()->class('voyti-admin-update')->open();
-    echo Html::H1($translator->translate('voyti.view.admin.update_user_title', ['username' => Html::encode($username)], category: 'voyti'));
+    echo Html::H1($translator->translate('voyti.view.admin.update_user_title', ['username' => $username], category: 'voyti'));
 
     echo Html::form()
         ->post($url->generate('voyti/admin-update', ['id' => $user->getId()]))

@@ -8,6 +8,15 @@ use Yiisoft\Db\Schema\Column\ColumnBuilder;
 
 final class M260621101843_create_user_module_tables implements RevertibleMigrationInterface
 {
+
+    public function down(MigrationBuilder $b): void
+    {
+        $b->dropTable('{{%user_session_history}}');
+        $b->dropTable('{{%user_token}}');
+        $b->dropTable('{{%user_social_account}}');
+        $b->dropTable('{{%user_profile}}');
+        $b->dropTable('{{%user}}');
+    }
     public function up(MigrationBuilder $b): void
     {
         $b->createTable('{{%user}}', [
@@ -93,14 +102,5 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
         $b->addForeignKey('{{%user_social_account}}', 'fk-user-social-account-user-id', ['user_id'], '{{%user}}', ['id'], 'CASCADE', 'RESTRICT');
         $b->addForeignKey('{{%user_token}}', 'fk-user-token-user-id', ['user_id'], '{{%user}}', ['id'], 'CASCADE', 'RESTRICT');
         $b->addForeignKey('{{%user_session_history}}', 'fk-user-session-history-user-id', ['user_id'], '{{%user}}', ['id'], 'CASCADE', 'RESTRICT');
-    }
-
-    public function down(MigrationBuilder $b): void
-    {
-        $b->dropTable('{{%user_session_history}}');
-        $b->dropTable('{{%user_token}}');
-        $b->dropTable('{{%user_social_account}}');
-        $b->dropTable('{{%user_profile}}');
-        $b->dropTable('{{%user}}');
     }
 }

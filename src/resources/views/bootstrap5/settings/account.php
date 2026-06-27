@@ -2,15 +2,18 @@
 
 declare(strict_types=1);
 
+use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\Form\Settings\SettingsForm;
+use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 
 /**
- * @var YiiRocks\Voyti\Form\Settings\SettingsForm $model
- * @var YiiRocks\Voyti\ModuleConfig $config
- * @var YiiRocks\Voyti\Entity\User $user
+ * @var SettingsForm $model
+ * @var ModuleConfig $config
+ * @var User $user
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
  * @var string $csrf
@@ -19,27 +22,27 @@ use Yiisoft\Translator\TranslatorInterface;
 $this->setTitle($translator->translate('voyti.view.account.title', category: 'voyti'));
 
 echo Html::div()->class('voyti-account')->open();
-    include dirname(__DIR__) . '/shared/_menu.php';
+include dirname(__DIR__) . '/shared/_menu.php';
 
-    echo Html::H1($translator->translate('voyti.view.account.title', category: 'voyti'));
+echo Html::H1($translator->translate('voyti.view.account.title', category: 'voyti'));
 
-    echo Html::form()
-        ->post($url->generate('voyti/settings-account'))
-        ->csrf($csrf)
-        ->open();
+echo Html::form()
+    ->post($url->generate('voyti/settings-account'))
+    ->csrf($csrf)
+    ->open();
 
-    echo Field::errorSummary($model);
+echo Field::errorSummary($model);
 
-    echo Field::text($model, 'username');
+echo Field::text($model, 'username');
 
-    echo Field::email($model, 'email');
+echo Field::email($model, 'email');
 
-    echo Field::password($model, 'password');
+echo Field::password($model, 'password');
 
-    echo Field::buttonGroup()
-        ->buttons(
-            Html::submitButton($translator->translate('voyti.view.save_button', category: 'voyti'))
-        );
+echo Field::buttonGroup()
+    ->buttons(
+        Html::submitButton($translator->translate('voyti.view.save_button', category: 'voyti'))
+    );
 
-    echo Html::form()->close();
+echo Html::form()->close();
 echo Html::div()->close();

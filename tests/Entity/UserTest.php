@@ -52,6 +52,30 @@ final class UserTest extends TestCase
         parent::tearDown();
     }
 
+    public function testConfirmUserLoadedFromDb(): void
+    {
+        $user = new User();
+        $user->setUsername('confirmuser');
+        $user->setEmail('confirm@example.com');
+        $user->setPasswordHash('hash1');
+        $user->setAuthKey('auth1');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $user->save();
+
+        $loaded = User::query()->findByPk($user->getId());
+        $this->assertInstanceOf(User::class, $loaded);
+        $this->assertFalse($loaded->isConfirmed());
+
+        $loaded->setConfirmedAt(time());
+        $loaded->save();
+
+        $found = User::query()->where(['username' => 'confirmuser'])->one();
+        $this->assertInstanceOf(User::class, $found);
+        $this->assertTrue($found->isConfirmed());
+        $this->assertNotNull($found->getConfirmedAt());
+    }
+
     public function testCreateAndFind(): void
     {
         $user = new User();
@@ -195,30 +219,6 @@ final class UserTest extends TestCase
         $found = User::query()->where(['username' => 'updateuser'])->one();
         $this->assertInstanceOf(User::class, $found);
         $this->assertSame('updated@example.com', $found->getEmail());
-    }
-
-    public function testConfirmUserLoadedFromDb(): void
-    {
-        $user = new User();
-        $user->setUsername('confirmuser');
-        $user->setEmail('confirm@example.com');
-        $user->setPasswordHash('hash1');
-        $user->setAuthKey('auth1');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-
-        $loaded = User::query()->findByPk($user->getId());
-        $this->assertInstanceOf(User::class, $loaded);
-        $this->assertFalse($loaded->isConfirmed());
-
-        $loaded->setConfirmedAt(time());
-        $loaded->save();
-
-        $found = User::query()->where(['username' => 'confirmuser'])->one();
-        $this->assertInstanceOf(User::class, $found);
-        $this->assertTrue($found->isConfirmed());
-        $this->assertNotNull($found->getConfirmedAt());
     }
 
     public function testValidateAuthKey(): void

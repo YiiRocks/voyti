@@ -6,14 +6,19 @@ namespace YiiRocks\Voyti\AuthClient;
 
 final class Google extends AbstractAuthClient
 {
-    public function __construct()
+    /**
+     * @param array<string, mixed> $config
+     */
+    public function __construct(array $config = [])
     {
         parent::__construct(
-            'https://accounts.google.com/o/oauth2/auth',
             'google',
-            'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.userProfile',
             'Google',
-            'https://accounts.google.com/o/oauth2/userToken',
+            'https://accounts.google.com/o/oauth2/v2/auth',
+            'https://oauth2.googleapis.com/token',
+            'https://openidconnect.googleapis.com/v1/userinfo',
+            'openid email profile',
+            $config,
         );
     }
 }

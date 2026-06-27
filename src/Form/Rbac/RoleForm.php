@@ -14,12 +14,22 @@ final class RoleForm extends AbstractAuthItemForm
         parent::__construct($translator);
     }
 
+    /**
+     * @return string
+     *
+     * @psalm-return 'role'
+     */
     #[\Override]
     public function getFormName(): string
     {
         return 'role';
     }
 
+    /**
+     * @return string
+     *
+     * @psalm-return 'role'
+     */
     #[\Override]
     public function getType(): string
     {

@@ -41,7 +41,9 @@ final class RegistrationForm extends FormModel implements RulesProviderInterface
     }
 
     /**
-     * @return array<string, string>
+     * @return string[]
+     *
+     * @psalm-return array{username: string, email: string, password: string, gdprConsent: string}
      */
     public function getAttributeLabels(): array
     {
@@ -56,6 +58,17 @@ final class RegistrationForm extends FormModel implements RulesProviderInterface
         ];
     }
 
+    /**
+     * @return string
+     *
+     * @psalm-return 'register'
+     */
+    #[\Override]
+    public function getFormName(): string
+    {
+        return 'register';
+    }
+
     #[\Override]
     public function getPropertyLabel(string $property): string
     {
@@ -65,12 +78,6 @@ final class RegistrationForm extends FormModel implements RulesProviderInterface
             return $labels[$property];
         }
         return parent::getPropertyLabel($property);
-    }
-
-    #[\Override]
-    public function getFormName(): string
-    {
-        return 'register';
     }
 
     #[\Override]

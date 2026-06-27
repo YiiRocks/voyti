@@ -11,6 +11,7 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\ModuleConfig;
+use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
 
@@ -21,6 +22,7 @@ final class AccessRuleMiddleware implements MiddlewareInterface
         private readonly ModuleConfig $config,
         private readonly AuthHelper $authHelper,
         private readonly ResponseFactoryInterface $responseFactory,
+        private readonly UrlGeneratorInterface $url,
     ) {
     }
 
@@ -32,7 +34,7 @@ final class AccessRuleMiddleware implements MiddlewareInterface
 
         if ($user === null) {
             $response = $this->responseFactory->createResponse(302);
-            return $response->withHeader('Location', $this->config->loginPath);
+            return $response->withHeader('Location', $this->url->generate($this->config->loginRoute));
         }
 
         $userId = $user->getId() ?? 0;

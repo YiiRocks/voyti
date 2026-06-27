@@ -25,7 +25,9 @@ final class RuleForm extends FormModel implements RulesProviderInterface
     }
 
     /**
-     * @return array<string, string>
+     * @return string[]
+     *
+     * @psalm-return array{name: string, class: string}
      */
     public function getAttributeLabels(): array
     {
@@ -33,6 +35,17 @@ final class RuleForm extends FormModel implements RulesProviderInterface
             'name' => $this->translator->translate('voyti.view.name_label', category: 'voyti'),
             'class' => $this->translator->translate('voyti.view.rule.class_label', category: 'voyti'),
         ];
+    }
+
+    /**
+     * @return string
+     *
+     * @psalm-return 'rule'
+     */
+    #[\Override]
+    public function getFormName(): string
+    {
+        return 'rule';
     }
 
     #[\Override]
@@ -44,12 +57,6 @@ final class RuleForm extends FormModel implements RulesProviderInterface
             return $labels[$property];
         }
         return parent::getPropertyLabel($property);
-    }
-
-    #[\Override]
-    public function getFormName(): string
-    {
-        return 'rule';
     }
 
     #[\Override]

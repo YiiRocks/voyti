@@ -6,14 +6,19 @@ namespace YiiRocks\Voyti\AuthClient;
 
 final class LinkedIn extends AbstractAuthClient
 {
-    public function __construct()
+    /**
+     * @param array<string, mixed> $config
+     */
+    public function __construct(array $config = [])
     {
         parent::__construct(
-            'https://www.linkedin.com/uas/oauth2/authorization',
             'linkedin',
-            'r_emailaddress r_liteprofile',
             'LinkedIn',
-            'https://www.linkedin.com/uas/oauth2/accessToken',
+            'https://www.linkedin.com/oauth/v2/authorization',
+            'https://www.linkedin.com/oauth/v2/accessToken',
+            'https://api.linkedin.com/v2/userinfo',
+            'openid profile email',
+            $config,
         );
     }
 }

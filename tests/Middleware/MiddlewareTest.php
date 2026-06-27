@@ -23,18 +23,43 @@ use Yiisoft\Rbac\AssignmentsStorageInterface;
 use Yiisoft\Rbac\ItemsStorageInterface;
 use Yiisoft\Rbac\ManagerInterface;
 use Yiisoft\Rbac\Permission;
+use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 
 final class MiddlewareTest extends TestCase
 {
-    public function testAccessRuleRedirectsGuestsToConfiguredLoginPath(): void
+
+    public function testAccessRuleAllowsAdminUsersThrough(): void
     {
+        $currentUser = $this->createCurrentUser($this->createIdentity('42'));
+        $manager = $this->createManager(['admin' => new Permission('admin')]);
+
+        $middleware = new AccessRuleMiddleware(
+            $currentUser,
+            new ModuleConfig(administratorPermissionName: 'admin'),
+            $this->createAuthHelper($manager),
+            new Psr17Factory(),
+            $this->createUrlGenerator(),
+        );
+
+        $handler = new TrackingHandler();
+        $response = $middleware->process($this->createRequest(), $handler);
+
+        self::assertTrue($handler->handled);
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame('ok', (string) $response->getBody());
+    }
+    public function testAccessRuleRedirectsGuestsToConfiguredLoginRoute(): void
+    {
+        $urlGenerator = $this->createUrlGenerator(['custom/login' => '/custom/login']);
+
         $middleware = new AccessRuleMiddleware(
             $this->createCurrentUser(),
-            new ModuleConfig(loginPath: '/custom/login'),
+            new ModuleConfig(loginRoute: 'custom/login'),
             $this->createAuthHelper($this->createManager([])),
             new Psr17Factory(),
+            $urlGenerator,
         );
 
         $handler = new TrackingHandler();
@@ -54,57 +79,13 @@ final class MiddlewareTest extends TestCase
             new ModuleConfig(administratorPermissionName: 'admin'),
             $this->createAuthHelper($this->createManager([])),
             new Psr17Factory(),
+            $this->createUrlGenerator(),
         );
 
         $handler = new TrackingHandler();
         $response = $middleware->process($this->createRequest(), $handler);
 
         self::assertSame(403, $response->getStatusCode());
-        self::assertFalse($handler->handled);
-    }
-
-    public function testAccessRuleAllowsAdminUsersThrough(): void
-    {
-        $currentUser = $this->createCurrentUser($this->createIdentity('42'));
-        $manager = $this->createManager(['admin' => new Permission('admin')]);
-
-        $middleware = new AccessRuleMiddleware(
-            $currentUser,
-            new ModuleConfig(administratorPermissionName: 'admin'),
-            $this->createAuthHelper($manager),
-            new Psr17Factory(),
-        );
-
-        $handler = new TrackingHandler();
-        $response = $middleware->process($this->createRequest(), $handler);
-
-        self::assertTrue($handler->handled);
-        self::assertSame(200, $response->getStatusCode());
-        self::assertSame('ok', (string) $response->getBody());
-    }
-
-    public function testPasswordAgeEnforcementRedirectsToConfiguredAccountSettingsPath(): void
-    {
-        $user = $this->createUserIdentity(
-            id: '42',
-            passwordChangedAt: time() - (91 * 86400),
-        );
-
-        $middleware = new PasswordAgeEnforceMiddleware(
-            $this->createCurrentUser($user),
-            new ModuleConfig(
-                maxPasswordAge: 90,
-                accountSettingsPath: '/custom/settings/account',
-            ),
-            $this->createStub(TranslatorInterface::class),
-            new Psr17Factory(),
-        );
-
-        $handler = new TrackingHandler();
-        $response = $middleware->process($this->createRequest(), $handler);
-
-        self::assertSame(302, $response->getStatusCode());
-        self::assertSame('/custom/settings/account', $response->getHeaderLine('Location'));
         self::assertFalse($handler->handled);
     }
 
@@ -120,6 +101,7 @@ final class MiddlewareTest extends TestCase
             new ModuleConfig(maxPasswordAge: 90),
             $this->createStub(TranslatorInterface::class),
             new Psr17Factory(),
+            $this->createUrlGenerator(),
         );
 
         $handler = new TrackingHandler();
@@ -129,23 +111,24 @@ final class MiddlewareTest extends TestCase
         self::assertSame(200, $response->getStatusCode());
     }
 
-    public function testTwoFactorEnforcementRedirectsToConfiguredAccountSettingsPath(): void
+    public function testPasswordAgeEnforcementRedirectsToConfiguredAccountSettingsRoute(): void
     {
         $user = $this->createUserIdentity(
             id: '42',
-            authTfEnabled: false,
+            passwordChangedAt: time() - (91 * 86400),
         );
-        $manager = $this->createManager(['admin' => new Permission('admin')]);
 
-        $middleware = new TwoFactorAuthenticationEnforceMiddleware(
+        $urlGenerator = $this->createUrlGenerator(['custom/settings-account' => '/custom/settings/account']);
+
+        $middleware = new PasswordAgeEnforceMiddleware(
             $this->createCurrentUser($user),
             new ModuleConfig(
-                enableTwoFactorAuthentication: true,
-                twoFactorAuthenticationForcedPermissions: ['admin'],
-                accountSettingsPath: '/custom/settings/account',
+                maxPasswordAge: 90,
+                accountSettingsRoute: 'custom/settings-account',
             ),
-            $manager,
+            $this->createStub(TranslatorInterface::class),
             new Psr17Factory(),
+            $urlGenerator,
         );
 
         $handler = new TrackingHandler();
@@ -172,6 +155,7 @@ final class MiddlewareTest extends TestCase
             ),
             $manager,
             new Psr17Factory(),
+            $this->createUrlGenerator(),
         );
 
         $handler = new TrackingHandler();
@@ -179,6 +163,59 @@ final class MiddlewareTest extends TestCase
 
         self::assertTrue($handler->handled);
         self::assertSame(200, $response->getStatusCode());
+    }
+
+    public function testTwoFactorEnforcementRedirectsToConfiguredAccountSettingsRoute(): void
+    {
+        $user = $this->createUserIdentity(
+            id: '42',
+            authTfEnabled: false,
+        );
+        $manager = $this->createManager(['admin' => new Permission('admin')]);
+
+        $urlGenerator = $this->createUrlGenerator(['custom/settings-account' => '/custom/settings/account']);
+
+        $middleware = new TwoFactorAuthenticationEnforceMiddleware(
+            $this->createCurrentUser($user),
+            new ModuleConfig(
+                enableTwoFactorAuthentication: true,
+                twoFactorAuthenticationForcedPermissions: ['admin'],
+                accountSettingsRoute: 'custom/settings-account',
+            ),
+            $manager,
+            new Psr17Factory(),
+            $urlGenerator,
+        );
+
+        $handler = new TrackingHandler();
+        $response = $middleware->process($this->createRequest(), $handler);
+
+        self::assertSame(302, $response->getStatusCode());
+        self::assertSame('/custom/settings/account', $response->getHeaderLine('Location'));
+        self::assertFalse($handler->handled);
+    }
+
+    private function createAuthHelper(ManagerInterface $manager): AuthHelper
+    {
+        return new AuthHelper(
+            $manager,
+            $this->createStub(ItemsStorageInterface::class),
+            $this->createStub(AssignmentsStorageInterface::class),
+            new ModuleConfig(administratorPermissionName: 'admin'),
+        );
+    }
+
+    /**
+     * @param array<string, string> $map route name → URL
+     */
+    private function createUrlGenerator(array $map = []): UrlGeneratorInterface
+    {
+        $generator = $this->createStub(UrlGeneratorInterface::class);
+        $generator
+            ->method('generate')
+            ->willReturnCallback(fn (string $name) => $map[$name] ?? '/' . str_replace('-', '/', $name));
+
+        return $generator;
     }
 
     private function createCurrentUser(?IdentityInterface $identity = null): CurrentUser
@@ -201,27 +238,6 @@ final class MiddlewareTest extends TestCase
         return $currentUser;
     }
 
-    private function createAuthHelper(ManagerInterface $manager): AuthHelper
-    {
-        return new AuthHelper(
-            $manager,
-            $this->createStub(ItemsStorageInterface::class),
-            $this->createStub(AssignmentsStorageInterface::class),
-            new ModuleConfig(administratorPermissionName: 'admin'),
-        );
-    }
-
-    /**
-     * @param array<string, Permission> $permissions
-     */
-    private function createManager(array $permissions): ManagerInterface
-    {
-        $manager = $this->createStub(ManagerInterface::class);
-        $manager->method('getItemsByUserId')->willReturn($permissions);
-        $manager->method('getPermissionsByUserId')->willReturn($permissions);
-        return $manager;
-    }
-
     private function createIdentity(string $id): IdentityInterface
     {
         return new class($id) implements IdentityInterface {
@@ -235,6 +251,17 @@ final class MiddlewareTest extends TestCase
                 return $this->id;
             }
         };
+    }
+
+    /**
+     * @param array<string, Permission> $permissions
+     */
+    private function createManager(array $permissions): ManagerInterface
+    {
+        $manager = $this->createStub(ManagerInterface::class);
+        $manager->method('getItemsByUserId')->willReturn($permissions);
+        $manager->method('getPermissionsByUserId')->willReturn($permissions);
+        return $manager;
     }
 
     private function createRequest(): ServerRequestInterface

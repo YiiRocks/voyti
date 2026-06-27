@@ -29,7 +29,9 @@ abstract class AbstractAuthItemForm extends FormModel implements RulesProviderIn
     }
 
     /**
-     * @return array<string, string>
+     * @return string[]
+     *
+     * @psalm-return array{name: string, description: string, children: string, rule: string}
      */
     public function getAttributeLabels(): array
     {
@@ -42,6 +44,12 @@ abstract class AbstractAuthItemForm extends FormModel implements RulesProviderIn
     }
 
     #[\Override]
+    public function getFormName(): string
+    {
+        return 'authItem';
+    }
+
+    #[\Override]
     public function getPropertyLabel(string $property): string
     {
         /** @var array<string, string> $labels */
@@ -50,12 +58,6 @@ abstract class AbstractAuthItemForm extends FormModel implements RulesProviderIn
             return $labels[$property];
         }
         return parent::getPropertyLabel($property);
-    }
-
-    #[\Override]
-    public function getFormName(): string
-    {
-        return 'authItem';
     }
 
     #[\Override]

@@ -84,6 +84,14 @@ final class MailCapture implements \Yiisoft\Mailer\MailerInterface
     /** @var list<MessageInterface> */
     private array $messages = [];
 
+    /**
+     * @return list<MessageInterface>
+     */
+    public function messages(): array
+    {
+        return $this->messages;
+    }
+
     public function send(MessageInterface $message): void
     {
         $this->messages[] = $message;
@@ -96,13 +104,5 @@ final class MailCapture implements \Yiisoft\Mailer\MailerInterface
         }
 
         return new SendResults($this->messages, []);
-    }
-
-    /**
-     * @return list<MessageInterface>
-     */
-    public function messages(): array
-    {
-        return $this->messages;
     }
 }

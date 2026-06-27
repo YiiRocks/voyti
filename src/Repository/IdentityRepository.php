@@ -14,6 +14,9 @@ final class IdentityRepository implements IdentityRepositoryInterface
     ) {
     }
 
+    /**
+     * @return \YiiRocks\Voyti\Entity\User|null
+     */
     #[\Override]
     public function findIdentity(string $id): ?IdentityInterface
     {

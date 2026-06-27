@@ -5,19 +5,14 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Controller;
 
 use Psr\Http\Message\ResponseInterface;
-use YiiRocks\Voyti\Voyti;
 
 trait RenderTrait
 {
-    protected function viewPath(): string
-    {
-        return Voyti::VIEWS_PATH;
-    }
 
     protected function renderError(string $messageKey): ResponseInterface
     {
         return $this->renderView('shared/message', [
-            'title' => $this->translator->translate($messageKey, category: Voyti::TRANSLATION_CATEGORY),
+            'title' => $this->translator->translate($messageKey, category: 'voyti'),
             'translator' => $this->translator,
         ]);
     }
@@ -25,9 +20,13 @@ trait RenderTrait
     protected function renderSuccess(string $messageKey): ResponseInterface
     {
         return $this->renderView('shared/message', [
-            'title' => $this->translator->translate($messageKey, category: Voyti::TRANSLATION_CATEGORY),
+            'title' => $this->translator->translate($messageKey, category: 'voyti'),
             'translator' => $this->translator,
         ]);
+    }
+    protected function viewPath(): string
+    {
+        return dirname(__DIR__) . '/resources/views/bootstrap5';
     }
     /**
      * @param array<string, mixed> $params

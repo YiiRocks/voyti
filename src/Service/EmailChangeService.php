@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service;
 
-use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Repository\UserRepository;
+use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Strategy\MailChangeStrategyInterface;
 
 final class EmailChangeService

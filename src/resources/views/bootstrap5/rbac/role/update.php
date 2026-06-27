@@ -17,34 +17,34 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var string $csrf
  */
 
-$this->setTitle($translator->translate('voyti.view.role.update_title', ['name' => Html::encode($model->itemName)], category: 'voyti'));
+$this->setTitle($translator->translate('voyti.view.role.update_title', ['name' => $model->itemName], category: 'voyti'));
 
 echo Html::div()->class('voyti-rbac-update')->open();
-    echo Html::H1($translator->translate('voyti.view.role.update_title', ['name' => Html::encode($model->itemName)], category: 'voyti'));
+echo Html::H1($translator->translate('voyti.view.role.update_title', ['name' => $model->itemName], category: 'voyti'));
 
-    echo Html::form()
-        ->post($url->generate('voyti/roles-update', ['name' => $model->itemName]))
-        ->csrf($csrf)
-        ->open();
+echo Html::form()
+    ->post($url->generate('voyti/roles-update', ['name' => $model->itemName]))
+    ->csrf($csrf)
+    ->open();
 
-    if (!empty($errors)) {
-        echo Html::div()->class('alert alert-danger')->open();
-            foreach ($errors as $field => $fieldErrors) {
-                foreach ((array) $fieldErrors as $error) {
-                    echo Html::div(Html::encode($error));
-                }
-            }
-        echo Html::div()->close();
+if (!empty($errors)) {
+    echo Html::div()->class('alert alert-danger')->open();
+    foreach ($errors as $field => $fieldErrors) {
+        foreach ((array) $fieldErrors as $error) {
+            echo Html::div($error);
+        }
     }
+    echo Html::div()->close();
+}
 
-    echo Field::text($model, 'name');
+echo Field::text($model, 'name');
 
-    echo Field::text($model, 'description');
+echo Field::text($model, 'description');
 
-    echo Field::buttonGroup()
-        ->buttons(
-            Html::submitButton($translator->translate('voyti.view.update_button', category: 'voyti'))
-        );
+echo Field::buttonGroup()
+    ->buttons(
+        Html::submitButton($translator->translate('voyti.view.update_button', category: 'voyti'))
+    );
 
-    echo Html::form()->close();
+echo Html::form()->close();
 echo Html::div()->close();

@@ -242,6 +242,7 @@ return [
 
     // Pagination
     'voyti.view.filter_button' => 'Filteren',
+    'voyti.view.pagination_navigation' => 'Pagina navigatie',
     'voyti.view.previous' => 'Vorige',
     'voyti.view.next' => 'Volgende',
 
@@ -289,6 +290,7 @@ return [
     'voyti.view.update_profile_link' => 'Profiel bijwerken',
     'voyti.view.send_button' => 'Verzenden',
     'voyti.view.connect_button' => 'Koppelen',
+    'voyti.view.disconnect_button' => 'Ontkoppelen',
 
     // Confirmation prompts
     'voyti.view.delete_user_confirm' => 'Deze gebruiker verwijderen?',

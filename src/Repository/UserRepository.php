@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Repository;
 
+use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserProfile;
 use YiiRocks\Voyti\Entity\UserToken;
-use YiiRocks\Voyti\Entity\User;
+use Yiisoft\ActiveRecord\ActiveRecordInterface;
 
 /** @extends BaseRepository<User> */
 final class UserRepository extends BaseRepository
@@ -29,7 +30,7 @@ final class UserRepository extends BaseRepository
     }
 
     #[\Override]
-    public function delete(\Yiisoft\ActiveRecord\ActiveRecordInterface $model): void
+    public function delete(ActiveRecordInterface $model): void
     {
         if ($model instanceof User) {
             $userProfile = $model->getProfile();
@@ -77,7 +78,7 @@ final class UserRepository extends BaseRepository
     }
 
     #[\Override]
-    public function save(\Yiisoft\ActiveRecord\ActiveRecordInterface $model): void
+    public function save(ActiveRecordInterface $model): void
     {
         parent::save($model);
     }

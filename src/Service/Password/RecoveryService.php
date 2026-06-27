@@ -7,10 +7,10 @@ namespace YiiRocks\Voyti\Service\Password;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\ModuleConfig;
-use Yiisoft\Security\Random;
 use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\ServiceResult;
+use Yiisoft\Security\Random;
 use Yiisoft\Translator\TranslatorInterface;
 
 final class RecoveryService

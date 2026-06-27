@@ -17,7 +17,6 @@ use Yiisoft\Translator\Message\Php\MessageSource;
 use Yiisoft\Translator\SimpleMessageFormatter;
 use Yiisoft\Translator\Translator;
 use Yiisoft\Translator\TranslatorInterface;
-use YiiRocks\Voyti\Voyti;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -71,10 +70,10 @@ abstract class TestCase extends BaseTestCase
 
     protected function createTranslator(): TranslatorInterface
     {
-        $translator = new Translator('en', null, Voyti::TRANSLATION_CATEGORY);
+        $translator = new Translator('en', null, 'voyti');
         $translator->addCategorySources(
             new CategorySource(
-                Voyti::TRANSLATION_CATEGORY,
+                'voyti',
                 new MessageSource(dirname(__DIR__) . '/src/resources/messages'),
                 new SimpleMessageFormatter(),
             ),
@@ -98,16 +97,16 @@ abstract class TestCase extends BaseTestCase
         return $this->db;
     }
 
-    protected function hasSqliteConnection(): bool
-    {
-        return $this->db !== null;
-    }
-
     protected function getTranslator(): TranslatorInterface
     {
         if ($this->translator === null) {
             $this->translator = $this->createTranslator();
         }
         return $this->translator;
+    }
+
+    protected function hasSqliteConnection(): bool
+    {
+        return $this->db !== null;
     }
 }

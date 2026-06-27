@@ -8,17 +8,16 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Entity\UserProfile;
+use YiiRocks\Voyti\Entity\UserSessionHistory;
 use YiiRocks\Voyti\Form\Auth\RegistrationForm;
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Form\Settings\UserProfileForm;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\ModuleConfig;
-use Yiisoft\Security\PasswordHasher;
-use Yiisoft\Security\Random;
 use YiiRocks\Voyti\Repository\UserProfileRepository;
-use YiiRocks\Voyti\Repository\UserSessionHistoryRepository;
 use YiiRocks\Voyti\Repository\UserRepository;
+use YiiRocks\Voyti\Repository\UserSessionHistoryRepository;
 use YiiRocks\Voyti\Service\Password\ExpireService;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
 use YiiRocks\Voyti\Service\Rbac\UpdateAssignmentsService;
@@ -26,10 +25,12 @@ use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\Service\User\BlockService;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\CreateService;
-use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Http\Method;
+use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Rbac\Assignment;
 use Yiisoft\Router\UrlGeneratorInterface;
+use Yiisoft\Security\PasswordHasher;
+use Yiisoft\Security\Random;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\Validator\ValidatorInterface;
@@ -37,8 +38,8 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 final class AdminController
 {
-    use RenderTrait;
     use InputDataTrait;
+    use RenderTrait;
 
     public function __construct(
         private readonly TranslatorInterface $translator,
@@ -62,11 +63,6 @@ final class AdminController
         private readonly HydratorInterface $hydrator,
         private readonly CurrentUser $currentUser,
     ) {
-    }
-
-    protected function viewPath(): string
-    {
-        return $this->config->viewPath;
     }
 
     public function assignments(ServerRequestInterface $request, int $id): ResponseInterface
@@ -209,21 +205,6 @@ final class AdminController
         return $this->renderError('voyti.admin.user_not_found');
     }
 
-    public function userSessionHistory(int $id): ResponseInterface
-    {
-        $user = $this->userRepository->findById($id);
-        if ($user === null) {
-            return $this->renderError('voyti.admin.user_not_found');
-        }
-
-        $sessions = $this->userSessionHistoryRepository->findByUserId($id);
-        return $this->renderView('admin/_session-history', [
-            'user' => $user,
-            'sessions' => $sessions,
-            'config' => $this->config,
-        ]);
-    }
-
     public function switchIdentity(int $id): ResponseInterface
     {
         $result = $this->switchIdentityService->run($id);
@@ -239,9 +220,7 @@ final class AdminController
 
         $sessions = $this->userSessionHistoryRepository->findByUserId($id);
         foreach ($sessions as $session) {
-            if ($session instanceof \YiiRocks\Voyti\Entity\UserSessionHistory) {
-                $session->delete();
-            }
+            $session->delete();
         }
 
         return $this->renderSuccess('voyti.admin.sessions_terminated');
@@ -313,5 +292,25 @@ final class AdminController
         }
 
         return $this->renderView('admin/_profile', ['user' => $user, 'model' => $model, 'config' => $this->config]);
+    }
+
+    public function userSessionHistory(int $id): ResponseInterface
+    {
+        $user = $this->userRepository->findById($id);
+        if ($user === null) {
+            return $this->renderError('voyti.admin.user_not_found');
+        }
+
+        $sessions = $this->userSessionHistoryRepository->findByUserId($id);
+        return $this->renderView('admin/_session-history', [
+            'user' => $user,
+            'sessions' => $sessions,
+            'config' => $this->config,
+        ]);
+    }
+
+    protected function viewPath(): string
+    {
+        return $this->config->viewPath;
     }
 }

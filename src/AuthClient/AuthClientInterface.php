@@ -6,13 +6,13 @@ namespace YiiRocks\Voyti\AuthClient;
 
 interface AuthClientInterface
 {
-    public function getAuthUrl(): string;
+    public function fetchUserAttributes(string $code, string $redirectUri, OAuthHttpClientInterface $httpClient): array;
 
     public function getName(): string;
 
-    public function getScope(): string;
+    public function getAuthorizationUrl(string $redirectUri, string $state): string;
 
     public function getTitle(): string;
 
-    public function getTokenUrl(): string;
+    public function isEnabled(): bool;
 }

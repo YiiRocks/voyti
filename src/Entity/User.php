@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Entity;
 
+use Yiisoft\ActiveRecord\ActiveQueryInterface;
 use Yiisoft\ActiveRecord\ActiveRecord;
 use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
 use Yiisoft\Auth\IdentityInterface;
@@ -89,6 +90,9 @@ final class User extends ActiveRecord implements IdentityInterface
         return $this->gdpr_consent_date;
     }
 
+    /**
+     * @return null|numeric-string
+     */
     #[\Override]
     public function getId(): ?string
     {
@@ -134,11 +138,16 @@ final class User extends ActiveRecord implements IdentityInterface
         return $this->registration_ip;
     }
 
-    public function getSocialNetworkAccounts(): \Yiisoft\ActiveRecord\ActiveQueryInterface
+    public function getSocialNetworkAccounts(): ActiveQueryInterface
     {
         return $this->hasMany(UserSocialAccount::class, ['user_id' => 'id']);
     }
 
+    /**
+     * @return (\Yiisoft\ActiveRecord\ActiveRecordInterface|array)[]
+     *
+     * @psalm-return array<\Yiisoft\ActiveRecord\ActiveRecordInterface|array>
+     */
     public function getTokens(): array
     {
         return $this->hasMany(UserToken::class, ['user_id' => 'id'])->all();
@@ -294,6 +303,11 @@ final class User extends ActiveRecord implements IdentityInterface
         $this->username = $username;
     }
 
+    /**
+     * @return string
+     *
+     * @psalm-return '{{%user}}'
+     */
     #[\Override]
     public function tableName(): string
     {

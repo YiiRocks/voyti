@@ -38,11 +38,6 @@ final class ProfileController
     ) {
     }
 
-    protected function viewPath(): string
-    {
-        return $this->config->viewPath;
-    }
-
     public function show(ServerRequestInterface $request, int $id): ResponseInterface
     {
         $identity = $this->currentUser->getIdentity();
@@ -77,6 +72,11 @@ final class ProfileController
         $user = $this->userRepository->findById($id);
 
         return $this->renderView('profile/show', ['user' => $user, 'userProfile' => $userProfile]);
+    }
+
+    protected function viewPath(): string
+    {
+        return $this->config->viewPath;
     }
 
     private function isAdmin(IdentityInterface $identity): bool

@@ -242,6 +242,7 @@ return [
 
     // Pagination
     'voyti.view.filter_button' => 'Фильтр',
+    'voyti.view.pagination_navigation' => 'Навигация по страницам',
     'voyti.view.previous' => 'Предыдущая',
     'voyti.view.next' => 'Следующая',
 
@@ -289,6 +290,7 @@ return [
     'voyti.view.update_profile_link' => 'Редактировать профиль',
     'voyti.view.send_button' => 'Отправить',
     'voyti.view.connect_button' => 'Привязать',
+    'voyti.view.disconnect_button' => 'Отключить',
 
     // Confirmation prompts
     'voyti.view.delete_user_confirm' => 'Удалить этого пользователя?',

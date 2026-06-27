@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service\Auth;
 
+use Psr\EventDispatcher\EventDispatcherInterface;
+use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserSocialAccount;
+use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
 use YiiRocks\Voyti\ModuleConfig;
-use Yiisoft\User\CurrentUser;
-use YiiRocks\Voyti\Repository\UserSocialAccountRepository;
 use YiiRocks\Voyti\Repository\UserRepository;
+use YiiRocks\Voyti\Repository\UserSocialAccountRepository;
 use YiiRocks\Voyti\Service\ServiceResult;
+use Yiisoft\Security\Random;
 use Yiisoft\Session\SessionInterface;
+use Yiisoft\User\CurrentUser;
 
 final class UserSocialAuthenticateService
 {
@@ -20,10 +24,15 @@ final class UserSocialAuthenticateService
         private readonly UserRepository $userRepository,
         private readonly CurrentUser $currentUser,
         private readonly SessionInterface $session,
+        private readonly EventDispatcherInterface $eventDispatcher,
     ) {
     }
 
-    public function run(string $provider, string $clientId, array $userAttributes): ServiceResult
+    /**
+     * @param array<array-key, mixed> $userAttributes
+     * @param array<array-key, mixed> $serverParams
+     */
+    public function run(string $provider, string $clientId, array $userAttributes, array $serverParams = []): ServiceResult
     {
         if (!$this->config->enableSocialNetworkRegistration) {
             return ServiceResult::failure('Social network registration is disabled');
@@ -45,9 +54,6 @@ final class UserSocialAuthenticateService
 
         if ($account === null) {
             $account = $this->createAccount($provider, $clientId, $userAttributes);
-            if ($account === null) {
-                return ServiceResult::failure('Unable to create social network account');
-            }
         }
 
         if ($account->getUserId() !== null) {
@@ -60,16 +66,20 @@ final class UserSocialAuthenticateService
             }
 
             $this->currentUser->login($user);
-            $user->setLastLoginAt(time());
-            $user->setLastLoginIp($this->config->disableIpLogging ? '127.0.0.1' : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1'));
-            $user->save();
+            $this->updateLastLoginMetadata($user, $serverParams);
+            $this->eventDispatcher->dispatch(new AfterLoginEvent($user));
 
             $this->session->remove('oauth_client_data');
 
             return ServiceResult::success();
         }
 
-        $this->session->set('social_network_account_id', $account->getId());
+        $code = $account->getCode();
+        if ($code === null || $code === '') {
+            return ServiceResult::failure('Unable to prepare the social account connection');
+        }
+
+        $this->session->set('social_network_account_code', $code);
 
         return ServiceResult::success();
     }
@@ -77,7 +87,7 @@ final class UserSocialAuthenticateService
     /**
      * @param array $attributes
      */
-    private function createAccount(string $provider, string $clientId, array $attributes): ?UserSocialAccount
+    private function createAccount(string $provider, string $clientId, array $attributes): UserSocialAccount
     {
         $account = new UserSocialAccount();
         $account->setProvider($provider);
@@ -86,7 +96,8 @@ final class UserSocialAuthenticateService
         $email = $this->stringAttribute($attributes, 'email');
         $account->setUsername($username);
         $account->setEmail($email);
-        $account->setCode(json_encode($attributes, JSON_THROW_ON_ERROR));
+        $account->setCode(Random::string(32));
+        $account->setData(json_encode($attributes, JSON_THROW_ON_ERROR));
         $account->setCreatedAt(time());
 
         $email = $account->getEmail();
@@ -97,20 +108,47 @@ final class UserSocialAuthenticateService
             }
         }
 
-        if (!$this->userSocialAccountRepository->save($account)) {
-            return null;
+        $this->userSocialAccountRepository->save($account);
+
+        if ($account->getUserId() !== null) {
+            $user = $this->userRepository->findById($account->getUserId());
+            if ($user !== null) {
+                $account->connect($user);
+            }
         }
 
         return $account;
     }
 
     /**
-     * @param array<array-key, mixed> $attributes
+     * @param array<array-key, mixed> $serverParams
      */
-    private function stringAttribute(array $attributes, string $key): ?string
+    private function remoteAddr(array $serverParams): string
+    {
+        $remoteAddr = $serverParams['REMOTE_ADDR'] ?? null;
+
+        return is_string($remoteAddr) && $remoteAddr !== '' ? $remoteAddr : '127.0.0.1';
+    }
+
+    /**
+     * @param array<array-key, mixed> $attributes
+     *
+     * @return null|string
+     */
+    private function stringAttribute(array $attributes, string $key): string|null
     {
         $value = $attributes[$key] ?? null;
 
         return is_string($value) && $value !== '' ? $value : null;
+    }
+
+    /**
+     * @param array<array-key, mixed> $serverParams
+     */
+    private function updateLastLoginMetadata(User $user, array $serverParams): void
+    {
+        $user->setLastLoginAt(time());
+        $user->setLastLoginIp($this->config->disableIpLogging ? '127.0.0.1' : $this->remoteAddr($serverParams));
+        $user->save();
     }
 }

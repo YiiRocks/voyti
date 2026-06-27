@@ -10,6 +10,9 @@ final class SmsCodeGeneratorService
 {
 
 
+    /**
+     * @return numeric-string
+     */
     public function run(User $user): string
     {
         $code = (string)random_int(100000, 999999);

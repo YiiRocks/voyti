@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Factory;
 
-use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Service\MailService;
 
 final class MailFactory

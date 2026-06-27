@@ -9,16 +9,31 @@ use YiiRocks\Voyti\Entity\UserSessionHistory;
 /** @extends BaseRepository<UserSessionHistory> */
 final class UserSessionHistoryRepository extends BaseRepository
 {
+    /**
+     * @return UserSessionHistory[]
+     *
+     * @psalm-return list<UserSessionHistory>
+     */
     public function findAllSessionHistory(): array
     {
         return $this->findAll(UserSessionHistory::class);
     }
 
+    /**
+     * @return UserSessionHistory[]
+     *
+     * @psalm-return list<UserSessionHistory>
+     */
     public function findByUserId(int $userId): array
     {
         return $this->findAll(UserSessionHistory::class, ['user_id' => $userId]);
     }
 
+    /**
+     * @return (array|object)[]
+     *
+     * @psalm-return array<array|object>
+     */
     public function search(array $filters = []): array
     {
         $query = $this->query(UserSessionHistory::class);

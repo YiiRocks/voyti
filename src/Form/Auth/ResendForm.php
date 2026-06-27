@@ -28,6 +28,11 @@ final class ResendForm extends FormModel implements RulesProviderInterface
     ) {
     }
 
+    /**
+     * @return string[]
+     *
+     * @psalm-return array{email: string}
+     */
     public function getAttributeLabels(): array
     {
         return [
@@ -35,6 +40,11 @@ final class ResendForm extends FormModel implements RulesProviderInterface
         ];
     }
 
+    /**
+     * @return string
+     *
+     * @psalm-return 'resend'
+     */
     #[\Override]
     public function getFormName(): string
     {

@@ -14,7 +14,7 @@ $this->setTitle($title);
 
 echo Html::div()->class('card shadow-sm')->open();
     echo Html::div()->class('card-body text-center py-5')->open();
-        echo Html::H1(Html::encode($title));
+        echo Html::H1($title);
 
         echo Html::a($translator->translate('voyti.view.go_home', category: 'voyti'), '/')->class('btn', 'btn-primary');
     echo Html::div()->close();

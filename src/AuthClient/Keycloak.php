@@ -6,16 +6,22 @@ namespace YiiRocks\Voyti\AuthClient;
 
 final class Keycloak extends AbstractAuthClient
 {
-    public function __construct(
-        string $baseUrl = '',
-        string $realm = '',
-    ) {
+    /**
+     * @param array<string, mixed> $config
+     */
+    public function __construct(array $config = [])
+    {
+        $baseUrl = isset($config['baseUrl']) && is_string($config['baseUrl']) ? rtrim($config['baseUrl'], '/') : '';
+        $realm = isset($config['realm']) && is_string($config['realm']) ? trim($config['realm']) : '';
+
         parent::__construct(
-            "{$baseUrl}/realms/{$realm}/protocol/openid-connect/auth",
             'keycloak',
-            'openid userProfile email',
             'Keycloak',
-            "{$baseUrl}/realms/{$realm}/protocol/openid-connect/userToken",
+            "{$baseUrl}/realms/{$realm}/protocol/openid-connect/auth",
+            "{$baseUrl}/realms/{$realm}/protocol/openid-connect/token",
+            "{$baseUrl}/realms/{$realm}/protocol/openid-connect/userinfo",
+            'openid email profile',
+            $config,
         );
     }
 }

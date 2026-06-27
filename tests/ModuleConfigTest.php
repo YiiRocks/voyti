@@ -6,7 +6,6 @@ namespace YiiRocks\Voyti\tests;
 
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Voyti;
 
 final class ModuleConfigTest extends TestCase
 {
@@ -17,32 +16,21 @@ final class ModuleConfigTest extends TestCase
             recaptchaVersion: 'v2',
             enableSessionHistory: true,
             numberSessionHistory: 100,
-            timeoutSessionHistory: 3600,
             enableGdprCompliance: true,
-            gdprPrivacyPolicyUrl: 'https://example.com/privacy',
             gdprExportProperties: ['email'],
             gdprAnonymizePrefix: 'ANON',
-            gdprRequireConsentToAll: true,
-            gdprConsentMessage: 'Do you consent?',
-            gdprConsentExcludedUrls: ['/admin'],
             enableTwoFactorAuthentication: true,
             twoFactorAuthenticationForcedPermissions: ['admin'],
-            twoFactorAuthenticationValidators: ['email'],
-            twoFactorAuthenticationCycles: 2,
-            enableAutoLogin: false,
             enableRegistration: false,
             enableSocialNetworkRegistration: false,
-            sendWelcomeMailAfterSocialNetworkRegistration: false,
             enableEmailConfirmation: false,
-            enableFlashMessages: false,
             enableSwitchIdentities: false,
             switchIdentitySessionKey: 'custom_key',
-            loginPath: '/custom/login',
-            accountSettingsPath: '/custom/settings/account',
+            loginRoute: 'custom/login',
+            accountSettingsRoute: 'custom/settings-account',
             mailAdminOnRegister: 'admin@example.com',
             enablePasswordExpiration: true,
             generatePasswords: true,
-            allowUnconfirmedEmailLogin: true,
             allowPasswordRecovery: false,
             allowAdminPasswordRecovery: false,
             allowAccountDelete: true,
@@ -50,51 +38,35 @@ final class ModuleConfigTest extends TestCase
             rememberLoginLifespan: 3600,
             tokenConfirmationLifespan: 1800,
             tokenRecoveryLifespan: 900,
-            administrators: ['admin'],
             administratorPermissionName: 'admin',
             profileVisibility: 1,
             maxPasswordAge: 90,
-            restrictUserPermissionAssignment: true,
             disableIpLogging: true,
-            minPasswordRequirements: ['lower' => 1],
             viewPath: '/custom/views',
             mailPath: '/custom/mail',
             mailParams: ['fromEmail' => 'admin@example.com'],
             enableRestApi: true,
-            authenticatorClass: 'Yiisoft\\Auth\\Method\\Session',
             adminRestPrefix: 'admin/api/v2',
-            adminRestRoutes: ['GET users' => 'index'],
         );
 
         $this->assertSame('v2', $config->recaptchaVersion);
         $this->assertTrue($config->enableSessionHistory);
         $this->assertSame(100, $config->numberSessionHistory);
-        $this->assertSame(3600, $config->timeoutSessionHistory);
         $this->assertTrue($config->enableGdprCompliance);
-        $this->assertSame('https://example.com/privacy', $config->gdprPrivacyPolicyUrl);
         $this->assertSame(['email'], $config->gdprExportProperties);
         $this->assertSame('ANON', $config->gdprAnonymizePrefix);
-        $this->assertTrue($config->gdprRequireConsentToAll);
-        $this->assertSame('Do you consent?', $config->gdprConsentMessage);
-        $this->assertSame(['/admin'], $config->gdprConsentExcludedUrls);
         $this->assertTrue($config->enableTwoFactorAuthentication);
         $this->assertSame(['admin'], $config->twoFactorAuthenticationForcedPermissions);
-        $this->assertSame(['email'], $config->twoFactorAuthenticationValidators);
-        $this->assertSame(2, $config->twoFactorAuthenticationCycles);
-        $this->assertFalse($config->enableAutoLogin);
         $this->assertFalse($config->enableRegistration);
         $this->assertFalse($config->enableSocialNetworkRegistration);
-        $this->assertFalse($config->sendWelcomeMailAfterSocialNetworkRegistration);
         $this->assertFalse($config->enableEmailConfirmation);
-        $this->assertFalse($config->enableFlashMessages);
         $this->assertFalse($config->enableSwitchIdentities);
         $this->assertSame('custom_key', $config->switchIdentitySessionKey);
-        $this->assertSame('/custom/login', $config->loginPath);
-        $this->assertSame('/custom/settings/account', $config->accountSettingsPath);
+        $this->assertSame('custom/login', $config->loginRoute);
+        $this->assertSame('custom/settings-account', $config->accountSettingsRoute);
         $this->assertSame('admin@example.com', $config->mailAdminOnRegister);
         $this->assertTrue($config->enablePasswordExpiration);
         $this->assertTrue($config->generatePasswords);
-        $this->assertTrue($config->allowUnconfirmedEmailLogin);
         $this->assertFalse($config->allowPasswordRecovery);
         $this->assertFalse($config->allowAdminPasswordRecovery);
         $this->assertTrue($config->allowAccountDelete);
@@ -102,20 +74,15 @@ final class ModuleConfigTest extends TestCase
         $this->assertSame(3600, $config->rememberLoginLifespan);
         $this->assertSame(1800, $config->tokenConfirmationLifespan);
         $this->assertSame(900, $config->tokenRecoveryLifespan);
-        $this->assertSame(['admin'], $config->administrators);
         $this->assertSame('admin', $config->administratorPermissionName);
         $this->assertSame(1, $config->profileVisibility);
         $this->assertSame(90, $config->maxPasswordAge);
-        $this->assertTrue($config->restrictUserPermissionAssignment);
         $this->assertTrue($config->disableIpLogging);
-        $this->assertSame(['lower' => 1], $config->minPasswordRequirements);
         $this->assertSame('/custom/views', $config->viewPath);
         $this->assertSame('/custom/mail', $config->mailPath);
         $this->assertSame(['fromEmail' => 'admin@example.com'], $config->mailParams);
         $this->assertTrue($config->enableRestApi);
-        $this->assertSame('Yiisoft\\Auth\\Method\\Session', $config->authenticatorClass);
         $this->assertSame('admin/api/v2', $config->adminRestPrefix);
-        $this->assertSame(['GET users' => 'index'], $config->adminRestRoutes);
     }
     public function testDefaultValues(): void
     {
@@ -124,9 +91,7 @@ final class ModuleConfigTest extends TestCase
         $this->assertNull($config->recaptchaVersion);
         $this->assertFalse($config->enableSessionHistory);
         $this->assertFalse($config->numberSessionHistory);
-        $this->assertFalse($config->timeoutSessionHistory);
         $this->assertFalse($config->enableGdprCompliance);
-        $this->assertNull($config->gdprPrivacyPolicyUrl);
         $this->assertSame([
             'email',
             'username',
@@ -138,27 +103,18 @@ final class ModuleConfigTest extends TestCase
             'userProfile.bio',
         ], $config->gdprExportProperties);
         $this->assertSame('GDPR', $config->gdprAnonymizePrefix);
-        $this->assertFalse($config->gdprRequireConsentToAll);
-        $this->assertNull($config->gdprConsentMessage);
-        $this->assertSame(['user/settings/*'], $config->gdprConsentExcludedUrls);
         $this->assertFalse($config->enableTwoFactorAuthentication);
         $this->assertSame([], $config->twoFactorAuthenticationForcedPermissions);
-        $this->assertSame([], $config->twoFactorAuthenticationValidators);
-        $this->assertSame(1, $config->twoFactorAuthenticationCycles);
-        $this->assertTrue($config->enableAutoLogin);
         $this->assertTrue($config->enableRegistration);
         $this->assertTrue($config->enableSocialNetworkRegistration);
-        $this->assertTrue($config->sendWelcomeMailAfterSocialNetworkRegistration);
         $this->assertTrue($config->enableEmailConfirmation);
-        $this->assertTrue($config->enableFlashMessages);
         $this->assertTrue($config->enableSwitchIdentities);
-        $this->assertSame(Voyti::SWITCH_IDENTITY_SESSION_KEY, $config->switchIdentitySessionKey);
-        $this->assertSame('/user/login', $config->loginPath);
-        $this->assertSame('/user/settings/account', $config->accountSettingsPath);
+        $this->assertSame('voyti_original_user', $config->switchIdentitySessionKey);
+        $this->assertSame('voyti/login', $config->loginRoute);
+        $this->assertSame('voyti/settings-account', $config->accountSettingsRoute);
         $this->assertNull($config->mailAdminOnRegister);
         $this->assertFalse($config->enablePasswordExpiration);
         $this->assertFalse($config->generatePasswords);
-        $this->assertFalse($config->allowUnconfirmedEmailLogin);
         $this->assertTrue($config->allowPasswordRecovery);
         $this->assertTrue($config->allowAdminPasswordRecovery);
         $this->assertFalse($config->allowAccountDelete);
@@ -166,15 +122,18 @@ final class ModuleConfigTest extends TestCase
         $this->assertSame(1209600, $config->rememberLoginLifespan);
         $this->assertSame(86400, $config->tokenConfirmationLifespan);
         $this->assertSame(21600, $config->tokenRecoveryLifespan);
-        $this->assertSame([], $config->administrators);
         $this->assertNull($config->administratorPermissionName);
         $this->assertSame(0, $config->profileVisibility);
         $this->assertNull($config->maxPasswordAge);
-        $this->assertFalse($config->restrictUserPermissionAssignment);
         $this->assertFalse($config->disableIpLogging);
-        $this->assertSame(['lower' => 1, 'digit' => 1, 'upper' => 1], $config->minPasswordRequirements);
-        $this->assertSame(Voyti::VIEWS_PATH, $config->viewPath);
-        $this->assertSame(Voyti::MAIL_PATH, $config->mailPath);
+        $this->assertSame(
+            str_replace('\\', '/', dirname(__DIR__) . '/src/resources/views/bootstrap5'),
+            str_replace('\\', '/', $config->viewPath),
+        );
+        $this->assertSame(
+            str_replace('\\', '/', dirname(__DIR__) . '/src/resources/mail'),
+            str_replace('\\', '/', $config->mailPath),
+        );
         $this->assertSame([
             'fromEmail' => 'no-reply@example.com',
             'welcomeMailSubject' => 'Welcome to {app}',
@@ -184,15 +143,50 @@ final class ModuleConfigTest extends TestCase
             'twoFactorMailSubject' => 'Code for two factor authentication on {app}',
         ], $config->mailParams);
         $this->assertFalse($config->enableRestApi);
-        $this->assertSame('Yiisoft\\Auth\\Method\\QueryParam', $config->authenticatorClass);
         $this->assertSame('api/v1', $config->adminRestPrefix);
+    }
+
+    public function testFromArray(): void
+    {
+        $config = ModuleConfig::fromArray([
+            'enableRestApi' => true,
+            'adminRestPrefix' => 'admin/api',
+            'socialNetworkClients' => [
+                'github' => [
+                    'clientId' => 'client-id',
+                    'clientSecret' => 'client-secret',
+                ],
+            ],
+        ]);
+
+        $this->assertTrue($config->enableRestApi);
+        $this->assertSame('admin/api', $config->adminRestPrefix);
         $this->assertSame([
-            'GET users' => 'index',
-            'POST users' => 'create',
-            'PUT,PATCH users/{id}' => 'update',
-            'GET users/{id}' => 'view',
-            'DELETE users/{id}' => 'delete',
-        ], $config->adminRestRoutes);
+            'github' => [
+                'clientId' => 'client-id',
+                'clientSecret' => 'client-secret',
+            ],
+        ], $config->socialNetworkClients);
+        $this->assertTrue($config->enableRegistration);
+    }
+
+    public function testFromArrayIgnoresLegacyUnknownOptions(): void
+    {
+        $config = ModuleConfig::fromArray([
+            'autoRegisterRoutes' => false,
+            'enableRestApi' => true,
+        ]);
+
+        $this->assertTrue($config->enableRestApi);
+        $this->assertTrue($config->enableRegistration);
+    }
+
+    public function testPackageParamsExposeDefaults(): void
+    {
+        $params = require dirname(__DIR__) . '/config/params.php';
+
+        $this->assertSame(ModuleConfig::defaults(), $params['yiirocks/voyti']);
+        $this->assertArrayNotHasKey(ModuleConfig::class, $params);
     }
 
     public function testHasNumberSessionHistory(): void
@@ -208,20 +202,5 @@ final class ModuleConfigTest extends TestCase
 
         $config = new ModuleConfig(numberSessionHistory: 5);
         $this->assertTrue($config->hasNumberSessionHistory());
-    }
-
-    public function testHasTimeoutSessionHistory(): void
-    {
-        $config = new ModuleConfig();
-        $this->assertFalse($config->hasTimeoutSessionHistory());
-
-        $config = new ModuleConfig(timeoutSessionHistory: false);
-        $this->assertFalse($config->hasTimeoutSessionHistory());
-
-        $config = new ModuleConfig(timeoutSessionHistory: 0);
-        $this->assertFalse($config->hasTimeoutSessionHistory());
-
-        $config = new ModuleConfig(timeoutSessionHistory: 3600);
-        $this->assertTrue($config->hasTimeoutSessionHistory());
     }
 }

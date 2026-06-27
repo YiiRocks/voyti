@@ -57,6 +57,11 @@ final class UserToken extends ActiveRecord
         return $this->user_id;
     }
 
+    /**
+     * @return string[]
+     *
+     * @psalm-return list{'user_id', 'code', 'type'}
+     */
     #[\Override]
     public function primaryKey(): array
     {
@@ -83,6 +88,11 @@ final class UserToken extends ActiveRecord
         $this->user_id = $userId;
     }
 
+    /**
+     * @return string
+     *
+     * @psalm-return '{{%user_token}}'
+     */
     #[\Override]
     public function tableName(): string
     {

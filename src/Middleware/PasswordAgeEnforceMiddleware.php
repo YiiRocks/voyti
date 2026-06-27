@@ -11,9 +11,10 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\ModuleConfig;
+use Yiisoft\Router\UrlGeneratorInterface;
+use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
-use Yiisoft\Translator\TranslatorInterface;
 
 final class PasswordAgeEnforceMiddleware implements MiddlewareInterface
 {
@@ -22,6 +23,7 @@ final class PasswordAgeEnforceMiddleware implements MiddlewareInterface
         private readonly ModuleConfig $config,
         private readonly TranslatorInterface $translator,
         private readonly ResponseFactoryInterface $responseFactory,
+        private readonly UrlGeneratorInterface $url,
     ) {
     }
 
@@ -42,7 +44,7 @@ final class PasswordAgeEnforceMiddleware implements MiddlewareInterface
         $passwordChangedAt = $user->getPasswordChangedAt();
         if ($passwordChangedAt !== null && (time() - $passwordChangedAt) >= $maxPasswordAge * 86400) {
             $response = $this->responseFactory->createResponse(302);
-            return $response->withHeader('Location', $this->config->accountSettingsPath);
+            return $response->withHeader('Location', $this->url->generate($this->config->accountSettingsRoute));
         }
 
         return $handler->handle($request);

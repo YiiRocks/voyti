@@ -26,12 +26,20 @@ final class RoleController extends AbstractAuthItemController
         parent::__construct($translator, $viewRenderer, $authHelper, $url, $validator, $authItemEditionService);
     }
 
+    /**
+     * @return RoleForm
+     */
     #[\Override]
     protected function createForm(): AbstractAuthItemForm
     {
         return new RoleForm($this->translator);
     }
 
+    /**
+     * @return string
+     *
+     * @psalm-return 'role'
+     */
     #[\Override]
     protected function getItemType(): string
     {

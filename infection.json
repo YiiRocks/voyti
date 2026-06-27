@@ -12,7 +12,7 @@
         ]
     },
     "phpUnit": {
-        "customPath": "vendor/bin/phpunit"
+        "customPath": "bin/phpunit"
     },
     "initialTestsPhpOptions": "-d extension=pdo_sqlite -d pcov.enabled=1",
     "minMsi": 100,

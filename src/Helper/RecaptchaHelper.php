@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Helper;
 
 use YiiRocks\Recaptcha\RecaptchaV2Field;
+use YiiRocks\Recaptcha\RecaptchaV3Badge;
 use YiiRocks\Recaptcha\RecaptchaV3Field;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\FormModel\FormModelInterface;
@@ -40,6 +41,7 @@ final class RecaptchaHelper
             return '';
         }
         return RecaptchaV3Field::field($form, $attribute)
+            ->withBadge(RecaptchaV3Badge::Hidden)
             ->withAction('voyti_' . $formName)
             ->render();
     }

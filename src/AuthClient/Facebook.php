@@ -6,14 +6,49 @@ namespace YiiRocks\Voyti\AuthClient;
 
 final class Facebook extends AbstractAuthClient
 {
-    public function __construct()
+    /**
+     * @param array<string, mixed> $config
+     */
+    public function __construct(array $config = [])
     {
         parent::__construct(
-            'https://www.facebook.com/dialog/oauth',
             'facebook',
-            'email',
             'Facebook',
-            'https://graph.facebook.com/v2.0/oauth/access_token',
+            'https://www.facebook.com/v19.0/dialog/oauth',
+            'https://graph.facebook.com/v19.0/oauth/access_token',
+            'https://graph.facebook.com/me',
+            'email',
+            $config,
         );
+    }
+
+    /**
+     * @param array<string, mixed> $tokenData
+     *
+     * @return string[]
+     *
+     * @psalm-return array<string, string>
+     */
+    #[\Override]
+    protected function userInfoHeaders(array $tokenData): array
+    {
+        return [
+            'Accept' => 'application/json',
+            'User-Agent' => 'YiiRocks Voyti',
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $tokenData
+     *
+     * @return array<string, string>
+     */
+    #[\Override]
+    protected function userInfoQuery(array $tokenData): array
+    {
+        return [
+            'access_token' => (string) ($tokenData['access_token'] ?? ''),
+            'fields' => 'id,name,email',
+        ];
     }
 }

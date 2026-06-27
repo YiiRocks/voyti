@@ -19,7 +19,9 @@ final class GdprDeleteForm extends FormModel
     }
 
     /**
-     * @return array<string, string>
+     * @return string[]
+     *
+     * @psalm-return array{password: string, consent: string}
      */
     public function getAttributeLabels(): array
     {
@@ -27,6 +29,17 @@ final class GdprDeleteForm extends FormModel
             'password' => $this->translator->translate('voyti.view.current_password_label', category: 'voyti'),
             'consent' => $this->translator->translate('voyti.view.gdpr.delete_confirm_label', category: 'voyti'),
         ];
+    }
+
+    /**
+     * @return string
+     *
+     * @psalm-return 'gdpr-delete'
+     */
+    #[\Override]
+    public function getFormName(): string
+    {
+        return 'gdpr-delete';
     }
 
     #[\Override]
@@ -38,11 +51,5 @@ final class GdprDeleteForm extends FormModel
             return $labels[$property];
         }
         return parent::getPropertyLabel($property);
-    }
-
-    #[\Override]
-    public function getFormName(): string
-    {
-        return 'gdpr-delete';
     }
 }

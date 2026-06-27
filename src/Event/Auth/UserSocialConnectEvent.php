@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Event\Auth;
 
-use YiiRocks\Voyti\Entity\UserSocialAccount;
 use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\Entity\UserSocialAccount;
 
 final class UserSocialConnectEvent
 {

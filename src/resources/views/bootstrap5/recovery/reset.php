@@ -2,13 +2,14 @@
 
 declare(strict_types=1);
 
+use YiiRocks\Voyti\Form\Auth\RecoveryForm;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 
 /**
- * @var YiiRocks\Voyti\Form\Auth\RecoveryForm $model
+ * @var RecoveryForm $model
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
  * @var string $csrf
@@ -17,19 +18,19 @@ use Yiisoft\Translator\TranslatorInterface;
 $this->setTitle($translator->translate('voyti.view.recovery.reset_title', category: 'voyti'));
 
 echo Html::div()->class('voyti-reset')->open();
-    echo Html::H1($translator->translate('voyti.view.recovery.reset_title', category: 'voyti'));
+echo Html::H1($translator->translate('voyti.view.recovery.reset_title', category: 'voyti'));
 
-    echo Html::form()
-        ->post()
-        ->csrf($csrf)
-        ->open();
+echo Html::form()
+    ->post()
+    ->csrf($csrf)
+    ->open();
 
-    echo Field::password($model, 'password');
+echo Field::password($model, 'password');
 
-    echo Field::buttonGroup()
-        ->buttons(
-            Html::submitButton($translator->translate('voyti.view.recovery.reset_button', category: 'voyti'))
-        );
+echo Field::buttonGroup()
+    ->buttons(
+        Html::submitButton($translator->translate('voyti.view.recovery.reset_button', category: 'voyti'))
+    );
 
-    echo Html::form()->close();
+echo Html::form()->close();
 echo Html::div()->close();

@@ -12,14 +12,15 @@ use YiiRocks\Voyti\Form\Auth\RegistrationForm;
 use YiiRocks\Voyti\Form\Auth\ResendForm;
 use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Repository\UserRepository;
+use YiiRocks\Voyti\Repository\UserTokenRepository;
+use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\User\AccountConfirmationService;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\RegisterService;
 use YiiRocks\Voyti\Service\User\ResendConfirmationService;
-use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Http\Method;
+use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\ValidatorInterface;
@@ -27,8 +28,8 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 final class RegistrationController
 {
-    use RenderTrait;
     use InputDataTrait;
+    use RenderTrait;
 
     public function __construct(
         private readonly TranslatorInterface $translator,
@@ -43,13 +44,9 @@ final class RegistrationController
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly UrlGeneratorInterface $url,
         private readonly ModuleConfig $config,
+        private readonly PendingSocialAccountService $pendingSocialAccountService,
         private readonly HydratorInterface $hydrator,
     ) {
-    }
-
-    protected function viewPath(): string
-    {
-        return $this->config->viewPath;
     }
 
     public function confirm(ServerRequestInterface $request, int $id, string $code): ResponseInterface
@@ -73,7 +70,15 @@ final class RegistrationController
 
     public function connect(ServerRequestInterface $request, string $code): ResponseInterface
     {
-        return $this->renderView('registration/connect', ['code' => $code, 'config' => $this->config]);
+        $account = $this->pendingSocialAccountService->useCode($code);
+        if ($account === null) {
+            return $this->renderError('voyti.settings.network_not_found');
+        }
+
+        return $this->renderView('registration/connect', [
+            'account' => $account,
+            'config' => $this->config,
+        ]);
     }
 
     public function register(ServerRequestInterface $request): ResponseInterface
@@ -99,6 +104,10 @@ final class RegistrationController
                 ]);
 
                 if ($serviceResult->isSuccess()) {
+                    $user = $this->userRepository->findByEmail($form->email);
+                    if ($user !== null) {
+                        $this->pendingSocialAccountService->connect($user);
+                    }
                     $this->eventDispatcher->dispatch(new FormEvent($form));
                     return $this->renderView('shared/message', [
                         'title' => $this->translator->translate($serviceResult->getMessage(), category: 'voyti'),
@@ -140,5 +149,10 @@ final class RegistrationController
         }
 
         return $this->renderView('registration/resend', ['model' => $form, 'config' => $this->config]);
+    }
+
+    protected function viewPath(): string
+    {
+        return $this->config->viewPath;
     }
 }

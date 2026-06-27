@@ -78,6 +78,11 @@ final class UserSessionHistory extends ActiveRecord
         $this->user_id = $userId;
     }
 
+    /**
+     * @return string
+     *
+     * @psalm-return '{{%user_session_history}}'
+     */
     #[\Override]
     public function tableName(): string
     {

@@ -32,6 +32,8 @@ final class RecoveryFormTest extends TestCase
 
         $result = $validator->validate($form);
         $this->assertFalse($result->isValid());
+        $this->assertFalse($result->isPropertyValid('email'));
+        $this->assertTrue($result->isPropertyValid('password'));
     }
 
     public function testEmptyEmail(): void
@@ -49,8 +51,7 @@ final class RecoveryFormTest extends TestCase
     public function testEmptyPassword(): void
     {
         $validator = new Validator();
-        $form = $this->createForm();
-        $form->email = 'user@example.com';
+        $form = $this->createForm(scenario: RecoveryForm::SCENARIO_RESET);
         $form->password = '';
 
         $result = $validator->validate($form);
@@ -81,7 +82,7 @@ final class RecoveryFormTest extends TestCase
         $rules = $form->getRules();
         /** @var array<string, mixed> $rules */
         $this->assertArrayHasKey('email', $rules);
-        $this->assertArrayHasKey('password', $rules);
+        $this->assertArrayNotHasKey('password', $rules);
     }
 
     public function testGetRulesWithRequestScenarioAndRecaptchaV2(): void
@@ -127,8 +128,8 @@ final class RecoveryFormTest extends TestCase
         $form = $this->createForm(scenario: RecoveryForm::SCENARIO_RESET);
         $rules = $form->getRules();
         /** @var array<string, mixed> $rules */
-        $this->assertArrayHasKey('email', $rules);
         $this->assertArrayHasKey('password', $rules);
+        $this->assertArrayNotHasKey('email', $rules);
         $this->assertArrayNotHasKey('gRecaptchaResponse', $rules);
     }
 
@@ -137,18 +138,17 @@ final class RecoveryFormTest extends TestCase
         $validator = new Validator();
         $form = $this->createForm();
         $form->email = 'not-email';
-        $form->password = 'newsecret';
 
         $result = $validator->validate($form);
         $this->assertFalse($result->isValid());
         $this->assertFalse($result->isPropertyValid('email'));
+        $this->assertTrue($result->isPropertyValid('password'));
     }
 
     public function testLongPassword(): void
     {
         $validator = new Validator();
-        $form = $this->createForm();
-        $form->email = 'user@example.com';
+        $form = $this->createForm(scenario: RecoveryForm::SCENARIO_RESET);
         $form->password = str_repeat('a', 73);
 
         $result = $validator->validate($form);
@@ -185,8 +185,7 @@ final class RecoveryFormTest extends TestCase
     public function testShortPassword(): void
     {
         $validator = new Validator();
-        $form = $this->createForm();
-        $form->email = 'user@example.com';
+        $form = $this->createForm(scenario: RecoveryForm::SCENARIO_RESET);
         $form->password = '12345';
 
         $result = $validator->validate($form);
@@ -194,11 +193,20 @@ final class RecoveryFormTest extends TestCase
         $this->assertFalse($result->isPropertyValid('password'));
     }
 
-    public function testValidData(): void
+    public function testValidRequestData(): void
     {
         $validator = new Validator();
         $form = $this->createForm();
         $form->email = 'user@example.com';
+
+        $result = $validator->validate($form);
+        $this->assertTrue($result->isValid());
+    }
+
+    public function testValidResetData(): void
+    {
+        $validator = new Validator();
+        $form = $this->createForm(scenario: RecoveryForm::SCENARIO_RESET);
         $form->password = 'newsecret';
 
         $result = $validator->validate($form);

@@ -9,7 +9,6 @@ use YiiRocks\Recaptcha\RecaptchaV3Rule;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
-use Yiisoft\Validator\Helper\ObjectParser;
 use Yiisoft\Validator\Rule\Email;
 use Yiisoft\Validator\Rule\Length;
 use Yiisoft\Validator\Rule\Required;
@@ -20,14 +19,10 @@ final class RecoveryForm extends FormModel implements RulesProviderInterface
     public const SCENARIO_REQUEST = 'request';
     public const SCENARIO_RESET = 'reset';
 
-    #[Required]
-    #[Email]
     public string $email = '';
 
     public string $gRecaptchaResponse = '';
 
-    #[Required]
-    #[Length(min: 6, max: 72)]
     public string $password = '';
 
     public function __construct(
@@ -38,7 +33,9 @@ final class RecoveryForm extends FormModel implements RulesProviderInterface
     }
 
     /**
-     * @return array<string, string>
+     * @return string[]
+     *
+     * @psalm-return array{email: string, password: string}
      */
     public function getAttributeLabels(): array
     {
@@ -46,6 +43,17 @@ final class RecoveryForm extends FormModel implements RulesProviderInterface
             'email' => $this->translator->translate('voyti.view.email_label', category: 'voyti'),
             'password' => $this->translator->translate('voyti.view.new_password_label', category: 'voyti'),
         ];
+    }
+
+    /**
+     * @return string
+     *
+     * @psalm-return 'recovery'
+     */
+    #[\Override]
+    public function getFormName(): string
+    {
+        return 'recovery';
     }
 
     #[\Override]
@@ -60,16 +68,23 @@ final class RecoveryForm extends FormModel implements RulesProviderInterface
     }
 
     #[\Override]
-    public function getFormName(): string
-    {
-        return 'recovery';
-    }
-
-    #[\Override]
     public function getRules(): iterable
     {
-        $parser = new ObjectParser($this);
-        $rules = $parser->getRules();
+        $rules = [];
+
+        if ($this->scenario === self::SCENARIO_REQUEST) {
+            $rules['email'] = [
+                new Required(),
+                new Email(),
+            ];
+        }
+
+        if ($this->scenario === self::SCENARIO_RESET) {
+            $rules['password'] = [
+                new Required(),
+                new Length(min: 6, max: 72),
+            ];
+        }
 
         if ($this->config->recaptchaVersion !== null
             && $this->scenario === self::SCENARIO_REQUEST

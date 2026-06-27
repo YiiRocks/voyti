@@ -25,7 +25,9 @@ final class SettingsForm extends FormModel
     }
 
     /**
-     * @return array<string, string>
+     * @return string[]
+     *
+     * @psalm-return array{username: string, email: string, password: string, publicEmail: string, name: string, bio: string, currentPassword: string, authTfEnabled: string}
      */
     public function getAttributeLabels(): array
     {
@@ -41,6 +43,17 @@ final class SettingsForm extends FormModel
         ];
     }
 
+    /**
+     * @return string
+     *
+     * @psalm-return 'settings'
+     */
+    #[\Override]
+    public function getFormName(): string
+    {
+        return 'settings';
+    }
+
     #[\Override]
     public function getPropertyLabel(string $property): string
     {
@@ -50,12 +63,6 @@ final class SettingsForm extends FormModel
             return $labels[$property];
         }
         return parent::getPropertyLabel($property);
-    }
-
-    #[\Override]
-    public function getFormName(): string
-    {
-        return 'settings';
     }
 
     public function getUser(): ?User

@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service;
 
+use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\Entity\UserToken;
 use Yiisoft\Mailer\MailerInterface;
 use Yiisoft\Mailer\Message;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
-use YiiRocks\Voyti\Entity\UserToken;
-use YiiRocks\Voyti\Entity\User;
 
 final class MailService
 {
@@ -25,12 +25,9 @@ final class MailService
     ) {
     }
 
-    private function getMailSubject(string $key, string $default): string
-    {
-        $subject = $this->mailParams[$key] ?? $default;
-        return trim(str_replace('{app}', '', $subject));
-    }
-
+    /**
+     * @return true
+     */
     public function send(string $type, string $to, string $subject, string $view, array $params = []): bool
     {
         $from = $this->mailParams['fromEmail'] ?? 'no-reply@example.com';
@@ -149,6 +146,12 @@ final class MailService
                 'translator' => $this->translator,
             ],
         );
+    }
+
+    private function getMailSubject(string $key, string $default): string
+    {
+        $subject = $this->mailParams[$key] ?? $default;
+        return trim(str_replace('{app}', '', $subject));
     }
 
     /**

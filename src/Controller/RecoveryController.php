@@ -10,12 +10,12 @@ use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Form\Auth\RecoveryForm;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Repository\UserRepository;
+use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
 use YiiRocks\Voyti\Service\Password\ResetService;
-use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Http\Method;
+use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\ValidatorInterface;
@@ -38,11 +38,6 @@ final class RecoveryController
         private readonly ModuleConfig $config,
         private readonly HydratorInterface $hydrator,
     ) {
-    }
-
-    protected function viewPath(): string
-    {
-        return $this->config->viewPath;
     }
 
     public function request(ServerRequestInterface $request): ResponseInterface
@@ -104,5 +99,10 @@ final class RecoveryController
         }
 
         return $this->renderView('recovery/reset', ['model' => $form, 'errors' => $errors]);
+    }
+
+    protected function viewPath(): string
+    {
+        return $this->config->viewPath;
     }
 }

@@ -5,17 +5,17 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Service\User;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
+use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserProfile;
 use YiiRocks\Voyti\Entity\UserToken;
-use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Event\Auth\AfterRegisterEvent;
 use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\ModuleConfig;
-use Yiisoft\Security\PasswordHasher;
-use Yiisoft\Security\Random;
 use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\ServiceResult;
+use Yiisoft\Security\PasswordHasher;
+use Yiisoft\Security\Random;
 
 final class CreateService
 {

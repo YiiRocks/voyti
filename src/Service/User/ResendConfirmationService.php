@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service\User;
 
-use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Repository\UserTokenRepository;
-use Yiisoft\Security\Random;
 use YiiRocks\Voyti\Service\MailService;
+use Yiisoft\Security\Random;
 
 final class ResendConfirmationService
 {

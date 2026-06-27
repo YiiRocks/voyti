@@ -7,12 +7,12 @@ namespace YiiRocks\Voyti\Controller\api\v1;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Entity\User;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Helper\InputDataTrait;
-use Yiisoft\Security\PasswordHasher;
-use Yiisoft\Security\Random;
+use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\UserRepository;
 use Yiisoft\DataResponse\ResponseFactory\DataResponseFactoryInterface;
+use Yiisoft\Security\PasswordHasher;
+use Yiisoft\Security\Random;
 use Yiisoft\Translator\TranslatorInterface;
 
 final class AdminController

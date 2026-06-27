@@ -7,26 +7,29 @@ namespace YiiRocks\Voyti\Controller;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
+use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserProfile;
 use YiiRocks\Voyti\Event\Gdpr\GdprEvent;
 use YiiRocks\Voyti\Event\User\UserEvent;
+use YiiRocks\Voyti\Form\Settings\GdprConsentForm;
 use YiiRocks\Voyti\Form\Settings\GdprDeleteForm;
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Form\Settings\UserProfileForm;
 use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\ModuleConfig;
-use Yiisoft\Security\PasswordHasher;
-use Yiisoft\Security\Random;
 use YiiRocks\Voyti\Repository\UserProfileRepository;
+use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Repository\UserSocialAccountRepository;
 use YiiRocks\Voyti\Repository\UserTokenRepository;
-use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\EmailChangeService;
 use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
 use YiiRocks\Voyti\Strategy\EmailChangeStrategyFactory;
-use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Http\Method;
+use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
+use Yiisoft\Security\PasswordHasher;
+use Yiisoft\Security\Random;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
@@ -35,8 +38,8 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 final class SettingsController
 {
-    use RenderTrait;
     use InputDataTrait;
+    use RenderTrait;
 
     public function __construct(
         private readonly TranslatorInterface $translator,
@@ -49,6 +52,7 @@ final class SettingsController
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly UrlGeneratorInterface $url,
         private readonly ModuleConfig $config,
+        private readonly AuthClientRegistry $authClientRegistry,
         private readonly EmailChangeStrategyFactory $emailChangeStrategyFactory,
         private readonly QrCodeUriGeneratorService $twoFactorQrCodeService,
         private readonly EmailChangeService $emailChangeService,
@@ -56,11 +60,6 @@ final class SettingsController
         private readonly HydratorInterface $hydrator,
         private readonly CurrentUser $currentUser,
     ) {
-    }
-
-    protected function viewPath(): string
-    {
-        return $this->config->viewPath;
     }
 
     public function account(ServerRequestInterface $request): ResponseInterface
@@ -157,14 +156,12 @@ final class SettingsController
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated', category: 'voyti'), 'translator' => $this->translator]);
         }
 
-        $account = $this->userSocialAccountRepository->findByProviderAndClientId('', '');
-        if ($account === null) {
-            $accounts = $this->userSocialAccountRepository->findByUserId((int) ($identity->getId() ?? 0));
-            foreach ($accounts as $a) {
-                if ($a->getId() === $id) {
-                    $account = $a;
-                    break;
-                }
+        $account = null;
+        $accounts = $this->userSocialAccountRepository->findByUserId((int) ($identity->getId() ?? 0));
+        foreach ($accounts as $candidate) {
+            if ($candidate->getId() === $id) {
+                $account = $candidate;
+                break;
             }
         }
 
@@ -219,18 +216,28 @@ final class SettingsController
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_available', category: 'voyti'), 'translator' => $this->translator]);
         }
 
+        $form = new GdprConsentForm($this->translator);
         $identity = $this->currentUser->getIdentity();
         if (!($identity instanceof GuestIdentityInterface) && $request->getMethod() === Method::POST) {
+            $body = $this->parsedBody($request);
+            $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
             $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
             if ($user !== null) {
-                $user->setGdprConsent(true);
-                $user->setGdprConsentDate(time());
+                $user->setGdprConsent($form->consent);
+                $user->setGdprConsentDate($form->consent ? time() : null);
                 $user->save();
                 return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.gdpr_consent_saved', category: 'voyti'), 'translator' => $this->translator]);
             }
         }
 
-        return $this->renderView('settings/gdpr-consent', ['config' => $this->config]);
+        if (!($identity instanceof GuestIdentityInterface)) {
+            $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
+            if ($user !== null) {
+                $form->consent = $user->isGdprConsent();
+            }
+        }
+
+        return $this->renderView('settings/gdpr-consent', ['model' => $form]);
     }
 
     public function gdprDelete(ServerRequestInterface $request): ResponseInterface
@@ -272,7 +279,20 @@ final class SettingsController
         if ($identity instanceof GuestIdentityInterface) {
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated', category: 'voyti'), 'translator' => $this->translator]);
         }
-        return $this->renderView('settings/networks', ['user' => $identity]);
+
+        $accounts = $this->userSocialAccountRepository->findByUserId((int) ($identity->getId() ?? 0));
+        $connectedProviders = array_values(array_filter(array_map(
+            static fn (\YiiRocks\Voyti\Entity\UserSocialAccount $account): string => $account->getProvider(),
+            $accounts,
+        )));
+
+        return $this->renderView('settings/networks', [
+            'accounts' => $accounts,
+            'config' => $this->config,
+            'authClients' => $this->authClientRegistry,
+            'connectRouteName' => 'voyti/connect',
+            'excludedProviders' => $connectedProviders,
+        ]);
     }
 
     public function privacy(): ResponseInterface
@@ -281,50 +301,6 @@ final class SettingsController
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_available', category: 'voyti'), 'translator' => $this->translator]);
         }
         return $this->renderView('settings/privacy', ['config' => $this->config]);
-    }
-
-    public function userProfile(ServerRequestInterface $request): ResponseInterface
-    {
-        $identity = $this->currentUser->getIdentity();
-        if ($identity instanceof GuestIdentityInterface) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated', category: 'voyti'), 'translator' => $this->translator]);
-        }
-
-        $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
-        if ($user === null) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found', category: 'voyti'), 'translator' => $this->translator]);
-        }
-
-        $userProfile = $user->getProfile();
-        if ($userProfile === null) {
-            $userProfile = new UserProfile();
-            $userProfile->setUserId((int) ($user->getId() ?? 0));
-        }
-
-        $form = new UserProfileForm($this->translator);
-        $form->name = $userProfile->getName() ?? '';
-        $form->bio = $userProfile->getBio() ?? '';
-        $form->publicEmail = $userProfile->getPublicEmail() ?? '';
-
-        if ($request->getMethod() === Method::POST) {
-            $body = $this->parsedBody($request);
-            $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
-
-            $userProfile->setName($form->name);
-            $userProfile->setBio($form->bio);
-            $userProfile->setPublicEmail($form->publicEmail);
-
-            $userProfile->save();
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.profile_updated', category: 'voyti'), 'translator' => $this->translator]);
-        }
-
-        return $this->renderView('settings/profile', [
-            'model' => $form,
-            'user' => $user,
-            'userProfile' => $userProfile,
-            'errors' => [],
-            'config' => $this->config,
-        ]);
     }
 
     public function twoFactor(ServerRequestInterface $request): ResponseInterface
@@ -400,7 +376,56 @@ final class SettingsController
         return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.two_factor_enabled', category: 'voyti'), 'translator' => $this->translator]);
     }
 
-    private function exportValue(\YiiRocks\Voyti\Entity\User $user, string $property): mixed
+    public function userProfile(ServerRequestInterface $request): ResponseInterface
+    {
+        $identity = $this->currentUser->getIdentity();
+        if ($identity instanceof GuestIdentityInterface) {
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated', category: 'voyti'), 'translator' => $this->translator]);
+        }
+
+        $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
+        if ($user === null) {
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found', category: 'voyti'), 'translator' => $this->translator]);
+        }
+
+        $userProfile = $user->getProfile();
+        if ($userProfile === null) {
+            $userProfile = new UserProfile();
+            $userProfile->setUserId((int) ($user->getId() ?? 0));
+        }
+
+        $form = new UserProfileForm($this->translator);
+        $form->name = $userProfile->getName() ?? '';
+        $form->bio = $userProfile->getBio() ?? '';
+        $form->publicEmail = $userProfile->getPublicEmail() ?? '';
+
+        if ($request->getMethod() === Method::POST) {
+            $body = $this->parsedBody($request);
+            $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
+
+            $userProfile->setName($form->name);
+            $userProfile->setBio($form->bio);
+            $userProfile->setPublicEmail($form->publicEmail);
+
+            $userProfile->save();
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.profile_updated', category: 'voyti'), 'translator' => $this->translator]);
+        }
+
+        return $this->renderView('settings/profile', [
+            'model' => $form,
+            'user' => $user,
+            'userProfile' => $userProfile,
+            'errors' => [],
+            'config' => $this->config,
+        ]);
+    }
+
+    protected function viewPath(): string
+    {
+        return $this->config->viewPath;
+    }
+
+    private function exportValue(User $user, string $property): mixed
     {
         return match ($property) {
             'email' => $user->getEmail(),

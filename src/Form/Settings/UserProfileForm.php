@@ -19,7 +19,9 @@ final class UserProfileForm extends FormModel
     }
 
     /**
-     * @return array<string, string>
+     * @return string[]
+     *
+     * @psalm-return array{name: string, bio: string, publicEmail: string}
      */
     public function getAttributeLabels(): array
     {
@@ -28,6 +30,17 @@ final class UserProfileForm extends FormModel
             'bio' => $this->translator->translate('voyti.view.bio_label', category: 'voyti'),
             'publicEmail' => $this->translator->translate('voyti.view.public_email_label', category: 'voyti'),
         ];
+    }
+
+    /**
+     * @return string
+     *
+     * @psalm-return 'userProfile'
+     */
+    #[\Override]
+    public function getFormName(): string
+    {
+        return 'userProfile';
     }
 
     #[\Override]
@@ -39,11 +52,5 @@ final class UserProfileForm extends FormModel
             return $labels[$property];
         }
         return parent::getPropertyLabel($property);
-    }
-
-    #[\Override]
-    public function getFormName(): string
-    {
-        return 'userProfile';
     }
 }

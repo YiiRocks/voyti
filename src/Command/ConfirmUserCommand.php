@@ -31,6 +31,11 @@ final class ConfirmUserCommand extends Command
             ->addOption('id', null, InputOption::VALUE_OPTIONAL, 'ID');
     }
 
+    /**
+     * @return int
+     *
+     * @psalm-return 0|1
+     */
     #[\Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {

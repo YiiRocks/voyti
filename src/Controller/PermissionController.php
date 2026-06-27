@@ -26,12 +26,20 @@ final class PermissionController extends AbstractAuthItemController
         parent::__construct($translator, $viewRenderer, $authHelper, $url, $validator, $authItemEditionService);
     }
 
+    /**
+     * @return PermissionForm
+     */
     #[\Override]
     protected function createForm(): AbstractAuthItemForm
     {
         return new PermissionForm($this->translator);
     }
 
+    /**
+     * @return string
+     *
+     * @psalm-return 'permission'
+     */
     #[\Override]
     protected function getItemType(): string
     {
