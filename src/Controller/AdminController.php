@@ -8,7 +8,6 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Entity\UserProfile;
-use YiiRocks\Voyti\Entity\UserSessionHistory;
 use YiiRocks\Voyti\Form\Auth\RegistrationForm;
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Form\Settings\UserProfileForm;

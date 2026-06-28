@@ -35,6 +35,7 @@ use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\Password\ExpireService;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
 use YiiRocks\Voyti\Service\Password\ResetService;
+use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\Service\Rbac\UpdateAssignmentsService;
 use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
@@ -83,6 +84,7 @@ final class ControllerHarness
     public readonly Aliases $aliases;
     public readonly AuthHelper $authHelper;
     public readonly CurrentUser $currentUser;
+    public readonly RememberMeCookieService $rememberMeCookieService;
     public readonly EmailChangeService $emailChangeService;
     public readonly EmailChangeStrategyFactory $emailChangeStrategyFactory;
     public readonly EventCaptureDispatcher $eventDispatcher;
@@ -169,9 +171,12 @@ final class ControllerHarness
         $this->emailChangeStrategyFactory = new EmailChangeStrategyFactory($this->userTokenFactory, $this->mailFactory);
         $this->emailChangeService = new EmailChangeService($this->moduleConfig, $this->userTokens, $this->users);
         $this->qrCodeUriGeneratorService = new QrCodeUriGeneratorService();
-        $this->currentUser = new CurrentUser(
+        $this->currentUser = (new CurrentUser(
             new IdentityRepository($this->users),
             $this->eventDispatcher,
+        ))->withSession($this->session);
+        $this->rememberMeCookieService = new RememberMeCookieService(
+            $this->moduleConfig->rememberLoginLifespan,
         );
         $authClientRegistry = (new AuthClientRegistryFactory($this->moduleConfig))->create();
         $oauthHttpClient ??= new FakeHttpClient();
@@ -267,6 +272,7 @@ final class ControllerHarness
             $responseFactory,
             $this->url,
             $this->session,
+            $this->rememberMeCookieService,
             $this->moduleConfig,
             $authClientRegistry,
             $socialAuthProviderService,

@@ -4,16 +4,27 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests;
 
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Container\ContainerInterface;
+use Yiisoft\Db\Connection\ConnectionInterface;
+use Yiisoft\Db\Connection\ConnectionProvider;
+use YiiRocks\Voyti\Service\RememberMeCookieService;
 use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\User\CurrentUser;
+use Yiisoft\User\Login\Cookie\CookieLoginIdentityInterface;
 
 final class BootstrapTest extends TestCase
 {
+    #[\Override]
+    protected function tearDown(): void
+    {
+        ConnectionProvider::clear();
+        parent::tearDown();
+    }
+
     public function testBootstrapInitializesSessionFromCookie(): void
     {
         $bootstrap = require dirname(__DIR__) . '/config/bootstrap.php';
@@ -144,6 +155,79 @@ final class BootstrapTest extends TestCase
         $bootstrap[0]($container);
         $this->assertSame('42', $currentUser->getId());
     }
+
+    #[AllowMockObjectsWithoutExpectations]
+    public function testBootstrapAllowsCurrentUserToRestoreIdentityFromCookie(): void
+    {
+        $bootstrap = require dirname(__DIR__) . '/config/bootstrap.php';
+        $session = new TestSession();
+        ConnectionProvider::set($this->getDb());
+        $identityRepository = new class implements IdentityRepositoryInterface {
+            public function findIdentity(string $id): ?IdentityInterface
+            {
+                return $id === '42' ? new TestIdentity($id, 'cookie-key') : null;
+            }
+        };
+        $currentUser = new CurrentUser(
+            $identityRepository,
+            new class implements EventDispatcherInterface {
+                public function dispatch(object $event): object
+                {
+                    return $event;
+                }
+            },
+        );
+        $rememberMeCookieService = new RememberMeCookieService(3600);
+
+        $container = new class($session, $currentUser, $identityRepository, $rememberMeCookieService) implements ContainerInterface {
+            public function __construct(
+                private readonly SessionInterface $session,
+                private readonly CurrentUser $currentUser,
+                private readonly IdentityRepositoryInterface $identityRepository,
+                private readonly RememberMeCookieService $rememberMeCookieService,
+            ) {
+            }
+
+            public function get(string $id): mixed
+            {
+                return match ($id) {
+                    SessionInterface::class => $this->session,
+                    CurrentUser::class => $this->currentUser,
+                    IdentityRepositoryInterface::class => $this->identityRepository,
+                    RememberMeCookieService::class => $this->rememberMeCookieService,
+                    default => null,
+                };
+            }
+
+            public function has(string $id): bool
+            {
+                return in_array(
+                    $id,
+                    [SessionInterface::class, CurrentUser::class, IdentityRepositoryInterface::class, RememberMeCookieService::class],
+                    true,
+                );
+            }
+        };
+
+        ConnectionProvider::set($this->createMock(ConnectionInterface::class));
+
+        $cookieName = $rememberMeCookieService->getCookieName();
+        $previousCookie = $_COOKIE[$cookieName] ?? null;
+        $_COOKIE[$cookieName] = json_encode(['42', 'cookie-key', time() + 3600], JSON_THROW_ON_ERROR);
+
+        try {
+            $bootstrap[0]($container);
+        } finally {
+            if ($previousCookie === null) {
+                unset($_COOKIE[$cookieName]);
+            } else {
+                $_COOKIE[$cookieName] = $previousCookie;
+            }
+        }
+
+        $this->assertSame('42', $currentUser->getId());
+        $this->assertSame('42', $session->get('__auth_id'));
+    }
 }
 
 final class TestSession implements SessionInterface
@@ -238,15 +322,26 @@ final class TestSession implements SessionInterface
     }
 }
 
-final class TestIdentity implements IdentityInterface
+final class TestIdentity implements CookieLoginIdentityInterface
 {
     public function __construct(
         private readonly string $id,
+        private readonly string $cookieLoginKey = 'test-auth-key',
     ) {
     }
 
     public function getId(): ?string
     {
         return $this->id;
+    }
+
+    public function getCookieLoginKey(): string
+    {
+        return $this->cookieLoginKey;
+    }
+
+    public function validateCookieLoginKey(string $key): bool
+    {
+        return $this->cookieLoginKey === $key;
     }
 }

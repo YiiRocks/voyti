@@ -462,6 +462,42 @@ final class WorkflowTest extends TestCase
         $this->assertNotEmpty(array_filter($events, static fn (object $event): bool => $event instanceof AfterRegisterEvent));
         $this->assertNotEmpty(array_filter($events, static fn (object $event): bool => $event instanceof AfterLoginEvent));
         $this->assertCount(1, $this->harness->mailer->messages());
+        $this->assertSame('', $response->getHeaderLine('Set-Cookie'));
+    }
+
+    public function testRememberMeSetsPersistentCookieAndLogoutExpiresIt(): void
+    {
+        $user = $this->registerAndConfirmUser('nina', 'nina@example.test', 'secret123');
+        $originalAuthKey = $user->getAuthKey();
+
+        $loginResponse = $this->harness->securityController->login(
+            $this->harness->request(
+                Method::POST,
+                $this->harness->formPayload(
+                    new LoginForm($this->harness->moduleConfig, $this->harness->translator),
+                    [
+                        'login' => 'nina@example.test',
+                        'password' => 'secret123',
+                        'rememberMe' => true,
+                    ],
+                ),
+                serverParams: ['REMOTE_ADDR' => $this->remoteAddr],
+            ),
+        );
+
+        $rememberCookie = $loginResponse->getHeaderLine('Set-Cookie');
+        $this->assertStringContainsString('autoLogin=', $rememberCookie);
+        $this->assertStringContainsString('Max-Age=1209600', $rememberCookie);
+
+        $logoutResponse = $this->harness->securityController->logout();
+        $expiredCookie = $logoutResponse->getHeaderLine('Set-Cookie');
+        $this->assertStringContainsString('autoLogin=', $expiredCookie);
+        $this->assertStringContainsString('Expires=', $expiredCookie);
+        $this->assertStringContainsString('Max-Age=-', $expiredCookie);
+
+        $reloaded = $this->harness->users->findById((int) $user->getId());
+        $this->assertInstanceOf(User::class, $reloaded);
+        $this->assertNotSame($originalAuthKey, $reloaded->getAuthKey());
     }
 
     public function testSocialAuthenticationDispatchesLoginEventAndWritesSessionHistory(): void
@@ -541,7 +577,7 @@ final class WorkflowTest extends TestCase
 
         $history = $this->harness->userSessionHistory->findByUserId((int) $user->getId());
         $this->assertCount(1, $history);
-        $this->assertSame('test-session', $history[0]->getSessionId());
+        $this->assertStringStartsWith('test-session-', $history[0]->getSessionId());
         $this->assertSame($this->remoteAddr, $history[0]->getIp());
     }
 
@@ -818,7 +854,7 @@ final class WorkflowTest extends TestCase
 
         $history = $this->harness->userSessionHistory->findByUserId((int) $user->getId());
         $this->assertCount(1, $history);
-        $this->assertSame('test-session', $history[0]->getSessionId());
+        $this->assertStringStartsWith('test-session-', $history[0]->getSessionId());
         $this->assertSame($this->remoteAddr, $history[0]->getIp());
     }
 

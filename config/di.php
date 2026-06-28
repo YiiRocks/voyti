@@ -8,14 +8,13 @@ use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistryFactory;
-use YiiRocks\Voyti\Http\ClientInterface;
-use YiiRocks\Voyti\Http\Psr18Client;
-use YiiRocks\Voyti\AuthClient\Twitter;
 use YiiRocks\Voyti\Factory\MailFactory;
 use YiiRocks\Voyti\Factory\TokenFactory;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Helper\GravatarHelper;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
+use YiiRocks\Voyti\Http\ClientInterface;
+use YiiRocks\Voyti\Http\Psr18Client;
 use YiiRocks\Voyti\Listener;
 use YiiRocks\Voyti\Middleware\RouteParametersResolver;
 use YiiRocks\Voyti\ModuleConfig;
@@ -35,6 +34,7 @@ use YiiRocks\Voyti\Service\Password\ResetService;
 use YiiRocks\Voyti\Service\Rbac\ItemEditionService;
 use YiiRocks\Voyti\Service\Rbac\RuleEditionService;
 use YiiRocks\Voyti\Service\Rbac\UpdateAssignmentsService;
+use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
 use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
@@ -69,6 +69,9 @@ return [
     ParametersResolverInterface::class => RouteParametersResolver::class,
 
     ModuleConfig::class => static fn () => ModuleConfig::fromArray($params['yiirocks/voyti'] ?? []),
+    RememberMeCookieService::class => static fn (ModuleConfig $config) => new RememberMeCookieService(
+        $config->rememberLoginLifespan,
+    ),
 
     UserRepository::class => UserRepository::class,
     UserProfileRepository::class => UserProfileRepository::class,

@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 use Psr\Container\ContainerInterface;
+use Yiisoft\Auth\IdentityRepositoryInterface;
+use Yiisoft\Db\Connection\ConnectionProvider;
+use YiiRocks\Voyti\Service\RememberMeCookieService;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\User\CurrentUser;
 
@@ -33,6 +36,23 @@ return [
             (function (SessionInterface $session): void {
                 $this->session = $session;
             })->call($currentUser, $session);
+
+            if (
+                $container->has(RememberMeCookieService::class)
+                && $container->has(IdentityRepositoryInterface::class)
+                && ConnectionProvider::has()
+                && $currentUser->isGuest()
+            ) {
+                $rememberMeCookieService = $container->get(RememberMeCookieService::class);
+                $identityRepository = $container->get(IdentityRepositoryInterface::class);
+
+                if (
+                    $rememberMeCookieService instanceof RememberMeCookieService
+                    && $identityRepository instanceof IdentityRepositoryInterface
+                ) {
+                    $rememberMeCookieService->loginByCookie($_COOKIE, $currentUser, $identityRepository);
+                }
+            }
         }
     },
 ];

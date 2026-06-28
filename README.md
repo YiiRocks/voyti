@@ -33,7 +33,7 @@ Ported from [2amigos/yii2-usuario](https://github.com/2amigos/yii2-usuario) and 
 
 - **User Management** — Registration, email confirmation, login/logout, password recovery, password expiration
 - **Profile Management** — User profiles with gravatar, timezone, social links
-- **Social Authentication** — Various built-in auth clients ([listed below](#social-authentication))
+- **Social Authentication** — Various built-in auth clients as [listed below](#social-authentication)
 - **Two-Factor Authentication** — TOTP (authenticator app), email, and SMS 2FA with enforced-per-permission support
 - **RBAC Management** — Full admin UI for roles, permissions, and rules with parent-child hierarchy, assignment management, and filtering
 - **Session Management** — Session history tracking and termination
@@ -132,7 +132,7 @@ Below are all top-level `yiirocks/voyti` options, followed by the nested `mailPa
 | `allowAdminPasswordRecovery` | `bool` | `true` | Allow admin-initiated password recovery |
 | `allowAccountDelete` | `bool` | `false` | Allow users to delete their account |
 | `emailChangeStrategy` | `int` | `1` | 0=insecure, 1=default, 2=secure |
-| `rememberLoginLifespan` | `int` | `1209600` | Remember-me duration (seconds) |
+| `rememberLoginLifespan` | `int` | `1209600` | Remember-me cookie lifetime and idle auth timeout in seconds |
 | `tokenConfirmationLifespan` | `int` | `86400` | Confirmation token validity |
 | `tokenRecoveryLifespan` | `int` | `21600` | Recovery token validity |
 | `enableSwitchIdentities` | `bool` | `true` | Allow admin to switch user identities |

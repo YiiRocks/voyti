@@ -11,22 +11,28 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var TranslatorInterface $translator
  */
 
-echo Html::ul()->class('nav nav-pills mb-4')->open();
-echo Html::tag('li')->class('nav-item')->open();
-echo Html::a($translator->translate('voyti.menu.userProfile', category: 'voyti'), $url->generate('voyti/settings'))->class('nav-link');
-echo Html::tag('li')->close();
-
-echo Html::tag('li')->class('nav-item')->open();
-echo Html::a($translator->translate('voyti.menu.account', category: 'voyti'), $url->generate('voyti/settings-account'))->class('nav-link');
-echo Html::tag('li')->close();
-
-echo Html::tag('li')->class('nav-item')->open();
-echo Html::a($translator->translate('voyti.menu.networks', category: 'voyti'), $url->generate('voyti/settings-networks'))->class('nav-link');
-echo Html::tag('li')->close();
+$items = [
+    Html::li(
+        Html::a($translator->translate('voyti.menu.userProfile', category: 'voyti'), $url->generate('voyti/settings'))->class('nav-link'),
+        ['class' => 'nav-item'],
+    ),
+    Html::li(
+        Html::a($translator->translate('voyti.menu.account', category: 'voyti'), $url->generate('voyti/settings-account'))->class('nav-link'),
+        ['class' => 'nav-item'],
+    ),
+    Html::li(
+        Html::a($translator->translate('voyti.menu.networks', category: 'voyti'), $url->generate('voyti/settings-networks'))->class('nav-link'),
+        ['class' => 'nav-item'],
+    ),
+];
 
 if (!empty($config) && $config->enableGdprCompliance) {
-    echo Html::tag('li')->class('nav-item')->open();
-    echo Html::a($translator->translate('voyti.view.settings.privacy', category: 'voyti'), $url->generate('voyti/settings-privacy'))->class('nav-link');
-    echo Html::tag('li')->close();
+    $items[] = Html::li(
+        Html::a($translator->translate('voyti.view.settings.privacy', category: 'voyti'), $url->generate('voyti/settings-privacy'))->class('nav-link'),
+        ['class' => 'nav-item'],
+    );
 }
-echo Html::ul()->close();
+
+echo Html::ul()
+    ->class('nav nav-pills mb-4')
+    ->items(...$items);

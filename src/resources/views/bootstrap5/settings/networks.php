@@ -43,7 +43,7 @@ if (empty($accounts)) {
         $content .= $disconnect;
         $content .= Html::div()->close();
 
-        echo Html::tag('li', $content)->class('list-group-item')->encode(false);
+        echo Html::li($content, ['class' => 'list-group-item'])->encode(false);
     }
 
     echo Html::ul()->close();

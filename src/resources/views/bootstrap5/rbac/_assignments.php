@@ -19,7 +19,7 @@ echo Html::H3()->close();
 echo Html::ul()->class('list-group')->open();
 
 foreach ($assignments as $item) {
-    echo Html::tag('li', $item->getName())->class('list-group-item');
+    echo Html::li($item->getName(), ['class' => 'list-group-item']);
 }
 
 echo Html::ul()->close();

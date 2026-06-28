@@ -8,8 +8,9 @@ use Yiisoft\ActiveRecord\ActiveQueryInterface;
 use Yiisoft\ActiveRecord\ActiveRecord;
 use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
 use Yiisoft\Auth\IdentityInterface;
+use Yiisoft\User\Login\Cookie\CookieLoginIdentityInterface;
 
-final class User extends ActiveRecord implements IdentityInterface
+final class User extends ActiveRecord implements IdentityInterface, CookieLoginIdentityInterface
 {
     use PrivatePropertiesTrait;
     public const NEW_EMAIL_CONFIRMED = 0b10;
@@ -73,6 +74,12 @@ final class User extends ActiveRecord implements IdentityInterface
     public function getCreatedAt(): int
     {
         return $this->created_at;
+    }
+
+    #[\Override]
+    public function getCookieLoginKey(): string
+    {
+        return $this->auth_key;
     }
 
     public function getEmail(): string
@@ -317,5 +324,11 @@ final class User extends ActiveRecord implements IdentityInterface
     public function validateAuthKey(string $authKey): bool
     {
         return $this->auth_key === $authKey;
+    }
+
+    #[\Override]
+    public function validateCookieLoginKey(string $key): bool
+    {
+        return $this->validateAuthKey($key);
     }
 }

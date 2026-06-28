@@ -21,10 +21,12 @@ use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\Auth\SocialAuthProviderService;
 use YiiRocks\Voyti\Service\Auth\UserSocialAccountConnectService;
 use YiiRocks\Voyti\Service\Auth\UserSocialAuthenticateService;
+use YiiRocks\Voyti\Service\RememberMeCookieService;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Security\PasswordHasher;
+use Yiisoft\Security\Random;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
@@ -48,6 +50,7 @@ final class SecurityController
         private readonly ResponseFactoryInterface $responseFactory,
         private readonly UrlGeneratorInterface $url,
         private readonly SessionInterface $session,
+        private readonly RememberMeCookieService $rememberMeCookieService,
         private readonly ModuleConfig $config,
         private readonly AuthClientRegistry $authClientRegistry,
         private readonly SocialAuthProviderService $socialAuthProviderService,
@@ -89,6 +92,13 @@ final class SecurityController
             return $this->redirect($this->url->generate('voyti/registration-connect', ['code' => $account->getCode() ?? 'connect']));
         }
 
+        $user = $this->currentUser->getIdentity();
+        if ($user instanceof User) {
+            $response = $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.security.authenticated', category: 'voyti'), 'translator' => $this->translator]);
+
+            return $this->rememberMeCookieService->addCookie($user, $response);
+        }
+
         return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.security.authenticated', category: 'voyti'), 'translator' => $this->translator]);
     }
 
@@ -122,7 +132,13 @@ final class SecurityController
                 $this->updateLastLoginMetadata($user, $request->getServerParams());
                 $this->pendingSocialAccountService->connect($user);
                 $this->eventDispatcher->dispatch(new AfterLoginEvent($user));
-                return $this->renderSuccess('voyti.security.authenticated');
+
+                $response = $this->renderSuccess('voyti.security.authenticated');
+                if ($this->boolValue($credentials, 'rememberMe')) {
+                    $response = $this->rememberMeCookieService->addCookie($user, $response);
+                }
+
+                return $response;
             }
         }
 
@@ -199,7 +215,12 @@ final class SecurityController
                     $this->eventDispatcher->dispatch(new FormEvent($form));
                     $this->eventDispatcher->dispatch(new AfterLoginEvent($user));
 
-                    return $this->renderSuccess('voyti.security.logged_in');
+                    $response = $this->renderSuccess('voyti.security.logged_in');
+                    if ($form->rememberMe) {
+                        $response = $this->rememberMeCookieService->addCookie($user, $response);
+                    }
+
+                    return $response;
                 }
             }
         }
@@ -213,8 +234,14 @@ final class SecurityController
 
     public function logout(): ResponseInterface
     {
-        $this->currentUser->logout();
-        return $this->renderSuccess('voyti.security.logged_out');
+        $identity = $this->currentUser->getIdentity();
+        if ($this->currentUser->logout() && $identity instanceof User) {
+            $identity->setAuthKey(Random::string());
+            $identity->setUpdatedAt(time());
+            $identity->save();
+        }
+
+        return $this->rememberMeCookieService->expireCookie($this->renderSuccess('voyti.security.logged_out'));
     }
 
     protected function viewPath(): string
