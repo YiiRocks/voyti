@@ -31,7 +31,7 @@ Ported from [2amigos/yii2-usuario](https://github.com/2amigos/yii2-usuario) and 
 
 ## Features
 
-- **User Management** — Registration, email confirmation, login/logout, password recovery, password expiration
+- **User Management** — Registration, email confirmation, login/logout with remember-me, password recovery, password expiration
 - **Profile Management** — User profiles with gravatar, timezone, social links
 - **Social Authentication** — Various built-in auth clients as [listed below](#social-authentication)
 - **Two-Factor Authentication** — TOTP (authenticator app), email, and SMS 2FA with enforced-per-permission support
@@ -84,22 +84,48 @@ One migration creates the `user`, `user_profile`, `user_social_account`,
 `user_token`, and `user_session_history` tables with all columns (2FA, GDPR,
 password expiration, last login IP, etc.) included.
 
-### 3. Done
+### 3. Register routes
+
+Routes are **not** auto-registered — you must add them to your router configuration.
+
+Pull the `voyti-routes` config group into your router definition. The example below mounts them under a `user/` prefix — omit or change the prefix as needed:
+
+```php
+use Yiisoft\Config\Config;
+use Yiisoft\Definitions\DynamicReference;
+use Yiisoft\Router\Group;
+use Yiisoft\Router\RouteCollection;
+use Yiisoft\Router\RouteCollectionInterface;
+use Yiisoft\Router\RouteCollector;
+
+/** @var Config $config */
+
+return [
+    RouteCollectionInterface::class => [
+        'class' => RouteCollection::class,
+        '__construct()' => [
+            'collector' => DynamicReference::to(
+                static fn() => (new RouteCollector())
+                    ->addRoute(
+                        Group::create('/')
+                            ->routes(...[
+                                ...$config->get("routes"), // your routes
+                                Group::create('user/')
+                                    ->routes(...$config->get("voyti-routes"))
+                            ]),
+                    )
+            ),
+        ],
+    ],
+];
+```
+
+When `enableRestApi` is `true`, the API routes are mounted under `adminRestPrefix` and expose user CRUD endpoints.
+
+### 4. Done
 
 DI bindings, event listeners, and console commands are auto-registered via the
 [Yii3 config plugin](https://github.com/yiisoft/config). No manual wiring needed.
-
-Console commands:
-
-| Command | Description |
-|---------|-------------|
-| `voyti:create` | Create a new user |
-| `voyti:delete` | Delete a user |
-| `voyti:confirm` | Confirm a user's email |
-| `voyti:password` | Change a user's password |
-
-To customize behaviour, see [Configuration](#configuration). To mount routes
-under a prefix, see [Router Setup](#router-setup).
 
 ## Configuration
 
@@ -184,7 +210,7 @@ Below are all top-level `yiirocks/voyti` options, followed by the nested `mailPa
 ### Views & Mail
 
 | Option | Type | Default | Description |
-|--------|------|--------|-------------|
+|--------|------|--------|--------------|
 | `viewPath` | `string` | `__DIR__ . '/resources/views/bootstrap5'` | Base path for web templates |
 | `mailPath` | `string` | `__DIR__ . '/resources/mail'` | Base path for mail templates |
 | `mailParams` | `array` | see below | Mail from address and subjects |
@@ -304,6 +330,15 @@ With credentials configured:
 2. `settings/networks` lists connected providers and renders connect buttons for the remaining configured providers.
 3. New social identities redirect to the registration connect screen, where users can log in to an existing account or register a new one before the identity is linked.
 
+## Console commands
+
+| Command | Description |
+|---------|-------------|
+| `voyti:create` | Create a new user |
+| `voyti:delete` | Delete a user |
+| `voyti:confirm` | Confirm a user's email |
+| `voyti:password` | Change a user's password |
+
 ## Middleware
 
 The extension ships three PSR-15 middleware classes for access control:
@@ -315,7 +350,7 @@ The extension ships three PSR-15 middleware classes for access control:
 | `TwoFactorAuthenticationEnforceMiddleware` | Redirects to `accountSettingsRoute` when required permissions are assigned |
 
 Register them in your application's middleware pipeline as needed.
-Both redirect targets are configurable via `ModuleConfig`, so you can map them to your own route structure.
+The two redirect targets (`loginRoute` and `accountSettingsRoute`) are configurable via `ModuleConfig`, so you can map them to your own route structure.
 
 ## RBAC
 
@@ -395,45 +430,6 @@ The library does not provide a menu model or navigation contract. It only expose
 | `voyti/rules-create` | `GET`, `POST` | `rules/create` | Create rule |
 | `voyti/rules-update` | `GET`, `POST` | `rules/update/{name}` | Update rule |
 | `voyti/rules-delete` | `POST` | `rules/delete/{name}` | Delete rule |
-
-When `enableRestApi` is `true`, the API routes are mounted under `adminRestPrefix` and expose user CRUD endpoints for list, view, create, update, and delete.
-
-### Router Setup
-
-To mount Voyti routes under a prefix (e.g. `/user`), configure your router DI definition to include the `voyti-routes` config group:
-
-```php
-// config/common/di/router.php
-use Yiisoft\Config\Config;
-use Yiisoft\Definitions\DynamicReference;
-use Yiisoft\Router\Group;
-use Yiisoft\Router\RouteCollection;
-use Yiisoft\Router\RouteCollectionInterface;
-use Yiisoft\Router\RouteCollector;
-
-/** @var Config $config */
-
-return [
-    RouteCollectionInterface::class => [
-        'class' => RouteCollection::class,
-        '__construct()' => [
-            'collector' => DynamicReference::to(
-                static fn() => (new RouteCollector())->addRoute(
-                    Group::create('/')
-                        ->routes(...[
-                            ...$config->get("routes"), // your own routes
-                            Group::create('user/')
-                                ->routes(...$config->get("voyti-routes"))
-                        ],
-                    ),
-                ),
-            ),
-        ],
-    ],
-];
-```
-
-Without this configuration, Voyti routes are not registered.
 
 ## Testing
 
