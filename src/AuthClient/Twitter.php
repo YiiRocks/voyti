@@ -12,8 +12,8 @@ final class Twitter extends AbstractAuthClient
     public function __construct(array $config = [])
     {
         parent::__construct(
-            'twitter',
-            'Twitter',
+            'x',
+            'X (formerly Twitter)',
             'https://twitter.com/i/oauth2/authorize',
             'https://api.twitter.com/2/oauth2/token',
             'https://api.twitter.com/2/users/me',

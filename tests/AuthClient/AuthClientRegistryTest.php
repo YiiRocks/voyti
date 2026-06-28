@@ -41,8 +41,8 @@ final class AuthClientRegistryTest extends TestCase
         self::assertSame('keycloak', $clients[3]->getName());
         self::assertSame('linkedin', $clients[4]->getName());
         self::assertSame('microsoft365', $clients[5]->getName());
-        self::assertSame('twitter', $clients[6]->getName());
         self::assertSame('vkontakte', $clients[7]->getName());
+        self::assertSame('x', $clients[6]->getName());
         self::assertSame('yandex', $clients[8]->getName());
     }
 

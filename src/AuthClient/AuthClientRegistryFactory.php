@@ -30,8 +30,8 @@ final class AuthClientRegistryFactory
                 'keycloak' => new Keycloak($providerConfig),
                 'linkedin' => new LinkedIn($providerConfig),
                 'microsoft365' => new Microsoft365($providerConfig),
-                'twitter' => new Twitter($providerConfig),
                 'vkontakte' => new VKontakte($providerConfig),
+                'x' => new Twitter($providerConfig),
                 'yandex' => new Yandex($providerConfig),
                 default => null,
             };

@@ -33,7 +33,7 @@ Ported from [2amigos/yii2-usuario](https://github.com/2amigos/yii2-usuario) and 
 
 - **User Management** — Registration, email confirmation, login/logout, password recovery, password expiration
 - **Profile Management** — User profiles with gravatar, timezone, social links
-- **Social Authentication** — 9 built-in auth clients (Facebook, GitHub, Google, LinkedIn, Twitter, VKontakte, Yandex, Keycloak, Microsoft365)
+- **Social Authentication** — Various built-in auth clients ([listed below](#social-authentication))
 - **Two-Factor Authentication** — TOTP (authenticator app), email, and SMS 2FA with enforced-per-permission support
 - **RBAC Management** — Full admin UI for roles, permissions, and rules with parent-child hierarchy, assignment management, and filtering
 - **Session Management** — Session history tracking and termination
@@ -248,7 +248,7 @@ Only Keycloak adds recognized extra options:
 
 Various auth clients are included. Each implements the auth client interface and maps provider attributes to the `SocialNetworkAccount` entity:
 
-- Facebook, GitHub, Google, Keycloak, LinkedIn, Microsoft365, Twitter, VKontakte, Yandex
+- Facebook, GitHub, Google, Keycloak, LinkedIn, Microsoft365, VKontakte, X (formerly Twitter), Yandex
 
 The `SocialAuthProviderService` handles the OAuth redirect/callback flow. The `UserSocialAuthenticateService` handles account lookup, creation, and user login. The `UserSocialAccountConnectService` links a social account to an existing user.
 
@@ -264,8 +264,8 @@ The following table shows Voyti's built-in endpoints and scopes. These are used 
 | `keycloak` | `openid email profile` | `{baseUrl}/realms/{realm}/protocol/openid-connect/auth` | `{baseUrl}/realms/{realm}/protocol/openid-connect/token` | `{baseUrl}/realms/{realm}/protocol/openid-connect/userinfo` |
 | `linkedin` | `openid profile email` | `https://www.linkedin.com/oauth/v2/authorization` | `https://www.linkedin.com/oauth/v2/accessToken` | `https://api.linkedin.com/v2/userinfo` |
 | `microsoft365` | `openid profile email User.Read` | `https://login.microsoftonline.com/common/oauth2/v2.0/authorize` | `https://login.microsoftonline.com/common/oauth2/v2.0/token` | `https://graph.microsoft.com/oidc/userinfo` |
-| `twitter` | `tweet.read users.read offline.access` | `https://twitter.com/i/oauth2/authorize` | `https://api.twitter.com/2/oauth2/token` | `https://api.twitter.com/2/users/me` |
 | `vkontakte` | `email` | `https://oauth.vk.com/authorize` | `https://oauth.vk.com/access_token` | `https://api.vk.com/method/users.get` |
+| `x` | `tweet.read users.read offline.access` | `https://twitter.com/i/oauth2/authorize` | `https://api.twitter.com/2/oauth2/token` | `https://api.twitter.com/2/users/me` |
 | `yandex` | `login:email login:info` | `https://oauth.yandex.com/authorize` | `https://oauth.yandex.com/token` | `https://login.yandex.ru/info` |
 
 ### Provider-specific built-in request behavior
@@ -276,8 +276,8 @@ Voyti also applies a few provider-specific defaults during the user-info step:
 |---|---|
 | `facebook` | Sends `access_token` and `fields=id,name,email` on the user-info request. |
 | `github` | If `/user` does not include an email, Voyti also requests `https://api.github.com/user/emails` and picks the first primary or verified address. |
-| `twitter` | Sends `user.fields=id,name,username,profile_image_url`; normalized social identity does **not** include email. |
 | `vkontakte` | Sends `access_token`, `fields=screen_name`, and `v=5.199`; email is read from the token response when present. |
+| `x` | Sends `user.fields=id,name,username,profile_image_url`; normalized social identity does **not** include email (X API v2 does not expose the user's email address without elevated access). |
 | `yandex` | Sends `format=json` on the user-info request. |
 
 ### Example
