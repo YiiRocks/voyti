@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace YiiRocks\Voyti\AuthClient;
+namespace YiiRocks\Voyti\Http;
 
-interface OAuthHttpClientInterface
+interface ClientInterface
 {
     /**
      * @param array<string, string> $headers

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\AuthClient;
 
+use YiiRocks\Voyti\Http\ClientInterface;
+
 final class GitHub extends AbstractAuthClient
 {
     /**
@@ -28,7 +30,7 @@ final class GitHub extends AbstractAuthClient
      * @psalm-return array<string, mixed>
      */
     #[\Override]
-    protected function loadUserAttributes(array $tokenData, OAuthHttpClientInterface $httpClient): array
+    protected function loadUserAttributes(array $tokenData, ClientInterface $httpClient): array
     {
         $attributes = parent::loadUserAttributes($tokenData, $httpClient);
         $email = $attributes['email'] ?? null;

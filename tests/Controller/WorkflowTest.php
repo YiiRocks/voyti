@@ -20,7 +20,7 @@ use YiiRocks\Voyti\Listener\SessionHistoryListener;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\UserSessionHistory\UserSessionHistoryDecorator;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
-use YiiRocks\Voyti\tests\Support\FakeOAuthHttpClient;
+use YiiRocks\Voyti\tests\Support\FakeHttpClient;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Db\Connection\ConnectionInterface;
 use Yiisoft\Db\Connection\ConnectionProvider;
@@ -466,7 +466,7 @@ final class WorkflowTest extends TestCase
 
     public function testSocialAuthenticationDispatchesLoginEventAndWritesSessionHistory(): void
     {
-        $oauthHttpClient = new FakeOAuthHttpClient();
+        $oauthHttpClient = new FakeHttpClient();
         $this->harness = new ControllerHarness(
             dirname(__DIR__, 2),
             new ModuleConfig(
@@ -569,7 +569,7 @@ final class WorkflowTest extends TestCase
 
     public function testSocialAuthenticationForNewUserRedirectsToConnectAndLinksOnRegistration(): void
     {
-        $oauthHttpClient = new FakeOAuthHttpClient();
+        $oauthHttpClient = new FakeHttpClient();
         $this->harness = new ControllerHarness(
             dirname(__DIR__, 2),
             new ModuleConfig(
@@ -701,7 +701,7 @@ final class WorkflowTest extends TestCase
 
     public function testAuthenticatedUserCanConnectSocialAccount(): void
     {
-        $oauthHttpClient = new FakeOAuthHttpClient();
+        $oauthHttpClient = new FakeHttpClient();
         $this->harness = new ControllerHarness(
             dirname(__DIR__, 2),
             new ModuleConfig(

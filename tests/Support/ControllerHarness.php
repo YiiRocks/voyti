@@ -10,7 +10,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Stringable;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistryFactory;
-use YiiRocks\Voyti\AuthClient\OAuthHttpClientInterface;
+use YiiRocks\Voyti\Http\ClientInterface;
 use YiiRocks\Voyti\Controller\AdminController;
 use YiiRocks\Voyti\Controller\RecoveryController;
 use YiiRocks\Voyti\Controller\RegistrationController;
@@ -121,7 +121,7 @@ final class ControllerHarness
     public function __construct(
         string $projectRoot,
         ?ModuleConfig $moduleConfig = null,
-        ?OAuthHttpClientInterface $oauthHttpClient = null,
+        ?ClientInterface $oauthHttpClient = null,
     )
     {
         $this->translator = new Translator('en', null, 'voyti');
@@ -174,7 +174,7 @@ final class ControllerHarness
             $this->eventDispatcher,
         );
         $authClientRegistry = (new AuthClientRegistryFactory($this->moduleConfig))->create();
-        $oauthHttpClient ??= new FakeOAuthHttpClient();
+        $oauthHttpClient ??= new FakeHttpClient();
         $pendingSocialAccountService = new PendingSocialAccountService($this->socialAccounts, $this->session);
         $socialAuthProviderService = new SocialAuthProviderService(
             $authClientRegistry,

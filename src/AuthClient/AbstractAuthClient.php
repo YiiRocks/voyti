@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\AuthClient;
 
 use RuntimeException;
+use YiiRocks\Voyti\Http\ClientInterface;
 
 abstract class AbstractAuthClient implements AuthClientInterface
 {
@@ -28,7 +29,7 @@ abstract class AbstractAuthClient implements AuthClientInterface
      * @psalm-return array<string, mixed>
      */
     #[\Override]
-    public function fetchUserAttributes(string $code, string $redirectUri, OAuthHttpClientInterface $httpClient): array
+    public function fetchUserAttributes(string $code, string $redirectUri, ClientInterface $httpClient): array
     {
         if (!$this->isEnabled()) {
             throw new RuntimeException("The '{$this->name}' social provider is disabled.");
@@ -93,7 +94,7 @@ abstract class AbstractAuthClient implements AuthClientInterface
      *
      * @psalm-return array<string, mixed>
      */
-    protected function loadUserAttributes(array $tokenData, OAuthHttpClientInterface $httpClient): array
+    protected function loadUserAttributes(array $tokenData, ClientInterface $httpClient): array
     {
         return $httpClient->send(
             'GET',
@@ -286,7 +287,7 @@ abstract class AbstractAuthClient implements AuthClientInterface
      *
      * @psalm-return array<string, mixed>
      */
-    private function exchangeCodeForToken(string $code, string $redirectUri, OAuthHttpClientInterface $httpClient): array
+    private function exchangeCodeForToken(string $code, string $redirectUri, ClientInterface $httpClient): array
     {
         return $httpClient->send(
             'POST',

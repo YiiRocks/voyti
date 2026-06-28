@@ -2,12 +2,23 @@
 
 declare(strict_types=1);
 
-namespace YiiRocks\Voyti\AuthClient;
+namespace YiiRocks\Voyti\Http;
 
+use Psr\Http\Client\ClientExceptionInterface;
+use Psr\Http\Client\ClientInterface as PsrClientInterface;
+use Psr\Http\Message\RequestFactoryInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 use RuntimeException;
 
-final class NativeOAuthHttpClient implements OAuthHttpClientInterface
+final class Psr18Client implements ClientInterface
 {
+    public function __construct(
+        private readonly PsrClientInterface $httpClient,
+        private readonly RequestFactoryInterface $requestFactory,
+        private readonly StreamFactoryInterface $streamFactory,
+    ) {
+    }
+
     #[\Override]
     public function send(
         string $method,
@@ -16,40 +27,28 @@ final class NativeOAuthHttpClient implements OAuthHttpClientInterface
         array $query = [],
         array $body = [],
     ): array {
-        $method = strtoupper($method);
         $requestUrl = $this->appendQuery($url, $query);
-        $headerLines = [];
-        foreach ($headers as $name => $value) {
-            $headerLines[] = $name . ': ' . $value;
-        }
+        $request = $this->requestFactory->createRequest(strtoupper($method), $requestUrl);
 
-        $context = [
-            'method' => $method,
-            'header' => implode("\r\n", $headerLines),
-            'ignore_errors' => true,
-            'timeout' => 15,
-        ];
+        foreach ($headers as $name => $value) {
+            $request = $request->withHeader($name, $value);
+        }
 
         if ($body !== []) {
-            $context['header'] = trim($context['header'] . "\r\nContent-Type: application/x-www-form-urlencoded");
-            $context['content'] = http_build_query($body);
+            $request = $request
+                ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
+                ->withBody($this->streamFactory->createStream(http_build_query($body)));
         }
 
-        $resource = @file_get_contents(
-            $requestUrl,
-            false,
-            stream_context_create(['http' => $context]),
-        );
-
-        if ($resource === false) {
-            throw new RuntimeException("Unable to contact OAuth provider at '{$requestUrl}'.");
+        try {
+            $response = $this->httpClient->sendRequest($request);
+        } catch (ClientExceptionInterface $exception) {
+            throw new RuntimeException("Unable to contact OAuth provider at '{$requestUrl}'.", previous: $exception);
         }
 
-        /** @var list<string> $http_response_header */
-        $responseHeaders = $http_response_header ?? [];
-        $statusCode = $this->statusCode($responseHeaders);
         /** @var array<string, mixed> $data */
-        $data = $this->decode($resource);
+        $data = $this->decode((string) $response->getBody());
+        $statusCode = $response->getStatusCode();
 
         if ($statusCode >= 400) {
             $message = $this->errorMessage($data);
@@ -68,6 +67,9 @@ final class NativeOAuthHttpClient implements OAuthHttpClientInterface
         return $url . (str_contains($url, '?') ? '&' : '?') . http_build_query($query);
     }
 
+    /**
+     * @return array<array-key, mixed>
+     */
     private function decode(string $body): array
     {
         $decoded = json_decode($body, true);
@@ -81,7 +83,7 @@ final class NativeOAuthHttpClient implements OAuthHttpClientInterface
     }
 
     /**
-     * @param array $data
+     * @param array<array-key, mixed> $data
      */
     private function errorMessage(array $data): string
     {
@@ -101,18 +103,5 @@ final class NativeOAuthHttpClient implements OAuthHttpClientInterface
         }
 
         return '';
-    }
-
-    /**
-     * @param list<string> $headers
-     */
-    private function statusCode(array $headers): int
-    {
-        $statusLine = $headers[0] ?? '';
-        if (preg_match('/\s(\d{3})\s/', $statusLine, $matches) === 1) {
-            return (int) $matches[1];
-        }
-
-        return 200;
     }
 }

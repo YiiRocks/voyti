@@ -6,7 +6,7 @@ namespace YiiRocks\Voyti\Service\Auth;
 
 use RuntimeException;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
-use YiiRocks\Voyti\AuthClient\OAuthHttpClientInterface;
+use YiiRocks\Voyti\Http\ClientInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Security\Random;
 use Yiisoft\Session\SessionInterface;
@@ -15,7 +15,7 @@ final class SocialAuthProviderService
 {
     public function __construct(
         private readonly AuthClientRegistry $authClientRegistry,
-        private readonly OAuthHttpClientInterface $httpClient,
+        private readonly ClientInterface $httpClient,
         private readonly SessionInterface $session,
         private readonly UrlGeneratorInterface $url,
     ) {

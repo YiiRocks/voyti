@@ -3,10 +3,13 @@
 declare(strict_types=1);
 
 use Psr\EventDispatcher\EventDispatcherInterface;
+use Psr\Http\Client\ClientInterface as PsrClientInterface;
+use Psr\Http\Message\RequestFactoryInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistryFactory;
-use YiiRocks\Voyti\AuthClient\NativeOAuthHttpClient;
-use YiiRocks\Voyti\AuthClient\OAuthHttpClientInterface;
+use YiiRocks\Voyti\Http\ClientInterface;
+use YiiRocks\Voyti\Http\Psr18Client;
 use YiiRocks\Voyti\AuthClient\Twitter;
 use YiiRocks\Voyti\Factory\MailFactory;
 use YiiRocks\Voyti\Factory\TokenFactory;
@@ -81,7 +84,11 @@ return [
     ) => new AuthHelper($authManager, $itemsStorage, $assignmentsStorage, $config),
     GravatarHelper::class => GravatarHelper::class,
     TimezoneHelper::class => TimezoneHelper::class,
-    OAuthHttpClientInterface::class => NativeOAuthHttpClient::class,
+    ClientInterface::class => static fn (
+        PsrClientInterface $httpClient,
+        RequestFactoryInterface $requestFactory,
+        StreamFactoryInterface $streamFactory,
+    ) => new Psr18Client($httpClient, $requestFactory, $streamFactory),
     AuthClientRegistryFactory::class => AuthClientRegistryFactory::class,
     AuthClientRegistry::class => fn (AuthClientRegistryFactory $factory) => $factory->create(),
 

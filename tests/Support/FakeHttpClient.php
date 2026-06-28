@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Support;
 
-use YiiRocks\Voyti\AuthClient\OAuthHttpClientInterface;
+use YiiRocks\Voyti\Http\ClientInterface;
 
-final class FakeOAuthHttpClient implements OAuthHttpClientInterface
+final class FakeHttpClient implements ClientInterface
 {
     /** @var array<string, array<string, mixed>> */
     private array $responses = [];
