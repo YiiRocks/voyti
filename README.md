@@ -27,9 +27,7 @@ Ported from [2amigos/yii2-usuario](https://github.com/2amigos/yii2-usuario) and 
 5. [Middleware](#middleware)
 6. [RBAC](#rbac)
 7. [Routes](#routes)
-8. [Views](#views)
-9. [Testing](#testing)
-10. [Project Structure](#project-structure)
+8. [Testing](#testing)
 
 ## Features
 
@@ -117,7 +115,7 @@ return [
 ];
 ```
 
-Below are all 35 options grouped by concern.
+Below are all top-level `yiirocks/voyti` options, followed by the nested `mailParams` and `socialNetworkClients` options.
 
 ### Authentication & Registration
 
@@ -183,12 +181,12 @@ Below are all 35 options grouped by concern.
 | `administratorPermissionName` | `?string` | `null` | Permission name for admin access |
 | `profileVisibility` | `int` | `0` | Profile visibility level |
 
-### Mail & Views
+### Views & Mail
 
 | Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `viewPath` | `string` | `(bundled views)` | Base path for web templates |
-| `mailPath` | `string` | `(bundled mail)` | Base path for mail templates |
+|--------|------|--------|-------------|
+| `viewPath` | `string` | `__DIR__ . '/resources/views/bootstrap5'` | Base path for web templates |
+| `mailPath` | `string` | `__DIR__ . '/resources/mail'` | Base path for mail templates |
 | `mailParams` | `array` | see below | Mail from address and subjects |
 
 Mail params defaults:
@@ -204,6 +202,17 @@ Mail params defaults:
 ]
 ```
 
+`mailParams` accepts the following keys:
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `fromEmail` | `string` | `'no-reply@example.com'` | Sender address for Voyti mail |
+| `welcomeMailSubject` | `string` | `'Welcome to {app}'` | Welcome email subject |
+| `confirmationMailSubject` | `string` | `'Confirm account on {app}'` | Registration confirmation subject |
+| `reconfirmationMailSubject` | `string` | `'Confirm email change on {app}'` | Email change confirmation subject |
+| `recoveryMailSubject` | `string` | `'Complete password reset on {app}'` | Password recovery subject |
+| `twoFactorMailSubject` | `string` | `'Code for two factor authentication on {app}'` | 2FA email code subject |
+
 ### REST API
 
 | Option | Type | Default | Description |
@@ -211,37 +220,37 @@ Mail params defaults:
 | `enableRestApi` | `bool` | `false` | Enable REST API |
 | `adminRestPrefix` | `string` | `'api/v1'` | REST API URL prefix |
 
+### Social Authentication Providers
+
+`socialNetworkClients` is a keyed array where each key is a provider name such as `github`, `google`, or `keycloak`.
+
+Every provider accepts these options unless noted otherwise:
+
+| Option | Type | Required | Default | Description |
+|---|---|---|---:|---|
+| `clientId` | `string` | yes | none | OAuth client/application ID issued by the provider |
+| `clientSecret` | `string` | yes | none | OAuth client secret issued by the provider |
+| `redirectUri` | `string` | no | generated callback URL | Overrides the callback URL; otherwise Voyti uses the absolute route URL for `voyti/auth` or `voyti/connect` |
+| `scope` | `string` | no | provider default | Replaces the built-in default scope string |
+| `enabled` | `bool` | no | `true` | If `false`, the provider is not registered and no button is rendered |
+| `authorizationParams` | `array<string, scalar>` | no | `[]` | Extra query parameters appended to the authorization request |
+| `tokenParams` | `array<string, scalar>` | no | `[]` | Extra fields merged into the token exchange request body |
+| `userInfoQuery` | `array<string, scalar>` | no | `[]` | Extra query parameters merged into the user-info request |
+
+Only Keycloak adds recognized extra options:
+
+| Provider key | Extra option | Type | Required | Description |
+|---|---|---|---:|---|
+| `keycloak` | `baseUrl` | `string` | yes | Base Keycloak URL, for example `https://sso.example.com` |
+| `keycloak` | `realm` | `string` | yes | Keycloak realm name used to build auth, token, and userinfo endpoints |
+
 ## Social Authentication
 
-Nine auth clients are included. Each implements the auth client interface and maps provider attributes to the `SocialNetworkAccount` entity:
+Various auth clients are included. Each implements the auth client interface and maps provider attributes to the `SocialNetworkAccount` entity:
 
 - Facebook, GitHub, Google, Keycloak, LinkedIn, Microsoft365, Twitter, VKontakte, Yandex
 
 The `SocialAuthProviderService` handles the OAuth redirect/callback flow. The `UserSocialAuthenticateService` handles account lookup, creation, and user login. The `UserSocialAccountConnectService` links a social account to an existing user.
-
-### Common configuration options
-
-Every provider accepts the following options unless noted otherwise:
-
-| Option | Type | Required | Default | Description |
-|---|---|---|---:|---|
-| `clientId` | `string` | yes | none | OAuth client/application ID issued by the provider. |
-| `clientSecret` | `string` | yes | none | OAuth client secret issued by the provider. |
-| `redirectUri` | `string` | no | generated absolute callback URL | Overrides the callback URL. If omitted, Voyti uses the absolute route URL for `voyti/auth` or `voyti/connect`. |
-| `scope` | `string` | no | provider default | Replaces the built-in default scope string for that provider. |
-| `enabled` | `bool` | no | `true` | If `false`, the provider is not registered and no button is rendered. |
-| `authorizationParams` | `array<string, scalar>` | no | `[]` | Extra query parameters appended to the authorization request. |
-| `tokenParams` | `array<string, scalar>` | no | `[]` | Extra fields merged into the token exchange request body. |
-| `userInfoQuery` | `array<string, scalar>` | no | `[]` | Extra query parameters added to the user-info request. These merge with provider-specific defaults, not replace them. |
-
-### Provider-specific options
-
-Only Keycloak adds extra recognized options beyond the common set:
-
-| Provider key | Extra option | Type | Required | Description |
-|---|---|---|---:|---|
-| `keycloak` | `baseUrl` | `string` | yes | Base Keycloak URL, for example `https://sso.example.com`. |
-| `keycloak` | `realm` | `string` | yes | Keycloak realm name used to build auth, token, and userinfo endpoints. |
 
 ### Built-in defaults by provider
 
@@ -424,34 +433,7 @@ return [
 ];
 ```
 
-Without this setup, routes are registered at the root (`/login`, `/register`, etc.).
-
-## Views
-
-### Web Views
-
-Web views are in `src/resources/views/bootstrap5/`. Override them by setting `viewPath` in `yiirocks/voyti`:
-
-```php
-// config/params.php
-return [
-    'yiirocks/voyti' => [
-        'viewPath' => '/path/to/your/custom/views',
-    ],
-];
-```
-
-### Mail Views
-
-Mail templates are in `src/resources/mail/`. Override them by setting `mailPath` in `yiirocks/voyti`:
-
-```php
-return [
-    'yiirocks/voyti' => [
-        'mailPath' => '/path/to/your/custom/mail',
-    ],
-];
-```
+Without this configuration, Voyti routes are not registered.
 
 ## Testing
 
@@ -464,33 +446,6 @@ composer infection
 
 # Static analysis
 composer psalm
-```
-
-## Project Structure
-
-```
-src/
-├── AuthClient/          social auth clients
-├── Command/             console commands
-├── Controller/          web controllers & API controller
-├── Entity/              ActiveRecord entities
-├── Event/               event classes
-├── Factory/             TokenFactory, MailFactory
-├── Form/                form models
-├── Helper/              helpers
-├── Listener/            event listeners
-├── Middleware/          PSR-15 middleware
-├── Migration/           table-creation migrations
-├── Repository/          repositories
-├── Service/             services
-├── Strategy/            email-change strategies + factory + interface
-├── Validator/           validators
-├── resources/
-│   ├── mail/            mail templates
-│   ├── messages/        locales
-│   └── views/
-│       └── bootstrap5/  web views
-└── ModuleConfig.php     configuration options
 ```
 
 ## Credits
