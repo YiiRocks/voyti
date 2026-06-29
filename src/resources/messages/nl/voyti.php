@@ -121,6 +121,7 @@ return [
     'voyti.menu.userProfile' => 'Profiel',
     'voyti.menu.account' => 'Account',
     'voyti.menu.networks' => 'Netwerken',
+    'voyti.menu.two_factor' => 'Tweefactorauthenticatie',
 
     // Login view
     'voyti.view.login.title' => 'Inloggen',
@@ -139,6 +140,7 @@ return [
     'voyti.view.two_factor.enabled' => 'Tweefactorauthenticatie is ingeschakeld',
     'voyti.view.two_factor.disable' => 'Uitschakelen',
     'voyti.view.two_factor.scan_qr' => 'Scan deze QR-code met uw authenticator-app',
+    'voyti.view.two_factor.manual_entry' => 'Of voer deze sleutel handmatig in:',
     'voyti.view.two_factor.qr_unavailable' => 'QR-code is niet beschikbaar',
     'voyti.view.two_factor.enter_code' => 'Voer de verificatiecode in',
     'voyti.view.two_factor.enable' => 'Inschakelen',

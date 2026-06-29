@@ -22,6 +22,7 @@ final class MailService
         private readonly array $mailParams,
         private readonly TranslatorInterface $translator,
         private readonly UrlGeneratorInterface $url,
+        private readonly string $appName = 'Voyti',
     ) {
     }
 
@@ -151,7 +152,7 @@ final class MailService
     private function getMailSubject(string $key, string $default): string
     {
         $subject = $this->mailParams[$key] ?? $default;
-        return trim(str_replace('{app}', '', $subject));
+        return trim(str_replace('{app}', $this->appName, $subject));
     }
 
     /**

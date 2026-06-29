@@ -170,7 +170,7 @@ final class ControllerHarness
         $this->mailFactory = new MailFactory($this->mailService);
         $this->emailChangeStrategyFactory = new EmailChangeStrategyFactory($this->userTokenFactory, $this->mailFactory);
         $this->emailChangeService = new EmailChangeService($this->moduleConfig, $this->userTokens, $this->users);
-        $this->qrCodeUriGeneratorService = new QrCodeUriGeneratorService();
+        $this->qrCodeUriGeneratorService = new QrCodeUriGeneratorService($this->moduleConfig);
         $this->currentUser = (new CurrentUser(
             new IdentityRepository($this->users),
             $this->eventDispatcher,

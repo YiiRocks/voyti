@@ -30,7 +30,7 @@ final class UserTest extends TestCase
             updated_at INTEGER NOT NULL,
             created_at INTEGER NOT NULL,
             last_login_at INTEGER,
-            auth_tf_key VARCHAR(32),
+            auth_tf_key VARCHAR(64),
             auth_tf_enabled INTEGER DEFAULT 0,
             password_changed_at INTEGER,
             last_login_ip VARCHAR(45),

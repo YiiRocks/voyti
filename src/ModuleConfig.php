@@ -9,7 +9,7 @@ final class ModuleConfig
     /**
      * @return (array|bool|int|null|string)[]
      *
-     * @psalm-return array{recaptchaVersion: null|string, enableSessionHistory: bool, numberSessionHistory: false|int, enableGdprCompliance: bool, gdprExportProperties: array, gdprAnonymizePrefix: string, enableTwoFactorAuthentication: bool, twoFactorAuthenticationForcedPermissions: array, enableRegistration: bool, enableSocialNetworkRegistration: bool, socialNetworkClients: array, enableEmailConfirmation: bool, enableSwitchIdentities: bool, switchIdentitySessionKey: null|string, loginRoute: string, accountSettingsRoute: string, mailAdminOnRegister: null|string, enablePasswordExpiration: bool, generatePasswords: bool, allowPasswordRecovery: bool, allowAdminPasswordRecovery: bool, allowAccountDelete: bool, emailChangeStrategy: int, rememberLoginLifespan: int, tokenConfirmationLifespan: int, tokenRecoveryLifespan: int, administratorPermissionName: null|string, profileVisibility: int, maxPasswordAge: int|null, disableIpLogging: bool, viewPath: string, mailPath: string, mailParams: array, enableRestApi: bool, adminRestPrefix: string}
+     * @psalm-return array{appName: string, recaptchaVersion: null|string, enableSessionHistory: bool, numberSessionHistory: false|int, enableGdprCompliance: bool, gdprExportProperties: array, gdprAnonymizePrefix: string, enableTwoFactorAuthentication: bool, twoFactorAuthenticationForcedPermissions: array, enableRegistration: bool, enableSocialNetworkRegistration: bool, socialNetworkClients: array, enableEmailConfirmation: bool, enableSwitchIdentities: bool, switchIdentitySessionKey: null|string, loginRoute: string, accountSettingsRoute: string, mailAdminOnRegister: null|string, enablePasswordExpiration: bool, generatePasswords: bool, allowPasswordRecovery: bool, allowAdminPasswordRecovery: bool, allowAccountDelete: bool, emailChangeStrategy: int, rememberLoginLifespan: int, tokenConfirmationLifespan: int, tokenRecoveryLifespan: int, administratorPermissionName: null|string, profileVisibility: int, maxPasswordAge: int|null, disableIpLogging: bool, viewPath: string, mailPath: string, mailParams: array, enableRestApi: bool, adminRestPrefix: string}
      */
     public static function defaults(): array
     {
@@ -29,6 +29,7 @@ final class ModuleConfig
     }
 
     public function __construct(
+        public readonly string $appName = 'Voyti',
         public readonly ?string $recaptchaVersion = null,
         public readonly bool $enableSessionHistory = false,
         public readonly int|false $numberSessionHistory = false,

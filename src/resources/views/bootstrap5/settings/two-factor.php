@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -11,6 +12,8 @@ use Yiisoft\Translator\TranslatorInterface;
 /**
  * @var User $user
  * @var string $qrCodeUri
+ * @var string|null $secret
+ * @var ModuleConfig $config
  * @var array $errors
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
@@ -19,10 +22,10 @@ use Yiisoft\Translator\TranslatorInterface;
 
 $this->setTitle($translator->translate('voyti.view.two_factor.title', category: 'voyti'));
 
-echo Html::div()->class('voyti-two-factor')->open();
-Html::H3()->class('mb-3')->open();
-echo $translator->translate('voyti.view.two_factor.title', category: 'voyti');
-echo Html::H3()->close();
+echo Html::div()->class('voyti-settings')->open();
+include dirname(__DIR__) . '/shared/_menu.php';
+
+echo Html::H3($translator->translate('voyti.view.two_factor.title', category: 'voyti'))->class('mb-3');
 
 if (!empty($errors)) {
     echo Html::div()->class('alert alert-danger')->open();
@@ -52,7 +55,13 @@ if ($user->isAuthTfEnabled()) {
     echo Html::p($translator->translate('voyti.view.two_factor.scan_qr', category: 'voyti'));
 
     if (!empty($qrCodeUri)) {
-        echo Html::img($qrCodeUri)->alt('QR Code')->class('img-fluid mb-3');
+        echo Html::div()->class('img-fluid mb-3')->addStyle(['max-width' => '260px'])->open();
+        echo $qrCodeUri;
+        echo Html::div()->close();
+
+        if (!empty($secret)) {
+            echo Html::p($translator->translate('voyti.view.two_factor.manual_entry', category: 'voyti') . ' ' . Html::code($secret))->encode(false);
+        }
     } else {
         echo Html::div()->class('alert alert-warning')->open();
         echo $translator->translate('voyti.view.two_factor.qr_unavailable', category: 'voyti');

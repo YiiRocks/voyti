@@ -123,6 +123,7 @@ return [
     'voyti.menu.userProfile' => 'Profile',
     'voyti.menu.account' => 'Account',
     'voyti.menu.networks' => 'Networks',
+    'voyti.menu.two_factor' => 'Two-Factor Auth',
 
     // Login view
     'voyti.view.login.title' => 'Log In',
@@ -141,6 +142,7 @@ return [
     'voyti.view.two_factor.enabled' => 'Two-factor authentication is enabled',
     'voyti.view.two_factor.disable' => 'Disable',
     'voyti.view.two_factor.scan_qr' => 'Scan this QR code with your authenticator app',
+    'voyti.view.two_factor.manual_entry' => 'Or enter this key manually:',
     'voyti.view.two_factor.qr_unavailable' => 'QR code is not available',
     'voyti.view.two_factor.enter_code' => 'Enter the verification code',
     'voyti.view.two_factor.enable' => 'Enable',

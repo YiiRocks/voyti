@@ -13,7 +13,9 @@ use Yiisoft\Translator\TranslatorInterface;
 
 $this->setTitle($translator->translate('voyti.view.privacy.title', category: 'voyti'));
 
-echo Html::div()->class('voyti-privacy')->open();
+echo Html::div()->class('voyti-settings')->open();
+include dirname(__DIR__) . '/shared/_menu.php';
+
 echo Html::H1($translator->translate('voyti.view.privacy.title', category: 'voyti'));
 
 echo Html::div()->class('list-group')->open();

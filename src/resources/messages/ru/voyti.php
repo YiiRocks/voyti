@@ -121,6 +121,7 @@ return [
     'voyti.menu.userProfile' => 'Профиль',
     'voyti.menu.account' => 'Аккаунт',
     'voyti.menu.networks' => 'Сети',
+    'voyti.menu.two_factor' => '2FA',
 
     // Login view
     'voyti.view.login.title' => 'Войти',
@@ -139,6 +140,7 @@ return [
     'voyti.view.two_factor.enabled' => 'Двухфакторная аутентификация включена',
     'voyti.view.two_factor.disable' => 'Отключить',
     'voyti.view.two_factor.scan_qr' => 'Сканируйте этот QR-код с помощью приложения-аутентификатора',
+    'voyti.view.two_factor.manual_entry' => 'Или введите этот ключ вручную:',
     'voyti.view.two_factor.qr_unavailable' => 'QR-код недоступен',
     'voyti.view.two_factor.enter_code' => 'Введите проверочный код',
     'voyti.view.two_factor.enable' => 'Включить',

@@ -108,7 +108,7 @@ final class SettingsController
             }
         }
 
-        return $this->renderView('settings/account', ['model' => $form]);
+        return $this->renderView('settings/account', ['model' => $form, 'config' => $this->config]);
     }
 
     public function confirm(ServerRequestInterface $request, string $code): ResponseInterface
@@ -324,6 +324,7 @@ final class SettingsController
         return $this->renderView('settings/two-factor', [
             'user' => $user,
             'qrCodeUri' => $qrCodeSvg,
+            'secret' => $user->getAuthTfKey(),
             'config' => $this->config,
             'errors' => [],
         ]);

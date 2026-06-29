@@ -873,7 +873,7 @@ final class WorkflowTest extends TestCase
             password_hash VARCHAR(255) NOT NULL,
             auth_key VARCHAR(32) NOT NULL,
             auth_tf_enabled INTEGER NOT NULL DEFAULT 0,
-            auth_tf_key VARCHAR(16),
+            auth_tf_key VARCHAR(64),
             auth_tf_mobile_phone VARCHAR(32),
             auth_tf_type VARCHAR(20),
             blocked_at INTEGER,

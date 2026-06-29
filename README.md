@@ -143,6 +143,12 @@ return [
 
 Below are all top-level `yiirocks/voyti` options, followed by the nested `mailParams` and `socialNetworkClients` options.
 
+### General
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `appName` | `string` | `'Voyti'` | Application name — used as TOTP issuer in 2FA QR codes and `{app}` placeholder in mail subjects |
+
 ### Authentication & Registration
 
 | Option | Type | Default | Description |

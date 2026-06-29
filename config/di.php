@@ -119,7 +119,7 @@ return [
         ModuleConfig $config,
         TranslatorInterface $translator,
         UrlGeneratorInterface $url
-    ) => new MailService($mailer, $config->mailPath, $config->mailParams, $translator, $url),
+    ) => new MailService($mailer, $config->mailPath, $config->mailParams, $translator, $url, $config->appName),
     AccountConfirmationService::class => fn (
         UserTokenRepository $tokenRepository
     ) => new AccountConfirmationService($tokenRepository),
@@ -163,7 +163,8 @@ return [
     SmsCodeGeneratorService::class => fn (
     ) => new SmsCodeGeneratorService,
     QrCodeUriGeneratorService::class => fn (
-    ) => new QrCodeUriGeneratorService,
+        ModuleConfig $config
+    ) => new QrCodeUriGeneratorService($config),
     UserSessionHistoryDecorator::class => fn (
         EventDispatcherInterface $eventDispatcher,
         ModuleConfig $config,

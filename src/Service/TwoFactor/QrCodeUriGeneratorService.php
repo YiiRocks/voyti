@@ -4,12 +4,19 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service\TwoFactor;
 
+use chillerlan\Authenticator\Authenticator;
 use chillerlan\QRCode\QRCode;
 use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Security\Random;
 
 final class QrCodeUriGeneratorService
 {
+    public function __construct(
+        private readonly ModuleConfig $config,
+    ) {
+    }
+
     public function generateQrCodeSvg(User $user): string
     {
         $uri = $this->run($user);
@@ -32,12 +39,14 @@ final class QrCodeUriGeneratorService
     {
         $secret = $user->getAuthTfKey();
         if ($secret === null || $secret === '') {
-            $secret = Random::string(32);
+            $secret = class_exists(Authenticator::class)
+                ? (new Authenticator())->createSecret()
+                : Random::string(32);
             $user->setAuthTfKey($secret);
             $user->save();
         }
 
-        $issuer = 'Voyti';
+        $issuer = $this->config->appName;
         $label = $user->getEmail();
         return sprintf(
             'otpauth://totp/%s:%s?secret=%s&issuer=%s',
