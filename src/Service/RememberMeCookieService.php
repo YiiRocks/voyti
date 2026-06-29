@@ -59,9 +59,15 @@ final class RememberMeCookieService
         CurrentUser $currentUser,
         IdentityRepositoryInterface $identityRepository,
     ): void {
-        $cookie = $cookies[$this->getCookieName()] ?? null;
+        $cookieName = $this->getCookieName();
+        $cookie = $cookies[$cookieName] ?? null;
+
+        if (!is_string($cookie)) {
+            return;
+        }
+
         try {
-            $data = is_string($cookie) ? json_decode($cookie, true, 512, JSON_THROW_ON_ERROR) : null;
+            $data = json_decode($cookie, true, 512, JSON_THROW_ON_ERROR);
         } catch (JsonException) {
             return;
         }
@@ -80,7 +86,6 @@ final class RememberMeCookieService
         ) {
             return;
         }
-
         $currentUser->login($identity);
     }
 }
