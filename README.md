@@ -205,13 +205,13 @@ Below are all top-level `yiirocks/voyti` options, followed by the nested `mailPa
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `enableSessionHistory` | `bool` | `false` | Track session history |
-| `numberSessionHistory` | `int\|false` | `false` | Max sessions to keep per user |
+| `enableSessionHistory` | `bool` | `true` | Track session history |
+| `numberSessionHistory` | `int\|false` | `50` | Max sessions to keep per user |
 | `disableIpLogging` | `bool` | `false` | Disable IP address logging |
 | `enablePasswordExpiration` | `bool` | `false` | Enable password expiration |
 | `maxPasswordAge` | `?int` | `null` | Max password age in days |
 | `administratorPermissionName` | `?string` | `null` | Permission name for admin access |
-| `profileVisibility` | `int` | `0` | Profile visibility level |
+| `profileVisibility` | `int` | `2` | Profile visibility: `0` = owner only, `1` = owner + admins, `2` = any authenticated user, `3` = public |
 
 ### Views & Mail
 
@@ -225,7 +225,6 @@ Mail params defaults:
 
 ```php
 [
-    'fromEmail' => 'no-reply@example.com',
     'welcomeMailSubject' => 'Welcome to {app}',
     'confirmationMailSubject' => 'Confirm account on {app}',
     'reconfirmationMailSubject' => 'Confirm email change on {app}',
@@ -238,7 +237,6 @@ Mail params defaults:
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| `fromEmail` | `string` | `'no-reply@example.com'` | Sender address for Voyti mail |
 | `welcomeMailSubject` | `string` | `'Welcome to {app}'` | Welcome email subject |
 | `confirmationMailSubject` | `string` | `'Confirm account on {app}'` | Registration confirmation subject |
 | `reconfirmationMailSubject` | `string` | `'Confirm email change on {app}'` | Email change confirmation subject |

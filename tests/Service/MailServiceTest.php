@@ -18,8 +18,9 @@ final class MailServiceTest extends TestCase
     {
         $mailPath = $this->createTempMailPath();
         try {
+            mkdir($mailPath . '/html');
             file_put_contents(
-                $mailPath . '/welcome.php',
+                $mailPath . '/html/welcome.php',
                 <<<'PHP'
 <?php
 echo 'custom-html-' . $username;
@@ -36,7 +37,7 @@ PHP
 
             $mailer = new MailCapture();
             $url = $this->createStub(UrlGeneratorInterface::class);
-            $service = new MailService($mailer, $mailPath, ['fromEmail' => 'from@example.com'], new Translator('en'), $url);
+            $service = new MailService($mailer, $mailPath, [], new Translator('en'), $url);
 
             $user = new User();
             $user->setUsername('alice');
@@ -64,14 +65,17 @@ PHP
 
     private function removeTempMailPath(string $path): void
     {
+        if (is_file($path . '/html/welcome.php')) {
+            unlink($path . '/html/welcome.php');
+        }
+        if (is_dir($path . '/html')) {
+            rmdir($path . '/html');
+        }
         if (is_file($path . '/text/welcome.php')) {
             unlink($path . '/text/welcome.php');
         }
         if (is_dir($path . '/text')) {
             rmdir($path . '/text');
-        }
-        if (is_file($path . '/welcome.php')) {
-            unlink($path . '/welcome.php');
         }
         if (is_dir($path)) {
             rmdir($path);

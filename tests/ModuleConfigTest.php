@@ -44,7 +44,7 @@ final class ModuleConfigTest extends TestCase
             disableIpLogging: true,
             viewPath: '/custom/views',
             mailPath: '/custom/mail',
-            mailParams: ['fromEmail' => 'admin@example.com'],
+            mailParams: ['welcomeMailSubject' => 'Welcome'],
             enableRestApi: true,
             adminRestPrefix: 'admin/api/v2',
         );
@@ -80,7 +80,7 @@ final class ModuleConfigTest extends TestCase
         $this->assertTrue($config->disableIpLogging);
         $this->assertSame('/custom/views', $config->viewPath);
         $this->assertSame('/custom/mail', $config->mailPath);
-        $this->assertSame(['fromEmail' => 'admin@example.com'], $config->mailParams);
+        $this->assertSame(['welcomeMailSubject' => 'Welcome'], $config->mailParams);
         $this->assertTrue($config->enableRestApi);
         $this->assertSame('admin/api/v2', $config->adminRestPrefix);
     }
@@ -89,8 +89,8 @@ final class ModuleConfigTest extends TestCase
         $config = new ModuleConfig();
 
         $this->assertNull($config->recaptchaVersion);
-        $this->assertFalse($config->enableSessionHistory);
-        $this->assertFalse($config->numberSessionHistory);
+        $this->assertTrue($config->enableSessionHistory);
+        $this->assertSame(50, $config->numberSessionHistory);
         $this->assertFalse($config->enableGdprCompliance);
         $this->assertSame([
             'email',
@@ -123,7 +123,7 @@ final class ModuleConfigTest extends TestCase
         $this->assertSame(86400, $config->tokenConfirmationLifespan);
         $this->assertSame(21600, $config->tokenRecoveryLifespan);
         $this->assertNull($config->administratorPermissionName);
-        $this->assertSame(0, $config->profileVisibility);
+        $this->assertSame(2, $config->profileVisibility);
         $this->assertNull($config->maxPasswordAge);
         $this->assertFalse($config->disableIpLogging);
         $this->assertSame(
@@ -135,7 +135,6 @@ final class ModuleConfigTest extends TestCase
             str_replace('\\', '/', $config->mailPath),
         );
         $this->assertSame([
-            'fromEmail' => 'no-reply@example.com',
             'welcomeMailSubject' => 'Welcome to {app}',
             'confirmationMailSubject' => 'Confirm account on {app}',
             'reconfirmationMailSubject' => 'Confirm email change on {app}',
@@ -192,7 +191,7 @@ final class ModuleConfigTest extends TestCase
     public function testHasNumberSessionHistory(): void
     {
         $config = new ModuleConfig();
-        $this->assertFalse($config->hasNumberSessionHistory());
+        $this->assertTrue($config->hasNumberSessionHistory());
 
         $config = new ModuleConfig(numberSessionHistory: false);
         $this->assertFalse($config->hasNumberSessionHistory());

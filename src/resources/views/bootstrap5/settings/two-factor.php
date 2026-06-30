@@ -25,7 +25,7 @@ $this->setTitle($translator->translate('voyti.view.two_factor.title', category: 
 echo Html::div()->class('voyti-settings')->open();
 include dirname(__DIR__) . '/shared/_menu.php';
 
-echo Html::H3($translator->translate('voyti.view.two_factor.title', category: 'voyti'))->class('mb-3');
+echo Html::H1($translator->translate('voyti.view.two_factor.title', category: 'voyti'));
 
 if (!empty($errors)) {
     echo Html::div()->class('alert alert-danger')->open();

@@ -31,8 +31,8 @@ final class ModuleConfig
     public function __construct(
         public readonly string $appName = 'Voyti',
         public readonly ?string $recaptchaVersion = null,
-        public readonly bool $enableSessionHistory = false,
-        public readonly int|false $numberSessionHistory = false,
+        public readonly bool $enableSessionHistory = true,
+        public readonly int|false $numberSessionHistory = 50,
         public readonly bool $enableGdprCompliance = false,
         public readonly array $gdprExportProperties = [
             'email',
@@ -66,13 +66,12 @@ final class ModuleConfig
         public readonly int $tokenConfirmationLifespan = 86400,
         public readonly int $tokenRecoveryLifespan = 21600,
         public readonly ?string $administratorPermissionName = null,
-        public readonly int $profileVisibility = 0,
+        public readonly int $profileVisibility = 2,
         public readonly ?int $maxPasswordAge = null,
         public readonly bool $disableIpLogging = false,
         public readonly string $viewPath = __DIR__ . '/resources/views/bootstrap5',
         public readonly string $mailPath = __DIR__ . '/resources/mail',
         public readonly array $mailParams = [
-            'fromEmail' => 'no-reply@example.com',
             'welcomeMailSubject' => 'Welcome to {app}',
             'confirmationMailSubject' => 'Confirm account on {app}',
             'reconfirmationMailSubject' => 'Confirm email change on {app}',

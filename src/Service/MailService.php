@@ -31,15 +31,12 @@ final class MailService
      */
     public function send(string $type, string $to, string $subject, string $view, array $params = []): bool
     {
-        $from = $this->mailParams['fromEmail'] ?? 'no-reply@example.com';
-
         $message = new Message(
-            from: $from,
             to: $to,
             subject: $subject,
         );
 
-        $htmlBody = $this->renderView("{$view}.php", $params);
+        $htmlBody = $this->renderView("html/{$view}.php", $params);
         $textBody = $this->renderView("text/{$view}.php", $params);
 
         if ($htmlBody !== null) {
