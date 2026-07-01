@@ -22,31 +22,19 @@ Html::H3()->class('mb-3')->open();
 echo $translator->translate('voyti.view.admin.session_history', category: 'voyti');
 echo Html::H3()->close();
 
-echo Html::div()->class('table-responsive')->open();
-echo Html::table()->class('table table-striped')->open();
-
-echo Html::tag('thead')->open();
-echo Html::tag('tr')->open();
-echo Html::tag('th', $translator->translate('voyti.view.session_history.ip', category: 'voyti'));
-echo Html::tag('th', $translator->translate('voyti.view.session_history.user_agent', category: 'voyti'));
-echo Html::tag('th', $translator->translate('voyti.view.session_history.created', category: 'voyti'));
-echo Html::tag('tr')->close();
-echo Html::tag('thead')->close();
-
-echo Html::tag('tbody')->open();
+echo Html::div()->class('d-none d-md-flex row fw-bold border-bottom pb-2 mb-2')->open();
+echo Html::div($translator->translate('voyti.view.session_history.ip', category: 'voyti'))->class('col-3');
+echo Html::div($translator->translate('voyti.view.session_history.user_agent', category: 'voyti'))->class('col-6');
+echo Html::div($translator->translate('voyti.view.session_history.created', category: 'voyti'))->class('col-3');
+echo Html::div()->close();
 
 foreach ($sessions as $session) {
-    echo Html::tag('tr')->open();
-    echo Html::tag('td', $session->getIp() ?? '');
-    echo Html::tag('td', $session->getUserAgent() ?? '');
-    echo Html::tag('td', date('Y-m-d H:i:s', $session->getCreatedAt()));
-    echo Html::tag('tr')->close();
+    echo Html::div()->class('row py-2 border-bottom align-items-center')->open();
+    echo Html::div($session->getIp() ?? '')->class('col-3 text-break');
+    echo Html::div($session->getUserAgent() ?? '')->class('col-6 text-break');
+    echo Html::div(date('Y-m-d H:i:s', $session->getCreatedAt()))->class('col-3');
+    echo Html::div()->close();
 }
-
-echo Html::tag('tbody')->close();
-
-echo Html::table()->close();
-echo Html::div()->close();
 
 echo Html::form()
     ->post($url->generate('voyti/admin-terminate-sessions', ['id' => $user->getId()]))

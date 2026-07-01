@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Controller;
 
+use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Form\Rbac\RuleForm;
@@ -28,6 +29,7 @@ final class RuleController
         private readonly UrlGeneratorInterface $url,
         private readonly ValidatorInterface $validator,
         private readonly RuleEditionService $authRuleEditionService,
+        private readonly ResponseFactoryInterface $responseFactory,
     ) {
     }
 
@@ -57,7 +59,7 @@ final class RuleController
             }
         }
 
-        return $this->renderView('rule/create', [
+        return $this->renderView('rbac/rule/create', [
             'model' => $form,
             'errors' => $errors,
         ]);
@@ -67,14 +69,14 @@ final class RuleController
     {
         $this->authRuleEditionService->remove($name);
 
-        return $this->renderSuccess('voyti.rule.removed');
+        return $this->redirect($this->url->generate('voyti/rules'));
     }
 
     public function index(): ResponseInterface
     {
         $rules = $this->authHelper->getRuleNames();
 
-        return $this->renderView('rule/index', [
+        return $this->renderView('rbac/rule/index', [
             'rules' => $rules,
         ]);
     }
@@ -98,7 +100,7 @@ final class RuleController
 
             if ($result->isValid()) {
                 if ($this->authRuleEditionService->update($form)) {
-                    return $this->renderSuccess('voyti.rule.updated');
+                    return $this->redirect($this->url->generate('voyti/rules'));
                 }
                 $errors['class'] = [$this->translator->translate('voyti.rule.invalid_class', category: 'voyti')];
             } else {
@@ -106,9 +108,15 @@ final class RuleController
             }
         }
 
-        return $this->renderView('rule/update', [
+        return $this->renderView('rbac/rule/update', [
             'model' => $form,
             'errors' => $errors,
         ]);
+    }
+
+    private function redirect(string $url): ResponseInterface
+    {
+        return $this->responseFactory->createResponse(302)
+            ->withHeader('Location', $url);
     }
 }

@@ -65,42 +65,35 @@ echo Html::div()->close();
 
 echo Html::form()->close();
 
-echo Html::div()->class('table-responsive')->open();
-echo Html::table()->class('table table-striped table-hover')->open();
-
-echo Html::tag('thead')->class('table-light')->open();
-echo Html::tag('tr')->open();
-echo Html::tag('th', $translator->translate('voyti.view.id_header', category: 'voyti'))->addAttributes(['scope' => 'col']);
-echo Html::tag('th', $translator->translate('voyti.view.username_header', category: 'voyti'))->addAttributes(['scope' => 'col']);
-echo Html::tag('th', $translator->translate('voyti.view.email_header', category: 'voyti'))->addAttributes(['scope' => 'col']);
-echo Html::tag('th', $translator->translate('voyti.view.status_header', category: 'voyti'))->addAttributes(['scope' => 'col']);
-echo Html::tag('th', $translator->translate('voyti.view.actions_header', category: 'voyti'))->class('text-end')->addAttributes(['scope' => 'col']);
-echo Html::tag('tr')->close();
-echo Html::tag('thead')->close();
-
-echo Html::tag('tbody')->open();
+echo Html::div()->class('d-none d-md-flex row fw-bold border-bottom pb-2 mb-2')->open();
+echo Html::div($translator->translate('voyti.view.id_header', category: 'voyti'))->class('col-1');
+echo Html::div($translator->translate('voyti.view.username_header', category: 'voyti'))->class('col-3');
+echo Html::div($translator->translate('voyti.view.email_header', category: 'voyti'))->class('col-3');
+echo Html::div($translator->translate('voyti.view.status_header', category: 'voyti'))->class('col-2');
+echo Html::div($translator->translate('voyti.view.actions_header', category: 'voyti'))->class('col-3 text-end');
+echo Html::div()->close();
 
 /** @var User $user */
 foreach ($users as $user) {
-    echo Html::tag('tr')->open();
-    echo Html::tag('td', $user->getId());
-    echo Html::tag('td', $user->getUsername());
-    echo Html::tag('td', $user->getEmail());
-    echo Html::tag('td')->open();
+    echo Html::div()->class('row py-2 border-bottom align-items-center')->open();
+    echo Html::div($user->getId())->class('col-1');
+    echo Html::div($user->getUsername())->class('col-3 text-break');
+    echo Html::div($user->getEmail())->class('col-3 text-break');
+    echo Html::div()->class('col-2')->open();
 
     if ($user->isBlocked()) {
-        echo Html::tag('span', $translator->translate('voyti.view.status_blocked', category: 'voyti'))->class('badge bg-danger');
+        echo Html::span($translator->translate('voyti.view.status_blocked', category: 'voyti'))->class('badge bg-danger');
     } elseif ($user->isConfirmed()) {
-        echo Html::tag('span', $translator->translate('voyti.view.status_active', category: 'voyti'))->class('badge bg-success');
+        echo Html::span($translator->translate('voyti.view.status_active', category: 'voyti'))->class('badge bg-success');
     } else {
-        echo Html::tag('span', $translator->translate('voyti.view.status_pending', category: 'voyti'))->class('badge bg-warning text-dark');
+        echo Html::span($translator->translate('voyti.view.status_pending', category: 'voyti'))->class('badge bg-warning text-dark');
     }
 
-    echo Html::tag('td')->close();
+    echo Html::div()->close();
 
-    echo Html::tag('td')->class('text-end')->open();
+    echo Html::div()->class('col-3 text-end')->open();
     echo Html::a($translator->translate('voyti.view.info_link', category: 'voyti'), $url->generate('voyti/admin-info', ['id' => $user->getId()]))->class('btn', 'btn-sm', 'btn-outline-secondary', 'me-1');
-    echo Html::a($translator->translate('voyti.view.update_link', category: 'voyti'), $url->generate('voyti/admin-update', ['id' => $user->getId()]))->class('btn', 'btn-sm', 'btn-outline-secondary');
+    echo Html::a($translator->translate('voyti.view.update_link', category: 'voyti'), $url->generate('voyti/admin-update', ['id' => $user->getId()]))->class('btn', 'btn-sm', 'btn-outline-secondary', 'me-1');
 
     echo Html::form()
         ->post($url->generate('voyti/admin-delete', ['id' => $user->getId()]))
@@ -109,13 +102,9 @@ foreach ($users as $user) {
         ->open();
     echo Html::submitButton($translator->translate('voyti.view.delete_button', category: 'voyti'))->class('btn', 'btn-sm', 'btn-outline-danger');
     echo Html::form()->close();
-    echo Html::tag('td')->close();
-    echo Html::tag('tr')->close();
+    echo Html::div()->close();
+    echo Html::div()->close();
 }
-
-echo Html::tag('tbody')->close();
-echo Html::table()->close();
-echo Html::div()->close();
 
 if ($totalPages > 1) {
     $pageQuery = [

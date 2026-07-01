@@ -29,34 +29,26 @@ echo Html::form()
     ->csrf($csrf)
     ->open();
 
-echo Html::table()->class('table')->open();
-echo Html::tag('thead')->open();
-echo Html::tag('tr')->open();
-echo Html::tag('th', $translator->translate('voyti.view.assignments.assigned', category: 'voyti'));
-echo Html::tag('th', $translator->translate('voyti.view.assignments.available', category: 'voyti'));
-echo Html::tag('tr')->close();
-echo Html::tag('thead')->close();
-echo Html::tag('tbody')->open();
-echo Html::tag('tr')->open();
-echo Html::tag('td')->open();
+echo Html::div()->class('row g-3')->open();
+echo Html::div()->class('col-md-6')->open();
+echo Html::div($translator->translate('voyti.view.assignments.assigned', category: 'voyti'))->class('fw-bold mb-2');
 foreach ($assignments as $itemName) {
     echo Html::div()->class('form-check')->open();
     echo Html::input('checkbox')->class('form-check-input')->name('items[]')->value($itemName)->addAttributes(['checked' => true]);
     echo Html::label($itemName)->class('form-check-label');
     echo Html::div()->close();
 }
-echo Html::tag('td')->close();
-echo Html::tag('td')->open();
+echo Html::div()->close();
+echo Html::div()->class('col-md-6')->open();
+echo Html::div($translator->translate('voyti.view.assignments.available', category: 'voyti'))->class('fw-bold mb-2');
 foreach ($available as $name => $item) {
     echo Html::div()->class('form-check')->open();
     echo Html::input('checkbox')->class('form-check-input')->name('items[]')->value($name);
     echo Html::label($name)->class('form-check-label');
     echo Html::div()->close();
 }
-echo Html::tag('td')->close();
-echo Html::tag('tr')->close();
-echo Html::tag('tbody')->close();
-echo Html::table()->close();
+echo Html::div()->close();
+echo Html::div()->close();
 
 echo Field::buttonGroup()
     ->buttons(

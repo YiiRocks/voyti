@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Controller;
 
+use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Form\Rbac\AbstractAuthItemForm;
@@ -29,6 +30,7 @@ abstract class AbstractAuthItemController
         protected readonly UrlGeneratorInterface $url,
         protected readonly ValidatorInterface $validator,
         protected readonly ItemEditionService $authItemEditionService,
+        protected readonly ResponseFactoryInterface $responseFactory,
     ) {
     }
 
@@ -43,14 +45,13 @@ abstract class AbstractAuthItemController
             $result = $this->validator->validate($form);
 
             if ($result->isValid()) {
-                if ($this->authItemEditionService->create($form)) {
-                    return $this->renderSuccess('voyti.auth_item.' . $this->getItemType() . '_created');
-                }
+                $this->authItemEditionService->create($form);
+                return $this->redirect($this->url->generate('voyti/' . $this->getIndexRouteName()));
             }
             $errors = $result->getErrorMessagesIndexedByProperty();
         }
 
-        return $this->renderView($this->getItemType() . '/create', [
+        return $this->renderView('rbac/' . $this->getItemType() . '/create', [
             'model' => $form,
             'errors' => $errors,
             'unassignedItems' => $this->authHelper->getAllItems(),
@@ -61,7 +62,7 @@ abstract class AbstractAuthItemController
     {
         $this->authItemEditionService->delete($name, $this->getItemType());
 
-        return $this->renderSuccess('voyti.auth_item.' . $this->getItemType() . '_deleted');
+        return $this->redirect($this->url->generate('voyti/' . $this->getIndexRouteName()));
     }
 
     public function index(ServerRequestInterface $request): ResponseInterface
@@ -88,7 +89,7 @@ abstract class AbstractAuthItemController
             );
         }
 
-        return $this->renderView($this->getItemType() . '/index', [
+        return $this->renderView('rbac/' . $this->getItemType() . '/index', [
             'items' => $items,
             'filterName' => $filterName,
             'filterDescription' => $filterDescription,
@@ -120,18 +121,25 @@ abstract class AbstractAuthItemController
             $result = $this->validator->validate($form);
 
             if ($result->isValid()) {
-                if ($this->authItemEditionService->update($form)) {
-                    return $this->renderSuccess('voyti.auth_item.' . $this->getItemType() . '_updated');
-                }
+                $this->authItemEditionService->update($form);
+                return $this->redirect($this->url->generate('voyti/' . $this->getIndexRouteName()));
             }
             $errors = $result->getErrorMessagesIndexedByProperty();
         }
 
-        return $this->renderView($this->getItemType() . '/update', [
+        return $this->renderView('rbac/' . $this->getItemType() . '/update', [
             'model' => $form,
             'errors' => $errors,
             'unassignedItems' => $this->authHelper->getAllItems(),
         ]);
+    }
+
+    abstract protected function getIndexRouteName(): string;
+
+    private function redirect(string $url): ResponseInterface
+    {
+        return $this->responseFactory->createResponse(302)
+            ->withHeader('Location', $url);
     }
 
     abstract protected function createForm(): AbstractAuthItemForm;

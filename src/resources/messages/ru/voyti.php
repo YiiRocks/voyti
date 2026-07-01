@@ -64,17 +64,8 @@ return [
 
     // RuleController
     'voyti.rule.added' => 'Правило авторизации добавлено',
-    'voyti.rule.updated' => 'Правило авторизации обновлено',
-    'voyti.rule.removed' => 'Правило авторизации удалено',
     'voyti.rule.invalid_class' => 'Недопустимый класс правила',
 
-    // AbstractAuthItemController (permissions/roles)
-    'voyti.auth_item.permission_created' => 'Разрешение создано',
-    'voyti.auth_item.permission_updated' => 'Разрешение обновлено',
-    'voyti.auth_item.permission_deleted' => 'Разрешение удалено',
-    'voyti.auth_item.role_created' => 'Роль создана',
-    'voyti.auth_item.role_updated' => 'Роль обновлена',
-    'voyti.auth_item.role_deleted' => 'Роль удалена',
     'voyti.auth_item.not_found' => 'Элемент авторизации не найден',
 
     // API AdminController

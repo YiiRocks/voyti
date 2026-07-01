@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Controller;
 
+use Psr\Http\Message\ResponseFactoryInterface;
 use YiiRocks\Voyti\Form\Rbac\AbstractAuthItemForm;
 use YiiRocks\Voyti\Form\Rbac\PermissionForm;
 use YiiRocks\Voyti\Helper\AuthHelper;
@@ -22,8 +23,9 @@ final class PermissionController extends AbstractAuthItemController
         UrlGeneratorInterface $url,
         ValidatorInterface $validator,
         ItemEditionService $authItemEditionService,
+        ResponseFactoryInterface $responseFactory,
     ) {
-        parent::__construct($translator, $viewRenderer, $authHelper, $url, $validator, $authItemEditionService);
+        parent::__construct($translator, $viewRenderer, $authHelper, $url, $validator, $authItemEditionService, $responseFactory);
     }
 
     /**
@@ -44,5 +46,11 @@ final class PermissionController extends AbstractAuthItemController
     protected function getItemType(): string
     {
         return 'permission';
+    }
+
+    #[\Override]
+    protected function getIndexRouteName(): string
+    {
+        return 'permissions';
     }
 }

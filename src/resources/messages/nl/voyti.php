@@ -64,17 +64,8 @@ return [
 
     // RuleController
     'voyti.rule.added' => 'Autorisatieregel is toegevoegd',
-    'voyti.rule.updated' => 'Autorisatieregel is bijgewerkt',
-    'voyti.rule.removed' => 'Autorisatieregel is verwijderd',
     'voyti.rule.invalid_class' => 'Ongeldige regelklasse',
 
-    // AbstractAuthItemController (permissions/roles)
-    'voyti.auth_item.permission_created' => 'Machtiging aangemaakt',
-    'voyti.auth_item.permission_updated' => 'Machtiging bijgewerkt',
-    'voyti.auth_item.permission_deleted' => 'Machtiging verwijderd',
-    'voyti.auth_item.role_created' => 'Rol aangemaakt',
-    'voyti.auth_item.role_updated' => 'Rol bijgewerkt',
-    'voyti.auth_item.role_deleted' => 'Rol verwijderd',
     'voyti.auth_item.not_found' => 'Autorisatie-item niet gevonden',
 
     // API AdminController

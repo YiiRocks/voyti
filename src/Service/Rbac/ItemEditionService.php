@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service\Rbac;
 
-use Throwable;
+use RuntimeException;
 use YiiRocks\Voyti\Form\Rbac\AbstractAuthItemForm;
 use YiiRocks\Voyti\Validator\Rbac\ItemsValidator;
 use Yiisoft\Rbac\ItemsStorageInterface;
@@ -21,70 +21,63 @@ final class ItemEditionService
     ) {
     }
 
-    public function create(AbstractAuthItemForm $form): bool
+    public function create(AbstractAuthItemForm $form): void
     {
-        try {
-            if ($form->getType() === 'role') {
-                $item = (new Role($form->name))->withDescription($form->description);
-                if ($form->rule !== null && $form->rule !== '') {
-                    $item = $item->withRuleName($form->rule);
-                }
-                $this->authManager->addRole($item);
-            } else {
-                $item = (new Permission($form->name))->withDescription($form->description);
-                if ($form->rule !== null && $form->rule !== '') {
-                    $item = $item->withRuleName($form->rule);
-                }
-                $this->authManager->addPermission($item);
+        if ($form->getType() === 'role') {
+            $item = (new Role($form->name))->withDescription($form->description);
+            if ($form->rule !== null && $form->rule !== '') {
+                $item = $item->withRuleName($form->rule);
             }
-
-            $this->updateChildren($form->name, $form->children);
-            return true;
-        } catch (Throwable) {
-            return false;
+            $this->authManager->addRole($item);
+        } else {
+            $item = (new Permission($form->name))->withDescription($form->description);
+            if ($form->rule !== null && $form->rule !== '') {
+                $item = $item->withRuleName($form->rule);
+            }
+            $this->authManager->addPermission($item);
         }
+
+        $this->updateChildren($form->name, $form->children);
     }
 
-    public function delete(string $name, string $type): bool
+    public function delete(string $name, string $type): void
     {
-        try {
-            if ($type === 'role') {
-                $this->authManager->removeRole($name);
-            } else {
-                $this->authManager->removePermission($name);
-            }
-            $this->authManager->removeChildren($name);
-            return true;
-        } catch (Throwable) {
-            return false;
+        if ($type === 'role') {
+            $this->authManager->removeRole($name);
+        } else {
+            $this->authManager->removePermission($name);
         }
+        $this->authManager->removeChildren($name);
     }
 
-    public function update(AbstractAuthItemForm $form): bool
+    public function update(AbstractAuthItemForm $form): void
     {
         $oldName = $form->itemName !== '' ? $form->itemName : $form->name;
 
-        try {
-            if ($form->getType() === 'role') {
-                $item = (new Role($form->name))->withDescription($form->description);
-                if ($form->rule !== null && $form->rule !== '') {
-                    $item = $item->withRuleName($form->rule);
-                }
-                $this->authManager->updateRole($oldName, $item);
-            } else {
-                $item = (new Permission($form->name))->withDescription($form->description);
-                if ($form->rule !== null && $form->rule !== '') {
-                    $item = $item->withRuleName($form->rule);
-                }
-                $this->authManager->updatePermission($oldName, $item);
+        if ($form->getType() === 'role') {
+            $item = $this->itemsStorage->getRole($oldName);
+            if ($item === null) {
+                throw new RuntimeException("Role '{$oldName}' not found.");
             }
-
-            $this->authManager->removeChildren($form->name);
-            $this->updateChildren($form->name, $form->children);
-            return true;
-        } catch (Throwable) {
-            return false;
+            $item = $item->withName($form->name)->withDescription($form->description);
+            if ($form->rule !== null && $form->rule !== '') {
+                $item = $item->withRuleName($form->rule);
+            }
+            $this->authManager->updateRole($oldName, $item);
+        } else {
+            $item = $this->itemsStorage->getPermission($oldName);
+            if ($item === null) {
+                throw new RuntimeException("Permission '{$oldName}' not found.");
+            }
+            $item = $item->withName($form->name)->withDescription($form->description);
+            if ($form->rule !== null && $form->rule !== '') {
+                $item = $item->withRuleName($form->rule);
+            }
+            $this->authManager->updatePermission($oldName, $item);
         }
+
+        $this->authManager->removeChildren($form->name);
+        $this->updateChildren($form->name, $form->children);
     }
 
     private function updateChildren(string $parentName, array $children): void

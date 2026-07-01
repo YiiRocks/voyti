@@ -64,17 +64,8 @@ return [
 
     // RuleController
     'voyti.rule.added' => 'Autorisierungsregel wurde hinzugefügt',
-    'voyti.rule.updated' => 'Autorisierungsregel wurde aktualisiert',
-    'voyti.rule.removed' => 'Autorisierungsregel wurde entfernt',
     'voyti.rule.invalid_class' => 'Ungültige Regelklasse',
 
-    // AbstractAuthItemController (permissions/roles)
-    'voyti.auth_item.permission_created' => 'Berechtigung erstellt',
-    'voyti.auth_item.permission_updated' => 'Berechtigung aktualisiert',
-    'voyti.auth_item.permission_deleted' => 'Berechtigung gelöscht',
-    'voyti.auth_item.role_created' => 'Rolle erstellt',
-    'voyti.auth_item.role_updated' => 'Rolle aktualisiert',
-    'voyti.auth_item.role_deleted' => 'Rolle gelöscht',
     'voyti.auth_item.not_found' => 'Autorisierungselement nicht gefunden',
 
     // API AdminController
