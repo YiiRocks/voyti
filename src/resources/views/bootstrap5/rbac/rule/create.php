@@ -7,18 +7,21 @@ use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\View\WebView;
 
 /**
+ * @var WebView $this
  * @var RuleForm $model
- * @var array $errors
+ * @var array<string, list<string>> $errors
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
  * @var string $csrf
  */
 
+/** @psalm-suppress InvalidScope */
 $this->setTitle($translator->translate('voyti.view.rule.create_title', category: 'voyti'));
 
-echo Html::div()->class('voyti-rbac-create')->open();
+echo Html::div()->open();
 echo Html::H1($translator->translate('voyti.view.rule.create_title', category: 'voyti'));
 
 echo Html::form()
@@ -29,7 +32,8 @@ echo Html::form()
 if (!empty($errors)) {
     echo Html::div()->class('alert alert-danger')->open();
     foreach ($errors as $field => $fieldErrors) {
-        foreach ((array) $fieldErrors as $error) {
+        /** @var string $error */
+        foreach ($fieldErrors as $error) {
             echo Html::div($error);
         }
     }

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Helper;
 
 use PHPUnit\Framework\TestCase;
+use Psr\EventDispatcher\EventDispatcherInterface;
+use Yiisoft\Auth\IdentityRepositoryInterface;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Rbac\Assignment;
@@ -14,6 +16,7 @@ use Yiisoft\Rbac\ItemsStorageInterface;
 use Yiisoft\Rbac\ManagerInterface;
 use Yiisoft\Rbac\Permission;
 use Yiisoft\Rbac\Role;
+use Yiisoft\User\CurrentUser;
 
 final class AuthHelperTest extends TestCase
 {
@@ -290,12 +293,17 @@ final class AuthHelperTest extends TestCase
         ModuleConfig $config,
         ?ItemsStorageInterface $itemsStorage = null,
         ?AssignmentsStorageInterface $assignmentsStorage = null,
+        ?CurrentUser $currentUser = null,
     ): AuthHelper {
         return new AuthHelper(
             $authManager,
             $itemsStorage ?? new AuthHelperItemsStorageDouble(),
             $assignmentsStorage ?? new AuthHelperAssignmentsStorageDouble(),
             $config,
+            $currentUser ?? new CurrentUser(
+                $this->createStub(IdentityRepositoryInterface::class),
+                $this->createStub(EventDispatcherInterface::class),
+            ),
         );
     }
 }

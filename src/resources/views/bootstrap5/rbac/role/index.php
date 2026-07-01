@@ -6,8 +6,10 @@ use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\View\WebView;
 
 /**
+ * @var WebView $this
  * @var array $items Array of Role objects
  * @var string $filterName
  * @var string $filterDescription
@@ -16,9 +18,10 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var string $csrf
  */
 
+/** @psalm-suppress InvalidScope */
 $this->setTitle($translator->translate('voyti.view.role.title', category: 'voyti'));
 
-echo Html::div()->class('voyti-rbac-index')->open();
+echo Html::div()->open();
 echo Html::div()->class('d-flex justify-content-between align-items-center mb-3')->open();
 echo Html::H1($translator->translate('voyti.view.role.title', category: 'voyti'));
 echo Html::a($translator->translate('voyti.view.role.create_link', category: 'voyti'), $url->generate('voyti/roles-create'))->class('btn', 'btn-primary');
@@ -63,11 +66,13 @@ echo Html::tag('thead')->close();
 
 echo Html::tag('tbody')->open();
 
+/** @var Yiisoft\Rbac\Role $role */
 foreach ($items as $role) {
     echo Html::tag('tr')->open();
     echo Html::tag('td', $role->getName());
     echo Html::tag('td', $role->getDescription());
-    echo Html::tag('td', implode(', ', array_map(fn ($c) => $c->getName(), $role->getChildren())));
+    /** @psalm-suppress MixedArgument, UndefinedMethod */
+    echo Html::tag('td', implode(', ', array_map(fn(\Yiisoft\Rbac\Role $c): string => $c->getName(), $role->getChildren())));
     echo Html::tag('td')->class('text-end')->open();
     echo Html::a($translator->translate('voyti.view.update_link', category: 'voyti'), $url->generate('voyti/roles-update', ['name' => $role->getName()]))->class('btn', 'btn-sm', 'btn-outline-secondary');
     echo ' ';

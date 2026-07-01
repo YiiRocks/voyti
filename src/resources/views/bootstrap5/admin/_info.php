@@ -12,14 +12,14 @@ use Yiisoft\Translator\TranslatorInterface;
 
 /**
  * @var User $user
- * @var UserProfile $userProfile
+ * @var UserProfile|null $userProfile
  * @var ModuleConfig $config
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
  * @var string $csrf
  */
 
-echo Html::div()->class('voyti-admin-info')->open();
+echo Html::div()->open();
 echo Html::div()->class('d-flex justify-content-between align-items-center mb-3')->open();
 echo Html::H1($user->getUsername());
 

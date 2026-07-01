@@ -119,10 +119,10 @@ final class ModuleConfigTest extends TestCase
         $this->assertTrue($config->allowAdminPasswordRecovery);
         $this->assertFalse($config->allowAccountDelete);
         $this->assertSame(1, $config->emailChangeStrategy);
-        $this->assertSame(1209600, $config->rememberLoginLifespan);
+        $this->assertSame(2592000, $config->rememberLoginLifespan);
         $this->assertSame(86400, $config->tokenConfirmationLifespan);
         $this->assertSame(21600, $config->tokenRecoveryLifespan);
-        $this->assertNull($config->administratorPermissionName);
+        $this->assertSame('admin', $config->administratorPermissionName);
         $this->assertSame(2, $config->profileVisibility);
         $this->assertNull($config->maxPasswordAge);
         $this->assertFalse($config->disableIpLogging);

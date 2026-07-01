@@ -6,16 +6,19 @@ use YiiRocks\Voyti\Entity\UserSocialAccount;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\View\WebView;
 
 /**
+ * @var WebView $this
  * @var UserSocialAccount $account
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
  */
 
+/** @psalm-suppress InvalidScope */
 $this->setTitle($translator->translate('voyti.view.registration.connect_title', category: 'voyti'));
 
-echo Html::div()->class('voyti-registration-connect')->open();
+echo Html::div()->open();
 echo Html::H1($translator->translate('voyti.view.registration.connect_title', category: 'voyti'));
 echo Html::p($translator->translate('voyti.view.registration.connect_provider', ['provider' => $account->getProvider()], category: 'voyti'));
 

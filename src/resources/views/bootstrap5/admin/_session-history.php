@@ -7,16 +7,17 @@ use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
+use YiiRocks\Voyti\Entity\UserSessionHistory;
 
 /**
  * @var User $user
- * @var array $sessions
+ * @var UserSessionHistory[] $sessions
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
  * @var string $csrf
  */
 
-echo Html::div()->class('voyti-admin-session-history')->open();
+echo Html::div()->open();
 Html::H3()->class('mb-3')->open();
 echo $translator->translate('voyti.view.admin.session_history', category: 'voyti');
 echo Html::H3()->close();

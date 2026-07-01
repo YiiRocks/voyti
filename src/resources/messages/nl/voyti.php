@@ -171,10 +171,9 @@ return [
     'voyti.view.recovery.reset_button' => 'Wachtwoord resetten',
 
     // UserProfile view
-    'voyti.view.userProfile.email_label' => 'E-mail:',
-    'voyti.view.userProfile.name_label' => 'Naam:',
-    'voyti.view.userProfile.location_label' => 'Locatie:',
-    'voyti.view.userProfile.bio_label' => 'Bio:',
+    'voyti.view.userProfile.email_label' => 'E-mail',
+    'voyti.view.userProfile.location_label' => 'Locatie',
+    'voyti.view.userProfile.bio_label' => 'Bio',
 
     // Settings views
     'voyti.view.userProfile.title' => 'Profielinstellingen',

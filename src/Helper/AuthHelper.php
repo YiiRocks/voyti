@@ -12,6 +12,7 @@ use Yiisoft\Rbac\ItemsStorageInterface;
 use Yiisoft\Rbac\ManagerInterface;
 use Yiisoft\Rbac\Permission;
 use Yiisoft\Rbac\Role;
+use Yiisoft\User\CurrentUser;
 
 final class AuthHelper
 {
@@ -20,6 +21,7 @@ final class AuthHelper
         private readonly ItemsStorageInterface $itemsStorage,
         private readonly AssignmentsStorageInterface $assignmentsStorage,
         private readonly ModuleConfig $config,
+        private readonly CurrentUser $currentUser,
     ) {
     }
 
@@ -122,8 +124,12 @@ final class AuthHelper
         return isset($items[$role]);
     }
 
-    public function isAdmin(int|string $userId): bool
+    public function isAdmin(int|string|null $userId = null): bool
     {
+        $userId ??= $this->currentUser->getId();
+        if ($userId === null) {
+            return false;
+        }
         if ($this->config->administratorPermissionName !== null) {
             $items = $this->authManager->getItemsByUserId($userId);
             return isset($items[$this->config->administratorPermissionName]);

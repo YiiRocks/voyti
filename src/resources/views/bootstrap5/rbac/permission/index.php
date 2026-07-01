@@ -6,8 +6,10 @@ use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\View\WebView;
 
 /**
+ * @var WebView $this
  * @var array $items Array of Permission objects
  * @var string $filterName
  * @var string $filterDescription
@@ -16,9 +18,10 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var string $csrf
  */
 
+/** @psalm-suppress InvalidScope */
 $this->setTitle($translator->translate('voyti.view.permission.title', category: 'voyti'));
 
-echo Html::div()->class('voyti-rbac-index')->open();
+echo Html::div()->open();
 echo Html::div()->class('d-flex justify-content-between align-items-center mb-3')->open();
 echo Html::H1($translator->translate('voyti.view.permission.title', category: 'voyti'));
 echo Html::a($translator->translate('voyti.view.permission.create_link', category: 'voyti'), $url->generate('voyti/permissions-create'))->class('btn', 'btn-primary');
@@ -62,6 +65,7 @@ echo Html::tag('thead')->close();
 
 echo Html::tag('tbody')->open();
 
+/** @var Yiisoft\Rbac\Item $perm */
 foreach ($items as $perm) {
     echo Html::tag('tr')->open();
     echo Html::tag('td', $perm->getName());

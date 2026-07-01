@@ -6,17 +6,20 @@ use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\View\WebView;
 
 /**
- * @var array $errors
+ * @var WebView $this
+ * @var array<string, list<string>> $errors
  * @var TranslatorInterface $translator
  * @var UrlGeneratorInterface $url
  * @var string $csrf
  */
 
+/** @psalm-suppress InvalidScope */
 $this->setTitle($translator->translate('voyti.view.two_factor_sms.title', category: 'voyti'));
 
-echo Html::div()->class('voyti-two-factor-sms')->open();
+echo Html::div()->open();
 Html::H3()->class('mb-3')->open();
 echo $translator->translate('voyti.view.two_factor_sms.title', category: 'voyti');
 echo Html::H3()->close();
@@ -24,7 +27,8 @@ echo Html::H3()->close();
 if (!empty($errors)) {
     echo Html::div()->class('alert alert-danger')->open();
     foreach ($errors as $field => $fieldErrors) {
-        foreach ((array) $fieldErrors as $error) {
+        /** @var string $error */
+        foreach ($fieldErrors as $error) {
             echo Html::div($error);
         }
     }

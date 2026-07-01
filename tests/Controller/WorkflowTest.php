@@ -200,7 +200,6 @@ final class WorkflowTest extends TestCase
             'url' => $this->harness->url,
         ]);
 
-        $this->assertStringContainsString('voyti-admin-index', $html);
         $this->assertStringContainsString('voyti/admin', $html);
     }
 
@@ -487,7 +486,7 @@ final class WorkflowTest extends TestCase
 
         $rememberCookie = $loginResponse->getHeaderLine('Set-Cookie');
         $this->assertStringContainsString('autoLogin=', $rememberCookie);
-        $this->assertStringContainsString('Max-Age=1209600', $rememberCookie);
+        $this->assertStringContainsString('Max-Age=2592000', $rememberCookie);
 
         $logoutResponse = $this->harness->securityController->logout();
         $expiredCookie = $logoutResponse->getHeaderLine('Set-Cookie');

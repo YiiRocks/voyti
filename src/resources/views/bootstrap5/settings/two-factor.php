@@ -8,21 +8,24 @@ use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\View\WebView;
 
 /**
+ * @var WebView $this
  * @var User $user
  * @var string $qrCodeUri
  * @var string|null $secret
  * @var ModuleConfig $config
- * @var array $errors
+ * @var array<string, list<string>> $errors
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
  * @var string $csrf
  */
 
+/** @psalm-suppress InvalidScope */
 $this->setTitle($translator->translate('voyti.view.two_factor.title', category: 'voyti'));
 
-echo Html::div()->class('voyti-settings')->open();
+echo Html::div()->open();
 include dirname(__DIR__) . '/shared/_menu.php';
 
 echo Html::H1($translator->translate('voyti.view.two_factor.title', category: 'voyti'));
@@ -30,7 +33,8 @@ echo Html::H1($translator->translate('voyti.view.two_factor.title', category: 'v
 if (!empty($errors)) {
     echo Html::div()->class('alert alert-danger')->open();
     foreach ($errors as $field => $fieldErrors) {
-        foreach ((array) $fieldErrors as $error) {
+        /** @var string $error */
+        foreach ($fieldErrors as $error) {
             echo Html::div($error);
         }
     }
@@ -60,7 +64,7 @@ if ($user->isAuthTfEnabled()) {
         echo Html::div()->close();
 
         if (!empty($secret)) {
-            echo Html::p($translator->translate('voyti.view.two_factor.manual_entry', category: 'voyti') . ' ' . Html::code($secret))->encode(false);
+            echo Html::p($translator->translate('voyti.view.two_factor.manual_entry', category: 'voyti') . ' ' . Html::code($secret)->render())->encode(false);
         }
     } else {
         echo Html::div()->class('alert alert-warning')->open();

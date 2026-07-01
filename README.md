@@ -164,7 +164,7 @@ Below are all top-level `yiirocks/voyti` options, followed by the nested `mailPa
 | `allowAdminPasswordRecovery` | `bool` | `true` | Allow admin-initiated password recovery |
 | `allowAccountDelete` | `bool` | `false` | Allow users to delete their account |
 | `emailChangeStrategy` | `int` | `1` | 0=insecure, 1=default, 2=secure |
-| `rememberLoginLifespan` | `int` | `1209600` | Remember-me cookie lifetime and idle auth timeout in seconds |
+| `rememberLoginLifespan` | `int` | `2592000` | Remember-me cookie lifetime and idle auth timeout in seconds |
 | `tokenConfirmationLifespan` | `int` | `86400` | Confirmation token validity |
 | `tokenRecoveryLifespan` | `int` | `21600` | Recovery token validity |
 | `enableSwitchIdentities` | `bool` | `true` | Allow admin to switch user identities |
@@ -210,7 +210,7 @@ Below are all top-level `yiirocks/voyti` options, followed by the nested `mailPa
 | `disableIpLogging` | `bool` | `false` | Disable IP address logging |
 | `enablePasswordExpiration` | `bool` | `false` | Enable password expiration |
 | `maxPasswordAge` | `?int` | `null` | Max password age in days |
-| `administratorPermissionName` | `?string` | `null` | Permission name for admin access |
+| `administratorPermissionName` | `?string` | `'admin'` | Permission/role name granting admin access |
 | `profileVisibility` | `int` | `2` | Profile visibility: `0` = owner only, `1` = owner + admins, `2` = any authenticated user, `3` = public |
 
 ### Views & Mail

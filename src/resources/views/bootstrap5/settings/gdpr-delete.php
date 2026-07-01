@@ -7,17 +7,20 @@ use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\View\WebView;
 
 /**
+ * @var WebView $this
  * @var GdprDeleteForm $model
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
  * @var string $csrf
  */
 
+/** @psalm-suppress InvalidScope */
 $this->setTitle($translator->translate('voyti.view.gdpr.delete_title', category: 'voyti'));
 
-echo Html::div()->class('voyti-gdpr-delete')->open();
+echo Html::div()->open();
 echo Html::H1($translator->translate('voyti.view.gdpr.delete_title', category: 'voyti'));
 
 echo Html::p()->class('alert alert-warning')->open();

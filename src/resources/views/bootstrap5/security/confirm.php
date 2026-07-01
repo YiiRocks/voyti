@@ -8,8 +8,10 @@ use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\View\WebView;
 
 /**
+ * @var WebView $this
  * @var LoginForm $model
  * @var ModuleConfig $config
  * @var UrlGeneratorInterface $url
@@ -17,9 +19,10 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var string $csrf
  */
 
+/** @psalm-suppress InvalidScope */
 $this->setTitle($translator->translate('voyti.view.two_factor.title', category: 'voyti'));
 
-echo Html::div()->class('voyti-2fa')->open();
+echo Html::div()->open();
 echo Html::H1($translator->translate('voyti.view.two_factor.title', category: 'voyti'));
 
 echo Html::form()

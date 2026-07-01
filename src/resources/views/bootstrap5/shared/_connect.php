@@ -9,8 +9,8 @@ use Yiisoft\Router\UrlGeneratorInterface;
 
 /**
  * @var AuthClientRegistry $authClients
- * @var list<string> $excludedProviders
- * @var string $routeName
+ * @var list<string>|null $excludedProviders
+ * @var string|null $routeName
  * @var UrlGeneratorInterface $url
  */
 

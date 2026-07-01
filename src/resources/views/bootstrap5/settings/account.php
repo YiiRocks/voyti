@@ -9,8 +9,10 @@ use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\View\WebView;
 
 /**
+ * @var WebView $this
  * @var SettingsForm $model
  * @var ModuleConfig $config
  * @var User $user
@@ -19,9 +21,10 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var string $csrf
  */
 
+/** @psalm-suppress InvalidScope */
 $this->setTitle($translator->translate('voyti.view.account.title', category: 'voyti'));
 
-echo Html::div()->class('voyti-account')->open();
+echo Html::div()->open();
 include dirname(__DIR__) . '/shared/_menu.php';
 
 echo Html::H1($translator->translate('voyti.view.account.title', category: 'voyti'));

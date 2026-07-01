@@ -7,19 +7,23 @@ use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use YiiRocks\Voyti\Entity\UserSocialAccount;
+use Yiisoft\View\WebView;
 
 /**
+ * @var WebView $this
  * @var list<UserSocialAccount> $accounts
  * @var AuthClientRegistry $authClients
  * @var list<string> $excludedProviders
  * @var string $connectRouteName
  * @var UrlGeneratorInterface $url
+ * @var string $csrf
  * @var TranslatorInterface $translator
  */
 
+/** @psalm-suppress InvalidScope */
 $this->setTitle($translator->translate('voyti.view.networks.title', category: 'voyti'));
 
-echo Html::div()->class('voyti-networks')->open();
+echo Html::div()->open();
 include dirname(__DIR__) . '/shared/_menu.php';
 
 echo Html::H1($translator->translate('voyti.view.networks.title', category: 'voyti'));
@@ -36,10 +40,11 @@ if (empty($accounts)) {
             ->open()
             . Html::submitButton($translator->translate('voyti.view.disconnect_button', category: 'voyti'))
                 ->class('btn', 'btn-outline-danger', 'btn-sm')
+                ->render()
             . Html::form()->close();
 
         $content = Html::div()->class('d-flex justify-content-between align-items-center gap-3')->open();
-        $content .= Html::span($account->getProvider());
+        $content .= Html::span($account->getProvider())->render();
         $content .= $disconnect;
         $content .= Html::div()->close();
 

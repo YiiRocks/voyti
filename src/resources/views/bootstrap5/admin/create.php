@@ -7,18 +7,21 @@ use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\View\WebView;
 
 /**
+ * @var WebView $this
  * @var RegistrationForm $model
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
- * @var array $errors
+ * @var array<string, list<string>> $errors
  * @var string $csrf
  */
 
+/** @psalm-suppress InvalidScope */
 $this->setTitle($translator->translate('voyti.view.admin.create_user_title', category: 'voyti'));
 
-echo Html::div()->class('voyti-admin-create')->open();
+echo Html::div()->open();
 echo Html::H1($translator->translate('voyti.view.admin.create_user_title', category: 'voyti'));
 
 echo Html::form()

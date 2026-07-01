@@ -7,19 +7,22 @@ use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\View\WebView;
 
 /**
+ * @var WebView $this
  * @var PermissionForm $model
- * @var array $errors
+ * @var array<string, list<string>> $errors
  * @var array $unassignedItems
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
  * @var string $csrf
  */
 
+/** @psalm-suppress InvalidScope */
 $this->setTitle($translator->translate('voyti.view.permission.update_title', ['name' => $model->itemName], category: 'voyti'));
 
-echo Html::div()->class('voyti-rbac-update')->open();
+echo Html::div()->open();
 echo Html::H1($translator->translate('voyti.view.permission.update_title', ['name' => $model->itemName], category: 'voyti'));
 
 echo Html::form()
@@ -30,7 +33,8 @@ echo Html::form()
 if (!empty($errors)) {
     echo Html::div()->class('alert alert-danger')->open();
     foreach ($errors as $field => $fieldErrors) {
-        foreach ((array) $fieldErrors as $error) {
+        /** @var string $error */
+        foreach ($fieldErrors as $error) {
             echo Html::div($error);
         }
     }

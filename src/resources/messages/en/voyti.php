@@ -173,10 +173,9 @@ return [
     'voyti.view.recovery.reset_button' => 'Reset password',
 
     // UserProfile view
-    'voyti.view.userProfile.email_label' => 'Email:',
-    'voyti.view.userProfile.name_label' => 'Name:',
-    'voyti.view.userProfile.location_label' => 'Location:',
-    'voyti.view.userProfile.bio_label' => 'Bio:',
+    'voyti.view.userProfile.email_label' => 'Email',
+    'voyti.view.userProfile.location_label' => 'Location',
+    'voyti.view.userProfile.bio_label' => 'Bio',
 
     // Settings views
     'voyti.view.userProfile.title' => 'Profile settings',

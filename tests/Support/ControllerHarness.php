@@ -217,7 +217,14 @@ final class ControllerHarness
         $this->rbacItemsStorage = new HarnessRbacItemsStorage();
         $this->rbacAssignmentsStorage = new HarnessRbacAssignmentsStorage();
         $this->rbacManager = new Manager($this->rbacItemsStorage, $this->rbacAssignmentsStorage);
-        $this->authHelper = new AuthHelper($this->rbacManager, $this->rbacItemsStorage, $this->rbacAssignmentsStorage, $this->moduleConfig);
+        $this->authHelper = new AuthHelper($this->rbacManager, $this->rbacItemsStorage, $this->rbacAssignmentsStorage, $this->moduleConfig, new CurrentUser(
+            new class implements IdentityRepositoryInterface {
+                public function findIdentity(string $id): ?IdentityInterface { return null; }
+            },
+            new class implements EventDispatcherInterface {
+                public function dispatch(object $event): object { return $event; }
+            },
+        ));
         $itemsValidator = new ItemsValidator($this->rbacItemsStorage);
         $createService = new CreateService(
             $this->users,

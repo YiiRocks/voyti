@@ -6,17 +6,20 @@ use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\View\WebView;
 
 /**
+ * @var WebView $this
  * @var array $rules Array of rule class names (string[])
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
  * @var string $csrf
  */
 
+/** @psalm-suppress InvalidScope */
 $this->setTitle($translator->translate('voyti.view.rule.title', category: 'voyti'));
 
-echo Html::div()->class('voyti-rbac-index')->open();
+echo Html::div()->open();
 echo Html::div()->class('d-flex justify-content-between align-items-center mb-3')->open();
 echo Html::H1($translator->translate('voyti.view.rule.title', category: 'voyti'));
 echo Html::a($translator->translate('voyti.view.rule.create_link', category: 'voyti'), $url->generate('voyti/rules-create'))->class('btn', 'btn-primary');
@@ -34,6 +37,7 @@ echo Html::tag('thead')->close();
 
 echo Html::tag('tbody')->open();
 
+/** @var string $ruleName */
 foreach ($rules as $ruleName) {
     echo Html::tag('tr')->open();
     echo Html::tag('td', $ruleName);

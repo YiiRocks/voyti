@@ -83,8 +83,9 @@ return [
         ManagerInterface $authManager,
         ItemsStorageInterface $itemsStorage,
         AssignmentsStorageInterface $assignmentsStorage,
-        ModuleConfig $config
-    ) => new AuthHelper($authManager, $itemsStorage, $assignmentsStorage, $config),
+        ModuleConfig $config,
+        CurrentUser $currentUser,
+    ) => new AuthHelper($authManager, $itemsStorage, $assignmentsStorage, $config, $currentUser),
     GravatarHelper::class => GravatarHelper::class,
     TimezoneHelper::class => TimezoneHelper::class,
     ClientInterface::class => static fn (

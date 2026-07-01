@@ -18,11 +18,6 @@ final class AuthClientRegistryFactory
         $clients = [];
 
         foreach ($this->config->socialNetworkClients as $provider => $providerConfig) {
-            if (!is_string($provider) || !is_array($providerConfig)) {
-                continue;
-            }
-
-            /** @var array<string, mixed> $providerConfig */
             $client = match ($provider) {
                 'facebook' => new Facebook($providerConfig),
                 'github' => new GitHub($providerConfig),

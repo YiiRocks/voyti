@@ -10,8 +10,10 @@ use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\View\WebView;
 
 /**
+ * @var WebView $this
  * @var LoginForm $model
  * @var ModuleConfig $config
  * @var AuthClientRegistry $authClients
@@ -19,11 +21,13 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var TranslatorInterface $translator
  */
 
+/** @psalm-suppress InvalidScope */
 $this->setTitle($translator->translate('voyti.view.login.title', category: 'voyti'));
 
-echo Html::div()->class('voyti-login')->open();
+echo Html::div()->open();
 echo Html::H1($translator->translate('voyti.view.login.title', category: 'voyti'));
 
+/** @var string $csrf */
 echo Html::form()
     ->post($url->generate('voyti/login'))
     ->csrf($csrf)

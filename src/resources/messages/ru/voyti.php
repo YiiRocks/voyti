@@ -171,10 +171,9 @@ return [
     'voyti.view.recovery.reset_button' => 'Сбросить пароль',
 
     // UserProfile view
-    'voyti.view.userProfile.email_label' => 'Email:',
-    'voyti.view.userProfile.name_label' => 'Имя:',
-    'voyti.view.userProfile.location_label' => 'Местоположение:',
-    'voyti.view.userProfile.bio_label' => 'О себе:',
+    'voyti.view.userProfile.email_label' => 'Email',
+    'voyti.view.userProfile.location_label' => 'Местоположение',
+    'voyti.view.userProfile.bio_label' => 'О себе',
 
     // Settings views
     'voyti.view.userProfile.title' => 'Настройки профиля',

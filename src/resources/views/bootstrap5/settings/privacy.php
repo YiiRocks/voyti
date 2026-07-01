@@ -5,15 +5,18 @@ declare(strict_types=1);
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\View\WebView;
 
 /**
+ * @var WebView $this
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
  */
 
+/** @psalm-suppress InvalidScope */
 $this->setTitle($translator->translate('voyti.view.privacy.title', category: 'voyti'));
 
-echo Html::div()->class('voyti-settings')->open();
+echo Html::div()->open();
 include dirname(__DIR__) . '/shared/_menu.php';
 
 echo Html::H1($translator->translate('voyti.view.privacy.title', category: 'voyti'));

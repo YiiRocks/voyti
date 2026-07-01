@@ -6,10 +6,13 @@ use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\View\WebView;
+use YiiRocks\Voyti\Entity\User;
 
 /**
+ * @var WebView $this
  * @var array $users
- * @var array $filters
+ * @var array<string, string> $filters
  * @var int $totalPages
  * @var int $currentPage
  * @var UrlGeneratorInterface $url
@@ -17,9 +20,10 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var string $csrf
  */
 
+/** @psalm-suppress InvalidScope */
 $this->setTitle($translator->translate('voyti.view.admin.title', category: 'voyti'));
 
-echo Html::div()->class('voyti-admin-index')->open();
+echo Html::div()->open();
 echo Html::div()->class('d-flex justify-content-between align-items-center mb-3')->open();
 echo Html::H1($translator->translate('voyti.view.admin.title', category: 'voyti'));
 echo Html::a($translator->translate('voyti.view.admin.create_user_link', category: 'voyti'), $url->generate('voyti/admin-create'))->class('btn', 'btn-primary');
@@ -30,7 +34,7 @@ echo Html::form()
     ->method('get')
     ->open();
 
-echo Html::div()->class('row g-2')->open();
+echo Html::div()->class('row mb-3 g-2')->open();
 echo Html::div()->class('col')->open();
 echo Html::input('text')->class('form-control')->name('username')->value($filters['username'] ?? '')->addAttributes(['placeholder' => $translator->translate('voyti.view.username_header', category: 'voyti')]);
 echo Html::div()->close();
@@ -76,6 +80,7 @@ echo Html::tag('thead')->close();
 
 echo Html::tag('tbody')->open();
 
+/** @var User $user */
 foreach ($users as $user) {
     echo Html::tag('tr')->open();
     echo Html::tag('td', $user->getId());
@@ -94,22 +99,15 @@ foreach ($users as $user) {
     echo Html::tag('td')->close();
 
     echo Html::tag('td')->class('text-end')->open();
-    echo Html::a($translator->translate('voyti.view.info_link', category: 'voyti'), $url->generate('voyti/admin-info', ['id' => $user->getId()]))->class('btn', 'btn-sm', 'btn-outline-secondary');
-    echo ' ';
+    echo Html::a($translator->translate('voyti.view.info_link', category: 'voyti'), $url->generate('voyti/admin-info', ['id' => $user->getId()]))->class('btn', 'btn-sm', 'btn-outline-secondary', 'me-1');
     echo Html::a($translator->translate('voyti.view.update_link', category: 'voyti'), $url->generate('voyti/admin-update', ['id' => $user->getId()]))->class('btn', 'btn-sm', 'btn-outline-secondary');
-    echo ' ';
 
     echo Html::form()
         ->post($url->generate('voyti/admin-delete', ['id' => $user->getId()]))
         ->csrf($csrf)
         ->class('d-inline')
         ->open();
-
-    echo Field::buttonGroup()
-        ->buttons(
-            Html::submitButton($translator->translate('voyti.view.delete_button', category: 'voyti'))->class('btn', 'btn-sm', 'btn-outline-danger')
-        );
-
+    echo Html::submitButton($translator->translate('voyti.view.delete_button', category: 'voyti'))->class('btn', 'btn-sm', 'btn-outline-danger');
     echo Html::form()->close();
     echo Html::tag('td')->close();
     echo Html::tag('tr')->close();
@@ -154,6 +152,6 @@ if ($totalPages > 1) {
 
     echo Html::nav()
         ->attribute('aria-label', $translator->translate('voyti.view.pagination_navigation', category: 'voyti'))
-        ->content("\n" . Html::ul()->class('pagination', 'justify-content-center')->items(...$items) . "\n");
+        ->content("\n" . Html::ul()->class('pagination', 'justify-content-center')->items(...$items)->render() . "\n");
 }
 echo Html::div()->close();

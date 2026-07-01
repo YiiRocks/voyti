@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 use Yiisoft\Html\Html;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\View\WebView;
 
 /**
+ * @var WebView $this
  * @var string $title
  * @var TranslatorInterface $translator
  */
 
+/** @psalm-suppress InvalidScope */
 $this->setTitle($title);
 
 echo Html::div()->class('card shadow-sm')->open();

@@ -191,10 +191,6 @@ final class SettingsController
 
         $data = [];
         foreach ($this->config->gdprExportProperties as $property) {
-            if (!is_string($property) || $property === '') {
-                continue;
-            }
-
             $value = $this->exportValue($user, $property);
             if ($value !== null) {
                 $data[$property] = $value;

@@ -57,6 +57,13 @@ return [
                     $rememberMeCookieService->loginByCookie($_COOKIE, $currentUser, $identityRepository);
                 }
             }
+
+            if (!$currentUser->isGuest() && $container->has(RememberMeCookieService::class)) {
+                $rememberMeCookieService = $container->get(RememberMeCookieService::class);
+                if ($rememberMeCookieService instanceof RememberMeCookieService) {
+                    $rememberMeCookieService->refreshCookie($currentUser);
+                }
+            }
         }
     },
 ];

@@ -12,14 +12,14 @@ use Yiisoft\Translator\TranslatorInterface;
 /**
  * @var User $user
  * @var ModuleConfig $config
- * @var array $assignments Array of assigned item names (string[])
- * @var array $available Array of unassigned items (name => Item)
+ * @var string[] $assignments Array of assigned item names
+ * @var array<array-key, \Yiisoft\Rbac\Item> $available Array of unassigned items (name => Item)
  * @var TranslatorInterface $translator
  * @var UrlGeneratorInterface $url
  * @var string $csrf
  */
 
-echo Html::div()->class('voyti-assignments')->open();
+echo Html::div()->open();
 Html::H3()->class('mb-3')->open();
 echo $translator->translate('voyti.view.assignments.title', category: 'voyti');
 echo Html::H3()->close();

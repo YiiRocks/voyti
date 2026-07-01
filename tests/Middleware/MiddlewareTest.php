@@ -202,6 +202,10 @@ final class MiddlewareTest extends TestCase
             $this->createStub(ItemsStorageInterface::class),
             $this->createStub(AssignmentsStorageInterface::class),
             new ModuleConfig(administratorPermissionName: 'admin'),
+            new CurrentUser(
+                $this->createStub(IdentityRepositoryInterface::class),
+                $this->createStub(EventDispatcherInterface::class),
+            ),
         );
     }
 
