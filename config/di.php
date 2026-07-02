@@ -37,7 +37,6 @@ use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
 use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
-use YiiRocks\Voyti\Service\TwoFactor\SmsCodeGeneratorService;
 use YiiRocks\Voyti\Service\User\AccountConfirmationService;
 use YiiRocks\Voyti\Service\User\BlockService;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
@@ -155,8 +154,6 @@ return [
     EmailCodeGeneratorService::class => fn (
         MailService $mailService
     ) => new EmailCodeGeneratorService($mailService),
-    SmsCodeGeneratorService::class => fn (
-    ) => new SmsCodeGeneratorService,
     QrCodeUriGeneratorService::class => fn (
         ModuleConfig $config
     ) => new QrCodeUriGeneratorService($config),

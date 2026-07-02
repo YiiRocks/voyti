@@ -257,9 +257,13 @@ final class AdminController
 
         if ($request->getMethod() === Method::POST) {
             $body = $this->parsedBody($request);
-            $user->setUsername($this->stringValue($body, 'username', $user->getUsername()));
-            $user->setEmail($this->stringValue($body, 'email', $user->getEmail()));
-            $password = $this->stringValue($body, 'password');
+            $userData = $body['user'] ?? null;
+            if (!is_array($userData)) {
+                $userData = [];
+            }
+            $user->setUsername($this->stringValue($userData, 'username', $user->getUsername()));
+            $user->setEmail($this->stringValue($userData, 'email', $user->getEmail()));
+            $password = $this->stringValue($userData, 'password');
             if ($password !== '') {
                 $user->setPasswordHash($this->passwordHasher->hash($password));
                 $user->setPasswordChangedAt(time());

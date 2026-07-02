@@ -138,10 +138,6 @@ return [
     'voyti.view.two_factor.verify' => 'Verify',
     'voyti.view.two_factor_email.title' => 'Two-factor authentication via email',
     'voyti.view.two_factor_email.enter_code' => 'Enter the verification code sent to your email',
-    'voyti.view.two_factor_sms.title' => 'Two-factor authentication via SMS',
-    'voyti.view.two_factor_sms.phone' => 'Phone number',
-    'voyti.view.two_factor_sms.send' => 'Send code',
-
     // Registration views
     'voyti.view.registration.register_title' => 'Create account',
     'voyti.view.registration.gdpr_consent_label' => 'I agree processing of my personal data',

@@ -22,7 +22,6 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
     private string $auth_key = '';
     private int|bool $auth_tf_enabled = false;
     private ?string $auth_tf_key = null;
-    private ?string $auth_tf_mobile_phone = null;
     private ?string $auth_tf_type = null;
     private ?int $blocked_at = null;
     private ?int $confirmed_at = null;
@@ -50,11 +49,6 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
     public function getAuthTfKey(): ?string
     {
         return $this->auth_tf_key;
-    }
-
-    public function getAuthTfMobilePhone(): ?string
-    {
-        return $this->auth_tf_mobile_phone;
     }
 
     public function getAuthTfType(): ?string
@@ -219,11 +213,6 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
     public function setAuthTfKey(?string $authTfKey): void
     {
         $this->auth_tf_key = $authTfKey;
-    }
-
-    public function setAuthTfMobilePhone(?string $authTfMobilePhone): void
-    {
-        $this->auth_tf_mobile_phone = $authTfMobilePhone;
     }
 
     public function setAuthTfType(?string $authTfType): void

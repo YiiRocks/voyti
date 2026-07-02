@@ -136,10 +136,6 @@ return [
     'voyti.view.two_factor.verify' => 'Проверить',
     'voyti.view.two_factor_email.title' => 'Двухфакторная аутентификация по email',
     'voyti.view.two_factor_email.enter_code' => 'Введите проверочный код, отправленный на ваш email',
-    'voyti.view.two_factor_sms.title' => 'Двухфакторная аутентификация по SMS',
-    'voyti.view.two_factor_sms.phone' => 'Номер телефона',
-    'voyti.view.two_factor_sms.send' => 'Отправить код',
-
     // Registration views
     'voyti.view.registration.register_title' => 'Создать аккаунт',
     'voyti.view.registration.gdpr_consent_label' => 'Я согласен на обработку моих персональных данных',

@@ -27,7 +27,6 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
             'auth_key' => ColumnBuilder::string(32)->notNull(),
             'auth_tf_enabled' => ColumnBuilder::boolean()->notNull()->defaultValue(false),
             'auth_tf_key' => ColumnBuilder::string(64),
-            'auth_tf_mobile_phone' => ColumnBuilder::string(32),
             'auth_tf_type' => ColumnBuilder::string(20),
             'blocked_at' => ColumnBuilder::integer(),
             'confirmed_at' => ColumnBuilder::integer(),

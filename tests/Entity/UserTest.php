@@ -37,8 +37,7 @@ final class UserTest extends TestCase
             gdpr_deleted INTEGER DEFAULT 0,
             gdpr_consent INTEGER DEFAULT 0,
             gdpr_consent_date INTEGER,
-            auth_tf_type VARCHAR(20),
-            auth_tf_mobile_phone VARCHAR(20)
+            auth_tf_type VARCHAR(20)
         )')->execute();
     }
 
@@ -180,17 +179,6 @@ final class UserTest extends TestCase
         $user->setAuthTfEnabled(true);
         $this->assertEquals('SECRETKEY123', $user->getAuthTfKey());
         $this->assertTrue($user->isAuthTfEnabled());
-    }
-
-    public function testTwoFactorTypeAndMobile(): void
-    {
-        $user = new User();
-        $this->assertNull($user->getAuthTfType());
-        $this->assertNull($user->getAuthTfMobilePhone());
-        $user->setAuthTfType('sms');
-        $user->setAuthTfMobilePhone('+1234567890');
-        $this->assertEquals('sms', $user->getAuthTfType());
-        $this->assertEquals('+1234567890', $user->getAuthTfMobilePhone());
     }
 
     public function testUnconfirmedEmail(): void

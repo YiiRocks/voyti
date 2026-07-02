@@ -136,10 +136,6 @@ return [
     'voyti.view.two_factor.verify' => 'Überprüfen',
     'voyti.view.two_factor_email.title' => 'Zwei-Faktor-Authentifizierung per E-Mail',
     'voyti.view.two_factor_email.enter_code' => 'Geben Sie den per E-Mail gesendeten Verifizierungscode ein',
-    'voyti.view.two_factor_sms.title' => 'Zwei-Faktor-Authentifizierung per SMS',
-    'voyti.view.two_factor_sms.phone' => 'Telefonnummer',
-    'voyti.view.two_factor_sms.send' => 'Code senden',
-
     // Registration views
     'voyti.view.registration.register_title' => 'Konto erstellen',
     'voyti.view.registration.gdpr_consent_label' => 'Ich stimme der Verarbeitung meiner personenbezogenen Daten zu',
