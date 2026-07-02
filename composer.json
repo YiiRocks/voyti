@@ -64,7 +64,7 @@
         "chillerlan/php-authenticator": "^5.4",
         "chillerlan/php-qrcode": "^6.0",
         "friendsofphp/php-cs-fixer": "@stable",
-        "infection/infection": "^0.33.2",
+        "infection/infection": "^0.34.0",
         "nyholm/psr7": "^1.8",
         "phpmd/phpmd": "@stable",
         "phpunit/phpunit": "@stable",
