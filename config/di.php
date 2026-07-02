@@ -113,7 +113,7 @@ return [
         ModuleConfig $config,
         TranslatorInterface $translator,
         UrlGeneratorInterface $url
-    ) => new MailService($mailer, $config->mailPath, $config->mailParams, $translator, $url, $config->appName),
+    ) => new MailService($mailer, $config->mailPath, $translator, $url, $config->appName),
     AccountConfirmationService::class => fn (
         UserTokenRepository $tokenRepository
     ) => new AccountConfirmationService($tokenRepository),

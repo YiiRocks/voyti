@@ -37,7 +37,7 @@ PHP
 
             $mailer = new MailCapture();
             $url = $this->createStub(UrlGeneratorInterface::class);
-            $service = new MailService($mailer, $mailPath, [], new Translator('en'), $url);
+            $service = new MailService($mailer, $mailPath, new Translator('en'), $url);
 
             $user = new User();
             $user->setUsername('alice');

@@ -82,12 +82,13 @@ return [
     'voyti.validator.invalid_code_with_time' => 'Ungültiger Code. Bitte versuchen Sie es innerhalb von {timeDuration} Sekunden erneut.',
     'voyti.validator.invalid_two_factor_code_with_time' => 'Ungültiger Zwei-Faktor-Authentifizierungscode. Bitte versuchen Sie es innerhalb von {timeDuration} Sekunden erneut.',
 
-    // ModuleConfig mail subjects
+    // Mail subjects
     'voyti.mail.welcome_subject' => 'Willkommen bei {app}',
     'voyti.mail.confirmation_subject' => 'Konto auf {app} bestätigen',
     'voyti.mail.reconfirmation_subject' => 'E-Mail-Änderung auf {app} bestätigen',
     'voyti.mail.recovery_subject' => 'Passwort-Zurücksetzung auf {app} abschließen',
     'voyti.mail.two_factor_subject' => 'Code für die Zwei-Faktor-Authentifizierung auf {app}',
+    'voyti.mail.admin_notification_subject' => 'Neue Benutzerregistrierung auf {app}',
 
     // Mail view templates
     'voyti.mail.welcome_heading' => 'Willkommen!',

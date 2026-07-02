@@ -9,7 +9,7 @@ final class ModuleConfig
     /**
      * @return (array|bool|int|null|string)[]
      *
-     * @psalm-return array{appName: string, recaptchaVersion: null|string, enableSessionHistory: bool, numberSessionHistory: false|int, enableGdprCompliance: bool, gdprExportProperties: list<string>, gdprAnonymizePrefix: string, enableTwoFactorAuthentication: bool, twoFactorAuthenticationForcedPermissions: array<array-key, string>, enableRegistration: bool, enableSocialNetworkRegistration: bool, socialNetworkClients: array<string, array<string, mixed>>, enableEmailConfirmation: bool, enableSwitchIdentities: bool, switchIdentitySessionKey: null|string, loginRoute: string, accountSettingsRoute: string, mailAdminOnRegister: null|string, enablePasswordExpiration: bool, generatePasswords: bool, allowPasswordRecovery: bool, allowAdminPasswordRecovery: bool, allowAccountDelete: bool, emailChangeStrategy: int, rememberLoginLifespan: int, tokenConfirmationLifespan: int, tokenRecoveryLifespan: int, administratorPermissionName: null|string, profileVisibility: int, maxPasswordAge: int|null, disableIpLogging: bool, viewPath: string, mailPath: string, mailParams: array<string, string>, enableRestApi: bool, adminRestPrefix: string}
+     * @psalm-return array{appName: string, recaptchaVersion: null|string, enableSessionHistory: bool, numberSessionHistory: false|int, enableGdprCompliance: bool, gdprExportProperties: list<string>, gdprAnonymizePrefix: string, enableTwoFactorAuthentication: bool, twoFactorAuthenticationForcedPermissions: array<array-key, string>, enableRegistration: bool, enableSocialNetworkRegistration: bool, socialNetworkClients: array<string, array<string, mixed>>, enableEmailConfirmation: bool, enableSwitchIdentities: bool, switchIdentitySessionKey: null|string, loginRoute: string, accountSettingsRoute: string, mailAdminOnRegister: null|string, enablePasswordExpiration: bool, generatePasswords: bool, allowPasswordRecovery: bool, allowAdminPasswordRecovery: bool, allowAccountDelete: bool, emailChangeStrategy: int, rememberLoginLifespan: int, tokenConfirmationLifespan: int, tokenRecoveryLifespan: int, administratorPermissionName: null|string, profileVisibility: int, maxPasswordAge: int|null, disableIpLogging: bool, viewPath: string, mailPath: string, enableRestApi: bool, adminRestPrefix: string}
      */
     public static function defaults(): array
     {
@@ -74,14 +74,6 @@ final class ModuleConfig
         public readonly bool $disableIpLogging = false,
         public readonly string $viewPath = __DIR__ . '/resources/views/bootstrap5',
         public readonly string $mailPath = __DIR__ . '/resources/mail',
-        /** @psalm-var array<string, string> */
-        public readonly array $mailParams = [
-            'welcomeMailSubject' => 'Welcome to {app}',
-            'confirmationMailSubject' => 'Confirm account on {app}',
-            'reconfirmationMailSubject' => 'Confirm email change on {app}',
-            'recoveryMailSubject' => 'Complete password reset on {app}',
-            'twoFactorMailSubject' => 'Code for two factor authentication on {app}',
-        ],
         public readonly bool $enableRestApi = false,
         public readonly string $adminRestPrefix = 'api/v1',
     ) {

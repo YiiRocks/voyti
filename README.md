@@ -141,7 +141,7 @@ return [
 ];
 ```
 
-Below are all top-level `yiirocks/voyti` options, followed by the nested `mailParams` and `socialNetworkClients` options.
+Below are all top-level `yiirocks/voyti` options, followed by the nested `socialNetworkClients` options.
 
 ### General
 
@@ -219,29 +219,6 @@ Below are all top-level `yiirocks/voyti` options, followed by the nested `mailPa
 |--------|------|--------|--------------|
 | `viewPath` | `string` | `__DIR__ . '/resources/views/bootstrap5'` | Base path for web templates |
 | `mailPath` | `string` | `__DIR__ . '/resources/mail'` | Base path for mail templates |
-| `mailParams` | `array` | see below | Mail from address and subjects |
-
-Mail params defaults:
-
-```php
-[
-    'welcomeMailSubject' => 'Welcome to {app}',
-    'confirmationMailSubject' => 'Confirm account on {app}',
-    'reconfirmationMailSubject' => 'Confirm email change on {app}',
-    'recoveryMailSubject' => 'Complete password reset on {app}',
-    'twoFactorMailSubject' => 'Code for two factor authentication on {app}',
-]
-```
-
-`mailParams` accepts the following keys:
-
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `welcomeMailSubject` | `string` | `'Welcome to {app}'` | Welcome email subject |
-| `confirmationMailSubject` | `string` | `'Confirm account on {app}'` | Registration confirmation subject |
-| `reconfirmationMailSubject` | `string` | `'Confirm email change on {app}'` | Email change confirmation subject |
-| `recoveryMailSubject` | `string` | `'Complete password reset on {app}'` | Password recovery subject |
-| `twoFactorMailSubject` | `string` | `'Code for two factor authentication on {app}'` | 2FA email code subject |
 
 ### REST API
 

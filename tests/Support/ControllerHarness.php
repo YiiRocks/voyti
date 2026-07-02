@@ -163,7 +163,6 @@ final class ControllerHarness
         $this->mailService = new MailService(
             $this->mailer,
             $this->moduleConfig->mailPath,
-            $this->moduleConfig->mailParams,
             $this->translator,
             $this->url,
         );

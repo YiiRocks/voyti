@@ -82,12 +82,13 @@ return [
     'voyti.validator.invalid_code_with_time' => 'Ongeldige code. Probeer het opnieuw binnen {timeDuration} seconden.',
     'voyti.validator.invalid_two_factor_code_with_time' => 'Ongeldige tweefactorauthenticatiecode. Probeer het opnieuw binnen {timeDuration} seconden.',
 
-    // ModuleConfig mail subjects
+    // Mail subjects
     'voyti.mail.welcome_subject' => 'Welkom bij {app}',
     'voyti.mail.confirmation_subject' => 'Account bevestigen op {app}',
     'voyti.mail.reconfirmation_subject' => 'E-mailwijziging bevestigen op {app}',
     'voyti.mail.recovery_subject' => 'Voltooi wachtwoordherstel op {app}',
     'voyti.mail.two_factor_subject' => 'Code voor tweefactorauthenticatie op {app}',
+    'voyti.mail.admin_notification_subject' => 'Nieuwe gebruiker geregistreerd op {app}',
 
     // Mail view templates
     'voyti.mail.welcome_heading' => 'Welkom!',

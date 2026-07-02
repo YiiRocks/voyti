@@ -13,13 +13,9 @@ use Yiisoft\Translator\TranslatorInterface;
 
 final class MailService
 {
-    /**
-     * @param array<string, string> $mailParams
-     */
     public function __construct(
         private readonly MailerInterface $mailer,
         private readonly string $mailPath,
-        private readonly array $mailParams,
         private readonly TranslatorInterface $translator,
         private readonly UrlGeneratorInterface $url,
         private readonly string $appName = 'Voyti',
@@ -55,7 +51,7 @@ final class MailService
         return $this->send(
             'admin_notification',
             $adminEmail,
-            'New user registration',
+            $this->getMailSubject('admin_notification_subject'),
             'welcome',
             [
                 'username' => $user->getUsername(),
@@ -66,7 +62,7 @@ final class MailService
 
     public function sendConfirmation(User $user, UserToken $userToken): bool
     {
-        $subject = $this->getMailSubject('confirmationMailSubject', 'Confirm account');
+        $subject = $this->getMailSubject('confirmation_subject');
         $userId = $user->getId();
         if ($userId === null) {
             return false;
@@ -86,7 +82,7 @@ final class MailService
 
     public function sendReconfirmation(User $user, UserToken $userToken): bool
     {
-        $subject = $this->getMailSubject('reconfirmationMailSubject', 'Confirm email change');
+        $subject = $this->getMailSubject('reconfirmation_subject');
         return $this->send(
             'reconfirmation',
             $user->getEmail(),
@@ -102,7 +98,7 @@ final class MailService
 
     public function sendRecovery(string $username, string $email, UserToken $userToken): bool
     {
-        $subject = $this->getMailSubject('recoveryMailSubject', 'Password reset');
+        $subject = $this->getMailSubject('recovery_subject');
         return $this->send(
             'recovery',
             $email,
@@ -118,7 +114,7 @@ final class MailService
 
     public function sendTwoFactorCode(string $email, string $code): bool
     {
-        $subject = $this->getMailSubject('twoFactorMailSubject', '2FA Code');
+        $subject = $this->getMailSubject('two_factor_subject');
         return $this->send(
             'twofactor',
             $email,
@@ -133,7 +129,7 @@ final class MailService
 
     public function sendWelcome(User $user, string $password): bool
     {
-        $subject = $this->getMailSubject('welcomeMailSubject', 'Welcome');
+        $subject = $this->getMailSubject('welcome_subject');
         return $this->send(
             'welcome',
             $user->getEmail(),
@@ -146,10 +142,13 @@ final class MailService
         );
     }
 
-    private function getMailSubject(string $key, string $default): string
+    private function getMailSubject(string $key): string
     {
-        $subject = $this->mailParams[$key] ?? $default;
-        return trim(str_replace('{app}', $this->appName, $subject));
+        return $this->translator->translate(
+            'voyti.mail.' . $key,
+            ['app' => $this->appName],
+            category: 'voyti',
+        );
     }
 
     /**

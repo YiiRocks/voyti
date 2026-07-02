@@ -30,9 +30,8 @@ final class AccessRuleMiddleware implements MiddlewareInterface
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $user = $this->currentUser->getIdentity();
-        $user = $user instanceof GuestIdentityInterface ? null : $user;
 
-        if ($user === null) {
+        if ($user instanceof GuestIdentityInterface) {
             $response = $this->responseFactory->createResponse(302);
             return $response->withHeader('Location', $this->url->generate($this->config->loginRoute));
         }

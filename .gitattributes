@@ -4,7 +4,6 @@
 /.editorconfig export-ignore
 /.github export-ignore
 /.gitignore export-ignore
-/.idea export-ignore
 /.php-cs-fixer.php export-ignore
 /infection.json export-ignore
 /phpunit.xml.dist export-ignore

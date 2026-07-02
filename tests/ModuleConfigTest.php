@@ -44,7 +44,6 @@ final class ModuleConfigTest extends TestCase
             disableIpLogging: true,
             viewPath: '/custom/views',
             mailPath: '/custom/mail',
-            mailParams: ['welcomeMailSubject' => 'Welcome'],
             enableRestApi: true,
             adminRestPrefix: 'admin/api/v2',
         );
@@ -80,7 +79,6 @@ final class ModuleConfigTest extends TestCase
         $this->assertTrue($config->disableIpLogging);
         $this->assertSame('/custom/views', $config->viewPath);
         $this->assertSame('/custom/mail', $config->mailPath);
-        $this->assertSame(['welcomeMailSubject' => 'Welcome'], $config->mailParams);
         $this->assertTrue($config->enableRestApi);
         $this->assertSame('admin/api/v2', $config->adminRestPrefix);
     }
@@ -134,13 +132,6 @@ final class ModuleConfigTest extends TestCase
             str_replace('\\', '/', dirname(__DIR__) . '/src/resources/mail'),
             str_replace('\\', '/', $config->mailPath),
         );
-        $this->assertSame([
-            'welcomeMailSubject' => 'Welcome to {app}',
-            'confirmationMailSubject' => 'Confirm account on {app}',
-            'reconfirmationMailSubject' => 'Confirm email change on {app}',
-            'recoveryMailSubject' => 'Complete password reset on {app}',
-            'twoFactorMailSubject' => 'Code for two factor authentication on {app}',
-        ], $config->mailParams);
         $this->assertFalse($config->enableRestApi);
         $this->assertSame('api/v1', $config->adminRestPrefix);
     }

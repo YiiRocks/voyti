@@ -82,12 +82,13 @@ return [
     'voyti.validator.invalid_code_with_time' => 'Неверный код. Пожалуйста, повторите попытку в течение {timeDuration} секунд.',
     'voyti.validator.invalid_two_factor_code_with_time' => 'Неверный код двухфакторной аутентификации. Пожалуйста, повторите попытку в течение {timeDuration} секунд.',
 
-    // ModuleConfig mail subjects
+    // Mail subjects
     'voyti.mail.welcome_subject' => 'Добро пожаловать в {app}',
     'voyti.mail.confirmation_subject' => 'Подтверждение аккаунта на {app}',
     'voyti.mail.reconfirmation_subject' => 'Подтверждение смены email на {app}',
     'voyti.mail.recovery_subject' => 'Завершение сброса пароля на {app}',
     'voyti.mail.two_factor_subject' => 'Код для двухфакторной аутентификации на {app}',
+    'voyti.mail.admin_notification_subject' => 'Новая регистрация пользователя на {app}',
 
     // Mail view templates
     'voyti.mail.welcome_heading' => 'Добро пожаловать!',
