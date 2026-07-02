@@ -9,10 +9,12 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use RuntimeException;
 use YiiRocks\Voyti\Form\Rbac\AbstractAuthItemForm;
+use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Repository\UserRepository;
 use Yiisoft\Http\Method;
 use Yiisoft\Rbac\AssignmentsStorageInterface;
+use Yiisoft\Rbac\Item;
 use Yiisoft\Rbac\ItemsStorageInterface;
 use Yiisoft\Rbac\ManagerInterface;
 use Yiisoft\Rbac\Permission;
@@ -103,7 +105,7 @@ abstract class AbstractAuthItemController
         $filterName = $this->stringValue($queryParams, 'name');
         $filterDescription = $this->stringValue($queryParams, 'description');
 
-        /** @var array<string, \Yiisoft\Rbac\Item> $items */
+        /** @var array<string, Item> $items */
         $items = $this->getItemType() === 'role'
             ? $this->itemsStorage->getRoles()
             : $this->itemsStorage->getPermissions();
@@ -111,13 +113,13 @@ abstract class AbstractAuthItemController
         if ($filterName !== '') {
             $items = array_filter(
                 $items,
-                static fn (\Yiisoft\Rbac\Item $item): bool => str_contains($item->getName(), $filterName),
+                static fn (Item $item): bool => str_contains($item->getName(), $filterName),
             );
         }
         if ($filterDescription !== '') {
             $items = array_filter(
                 $items,
-                static fn (\Yiisoft\Rbac\Item $item): bool => str_contains($item->getDescription(), $filterDescription),
+                static fn (Item $item): bool => str_contains($item->getDescription(), $filterDescription),
             );
         }
 
@@ -204,7 +206,7 @@ abstract class AbstractAuthItemController
     }
 
     /**
-     * @return list<array{user: \YiiRocks\Voyti\Entity\User, assigned: bool}>
+     * @return list<array{user: User, assigned: bool}>
      */
     private function buildUserAssignmentData(string $itemName): array
     {

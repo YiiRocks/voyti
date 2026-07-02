@@ -23,7 +23,7 @@ final class AuthHelperTest extends TestCase
     {
         $itemsStorage = $this->createMock(ItemsStorageInterface::class);
         $itemsStorage->expects(self::once())->method('getAll')->willReturn(['admin' => new Role('admin')]);
-        $authManager = $this->createMock(ManagerInterface::class);
+        $authManager = $this->createStub(ManagerInterface::class);
         $helper = $this->createHelper($authManager, new ModuleConfig(), $itemsStorage);
 
         $ruleNames = $helper->getRuleNames();
@@ -41,7 +41,7 @@ final class AuthHelperTest extends TestCase
             'user' => $role2,
             'read' => $perm,
         ]);
-        $authManager = $this->createMock(ManagerInterface::class);
+        $authManager = $this->createStub(ManagerInterface::class);
         $helper = $this->createHelper($authManager, new ModuleConfig(), $itemsStorage);
 
         $ruleNames = $helper->getRuleNames();
@@ -64,7 +64,7 @@ final class AuthHelperTest extends TestCase
             ->method('getByUserId')
             ->with('1')
             ->willReturn(['admin' => new Assignment('admin', 'admin', 1000)]);
-        $authManager = $this->createMock(ManagerInterface::class);
+        $authManager = $this->createStub(ManagerInterface::class);
         $helper = $this->createHelper($authManager, new ModuleConfig(), $itemsStorage, $assignmentsStorage);
 
         $unassigned = $helper->getUnassignedItems(1);
@@ -225,7 +225,12 @@ final class AuthHelperTest extends TestCase
             $config,
             $currentUser ?? new CurrentUser(
                 $this->createStub(IdentityRepositoryInterface::class),
-                $this->createStub(EventDispatcherInterface::class),
+                new class implements EventDispatcherInterface {
+                    public function dispatch(object $event): object
+                    {
+                        return $event;
+                    }
+                },
             ),
         );
     }

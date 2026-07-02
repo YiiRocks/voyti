@@ -6,6 +6,7 @@ use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
+use Yiisoft\Rbac\Item;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 
@@ -13,7 +14,7 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var User $user
  * @var ModuleConfig $config
  * @var string[] $assignments Array of assigned item names
- * @var array<array-key, \Yiisoft\Rbac\Item> $available Array of unassigned items (name => Item)
+ * @var array<array-key, Item> $available Array of unassigned items (name => Item)
  * @var TranslatorInterface $translator
  * @var UrlGeneratorInterface $url
  * @var string $csrf

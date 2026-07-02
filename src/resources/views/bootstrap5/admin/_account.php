@@ -6,6 +6,8 @@ use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
+use Yiisoft\Rbac\Permission;
+use Yiisoft\Rbac\Role;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\View\WebView;
@@ -18,7 +20,7 @@ use Yiisoft\View\WebView;
  * @var TranslatorInterface $translator
  * @var array<string, list<string>> $errors
  * @var string $csrf
- * @var array<string, \Yiisoft\Rbac\Permission|\Yiisoft\Rbac\Role> $allItems
+ * @var array<string, Permission|Role> $allItems
  * @var list<string> $assignedItems
  */
 

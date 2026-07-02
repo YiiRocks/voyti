@@ -6,6 +6,7 @@ namespace YiiRocks\Voyti\Entity;
 
 use Yiisoft\ActiveRecord\ActiveQueryInterface;
 use Yiisoft\ActiveRecord\ActiveRecord;
+use Yiisoft\ActiveRecord\ActiveRecordInterface;
 use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
 use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\User\Login\Cookie\CookieLoginIdentityInterface;
@@ -151,9 +152,9 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
     }
 
     /**
-     * @return (\Yiisoft\ActiveRecord\ActiveRecordInterface|array)[]
+     * @return (ActiveRecordInterface|array)[]
      *
-     * @psalm-return array<\Yiisoft\ActiveRecord\ActiveRecordInterface|array>
+     * @psalm-return array<ActiveRecordInterface|array>
      */
     public function getTokens(): array
     {

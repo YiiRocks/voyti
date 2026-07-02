@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use YiiRocks\Voyti\Form\Rbac\PermissionForm;
+use YiiRocks\Voyti\Entity\User;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -17,7 +18,7 @@ use Yiisoft\View\WebView;
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
  * @var string $csrf
- * @var list<array{user: \YiiRocks\Voyti\Entity\User, assigned: bool}> $users
+ * @var list<array{user: User, assigned: bool}> $users
  */
 
 /** @psalm-suppress InvalidScope */

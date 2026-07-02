@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Repository;
 
+use YiiRocks\Voyti\Entity\User;
 use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 
@@ -15,7 +16,7 @@ final class IdentityRepository implements IdentityRepositoryInterface
     }
 
     /**
-     * @return \YiiRocks\Voyti\Entity\User|null
+     * @return User|null
      */
     #[\Override]
     public function findIdentity(string $id): ?IdentityInterface

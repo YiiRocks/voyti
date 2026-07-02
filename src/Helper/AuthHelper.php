@@ -8,6 +8,7 @@ use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Rbac\Assignment;
 use Yiisoft\Rbac\AssignmentsStorageInterface;
 use Yiisoft\Rbac\Item;
+use Yiisoft\Rbac\Permission;
 use Yiisoft\Rbac\ItemsStorageInterface;
 use Yiisoft\Rbac\ManagerInterface;
 use Yiisoft\Rbac\Role;
@@ -40,9 +41,9 @@ final class AuthHelper
     }
 
     /**
-     * @return (\Yiisoft\Rbac\Permission|\Yiisoft\Rbac\Role)[]
+     * @return (Permission|Role)[]
      *
-     * @psalm-return array<string, \Yiisoft\Rbac\Permission|\Yiisoft\Rbac\Role>
+     * @psalm-return array<string, Permission|Role>
      */
     public function getUnassignedItems(int $userId): array
     {
