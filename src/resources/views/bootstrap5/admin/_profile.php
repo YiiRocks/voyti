@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Form\Settings\UserProfileForm;
+use YiiRocks\Voyti\Helper\TimezoneHelper;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -36,9 +37,19 @@ echo Field::errorSummary($model);
 
 echo Field::text($model, 'name');
 
-echo Field::textarea($model, 'bio')->rows(3);
-
 echo Field::email($model, 'publicEmail');
+
+echo Field::email($model, 'gravatarEmail');
+
+echo Field::text($model, 'location');
+
+echo Field::text($model, 'website');
+
+echo Field::select($model, 'timezone')
+    ->prompt('')
+    ->optionsData(TimezoneHelper::getAll());
+
+echo Field::textarea($model, 'bio')->rows(3);
 
 echo Field::buttonGroup()
     ->buttons(

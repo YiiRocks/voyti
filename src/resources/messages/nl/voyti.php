@@ -160,16 +160,13 @@ return [
     'voyti.view.userProfile.bio_label' => 'Bio',
 
     // Settings views
-    'voyti.view.userProfile.title' => 'Profielinstellingen',
+    'voyti.view.edit_profile.title' => 'Profiel bewerken',
+    'voyti.view.userProfile.title' => 'Profielforbeeld',
     'voyti.view.account.title' => 'Accountinstellingen',
     'voyti.view.networks.title' => 'Netwerken',
     'voyti.view.privacy.title' => 'Privacy',
     'voyti.view.privacy.manage_gdpr_consent' => 'AVG-toestemming beheren',
     'voyti.view.privacy.delete_data' => 'Mijn gegevens verwijderen',
-    'voyti.view.settings.title' => 'Instellingen',
-    'voyti.view.settings.userProfile' => 'Profiel',
-    'voyti.view.settings.account' => 'Account',
-    'voyti.view.settings.networks' => 'Netwerken',
     'voyti.view.settings.privacy' => 'Privacy',
 
     // GDPR views
@@ -241,6 +238,7 @@ return [
     'voyti.view.description_label' => 'Omschrijving',
     'voyti.view.bio_label' => 'Bio',
     'voyti.view.public_email_label' => 'Openbaar e-mailadres',
+    'voyti.view.not_set' => 'Niet ingesteld',
     'voyti.view.website_label' => 'Website',
     'voyti.view.location_label' => 'Locatie',
     'voyti.view.gravatar_email_label' => 'Gravatar-e-mail',

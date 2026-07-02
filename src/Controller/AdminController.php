@@ -309,8 +309,12 @@ final class AdminController
 
         $model = new UserProfileForm($this->translator);
         $model->name = $userProfile->getName() ?? '';
-        $model->bio = $userProfile->getBio() ?? '';
         $model->publicEmail = $userProfile->getPublicEmail() ?? '';
+        $model->gravatarEmail = $userProfile->getGravatarEmail() ?? '';
+        $model->location = $userProfile->getLocation() ?? '';
+        $model->website = $userProfile->getWebsite() ?? '';
+        $model->timezone = $userProfile->getTimezone() ?? '';
+        $model->bio = $userProfile->getBio() ?? '';
 
         if ($request->getMethod() === Method::POST) {
             $body = $this->parsedBody($request);
@@ -319,8 +323,12 @@ final class AdminController
             $model->processValidationResult($result);
             if ($result->isValid()) {
                 $userProfile->setName($model->name !== '' ? $model->name : null);
-                $userProfile->setBio($model->bio !== '' ? $model->bio : null);
                 $userProfile->setPublicEmail($model->publicEmail !== '' ? $model->publicEmail : null);
+                $userProfile->setGravatarEmail($model->gravatarEmail !== '' ? $model->gravatarEmail : null);
+                $userProfile->setLocation($model->location !== '' ? $model->location : null);
+                $userProfile->setWebsite($model->website !== '' ? $model->website : null);
+                $userProfile->setTimezone($model->timezone !== '' ? $model->timezone : null);
+                $userProfile->setBio($model->bio !== '' ? $model->bio : null);
                 $userProfile->save();
                 return $this->renderSuccess('voyti.admin.profile_details_updated');
             }

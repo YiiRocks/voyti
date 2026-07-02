@@ -21,7 +21,6 @@ final class UserProfileTest extends TestCase
             name VARCHAR(255),
             public_email VARCHAR(255),
             gravatar_email VARCHAR(255),
-            gravatar_id VARCHAR(32),
             location VARCHAR(255),
             website VARCHAR(255),
             bio TEXT,
@@ -47,7 +46,7 @@ final class UserProfileTest extends TestCase
         $userProfile->setName('John Doe');
         $userProfile->setPublicEmail('john@example.com');
         $userProfile->setGravatarEmail('john@gravatar.com');
-        $expectedGravatarId = md5(trim('john@gravatar.com'));
+        $expectedGravatarId = hash('sha256', trim('john@gravatar.com'));
         $userProfile->setLocation('New York');
         $userProfile->setWebsite('https://johndoe.com');
         $userProfile->setBio('A cool developer');
@@ -90,7 +89,7 @@ final class UserProfileTest extends TestCase
 
         $found = UserProfile::query()->where(['user_id' => 5])->one();
         $this->assertInstanceOf(UserProfile::class, $found);
-        $this->assertSame(md5(trim('test@gravatar.com')), $found->getGravatarId());
+        $this->assertSame(hash('sha256', trim('test@gravatar.com')), $found->getGravatarId());
     }
 
     public function testGravatarIdClearedWhenEmailRemoved(): void

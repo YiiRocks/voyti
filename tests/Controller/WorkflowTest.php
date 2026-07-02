@@ -377,7 +377,8 @@ final class WorkflowTest extends TestCase
                 ),
             ),
         );
-        $this->assertResponseContains($profileResponse, 'Your profile has been updated');
+        $this->assertSame(302, $profileResponse->getStatusCode());
+        $this->assertSame('/voyti/settings', $profileResponse->getHeaderLine('Location'));
 
         $profile = $this->harness->userProfiles->findByUserId((int) $user->getId());
         $this->assertNotNull($profile);
@@ -892,7 +893,6 @@ final class WorkflowTest extends TestCase
             user_id INTEGER NOT NULL PRIMARY KEY,
             bio TEXT,
             gravatar_email VARCHAR(255),
-            gravatar_id VARCHAR(32),
             location VARCHAR(255),
             name VARCHAR(255),
             public_email VARCHAR(255),

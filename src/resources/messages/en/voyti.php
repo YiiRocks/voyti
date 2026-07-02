@@ -162,16 +162,13 @@ return [
     'voyti.view.userProfile.bio_label' => 'Bio',
 
     // Settings views
-    'voyti.view.userProfile.title' => 'Profile settings',
+    'voyti.view.edit_profile.title' => 'Edit Profile',
+    'voyti.view.userProfile.title' => 'Profile preview',
     'voyti.view.account.title' => 'Account settings',
     'voyti.view.networks.title' => 'Networks',
     'voyti.view.privacy.title' => 'Privacy',
     'voyti.view.privacy.manage_gdpr_consent' => 'Manage GDPR consent',
     'voyti.view.privacy.delete_data' => 'Delete my data',
-    'voyti.view.settings.title' => 'Settings',
-    'voyti.view.settings.userProfile' => 'Profile',
-    'voyti.view.settings.account' => 'Account',
-    'voyti.view.settings.networks' => 'Networks',
     'voyti.view.settings.privacy' => 'Privacy',
 
     // GDPR views
@@ -243,6 +240,7 @@ return [
     'voyti.view.description_label' => 'Description',
     'voyti.view.bio_label' => 'Bio',
     'voyti.view.public_email_label' => 'Public email',
+    'voyti.view.not_set' => 'Not set',
     'voyti.view.website_label' => 'Website',
     'voyti.view.location_label' => 'Location',
     'voyti.view.gravatar_email_label' => 'Gravatar email',
