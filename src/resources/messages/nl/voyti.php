@@ -53,8 +53,6 @@ return [
     'voyti.admin.user_confirmed' => 'Gebruiker is bevestigd',
     'voyti.admin.unable_to_confirm' => 'Kan gebruiker niet bevestigen',
     'voyti.admin.user_deleted' => 'Gebruiker is verwijderd',
-    'voyti.admin.block_status_updated' => 'Blokkeerstatus van gebruiker is bijgewerkt',
-    'voyti.admin.unable_to_update_block' => 'Kan blokkeerstatus niet bijwerken',
     'voyti.admin.password_change_required' => 'Gebruiker moet bij de volgende aanmelding het wachtwoord wijzigen',
     'voyti.admin.error_occurred' => 'Er is een fout opgetreden',
     'voyti.admin.cannot_delete_self' => 'U kunt uw eigen account niet verwijderen',

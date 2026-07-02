@@ -99,10 +99,11 @@ final class AdminController
     public function block(int $id): ResponseInterface
     {
         $user = $this->userRepository->findById($id);
-        if ($user !== null && $this->userBlockService->run($user)) {
-            return $this->renderSuccess('voyti.admin.block_status_updated');
+        if ($user !== null) {
+            $this->userBlockService->run($user);
         }
-        return $this->renderError('voyti.admin.unable_to_update_block');
+        return $this->responseFactory->createResponse(302)
+            ->withHeader('Location', $this->url->generate('voyti/admin'));
     }
 
     public function confirm(int $id): ResponseInterface

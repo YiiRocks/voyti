@@ -55,8 +55,6 @@ return [
     'voyti.admin.user_confirmed' => 'User has been confirmed',
     'voyti.admin.unable_to_confirm' => 'Unable to confirm user',
     'voyti.admin.user_deleted' => 'User has been deleted',
-    'voyti.admin.block_status_updated' => 'User block status has been updated',
-    'voyti.admin.unable_to_update_block' => 'Unable to update block status',
     'voyti.admin.password_change_required' => 'User will be required to change password at next login',
     'voyti.admin.error_occurred' => 'There was an error',
     'voyti.admin.cannot_delete_self' => 'You cannot delete your own account',

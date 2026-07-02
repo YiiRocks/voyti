@@ -53,8 +53,6 @@ return [
     'voyti.admin.user_confirmed' => 'Пользователь подтверждён',
     'voyti.admin.unable_to_confirm' => 'Не удалось подтвердить пользователя',
     'voyti.admin.user_deleted' => 'Пользователь удалён',
-    'voyti.admin.block_status_updated' => 'Статус блокировки пользователя обновлён',
-    'voyti.admin.unable_to_update_block' => 'Не удалось обновить статус блокировки',
     'voyti.admin.password_change_required' => 'Пользователь должен будет сменить пароль при следующем входе',
     'voyti.admin.error_occurred' => 'Произошла ошибка',
     'voyti.admin.cannot_delete_self' => 'Вы не можете удалить свой собственный аккаунт',

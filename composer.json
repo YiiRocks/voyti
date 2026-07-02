@@ -119,7 +119,6 @@
             "params-console": "params-console.php",
             "events": "events.php",
             "di": "di.php",
-            "rbac": "rbac.php",
             "voyti-routes": "routes.php",
             "bootstrap": "bootstrap.php"
         }

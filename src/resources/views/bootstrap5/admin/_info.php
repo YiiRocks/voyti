@@ -5,7 +5,6 @@ declare(strict_types=1);
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserProfile;
 use YiiRocks\Voyti\ModuleConfig;
-use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -59,66 +58,4 @@ if ($userProfile) {
 
 echo '</dl>' . "\n";
 
-echo Html::div()->class('mt-3 d-flex gap-2 flex-wrap')->open();
-
-if (!$user->isConfirmed()) {
-    echo Html::form()
-        ->post($url->generate('voyti/admin-confirm', ['id' => $user->getId()]))
-        ->csrf($csrf)
-        ->open();
-
-    echo Field::buttonGroup()
-        ->buttons(
-            Html::submitButton($translator->translate('voyti.view.confirm_button', category: 'voyti'))->class('btn', 'btn-success', 'btn-sm')
-        );
-
-    echo Html::form()->close();
-}
-
-echo Html::form()
-    ->post($url->generate('voyti/admin-block', ['id' => $user->getId()]))
-    ->csrf($csrf)
-    ->open();
-
-if ($user->isBlocked()) {
-    echo Field::buttonGroup()
-        ->buttons(
-            Html::submitButton($translator->translate('voyti.view.unblock_button', category: 'voyti'))->class('btn', 'btn-warning', 'btn-sm')
-        );
-} else {
-    echo Field::buttonGroup()
-        ->buttons(
-            Html::submitButton($translator->translate('voyti.view.block_button', category: 'voyti'))->class('btn', 'btn-warning', 'btn-sm')
-        );
-}
-
-echo Html::form()->close();
-
-if ($config->enablePasswordExpiration) {
-    echo Html::form()
-        ->post($url->generate('voyti/admin-force-password', ['id' => $user->getId()]))
-        ->csrf($csrf)
-        ->open();
-
-    echo Field::buttonGroup()
-        ->buttons(
-            Html::submitButton($translator->translate('voyti.view.force_password_change_button', category: 'voyti'))->class('btn', 'btn-outline-secondary', 'btn-sm')
-        );
-
-    echo Html::form()->close();
-}
-
-echo Html::form()
-    ->post($url->generate('voyti/admin-delete', ['id' => $user->getId()]))
-    ->csrf($csrf)
-    ->open();
-
-echo Field::buttonGroup()
-    ->buttons(
-        Html::submitButton($translator->translate('voyti.view.delete_button', category: 'voyti'))->class('btn', 'btn-danger', 'btn-sm')
-    );
-
-echo Html::form()->close();
-
-echo Html::div()->close();
 echo Html::div()->close();

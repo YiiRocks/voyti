@@ -133,7 +133,7 @@ final class WorkflowTest extends TestCase
         $this->assertSame(UserToken::TYPE_RECOVERY, $recoveryToken->getType());
 
         $blockResponse = $this->harness->adminController->block($userId);
-        $this->assertResponseContains($blockResponse, 'User block status has been updated');
+        $this->assertSame(302, $blockResponse->getStatusCode());
         $blockedUser = $this->harness->users->findById($userId);
         $this->assertTrue($blockedUser->isBlocked());
     }

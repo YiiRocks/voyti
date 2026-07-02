@@ -53,8 +53,6 @@ return [
     'voyti.admin.user_confirmed' => 'Benutzer wurde bestätigt',
     'voyti.admin.unable_to_confirm' => 'Benutzer konnte nicht bestätigt werden',
     'voyti.admin.user_deleted' => 'Benutzer wurde gelöscht',
-    'voyti.admin.block_status_updated' => 'Sperrstatus des Benutzers wurde aktualisiert',
-    'voyti.admin.unable_to_update_block' => 'Sperrstatus konnte nicht aktualisiert werden',
     'voyti.admin.password_change_required' => 'Benutzer muss beim nächsten Login das Passwort ändern',
     'voyti.admin.error_occurred' => 'Es ist ein Fehler aufgetreten',
     'voyti.admin.cannot_delete_self' => 'Sie können Ihr eigenes Konto nicht löschen',

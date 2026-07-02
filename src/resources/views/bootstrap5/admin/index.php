@@ -8,6 +8,7 @@ use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\View\WebView;
 use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\ModuleConfig;
 
 /**
  * @var WebView $this
@@ -15,6 +16,7 @@ use YiiRocks\Voyti\Entity\User;
  * @var array<string, string> $filters
  * @var int $totalPages
  * @var int $currentPage
+ * @var ModuleConfig $config
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
  * @var string $csrf
@@ -95,7 +97,37 @@ foreach ($users as $user) {
 
     echo Html::div()->class('col-3 text-end')->open();
     echo Html::a($translator->translate('voyti.view.info_link', category: 'voyti'), $url->generate('voyti/admin-info', ['id' => $user->getId()]))->class('btn', 'btn-sm', 'btn-outline-secondary', 'me-1');
-    echo Html::a($translator->translate('voyti.view.update_link', category: 'voyti'), $url->generate('voyti/admin-update', ['id' => $user->getId()]))->class('btn', 'btn-sm', 'btn-outline-secondary', 'me-1');
+    echo Html::a($translator->translate('voyti.view.update_link', category: 'voyti'), $url->generate('voyti/admin-update', ['id' => $user->getId()]))->class('btn', 'btn-sm', 'btn-outline-secondary');
+
+    if (!$user->isConfirmed()) {
+        echo Html::form()
+            ->post($url->generate('voyti/admin-confirm', ['id' => $user->getId()]))
+            ->csrf($csrf)
+            ->class('d-inline')
+            ->open();
+        echo Html::submitButton($translator->translate('voyti.view.confirm_button', category: 'voyti'))->class('btn', 'btn-sm', 'btn-success');
+        echo Html::form()->close();
+    }
+
+    echo Html::form()
+        ->post($url->generate('voyti/admin-block', ['id' => $user->getId()]))
+        ->csrf($csrf)
+        ->class('d-inline')
+        ->open();
+    echo Html::submitButton(
+        $translator->translate($user->isBlocked() ? 'voyti.view.unblock_button' : 'voyti.view.block_button', category: 'voyti')
+    )->class('btn', 'btn-sm', 'btn-warning');
+    echo Html::form()->close();
+
+    if ($config->enablePasswordExpiration) {
+        echo Html::form()
+            ->post($url->generate('voyti/admin-force-password', ['id' => $user->getId()]))
+            ->csrf($csrf)
+            ->class('d-inline')
+            ->open();
+        echo Html::submitButton($translator->translate('voyti.view.force_password_change_button', category: 'voyti'))->class('btn', 'btn-sm', 'btn-outline-secondary');
+        echo Html::form()->close();
+    }
 
     echo Html::form()
         ->post($url->generate('voyti/admin-delete', ['id' => $user->getId()]))
