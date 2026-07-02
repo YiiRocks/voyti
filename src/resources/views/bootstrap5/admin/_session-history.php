@@ -18,6 +18,8 @@ use YiiRocks\Voyti\Entity\UserSessionHistory;
  */
 
 echo Html::div()->open();
+include dirname(__DIR__) . '/shared/_admin-menu.php';
+
 Html::H3()->class('mb-3')->open();
 echo $translator->translate('voyti.view.admin.session_history', category: 'voyti');
 echo Html::H3()->close();

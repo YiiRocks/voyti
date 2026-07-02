@@ -23,6 +23,8 @@ use Yiisoft\View\WebView;
 $this->setTitle($translator->translate('voyti.view.permission.create_title', category: 'voyti'));
 
 echo Html::div()->open();
+include dirname(__DIR__, 2) . '/shared/_admin-menu.php';
+
 echo Html::H1($translator->translate('voyti.view.permission.create_title', category: 'voyti'));
 
 echo Html::form()
@@ -44,6 +46,8 @@ if (!empty($errors)) {
 echo Field::text($model, 'name');
 
 echo Field::text($model, 'description');
+
+echo Field::text($model, 'rule');
 
 echo Field::buttonGroup()
     ->buttons(

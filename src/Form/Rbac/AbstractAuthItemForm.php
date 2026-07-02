@@ -14,12 +14,12 @@ use Yiisoft\Validator\RulesProviderInterface;
 abstract class AbstractAuthItemForm extends FormModel implements RulesProviderInterface
 {
     public array $children = [];
-    #[Length(max: 255)]
+    #[Length(max: 191)]
     public string $description = '';
     public string $itemName = '';
     #[Required]
     #[Regex(pattern: '/^\w[\w.:\-]+\w$/u')]
-    #[Length(min: 1, max: 64)]
+    #[Length(min: 1, max: 126)]
     public string $name = '';
     public ?string $rule = null;
 
@@ -64,8 +64,8 @@ abstract class AbstractAuthItemForm extends FormModel implements RulesProviderIn
     public function getRules(): iterable
     {
         return [
-            'name' => [new Required(), new Regex(pattern: '/^\w[\w.:\-]+\w$/u'), new Length(min: 1, max: 64)],
-            'description' => [new Length(max: 255)],
+            'name' => [new Required(), new Regex(pattern: '/^\w[\w.:\-]+\w$/u'), new Length(min: 1, max: 126)],
+            'description' => [new Length(max: 191)],
         ];
     }
 

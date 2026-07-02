@@ -20,6 +20,8 @@ use Yiisoft\Translator\TranslatorInterface;
  */
 
 echo Html::div()->open();
+include dirname(__DIR__) . '/shared/_admin-menu.php';
+
 echo Html::div()->class('d-flex justify-content-between align-items-center mb-3')->open();
 echo Html::H1($user->getUsername());
 

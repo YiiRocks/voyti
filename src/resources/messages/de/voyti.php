@@ -48,9 +48,7 @@ return [
     'voyti.userProfile.not_found' => 'Profil nicht gefunden',
 
     // AdminController
-    'voyti.admin.user_created' => 'Benutzer wurde erstellt',
     'voyti.admin.user_not_found' => 'Benutzer nicht gefunden',
-    'voyti.admin.account_details_updated' => 'Kontodaten wurden aktualisiert',
     'voyti.admin.profile_details_updated' => 'Profildaten wurden aktualisiert',
     'voyti.admin.user_confirmed' => 'Benutzer wurde bestätigt',
     'voyti.admin.unable_to_confirm' => 'Benutzer konnte nicht bestätigt werden',

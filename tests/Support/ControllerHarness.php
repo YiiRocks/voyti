@@ -351,6 +351,9 @@ final class ControllerHarness
             $this->moduleConfig,
             $this->hydrator,
             $this->currentUser,
+            $responseFactory,
+            $this->rbacItemsStorage,
+            $this->rbacAssignmentsStorage,
         );
     }
 

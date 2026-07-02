@@ -19,6 +19,8 @@ use Yiisoft\View\WebView;
 $this->setTitle($translator->translate('voyti.view.rule.title', category: 'voyti'));
 
 echo Html::div()->open();
+include dirname(__DIR__, 2) . '/shared/_admin-menu.php';
+
 echo Html::div()->class('d-flex justify-content-between align-items-center mb-3')->open();
 echo Html::H1($translator->translate('voyti.view.rule.title', category: 'voyti'));
 echo Html::a($translator->translate('voyti.view.rule.create_link', category: 'voyti'), $url->generate('voyti/rules-create'))->class('btn', 'btn-primary');

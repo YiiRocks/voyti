@@ -23,6 +23,8 @@ use Yiisoft\View\WebView;
 $this->setTitle($translator->translate('voyti.view.admin.update_profile_title', category: 'voyti'));
 
 echo Html::div()->open();
+include dirname(__DIR__) . '/shared/_admin-menu.php';
+
 echo Html::H1($translator->translate('voyti.view.admin.update_profile_title', category: 'voyti'));
 
 echo Html::form()

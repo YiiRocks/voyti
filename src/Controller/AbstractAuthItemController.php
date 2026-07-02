@@ -7,12 +7,16 @@ namespace YiiRocks\Voyti\Controller;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use RuntimeException;
 use YiiRocks\Voyti\Form\Rbac\AbstractAuthItemForm;
-use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Helper\InputDataTrait;
-use YiiRocks\Voyti\Service\Rbac\ItemEditionService;
+use YiiRocks\Voyti\Repository\UserRepository;
 use Yiisoft\Http\Method;
-use Yiisoft\Rbac\Item;
+use Yiisoft\Rbac\AssignmentsStorageInterface;
+use Yiisoft\Rbac\ItemsStorageInterface;
+use Yiisoft\Rbac\ManagerInterface;
+use Yiisoft\Rbac\Permission;
+use Yiisoft\Rbac\Role;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\ValidatorInterface;
@@ -26,11 +30,13 @@ abstract class AbstractAuthItemController
     public function __construct(
         protected readonly TranslatorInterface $translator,
         protected readonly WebViewRenderer $viewRenderer,
-        protected readonly AuthHelper $authHelper,
         protected readonly UrlGeneratorInterface $url,
         protected readonly ValidatorInterface $validator,
-        protected readonly ItemEditionService $authItemEditionService,
         protected readonly ResponseFactoryInterface $responseFactory,
+        protected readonly UserRepository $userRepository,
+        protected readonly ItemsStorageInterface $itemsStorage,
+        protected readonly ManagerInterface $managerInterface,
+        protected readonly AssignmentsStorageInterface $assignmentsStorage,
     ) {
     }
 
@@ -45,7 +51,28 @@ abstract class AbstractAuthItemController
             $result = $this->validator->validate($form);
 
             if ($result->isValid()) {
-                $this->authItemEditionService->create($form);
+                if ($this->getItemType() === 'role') {
+                    $item = (new Role($form->name))->withDescription($form->description);
+                    if ($form->rule !== '') {
+                        $item = $item->withRuleName($form->rule);
+                    }
+                    $this->managerInterface->addRole($item);
+                } else {
+                    $item = (new Permission($form->name))->withDescription($form->description);
+                    if ($form->rule !== '') {
+                        $item = $item->withRuleName($form->rule);
+                    }
+                    $this->managerInterface->addPermission($item);
+                }
+
+                /** @var list<string> $children */
+                $children = $form->children;
+                foreach ($children as $childName) {
+                    if ($childName !== '') {
+                        $this->managerInterface->addChild($form->name, $childName);
+                    }
+                }
+
                 return $this->redirect($this->url->generate('voyti/' . $this->getIndexRouteName()));
             }
             $errors = $result->getErrorMessagesIndexedByProperty();
@@ -54,13 +81,18 @@ abstract class AbstractAuthItemController
         return $this->renderView('rbac/' . $this->getItemType() . '/create', [
             'model' => $form,
             'errors' => $errors,
-            'unassignedItems' => $this->authHelper->getAllItems(),
+            'unassignedItems' => $this->itemsStorage->getAll(),
         ]);
     }
 
     public function delete(string $name): ResponseInterface
     {
-        $this->authItemEditionService->delete($name, $this->getItemType());
+        if ($this->getItemType() === 'role') {
+            $this->managerInterface->removeRole($name);
+        } else {
+            $this->managerInterface->removePermission($name);
+        }
+        $this->managerInterface->removeChildren($name);
 
         return $this->redirect($this->url->generate('voyti/' . $this->getIndexRouteName()));
     }
@@ -71,21 +103,21 @@ abstract class AbstractAuthItemController
         $filterName = $this->stringValue($queryParams, 'name');
         $filterDescription = $this->stringValue($queryParams, 'description');
 
-        /** @var array<string, Item> $items */
+        /** @var array<string, \Yiisoft\Rbac\Item> $items */
         $items = $this->getItemType() === 'role'
-            ? $this->authHelper->getRoles()
-            : $this->authHelper->getPermissions();
+            ? $this->itemsStorage->getRoles()
+            : $this->itemsStorage->getPermissions();
 
         if ($filterName !== '') {
             $items = array_filter(
                 $items,
-                static fn (Item $item): bool => str_contains($item->getName(), $filterName),
+                static fn (\Yiisoft\Rbac\Item $item): bool => str_contains($item->getName(), $filterName),
             );
         }
         if ($filterDescription !== '') {
             $items = array_filter(
                 $items,
-                static fn (Item $item): bool => str_contains($item->getDescription(), $filterDescription),
+                static fn (\Yiisoft\Rbac\Item $item): bool => str_contains($item->getDescription(), $filterDescription),
             );
         }
 
@@ -100,8 +132,8 @@ abstract class AbstractAuthItemController
     {
         $form = $this->createForm();
         $item = $this->getItemType() === 'role'
-            ? $this->authHelper->getRole($name)
-            : $this->authHelper->getPermission($name);
+            ? $this->managerInterface->getRole($name)
+            : $this->managerInterface->getPermission($name);
 
         if ($item === null) {
             return $this->renderError('voyti.auth_item.not_found');
@@ -111,7 +143,9 @@ abstract class AbstractAuthItemController
         $form->name = $item->getName();
         $form->description = $item->getDescription();
         $form->rule = $item->getRuleName() ?? '';
-        $form->children = array_keys($this->authHelper->getChildren($item->getName()));
+        $form->children = array_keys($this->itemsStorage->getDirectChildren($item->getName()));
+
+        $users = $this->buildUserAssignmentData($item->getName());
 
         $errors = [];
 
@@ -121,7 +155,41 @@ abstract class AbstractAuthItemController
             $result = $this->validator->validate($form);
 
             if ($result->isValid()) {
-                $this->authItemEditionService->update($form);
+                $oldName = $form->itemName !== '' ? $form->itemName : $form->name;
+
+                if ($this->getItemType() === 'role') {
+                    $role = $this->itemsStorage->getRole($oldName);
+                    if ($role === null) {
+                        throw new RuntimeException("Role '{$oldName}' not found.");
+                    }
+                    $role = $role->withName($form->name)->withDescription($form->description);
+                    if ($form->rule !== '') {
+                        $role = $role->withRuleName($form->rule);
+                    }
+                    $this->managerInterface->updateRole($oldName, $role);
+                } else {
+                    $perm = $this->itemsStorage->getPermission($oldName);
+                    if ($perm === null) {
+                        throw new RuntimeException("Permission '{$oldName}' not found.");
+                    }
+                    $perm = $perm->withName($form->name)->withDescription($form->description);
+                    if ($form->rule !== '') {
+                        $perm = $perm->withRuleName($form->rule);
+                    }
+                    $this->managerInterface->updatePermission($oldName, $perm);
+                }
+
+                $this->managerInterface->removeChildren($form->name);
+                /** @var list<string> $children */
+                $children = $form->children;
+                foreach ($children as $childName) {
+                    if ($childName !== '') {
+                        $this->managerInterface->addChild($form->name, $childName);
+                    }
+                }
+
+                $this->processUserAssignments($body, $form->name);
+
                 return $this->redirect($this->url->generate('voyti/' . $this->getIndexRouteName()));
             }
             $errors = $result->getErrorMessagesIndexedByProperty();
@@ -130,8 +198,57 @@ abstract class AbstractAuthItemController
         return $this->renderView('rbac/' . $this->getItemType() . '/update', [
             'model' => $form,
             'errors' => $errors,
-            'unassignedItems' => $this->authHelper->getAllItems(),
+            'users' => $users,
+            'unassignedItems' => $this->itemsStorage->getAll(),
         ]);
+    }
+
+    /**
+     * @return list<array{user: \YiiRocks\Voyti\Entity\User, assigned: bool}>
+     */
+    private function buildUserAssignmentData(string $itemName): array
+    {
+        $allUsers = $this->userRepository->findAllUsers();
+        /** @var array<string, true> $assignedUserIds */
+        $assignedUserIds = [];
+        foreach ($this->assignmentsStorage->getByItemNames([$itemName]) as $assignment) {
+            $assignedUserIds[$assignment->getUserId()] = true;
+        }
+
+        $users = [];
+        foreach ($allUsers as $user) {
+            $users[] = [
+                'user' => $user,
+                'assigned' => isset($assignedUserIds[(string) $user->getId()]),
+            ];
+        }
+        return $users;
+    }
+
+    /**
+     * @param array<array-key, mixed> $body
+     */
+    private function processUserAssignments(array $body, string $itemName): void
+    {
+        $submittedIds = [];
+        foreach (($body['assignedUsers'] ?? []) as $id) {
+            if (is_string($id) && $id !== '') {
+                $submittedIds[$id] = true;
+            }
+        }
+
+        $currentAssignments = $this->assignmentsStorage->getByItemNames([$itemName]);
+        foreach ($currentAssignments as $assignment) {
+            $uid = $assignment->getUserId();
+            if (!isset($submittedIds[$uid])) {
+                $this->assignmentsStorage->remove($itemName, $uid);
+            }
+            unset($submittedIds[$uid]);
+        }
+
+        foreach ($submittedIds as $uid => $_) {
+            $this->managerInterface->assign($itemName, (int) $uid);
+        }
     }
 
     abstract protected function getIndexRouteName(): string;

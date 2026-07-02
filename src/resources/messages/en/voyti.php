@@ -50,9 +50,7 @@ return [
     'voyti.userProfile.not_found' => 'Profile not found',
 
     // AdminController
-    'voyti.admin.user_created' => 'User has been created',
     'voyti.admin.user_not_found' => 'User not found',
-    'voyti.admin.account_details_updated' => 'Account details have been updated',
     'voyti.admin.profile_details_updated' => 'Profile details have been updated',
     'voyti.admin.user_confirmed' => 'User has been confirmed',
     'voyti.admin.unable_to_confirm' => 'Unable to confirm user',

@@ -10,7 +10,6 @@ use Yiisoft\Rbac\AssignmentsStorageInterface;
 use Yiisoft\Rbac\Item;
 use Yiisoft\Rbac\ItemsStorageInterface;
 use Yiisoft\Rbac\ManagerInterface;
-use Yiisoft\Rbac\Permission;
 use Yiisoft\Rbac\Role;
 use Yiisoft\User\CurrentUser;
 
@@ -23,65 +22,6 @@ final class AuthHelper
         private readonly ModuleConfig $config,
         private readonly CurrentUser $currentUser,
     ) {
-    }
-
-    public function assign(string $itemName, int $userId): void
-    {
-        $this->authManager->assign($itemName, $userId);
-    }
-
-    /**
-     * @return (Permission|Role)[]
-     *
-     * @psalm-return array<string, Permission|Role>
-     */
-    public function getAllItems(): array
-    {
-        return $this->itemsStorage->getAll();
-    }
-
-    /**
-     * @return array<string, Assignment>
-     */
-    public function getAssignments(int $userId): array
-    {
-        return $this->assignmentsStorage->getByUserId((string) $userId);
-    }
-
-    /**
-     * @return (Permission|Role)[]
-     *
-     * @psalm-return array<string, Permission|Role>
-     */
-    public function getChildren(string $parentName): array
-    {
-        return $this->itemsStorage->getDirectChildren($parentName);
-    }
-
-    public function getPermission(string $name): ?Permission
-    {
-        return $this->authManager->getPermission($name);
-    }
-
-    /**
-     * @return array<string, Permission>
-     */
-    public function getPermissions(): array
-    {
-        return $this->itemsStorage->getPermissions();
-    }
-
-    public function getRole(string $name): ?Role
-    {
-        return $this->authManager->getRole($name);
-    }
-
-    /**
-     * @return array<string, Role>
-     */
-    public function getRoles(): array
-    {
-        return $this->itemsStorage->getRoles();
     }
 
     /**
@@ -100,9 +40,9 @@ final class AuthHelper
     }
 
     /**
-     * @return (Permission|Role)[]
+     * @return (\Yiisoft\Rbac\Permission|\Yiisoft\Rbac\Role)[]
      *
-     * @psalm-return array<string, Permission|Role>
+     * @psalm-return array<string, \Yiisoft\Rbac\Permission|\Yiisoft\Rbac\Role>
      */
     public function getUnassignedItems(int $userId): array
     {
@@ -151,13 +91,4 @@ final class AuthHelper
         return true;
     }
 
-    public function revoke(string $itemName, int $userId): void
-    {
-        $this->authManager->revoke($itemName, $userId);
-    }
-
-    public function revokeAll(int $userId): void
-    {
-        $this->authManager->revokeAll($userId);
-    }
 }

@@ -22,10 +22,51 @@ return [
                 'bootstrap.php',
             ],
         ],
-        'params' => [
-            'yiisoft/db-migration' => [
-                'config/params.php',
+        'di' => [
+            'yiisoft/mailer' => [
+                'config/di.php',
             ],
+            'yiirocks/recaptcha' => [
+                'config/di.php',
+            ],
+            'yiisoft/router-fastroute' => [
+                'config/di.php',
+            ],
+            'yiisoft/db' => [
+                'config/di.php',
+            ],
+            'yiisoft/aliases' => [
+                'config/di.php',
+            ],
+            'yiisoft/form-model' => [
+                'config/di.php',
+            ],
+            'yiisoft/hydrator' => [
+                'config/di.php',
+            ],
+            'yiisoft/validator' => [
+                'config/di.php',
+            ],
+            'yiisoft/rbac' => [
+                'config/di.php',
+            ],
+            'yiisoft/router' => [
+                'config/di.php',
+            ],
+            'yiisoft/view' => [
+                'config/di.php',
+            ],
+            'yiisoft/translator' => [
+                'config/di.php',
+            ],
+            'yiisoft/cache' => [
+                'config/di.php',
+            ],
+            '/' => [
+                'di.php',
+            ],
+        ],
+        'params' => [
             'yiisoft/mailer' => [
                 'config/params.php',
             ],
@@ -56,6 +97,9 @@ return [
             'yiisoft/session' => [
                 'config/params.php',
             ],
+            'yiisoft/db-migration' => [
+                'config/params.php',
+            ],
             'yiisoft/form' => [
                 'config/params.php',
             ],
@@ -79,55 +123,6 @@ return [
             ],
             '/' => [
                 'params.php',
-            ],
-        ],
-        'di-console' => [
-            'yiisoft/db-migration' => [
-                'config/di-console.php',
-            ],
-        ],
-        'di' => [
-            'yiisoft/mailer' => [
-                'config/di.php',
-            ],
-            'yiisoft/rbac' => [
-                'config/di.php',
-            ],
-            'yiirocks/recaptcha' => [
-                'config/di.php',
-            ],
-            'yiisoft/router-fastroute' => [
-                'config/di.php',
-            ],
-            'yiisoft/db' => [
-                'config/di.php',
-            ],
-            'yiisoft/aliases' => [
-                'config/di.php',
-            ],
-            'yiisoft/form-model' => [
-                'config/di.php',
-            ],
-            'yiisoft/hydrator' => [
-                'config/di.php',
-            ],
-            'yiisoft/validator' => [
-                'config/di.php',
-            ],
-            'yiisoft/router' => [
-                'config/di.php',
-            ],
-            'yiisoft/view' => [
-                'config/di.php',
-            ],
-            'yiisoft/translator' => [
-                'config/di.php',
-            ],
-            'yiisoft/cache' => [
-                'config/di.php',
-            ],
-            '/' => [
-                'di.php',
             ],
         ],
         'di-web' => [
@@ -167,6 +162,11 @@ return [
                 'config/events-web.php',
             ],
         ],
+        'di-console' => [
+            'yiisoft/db-migration' => [
+                'config/di-console.php',
+            ],
+        ],
         'widgets' => [],
         'widgets-themes' => [],
         'params-console' => [
@@ -177,11 +177,6 @@ return [
         'events' => [
             '/' => [
                 'events.php',
-            ],
-        ],
-        'rbac' => [
-            '/' => [
-                'rbac.php',
             ],
         ],
         'voyti-routes' => [

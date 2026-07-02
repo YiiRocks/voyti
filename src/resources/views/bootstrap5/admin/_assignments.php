@@ -20,6 +20,8 @@ use Yiisoft\Translator\TranslatorInterface;
  */
 
 echo Html::div()->open();
+include dirname(__DIR__) . '/shared/_admin-menu.php';
+
 Html::H3()->class('mb-3')->open();
 echo $translator->translate('voyti.view.assignments.title', category: 'voyti');
 echo Html::H3()->close();

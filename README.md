@@ -365,18 +365,6 @@ Built on [`yiisoft/rbac`](https://github.com/yiisoft/rbac). The extension provid
 - **Parent-child hierarchy** — roles can have child permissions/roles
 - **Rule management** — register and manage custom `RuleInterface` classes
 
-Default roles are configured in `config/rbac.php`:
-
-```php
-return [
-    'rbac' => [
-        'guest' => [],
-        'user' => [],
-        'admin' => [],
-    ],
-];
-```
-
 ## Routes
 
 The library does not provide a menu model or navigation contract. It only exposes named routes that the host application can use in its own menu, sidebar, or access rules.

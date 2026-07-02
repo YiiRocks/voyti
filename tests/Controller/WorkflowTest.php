@@ -108,7 +108,7 @@ final class WorkflowTest extends TestCase
                 ],
             ),
         );
-        $this->assertResponseContains($response, 'User has been created');
+        $this->assertSame(302, $response->getStatusCode());
 
         $user = $this->harness->users->findByEmail('ivan@example.test');
         $this->assertInstanceOf(User::class, $user);
@@ -151,7 +151,7 @@ final class WorkflowTest extends TestCase
             ),
         );
 
-        $this->assertResponseContains($response, 'User has been created');
+        $this->assertSame(302, $response->getStatusCode());
 
         $user = $this->harness->users->findByEmail('grace@example.test');
         $this->assertInstanceOf(User::class, $user);

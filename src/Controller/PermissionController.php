@@ -7,8 +7,10 @@ namespace YiiRocks\Voyti\Controller;
 use Psr\Http\Message\ResponseFactoryInterface;
 use YiiRocks\Voyti\Form\Rbac\AbstractAuthItemForm;
 use YiiRocks\Voyti\Form\Rbac\PermissionForm;
-use YiiRocks\Voyti\Helper\AuthHelper;
-use YiiRocks\Voyti\Service\Rbac\ItemEditionService;
+use YiiRocks\Voyti\Repository\UserRepository;
+use Yiisoft\Rbac\AssignmentsStorageInterface;
+use Yiisoft\Rbac\ItemsStorageInterface;
+use Yiisoft\Rbac\ManagerInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\ValidatorInterface;
@@ -19,13 +21,15 @@ final class PermissionController extends AbstractAuthItemController
     public function __construct(
         TranslatorInterface $translator,
         WebViewRenderer $viewRenderer,
-        AuthHelper $authHelper,
         UrlGeneratorInterface $url,
         ValidatorInterface $validator,
-        ItemEditionService $authItemEditionService,
         ResponseFactoryInterface $responseFactory,
+        UserRepository $userRepository,
+        ItemsStorageInterface $itemsStorage,
+        ManagerInterface $managerInterface,
+        AssignmentsStorageInterface $assignmentsStorage,
     ) {
-        parent::__construct($translator, $viewRenderer, $authHelper, $url, $validator, $authItemEditionService, $responseFactory);
+        parent::__construct($translator, $viewRenderer, $url, $validator, $responseFactory, $userRepository, $itemsStorage, $managerInterface, $assignmentsStorage);
     }
 
     /**

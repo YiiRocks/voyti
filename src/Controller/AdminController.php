@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Controller;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
+use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Entity\UserProfile;
@@ -27,6 +28,8 @@ use YiiRocks\Voyti\Service\User\CreateService;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Rbac\Assignment;
+use Yiisoft\Rbac\AssignmentsStorageInterface;
+use Yiisoft\Rbac\ItemsStorageInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Security\Random;
@@ -61,6 +64,9 @@ final class AdminController
         private readonly ModuleConfig $config,
         private readonly HydratorInterface $hydrator,
         private readonly CurrentUser $currentUser,
+        private readonly ResponseFactoryInterface $responseFactory,
+        private readonly ItemsStorageInterface $itemsStorage,
+        private readonly AssignmentsStorageInterface $assignmentsStorage,
     ) {
     }
 
@@ -78,7 +84,7 @@ final class AdminController
             $this->updateAuthAssignmentsService->run($id, $items);
         }
 
-        $assignments = $this->authHelper->getAssignments($id);
+        $assignments = $this->assignmentsStorage->getByUserId((string) $id);
         $assignedNames = array_map(fn (Assignment $a) => $a->getItemName(), $assignments);
         $available = $this->authHelper->getUnassignedItems($id);
 
@@ -122,14 +128,27 @@ final class AdminController
 
             $result = $this->userCreateService->run($email, $username, $password);
             if ($result->isSuccess()) {
-                return $this->renderSuccess('voyti.admin.user_created');
+                $items = $body['assignedItems'] ?? [];
+                $items = is_array($items) ? array_values(array_filter($items, 'is_string')) : [];
+                if ($items !== []) {
+                    $user = $this->userRepository->findByUsername($username);
+                    if ($user !== null) {
+                        $this->updateAuthAssignmentsService->run((int) $user->getId(), $items);
+                    }
+                }
+                return $this->responseFactory->createResponse(302)
+                    ->withHeader('Location', $this->url->generate('voyti/admin'));
             }
             $errors = $result->getErrors();
         }
 
+        $allItems = $this->itemsStorage->getAll();
+
         return $this->renderView('admin/create', [
             'model' => $model,
             'errors' => $errors,
+            'allItems' => $allItems,
+            'assignedItems' => [],
         ]);
     }
 
@@ -247,14 +266,26 @@ final class AdminController
             }
             $user->setUpdatedAt(time());
             $user->save();
-            return $this->renderSuccess('voyti.admin.account_details_updated');
+
+            $items = $body['assignedItems'] ?? [];
+            $items = is_array($items) ? array_values(array_filter($items, 'is_string')) : [];
+            $this->updateAuthAssignmentsService->run($id, $items);
+
+            return $this->responseFactory->createResponse(302)
+                ->withHeader('Location', $this->url->generate('voyti/admin'));
         }
+
+        $assignments = $this->assignmentsStorage->getByUserId((string) $id);
+        $assignedNames = array_map(fn (Assignment $a) => $a->getItemName(), $assignments);
+        $allItems = $this->itemsStorage->getAll();
 
         return $this->renderView('admin/_account', [
             'user' => $user,
             'model' => $model,
             'errors' => [],
             'config' => $this->config,
+            'allItems' => $allItems,
+            'assignedItems' => $assignedNames,
         ]);
     }
 

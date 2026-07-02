@@ -48,9 +48,7 @@ return [
     'voyti.userProfile.not_found' => 'Profiel niet gevonden',
 
     // AdminController
-    'voyti.admin.user_created' => 'Gebruiker is aangemaakt',
     'voyti.admin.user_not_found' => 'Gebruiker niet gevonden',
-    'voyti.admin.account_details_updated' => 'Accountgegevens zijn bijgewerkt',
     'voyti.admin.profile_details_updated' => 'Profielgegevens zijn bijgewerkt',
     'voyti.admin.user_confirmed' => 'Gebruiker is bevestigd',
     'voyti.admin.unable_to_confirm' => 'Kan gebruiker niet bevestigen',

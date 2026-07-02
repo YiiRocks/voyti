@@ -31,7 +31,6 @@ use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\Password\ExpireService;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
 use YiiRocks\Voyti\Service\Password\ResetService;
-use YiiRocks\Voyti\Service\Rbac\ItemEditionService;
 use YiiRocks\Voyti\Service\Rbac\RuleEditionService;
 use YiiRocks\Voyti\Service\Rbac\UpdateAssignmentsService;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
@@ -101,11 +100,6 @@ return [
     ) => new ItemsValidator($itemsStorage),
     RuleValidator::class => new RuleValidator,
 
-    ItemEditionService::class => fn (
-        ManagerInterface $authManager,
-        ItemsStorageInterface $itemsStorage,
-        ItemsValidator $itemsValidator
-    ) => new ItemEditionService($authManager, $itemsStorage, $itemsValidator),
     RuleEditionService::class => fn (
         ItemsStorageInterface $itemsStorage,
         RuleValidator $ruleValidator
