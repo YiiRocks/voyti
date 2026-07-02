@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Controller;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
+use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
@@ -59,6 +60,7 @@ final class SettingsController
         private readonly UserTokenRepository $userTokenRepository,
         private readonly HydratorInterface $hydrator,
         private readonly CurrentUser $currentUser,
+        private readonly ResponseFactoryInterface $responseFactory,
     ) {
     }
 
@@ -393,19 +395,27 @@ final class SettingsController
 
         $form = new UserProfileForm($this->translator);
         $form->name = $userProfile->getName() ?? '';
-        $form->bio = $userProfile->getBio() ?? '';
         $form->publicEmail = $userProfile->getPublicEmail() ?? '';
+        $form->gravatarEmail = $userProfile->getGravatarEmail() ?? '';
+        $form->location = $userProfile->getLocation() ?? '';
+        $form->website = $userProfile->getWebsite() ?? '';
+        $form->timezone = $userProfile->getTimezone() ?? '';
+        $form->bio = $userProfile->getBio() ?? '';
 
         if ($request->getMethod() === Method::POST) {
             $body = $this->parsedBody($request);
             $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
 
             $userProfile->setName($form->name);
-            $userProfile->setBio($form->bio);
             $userProfile->setPublicEmail($form->publicEmail);
+            $userProfile->setGravatarEmail($form->gravatarEmail);
+            $userProfile->setLocation($form->location);
+            $userProfile->setWebsite($form->website);
+            $userProfile->setTimezone($form->timezone);
+            $userProfile->setBio($form->bio);
 
             $userProfile->save();
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.profile_updated', category: 'voyti'), 'translator' => $this->translator]);
+            return $this->redirect($this->url->generate('voyti/settings'));
         }
 
         return $this->renderView('settings/profile', [
@@ -415,6 +425,13 @@ final class SettingsController
             'errors' => [],
             'config' => $this->config,
         ]);
+    }
+
+    private function redirect(string $url): ResponseInterface
+    {
+        return $this->responseFactory
+            ->createResponse(302)
+            ->withHeader('Location', $url);
     }
 
     protected function viewPath(): string

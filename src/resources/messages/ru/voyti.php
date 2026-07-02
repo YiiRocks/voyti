@@ -160,16 +160,13 @@ return [
     'voyti.view.userProfile.bio_label' => 'О себе',
 
     // Settings views
-    'voyti.view.userProfile.title' => 'Настройки профиля',
+    'voyti.view.edit_profile.title' => 'Редактировать профиль',
+    'voyti.view.userProfile.title' => 'Просмотр профиля',
     'voyti.view.account.title' => 'Настройки аккаунта',
     'voyti.view.networks.title' => 'Сети',
     'voyti.view.privacy.title' => 'Конфиденциальность',
     'voyti.view.privacy.manage_gdpr_consent' => 'Управление согласием GDPR',
     'voyti.view.privacy.delete_data' => 'Удалить мои данные',
-    'voyti.view.settings.title' => 'Настройки',
-    'voyti.view.settings.userProfile' => 'Профиль',
-    'voyti.view.settings.account' => 'Аккаунт',
-    'voyti.view.settings.networks' => 'Сети',
     'voyti.view.settings.privacy' => 'Конфиденциальность',
 
     // GDPR views
@@ -241,6 +238,7 @@ return [
     'voyti.view.description_label' => 'Описание',
     'voyti.view.bio_label' => 'О себе',
     'voyti.view.public_email_label' => 'Публичный email',
+    'voyti.view.not_set' => 'Не указано',
     'voyti.view.website_label' => 'Веб-сайт',
     'voyti.view.location_label' => 'Местоположение',
     'voyti.view.gravatar_email_label' => 'Gravatar email',

@@ -8,7 +8,6 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\UserRepository;
 use Yiisoft\Security\PasswordHasher;
 
@@ -17,7 +16,6 @@ final class PasswordCommand extends Command
     public function __construct(
         private readonly UserRepository $userRepository,
         private readonly PasswordHasher $passwordHasher,
-        private readonly ModuleConfig $config,
     ) {
         parent::__construct();
     }

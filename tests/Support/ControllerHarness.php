@@ -313,6 +313,7 @@ final class ControllerHarness
             $this->userTokens,
             $this->hydrator,
             $this->currentUser,
+            $responseFactory,
         );
 
         $this->recoveryController = new RecoveryController(

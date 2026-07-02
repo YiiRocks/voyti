@@ -12,7 +12,6 @@ final class UserProfile extends ActiveRecord
     use PrivatePropertiesTrait;
     private ?string $bio = null;
     private ?string $gravatar_email = null;
-    private ?string $gravatar_id = null;
     private ?string $location = null;
     private ?string $name = null;
     private ?string $public_email = null;
@@ -32,7 +31,18 @@ final class UserProfile extends ActiveRecord
 
     public function getGravatarId(): ?string
     {
-        return $this->gravatar_id;
+        $email = $this->gravatar_email ?? $this->public_email;
+        if ($email === null || $email === '') {
+            if ($this->user_id === null || $this->db()->getSchema()->getTableSchema('{{%user}}', true) === null) {
+                return null;
+            }
+            $user = $this->getUser();
+            $email = $user?->getEmail();
+        }
+        if ($email === null || $email === '') {
+            return null;
+        }
+        return hash('sha256', strtolower(trim($email)));
     }
 
     public function getLocation(): ?string
@@ -71,18 +81,6 @@ final class UserProfile extends ActiveRecord
         return $this->website;
     }
 
-    #[\Override]
-    public function save(?array $properties = null): void
-    {
-        if ($this->gravatar_email !== null && $this->gravatar_email !== '') {
-            $this->gravatar_id = md5(strtolower(trim($this->gravatar_email)));
-        } else {
-            $this->gravatar_id = null;
-        }
-
-        parent::save($properties);
-    }
-
     public function setBio(?string $bio): void
     {
         $this->bio = $bio;
@@ -91,11 +89,6 @@ final class UserProfile extends ActiveRecord
     public function setGravatarEmail(?string $gravatarEmail): void
     {
         $this->gravatar_email = $gravatarEmail;
-    }
-
-    public function setGravatarId(?string $gravatarId): void
-    {
-        $this->gravatar_id = $gravatarId;
     }
 
     public function setLocation(?string $location): void
