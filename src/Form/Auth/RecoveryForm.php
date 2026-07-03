@@ -80,7 +80,8 @@ final class RecoveryForm extends FormModel implements RulesProviderInterface
         if ($this->scenario === self::SCENARIO_REQUEST) {
             $rules['email'] = [
                 new Required(),
-                new Email(),
+                new Email(checkDns: true, enableIdn: true, skipOnEmpty: true),
+                new Length(max: 255),
             ];
         }
 

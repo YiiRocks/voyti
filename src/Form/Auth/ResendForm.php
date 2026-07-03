@@ -11,13 +11,15 @@ use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\Helper\ObjectParser;
 use Yiisoft\Validator\Rule\Email;
+use Yiisoft\Validator\Rule\Length;
 use Yiisoft\Validator\Rule\Required;
 use Yiisoft\Validator\RulesProviderInterface;
 
 final class ResendForm extends FormModel implements RulesProviderInterface
 {
     #[Required]
-    #[Email]
+    #[Email(checkDns: true, enableIdn: true, skipOnEmpty: true)]
+    #[Length(max: 255)]
     public string $email = '';
 
     public string $gRecaptchaResponse = '';

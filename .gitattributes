@@ -2,6 +2,7 @@
 
 /.codacy.yml export-ignore
 /.editorconfig export-ignore
+/.gitattributes export-ignore
 /.github export-ignore
 /.gitignore export-ignore
 /.php-cs-fixer.php export-ignore

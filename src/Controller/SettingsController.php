@@ -248,9 +248,10 @@ final class SettingsController
         if ($request->getMethod() === Method::POST) {
             $body = $this->parsedBody($request);
             $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
+            $result = $this->validator->validate($form);
 
             $identity = $this->currentUser->getIdentity();
-            if (!($identity instanceof GuestIdentityInterface)) {
+            if ($result->isValid() && !($identity instanceof GuestIdentityInterface)) {
                 $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
                 if ($user !== null &&         $this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
                     $this->eventDispatcher->dispatch(new GdprEvent($user));

@@ -32,6 +32,10 @@ echo Html::form()
     ->csrf($csrf)
     ->open();
 
+echo Field::errorSummary($model);
+
+echo Field::password($model, 'password');
+
 echo Field::checkbox($model, 'consent');
 
 echo Field::buttonGroup()

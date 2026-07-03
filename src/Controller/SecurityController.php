@@ -22,6 +22,7 @@ use YiiRocks\Voyti\Service\Auth\SocialAuthProviderService;
 use YiiRocks\Voyti\Service\Auth\UserSocialAccountConnectService;
 use YiiRocks\Voyti\Service\Auth\UserSocialAuthenticateService;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
+use YiiRocks\Voyti\Validator\TwoFactor\CodeValidator;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -120,25 +121,37 @@ final class SecurityController
         if ($request->getMethod() === Method::POST) {
             $body = $this->parsedBody($request);
             $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
+            $form->processValidationResult($this->validator->validate($form));
 
             $user = $this->userRepository->findByUsernameOrEmail($form->login);
 
             if ($user !== null && $this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
-                $this->session->remove('credentials');
-                $currentUser = $this->boolValue($credentials, 'rememberMe')
-                    ? $this->currentUser->withAuthTimeout($this->config->rememberLoginLifespan)
-                    : $this->currentUser;
-                $currentUser->login($user);
-                $this->updateLastLoginMetadata($user, $request->getServerParams());
-                $this->pendingSocialAccountService->connect($user);
-                $this->eventDispatcher->dispatch(new AfterLoginEvent($user));
+                $codeValidator = new CodeValidator($user, $form->twoFactorAuthenticationCode ?? '');
+                $codeValidator->setTranslator($this->translator);
 
-                $response = $this->renderSuccess('voyti.security.authenticated');
-                if ($this->boolValue($credentials, 'rememberMe')) {
-                    $response = $this->rememberMeCookieService->addCookie($user, $response);
+                if ($codeValidator->validate()) {
+                    $this->session->remove('credentials');
+                    $currentUser = $this->boolValue($credentials, 'rememberMe')
+                        ? $this->currentUser->withAuthTimeout($this->config->rememberLoginLifespan)
+                        : $this->currentUser;
+                    $currentUser->login($user);
+                    $this->updateLastLoginMetadata($user, $request->getServerParams());
+                    $this->pendingSocialAccountService->connect($user);
+                    $this->eventDispatcher->dispatch(new AfterLoginEvent($user));
+
+                    $response = $this->renderSuccess('voyti.security.authenticated');
+                    if ($this->boolValue($credentials, 'rememberMe')) {
+                        $response = $this->rememberMeCookieService->addCookie($user, $response);
+                    }
+
+                    return $response;
                 }
 
-                return $response;
+                $errorMessage = $codeValidator->getErrorMessage();
+                $form->addError(
+                    $errorMessage !== '' ? $errorMessage : $this->translator->translate('voyti.validator.invalid_verification_code', category: 'voyti'),
+                    ['twoFactorAuthenticationCode'],
+                );
             }
         }
 

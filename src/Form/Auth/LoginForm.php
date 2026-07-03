@@ -10,6 +10,7 @@ use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\Helper\ObjectParser;
+use Yiisoft\Validator\Rule\Length;
 use Yiisoft\Validator\Rule\Required;
 use Yiisoft\Validator\RulesProviderInterface;
 
@@ -17,6 +18,7 @@ final class LoginForm extends FormModel implements RulesProviderInterface
 {
     public string $gRecaptchaResponse = '';
     #[Required]
+    #[Length(max: 255)]
     public string $login = '';
     #[Required]
     public string $password = '';

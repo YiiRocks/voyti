@@ -69,11 +69,23 @@ final class GdprDeleteFormTest extends TestCase
 
         $this->assertSame('mypassword', $form->getPropertyValue('password'));
     }
+    public function testUnconsentedFails(): void
+    {
+        $validator = new Validator();
+        $form = $this->createForm();
+        $form->password = 'currentpassword';
+        $form->consent = false;
+
+        $result = $validator->validate($form);
+        $this->assertFalse($result->isPropertyValid('consent'));
+    }
+
     public function testValidData(): void
     {
         $validator = new Validator();
         $form = $this->createForm();
         $form->password = 'currentpassword';
+        $form->consent = true;
 
         $result = $validator->validate($form);
         $this->assertTrue($result->isValid());

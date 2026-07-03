@@ -126,6 +126,17 @@ final class LoginFormTest extends TestCase
         $this->assertSame(0.5, $gRecaptchaResponse[0]->getThreshold());
     }
 
+    public function testLongLoginFails(): void
+    {
+        $validator = new Validator();
+        $form = $this->createForm();
+        $form->login = str_repeat('a', 256);
+        $form->password = 'secret123';
+
+        $result = $validator->validate($form);
+        $this->assertFalse($result->isPropertyValid('login'));
+    }
+
     public function testPropertyAccess(): void
     {
         $form = $this->createForm();

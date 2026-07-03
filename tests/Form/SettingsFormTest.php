@@ -27,6 +27,17 @@ final class SettingsFormTest extends TestCase
         $this->assertSame('', $form->passwordRepeat);
     }
 
+    public function testEmptyEmailFails(): void
+    {
+        $validator = new Validator();
+        $form = $this->createForm();
+        $form->username = 'newuser';
+        $form->email = '';
+
+        $result = $validator->validate($form);
+        $this->assertFalse($result->isPropertyValid('email'));
+    }
+
     public function testEmptyPasswordFails(): void
     {
         $validator = new Validator();
@@ -37,6 +48,17 @@ final class SettingsFormTest extends TestCase
 
         $result = $validator->validate($form);
         $this->assertFalse($result->isPropertyValid('password'));
+    }
+
+    public function testEmptyUsernameFails(): void
+    {
+        $validator = new Validator();
+        $form = $this->createForm();
+        $form->username = '';
+        $form->email = 'new@example.com';
+
+        $result = $validator->validate($form);
+        $this->assertFalse($result->isPropertyValid('username'));
     }
 
     public function testGetAttributeLabels(): void
@@ -83,6 +105,17 @@ final class SettingsFormTest extends TestCase
 
         $this->assertSame('voyti.view.username_label', $form->getPropertyLabel('username'));
         $this->assertSame('voyti.view.new_password_label', $form->getPropertyLabel('password'));
+    }
+
+    public function testInvalidUsernameCharactersFail(): void
+    {
+        $validator = new Validator();
+        $form = $this->createForm();
+        $form->username = 'invalid username!';
+        $form->email = 'new@example.com';
+
+        $result = $validator->validate($form);
+        $this->assertFalse($result->isPropertyValid('username'));
     }
 
     public function testLongPasswordFails(): void
@@ -147,23 +180,23 @@ final class SettingsFormTest extends TestCase
         $result = $validator->validate($form);
         $this->assertFalse($result->isPropertyValid('password'));
     }
+
+    public function testShortUsernameFails(): void
+    {
+        $validator = new Validator();
+        $form = $this->createForm();
+        $form->username = 'ab';
+        $form->email = 'new@example.com';
+
+        $result = $validator->validate($form);
+        $this->assertFalse($result->isPropertyValid('username'));
+    }
     public function testValidData(): void
     {
         $validator = new Validator();
         $form = $this->createForm();
         $form->username = 'newuser';
         $form->email = 'new@example.com';
-        $form->password = 'newsecret';
-        $form->passwordRepeat = 'newsecret';
-
-        $result = $validator->validate($form);
-        $this->assertTrue($result->isValid());
-    }
-
-    public function testValidWithEmptyUsernameAndEmail(): void
-    {
-        $validator = new Validator();
-        $form = $this->createForm();
         $form->password = 'newsecret';
         $form->passwordRepeat = 'newsecret';
 

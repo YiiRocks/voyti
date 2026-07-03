@@ -4,17 +4,33 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Form\Settings;
 
+use YiiRocks\Voyti\Helper\TimezoneHelper;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\Validator\Result;
+use Yiisoft\Validator\Rule\Callback;
+use Yiisoft\Validator\Rule\Email;
+use Yiisoft\Validator\Rule\Length;
+use Yiisoft\Validator\Rule\Url;
 
 final class UserProfileForm extends FormModel
 {
+    #[Length(max: 65535)]
     public string $bio = '';
+    #[Email(checkDns: true, enableIdn: true, skipOnEmpty: true)]
+    #[Length(max: 255)]
     public string $gravatarEmail = '';
+    #[Length(max: 255)]
     public string $location = '';
+    #[Length(max: 255)]
     public string $name = '';
+    #[Email(checkDns: true, enableIdn: true, skipOnEmpty: true)]
+    #[Length(max: 255)]
     public string $publicEmail = '';
+    #[Callback(method: 'validateTimezone', skipOnEmpty: true)]
     public string $timezone = '';
+    #[Length(max: 255)]
+    #[Url(skipOnEmpty: true)]
     public string $website = '';
 
     public function __construct(
@@ -60,5 +76,14 @@ final class UserProfileForm extends FormModel
             return $labels[$property];
         }
         return parent::getPropertyLabel($property);
+    }
+
+    public function validateTimezone(mixed $value): Result
+    {
+        $result = new Result();
+        if (!TimezoneHelper::isValid((string) $value)) {
+            $result->addError("'{$value}' is not a valid timezone identifier.");
+        }
+        return $result;
     }
 }

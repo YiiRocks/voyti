@@ -16,6 +16,7 @@ use Yiisoft\Validator\Rule\Equal;
 use Yiisoft\Validator\Rule\Length;
 use Yiisoft\Validator\Rule\Regex;
 use Yiisoft\Validator\Rule\Required;
+use Yiisoft\Validator\Rule\TrueValue;
 use Yiisoft\Validator\RulesProviderInterface;
 
 final class RegistrationForm extends FormModel implements RulesProviderInterface
@@ -90,6 +91,10 @@ final class RegistrationForm extends FormModel implements RulesProviderInterface
     {
         $parser = new ObjectParser($this);
         $rules = $parser->getRules();
+
+        if ($this->config->enableGdprCompliance) {
+            $rules['gdprConsent'] = [new TrueValue(trueValue: true)];
+        }
 
         if ($this->config->recaptchaVersion !== null && class_exists(RecaptchaV3Rule::class)) {
             $ruleClass = $this->config->recaptchaVersion === 'v2'

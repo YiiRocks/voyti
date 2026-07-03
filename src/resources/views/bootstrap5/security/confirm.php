@@ -30,6 +30,8 @@ echo Html::form()
     ->csrf($csrf)
     ->open();
 
+echo Field::errorSummary($model);
+
 echo Field::text($model, 'twoFactorAuthenticationCode')->inputAttributes(['autocomplete' => 'one-time-code']);
 
 echo Field::buttonGroup()

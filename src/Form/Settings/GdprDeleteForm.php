@@ -7,10 +7,12 @@ namespace YiiRocks\Voyti\Form\Settings;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\Rule\Required;
+use Yiisoft\Validator\Rule\TrueValue;
 
 final class GdprDeleteForm extends FormModel
 {
 
+    #[TrueValue(trueValue: true)]
     public bool $consent = false;
     #[Required]
     public string $password = '';

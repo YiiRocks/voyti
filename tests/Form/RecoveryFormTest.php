@@ -31,6 +31,28 @@ final class RecoveryFormTest extends TestCase
         $this->assertSame(RecoveryForm::SCENARIO_REQUEST, $form->scenario);
     }
 
+    public function testEmailAtMaxLengthBoundaryPasses(): void
+    {
+        $validator = new Validator();
+        $form = $this->createForm();
+        $form->email = str_repeat('a', 243) . '@example.com';
+        $this->assertSame(255, strlen($form->email));
+
+        $result = $validator->validate($form);
+        $this->assertTrue($result->isPropertyValid('email'));
+    }
+
+    public function testEmailOverMaxLengthBoundaryFails(): void
+    {
+        $validator = new Validator();
+        $form = $this->createForm();
+        $form->email = str_repeat('a', 244) . '@example.com';
+        $this->assertSame(256, strlen($form->email));
+
+        $result = $validator->validate($form);
+        $this->assertFalse($result->isPropertyValid('email'));
+    }
+
     public function testEmptyAll(): void
     {
         $validator = new Validator();
@@ -94,9 +116,14 @@ final class RecoveryFormTest extends TestCase
         $this->assertArrayNotHasKey('password', $rules);
         /** @var list<object> $emailRules */
         $emailRules = $rules['email'];
-        $this->assertCount(2, $emailRules);
+        $this->assertCount(3, $emailRules);
         $this->assertInstanceOf(Required::class, $emailRules[0]);
         $this->assertInstanceOf(Email::class, $emailRules[1]);
+        $this->assertTrue($emailRules[1]->shouldCheckDns());
+        $this->assertTrue($emailRules[1]->isIdnEnabled());
+        $this->assertTrue($emailRules[1]->getSkipOnEmpty());
+        $this->assertInstanceOf(Length::class, $emailRules[2]);
+        $this->assertSame(255, $emailRules[2]->getMax());
     }
 
     public function testGetRulesWithRequestScenarioAndRecaptchaV2(): void
@@ -172,6 +199,16 @@ final class RecoveryFormTest extends TestCase
         $result = $validator->validate($form);
         $this->assertFalse($result->isPropertyValid('email'));
         $this->assertTrue($result->isPropertyValid('password'));
+    }
+
+    public function testLongEmailFails(): void
+    {
+        $validator = new Validator();
+        $form = $this->createForm();
+        $form->email = str_repeat('a', 256) . '@example.com';
+
+        $result = $validator->validate($form);
+        $this->assertFalse($result->isPropertyValid('email'));
     }
 
     public function testLongPassword(): void

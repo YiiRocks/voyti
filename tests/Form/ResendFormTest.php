@@ -91,6 +91,16 @@ final class ResendFormTest extends TestCase
         $this->assertFalse($result->isPropertyValid('email'));
     }
 
+    public function testLongEmailFails(): void
+    {
+        $validator = new Validator();
+        $form = $this->createForm();
+        $form->email = str_repeat('a', 256) . '@example.com';
+
+        $result = $validator->validate($form);
+        $this->assertFalse($result->isPropertyValid('email'));
+    }
+
     public function testPropertyAccess(): void
     {
         $form = $this->createForm();

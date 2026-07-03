@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Controller;
 
+use chillerlan\Authenticator\Authenticator;
+use chillerlan\Authenticator\AuthenticatorOptions;
+use chillerlan\Authenticator\Common\Base32;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserSocialAccount;
 use YiiRocks\Voyti\Entity\UserToken;
@@ -880,8 +883,15 @@ final class WorkflowTest extends TestCase
         );
 
         $user = $this->registerAndConfirmUser('eve', 'eve@example.test', 'secret123');
+        $secret = Base32::encode(random_bytes(10));
         $user->setAuthTfEnabled(true);
+        $user->setAuthTfType('google');
+        $user->setAuthTfKey($secret);
         $user->save();
+
+        $authenticator = new Authenticator(new AuthenticatorOptions());
+        $authenticator->setSecret($secret);
+        $code = $authenticator->code();
 
         $loginResponse = $this->harness->securityController->login(
             $this->harness->request(
@@ -907,6 +917,7 @@ final class WorkflowTest extends TestCase
                     [
                         'login' => 'eve@example.test',
                         'password' => 'secret123',
+                        'twoFactorAuthenticationCode' => $code,
                     ],
                 ),
                 serverParams: ['REMOTE_ADDR' => $this->remoteAddr],

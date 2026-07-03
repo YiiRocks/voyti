@@ -28,6 +28,7 @@
     },
     "require": {
         "php": ">=8.3",
+        "ext-intl": "*",
         "psr/event-dispatcher": "^1.0",
         "psr/http-client": "^1.0",
         "psr/http-factory": "^1.0",
@@ -94,7 +95,7 @@
     "scripts": {
         "php-cs-fixer": "@php vendor/bin/php-cs-fixer fix",
         "phpmd": "@php vendor/bin/phpmd src/ text tests/data/phpmd_ruleset.xml",
-        "phpunit": "@php -d extension=pdo_sqlite vendor/bin/phpunit",
+        "phpunit": "@php -d extension=pdo_sqlite -d extension=intl vendor/bin/phpunit",
         "psalm": "@php vendor/bin/psalm",
         "infection": "PHP_INI_SCAN_DIR=:tests vendor/bin/infection --configuration=infection.json --min-msi=100 --min-covered-msi=100"
     },

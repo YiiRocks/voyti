@@ -20,6 +20,7 @@ use Yiisoft\Db\Connection\ConnectionInterface;
 use Yiisoft\Db\Connection\ConnectionProvider;
 use Yiisoft\Http\Method;
 use Yiisoft\Security\PasswordHasher;
+use Yiisoft\User\Guest\GuestIdentityInterface;
 
 /**
  * Targeted mutation-testing coverage for {@see \YiiRocks\Voyti\Controller\SettingsController}.
@@ -277,6 +278,33 @@ final class SettingsControllerTest extends TestCase
         $this->assertSame(200, $response->getStatusCode());
         $html = $this->harness->responseBody($response);
         $this->assertStringNotContainsString('Your personal information has been removed', $html);
+
+        $reloaded = $this->harness->users->findById($userId);
+        $this->assertInstanceOf(User::class, $reloaded);
+        $this->assertFalse($reloaded->isGdprDeleted());
+    }
+
+    public function testGdprDeleteRejectsGuestIdentityEvenWhenItReportsAnExistingUserId(): void
+    {
+        $user = $this->createUser('gwen', 'gwen@example.test', 'correct-password');
+        $userId = (int) $user->getId();
+        // A guest should never be able to reach the deletion logic at all,
+        // regardless of what getId() reports - the guard must check
+        // instanceof GuestIdentityInterface directly rather than relying on
+        // the id lookup incidentally failing.
+        $this->harness->currentUser->overrideIdentity(new SettingsGuestWithIdIdentity((string) $userId));
+
+        $response = $this->harness->settingsController->gdprDelete(
+            $this->harness->request(
+                Method::POST,
+                $this->harness->formPayload(
+                    new GdprDeleteForm($this->harness->translator),
+                    ['password' => 'correct-password'],
+                ),
+            ),
+        );
+
+        $this->assertStringNotContainsString('Your personal information has been removed', $this->harness->responseBody($response));
 
         $reloaded = $this->harness->users->findById($userId);
         $this->assertInstanceOf(User::class, $reloaded);
@@ -719,6 +747,18 @@ final class SettingsFakeAuthClient implements \YiiRocks\Voyti\AuthClient\AuthCli
     public function isEnabled(): bool
     {
         return true;
+    }
+}
+
+final class SettingsGuestWithIdIdentity implements GuestIdentityInterface
+{
+    public function __construct(private readonly string $id)
+    {
+    }
+
+    public function getId(): ?string
+    {
+        return $this->id;
     }
 }
 

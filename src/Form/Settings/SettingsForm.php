@@ -8,17 +8,25 @@ use YiiRocks\Voyti\Entity\User;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\Rule\CompareType;
+use Yiisoft\Validator\Rule\Email;
 use Yiisoft\Validator\Rule\Equal;
 use Yiisoft\Validator\Rule\Length;
+use Yiisoft\Validator\Rule\Regex;
+use Yiisoft\Validator\Rule\Required;
 
 final class SettingsForm extends FormModel
 {
+    #[Required]
+    #[Email(checkDns: true, enableIdn: true, skipOnEmpty: true)]
+    #[Length(max: 255)]
     public string $email = '';
-
     #[Length(min: 6, max: 72)]
     public string $password = '';
     #[Equal(targetProperty: 'password', strict: true, type: CompareType::STRING)]
     public string $passwordRepeat = '';
+    #[Required]
+    #[Length(min: 3, max: 255)]
+    #[Regex(pattern: '/^[-a-zA-Z0-9_\.@]+$/')]
     public string $username = '';
 
     private ?User $user = null;

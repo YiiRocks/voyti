@@ -40,6 +40,38 @@ final class RegistrationFormTest extends TestCase
         $this->assertFalse($result->isPropertyValid('password'));
     }
 
+    public function testGdprConsentNotRequiredWhenComplianceDisabled(): void
+    {
+        $config = new ModuleConfig(enableGdprCompliance: false);
+        $form = $this->createForm($config);
+        $form->username = 'testuser';
+        $form->email = 'test@example.com';
+        $form->password = 'secret123';
+        $form->passwordRepeat = 'secret123';
+        $form->gdprConsent = false;
+
+        $result = (new Validator())->validate($form);
+        $this->assertTrue($result->isValid());
+    }
+
+    public function testGdprConsentRequiredWhenComplianceEnabled(): void
+    {
+        $config = new ModuleConfig(enableGdprCompliance: true);
+        $form = $this->createForm($config);
+        $form->username = 'testuser';
+        $form->email = 'test@example.com';
+        $form->password = 'secret123';
+        $form->passwordRepeat = 'secret123';
+        $form->gdprConsent = false;
+
+        $result = (new Validator())->validate($form);
+        $this->assertFalse($result->isPropertyValid('gdprConsent'));
+
+        $form->gdprConsent = true;
+        $result = (new Validator())->validate($form);
+        $this->assertTrue($result->isValid());
+    }
+
     public function testGetAttributeLabels(): void
     {
         $form = $this->createForm();

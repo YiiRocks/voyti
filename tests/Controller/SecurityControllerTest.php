@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Controller;
 
+use chillerlan\Authenticator\Authenticator;
+use chillerlan\Authenticator\AuthenticatorOptions;
+use chillerlan\Authenticator\Common\Base32;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserSocialAccount;
 use YiiRocks\Voyti\Entity\UserToken;
@@ -49,7 +52,8 @@ final class SecurityControllerTest extends TestCase
 
     public function testConfirmDoesNotRememberWhenRememberMeIsOffString(): void
     {
-        $this->registerAndConfirmUser('petr', 'petr@example.test', 'secret123');
+        $user = $this->registerAndConfirmUser('petr', 'petr@example.test', 'secret123');
+        $code = $this->enableTwoFactorAuth($user);
 
         $this->harness->session->set('credentials', [
             'login' => 'petr@example.test',
@@ -58,7 +62,13 @@ final class SecurityControllerTest extends TestCase
         ]);
 
         $response = $this->harness->securityController->confirm(
-            $this->harness->request(Method::POST),
+            $this->harness->request(
+                Method::POST,
+                $this->harness->formPayload(
+                    new LoginForm($this->harness->moduleConfig, $this->harness->translator),
+                    ['twoFactorAuthenticationCode' => $code],
+                ),
+            ),
         );
 
         $this->assertResponseContains($response, 'Authenticated');
@@ -68,7 +78,8 @@ final class SecurityControllerTest extends TestCase
 
     public function testConfirmDoesNotRememberWhenRememberMeKeyIsMissing(): void
     {
-        $this->registerAndConfirmUser('ola', 'ola@example.test', 'secret123');
+        $user = $this->registerAndConfirmUser('ola', 'ola@example.test', 'secret123');
+        $code = $this->enableTwoFactorAuth($user);
 
         $this->harness->session->set('credentials', [
             'login' => 'ola@example.test',
@@ -76,12 +87,65 @@ final class SecurityControllerTest extends TestCase
         ]);
 
         $response = $this->harness->securityController->confirm(
-            $this->harness->request(Method::POST),
+            $this->harness->request(
+                Method::POST,
+                $this->harness->formPayload(
+                    new LoginForm($this->harness->moduleConfig, $this->harness->translator),
+                    ['twoFactorAuthenticationCode' => $code],
+                ),
+            ),
         );
 
         $this->assertResponseContains($response, 'Authenticated');
         $this->assertSame('', $response->getHeaderLine('Set-Cookie'));
         $this->assertNull($this->harness->session->get('__auth_expire'));
+    }
+
+    public function testConfirmFailsAndKeepsCredentialsWhenTwoFactorCodeIsWrong(): void
+    {
+        $user = $this->registerAndConfirmUser('ivo', 'ivo@example.test', 'secret123');
+        $this->enableTwoFactorAuth($user);
+
+        $this->harness->session->set('credentials', [
+            'login' => 'ivo@example.test',
+            'pwd' => 'secret123',
+            'rememberMe' => false,
+        ]);
+
+        $response = $this->harness->securityController->confirm(
+            $this->harness->request(
+                Method::POST,
+                $this->harness->formPayload(
+                    new LoginForm($this->harness->moduleConfig, $this->harness->translator),
+                    ['twoFactorAuthenticationCode' => '000000'],
+                ),
+            ),
+        );
+
+        $html = $this->harness->responseBody($response);
+        $this->assertStringNotContainsString('Authenticated', $html);
+        $this->assertStringContainsString('Invalid verification code.', $html);
+        $this->assertTrue($this->harness->currentUser->isGuest());
+        $this->assertNotNull($this->harness->session->get('credentials'));
+    }
+
+    public function testConfirmFailsWhenTwoFactorCodeIsMissing(): void
+    {
+        $user = $this->registerAndConfirmUser('juna', 'juna@example.test', 'secret123');
+        $this->enableTwoFactorAuth($user);
+
+        $this->harness->session->set('credentials', [
+            'login' => 'juna@example.test',
+            'pwd' => 'secret123',
+            'rememberMe' => false,
+        ]);
+
+        $response = $this->harness->securityController->confirm(
+            $this->harness->request(Method::POST),
+        );
+
+        $this->assertStringNotContainsString('Authenticated', $this->harness->responseBody($response));
+        $this->assertTrue($this->harness->currentUser->isGuest());
     }
 
     public function testConfirmHydratesLoginFromRequestBodyOverridingSessionCredentials(): void
@@ -111,7 +175,8 @@ final class SecurityControllerTest extends TestCase
 
     public function testConfirmRemembersWhenRememberMeIsAmbiguousTruthyString(): void
     {
-        $this->registerAndConfirmUser('rita', 'rita@example.test', 'secret123');
+        $user = $this->registerAndConfirmUser('rita', 'rita@example.test', 'secret123');
+        $code = $this->enableTwoFactorAuth($user);
 
         $this->harness->session->set('credentials', [
             'login' => 'rita@example.test',
@@ -120,7 +185,13 @@ final class SecurityControllerTest extends TestCase
         ]);
 
         $response = $this->harness->securityController->confirm(
-            $this->harness->request(Method::POST),
+            $this->harness->request(
+                Method::POST,
+                $this->harness->formPayload(
+                    new LoginForm($this->harness->moduleConfig, $this->harness->translator),
+                    ['twoFactorAuthenticationCode' => $code],
+                ),
+            ),
         );
 
         $this->assertResponseContains($response, 'Authenticated');
@@ -128,9 +199,41 @@ final class SecurityControllerTest extends TestCase
         $this->assertNotNull($this->harness->session->get('__auth_expire'));
     }
 
+    public function testConfirmShowsTranslatedFieldErrorWhenTwoFactorNotConfigured(): void
+    {
+        $user = $this->registerAndConfirmUser('kara', 'kara@example.test', 'secret123');
+        $user->setAuthTfEnabled(true);
+        $user->save();
+
+        $this->harness->session->set('credentials', [
+            'login' => 'kara@example.test',
+            'pwd' => 'secret123',
+            'rememberMe' => false,
+        ]);
+
+        $response = $this->harness->securityController->confirm(
+            $this->harness->request(
+                Method::POST,
+                $this->harness->formPayload(
+                    new LoginForm($this->harness->moduleConfig, $this->harness->translator),
+                    ['twoFactorAuthenticationCode' => '123456'],
+                ),
+            ),
+        );
+
+        $html = $this->harness->responseBody($response);
+        $this->assertStringNotContainsString('Authenticated', $html);
+        $this->assertTrue($this->harness->currentUser->isGuest());
+        // Appears twice: once in the error summary, once attached to the
+        // twoFactorAuthenticationCode field itself, which only renders when
+        // the error's value path actually names that property.
+        $this->assertSame(2, substr_count($html, 'Two factor authentication is not configured.'));
+    }
+
     public function testConfirmSuccessRemovesCredentialsUpdatesMetadataConnectsPendingAccountAndSetsAuthTimeout(): void
     {
         $user = $this->registerAndConfirmUser('nadia', 'nadia@example.test', 'secret123');
+        $code = $this->enableTwoFactorAuth($user);
 
         $pendingAccount = new UserSocialAccount();
         $pendingAccount->setProvider('github');
@@ -147,7 +250,14 @@ final class SecurityControllerTest extends TestCase
         ]);
 
         $response = $this->harness->securityController->confirm(
-            $this->harness->request(Method::POST, serverParams: ['REMOTE_ADDR' => $this->remoteAddr]),
+            $this->harness->request(
+                Method::POST,
+                $this->harness->formPayload(
+                    new LoginForm($this->harness->moduleConfig, $this->harness->translator),
+                    ['twoFactorAuthenticationCode' => $code],
+                ),
+                serverParams: ['REMOTE_ADDR' => $this->remoteAddr],
+            ),
         );
 
         $this->assertResponseContains($response, 'Authenticated');
@@ -569,6 +679,20 @@ final class SecurityControllerTest extends TestCase
         $db->createCommand('DROP TABLE IF EXISTS {{%user_social_account}}')->execute();
         $db->createCommand('DROP TABLE IF EXISTS {{%user_profile}}')->execute();
         $db->createCommand('DROP TABLE IF EXISTS {{%user}}')->execute();
+    }
+
+    private function enableTwoFactorAuth(User $user): string
+    {
+        $secret = Base32::encode(random_bytes(10));
+        $user->setAuthTfEnabled(true);
+        $user->setAuthTfType('google');
+        $user->setAuthTfKey($secret);
+        $user->save();
+
+        $authenticator = new Authenticator(new AuthenticatorOptions());
+        $authenticator->setSecret($secret);
+
+        return $authenticator->code();
     }
 
     private function registerAndConfirmUser(string $username, string $email, string $password): User
