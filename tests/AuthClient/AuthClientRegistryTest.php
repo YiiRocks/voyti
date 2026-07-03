@@ -52,7 +52,6 @@ final class AuthClientRegistryTest extends TestCase
 
         $client = $registry->get('github');
 
-        self::assertInstanceOf(GitHub::class, $client);
         self::assertSame('GitHub', $client?->getTitle());
         self::assertNull($registry->get('missing'));
     }

@@ -77,7 +77,6 @@ final class RegistrationController
 
         return $this->renderView('registration/connect', [
             'account' => $account,
-            'config' => $this->config,
         ]);
     }
 

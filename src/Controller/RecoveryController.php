@@ -76,7 +76,7 @@ final class RecoveryController
         $userToken = $this->userTokenRepository->findByUserIdTypeAndCode($id, UserToken::TYPE_RECOVERY, $code);
 
         if ($userToken === null || $userToken->getIsExpired($this->config->tokenRecoveryLifespan) || $userToken->getUser() === null) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.recovery.link_invalid', category: 'voyti'), 'translator' => $this->translator]);
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.recovery.link_invalid', category: 'voyti')]);
         }
 
         $user = $userToken->getUser();
@@ -93,7 +93,7 @@ final class RecoveryController
 
             if ($result->isValid()) {
                 $this->resetPasswordService->run($form->password, $user, $userToken);
-                return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.recovery.password_changed', category: 'voyti'), 'translator' => $this->translator]);
+                return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.recovery.password_changed', category: 'voyti')]);
             }
             $errors = $result->getErrorMessages();
         }

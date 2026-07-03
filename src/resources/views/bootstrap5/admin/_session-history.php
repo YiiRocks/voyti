@@ -3,11 +3,11 @@
 declare(strict_types=1);
 
 use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\Entity\UserSessionHistory;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
-use YiiRocks\Voyti\Entity\UserSessionHistory;
 
 /**
  * @var User $user

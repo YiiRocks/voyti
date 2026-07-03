@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
+use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\View\WebView;
-use YiiRocks\Voyti\Entity\User;
-use YiiRocks\Voyti\ModuleConfig;
 
 /**
  * @var WebView $this

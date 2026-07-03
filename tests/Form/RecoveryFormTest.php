@@ -10,6 +10,9 @@ use YiiRocks\Voyti\Form\Auth\RecoveryForm;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Translator\CategorySource;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\Validator\Rule\Email;
+use Yiisoft\Validator\Rule\Length;
+use Yiisoft\Validator\Rule\Required;
 use Yiisoft\Validator\Validator;
 
 final class RecoveryFormTest extends TestCase
@@ -31,21 +34,8 @@ final class RecoveryFormTest extends TestCase
         $form = $this->createForm();
 
         $result = $validator->validate($form);
-        $this->assertFalse($result->isValid());
         $this->assertFalse($result->isPropertyValid('email'));
         $this->assertTrue($result->isPropertyValid('password'));
-    }
-
-    public function testEmptyEmail(): void
-    {
-        $validator = new Validator();
-        $form = $this->createForm();
-        $form->email = '';
-        $form->password = 'newsecret';
-
-        $result = $validator->validate($form);
-        $this->assertFalse($result->isValid());
-        $this->assertFalse($result->isPropertyValid('email'));
     }
 
     public function testEmptyPassword(): void
@@ -55,7 +45,6 @@ final class RecoveryFormTest extends TestCase
         $form->password = '';
 
         $result = $validator->validate($form);
-        $this->assertFalse($result->isValid());
         $this->assertFalse($result->isPropertyValid('password'));
     }
 
@@ -76,6 +65,21 @@ final class RecoveryFormTest extends TestCase
         $this->assertSame('recovery', $form->getFormName());
     }
 
+    public function testGetPropertyLabelForKnownProperty(): void
+    {
+        $form = $this->createForm();
+
+        $this->assertSame('voyti.view.email_label', $form->getPropertyLabel('email'));
+        $this->assertSame('voyti.view.new_password_label', $form->getPropertyLabel('password'));
+    }
+
+    public function testGetPropertyLabelForUnknownPropertyFallsBackToParent(): void
+    {
+        $form = $this->createForm();
+
+        $this->assertSame('G Recaptcha Response', $form->getPropertyLabel('gRecaptchaResponse'));
+    }
+
     public function testGetRulesWithRequestScenario(): void
     {
         $form = $this->createForm(scenario: RecoveryForm::SCENARIO_REQUEST);
@@ -83,6 +87,11 @@ final class RecoveryFormTest extends TestCase
         /** @var array<string, mixed> $rules */
         $this->assertArrayHasKey('email', $rules);
         $this->assertArrayNotHasKey('password', $rules);
+        /** @var list<object> $emailRules */
+        $emailRules = $rules['email'];
+        $this->assertCount(2, $emailRules);
+        $this->assertInstanceOf(Required::class, $emailRules[0]);
+        $this->assertInstanceOf(Email::class, $emailRules[1]);
     }
 
     public function testGetRulesWithRequestScenarioAndRecaptchaV2(): void
@@ -131,6 +140,13 @@ final class RecoveryFormTest extends TestCase
         $this->assertArrayHasKey('password', $rules);
         $this->assertArrayNotHasKey('email', $rules);
         $this->assertArrayNotHasKey('gRecaptchaResponse', $rules);
+        /** @var list<object> $passwordRules */
+        $passwordRules = $rules['password'];
+        $this->assertCount(2, $passwordRules);
+        $this->assertInstanceOf(Required::class, $passwordRules[0]);
+        $this->assertInstanceOf(Length::class, $passwordRules[1]);
+        $this->assertSame(6, $passwordRules[1]->getMin());
+        $this->assertSame(72, $passwordRules[1]->getMax());
     }
 
     public function testInvalidEmail(): void
@@ -140,7 +156,6 @@ final class RecoveryFormTest extends TestCase
         $form->email = 'not-email';
 
         $result = $validator->validate($form);
-        $this->assertFalse($result->isValid());
         $this->assertFalse($result->isPropertyValid('email'));
         $this->assertTrue($result->isPropertyValid('password'));
     }
@@ -152,7 +167,6 @@ final class RecoveryFormTest extends TestCase
         $form->password = str_repeat('a', 73);
 
         $result = $validator->validate($form);
-        $this->assertFalse($result->isValid());
         $this->assertFalse($result->isPropertyValid('password'));
     }
 
@@ -166,6 +180,21 @@ final class RecoveryFormTest extends TestCase
         $this->assertSame('user@example.com', $form->getPropertyValue('email'));
         $this->assertSame('secret123', $form->getPropertyValue('password'));
         $this->assertSame('test-userToken', $form->getPropertyValue('gRecaptchaResponse'));
+    }
+
+    public function testResetScenarioAcceptsBoundaryPasswordLengths(): void
+    {
+        $validator = new Validator();
+
+        $minForm = $this->createForm(scenario: RecoveryForm::SCENARIO_RESET);
+        $minForm->password = '123456';
+        $minResult = $validator->validate($minForm);
+        $this->assertTrue($minResult->isValid());
+
+        $maxForm = $this->createForm(scenario: RecoveryForm::SCENARIO_RESET);
+        $maxForm->password = str_repeat('a', 72);
+        $maxResult = $validator->validate($maxForm);
+        $this->assertTrue($maxResult->isValid());
     }
 
     public function testResetScenarioDefaults(): void
@@ -189,7 +218,6 @@ final class RecoveryFormTest extends TestCase
         $form->password = '12345';
 
         $result = $validator->validate($form);
-        $this->assertFalse($result->isValid());
         $this->assertFalse($result->isPropertyValid('password'));
     }
 

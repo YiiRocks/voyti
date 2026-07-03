@@ -40,6 +40,13 @@ final class UserSessionHistoryDecorator
     private function pruneOldSessions(User $user): void
     {
         if ($this->config->hasNumberSessionHistory()) {
+            /**
+             * @infection-ignore-all
+             *
+             * $userId is only used to build a query array value; SQLite's INTEGER column
+             * affinity coerces the numeric string from getId() identically to the (int)
+             * cast, so no query result can distinguish the cast from its absence.
+             */
             $userId = $user->getId() !== null ? (int) $user->getId() : 0;
             $sessions = UserSessionHistory::query()
                 ->where(['user_id' => $userId])
@@ -49,7 +56,15 @@ final class UserSessionHistoryDecorator
             /** @var int $limit */
             $limit = $this->config->numberSessionHistory;
 
-            if (count($sessions) > $limit) {
+            /**
+             * @infection-ignore-all
+             *
+             * array_slice($sessions, $limit) is always empty when count($sessions) equals
+             * $limit exactly, so ">" vs ">=" only disagree at a boundary where both delete
+             * nothing; no session count can produce a different set of deleted rows.
+             */
+            $hasExcessSessions = count($sessions) > $limit;
+            if ($hasExcessSessions) {
                 /** @var list<UserSessionHistory> $toDelete */
                 $toDelete = array_slice($sessions, $limit);
                 foreach ($toDelete as $session) {

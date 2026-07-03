@@ -6,27 +6,6 @@ namespace YiiRocks\Voyti;
 
 final class ModuleConfig
 {
-    /**
-     * @return (array|bool|int|null|string)[]
-     *
-     * @psalm-return array{appName: string, recaptchaVersion: null|string, enableSessionHistory: bool, numberSessionHistory: false|int, enableGdprCompliance: bool, gdprExportProperties: list<string>, gdprAnonymizePrefix: string, enableTwoFactorAuthentication: bool, twoFactorAuthenticationForcedPermissions: array<array-key, string>, enableRegistration: bool, enableSocialNetworkRegistration: bool, socialNetworkClients: array<string, array<string, mixed>>, enableEmailConfirmation: bool, enableSwitchIdentities: bool, switchIdentitySessionKey: null|string, loginRoute: string, accountSettingsRoute: string, mailAdminOnRegister: null|string, enablePasswordExpiration: bool, generatePasswords: bool, allowPasswordRecovery: bool, allowAdminPasswordRecovery: bool, allowAccountDelete: bool, emailChangeStrategy: int, rememberLoginLifespan: int, tokenConfirmationLifespan: int, tokenRecoveryLifespan: int, administratorPermissionName: null|string, profileVisibility: int, maxPasswordAge: int|null, disableIpLogging: bool, viewPath: string, mailPath: string, enableRestApi: bool, adminRestPrefix: string}
-     */
-    public static function defaults(): array
-    {
-        return get_object_vars(new self());
-    }
-
-    /**
-     * @param array $config
-     *
-     * @psalm-suppress MixedArgument
-     */
-    public static function fromArray(array $config): self
-    {
-        $defaults = self::defaults();
-
-        return new self(...array_replace($defaults, array_intersect_key($config, $defaults)));
-    }
 
     public function __construct(
         public readonly string $appName = 'Voyti',
@@ -77,6 +56,27 @@ final class ModuleConfig
         public readonly bool $enableRestApi = false,
         public readonly string $adminRestPrefix = 'api/v1',
     ) {
+    }
+    /**
+     * @return (array|bool|int|null|string)[]
+     *
+     * @psalm-return array{appName: string, recaptchaVersion: null|string, enableSessionHistory: bool, numberSessionHistory: false|int, enableGdprCompliance: bool, gdprExportProperties: list<string>, gdprAnonymizePrefix: string, enableTwoFactorAuthentication: bool, twoFactorAuthenticationForcedPermissions: array<array-key, string>, enableRegistration: bool, enableSocialNetworkRegistration: bool, socialNetworkClients: array<string, array<string, mixed>>, enableEmailConfirmation: bool, enableSwitchIdentities: bool, switchIdentitySessionKey: null|string, loginRoute: string, accountSettingsRoute: string, mailAdminOnRegister: null|string, enablePasswordExpiration: bool, generatePasswords: bool, allowPasswordRecovery: bool, allowAdminPasswordRecovery: bool, allowAccountDelete: bool, emailChangeStrategy: int, rememberLoginLifespan: int, tokenConfirmationLifespan: int, tokenRecoveryLifespan: int, administratorPermissionName: null|string, profileVisibility: int, maxPasswordAge: int|null, disableIpLogging: bool, viewPath: string, mailPath: string, enableRestApi: bool, adminRestPrefix: string}
+     */
+    public static function defaults(): array
+    {
+        return get_object_vars(new self());
+    }
+
+    /**
+     * @param array $config
+     *
+     * @psalm-suppress MixedArgument
+     */
+    public static function fromArray(array $config): self
+    {
+        $defaults = self::defaults();
+
+        return new self(...array_intersect_key($config, $defaults));
     }
 
     public function hasNumberSessionHistory(): bool

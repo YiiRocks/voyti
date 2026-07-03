@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Entity;
 
+use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserSocialAccount;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Db\Connection\ConnectionProvider;
@@ -27,6 +28,29 @@ final class UserSocialAccountTest extends TestCase
             username VARCHAR(255),
             created_at INTEGER NOT NULL
         )')->execute();
+        $db->createCommand('CREATE TABLE {{%user}} (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username VARCHAR(255) NOT NULL,
+            email VARCHAR(255) NOT NULL,
+            password_hash VARCHAR(60) NOT NULL,
+            auth_key VARCHAR(32) NOT NULL,
+            unconfirmed_email VARCHAR(255),
+            registration_ip VARCHAR(45),
+            flags INTEGER NOT NULL DEFAULT 0,
+            confirmed_at INTEGER,
+            blocked_at INTEGER,
+            updated_at INTEGER NOT NULL,
+            created_at INTEGER NOT NULL,
+            last_login_at INTEGER,
+            auth_tf_key VARCHAR(64),
+            auth_tf_enabled INTEGER DEFAULT 0,
+            password_changed_at INTEGER,
+            last_login_ip VARCHAR(45),
+            gdpr_deleted INTEGER DEFAULT 0,
+            gdpr_consent INTEGER DEFAULT 0,
+            gdpr_consent_date INTEGER,
+            auth_tf_type VARCHAR(20)
+        )')->execute();
     }
 
     #[\Override]
@@ -34,6 +58,7 @@ final class UserSocialAccountTest extends TestCase
     {
         if ($this->hasSqliteConnection()) {
             $this->getDb()->createCommand('DROP TABLE IF EXISTS {{%user_social_account}}')->execute();
+            $this->getDb()->createCommand('DROP TABLE IF EXISTS {{%user}}')->execute();
             ConnectionProvider::clear();
         }
         parent::tearDown();
@@ -47,6 +72,55 @@ final class UserSocialAccountTest extends TestCase
         $account->setCode('oauth_code_xyz');
         /** @psalm-suppress DocblockTypeContradiction */
         $this->assertSame('oauth_code_xyz', $account->getCode());
+    }
+
+    public function testConnectClearsUsernameEmailAndCode(): void
+    {
+        $user = new User();
+        $user->setUsername('connectuser');
+        $user->setEmail('connectuser@example.com');
+        $user->setPasswordHash('hash');
+        $user->setAuthKey('authkey');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $user->save();
+
+        $account = new UserSocialAccount();
+        $account->setProvider('github');
+        $account->setClientId('gh_connect_client');
+        $account->setUsername('leftover_username');
+        $account->setEmail('leftover@example.com');
+        $account->setCode('leftover_code');
+        $account->setCreatedAt(time());
+
+        $result = $account->connect($user);
+
+        $this->assertTrue($result);
+        $this->assertSame((int) $user->getId(), $account->getUserId());
+        $this->assertNull($account->getUsername());
+        $this->assertNull($account->getEmail());
+        $this->assertNull($account->getCode());
+
+        $found = UserSocialAccount::query()->where(['client_id' => 'gh_connect_client'])->one();
+        $this->assertInstanceOf(UserSocialAccount::class, $found);
+        $this->assertSame((int) $user->getId(), $found->getUserId());
+        $this->assertNull($found->getUsername());
+        $this->assertNull($found->getEmail());
+    }
+
+    public function testConnectWithUnsavedUserSetsUserIdToZero(): void
+    {
+        $user = new User();
+        $this->assertNull($user->getId());
+
+        $account = new UserSocialAccount();
+        $account->setProvider('github');
+        $account->setClientId('gh_connect_no_id');
+        $account->setCreatedAt(time());
+
+        $account->connect($user);
+
+        $this->assertSame(0, $account->getUserId());
     }
 
     public function testCreateAndFind(): void

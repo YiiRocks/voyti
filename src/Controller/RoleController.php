@@ -41,6 +41,12 @@ final class RoleController extends AbstractAuthItemController
         return new RoleForm($this->translator);
     }
 
+    #[\Override]
+    protected function getIndexRouteName(): string
+    {
+        return 'roles';
+    }
+
     /**
      * @return string
      *
@@ -50,11 +56,5 @@ final class RoleController extends AbstractAuthItemController
     protected function getItemType(): string
     {
         return 'role';
-    }
-
-    #[\Override]
-    protected function getIndexRouteName(): string
-    {
-        return 'roles';
     }
 }

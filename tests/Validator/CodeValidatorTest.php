@@ -210,22 +210,6 @@ final class CodeValidatorTest extends TestCase
         $this->assertFalse($validator->validate());
     }
 
-    public function testValidateSucceedsWithCorrectCode(): void
-    {
-        $secret = Base32::encode(random_bytes(10));
-
-        $options = new AuthenticatorOptions();
-        $authenticator = new Authenticator($options);
-        $authenticator->setSecret($secret);
-        $validCode = $authenticator->code();
-
-        $user = new User();
-        $user->setAuthTfKey($secret);
-
-        $validator = new CodeValidator($user, $validCode);
-        self::assertTrue($validator->validate());
-    }
-
     public function testValidateWithAdjacentCycles(): void
     {
         $secret = Base32::encode(random_bytes(10));

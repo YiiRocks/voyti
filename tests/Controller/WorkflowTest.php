@@ -21,6 +21,7 @@ use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\UserSessionHistory\UserSessionHistoryDecorator;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\FakeHttpClient;
+use YiiRocks\Voyti\tests\Support\RecordingPasswordGenerator;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Db\Connection\ConnectionInterface;
 use Yiisoft\Db\Connection\ConnectionProvider;
@@ -138,6 +139,29 @@ final class WorkflowTest extends TestCase
         $this->assertTrue($blockedUser->isBlocked());
     }
 
+    public function testAdminCreateActionAssignsRbacItemsFromRequestBody(): void
+    {
+        $this->harness->seedRbacRole('manager');
+
+        $response = $this->harness->adminController->create(
+            $this->harness->request(
+                Method::POST,
+                [
+                    'username' => 'nadia',
+                    'email' => 'nadia@example.test',
+                    'password' => 'secret123',
+                    'assignedItems' => ['manager'],
+                ],
+            ),
+        );
+
+        $this->assertSame(302, $response->getStatusCode());
+
+        $user = $this->harness->users->findByEmail('nadia@example.test');
+        $this->assertInstanceOf(User::class, $user);
+        $this->assertTrue($this->harness->authHelper->hasRole((int) $user->getId(), 'manager'));
+    }
+
     public function testAdminCreateActionCreatesUserAndConfirmationToken(): void
     {
         $response = $this->harness->adminController->create(
@@ -158,6 +182,53 @@ final class WorkflowTest extends TestCase
         $this->assertFalse($user->isConfirmed());
         $this->assertCount(1, $this->harness->userTokens->findByUserId((int) $user->getId()));
         $this->assertCount(1, $this->harness->mailer->messages());
+    }
+
+    public function testAdminCreateActionGeneratesTwelveCharacterPasswordWhenBlank(): void
+    {
+        $passwordGenerator = new RecordingPasswordGenerator();
+        $harness = new ControllerHarness(dirname(__DIR__, 2), passwordGenerator: $passwordGenerator);
+
+        $response = $harness->adminController->create(
+            $harness->request(
+                Method::POST,
+                [
+                    'username' => 'petra',
+                    'email' => 'petra@example.test',
+                ],
+            ),
+        );
+
+        $this->assertSame(302, $response->getStatusCode());
+        $this->assertSame([12], $passwordGenerator->requestedLengths);
+
+        $user = $harness->users->findByEmail('petra@example.test');
+        $this->assertInstanceOf(User::class, $user);
+        $this->assertTrue((new PasswordHasher())->validate(str_repeat('x', 12), $user->getPasswordHash()));
+    }
+
+    public function testAdminCreateActionUsesProvidedPasswordWithoutGeneratingOne(): void
+    {
+        $passwordGenerator = new RecordingPasswordGenerator();
+        $harness = new ControllerHarness(dirname(__DIR__, 2), passwordGenerator: $passwordGenerator);
+
+        $response = $harness->adminController->create(
+            $harness->request(
+                Method::POST,
+                [
+                    'username' => 'oliver',
+                    'email' => 'oliver@example.test',
+                    'password' => 'oliver-secret',
+                ],
+            ),
+        );
+
+        $this->assertSame(302, $response->getStatusCode());
+        $this->assertSame([], $passwordGenerator->requestedLengths);
+
+        $user = $harness->users->findByEmail('oliver@example.test');
+        $this->assertInstanceOf(User::class, $user);
+        $this->assertTrue((new PasswordHasher())->validate('oliver-secret', $user->getPasswordHash()));
     }
 
     public function testAdminCreateViewRendersWithoutMissingModel(): void
@@ -241,6 +312,63 @@ final class WorkflowTest extends TestCase
         $this->assertStringContainsString($user->getUsername(), $html);
     }
 
+    public function testAuthenticatedUserCanConnectSocialAccount(): void
+    {
+        $oauthHttpClient = new FakeHttpClient();
+        $this->harness = new ControllerHarness(
+            dirname(__DIR__, 2),
+            new ModuleConfig(
+                socialNetworkClients: [
+                    'github' => [
+                        'clientId' => 'github-client-id',
+                        'clientSecret' => 'github-client-secret',
+                    ],
+                ],
+            ),
+            $oauthHttpClient,
+        );
+
+        $user = $this->registerAndConfirmUser('zoe', 'zoe@example.test', 'secret123');
+        $this->harness->currentUser->login($user);
+
+        $redirectResponse = $this->harness->securityController->connect(
+            $this->harness->request(Method::GET),
+            'github',
+        );
+        $this->assertSame(302, $redirectResponse->getStatusCode());
+
+        $location = $redirectResponse->getHeaderLine('Location');
+        parse_str((string) parse_url($location, PHP_URL_QUERY), $query);
+        $state = $query['state'] ?? null;
+        $this->assertIsString($state);
+
+        $oauthHttpClient->queue('POST', 'https://github.com/login/oauth/access_token', [
+            'access_token' => 'oauth-token',
+        ]);
+        $oauthHttpClient->queue('GET', 'https://api.github.com/user', [
+            'id' => 'gh-zoe',
+            'login' => 'zoe-gh',
+            'name' => 'Zoe Example',
+            'email' => 'zoe@example.test',
+        ]);
+
+        $response = $this->harness->securityController->connect(
+            $this->harness->request(
+                Method::GET,
+                queryParams: [
+                    'code' => 'oauth-code',
+                    'state' => $state,
+                ],
+            ),
+            'github',
+        );
+        $this->assertResponseContains($response, 'Authenticated');
+
+        $account = $this->harness->socialAccounts->findByProviderAndClientId('github', 'gh-zoe');
+        $this->assertInstanceOf(UserSocialAccount::class, $account);
+        $this->assertSame((int) $user->getId(), $account->getUserId());
+    }
+
     public function testGdprConsentDeleteAndAccountDeletionFlow(): void
     {
         $user = $this->registerAndConfirmUser('carol', 'carol@example.test', 'secret123');
@@ -295,6 +423,28 @@ final class WorkflowTest extends TestCase
         $this->assertNotEmpty(array_filter($events, static fn (object $event): bool => $event instanceof GdprEvent));
     }
 
+    public function testLoginPageRendersConfiguredSocialProviders(): void
+    {
+        $this->harness = new ControllerHarness(
+            dirname(__DIR__, 2),
+            new ModuleConfig(
+                socialNetworkClients: [
+                    'github' => [
+                        'clientId' => 'github-client-id',
+                        'clientSecret' => 'github-client-secret',
+                    ],
+                ],
+            ),
+        );
+
+        $response = $this->harness->securityController->login(
+            $this->harness->request(Method::GET),
+        );
+
+        $this->assertResponseContains($response, 'GitHub');
+        $this->assertStringContainsString('/voyti/auth/github', $this->harness->responseBody($response));
+    }
+
     public function testLoginViewIncludesCsrfToken(): void
     {
         $response = $this->harness->securityController->login(
@@ -304,6 +454,45 @@ final class WorkflowTest extends TestCase
         $html = $this->harness->responseBody($response);
 
         $this->assertMatchesRegularExpression('/name="_csrf" value="[^"]+"/', $html);
+    }
+
+    public function testNetworksPageUsesConnectViewAndExcludesConnectedProviders(): void
+    {
+        $this->harness = new ControllerHarness(
+            dirname(__DIR__, 2),
+            new ModuleConfig(
+                socialNetworkClients: [
+                    'github' => [
+                        'clientId' => 'github-client-id',
+                        'clientSecret' => 'github-client-secret',
+                    ],
+                    'google' => [
+                        'clientId' => 'google-client-id',
+                        'clientSecret' => 'google-client-secret',
+                    ],
+                ],
+            ),
+        );
+
+        $user = $this->registerAndConfirmUser('mia', 'mia@example.test', 'secret123');
+        $this->harness->currentUser->login($user);
+
+        $socialAccount = new UserSocialAccount();
+        $socialAccount->setProvider('github');
+        $socialAccount->setClientId('gh-mia');
+        $socialAccount->setUserId((int) $user->getId());
+        $socialAccount->setCreatedAt(time());
+        $socialAccount->save();
+
+        $response = $this->harness->settingsController->networks(
+            $this->harness->request(Method::GET),
+        );
+
+        $this->assertResponseContains($response, 'Networks');
+        $html = $this->harness->responseBody($response);
+        $this->assertStringContainsString('Google', $html);
+        $this->assertStringContainsString('/voyti/connect/google', $html);
+        $this->assertStringNotContainsString('/voyti/connect/github', $html);
     }
 
     public function testPasswordRecoveryRequestAndResetFlow(): void
@@ -381,7 +570,6 @@ final class WorkflowTest extends TestCase
         $this->assertSame('/voyti/settings', $profileResponse->getHeaderLine('Location'));
 
         $profile = $this->harness->userProfiles->findByUserId((int) $user->getId());
-        $this->assertNotNull($profile);
         $this->assertSame('Bob Example', $profile->getName());
         $this->assertSame('public@example.test', $profile->getPublicEmail());
         $this->assertSame('Updated bio', $profile->getBio());
@@ -581,28 +769,6 @@ final class WorkflowTest extends TestCase
         $this->assertSame($this->remoteAddr, $history[0]->getIp());
     }
 
-    public function testLoginPageRendersConfiguredSocialProviders(): void
-    {
-        $this->harness = new ControllerHarness(
-            dirname(__DIR__, 2),
-            new ModuleConfig(
-                socialNetworkClients: [
-                    'github' => [
-                        'clientId' => 'github-client-id',
-                        'clientSecret' => 'github-client-secret',
-                    ],
-                ],
-            ),
-        );
-
-        $response = $this->harness->securityController->login(
-            $this->harness->request(Method::GET),
-        );
-
-        $this->assertResponseContains($response, 'GitHub');
-        $this->assertStringContainsString('/voyti/auth/github', $this->harness->responseBody($response));
-    }
-
     public function testSocialAuthenticationForNewUserRedirectsToConnectAndLinksOnRegistration(): void
     {
         $oauthHttpClient = new FakeHttpClient();
@@ -694,102 +860,6 @@ final class WorkflowTest extends TestCase
         $this->assertInstanceOf(UserSocialAccount::class, $account);
         $this->assertSame((int) $registeredUser->getId(), $account->getUserId());
         $this->assertNull($account->getCode());
-    }
-
-    public function testNetworksPageUsesConnectViewAndExcludesConnectedProviders(): void
-    {
-        $this->harness = new ControllerHarness(
-            dirname(__DIR__, 2),
-            new ModuleConfig(
-                socialNetworkClients: [
-                    'github' => [
-                        'clientId' => 'github-client-id',
-                        'clientSecret' => 'github-client-secret',
-                    ],
-                    'google' => [
-                        'clientId' => 'google-client-id',
-                        'clientSecret' => 'google-client-secret',
-                    ],
-                ],
-            ),
-        );
-
-        $user = $this->registerAndConfirmUser('mia', 'mia@example.test', 'secret123');
-        $this->harness->currentUser->login($user);
-
-        $socialAccount = new UserSocialAccount();
-        $socialAccount->setProvider('github');
-        $socialAccount->setClientId('gh-mia');
-        $socialAccount->setUserId((int) $user->getId());
-        $socialAccount->setCreatedAt(time());
-        $socialAccount->save();
-
-        $response = $this->harness->settingsController->networks(
-            $this->harness->request(Method::GET),
-        );
-
-        $this->assertResponseContains($response, 'Networks');
-        $html = $this->harness->responseBody($response);
-        $this->assertStringContainsString('Google', $html);
-        $this->assertStringContainsString('/voyti/connect/google', $html);
-        $this->assertStringNotContainsString('/voyti/connect/github', $html);
-    }
-
-    public function testAuthenticatedUserCanConnectSocialAccount(): void
-    {
-        $oauthHttpClient = new FakeHttpClient();
-        $this->harness = new ControllerHarness(
-            dirname(__DIR__, 2),
-            new ModuleConfig(
-                socialNetworkClients: [
-                    'github' => [
-                        'clientId' => 'github-client-id',
-                        'clientSecret' => 'github-client-secret',
-                    ],
-                ],
-            ),
-            $oauthHttpClient,
-        );
-
-        $user = $this->registerAndConfirmUser('zoe', 'zoe@example.test', 'secret123');
-        $this->harness->currentUser->login($user);
-
-        $redirectResponse = $this->harness->securityController->connect(
-            $this->harness->request(Method::GET),
-            'github',
-        );
-        $this->assertSame(302, $redirectResponse->getStatusCode());
-
-        $location = $redirectResponse->getHeaderLine('Location');
-        parse_str((string) parse_url($location, PHP_URL_QUERY), $query);
-        $state = $query['state'] ?? null;
-        $this->assertIsString($state);
-
-        $oauthHttpClient->queue('POST', 'https://github.com/login/oauth/access_token', [
-            'access_token' => 'oauth-token',
-        ]);
-        $oauthHttpClient->queue('GET', 'https://api.github.com/user', [
-            'id' => 'gh-zoe',
-            'login' => 'zoe-gh',
-            'name' => 'Zoe Example',
-            'email' => 'zoe@example.test',
-        ]);
-
-        $response = $this->harness->securityController->connect(
-            $this->harness->request(
-                Method::GET,
-                queryParams: [
-                    'code' => 'oauth-code',
-                    'state' => $state,
-                ],
-            ),
-            'github',
-        );
-        $this->assertResponseContains($response, 'Authenticated');
-
-        $account = $this->harness->socialAccounts->findByProviderAndClientId('github', 'gh-zoe');
-        $this->assertInstanceOf(UserSocialAccount::class, $account);
-        $this->assertSame((int) $user->getId(), $account->getUserId());
     }
 
     public function testTwoFactorConfirmationDispatchesLoginEventAndWritesSessionHistory(): void

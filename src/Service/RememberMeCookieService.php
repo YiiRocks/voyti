@@ -22,10 +22,17 @@ use function time;
 
 final class RememberMeCookieService
 {
+    private \Closure $cookieEmitter;
+    private \Closure $now;
+
     public function __construct(
         private readonly int $duration,
         private readonly string $cookieName = 'autoLogin',
+        ?\Closure $cookieEmitter = null,
+        ?\Closure $now = null,
     ) {
+        $this->cookieEmitter = $cookieEmitter ?? static fn (string $name, string $value, array $options): bool => setcookie($name, $value, $options);
+        $this->now = $now ?? static fn (): int => time();
     }
 
     public function addCookie(CookieLoginIdentityInterface $identity, ResponseInterface $response): ResponseInterface
@@ -39,60 +46,6 @@ final class RememberMeCookieService
             );
     }
 
-    /**
-     * Refreshes the remember-me cookie with a new expiration timestamp
-     * to implement sliding expiration.
-     *
-     * The cookie is refreshed at most once every 24 hours to avoid sending
-     * a Set-Cookie header on every request.
-     */
-    public function refreshCookie(CurrentUser $currentUser): void
-    {
-        if ($this->duration <= 0) {
-            return;
-        }
-
-        $rawCookie = $_COOKIE[$this->cookieName] ?? null;
-        if (!is_string($rawCookie)) {
-            return;
-        }
-
-        try {
-            $data = json_decode($rawCookie, true, 512, JSON_THROW_ON_ERROR);
-        } catch (JsonException) {
-            return;
-        }
-
-        if (!is_array($data) || count($data) !== 3) {
-            return;
-        }
-
-        $lastRefresh = (int) $data[2] - $this->duration;
-
-        if (time() - $lastRefresh < 86400) {
-            return;
-        }
-
-        $identity = $currentUser->getIdentity();
-        if (!$identity instanceof CookieLoginIdentityInterface) {
-            return;
-        }
-
-        $expiresAt = time() + $this->duration;
-        $value = json_encode(
-            [$identity->getId(), $identity->getCookieLoginKey(), $expiresAt],
-            JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
-        );
-
-        setcookie($this->cookieName, $value, [
-            'expires' => $expiresAt,
-            'path' => '/',
-            'secure' => true,
-            'httponly' => true,
-            'samesite' => 'Lax',
-        ]);
-    }
-
     public function expireCookie(ResponseInterface $response): ResponseInterface
     {
         return $this->cookieLogin()->expireCookie($response);
@@ -103,11 +56,6 @@ final class RememberMeCookieService
         return $this->cookieLogin()->getCookieName();
     }
 
-    private function cookieLogin(): CookieLogin
-    {
-        return (new CookieLogin())->withCookieName($this->cookieName);
-    }
-
     /**
      * @param array<string, mixed> $cookies
      */
@@ -116,6 +64,7 @@ final class RememberMeCookieService
         CurrentUser $currentUser,
         IdentityRepositoryInterface $identityRepository,
     ): void {
+        $now = (int) ($this->now)();
         $cookieName = $this->getCookieName();
         $cookie = $cookies[$cookieName] ?? null;
 
@@ -139,10 +88,71 @@ final class RememberMeCookieService
         if (
             !$identity instanceof CookieLoginIdentityInterface
             || !$identity->validateCookieLoginKey((string) $key)
-            || ((int) $expires !== 0 && (int) $expires < time())
+            || ((int) $expires !== 0 && (int) $expires < $now)
         ) {
             return;
         }
         $currentUser->login($identity);
+    }
+
+    /**
+     * Refreshes the remember-me cookie with a new expiration timestamp
+     * to implement sliding expiration.
+     *
+     * The cookie is refreshed at most once every 24 hours to avoid sending
+     * a Set-Cookie header on every request.
+     */
+    public function refreshCookie(CurrentUser $currentUser): void
+    {
+        if ($this->duration <= 0) {
+            return;
+        }
+
+        $now = (int) ($this->now)();
+
+        $rawCookie = $_COOKIE[$this->cookieName] ?? null;
+        if (!is_string($rawCookie)) {
+            return;
+        }
+
+        try {
+            $data = json_decode($rawCookie, true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            return;
+        }
+
+        if (!is_array($data) || count($data) !== 3) {
+            return;
+        }
+
+        $lastRefresh = (int) $data[2] - $this->duration;
+
+        if ($now - $lastRefresh < 86400) {
+            return;
+        }
+
+        $identity = $currentUser->getIdentity();
+        if (!$identity instanceof CookieLoginIdentityInterface) {
+            return;
+        }
+
+        $expiresAt = $now + $this->duration;
+        $value = json_encode(
+            [$identity->getId(), $identity->getCookieLoginKey(), $expiresAt],
+            JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
+        );
+
+        ($this->cookieEmitter)($this->cookieName, $value, [
+            'expires' => $expiresAt,
+            'path' => '/',
+            'secure' => true,
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
+    }
+
+    private function cookieLogin(): CookieLogin
+    {
+        return (new CookieLogin())->withCookieName($this->cookieName);
     }
 }

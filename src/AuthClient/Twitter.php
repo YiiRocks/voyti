@@ -23,21 +23,6 @@ final class Twitter extends AbstractAuthClient
     }
 
     /**
-     * @param array<string, mixed> $tokenData
-     *
-     * @return string[]
-     *
-     * @psalm-return array{'user.fields': 'id,name,username,profile_image_url'}
-     */
-    #[\Override]
-    protected function userInfoQuery(array $tokenData): array
-    {
-        return [
-            'user.fields' => 'id,name,username,profile_image_url',
-        ];
-    }
-
-    /**
      * @param array<string, mixed> $attributes
      * @param array<string, mixed> $tokenData
      *
@@ -55,6 +40,21 @@ final class Twitter extends AbstractAuthClient
             'email' => null,
             'username' => $this->firstString(is_array($data) ? $data : [], ['username']),
             'name' => $this->firstString(is_array($data) ? $data : [], ['name']),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $tokenData
+     *
+     * @return string[]
+     *
+     * @psalm-return array{'user.fields': 'id,name,username,profile_image_url'}
+     */
+    #[\Override]
+    protected function userInfoQuery(array $tokenData): array
+    {
+        return [
+            'user.fields' => 'id,name,username,profile_image_url',
         ];
     }
 }

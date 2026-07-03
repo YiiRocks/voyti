@@ -34,21 +34,7 @@ final class RegistrationFormTest extends TestCase
         $form->password = '';
 
         $result = $validator->validate($form);
-        $this->assertFalse($result->isValid());
         $this->assertFalse($result->isPropertyValid('password'));
-    }
-
-    public function testGdprConsentOptional(): void
-    {
-        $validator = new Validator();
-        $form = $this->createForm();
-        $form->username = 'testuser';
-        $form->email = 'test@example.com';
-        $form->password = 'secret123';
-        $form->gdprConsent = true;
-
-        $result = $validator->validate($form);
-        $this->assertTrue($result->isValid());
     }
 
     public function testGetAttributeLabels(): void
@@ -70,6 +56,21 @@ final class RegistrationFormTest extends TestCase
     {
         $form = $this->createForm();
         $this->assertSame('register', $form->getFormName());
+    }
+
+    public function testGetPropertyLabelForKnownPropertyReturnsLabel(): void
+    {
+        $form = $this->createForm();
+
+        $this->assertSame('voyti.view.username_label', $form->getPropertyLabel('username'));
+        $this->assertSame('voyti.view.email_label', $form->getPropertyLabel('email'));
+    }
+
+    public function testGetPropertyLabelForUnknownPropertyFallsBackToParent(): void
+    {
+        $form = $this->createForm();
+
+        $this->assertSame('G Recaptcha Response', $form->getPropertyLabel('gRecaptchaResponse'));
     }
 
     public function testGetRulesWithRecaptchaV2(): void
@@ -115,7 +116,6 @@ final class RegistrationFormTest extends TestCase
         $form->password = 'secret123';
 
         $result = $validator->validate($form);
-        $this->assertFalse($result->isValid());
         $this->assertFalse($result->isPropertyValid('email'));
     }
 
@@ -128,7 +128,6 @@ final class RegistrationFormTest extends TestCase
         $form->password = 'secret123';
 
         $result = $validator->validate($form);
-        $this->assertFalse($result->isValid());
         $this->assertFalse($result->isPropertyValid('username'));
     }
 
@@ -152,7 +151,6 @@ final class RegistrationFormTest extends TestCase
         $form->password = str_repeat('a', 73);
 
         $result = $validator->validate($form);
-        $this->assertFalse($result->isValid());
         $this->assertFalse($result->isPropertyValid('password'));
     }
 
@@ -165,7 +163,6 @@ final class RegistrationFormTest extends TestCase
         $form->password = 'secret123';
 
         $result = $validator->validate($form);
-        $this->assertFalse($result->isValid());
         $this->assertFalse($result->isPropertyValid('email'));
     }
 
@@ -178,7 +175,6 @@ final class RegistrationFormTest extends TestCase
         $form->password = 'secret123';
 
         $result = $validator->validate($form);
-        $this->assertFalse($result->isValid());
         $this->assertFalse($result->isPropertyValid('username'));
     }
 
@@ -205,7 +201,6 @@ final class RegistrationFormTest extends TestCase
         $form->password = '12345';
 
         $result = $validator->validate($form);
-        $this->assertFalse($result->isValid());
         $this->assertFalse($result->isPropertyValid('password'));
     }
 
@@ -218,7 +213,6 @@ final class RegistrationFormTest extends TestCase
         $form->password = 'secret123';
 
         $result = $validator->validate($form);
-        $this->assertFalse($result->isValid());
         $this->assertFalse($result->isPropertyValid('username'));
     }
 

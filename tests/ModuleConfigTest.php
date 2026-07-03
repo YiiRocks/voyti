@@ -171,14 +171,6 @@ final class ModuleConfigTest extends TestCase
         $this->assertTrue($config->enableRegistration);
     }
 
-    public function testPackageParamsExposeDefaults(): void
-    {
-        $params = require dirname(__DIR__) . '/config/params.php';
-
-        $this->assertSame(ModuleConfig::defaults(), $params['yiirocks/voyti']);
-        $this->assertArrayNotHasKey(ModuleConfig::class, $params);
-    }
-
     public function testHasNumberSessionHistory(): void
     {
         $config = new ModuleConfig();
@@ -192,5 +184,13 @@ final class ModuleConfigTest extends TestCase
 
         $config = new ModuleConfig(numberSessionHistory: 5);
         $this->assertTrue($config->hasNumberSessionHistory());
+    }
+
+    public function testPackageParamsExposeDefaults(): void
+    {
+        $params = require dirname(__DIR__) . '/config/params.php';
+
+        $this->assertSame(ModuleConfig::defaults(), $params['yiirocks/voyti']);
+        $this->assertArrayNotHasKey(ModuleConfig::class, $params);
     }
 }

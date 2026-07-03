@@ -60,16 +60,16 @@
         "yiirocks/recaptcha": "Google reCAPTCHA v2 and v3 field + server-side validator for Yii3"
     },
     "require-dev": {
-        "yiirocks/recaptcha": "^1.0",
         "chillerlan/php-authenticator": "^5.4",
         "chillerlan/php-qrcode": "^6.0",
         "friendsofphp/php-cs-fixer": "@stable",
-        "infection/infection": "^0.33.2",
+        "infection/infection": "^0.34.0",
         "nyholm/psr7": "^1.8",
         "phpmd/phpmd": "@stable",
         "phpunit/phpunit": "@stable",
         "squizlabs/php_codesniffer": "@stable",
-        "vimeo/psalm": "@stable",
+        "vimeo/psalm": "^6.0",
+        "yiirocks/recaptcha": "^1.0",
         "yiisoft/config": "^1.6",
         "yiisoft/db-sqlite": "^2.0",
         "yiisoft/di": "*",
@@ -96,7 +96,7 @@
         "phpmd": "@php vendor/bin/phpmd src/ text tests/data/phpmd_ruleset.xml",
         "phpunit": "@php -d extension=pdo_sqlite vendor/bin/phpunit",
         "psalm": "@php vendor/bin/psalm",
-        "infection": "@php -d extension=pdo_sqlite -d pcov.enabled=1 vendor/bin/infection --configuration=infection.json --initial-tests-php-options='-d extension=pdo_sqlite -d pcov.enabled=1' --min-msi=100 --min-covered-msi=100"
+        "infection": "PHP_INI_SCAN_DIR=:tests vendor/bin/infection --configuration=infection.json --min-msi=100 --min-covered-msi=100"
     },
     "scripts-descriptions": {
         "php-cs-fixer": "Cleans to code with PHP Coding Standards Fixer.",

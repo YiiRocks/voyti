@@ -66,15 +66,15 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
         return $this->confirmed_at;
     }
 
-    public function getCreatedAt(): int
-    {
-        return $this->created_at;
-    }
-
     #[\Override]
     public function getCookieLoginKey(): string
     {
         return $this->auth_key;
+    }
+
+    public function getCreatedAt(): int
+    {
+        return $this->created_at;
     }
 
     public function getEmail(): string

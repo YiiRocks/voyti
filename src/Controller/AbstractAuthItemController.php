@@ -8,8 +8,8 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use RuntimeException;
-use YiiRocks\Voyti\Form\Rbac\AbstractAuthItemForm;
 use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\Form\Rbac\AbstractAuthItemForm;
 use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Repository\UserRepository;
 use Yiisoft\Http\Method;
@@ -205,6 +205,24 @@ abstract class AbstractAuthItemController
         ]);
     }
 
+    abstract protected function createForm(): AbstractAuthItemForm;
+
+    abstract protected function getIndexRouteName(): string;
+
+    abstract protected function getItemType(): string;
+
+    protected function loadForm(AbstractAuthItemForm $form, array $body): void
+    {
+        $prefix = $form->getFormName();
+        $data = $this->formData($body, $prefix);
+        $form->name = $this->stringValue($data, 'name', $form->name);
+        $form->description = $this->stringValue($data, 'description', $form->description);
+        $form->rule = $this->nullableStringValue($data, 'rule') ?? $form->rule;
+
+        $children = $data['children'] ?? $form->children;
+        $form->children = is_array($children) ? array_values(array_filter($children, 'is_string')) : $form->children;
+    }
+
     /**
      * @return list<array{user: User, assigned: bool}>
      */
@@ -253,27 +271,9 @@ abstract class AbstractAuthItemController
         }
     }
 
-    abstract protected function getIndexRouteName(): string;
-
     private function redirect(string $url): ResponseInterface
     {
         return $this->responseFactory->createResponse(302)
             ->withHeader('Location', $url);
-    }
-
-    abstract protected function createForm(): AbstractAuthItemForm;
-
-    abstract protected function getItemType(): string;
-
-    protected function loadForm(AbstractAuthItemForm $form, array $body): void
-    {
-        $prefix = $form->getFormName();
-        $data = $this->formData($body, $prefix);
-        $form->name = $this->stringValue($data, 'name', $form->name);
-        $form->description = $this->stringValue($data, 'description', $form->description);
-        $form->rule = $this->nullableStringValue($data, 'rule') ?? $form->rule;
-
-        $children = $data['children'] ?? $form->children;
-        $form->children = is_array($children) ? array_values(array_filter($children, 'is_string')) : $form->children;
     }
 }

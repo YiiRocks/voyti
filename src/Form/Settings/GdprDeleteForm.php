@@ -10,6 +10,8 @@ use Yiisoft\Validator\Rule\Required;
 
 final class GdprDeleteForm extends FormModel
 {
+
+    public bool $consent = false;
     #[Required]
     public string $password = '';
 

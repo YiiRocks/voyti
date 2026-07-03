@@ -10,9 +10,9 @@ interface AuthClientInterface
 {
     public function fetchUserAttributes(string $code, string $redirectUri, ClientInterface $httpClient): array;
 
-    public function getName(): string;
-
     public function getAuthorizationUrl(string $redirectUri, string $state): string;
+
+    public function getName(): string;
 
     public function getTitle(): string;
 

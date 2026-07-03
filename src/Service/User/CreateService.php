@@ -44,7 +44,6 @@ final class CreateService
 
         if ($this->config->enableEmailConfirmation) {
             $userToken = new UserToken();
-            $userToken->setType(UserToken::TYPE_CONFIRMATION);
             $userToken->setCreatedAt(time());
             $userToken->setCode(Random::string(32));
 

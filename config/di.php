@@ -29,6 +29,8 @@ use YiiRocks\Voyti\Service\Auth\UserSocialAuthenticateService;
 use YiiRocks\Voyti\Service\EmailChangeService;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\Password\ExpireService;
+use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
+use YiiRocks\Voyti\Service\Password\RandomPasswordGenerator;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
 use YiiRocks\Voyti\Service\Password\ResetService;
 use YiiRocks\Voyti\Service\Rbac\RuleEditionService;
@@ -76,6 +78,7 @@ return [
     UserTokenRepository::class => UserTokenRepository::class,
     UserSocialAccountRepository::class => UserSocialAccountRepository::class,
     UserSessionHistoryRepository::class => UserSessionHistoryRepository::class,
+    PasswordGeneratorInterface::class => RandomPasswordGenerator::class,
 
     AuthHelper::class => fn (
         ManagerInterface $authManager,

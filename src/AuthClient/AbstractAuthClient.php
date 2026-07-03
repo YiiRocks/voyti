@@ -48,12 +48,6 @@ abstract class AbstractAuthClient implements AuthClientInterface
     }
 
     #[\Override]
-    public function getName(): string
-    {
-        return $this->name;
-    }
-
-    #[\Override]
     public function getAuthorizationUrl(string $redirectUri, string $state): string
     {
         if (!$this->isEnabled()) {
@@ -76,6 +70,12 @@ abstract class AbstractAuthClient implements AuthClientInterface
     }
 
     #[\Override]
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    #[\Override]
     public function getTitle(): string
     {
         return $this->title;
@@ -85,6 +85,70 @@ abstract class AbstractAuthClient implements AuthClientInterface
     public function isEnabled(): bool
     {
         return (bool) ($this->config['enabled'] ?? true);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function authorizationParameters(): array
+    {
+        $parameters = $this->config['authorizationParams'] ?? [];
+
+        return is_array($parameters) ? $this->stringMap($parameters) : [];
+    }
+
+    protected function clientId(): string
+    {
+        $clientId = $this->config['clientId'] ?? '';
+
+        if (!is_string($clientId) || $clientId === '') {
+            throw new RuntimeException("The '{$this->name}' clientId is not configured.");
+        }
+
+        return $clientId;
+    }
+
+    protected function clientSecret(): string
+    {
+        $clientSecret = $this->config['clientSecret'] ?? '';
+
+        if (!is_string($clientSecret) || $clientSecret === '') {
+            throw new RuntimeException("The '{$this->name}' clientSecret is not configured.");
+        }
+
+        return $clientSecret;
+    }
+
+    /**
+     * @param array $data
+     * @param list<string> $keys
+     *
+     * @return null|string
+     */
+    protected function firstString(array $data, array $keys): string|null
+    {
+        foreach ($keys as $key) {
+            $value = $data[$key] ?? null;
+            if (is_string($value) && $value !== '') {
+                return $value;
+            }
+            if (is_int($value) || is_float($value)) {
+                return (string) $value;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array<string, mixed> $attributes
+     * @param array<string, mixed> $tokenData
+     */
+    protected function identifier(array $attributes, array $tokenData): string
+    {
+        $id = $this->firstString($attributes, ['id', 'sub', 'user_id']) ?? $this->firstString($tokenData, ['user_id']);
+
+        return $id ?? '';
     }
 
     /**
@@ -124,7 +188,7 @@ abstract class AbstractAuthClient implements AuthClientInterface
         if ($name === null) {
             $firstName = $this->firstString($attributes, ['first_name', 'given_name']);
             $lastName = $this->firstString($attributes, ['last_name', 'family_name']);
-            $name = trim(implode(' ', array_filter([$firstName, $lastName])));
+            $name = trim(implode(' ', [$firstName, $lastName]));
             $name = $name !== '' ? $name : null;
         }
 
@@ -138,49 +202,6 @@ abstract class AbstractAuthClient implements AuthClientInterface
             'username' => $username,
             'name' => $name,
         ];
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    protected function authorizationParameters(): array
-    {
-        $parameters = $this->config['authorizationParams'] ?? [];
-
-        return is_array($parameters) ? $this->stringMap($parameters) : [];
-    }
-
-    protected function clientId(): string
-    {
-        $clientId = $this->config['clientId'] ?? '';
-
-        if (!is_string($clientId) || $clientId === '') {
-            throw new RuntimeException("The '{$this->name}' clientId is not configured.");
-        }
-
-        return $clientId;
-    }
-
-    protected function clientSecret(): string
-    {
-        $clientSecret = $this->config['clientSecret'] ?? '';
-
-        if (!is_string($clientSecret) || $clientSecret === '') {
-            throw new RuntimeException("The '{$this->name}' clientSecret is not configured.");
-        }
-
-        return $clientSecret;
-    }
-
-    /**
-     * @param array<string, mixed> $attributes
-     * @param array<string, mixed> $tokenData
-     */
-    protected function identifier(array $attributes, array $tokenData): string
-    {
-        $id = $this->firstString($attributes, ['id', 'sub', 'user_id']) ?? $this->firstString($tokenData, ['user_id']);
-
-        return $id ?? '';
     }
 
     protected function resolveRedirectUri(string $fallback): string
@@ -232,28 +253,6 @@ abstract class AbstractAuthClient implements AuthClientInterface
     }
 
     /**
-     * @return string[]
-     *
-     * @psalm-return array<string, string>
-     */
-    private function tokenRequestBody(string $code, string $redirectUri): array
-    {
-        $body = [
-            'client_id' => $this->clientId(),
-            'client_secret' => $this->clientSecret(),
-            'code' => $code,
-            'grant_type' => 'authorization_code',
-            'redirect_uri' => $this->resolveRedirectUri($redirectUri),
-        ];
-
-        $tokenParameters = $this->config['tokenParams'] ?? [];
-
-        return is_array($tokenParameters)
-            ? array_merge($body, $this->stringMap($tokenParameters))
-            : $body;
-    }
-
-    /**
      * @param array<string, mixed> $tokenData
      */
     private function accessToken(array $tokenData): string
@@ -302,27 +301,6 @@ abstract class AbstractAuthClient implements AuthClientInterface
     }
 
     /**
-     * @param array $data
-     * @param list<string> $keys
-     *
-     * @return null|string
-     */
-    protected function firstString(array $data, array $keys): string|null
-    {
-        foreach ($keys as $key) {
-            $value = $data[$key] ?? null;
-            if (is_string($value) && $value !== '') {
-                return $value;
-            }
-            if (is_int($value) || is_float($value)) {
-                return (string) $value;
-            }
-        }
-
-        return null;
-    }
-
-    /**
      * @param array $values
      *
      * @return string[]
@@ -343,5 +321,27 @@ abstract class AbstractAuthClient implements AuthClientInterface
         }
 
         return $mapped;
+    }
+
+    /**
+     * @return string[]
+     *
+     * @psalm-return array<string, string>
+     */
+    private function tokenRequestBody(string $code, string $redirectUri): array
+    {
+        $body = [
+            'client_id' => $this->clientId(),
+            'client_secret' => $this->clientSecret(),
+            'code' => $code,
+            'grant_type' => 'authorization_code',
+            'redirect_uri' => $this->resolveRedirectUri($redirectUri),
+        ];
+
+        $tokenParameters = $this->config['tokenParams'] ?? [];
+
+        return is_array($tokenParameters)
+            ? array_merge($body, $this->stringMap($tokenParameters))
+            : $body;
     }
 }

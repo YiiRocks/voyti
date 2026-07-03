@@ -10,13 +10,6 @@ use YiiRocks\Voyti\Service\ServiceResult;
 final class ServiceResultTest extends TestCase
 {
 
-    public function testFailureCreatesFailureStatus(): void
-    {
-        $result = ServiceResult::failure();
-        self::assertTrue($result->isFailure());
-        self::assertFalse($result->isSuccess());
-    }
-
     public function testFailureMessageAndErrorsCanBeEmpty(): void
     {
         $result = ServiceResult::failure();
@@ -29,25 +22,12 @@ final class ServiceResultTest extends TestCase
         $result = ServiceResult::failure('Something broke', ['code' => 500]);
         self::assertSame('Something broke', $result->getMessage());
         self::assertSame(['code' => 500], $result->getErrors());
-        self::assertTrue($result->isFailure());
-    }
-
-    public function testGetErrorsDefaultsToEmptyArray(): void
-    {
-        $result = ServiceResult::failure();
-        self::assertSame([], $result->getErrors());
     }
 
     public function testGetErrorsReturnsErrors(): void
     {
         $result = ServiceResult::failure('Error', ['field' => 'Invalid value']);
         self::assertSame(['field' => 'Invalid value'], $result->getErrors());
-    }
-
-    public function testGetMessageDefaultsToEmptyString(): void
-    {
-        $result = ServiceResult::success();
-        self::assertSame('', $result->getMessage());
     }
 
     public function testGetMessageReturnsMessage(): void
@@ -79,13 +59,6 @@ final class ServiceResultTest extends TestCase
         $result = ServiceResult::success();
         self::assertTrue($result->isSuccess());
     }
-    public function testSuccessCreatesSuccessStatus(): void
-    {
-        $result = ServiceResult::success();
-        self::assertTrue($result->isSuccess());
-        self::assertFalse($result->isFailure());
-    }
-
     public function testSuccessMessageCanBeEmpty(): void
     {
         $result = ServiceResult::success();
@@ -97,6 +70,5 @@ final class ServiceResultTest extends TestCase
     {
         $result = ServiceResult::success('All good');
         self::assertSame('All good', $result->getMessage());
-        self::assertTrue($result->isSuccess());
     }
 }

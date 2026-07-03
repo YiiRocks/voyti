@@ -19,6 +19,7 @@ use YiiRocks\Voyti\Repository\UserProfileRepository;
 use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Repository\UserSessionHistoryRepository;
 use YiiRocks\Voyti\Service\Password\ExpireService;
+use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
 use YiiRocks\Voyti\Service\Rbac\UpdateAssignmentsService;
 use YiiRocks\Voyti\Service\SwitchIdentityService;
@@ -32,7 +33,6 @@ use Yiisoft\Rbac\AssignmentsStorageInterface;
 use Yiisoft\Rbac\ItemsStorageInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Security\PasswordHasher;
-use Yiisoft\Security\Random;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\Validator\ValidatorInterface;
@@ -58,6 +58,7 @@ final class AdminController
         private readonly UserSessionHistoryRepository $userSessionHistoryRepository,
         private readonly AuthHelper $authHelper,
         private readonly PasswordHasher $passwordHasher,
+        private readonly PasswordGeneratorInterface $passwordGenerator,
         private readonly ValidatorInterface $validator,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly UrlGeneratorInterface $url,
@@ -80,7 +81,7 @@ final class AdminController
         if ($request->getMethod() === Method::POST) {
             $body = $this->parsedBody($request);
             $items = $body['items'] ?? [];
-            $items = is_array($items) ? array_values(array_filter($items, 'is_string')) : [];
+            $items = is_array($items) ? $items : [];
             $this->updateAuthAssignmentsService->run($id, $items);
         }
 
@@ -90,7 +91,6 @@ final class AdminController
 
         return $this->renderView('admin/_assignments', [
             'user' => $user,
-            'config' => $this->config,
             'assignments' => $assignedNames,
             'available' => $available,
         ]);
@@ -125,12 +125,12 @@ final class AdminController
             $this->hydrator->hydrate($model, $this->formData($body, $model->getFormName()));
             $email = $model->email;
             $username = $model->username;
-            $password = $model->password !== '' ? $model->password : Random::string(12);
+            $password = $model->password !== '' ? $model->password : $this->passwordGenerator->generate(12);
 
             $result = $this->userCreateService->run($email, $username, $password);
             if ($result->isSuccess()) {
                 $items = $body['assignedItems'] ?? [];
-                $items = is_array($items) ? array_values(array_filter($items, 'is_string')) : [];
+                $items = is_array($items) ? $items : [];
                 if ($items !== []) {
                     $user = $this->userRepository->findByUsername($username);
                     if ($user !== null) {
@@ -210,7 +210,6 @@ final class AdminController
         return $this->renderView('admin/_info', [
             'user' => $user,
             'userProfile' => $user->getProfile(),
-            'config' => $this->config,
         ]);
     }
 
@@ -273,7 +272,7 @@ final class AdminController
             $user->save();
 
             $items = $body['assignedItems'] ?? [];
-            $items = is_array($items) ? array_values(array_filter($items, 'is_string')) : [];
+            $items = is_array($items) ? $items : [];
             $this->updateAuthAssignmentsService->run($id, $items);
 
             return $this->responseFactory->createResponse(302)
@@ -288,7 +287,6 @@ final class AdminController
             'user' => $user,
             'model' => $model,
             'errors' => [],
-            'config' => $this->config,
             'allItems' => $allItems,
             'assignedItems' => $assignedNames,
         ]);
@@ -334,7 +332,7 @@ final class AdminController
             }
         }
 
-        return $this->renderView('admin/_profile', ['user' => $user, 'model' => $model, 'config' => $this->config]);
+        return $this->renderView('admin/_profile', ['user' => $user, 'model' => $model]);
     }
 
     public function userSessionHistory(int $id): ResponseInterface
@@ -348,7 +346,6 @@ final class AdminController
         return $this->renderView('admin/_session-history', [
             'user' => $user,
             'sessions' => $sessions,
-            'config' => $this->config,
         ]);
     }
 

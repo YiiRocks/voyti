@@ -163,6 +163,13 @@ final class MailService
         extract($params, EXTR_OVERWRITE);
         ob_start();
         require $file;
+        /**
+         * @infection-ignore-all
+         *
+         * ob_get_clean() only returns false when no buffer is active, which can't happen
+         * here since ob_start() just opened one; no test can produce that state without
+         * itself closing an unrelated (e.g. PHPUnit's own) output buffer.
+         */
         return (string) ob_get_clean();
     }
 }

@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use YiiRocks\Voyti\Form\Rbac\RoleForm;
 use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\Form\Rbac\RoleForm;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;

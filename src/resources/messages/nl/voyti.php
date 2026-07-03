@@ -161,7 +161,7 @@ return [
 
     // Settings views
     'voyti.view.edit_profile.title' => 'Profiel bewerken',
-    'voyti.view.userProfile.title' => 'Profielforbeeld',
+    'voyti.view.userProfile.title' => 'Profielvoorbeeld',
     'voyti.view.account.title' => 'Accountinstellingen',
     'voyti.view.networks.title' => 'Netwerken',
     'voyti.view.privacy.title' => 'Privacy',

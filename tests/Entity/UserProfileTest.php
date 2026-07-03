@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Entity;
 
+use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserProfile;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Db\Connection\ConnectionProvider;
@@ -27,12 +28,36 @@ final class UserProfileTest extends TestCase
             timezone VARCHAR(40),
             PRIMARY KEY (user_id)
         )')->execute();
+        $db->createCommand('CREATE TABLE {{%user}} (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username VARCHAR(255) NOT NULL,
+            email VARCHAR(255) NOT NULL,
+            password_hash VARCHAR(60) NOT NULL,
+            auth_key VARCHAR(32) NOT NULL,
+            unconfirmed_email VARCHAR(255),
+            registration_ip VARCHAR(45),
+            flags INTEGER NOT NULL DEFAULT 0,
+            confirmed_at INTEGER,
+            blocked_at INTEGER,
+            updated_at INTEGER NOT NULL,
+            created_at INTEGER NOT NULL,
+            last_login_at INTEGER,
+            auth_tf_key VARCHAR(64),
+            auth_tf_enabled INTEGER DEFAULT 0,
+            password_changed_at INTEGER,
+            last_login_ip VARCHAR(45),
+            gdpr_deleted INTEGER DEFAULT 0,
+            gdpr_consent INTEGER DEFAULT 0,
+            gdpr_consent_date INTEGER,
+            auth_tf_type VARCHAR(20)
+        )')->execute();
     }
 
     #[\Override]
     protected function tearDown(): void
     {
         if ($this->hasSqliteConnection()) {
+            $this->getDb()->createCommand('DROP TABLE IF EXISTS {{%user}}')->execute();
             $this->getDb()->createCommand('DROP TABLE IF EXISTS {{%user_profile}}')->execute();
             ConnectionProvider::clear();
         }
@@ -55,6 +80,7 @@ final class UserProfileTest extends TestCase
 
         $found = UserProfile::query()->where(['user_id' => 1])->one();
         $this->assertInstanceOf(UserProfile::class, $found);
+        $this->assertTrue((new \ReflectionMethod(UserProfile::class, 'getGravatarId'))->isPublic());
         $this->assertSame(1, $found->getUserId());
         $this->assertSame('John Doe', $found->getName());
         $this->assertSame('john@example.com', $found->getPublicEmail());
@@ -77,6 +103,65 @@ final class UserProfileTest extends TestCase
 
         $found = UserProfile::query()->where(['user_id' => 3])->one();
         $this->assertNull($found);
+    }
+
+    public function testEmptyGravatarEmailFallsBackToPublicEmail(): void
+    {
+        $userProfile = new UserProfile();
+        $userProfile->setUserId(80);
+        $userProfile->setGravatarEmail('');
+        $userProfile->setPublicEmail(' Public@Example.com ');
+
+        $this->assertSame(
+            hash('sha256', 'public@example.com'),
+            $userProfile->getGravatarId(),
+        );
+    }
+
+    public function testGetUserReturnsMatchingRelatedUser(): void
+    {
+        $user = $this->createUser('first-related', 'first@example.com', 'hash2', 'auth2');
+        $otherUser = $this->createUser('second-related', 'second@example.com', 'hash3', 'auth3');
+
+        $userProfile = new UserProfile();
+        $userProfile->setUserId((int) $user->getId());
+        $userProfile->save();
+
+        $otherProfile = new UserProfile();
+        $otherProfile->setUserId((int) $otherUser->getId());
+        $otherProfile->save();
+
+        $found = UserProfile::query()->where(['user_id' => (int) $user->getId()])->one();
+        $this->assertInstanceOf(UserProfile::class, $found);
+        $relatedUser = $found->getUser();
+        $this->assertInstanceOf(User::class, $relatedUser);
+        $this->assertSame($user->getId(), $relatedUser->getId());
+        $this->assertSame('first-related', $relatedUser->getUsername());
+    }
+
+    public function testGetUserReturnsNullWhenRelatedUserIsMissing(): void
+    {
+        $userProfile = new UserProfile();
+        $userProfile->setUserId(999);
+        $userProfile->save();
+
+        $found = UserProfile::query()->where(['user_id' => 999])->one();
+        $this->assertInstanceOf(UserProfile::class, $found);
+        $this->assertNull($found->getUser());
+        $this->assertNull($found->getGravatarId());
+    }
+
+    public function testGravatarEmailTakesPrecedenceOverPublicEmail(): void
+    {
+        $userProfile = new UserProfile();
+        $userProfile->setUserId(8);
+        $userProfile->setPublicEmail('public@example.com');
+        $userProfile->setGravatarEmail('avatar@example.com');
+
+        $this->assertSame(
+            hash('sha256', 'avatar@example.com'),
+            $userProfile->getGravatarId(),
+        );
     }
 
     public function testGravatarIdAutoPopulatedFromEmail(): void
@@ -106,6 +191,67 @@ final class UserProfileTest extends TestCase
         $this->assertInstanceOf(UserProfile::class, $found);
         $this->assertNull($found->getGravatarId());
     }
+
+    public function testGravatarIdFallsBackToUserEmail(): void
+    {
+        $user = $this->createUser('fallback-user', '  User@Example.com ', 'hash1', 'auth1');
+
+        $userProfile = new UserProfile();
+        $userProfile->setUserId((int) $user->getId());
+        $userProfile->save();
+
+        $found = UserProfile::query()->where(['user_id' => (int) $user->getId()])->one();
+        $this->assertInstanceOf(UserProfile::class, $found);
+        $this->assertSame(
+            hash('sha256', 'user@example.com'),
+            $found->getGravatarId(),
+        );
+    }
+
+    public function testGravatarIdIgnoresStaleSchemaCacheWhenUserTableIsDropped(): void
+    {
+        $db = $this->getDb();
+
+        // Prime the schema's internal cache with the "table exists" state, so a
+        // non-refreshing lookup would keep returning a (now stale) non-null schema.
+        $this->assertNotNull($db->getSchema()->getTableSchema('{{%user}}'));
+
+        $db->createCommand('DROP TABLE IF EXISTS {{%user}}')->execute();
+
+        $userProfile = new UserProfile();
+        $userProfile->setUserId(321);
+
+        // getGravatarId() must force a schema refresh to notice the table is gone and
+        // bail out early; otherwise it would trust the stale cached schema and go on to
+        // query the now-missing table via getUser(), causing a database error instead.
+        $this->assertNull($userProfile->getGravatarId());
+    }
+
+    public function testGravatarIdReturnsNullWhenUserTableIsMissing(): void
+    {
+        $this->getDb()->createCommand('DROP TABLE IF EXISTS {{%user}}')->execute();
+
+        $userProfile = new UserProfile();
+        $userProfile->setUserId(123);
+
+        $this->assertNull($userProfile->getGravatarId());
+    }
+
+    public function testGravatarIdUsesNormalizedPublicEmail(): void
+    {
+        $userProfile = new UserProfile();
+        $userProfile->setUserId(7);
+        $userProfile->setPublicEmail('  Public@Example.com  ');
+        $userProfile->save();
+
+        $found = UserProfile::query()->where(['user_id' => 7])->one();
+        $this->assertInstanceOf(UserProfile::class, $found);
+        $this->assertSame(
+            hash('sha256', 'public@example.com'),
+            $found->getGravatarId(),
+        );
+    }
+
 
     public function testNullDefaults(): void
     {
@@ -149,5 +295,19 @@ final class UserProfileTest extends TestCase
         $this->assertInstanceOf(UserProfile::class, $found);
         $this->assertSame('Jane Smith', $found->getName());
         $this->assertSame('Los Angeles', $found->getLocation());
+    }
+
+    private function createUser(string $username, string $email, string $passwordHash, string $authKey): User
+    {
+        $user = new User();
+        $user->setUsername($username);
+        $user->setEmail($email);
+        $user->setPasswordHash($passwordHash);
+        $user->setAuthKey($authKey);
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $user->save();
+
+        return $user;
     }
 }

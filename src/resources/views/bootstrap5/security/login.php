@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
+use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use YiiRocks\Voyti\Form\Auth\LoginForm;
 use YiiRocks\Voyti\Helper\RecaptchaHelper;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;

@@ -104,7 +104,7 @@ final class UserSocialAuthenticateService
         if ($email !== null) {
             $user = $this->userRepository->findByEmail($email);
             if ($user !== null) {
-                $account->setUserId($user->getId() !== null ? (int) $user->getId() : 0);
+                $account->setUserId((int) $user->getId());
             }
         }
 

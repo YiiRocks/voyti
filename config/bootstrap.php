@@ -3,10 +3,10 @@
 declare(strict_types=1);
 
 use Psr\Container\ContainerInterface;
+use YiiRocks\Voyti\Service\RememberMeCookieService;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Db\Connection\ConnectionInterface;
 use Yiisoft\Db\Connection\ConnectionProvider;
-use YiiRocks\Voyti\Service\RememberMeCookieService;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\User\CurrentUser;
 

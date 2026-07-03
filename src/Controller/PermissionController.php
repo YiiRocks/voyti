@@ -41,6 +41,12 @@ final class PermissionController extends AbstractAuthItemController
         return new PermissionForm($this->translator);
     }
 
+    #[\Override]
+    protected function getIndexRouteName(): string
+    {
+        return 'permissions';
+    }
+
     /**
      * @return string
      *
@@ -50,11 +56,5 @@ final class PermissionController extends AbstractAuthItemController
     protected function getItemType(): string
     {
         return 'permission';
-    }
-
-    #[\Override]
-    protected function getIndexRouteName(): string
-    {
-        return 'permissions';
     }
 }

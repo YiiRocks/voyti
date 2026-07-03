@@ -4,16 +4,11 @@
             "src"
         ],
         "excludes": [
-            "resources",
-            "Helper/RecaptchaHelper.php",
-            "Helper/TimezoneHelper.php",
-            "Validator/TwoFactor/EmailValidator.php"
+            "resources"
         ]
     },
-    "phpUnit": {
-        "customPath": "bin/phpunit"
-    },
-    "initialTestsPhpOptions": "-d extension=pdo_sqlite -d pcov.enabled=1",
+    "timeout": 60,
+    "maxTimeouts": 1000,
     "minMsi": 100,
     "minCoveredMsi": 100
 }

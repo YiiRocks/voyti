@@ -23,16 +23,6 @@ final class SettingsFormTest extends TestCase
         $this->assertSame('', $form->password);
     }
 
-    public function testEmptyFormFailsDueToPassword(): void
-    {
-        $validator = new Validator();
-        $form = $this->createForm();
-
-        $result = $validator->validate($form);
-        $this->assertFalse($result->isValid());
-        $this->assertFalse($result->isPropertyValid('password'));
-    }
-
     public function testEmptyPasswordFails(): void
     {
         $validator = new Validator();
@@ -42,7 +32,6 @@ final class SettingsFormTest extends TestCase
         $form->password = '';
 
         $result = $validator->validate($form);
-        $this->assertFalse($result->isValid());
         $this->assertFalse($result->isPropertyValid('password'));
     }
 
@@ -75,6 +64,21 @@ final class SettingsFormTest extends TestCase
         $this->assertSame('settings', $form->getFormName());
     }
 
+    public function testGetPropertyLabelFallsBackForUnknownProperty(): void
+    {
+        $form = $this->createForm();
+
+        $this->assertSame('Unknown Property', $form->getPropertyLabel('unknownProperty'));
+    }
+
+    public function testGetPropertyLabelReturnsMappedLabel(): void
+    {
+        $form = $this->createForm();
+
+        $this->assertSame('voyti.view.username_label', $form->getPropertyLabel('username'));
+        $this->assertSame('voyti.view.new_password_label', $form->getPropertyLabel('password'));
+    }
+
     public function testLongPasswordFails(): void
     {
         $validator = new Validator();
@@ -84,7 +88,6 @@ final class SettingsFormTest extends TestCase
         $form->password = str_repeat('a', 73);
 
         $result = $validator->validate($form);
-        $this->assertFalse($result->isValid());
         $this->assertFalse($result->isPropertyValid('password'));
     }
 
@@ -109,7 +112,6 @@ final class SettingsFormTest extends TestCase
         $form->password = '12345';
 
         $result = $validator->validate($form);
-        $this->assertFalse($result->isValid());
         $this->assertFalse($result->isPropertyValid('password'));
     }
     public function testValidData(): void

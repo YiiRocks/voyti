@@ -94,7 +94,7 @@ final class SecurityController
 
         $user = $this->currentUser->getIdentity();
         if ($user instanceof User) {
-            $response = $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.security.authenticated', category: 'voyti'), 'translator' => $this->translator]);
+            $response = $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.security.authenticated', category: 'voyti')]);
 
             return $this->rememberMeCookieService->addCookie($user, $response);
         }
@@ -142,7 +142,7 @@ final class SecurityController
             }
         }
 
-        return $this->renderView('security/confirm', ['model' => $form, 'config' => $this->config]);
+        return $this->renderView('security/confirm', ['model' => $form]);
     }
 
     public function connect(ServerRequestInterface $request, string $provider): ResponseInterface
@@ -172,7 +172,7 @@ final class SecurityController
             return $this->renderView('shared/message', ['title' => $exception->getMessage(), 'translator' => $this->translator]);
         }
 
-        return $this->renderView('shared/message', ['title' => $result->isSuccess() ? $this->translator->translate('voyti.security.authenticated', category: 'voyti') : $result->getMessage(), 'translator' => $this->translator]);
+        return $this->renderView('shared/message', ['title' => $result->isSuccess() ? $this->translator->translate('voyti.security.authenticated', category: 'voyti') : $result->getMessage()]);
     }
 
     public function login(ServerRequestInterface $request): ResponseInterface
@@ -201,7 +201,7 @@ final class SecurityController
                             'pwd' => $form->password,
                             'rememberMe' => $form->rememberMe,
                         ]);
-                        return $this->renderView('security/confirm', ['model' => $form, 'config' => $this->config]);
+                        return $this->renderView('security/confirm', ['model' => $form]);
                     }
 
                     $userToLogin = $this->currentUser;
@@ -260,6 +260,13 @@ final class SecurityController
         return $boolValue ?? (bool) $value;
     }
 
+    private function redirect(string $url): ResponseInterface
+    {
+        return $this->responseFactory
+            ->createResponse(302)
+            ->withHeader('Location', $url);
+    }
+
     /**
      * @param array<array-key, mixed> $serverParams
      */
@@ -278,12 +285,5 @@ final class SecurityController
         $user->setLastLoginAt(time());
         $user->setLastLoginIp($this->config->disableIpLogging ? '127.0.0.1' : $this->remoteAddr($serverParams));
         $user->save();
-    }
-
-    private function redirect(string $url): ResponseInterface
-    {
-        return $this->responseFactory
-            ->createResponse(302)
-            ->withHeader('Location', $url);
     }
 }

@@ -66,8 +66,6 @@ final class EmailChangeService
             $user->setUnconfirmedEmail(null);
             $user->setFlags(0);
             $user->setUpdatedAt(time());
-            $user->save();
-            return true;
         }
 
         $user->save();

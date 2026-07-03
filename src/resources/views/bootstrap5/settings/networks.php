@@ -3,10 +3,10 @@
 declare(strict_types=1);
 
 use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
+use YiiRocks\Voyti\Entity\UserSocialAccount;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
-use YiiRocks\Voyti\Entity\UserSocialAccount;
 use Yiisoft\View\WebView;
 
 /**

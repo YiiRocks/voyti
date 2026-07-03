@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use YiiRocks\Voyti\Entity\User;
-use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Rbac\Item;
@@ -12,7 +11,6 @@ use Yiisoft\Translator\TranslatorInterface;
 
 /**
  * @var User $user
- * @var ModuleConfig $config
  * @var string[] $assignments Array of assigned item names
  * @var array<array-key, Item> $available Array of unassigned items (name => Item)
  * @var TranslatorInterface $translator

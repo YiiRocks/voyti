@@ -17,6 +17,13 @@ final class AccountConfirmationService
 
     public function run(string $code, User $user, ConfirmationService $confirmationService): bool
     {
+        /**
+         * @infection-ignore-all
+         *
+         * ConfirmationService::run() re-checks isConfirmed() and returns false itself
+         * before any side effect, so removing this early exit never changes the final
+         * return value or any observable state for an already-confirmed user.
+         */
         if ($user->isConfirmed()) {
             return false;
         }

@@ -2,169 +2,169 @@
 
 declare(strict_types=1);
 
-namespace YiiRocks\Voyti\tests\Validator;
+namespace YiiRocks\Voyti\Validator\TwoFactor {
 
-use PHPUnit\Framework\TestCase;
-use YiiRocks\Voyti\Entity\User;
-use YiiRocks\Voyti\Validator\TwoFactor\EmailValidator;
-
-final class EmailValidatorTest extends TestCase
-{
-
-    public function testConstructorWithDefaultCode(): void
+    // Intercepts calls to the global random_int() made from within this namespace
+    // (PHP resolves unqualified function calls against the current namespace first),
+    // so tests can assert on the exact bounds EmailValidator::generateCode() passes.
+    function random_int(int $min, int $max): int
     {
-        $user = new User();
-        $user->setAuthTfKey('some-stored-code');
+        \YiiRocks\Voyti\tests\Validator\EmailValidatorTest::$capturedMin = $min;
+        \YiiRocks\Voyti\tests\Validator\EmailValidatorTest::$capturedMax = $max;
 
-        $validator = new EmailValidator($user);
-        self::assertFalse($validator->validate());
+        return \random_int($min, $max);
     }
+}
 
-    public function testGenerateCodeReturnsRandomValues(): void
+namespace YiiRocks\Voyti\tests\Validator {
+
+    use PHPUnit\Framework\TestCase;
+    use YiiRocks\Voyti\Entity\User;
+    use YiiRocks\Voyti\Validator\TwoFactor\EmailValidator;
+
+    final class EmailValidatorTest extends TestCase
     {
-        $user = new User();
-        $user->setAuthTfKey('654321');
+        public static ?int $capturedMax = null;
+        public static ?int $capturedMin = null;
 
-        $validator = new EmailValidator($user);
-        $code1 = $validator->generateCode();
-        $code2 = $validator->generateCode();
+        protected function setUp(): void
+        {
+            parent::setUp();
+            self::$capturedMax = null;
+            self::$capturedMin = null;
+        }
 
-        self::assertNotSame($code1, $code2);
-    }
+        public function testConstructorWithDefaultCode(): void
+        {
+            $user = new User();
+            $user->setAuthTfKey('some-stored-code');
 
-    public function testGenerateCodeReturnsSixDigitString(): void
-    {
-        $user = new User();
-        $user->setAuthTfKey('654321');
+            $validator = new EmailValidator($user);
+            self::assertFalse($validator->validate());
+        }
 
-        $validator = new EmailValidator($user);
-        $code = $validator->generateCode();
+        public function testGenerateCodeReturnsRandomValues(): void
+        {
+            $user = new User();
+            $user->setAuthTfKey('654321');
 
-        self::assertSame(6, strlen($code));
-        self::assertMatchesRegularExpression('/^\d{6}$/', $code);
-    }
+            $validator = new EmailValidator($user);
+            $code1 = $validator->generateCode();
+            $code2 = $validator->generateCode();
 
-    public function testGetSuccessMessage(): void
-    {
-        $user = new User();
-        $user->setAuthTfKey('654321');
+            self::assertNotSame($code1, $code2);
+        }
 
-        $validator = new EmailValidator($user);
-        self::assertSame(
-            'Email two factor authentication has been enabled.',
-            $validator->getSuccessMessage(),
-        );
-    }
+        public function testGenerateCodeReturnsSixDigitString(): void
+        {
+            $user = new User();
+            $user->setAuthTfKey('654321');
 
-    public function testGetUnsuccessLoginMessage(): void
-    {
-        $user = new User();
-        $user->setAuthTfKey('654321');
+            $validator = new EmailValidator($user);
+            $code = $validator->generateCode();
 
-        $validator = new EmailValidator($user);
-        self::assertSame(
-            'Invalid email verification code. Please try again within 60 seconds.',
-            $validator->getUnsuccessLoginMessage(60),
-        );
-    }
+            self::assertMatchesRegularExpression('/^\d{6}$/', $code);
+        }
 
-    public function testGetUnsuccessMessage(): void
-    {
-        $user = new User();
-        $user->setAuthTfKey('654321');
+        public function testGenerateCodeUsesExactRandomIntBounds(): void
+        {
+            $user = new User();
+            $user->setAuthTfKey('654321');
 
-        $validator = new EmailValidator($user);
-        self::assertSame(
-            'Invalid code. Please try again within 30 seconds.',
-            $validator->getUnsuccessMessage(30),
-        );
-    }
+            $validator = new EmailValidator($user);
+            $validator->generateCode();
 
-    public function testValidateFailsWhenAuthTfKeyIsEmpty(): void
-    {
-        $user = new User();
-        $user->setAuthTfKey('');
+            self::assertSame(100000, self::$capturedMin);
+            self::assertSame(999999, self::$capturedMax);
+        }
 
-        $validator = new EmailValidator($user, '123456');
-        $result = $validator->validate();
-        self::assertFalse($result);
-    }
+        public function testGetSuccessMessage(): void
+        {
+            $user = new User();
+            $user->setAuthTfKey('654321');
 
-    public function testValidateFailsWhenAuthTfKeyIsNull(): void
-    {
-        $user = new User();
-        $user->setAuthTfKey(null);
+            $validator = new EmailValidator($user);
+            self::assertSame(
+                'Email two factor authentication has been enabled.',
+                $validator->getSuccessMessage(),
+            );
+        }
 
-        $validator = new EmailValidator($user, '123456');
-        $result = $validator->validate();
-        self::assertFalse($result);
-    }
+        public function testGetUnsuccessLoginMessage(): void
+        {
+            $user = new User();
+            $user->setAuthTfKey('654321');
 
-    public function testValidateFailsWithNonMatchingCode(): void
-    {
-        $user = new User();
-        $user->setAuthTfKey('654321');
+            $validator = new EmailValidator($user);
+            self::assertSame(
+                'Invalid email verification code. Please try again within 60 seconds.',
+                $validator->getUnsuccessLoginMessage(60),
+            );
+        }
 
-        $validator = new EmailValidator($user, '123456');
-        $result = $validator->validate();
-        self::assertFalse($result);
-    }
+        public function testGetUnsuccessMessage(): void
+        {
+            $user = new User();
+            $user->setAuthTfKey('654321');
 
-    public function testValidateReturnType(): void
-    {
-        $user = new User();
-        $user->setAuthTfKey('654321');
+            $validator = new EmailValidator($user);
+            self::assertSame(
+                'Invalid code. Please try again within 30 seconds.',
+                $validator->getUnsuccessMessage(30),
+            );
+        }
 
-        $validator = new EmailValidator($user, '654321');
-        $result = $validator->validate();
-        self::assertTrue($result);
-    }
+        public function testValidateFailsWhenAuthTfKeyIsEmpty(): void
+        {
+            $user = new User();
+            $user->setAuthTfKey('');
 
-    public function testValidateReturnTypeWithNullKey(): void
-    {
-        $user = new User();
-        $user->setAuthTfKey(null);
+            $validator = new EmailValidator($user, '123456');
+            $result = $validator->validate();
+            self::assertFalse($result);
+        }
 
-        $validator = new EmailValidator($user, '123456');
-        $result = $validator->validate();
-        self::assertFalse($result);
-    }
-    public function testValidateSucceedsWithMatchingCode(): void
-    {
-        $user = new User();
-        $user->setAuthTfKey('654321');
+        public function testValidateFailsWhenAuthTfKeyIsNull(): void
+        {
+            $user = new User();
+            $user->setAuthTfKey(null);
 
-        $validator = new EmailValidator($user, '654321');
-        $result = $validator->validate();
-        self::assertTrue($result);
-    }
+            $validator = new EmailValidator($user, '123456');
+            $result = $validator->validate();
+            self::assertFalse($result);
+        }
 
-    public function testValidateWithEmptyCode(): void
-    {
-        $user = new User();
-        $user->setAuthTfKey('654321');
+        public function testValidateFailsWithNonMatchingCode(): void
+        {
+            $user = new User();
+            $user->setAuthTfKey('654321');
 
-        $validator = new EmailValidator($user);
-        $result = $validator->validate();
-        self::assertFalse($result);
-    }
+            $validator = new EmailValidator($user, '123456');
+            $result = $validator->validate();
+            self::assertFalse($result);
+        }
 
-    public function testValidateWithEmptyCodeWhenStoredCodeIsEmpty(): void
-    {
-        $user = new User();
-        $user->setAuthTfKey('');
+        public function testValidateReturnType(): void
+        {
+            $user = new User();
+            $user->setAuthTfKey('654321');
 
-        $validator = new EmailValidator($user, '');
-        self::assertFalse($validator->validate());
-    }
+            $validator = new EmailValidator($user, '654321');
+            $result = $validator->validate();
+            self::assertTrue($result);
+        }
 
-    public function testValidateWithMatchingCodeAndExplicitBool(): void
-    {
-        $user = new User();
-        $user->setAuthTfKey('999999');
+        public function testValidateWithEmptyCodeWhenStoredCodeIsEmpty(): void
+        {
+            // Both the stored key and the supplied code must be '' here: this is the only
+            // case that catches a mutant removing the early `return false;` for an
+            // unconfigured (empty stored key) validator, since the code falls through to
+            // `$this->code === $storedCode`, which is only true when $this->code is also ''.
+            $user = new User();
+            $user->setAuthTfKey('');
 
-        $validator = new EmailValidator($user, '999999');
-        $result = $validator->validate();
-        self::assertTrue($result === true);
+            $validator = new EmailValidator($user, '');
+            self::assertFalse($validator->validate());
+        }
     }
 }

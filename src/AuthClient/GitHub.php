@@ -55,8 +55,8 @@ final class GitHub extends AbstractAuthClient
                 continue;
             }
 
-            $primary = (bool) ($entry['primary'] ?? false);
-            $verified = (bool) ($entry['verified'] ?? false);
+            $primary = $entry['primary'] ?? false;
+            $verified = $entry['verified'] ?? false;
             if ($primary || $verified) {
                 $attributes['email'] = $candidate;
                 break;

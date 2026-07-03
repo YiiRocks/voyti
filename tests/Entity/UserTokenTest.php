@@ -81,6 +81,50 @@ final class UserTokenTest extends TestCase
         $this->assertNull($found);
     }
 
+    public function testGetIsExpiredAtExactLifespanBoundaryIsNotExpired(): void
+    {
+        $userToken = new UserToken();
+        $userToken->setUserId(10);
+        $userToken->setCode('boundary_exact');
+        $userToken->setType(UserToken::TYPE_CONFIRMATION);
+        $userToken->setCreatedAt(time() - 86400);
+
+        $this->assertFalse($userToken->getIsExpired());
+    }
+
+    public function testGetIsExpiredAtExactRecoveryLifespanBoundaryIsNotExpired(): void
+    {
+        $userToken = new UserToken();
+        $userToken->setUserId(13);
+        $userToken->setCode('recovery_boundary_exact');
+        $userToken->setType(UserToken::TYPE_RECOVERY);
+        $userToken->setCreatedAt(time() - 21600);
+
+        $this->assertFalse($userToken->getIsExpired());
+    }
+
+    public function testGetIsExpiredJustPastRecoveryLifespanIsExpired(): void
+    {
+        $userToken = new UserToken();
+        $userToken->setUserId(11);
+        $userToken->setCode('recovery_past');
+        $userToken->setType(UserToken::TYPE_RECOVERY);
+        $userToken->setCreatedAt(time() - 21601);
+
+        $this->assertTrue($userToken->getIsExpired());
+    }
+
+    public function testGetIsExpiredOneSecondPastLifespanBoundaryIsExpired(): void
+    {
+        $userToken = new UserToken();
+        $userToken->setUserId(12);
+        $userToken->setCode('boundary_past');
+        $userToken->setType(UserToken::TYPE_CONFIRMATION);
+        $userToken->setCreatedAt(time() - 86401);
+
+        $this->assertTrue($userToken->getIsExpired());
+    }
+
     public function testNotFoundWithWrongPk(): void
     {
         $userToken = new UserToken();
@@ -95,6 +139,13 @@ final class UserTokenTest extends TestCase
 
         $notFound2 = UserToken::query()->where(['user_id' => 99, 'code' => 'unique_code', 'type' => UserToken::TYPE_CONFIRMATION])->one();
         $this->assertNull($notFound2);
+    }
+
+    public function testPrimaryKeyDefinition(): void
+    {
+        $userToken = new UserToken();
+
+        $this->assertSame(['user_id', 'code', 'type'], $userToken->primaryKey());
     }
 
     public function testTokenTypes(): void

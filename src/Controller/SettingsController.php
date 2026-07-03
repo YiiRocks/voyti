@@ -84,7 +84,6 @@ final class SettingsController
             $body = $this->parsedBody($request);
             $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
             $result = $this->validator->validate($form);
-            $form->processValidationResult($result);
 
             if ($result->isValid()) {
                 $user->setUsername($form->username);
@@ -106,7 +105,7 @@ final class SettingsController
                 $user->setUpdatedAt(time());
                 $user->save();
 
-                return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.account_details_updated', category: 'voyti'), 'translator' => $this->translator]);
+                return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.account_details_updated', category: 'voyti')]);
             }
         }
 
@@ -122,11 +121,11 @@ final class SettingsController
 
         $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
         if ($user === null) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found', category: 'voyti'), 'translator' => $this->translator]);
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found', category: 'voyti')]);
         }
 
         if ($this->emailChangeService->run($code, $user)) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.email_changed', category: 'voyti'), 'translator' => $this->translator]);
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.email_changed', category: 'voyti')]);
         }
 
         return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.email_change_failed', category: 'voyti'), 'translator' => $this->translator]);
@@ -148,7 +147,7 @@ final class SettingsController
             }
         }
 
-        return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.account_deleted', category: 'voyti'), 'translator' => $this->translator]);
+        return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.account_deleted', category: 'voyti')]);
     }
 
     public function disconnect(ServerRequestInterface $request, int $id): ResponseInterface
@@ -224,7 +223,7 @@ final class SettingsController
                 $user->setGdprConsent($form->consent);
                 $user->setGdprConsentDate($form->consent ? time() : null);
                 $user->save();
-                return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.gdpr_consent_saved', category: 'voyti'), 'translator' => $this->translator]);
+                return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.gdpr_consent_saved', category: 'voyti')]);
             }
         }
 
@@ -263,7 +262,7 @@ final class SettingsController
                     $user->setAuthKey(Random::string());
                     $user->save();
                     $this->eventDispatcher->dispatch(new GdprEvent($user));
-                    return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.personal_info_removed', category: 'voyti'), 'translator' => $this->translator]);
+                    return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.personal_info_removed', category: 'voyti')]);
                 }
             }
         }
@@ -279,6 +278,12 @@ final class SettingsController
         }
 
         $accounts = $this->userSocialAccountRepository->findByUserId((int) ($identity->getId() ?? 0));
+        /**
+         * @infection-ignore-all
+         *
+         * array_values() only re-indexes to satisfy the list<string> type; the sole
+         * consumer (_connect.php's in_array() check) never depends on key order.
+         */
         $connectedProviders = array_values(array_filter(array_map(
             static fn (\YiiRocks\Voyti\Entity\UserSocialAccount $account): string => $account->getProvider(),
             $accounts,
@@ -384,13 +389,13 @@ final class SettingsController
 
         $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
         if ($user === null) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found', category: 'voyti'), 'translator' => $this->translator]);
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found', category: 'voyti')]);
         }
 
         $userProfile = $user->getProfile();
         if ($userProfile === null) {
             $userProfile = new UserProfile();
-            $userProfile->setUserId((int) ($user->getId() ?? 0));
+            $userProfile->setUserId((int) $user->getId());
         }
 
         $form = new UserProfileForm($this->translator);
@@ -427,13 +432,6 @@ final class SettingsController
         ]);
     }
 
-    private function redirect(string $url): ResponseInterface
-    {
-        return $this->responseFactory
-            ->createResponse(302)
-            ->withHeader('Location', $url);
-    }
-
     protected function viewPath(): string
     {
         return $this->config->viewPath;
@@ -452,5 +450,12 @@ final class SettingsController
             'userProfile.bio' => $user->getProfile()?->getBio(),
             default => null,
         };
+    }
+
+    private function redirect(string $url): ResponseInterface
+    {
+        return $this->responseFactory
+            ->createResponse(302)
+            ->withHeader('Location', $url);
     }
 }

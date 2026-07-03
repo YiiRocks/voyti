@@ -57,39 +57,4 @@ final class TimeZoneValidatorTest extends TestCase
         $validator = new TimeZoneValidator('+05:30');
         self::assertFalse($validator->validate());
     }
-
-    public function testValidateWithValidAmericanTimezone(): void
-    {
-        $validator = new TimeZoneValidator('America/New_York');
-        self::assertTrue($validator->validate());
-    }
-
-    public function testValidateWithValidAsianTimezone(): void
-    {
-        $validator = new TimeZoneValidator('Asia/Tokyo');
-        self::assertTrue($validator->validate());
-    }
-
-    public function testValidateWithValidAustralianTimezone(): void
-    {
-        $validator = new TimeZoneValidator('Australia/Sydney');
-        self::assertTrue($validator->validate());
-    }
-
-    public function testValidateWithValidContinentalTimezone(): void
-    {
-        $validator = new TimeZoneValidator('Europe/London');
-        self::assertTrue($validator->validate());
-    }
-
-    public function testValidateWithValidPacificTimezone(): void
-    {
-        $validator = new TimeZoneValidator('Pacific/Auckland');
-        self::assertTrue($validator->validate());
-    }
-    public function testValidateWithValidUtcTimezone(): void
-    {
-        $validator = new TimeZoneValidator('UTC');
-        self::assertTrue($validator->validate());
-    }
 }

@@ -36,7 +36,7 @@ final class RecoveryService
         }
 
         $userToken = new UserToken();
-        $userToken->setUserId($user->getId() !== null ? (int) $user->getId() : 0);
+        $userToken->setUserId((int) $user->getId());
         $userToken->setType(UserToken::TYPE_RECOVERY);
         $userToken->setCreatedAt(time());
         $userToken->setCode(Random::string(32));

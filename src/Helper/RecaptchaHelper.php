@@ -14,6 +14,13 @@ final class RecaptchaHelper
 {
     public static function isAvailable(): bool
     {
+        /**
+         * @infection-ignore-all
+         *
+         * yiirocks/recaptcha is a hard require, so both classes are always present in
+         * this codebase's own test suite; a host app without the package is the only
+         * way either half of this check can ever be false, which no test here can simulate.
+         */
         return class_exists(RecaptchaV3Field::class)
             || class_exists(RecaptchaV2Field::class);
     }

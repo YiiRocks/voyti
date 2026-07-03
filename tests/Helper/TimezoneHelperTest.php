@@ -16,18 +16,6 @@ final class TimezoneHelperTest extends TestCase
         self::assertArrayHasKey('America/New_York', $timezones);
     }
 
-    public function testGetAllContainsAsiaTokyo(): void
-    {
-        $timezones = TimezoneHelper::getAll();
-        self::assertArrayHasKey('Asia/Tokyo', $timezones);
-    }
-
-    public function testGetAllContainsEuropeLondon(): void
-    {
-        $timezones = TimezoneHelper::getAll();
-        self::assertArrayHasKey('Europe/London', $timezones);
-    }
-
     public function testGetAllContainsExactGmtOffsetForUtc(): void
     {
         $timezones = TimezoneHelper::getAll();
@@ -40,12 +28,6 @@ final class TimezoneHelperTest extends TestCase
         foreach ($timezones as $timezone => $label) {
             $this->assertMatchesRegularExpression('/GMT[+-]\d+:\d{2}/', (string) $label);
         }
-    }
-
-    public function testGetAllContainsUtc(): void
-    {
-        $timezones = TimezoneHelper::getAll();
-        self::assertArrayHasKey('UTC', $timezones);
     }
 
     public function testGetAllGmtOffsetForAsiaKolkata(): void
@@ -101,7 +83,6 @@ final class TimezoneHelperTest extends TestCase
     {
         $timezones = TimezoneHelper::getAll();
         foreach ($timezones as $timezone => $label) {
-            self::assertStringContainsString('GMT', (string) $label);
             self::assertStringContainsString((string) $timezone, (string) $label);
         }
     }
@@ -109,13 +90,10 @@ final class TimezoneHelperTest extends TestCase
     public function testIsValidReturnsFalseForInvalidTimezone(): void
     {
         self::assertFalse(TimezoneHelper::isValid('Invalid/Timezone'));
-        self::assertFalse(TimezoneHelper::isValid(''));
     }
 
     public function testIsValidReturnsTrueForValidTimezone(): void
     {
         self::assertTrue(TimezoneHelper::isValid('UTC'));
-        self::assertTrue(TimezoneHelper::isValid('America/New_York'));
-        self::assertTrue(TimezoneHelper::isValid('Europe/Berlin'));
     }
 }

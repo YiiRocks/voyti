@@ -31,7 +31,10 @@ final class UserProfile extends ActiveRecord
 
     public function getGravatarId(): ?string
     {
-        $email = $this->gravatar_email ?? $this->public_email;
+        $email = $this->gravatar_email;
+        if ($email === null || $email === '') {
+            $email = $this->public_email;
+        }
         if ($email === null || $email === '') {
             if ($this->user_id === null || $this->db()->getSchema()->getTableSchema('{{%user}}', true) === null) {
                 return null;

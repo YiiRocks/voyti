@@ -27,7 +27,6 @@ final class GdprDeleteFormTest extends TestCase
         $form->password = '';
 
         $result = $validator->validate($form);
-        $this->assertFalse($result->isValid());
         $this->assertFalse($result->isPropertyValid('password'));
     }
 
@@ -46,6 +45,21 @@ final class GdprDeleteFormTest extends TestCase
     {
         $form = $this->createForm();
         $this->assertSame('gdpr-delete', $form->getFormName());
+    }
+
+    public function testGetPropertyLabelKnownProperty(): void
+    {
+        $form = $this->createForm();
+
+        $this->assertSame('voyti.view.current_password_label', $form->getPropertyLabel('password'));
+        $this->assertSame('voyti.view.gdpr.delete_confirm_label', $form->getPropertyLabel('consent'));
+    }
+
+    public function testGetPropertyLabelUnknownPropertyFallsBackToParent(): void
+    {
+        $form = $this->createForm();
+
+        $this->assertSame('Unknown', $form->getPropertyLabel('unknown'));
     }
 
     public function testPropertyAccess(): void

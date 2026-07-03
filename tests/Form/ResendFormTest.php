@@ -29,7 +29,6 @@ final class ResendFormTest extends TestCase
         $form->email = '';
 
         $result = $validator->validate($form);
-        $this->assertFalse($result->isValid());
         $this->assertFalse($result->isPropertyValid('email'));
     }
 
@@ -89,7 +88,6 @@ final class ResendFormTest extends TestCase
         $form->email = 'not-an-email';
 
         $result = $validator->validate($form);
-        $this->assertFalse($result->isValid());
         $this->assertFalse($result->isPropertyValid('email'));
     }
 

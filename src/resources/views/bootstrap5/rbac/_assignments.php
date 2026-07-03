@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use Yiisoft\Html\Html;
-use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Rbac\Item;
+use Yiisoft\Translator\TranslatorInterface;
 
 /**
  * @var Item[] $assignments

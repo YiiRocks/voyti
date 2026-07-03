@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserProfile;
-use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -12,7 +11,6 @@ use Yiisoft\Translator\TranslatorInterface;
 /**
  * @var User $user
  * @var UserProfile|null $userProfile
- * @var ModuleConfig $config
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
  * @var string $csrf

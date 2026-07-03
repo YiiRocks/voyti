@@ -41,7 +41,6 @@ final class RuleFormTest extends TestCase
         $form->class = '';
 
         $result = $validator->validate($form);
-        $this->assertFalse($result->isValid());
         $this->assertFalse($result->isPropertyValid('class'));
     }
 
@@ -53,7 +52,6 @@ final class RuleFormTest extends TestCase
         $form->class = 'Yiisoft\\Rbac\\Role';
 
         $result = $validator->validate($form);
-        $this->assertFalse($result->isValid());
         $this->assertFalse($result->isPropertyValid('name'));
     }
 

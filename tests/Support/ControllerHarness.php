@@ -10,7 +10,6 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Stringable;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistryFactory;
-use YiiRocks\Voyti\Http\ClientInterface;
 use YiiRocks\Voyti\Controller\AdminController;
 use YiiRocks\Voyti\Controller\RecoveryController;
 use YiiRocks\Voyti\Controller\RegistrationController;
@@ -22,6 +21,7 @@ use YiiRocks\Voyti\Form\Auth\RecoveryForm;
 use YiiRocks\Voyti\Form\Auth\RegistrationForm;
 use YiiRocks\Voyti\Form\Auth\ResendForm;
 use YiiRocks\Voyti\Helper\AuthHelper;
+use YiiRocks\Voyti\Http\ClientInterface;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\UserProfileRepository;
 use YiiRocks\Voyti\Repository\UserRepository;
@@ -33,10 +33,12 @@ use YiiRocks\Voyti\Service\Auth\SocialAuthProviderService;
 use YiiRocks\Voyti\Service\EmailChangeService;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\Password\ExpireService;
+use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
+use YiiRocks\Voyti\Service\Password\RandomPasswordGenerator;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
 use YiiRocks\Voyti\Service\Password\ResetService;
-use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\Service\Rbac\UpdateAssignmentsService;
+use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
 use YiiRocks\Voyti\Service\User\AccountConfirmationService;
@@ -84,7 +86,6 @@ final class ControllerHarness
     public readonly Aliases $aliases;
     public readonly AuthHelper $authHelper;
     public readonly CurrentUser $currentUser;
-    public readonly RememberMeCookieService $rememberMeCookieService;
     public readonly EmailChangeService $emailChangeService;
     public readonly EmailChangeStrategyFactory $emailChangeStrategyFactory;
     public readonly EventCaptureDispatcher $eventDispatcher;
@@ -93,6 +94,7 @@ final class ControllerHarness
     public readonly MailFactory $mailFactory;
     public readonly MailService $mailService;
     public readonly ModuleConfig $moduleConfig;
+    public readonly PasswordGeneratorInterface $passwordGenerator;
     public readonly PasswordHasher $passwordHasher;
     public readonly QrCodeUriGeneratorService $qrCodeUriGeneratorService;
     public readonly HarnessRbacAssignmentsStorage $rbacAssignmentsStorage;
@@ -102,6 +104,7 @@ final class ControllerHarness
     public readonly RecoveryForm $recoveryFormPrototype;
     public readonly RegistrationController $registrationController;
     public readonly RegistrationForm $registrationFormPrototype;
+    public readonly RememberMeCookieService $rememberMeCookieService;
     public readonly ResendConfirmationService $resendConfirmationService;
     public readonly ResendForm $resendFormPrototype;
     public readonly ResetService $resetPasswordService;
@@ -124,8 +127,9 @@ final class ControllerHarness
         string $projectRoot,
         ?ModuleConfig $moduleConfig = null,
         ?ClientInterface $oauthHttpClient = null,
-    )
-    {
+        ?PasswordGeneratorInterface $passwordGenerator = null,
+    ) {
+        $this->passwordGenerator = $passwordGenerator ?? new RandomPasswordGenerator();
         $this->translator = new Translator('en', null, 'voyti');
         $this->translator->addCategorySources(
             new CategorySource(
@@ -203,6 +207,7 @@ final class ControllerHarness
             $this->eventDispatcher,
             $this->passwordHasher,
             $this->moduleConfig,
+            $this->passwordGenerator,
         );
         $this->userConfirmationService = new ConfirmationService($this->eventDispatcher, $this->userTokens);
         $this->accountConfirmationService = new AccountConfirmationService($this->userTokens);
@@ -218,10 +223,16 @@ final class ControllerHarness
         $this->rbacManager = new Manager($this->rbacItemsStorage, $this->rbacAssignmentsStorage);
         $this->authHelper = new AuthHelper($this->rbacManager, $this->rbacItemsStorage, $this->rbacAssignmentsStorage, $this->moduleConfig, new CurrentUser(
             new class implements IdentityRepositoryInterface {
-                public function findIdentity(string $id): ?IdentityInterface { return null; }
+                public function findIdentity(string $id): ?IdentityInterface
+                {
+                    return null;
+                }
             },
             new class implements EventDispatcherInterface {
-                public function dispatch(object $event): object { return $event; }
+                public function dispatch(object $event): object
+                {
+                    return $event;
+                }
             },
         ));
         $itemsValidator = new ItemsValidator($this->rbacItemsStorage);
@@ -345,6 +356,7 @@ final class ControllerHarness
             $this->userSessionHistory,
             $this->authHelper,
             $this->passwordHasher,
+            $this->passwordGenerator,
             $this->validator(),
             $this->eventDispatcher,
             $this->url,
@@ -668,6 +680,19 @@ final class IdentityRepository implements IdentityRepositoryInterface
     public function findIdentity(string $id): ?IdentityInterface
     {
         return $this->users->findById((int) $id);
+    }
+}
+
+final class RecordingPasswordGenerator implements PasswordGeneratorInterface
+{
+    /** @var list<int> */
+    public array $requestedLengths = [];
+
+    public function generate(int $length): string
+    {
+        $this->requestedLengths[] = $length;
+
+        return str_repeat('x', $length);
     }
 }
 

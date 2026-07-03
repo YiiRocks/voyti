@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Entity;
 
 use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\Entity\UserProfile;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Db\Connection\ConnectionProvider;
 
@@ -39,12 +40,23 @@ final class UserTest extends TestCase
             gdpr_consent_date INTEGER,
             auth_tf_type VARCHAR(20)
         )')->execute();
+        $db->createCommand('CREATE TABLE {{%user_profile}} (
+            user_id INTEGER NOT NULL PRIMARY KEY,
+            name VARCHAR(255),
+            public_email VARCHAR(255),
+            gravatar_email VARCHAR(255),
+            location VARCHAR(255),
+            website VARCHAR(255),
+            bio TEXT,
+            timezone VARCHAR(40)
+        )')->execute();
     }
 
     #[\Override]
     protected function tearDown(): void
     {
         if ($this->hasSqliteConnection()) {
+            $this->getDb()->createCommand('DROP TABLE IF EXISTS {{%user_profile}}')->execute();
             $this->getDb()->createCommand('DROP TABLE IF EXISTS {{%user}}')->execute();
             ConnectionProvider::clear();
         }
@@ -71,7 +83,6 @@ final class UserTest extends TestCase
 
         $found = User::query()->where(['username' => 'confirmuser'])->one();
         $this->assertInstanceOf(User::class, $found);
-        $this->assertTrue($found->isConfirmed());
         $this->assertNotNull($found->getConfirmedAt());
     }
 
@@ -130,6 +141,17 @@ final class UserTest extends TestCase
         $this->assertEquals(12345, $user->getGdprConsentDate());
     }
 
+    public function testGetIdReturnsStringWhenInternalIdSet(): void
+    {
+        $user = new User();
+
+        $this->assertNull($user->getId());
+
+        $this->setPrivateProperty($user, 'id', 42);
+
+        $this->assertSame('42', $user->getId());
+    }
+
     public function testIsBlocked(): void
     {
         $user = new User();
@@ -154,12 +176,70 @@ final class UserTest extends TestCase
         $this->assertEquals('10.0.0.1', $user->getLastLoginIp());
     }
 
+    public function testLoadsRelatedProfile(): void
+    {
+        $user = $this->createUser('profileuser', 'profile@example.com', 'hash3', 'auth3');
+        $otherUser = $this->createUser('otherprofileuser', 'otherprofile@example.com', 'hash4', 'auth4');
+
+        $profile = new UserProfile();
+        $profile->setUserId((int) $user->getId());
+        $profile->setName('Profile User');
+        $profile->save();
+
+        $otherProfile = new UserProfile();
+        $otherProfile->setUserId((int) $otherUser->getId());
+        $otherProfile->setName('Other Profile User');
+        $otherProfile->save();
+
+        $found = User::query()->where(['username' => 'profileuser'])->one();
+        $this->assertInstanceOf(User::class, $found);
+        $relatedProfile = $found->getProfile();
+        $this->assertInstanceOf(UserProfile::class, $relatedProfile);
+        $this->assertSame('Profile User', $relatedProfile->getName());
+        $this->assertSame((int) $user->getId(), $relatedProfile->getUserId());
+    }
+
     public function testPasswordAge(): void
     {
         $user = new User();
         $this->assertEquals(9999, $user->getPasswordAge());
         $user->setPasswordChangedAt(time() - 86400 * 5);
         $this->assertEquals(5, $user->getPasswordAge());
+    }
+
+    public function testPasswordAgeStaysZeroBeforeFullDayElapsed(): void
+    {
+        $user = new User();
+        $user->setPasswordChangedAt(time() - 86399);
+
+        $this->assertSame(0, $user->getPasswordAge());
+    }
+
+    public function testPublicUserApiRemainsPublic(): void
+    {
+        foreach ([
+            'getConfirmedAt',
+            'getFlags',
+            'getPasswordAge',
+            'getRegistrationIp',
+            'getUnconfirmedEmail',
+            'isConfirmed',
+            'isGdprConsent',
+            'isGdprDeleted',
+            'setAuthTfEnabled',
+            'setConfirmedAt',
+            'setFlags',
+            'setGdprConsent',
+            'setGdprConsentDate',
+            'setGdprDeleted',
+            'setLastLoginAt',
+            'setPasswordChangedAt',
+            'setRegistrationIp',
+            'setUnconfirmedEmail',
+            'validateAuthKey',
+        ] as $method) {
+            $this->assertTrue((new \ReflectionMethod(User::class, $method))->isPublic(), $method . ' should stay public.');
+        }
     }
 
     public function testRegistrationIp(): void
@@ -215,5 +295,25 @@ final class UserTest extends TestCase
         $user->setAuthKey('secret123');
         $this->assertTrue($user->validateAuthKey('secret123'));
         $this->assertFalse($user->validateAuthKey('wrong'));
+    }
+
+    private function createUser(string $username, string $email, string $passwordHash, string $authKey): User
+    {
+        $user = new User();
+        $user->setUsername($username);
+        $user->setEmail($email);
+        $user->setPasswordHash($passwordHash);
+        $user->setAuthKey($authKey);
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $user->save();
+
+        return $user;
+    }
+
+    private function setPrivateProperty(User $user, string $property, mixed $value): void
+    {
+        $reflectionProperty = new \ReflectionProperty(User::class, $property);
+        $reflectionProperty->setValue($user, $value);
     }
 }

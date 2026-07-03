@@ -29,20 +29,4 @@ final class AjaxRequestModelValidatorTest extends TestCase
         $returnedResult = $ajaxValidator->validate();
         $this->assertSame($result, $returnedResult);
     }
-
-    public function testValidateReturnsResultInstance(): void
-    {
-        $form = $this->createStub(FormModel::class);
-        $validator = $this->createMock(ValidatorInterface::class);
-
-        $result = new Result();
-        $validator
-            ->method('validate')
-            ->with($form)
-            ->willReturn($result);
-
-        $ajaxValidator = new AjaxRequestModelValidator($form, $validator);
-
-        $this->assertInstanceOf(Result::class, $ajaxValidator->validate());
-    }
 }

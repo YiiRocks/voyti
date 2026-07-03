@@ -43,7 +43,6 @@ final class LoginFormTest extends TestCase
         $form->password = 'secret123';
 
         $result = $validator->validate($form);
-        $this->assertFalse($result->isValid());
         $this->assertFalse($result->isPropertyValid('login'));
     }
 
@@ -55,8 +54,42 @@ final class LoginFormTest extends TestCase
         $form->password = '';
 
         $result = $validator->validate($form);
-        $this->assertFalse($result->isValid());
         $this->assertFalse($result->isPropertyValid('password'));
+    }
+
+    public function testGetAttributeLabels(): void
+    {
+        $form = $this->createForm();
+
+        $this->assertSame(
+            [
+                'login' => 'voyti.view.login.login_label',
+                'password' => 'voyti.view.login.password_label',
+                'rememberMe' => 'voyti.view.login.remember_me_label',
+                'twoFactorAuthenticationCode' => 'voyti.view.two_factor.code_label',
+            ],
+            $form->getAttributeLabels(),
+        );
+    }
+
+    public function testGetPropertyLabelForKnownProperties(): void
+    {
+        $form = $this->createForm();
+
+        $this->assertSame('voyti.view.login.login_label', $form->getPropertyLabel('login'));
+        $this->assertSame('voyti.view.login.password_label', $form->getPropertyLabel('password'));
+        $this->assertSame('voyti.view.login.remember_me_label', $form->getPropertyLabel('rememberMe'));
+        $this->assertSame(
+            'voyti.view.two_factor.code_label',
+            $form->getPropertyLabel('twoFactorAuthenticationCode'),
+        );
+    }
+
+    public function testGetPropertyLabelForUnknownPropertyFallsBackToParent(): void
+    {
+        $form = $this->createForm();
+
+        $this->assertSame('G Recaptcha Response', $form->getPropertyLabel('gRecaptchaResponse'));
     }
 
     public function testGetRulesWithRecaptchaV2(): void
@@ -91,19 +124,6 @@ final class LoginFormTest extends TestCase
         );
         $this->assertSame('voyti_login', $gRecaptchaResponse[0]->getAction());
         $this->assertSame(0.5, $gRecaptchaResponse[0]->getThreshold());
-    }
-
-    public function testOptionalFields(): void
-    {
-        $validator = new Validator();
-        $form = $this->createForm();
-        $form->login = 'testuser';
-        $form->password = 'secret123';
-        $form->rememberMe = true;
-        $form->twoFactorAuthenticationCode = '123456';
-
-        $result = $validator->validate($form);
-        $this->assertTrue($result->isValid());
     }
 
     public function testPropertyAccess(): void

@@ -23,21 +23,6 @@ final class Yandex extends AbstractAuthClient
     }
 
     /**
-     * @param array<string, mixed> $tokenData
-     *
-     * @return string[]
-     *
-     * @psalm-return array{format: 'json'}
-     */
-    #[\Override]
-    protected function userInfoQuery(array $tokenData): array
-    {
-        return [
-            'format' => 'json',
-        ];
-    }
-
-    /**
      * @param array<string, mixed> $attributes
      * @param array<string, mixed> $tokenData
      *
@@ -53,6 +38,21 @@ final class Yandex extends AbstractAuthClient
             'email' => $this->firstString($attributes, ['default_email', 'email']),
             'username' => $this->firstString($attributes, ['login', 'display_name']),
             'name' => $this->firstString($attributes, ['real_name', 'display_name']),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $tokenData
+     *
+     * @return string[]
+     *
+     * @psalm-return array{format: 'json'}
+     */
+    #[\Override]
+    protected function userInfoQuery(array $tokenData): array
+    {
+        return [
+            'format' => 'json',
         ];
     }
 }

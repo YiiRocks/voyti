@@ -20,6 +20,11 @@ final class PendingSocialAccountService
     ) {
     }
 
+    public function clear(): void
+    {
+        $this->session->remove(self::SESSION_KEY);
+    }
+
     public function connect(User $user): ServiceResult
     {
         $account = $this->getPendingAccount();
@@ -27,20 +32,10 @@ final class PendingSocialAccountService
             return ServiceResult::success();
         }
 
-        $userId = $user->getId();
-        if ($account->isConnected() && $account->getUserId() !== (int) $userId) {
-            return ServiceResult::failure('This account has already been connected to another user');
-        }
-
         $account->connect($user);
         $this->clear();
 
         return ServiceResult::success();
-    }
-
-    public function clear(): void
-    {
-        $this->session->remove(self::SESSION_KEY);
     }
 
     public function getPendingAccount(): ?UserSocialAccount

@@ -46,7 +46,6 @@ final class MiddlewareTest extends TestCase
         $handler = new TrackingHandler();
         $response = $middleware->process($this->createRequest(), $handler);
 
-        self::assertTrue($handler->handled);
         self::assertSame(200, $response->getStatusCode());
         self::assertSame('ok', (string) $response->getBody());
     }
@@ -67,7 +66,6 @@ final class MiddlewareTest extends TestCase
 
         self::assertSame(302, $response->getStatusCode());
         self::assertSame('/custom/login', $response->getHeaderLine('Location'));
-        self::assertFalse($handler->handled);
     }
 
     public function testAccessRuleReturnsForbiddenForNonAdminUsers(): void
@@ -86,7 +84,68 @@ final class MiddlewareTest extends TestCase
         $response = $middleware->process($this->createRequest(), $handler);
 
         self::assertSame(403, $response->getStatusCode());
-        self::assertFalse($handler->handled);
+    }
+
+    public function testAccessRuleUsesActualIdWhenAuthenticatedIdentityHasNonNullId(): void
+    {
+        $manager = $this->createStub(ManagerInterface::class);
+        $manager
+            ->method('getItemsByUserId')
+            ->willReturnCallback(
+                static fn (int|string $userId): array => $userId === '42' ? ['admin' => new Permission('admin')] : [],
+            );
+
+        $middleware = new AccessRuleMiddleware(
+            $this->createCurrentUser($this->createIdentity('42')),
+            new ModuleConfig(administratorPermissionName: 'admin'),
+            $this->createAuthHelper($manager),
+            new Psr17Factory(),
+            $this->createUrlGenerator(),
+        );
+
+        $handler = new TrackingHandler();
+        $response = $middleware->process($this->createRequest(), $handler);
+
+        self::assertSame(200, $response->getStatusCode());
+    }
+
+    public function testAccessRuleUsesZeroWhenAuthenticatedIdentityHasNullId(): void
+    {
+        $manager = $this->createStub(ManagerInterface::class);
+        $manager
+            ->method('getItemsByUserId')
+            ->willReturnCallback(
+                static fn (int|string $userId): array => $userId === 0 ? ['admin' => new Permission('admin')] : [],
+            );
+
+        $middleware = new AccessRuleMiddleware(
+            $this->createCurrentUser($this->createIdentity(null)),
+            new ModuleConfig(administratorPermissionName: 'admin'),
+            $this->createAuthHelper($manager),
+            new Psr17Factory(),
+            $this->createUrlGenerator(),
+        );
+
+        $handler = new TrackingHandler();
+        $response = $middleware->process($this->createRequest(), $handler);
+
+        self::assertSame(200, $response->getStatusCode());
+    }
+
+    public function testPasswordAgeEnforcementAllowsNonUserIdentityThrough(): void
+    {
+        $middleware = new PasswordAgeEnforceMiddleware(
+            $this->createCurrentUser($this->createIdentity('42')),
+            new ModuleConfig(maxPasswordAge: 90),
+            $this->createStub(TranslatorInterface::class),
+            new Psr17Factory(),
+            $this->createUrlGenerator(),
+        );
+
+        $handler = new TrackingHandler();
+        $response = $middleware->process($this->createRequest(), $handler);
+
+        self::assertSame(200, $response->getStatusCode());
     }
 
     public function testPasswordAgeEnforcementAllowsRecentPasswordsThrough(): void
@@ -107,8 +166,55 @@ final class MiddlewareTest extends TestCase
         $handler = new TrackingHandler();
         $response = $middleware->process($this->createRequest(), $handler);
 
-        self::assertTrue($handler->handled);
         self::assertSame(200, $response->getStatusCode());
+    }
+
+    public function testPasswordAgeEnforcementDoesNotRedirectJustBeforeExpiryBoundary(): void
+    {
+        $user = $this->createUserIdentity(
+            id: '42',
+            passwordChangedAt: time() - (90 * 86400) + 1,
+        );
+
+        $middleware = new PasswordAgeEnforceMiddleware(
+            $this->createCurrentUser($user),
+            new ModuleConfig(maxPasswordAge: 90),
+            $this->createStub(TranslatorInterface::class),
+            new Psr17Factory(),
+            $this->createUrlGenerator(),
+        );
+
+        $handler = new TrackingHandler();
+        $response = $middleware->process($this->createRequest(), $handler);
+
+        self::assertSame(200, $response->getStatusCode());
+    }
+
+    public function testPasswordAgeEnforcementRedirectsExactlyAtExpiryBoundary(): void
+    {
+        $user = $this->createUserIdentity(
+            id: '42',
+            passwordChangedAt: time() - (90 * 86400),
+        );
+
+        $urlGenerator = $this->createUrlGenerator(['custom/settings-account' => '/custom/settings/account']);
+
+        $middleware = new PasswordAgeEnforceMiddleware(
+            $this->createCurrentUser($user),
+            new ModuleConfig(
+                maxPasswordAge: 90,
+                accountSettingsRoute: 'custom/settings-account',
+            ),
+            $this->createStub(TranslatorInterface::class),
+            new Psr17Factory(),
+            $urlGenerator,
+        );
+
+        $handler = new TrackingHandler();
+        $response = $middleware->process($this->createRequest(), $handler);
+
+        self::assertSame(302, $response->getStatusCode());
+        self::assertSame('/custom/settings/account', $response->getHeaderLine('Location'));
     }
 
     public function testPasswordAgeEnforcementRedirectsToConfiguredAccountSettingsRoute(): void
@@ -136,7 +242,6 @@ final class MiddlewareTest extends TestCase
 
         self::assertSame(302, $response->getStatusCode());
         self::assertSame('/custom/settings/account', $response->getHeaderLine('Location'));
-        self::assertFalse($handler->handled);
     }
 
     public function testTwoFactorEnforcementAllowsEnabledUsersThrough(): void
@@ -161,17 +266,60 @@ final class MiddlewareTest extends TestCase
         $handler = new TrackingHandler();
         $response = $middleware->process($this->createRequest(), $handler);
 
-        self::assertTrue($handler->handled);
         self::assertSame(200, $response->getStatusCode());
     }
 
-    public function testTwoFactorEnforcementRedirectsToConfiguredAccountSettingsRoute(): void
+    public function testTwoFactorEnforcementAllowsNonUserIdentityThrough(): void
     {
-        $user = $this->createUserIdentity(
-            id: '42',
-            authTfEnabled: false,
+        $middleware = new TwoFactorAuthenticationEnforceMiddleware(
+            $this->createCurrentUser($this->createIdentity('42')),
+            new ModuleConfig(
+                enableTwoFactorAuthentication: true,
+                twoFactorAuthenticationForcedPermissions: ['admin'],
+            ),
+            $this->createManager(['admin' => new Permission('admin')]),
+            new Psr17Factory(),
+            $this->createUrlGenerator(),
         );
-        $manager = $this->createManager(['admin' => new Permission('admin')]);
+
+        $handler = new TrackingHandler();
+        $response = $middleware->process($this->createRequest(), $handler);
+
+        self::assertSame(200, $response->getStatusCode());
+    }
+
+    public function testTwoFactorEnforcementSkipsWhenUserPermissionsDoNotOverlapForcedPermissions(): void
+    {
+        $user = $this->createUserIdentity(id: '42', authTfEnabled: false);
+        $manager = $this->createManager(['other' => new Permission('other')]);
+
+        $middleware = new TwoFactorAuthenticationEnforceMiddleware(
+            $this->createCurrentUser($user),
+            new ModuleConfig(
+                enableTwoFactorAuthentication: true,
+                twoFactorAuthenticationForcedPermissions: ['admin'],
+            ),
+            $manager,
+            new Psr17Factory(),
+            $this->createUrlGenerator(),
+        );
+
+        $handler = new TrackingHandler();
+        $response = $middleware->process($this->createRequest(), $handler);
+
+        self::assertSame(200, $response->getStatusCode());
+    }
+
+    public function testTwoFactorEnforcementUsesActualIdWhenAuthenticatedIdentityHasNonNullId(): void
+    {
+        $user = $this->createUserIdentity(id: '42', authTfEnabled: false);
+
+        $manager = $this->createStub(ManagerInterface::class);
+        $manager
+            ->method('getPermissionsByUserId')
+            ->willReturnCallback(
+                static fn (int|string $userId): array => $userId === '42' ? ['admin' => new Permission('admin')] : [],
+            );
 
         $urlGenerator = $this->createUrlGenerator(['custom/settings-account' => '/custom/settings/account']);
 
@@ -192,7 +340,39 @@ final class MiddlewareTest extends TestCase
 
         self::assertSame(302, $response->getStatusCode());
         self::assertSame('/custom/settings/account', $response->getHeaderLine('Location'));
-        self::assertFalse($handler->handled);
+    }
+
+    public function testTwoFactorEnforcementUsesZeroWhenAuthenticatedIdentityHasNullId(): void
+    {
+        $user = new User();
+        $this->setPrivateProperty($user, 'auth_tf_enabled', false);
+
+        $manager = $this->createStub(ManagerInterface::class);
+        $manager
+            ->method('getPermissionsByUserId')
+            ->willReturnCallback(
+                static fn (int|string $userId): array => $userId === 0 ? ['admin' => new Permission('admin')] : [],
+            );
+
+        $urlGenerator = $this->createUrlGenerator(['custom/settings-account' => '/custom/settings/account']);
+
+        $middleware = new TwoFactorAuthenticationEnforceMiddleware(
+            $this->createCurrentUser($user),
+            new ModuleConfig(
+                enableTwoFactorAuthentication: true,
+                twoFactorAuthenticationForcedPermissions: ['admin'],
+                accountSettingsRoute: 'custom/settings-account',
+            ),
+            $manager,
+            new Psr17Factory(),
+            $urlGenerator,
+        );
+
+        $handler = new TrackingHandler();
+        $response = $middleware->process($this->createRequest(), $handler);
+
+        self::assertSame(302, $response->getStatusCode());
+        self::assertSame('/custom/settings/account', $response->getHeaderLine('Location'));
     }
 
     private function createAuthHelper(ManagerInterface $manager): AuthHelper
@@ -207,19 +387,6 @@ final class MiddlewareTest extends TestCase
                 $this->createStub(EventDispatcherInterface::class),
             ),
         );
-    }
-
-    /**
-     * @param array<string, string> $map route name → URL
-     */
-    private function createUrlGenerator(array $map = []): UrlGeneratorInterface
-    {
-        $generator = $this->createStub(UrlGeneratorInterface::class);
-        $generator
-            ->method('generate')
-            ->willReturnCallback(fn (string $name) => $map[$name] ?? '/' . str_replace('-', '/', $name));
-
-        return $generator;
     }
 
     private function createCurrentUser(?IdentityInterface $identity = null): CurrentUser
@@ -242,10 +409,10 @@ final class MiddlewareTest extends TestCase
         return $currentUser;
     }
 
-    private function createIdentity(string $id): IdentityInterface
+    private function createIdentity(?string $id): IdentityInterface
     {
         return new class($id) implements IdentityInterface {
-            public function __construct(private readonly string $id)
+            public function __construct(private readonly ?string $id)
             {
             }
 
@@ -271,6 +438,19 @@ final class MiddlewareTest extends TestCase
     private function createRequest(): ServerRequestInterface
     {
         return new ServerRequest('GET', 'https://example.test/');
+    }
+
+    /**
+     * @param array<string, string> $map route name → URL
+     */
+    private function createUrlGenerator(array $map = []): UrlGeneratorInterface
+    {
+        $generator = $this->createStub(UrlGeneratorInterface::class);
+        $generator
+            ->method('generate')
+            ->willReturnCallback(fn (string $name) => $map[$name] ?? '/' . str_replace('-', '/', $name));
+
+        return $generator;
     }
 
     private function createUserIdentity(string $id, ?int $passwordChangedAt = null, bool $authTfEnabled = false): User

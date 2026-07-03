@@ -13,6 +13,7 @@ use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\MailService;
+use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\ServiceResult;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Security\Random;
@@ -25,6 +26,7 @@ final class RegisterService
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly PasswordHasher $passwordHasher,
         private readonly ModuleConfig $config,
+        private readonly PasswordGeneratorInterface $passwordGenerator,
     ) {
     }
 
@@ -34,7 +36,7 @@ final class RegisterService
         $email = isset($data['email']) && is_string($data['email']) ? $data['email'] : '';
         $password = isset($data['password']) && is_string($data['password']) && $data['password'] !== ''
             ? $data['password']
-            : Random::string(12);
+            : $this->passwordGenerator->generate(12);
         $gdprConsent = (bool) ($data['gdprConsent'] ?? false);
 
         $user = new User();
@@ -46,7 +48,7 @@ final class RegisterService
             $this->config->disableIpLogging ? '127.0.0.1' : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1')
         );
         $user->setGdprConsent($this->config->enableGdprCompliance ? $gdprConsent : false);
-        if ($gdprConsent) {
+        if ($this->config->enableGdprCompliance && $gdprConsent) {
             $user->setGdprConsentDate(time());
         }
         $user->setCreatedAt(time());
@@ -58,7 +60,6 @@ final class RegisterService
 
         if ($this->config->enableEmailConfirmation) {
             $userToken = new UserToken();
-            $userToken->setType(UserToken::TYPE_CONFIRMATION);
             $userToken->setCreatedAt(time());
             $userToken->setCode(Random::string(32));
 

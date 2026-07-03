@@ -23,6 +23,31 @@ final class VKontakte extends AbstractAuthClient
     }
 
     /**
+     * @param array<string, mixed> $attributes
+     * @param array<string, mixed> $tokenData
+     *
+     * @return (null|string)[]
+     *
+     * @psalm-return array{id: string, email: null|string, username: null|string, name: null|string}
+     */
+    #[\Override]
+    protected function normalizeUserAttributes(array $attributes, array $tokenData): array
+    {
+        $response = $attributes['response'] ?? [];
+        /** @var array $account */
+        $account = is_array($response) && isset($response[0]) && is_array($response[0]) ? $response[0] : [];
+        $firstName = $this->firstString($account, ['first_name']);
+        $lastName = $this->firstString($account, ['last_name']);
+
+        return [
+            'id' => $this->firstString($account, ['id']) ?? $this->firstString($tokenData, ['user_id']) ?? '',
+            'email' => $this->firstString($tokenData, ['email']),
+            'username' => $this->firstString($account, ['screen_name']),
+            'name' => trim(implode(' ', array_filter([$firstName, $lastName]))) ?: null,
+        ];
+    }
+
+    /**
      * @param array<string, mixed> $tokenData
      *
      * @return string[]
@@ -52,31 +77,6 @@ final class VKontakte extends AbstractAuthClient
             'access_token' => (string) ($tokenData['access_token'] ?? ''),
             'fields' => 'screen_name',
             'v' => '5.199',
-        ];
-    }
-
-    /**
-     * @param array<string, mixed> $attributes
-     * @param array<string, mixed> $tokenData
-     *
-     * @return (null|string)[]
-     *
-     * @psalm-return array{id: string, email: null|string, username: null|string, name: null|string}
-     */
-    #[\Override]
-    protected function normalizeUserAttributes(array $attributes, array $tokenData): array
-    {
-        $response = $attributes['response'] ?? [];
-        /** @var array $account */
-        $account = is_array($response) && isset($response[0]) && is_array($response[0]) ? $response[0] : [];
-        $firstName = $this->firstString($account, ['first_name']);
-        $lastName = $this->firstString($account, ['last_name']);
-
-        return [
-            'id' => $this->firstString($account, ['id']) ?? $this->firstString($tokenData, ['user_id']) ?? '',
-            'email' => $this->firstString($tokenData, ['email']),
-            'username' => $this->firstString($account, ['screen_name']),
-            'name' => trim(implode(' ', array_filter([$firstName, $lastName]))) ?: null,
         ];
     }
 }
