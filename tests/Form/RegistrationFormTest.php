@@ -10,6 +10,8 @@ use YiiRocks\Voyti\Form\Auth\RegistrationForm;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Translator\CategorySource;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\Validator\Rule\CompareType;
+use Yiisoft\Validator\Rule\Equal;
 use Yiisoft\Validator\Validator;
 
 final class RegistrationFormTest extends TestCase
@@ -22,6 +24,7 @@ final class RegistrationFormTest extends TestCase
         $this->assertSame('', $form->username);
         $this->assertSame('', $form->email);
         $this->assertSame('', $form->password);
+        $this->assertSame('', $form->passwordRepeat);
         $this->assertFalse($form->gdprConsent);
     }
 
@@ -45,10 +48,12 @@ final class RegistrationFormTest extends TestCase
         $this->assertArrayHasKey('username', $labels);
         $this->assertArrayHasKey('email', $labels);
         $this->assertArrayHasKey('password', $labels);
+        $this->assertArrayHasKey('passwordRepeat', $labels);
         $this->assertArrayHasKey('gdprConsent', $labels);
         $this->assertSame('voyti.view.username_label', $labels['username']);
         $this->assertSame('voyti.view.email_label', $labels['email']);
         $this->assertSame('voyti.view.password_label', $labels['password']);
+        $this->assertSame('voyti.view.password_repeat_label', $labels['passwordRepeat']);
         $this->assertSame('voyti.view.registration.gdpr_consent_label', $labels['gdprConsent']);
     }
 
@@ -71,6 +76,20 @@ final class RegistrationFormTest extends TestCase
         $form = $this->createForm();
 
         $this->assertSame('G Recaptcha Response', $form->getPropertyLabel('gRecaptchaResponse'));
+    }
+
+    public function testGetRulesIncludesStrictStringPasswordRepeatComparison(): void
+    {
+        $form = $this->createForm();
+        $rules = $form->getRules();
+        /** @var array<string, list<object>> $rules */
+        $this->assertArrayHasKey('passwordRepeat', $rules);
+        $passwordRepeatRules = $rules['passwordRepeat'];
+        $this->assertCount(1, $passwordRepeatRules);
+        $this->assertInstanceOf(Equal::class, $passwordRepeatRules[0]);
+        $this->assertSame('password', $passwordRepeatRules[0]->getTargetProperty());
+        $this->assertSame('===', $passwordRepeatRules[0]->getOperator());
+        $this->assertSame(CompareType::STRING, $passwordRepeatRules[0]->getType());
     }
 
     public function testGetRulesWithRecaptchaV2(): void
@@ -178,6 +197,19 @@ final class RegistrationFormTest extends TestCase
         $this->assertFalse($result->isPropertyValid('username'));
     }
 
+    public function testPasswordRepeatMismatchFails(): void
+    {
+        $validator = new Validator();
+        $form = $this->createForm();
+        $form->username = 'testuser';
+        $form->email = 'test@example.com';
+        $form->password = 'secret123';
+        $form->passwordRepeat = 'different123';
+
+        $result = $validator->validate($form);
+        $this->assertFalse($result->isPropertyValid('passwordRepeat'));
+    }
+
     public function testPropertyAccess(): void
     {
         $form = $this->createForm();
@@ -223,6 +255,7 @@ final class RegistrationFormTest extends TestCase
         $form->username = 'testuser';
         $form->email = 'test@example.com';
         $form->password = 'secret123';
+        $form->passwordRepeat = 'secret123';
 
         $result = $validator->validate($form);
         $this->assertTrue($result->isValid());

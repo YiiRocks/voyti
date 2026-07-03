@@ -10,7 +10,9 @@ use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\Helper\ObjectParser;
+use Yiisoft\Validator\Rule\CompareType;
 use Yiisoft\Validator\Rule\Email;
+use Yiisoft\Validator\Rule\Equal;
 use Yiisoft\Validator\Rule\Length;
 use Yiisoft\Validator\Rule\Regex;
 use Yiisoft\Validator\Rule\Required;
@@ -29,6 +31,8 @@ final class RegistrationForm extends FormModel implements RulesProviderInterface
 
     #[Length(min: 6, max: 72)]
     public string $password = '';
+    #[Equal(targetProperty: 'password', strict: true, type: CompareType::STRING)]
+    public string $passwordRepeat = '';
     #[Required]
     #[Length(min: 3, max: 255)]
     #[Regex(pattern: '/^[-a-zA-Z0-9_\.@]+$/')]
@@ -43,7 +47,7 @@ final class RegistrationForm extends FormModel implements RulesProviderInterface
     /**
      * @return string[]
      *
-     * @psalm-return array{username: string, email: string, password: string, gdprConsent: string}
+     * @psalm-return array{username: string, email: string, password: string, passwordRepeat: string, gdprConsent: string}
      */
     public function getAttributeLabels(): array
     {
@@ -51,6 +55,7 @@ final class RegistrationForm extends FormModel implements RulesProviderInterface
             'username' => $this->translator->translate('voyti.view.username_label', category: 'voyti'),
             'email' => $this->translator->translate('voyti.view.email_label', category: 'voyti'),
             'password' => $this->translator->translate('voyti.view.password_label', category: 'voyti'),
+            'passwordRepeat' => $this->translator->translate('voyti.view.password_repeat_label', category: 'voyti'),
             'gdprConsent' => $this->translator->translate(
                 'voyti.view.registration.gdpr_consent_label',
                 category: 'voyti',

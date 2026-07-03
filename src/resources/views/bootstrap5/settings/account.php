@@ -42,6 +42,8 @@ echo Field::email($model, 'email');
 
 echo Field::password($model, 'password');
 
+echo Field::password($model, 'passwordRepeat');
+
 echo Field::buttonGroup()
     ->buttons(
         Html::submitButton($translator->translate('voyti.view.save_button', category: 'voyti'))

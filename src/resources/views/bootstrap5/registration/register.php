@@ -39,6 +39,8 @@ echo Field::email($model, 'email');
 
 echo Field::password($model, 'password');
 
+echo Field::password($model, 'passwordRepeat');
+
 if ($config->enableGdprCompliance) {
     echo Field::checkbox($model, 'gdprConsent');
 }

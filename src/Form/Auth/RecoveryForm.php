@@ -9,7 +9,9 @@ use YiiRocks\Recaptcha\RecaptchaV3Rule;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\Validator\Rule\CompareType;
 use Yiisoft\Validator\Rule\Email;
+use Yiisoft\Validator\Rule\Equal;
 use Yiisoft\Validator\Rule\Length;
 use Yiisoft\Validator\Rule\Required;
 use Yiisoft\Validator\RulesProviderInterface;
@@ -25,6 +27,8 @@ final class RecoveryForm extends FormModel implements RulesProviderInterface
 
     public string $password = '';
 
+    public string $passwordRepeat = '';
+
     public function __construct(
         private readonly ModuleConfig $config,
         private readonly TranslatorInterface $translator,
@@ -35,13 +39,14 @@ final class RecoveryForm extends FormModel implements RulesProviderInterface
     /**
      * @return string[]
      *
-     * @psalm-return array{email: string, password: string}
+     * @psalm-return array{email: string, password: string, passwordRepeat: string}
      */
     public function getAttributeLabels(): array
     {
         return [
             'email' => $this->translator->translate('voyti.view.email_label', category: 'voyti'),
             'password' => $this->translator->translate('voyti.view.new_password_label', category: 'voyti'),
+            'passwordRepeat' => $this->translator->translate('voyti.view.new_password_repeat_label', category: 'voyti'),
         ];
     }
 
@@ -83,6 +88,10 @@ final class RecoveryForm extends FormModel implements RulesProviderInterface
             $rules['password'] = [
                 new Required(),
                 new Length(min: 6, max: 72),
+            ];
+            $rules['passwordRepeat'] = [
+                new Required(),
+                new Equal(targetProperty: 'password', strict: true, type: CompareType::STRING),
             ];
         }
 

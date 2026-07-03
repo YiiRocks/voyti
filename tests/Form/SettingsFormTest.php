@@ -9,6 +9,9 @@ use Stringable;
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
 use Yiisoft\Translator\CategorySource;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\Validator\Helper\ObjectParser;
+use Yiisoft\Validator\Rule\CompareType;
+use Yiisoft\Validator\Rule\Equal;
 use Yiisoft\Validator\Validator;
 
 final class SettingsFormTest extends TestCase
@@ -21,6 +24,7 @@ final class SettingsFormTest extends TestCase
         $this->assertSame('', $form->username);
         $this->assertSame('', $form->email);
         $this->assertSame('', $form->password);
+        $this->assertSame('', $form->passwordRepeat);
     }
 
     public function testEmptyPasswordFails(): void
@@ -43,6 +47,7 @@ final class SettingsFormTest extends TestCase
         $this->assertArrayHasKey('username', $labels);
         $this->assertArrayHasKey('email', $labels);
         $this->assertArrayHasKey('password', $labels);
+        $this->assertArrayHasKey('passwordRepeat', $labels);
         $this->assertArrayHasKey('publicEmail', $labels);
         $this->assertArrayHasKey('name', $labels);
         $this->assertArrayHasKey('bio', $labels);
@@ -51,6 +56,7 @@ final class SettingsFormTest extends TestCase
         $this->assertSame('voyti.view.username_label', $labels['username']);
         $this->assertSame('voyti.view.email_label', $labels['email']);
         $this->assertSame('voyti.view.new_password_label', $labels['password']);
+        $this->assertSame('voyti.view.new_password_repeat_label', $labels['passwordRepeat']);
         $this->assertSame('voyti.view.public_email_label', $labels['publicEmail']);
         $this->assertSame('voyti.view.name_label', $labels['name']);
         $this->assertSame('voyti.view.bio_label', $labels['bio']);
@@ -91,6 +97,33 @@ final class SettingsFormTest extends TestCase
         $this->assertFalse($result->isPropertyValid('password'));
     }
 
+    public function testPasswordRepeatMismatchFails(): void
+    {
+        $validator = new Validator();
+        $form = $this->createForm();
+        $form->username = 'newuser';
+        $form->email = 'new@example.com';
+        $form->password = 'newsecret';
+        $form->passwordRepeat = 'different';
+
+        $result = $validator->validate($form);
+        $this->assertFalse($result->isPropertyValid('passwordRepeat'));
+    }
+
+    public function testPasswordRepeatRuleIsStrictStringComparisonAgainstPassword(): void
+    {
+        $form = $this->createForm();
+        $rules = (new ObjectParser($form))->getRules();
+        /** @var array<string, list<object>> $rules */
+        $this->assertArrayHasKey('passwordRepeat', $rules);
+        $passwordRepeatRules = $rules['passwordRepeat'];
+        $this->assertCount(1, $passwordRepeatRules);
+        $this->assertInstanceOf(Equal::class, $passwordRepeatRules[0]);
+        $this->assertSame('password', $passwordRepeatRules[0]->getTargetProperty());
+        $this->assertSame('===', $passwordRepeatRules[0]->getOperator());
+        $this->assertSame(CompareType::STRING, $passwordRepeatRules[0]->getType());
+    }
+
     public function testPropertyAccess(): void
     {
         $form = $this->createForm();
@@ -121,6 +154,7 @@ final class SettingsFormTest extends TestCase
         $form->username = 'newuser';
         $form->email = 'new@example.com';
         $form->password = 'newsecret';
+        $form->passwordRepeat = 'newsecret';
 
         $result = $validator->validate($form);
         $this->assertTrue($result->isValid());
@@ -131,6 +165,7 @@ final class SettingsFormTest extends TestCase
         $validator = new Validator();
         $form = $this->createForm();
         $form->password = 'newsecret';
+        $form->passwordRepeat = 'newsecret';
 
         $result = $validator->validate($form);
         $this->assertTrue($result->isValid());

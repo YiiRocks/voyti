@@ -10,7 +10,9 @@ use YiiRocks\Voyti\Form\Auth\RecoveryForm;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Translator\CategorySource;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\Validator\Rule\CompareType;
 use Yiisoft\Validator\Rule\Email;
+use Yiisoft\Validator\Rule\Equal;
 use Yiisoft\Validator\Rule\Length;
 use Yiisoft\Validator\Rule\Required;
 use Yiisoft\Validator\Validator;
@@ -24,6 +26,7 @@ final class RecoveryFormTest extends TestCase
 
         $this->assertSame('', $form->email);
         $this->assertSame('', $form->password);
+        $this->assertSame('', $form->passwordRepeat);
         $this->assertSame('', $form->gRecaptchaResponse);
         $this->assertSame(RecoveryForm::SCENARIO_REQUEST, $form->scenario);
     }
@@ -55,8 +58,10 @@ final class RecoveryFormTest extends TestCase
 
         $this->assertArrayHasKey('email', $labels);
         $this->assertArrayHasKey('password', $labels);
+        $this->assertArrayHasKey('passwordRepeat', $labels);
         $this->assertSame('voyti.view.email_label', $labels['email']);
         $this->assertSame('voyti.view.new_password_label', $labels['password']);
+        $this->assertSame('voyti.view.new_password_repeat_label', $labels['passwordRepeat']);
     }
 
     public function testGetFormName(): void
@@ -138,6 +143,7 @@ final class RecoveryFormTest extends TestCase
         $rules = $form->getRules();
         /** @var array<string, mixed> $rules */
         $this->assertArrayHasKey('password', $rules);
+        $this->assertArrayHasKey('passwordRepeat', $rules);
         $this->assertArrayNotHasKey('email', $rules);
         $this->assertArrayNotHasKey('gRecaptchaResponse', $rules);
         /** @var list<object> $passwordRules */
@@ -147,6 +153,14 @@ final class RecoveryFormTest extends TestCase
         $this->assertInstanceOf(Length::class, $passwordRules[1]);
         $this->assertSame(6, $passwordRules[1]->getMin());
         $this->assertSame(72, $passwordRules[1]->getMax());
+        /** @var list<object> $passwordRepeatRules */
+        $passwordRepeatRules = $rules['passwordRepeat'];
+        $this->assertCount(2, $passwordRepeatRules);
+        $this->assertInstanceOf(Required::class, $passwordRepeatRules[0]);
+        $this->assertInstanceOf(Equal::class, $passwordRepeatRules[1]);
+        $this->assertSame('password', $passwordRepeatRules[1]->getTargetProperty());
+        $this->assertSame('===', $passwordRepeatRules[1]->getOperator());
+        $this->assertSame(CompareType::STRING, $passwordRepeatRules[1]->getType());
     }
 
     public function testInvalidEmail(): void
@@ -170,6 +184,17 @@ final class RecoveryFormTest extends TestCase
         $this->assertFalse($result->isPropertyValid('password'));
     }
 
+    public function testPasswordRepeatMismatchFails(): void
+    {
+        $validator = new Validator();
+        $form = $this->createForm(scenario: RecoveryForm::SCENARIO_RESET);
+        $form->password = 'newsecret';
+        $form->passwordRepeat = 'different';
+
+        $result = $validator->validate($form);
+        $this->assertFalse($result->isPropertyValid('passwordRepeat'));
+    }
+
     public function testPropertyAccess(): void
     {
         $form = $this->createForm();
@@ -188,11 +213,13 @@ final class RecoveryFormTest extends TestCase
 
         $minForm = $this->createForm(scenario: RecoveryForm::SCENARIO_RESET);
         $minForm->password = '123456';
+        $minForm->passwordRepeat = '123456';
         $minResult = $validator->validate($minForm);
         $this->assertTrue($minResult->isValid());
 
         $maxForm = $this->createForm(scenario: RecoveryForm::SCENARIO_RESET);
         $maxForm->password = str_repeat('a', 72);
+        $maxForm->passwordRepeat = str_repeat('a', 72);
         $maxResult = $validator->validate($maxForm);
         $this->assertTrue($maxResult->isValid());
     }
@@ -236,6 +263,7 @@ final class RecoveryFormTest extends TestCase
         $validator = new Validator();
         $form = $this->createForm(scenario: RecoveryForm::SCENARIO_RESET);
         $form->password = 'newsecret';
+        $form->passwordRepeat = 'newsecret';
 
         $result = $validator->validate($form);
         $this->assertTrue($result->isValid());

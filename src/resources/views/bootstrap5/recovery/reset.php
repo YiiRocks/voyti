@@ -30,6 +30,8 @@ echo Html::form()
 
 echo Field::password($model, 'password');
 
+echo Field::password($model, 'passwordRepeat');
+
 echo Field::buttonGroup()
     ->buttons(
         Html::submitButton($translator->translate('voyti.view.recovery.reset_button', category: 'voyti'))
