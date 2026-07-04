@@ -9,11 +9,11 @@ use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Repository\UserTokenRepository;
 
-final class ConfirmationService
+final readonly class ConfirmationService
 {
     public function __construct(
-        private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly UserTokenRepository $userTokenRepository,
+        private EventDispatcherInterface $eventDispatcher,
+        private UserTokenRepository $userTokenRepository,
     ) {
     }
 

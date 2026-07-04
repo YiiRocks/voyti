@@ -6,10 +6,10 @@ namespace YiiRocks\Voyti\Validator;
 
 use YiiRocks\Voyti\Helper\TimezoneHelper;
 
-final class TimeZoneValidator
+final readonly class TimeZoneValidator
 {
     public function __construct(
-        private readonly string $timezone,
+        private string $timezone,
     ) {
     }
 

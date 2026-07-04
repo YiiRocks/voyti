@@ -8,13 +8,13 @@ use YiiRocks\Voyti\Factory\MailFactory;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
 
-final class SecureEmailChangeStrategy implements MailChangeStrategyInterface
+final readonly class SecureEmailChangeStrategy implements MailChangeStrategyInterface
 {
     public function __construct(
-        private readonly SettingsForm $form,
-        private readonly UserTokenFactory $tokenFactory,
-        private readonly MailFactory $mailFactory,
-        private readonly DefaultEmailChangeStrategy $defaultStrategy,
+        private SettingsForm $form,
+        private UserTokenFactory $tokenFactory,
+        private MailFactory $mailFactory,
+        private DefaultEmailChangeStrategy $defaultStrategy,
     ) {
     }
 

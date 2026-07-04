@@ -11,11 +11,11 @@ use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Repository\UserRepository;
 use Yiisoft\Security\PasswordHasher;
 
-final class PasswordCommand extends Command
+final readonly class PasswordCommand extends Command
 {
     public function __construct(
-        private readonly UserRepository $userRepository,
-        private readonly PasswordHasher $passwordHasher,
+        private UserRepository $userRepository,
+        private PasswordHasher $passwordHasher,
     ) {
         parent::__construct();
     }

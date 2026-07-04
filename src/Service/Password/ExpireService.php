@@ -7,10 +7,10 @@ namespace YiiRocks\Voyti\Service\Password;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\ModuleConfig;
 
-final class ExpireService
+final readonly class ExpireService
 {
     public function __construct(
-        private readonly ModuleConfig $config,
+        private ModuleConfig $config,
     ) {
     }
 

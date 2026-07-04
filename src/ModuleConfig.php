@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti;
 
-final class ModuleConfig
+final readonly class ModuleConfig
 {
 
     public function __construct(
-        public readonly string $appName = 'Voyti',
-        public readonly ?string $recaptchaVersion = null,
-        public readonly bool $enableSessionHistory = true,
-        public readonly int|false $numberSessionHistory = 50,
-        public readonly bool $enableGdprCompliance = false,
+        public string $appName = 'Voyti',
+        public ?string $recaptchaVersion = null,
+        public bool $enableSessionHistory = true,
+        public int|false $numberSessionHistory = 50,
+        public bool $enableGdprCompliance = false,
         /** @psalm-var list<string> */
-        public readonly array $gdprExportProperties = [
+        public array $gdprExportProperties = [
             'email',
             'username',
             'userProfile.public_email',
@@ -24,37 +24,37 @@ final class ModuleConfig
             'userProfile.website',
             'userProfile.bio',
         ],
-        public readonly string $gdprAnonymizePrefix = 'GDPR',
-        public readonly bool $enableTwoFactorAuthentication = false,
+        public string $gdprAnonymizePrefix = 'GDPR',
+        public bool $enableTwoFactorAuthentication = false,
         /** @psalm-var array<array-key, string> */
-        public readonly array $twoFactorAuthenticationForcedPermissions = [],
-        public readonly bool $enableRegistration = true,
-        public readonly bool $enableSocialNetworkRegistration = true,
+        public array $twoFactorAuthenticationForcedPermissions = [],
+        public bool $enableRegistration = true,
+        public bool $enableSocialNetworkRegistration = true,
         /** @psalm-var array<string, array<string, mixed>> */
-        public readonly array $socialNetworkClients = [],
-        public readonly bool $enableEmailConfirmation = true,
-        public readonly bool $enableSwitchIdentities = true,
-        public readonly ?string $switchIdentitySessionKey = 'voyti_original_user',
-        public readonly string $loginRoute = 'voyti/login',
-        public readonly string $accountSettingsRoute = 'voyti/settings-account',
-        public readonly ?string $mailAdminOnRegister = null,
-        public readonly bool $enablePasswordExpiration = false,
-        public readonly bool $generatePasswords = false,
-        public readonly bool $allowPasswordRecovery = true,
-        public readonly bool $allowAdminPasswordRecovery = true,
-        public readonly bool $allowAccountDelete = false,
-        public readonly int $emailChangeStrategy = 1,
-        public readonly int $rememberLoginLifespan = 2592000,
-        public readonly int $tokenConfirmationLifespan = 86400,
-        public readonly int $tokenRecoveryLifespan = 21600,
-        public readonly ?string $administratorPermissionName = 'admin',
-        public readonly int $profileVisibility = 2,
-        public readonly ?int $maxPasswordAge = null,
-        public readonly bool $disableIpLogging = false,
-        public readonly string $viewPath = __DIR__ . '/resources/views/bootstrap5',
-        public readonly string $mailPath = __DIR__ . '/resources/mail',
-        public readonly bool $enableRestApi = false,
-        public readonly string $adminRestPrefix = 'api/v1',
+        public array $socialNetworkClients = [],
+        public bool $enableEmailConfirmation = true,
+        public bool $enableSwitchIdentities = true,
+        public ?string $switchIdentitySessionKey = 'voyti_original_user',
+        public string $loginRoute = 'voyti/login',
+        public string $accountSettingsRoute = 'voyti/settings-account',
+        public ?string $mailAdminOnRegister = null,
+        public bool $enablePasswordExpiration = false,
+        public bool $generatePasswords = false,
+        public bool $allowPasswordRecovery = true,
+        public bool $allowAdminPasswordRecovery = true,
+        public bool $allowAccountDelete = false,
+        public int $emailChangeStrategy = 1,
+        public int $rememberLoginLifespan = 2592000,
+        public int $tokenConfirmationLifespan = 86400,
+        public int $tokenRecoveryLifespan = 21600,
+        public ?string $administratorPermissionName = 'admin',
+        public int $profileVisibility = 2,
+        public ?int $maxPasswordAge = null,
+        public bool $disableIpLogging = false,
+        public string $viewPath = __DIR__ . '/resources/views/bootstrap5',
+        public string $mailPath = __DIR__ . '/resources/mail',
+        public bool $enableRestApi = false,
+        public string $adminRestPrefix = 'api/v1',
     ) {
     }
     /**

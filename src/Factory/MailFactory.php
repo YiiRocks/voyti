@@ -8,10 +8,10 @@ use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Service\MailService;
 
-final class MailFactory
+final readonly class MailFactory
 {
     public function __construct(
-        private readonly MailService $mailService,
+        private MailService $mailService,
     ) {
     }
 

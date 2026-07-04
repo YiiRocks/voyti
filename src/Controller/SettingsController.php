@@ -37,30 +37,30 @@ use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
-final class SettingsController
+final readonly class SettingsController
 {
     use InputDataTrait;
     use RenderTrait;
 
     public function __construct(
-        private readonly TranslatorInterface $translator,
-        private readonly WebViewRenderer $viewRenderer,
-        private readonly UserRepository $userRepository,
-        private readonly UserProfileRepository $userProfileRepository,
-        private readonly UserSocialAccountRepository $userSocialAccountRepository,
-        private readonly PasswordHasher $passwordHasher,
-        private readonly ValidatorInterface $validator,
-        private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly UrlGeneratorInterface $url,
-        private readonly ModuleConfig $config,
-        private readonly AuthClientRegistry $authClientRegistry,
-        private readonly EmailChangeStrategyFactory $emailChangeStrategyFactory,
-        private readonly QrCodeUriGeneratorService $twoFactorQrCodeService,
-        private readonly EmailChangeService $emailChangeService,
-        private readonly UserTokenRepository $userTokenRepository,
-        private readonly HydratorInterface $hydrator,
-        private readonly CurrentUser $currentUser,
-        private readonly ResponseFactoryInterface $responseFactory,
+        private TranslatorInterface $translator,
+        private WebViewRenderer $viewRenderer,
+        private UserRepository $userRepository,
+        private UserProfileRepository $userProfileRepository,
+        private UserSocialAccountRepository $userSocialAccountRepository,
+        private PasswordHasher $passwordHasher,
+        private ValidatorInterface $validator,
+        private EventDispatcherInterface $eventDispatcher,
+        private UrlGeneratorInterface $url,
+        private ModuleConfig $config,
+        private AuthClientRegistry $authClientRegistry,
+        private EmailChangeStrategyFactory $emailChangeStrategyFactory,
+        private QrCodeUriGeneratorService $twoFactorQrCodeService,
+        private EmailChangeService $emailChangeService,
+        private UserTokenRepository $userTokenRepository,
+        private HydratorInterface $hydrator,
+        private CurrentUser $currentUser,
+        private ResponseFactoryInterface $responseFactory,
     ) {
     }
 

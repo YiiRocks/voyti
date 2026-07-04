@@ -35,30 +35,30 @@ use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
-final class SecurityController
+final readonly class SecurityController
 {
     use InputDataTrait;
     use RenderTrait;
 
     public function __construct(
-        private readonly TranslatorInterface $translator,
-        private readonly WebViewRenderer $viewRenderer,
-        private readonly UserRepository $userRepository,
-        private readonly CurrentUser $currentUser,
-        private readonly PasswordHasher $passwordHasher,
-        private readonly ValidatorInterface $validator,
-        private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly ResponseFactoryInterface $responseFactory,
-        private readonly UrlGeneratorInterface $url,
-        private readonly SessionInterface $session,
-        private readonly RememberMeCookieService $rememberMeCookieService,
-        private readonly ModuleConfig $config,
-        private readonly AuthClientRegistry $authClientRegistry,
-        private readonly SocialAuthProviderService $socialAuthProviderService,
-        private readonly PendingSocialAccountService $pendingSocialAccountService,
-        private readonly UserSocialAuthenticateService $socialNetworkAuthenticateService,
-        private readonly UserSocialAccountConnectService $socialNetworkAccountConnectService,
-        private readonly HydratorInterface $hydrator,
+        private TranslatorInterface $translator,
+        private WebViewRenderer $viewRenderer,
+        private UserRepository $userRepository,
+        private CurrentUser $currentUser,
+        private PasswordHasher $passwordHasher,
+        private ValidatorInterface $validator,
+        private EventDispatcherInterface $eventDispatcher,
+        private ResponseFactoryInterface $responseFactory,
+        private UrlGeneratorInterface $url,
+        private SessionInterface $session,
+        private RememberMeCookieService $rememberMeCookieService,
+        private ModuleConfig $config,
+        private AuthClientRegistry $authClientRegistry,
+        private SocialAuthProviderService $socialAuthProviderService,
+        private PendingSocialAccountService $pendingSocialAccountService,
+        private UserSocialAuthenticateService $socialNetworkAuthenticateService,
+        private UserSocialAccountConnectService $socialNetworkAccountConnectService,
+        private HydratorInterface $hydrator,
     ) {
     }
 

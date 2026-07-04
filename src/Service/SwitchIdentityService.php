@@ -10,13 +10,13 @@ use Yiisoft\Session\SessionInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
 
-final class SwitchIdentityService
+final readonly class SwitchIdentityService
 {
     public function __construct(
-        private readonly ModuleConfig $config,
-        private readonly UserRepository $userRepository,
-        private readonly CurrentUser $currentUser,
-        private readonly SessionInterface $session,
+        private ModuleConfig $config,
+        private UserRepository $userRepository,
+        private CurrentUser $currentUser,
+        private SessionInterface $session,
     ) {
     }
 

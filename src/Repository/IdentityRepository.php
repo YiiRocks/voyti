@@ -8,10 +8,10 @@ use YiiRocks\Voyti\Entity\User;
 use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 
-final class IdentityRepository implements IdentityRepositoryInterface
+final readonly class IdentityRepository implements IdentityRepositoryInterface
 {
     public function __construct(
-        private readonly UserRepository $userRepository,
+        private UserRepository $userRepository,
     ) {
     }
 

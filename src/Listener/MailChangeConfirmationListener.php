@@ -9,11 +9,11 @@ use YiiRocks\Voyti\Event\Security\EmailChangeEvent;
 use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\MailService;
 
-final class MailChangeConfirmationListener
+final readonly class MailChangeConfirmationListener
 {
     public function __construct(
-        private readonly MailService $mailService,
-        private readonly UserTokenRepository $userTokenRepository,
+        private MailService $mailService,
+        private UserTokenRepository $userTokenRepository,
     ) {
     }
 

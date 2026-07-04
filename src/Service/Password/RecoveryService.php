@@ -13,14 +13,14 @@ use YiiRocks\Voyti\Service\ServiceResult;
 use Yiisoft\Security\Random;
 use Yiisoft\Translator\TranslatorInterface;
 
-final class RecoveryService
+final readonly class RecoveryService
 {
     public function __construct(
-        private readonly UserRepository $userRepository,
-        private readonly MailService $mailService,
-        private readonly ModuleConfig $config,
-        private readonly TranslatorInterface $translator,
-        private readonly EventDispatcherInterface $eventDispatcher,
+        private UserRepository $userRepository,
+        private MailService $mailService,
+        private ModuleConfig $config,
+        private TranslatorInterface $translator,
+        private EventDispatcherInterface $eventDispatcher,
     ) {
     }
 

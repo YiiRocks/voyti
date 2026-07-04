@@ -26,26 +26,26 @@ use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
-final class RegistrationController
+final readonly class RegistrationController
 {
     use InputDataTrait;
     use RenderTrait;
 
     public function __construct(
-        private readonly TranslatorInterface $translator,
-        private readonly WebViewRenderer $viewRenderer,
-        private readonly RegisterService $userRegisterService,
-        private readonly UserRepository $userRepository,
-        private readonly UserTokenRepository $userTokenRepository,
-        private readonly ConfirmationService $userConfirmationService,
-        private readonly AccountConfirmationService $accountConfirmationService,
-        private readonly ResendConfirmationService $resendConfirmationService,
-        private readonly ValidatorInterface $validator,
-        private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly UrlGeneratorInterface $url,
-        private readonly ModuleConfig $config,
-        private readonly PendingSocialAccountService $pendingSocialAccountService,
-        private readonly HydratorInterface $hydrator,
+        private TranslatorInterface $translator,
+        private WebViewRenderer $viewRenderer,
+        private RegisterService $userRegisterService,
+        private UserRepository $userRepository,
+        private UserTokenRepository $userTokenRepository,
+        private ConfirmationService $userConfirmationService,
+        private AccountConfirmationService $accountConfirmationService,
+        private ResendConfirmationService $resendConfirmationService,
+        private ValidatorInterface $validator,
+        private EventDispatcherInterface $eventDispatcher,
+        private UrlGeneratorInterface $url,
+        private ModuleConfig $config,
+        private PendingSocialAccountService $pendingSocialAccountService,
+        private HydratorInterface $hydrator,
     ) {
     }
 

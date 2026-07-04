@@ -95,9 +95,9 @@
     "scripts": {
         "php-cs-fixer": "@php vendor/bin/php-cs-fixer fix",
         "phpmd": "@php vendor/bin/phpmd src/ text tests/data/phpmd_ruleset.xml",
-        "phpunit": "@php -d extension=pdo_sqlite -d extension=intl vendor/bin/phpunit",
+        "phpunit": "@php vendor/bin/phpunit",
         "psalm": "@php vendor/bin/psalm",
-        "infection": "PHP_INI_SCAN_DIR=:tests vendor/bin/infection --configuration=infection.json --min-msi=100 --min-covered-msi=100"
+        "infection": "@php -d memory_limit=512M vendor/bin/infection --configuration=infection.json --min-msi=100 --min-covered-msi=100"
     },
     "scripts-descriptions": {
         "php-cs-fixer": "Cleans to code with PHP Coding Standards Fixer.",
@@ -123,6 +123,7 @@
         }
     },
     "config": {
+        "process-timeout": 600,
         "sort-packages": true,
         "allow-plugins": {
             "yiisoft/config": true,

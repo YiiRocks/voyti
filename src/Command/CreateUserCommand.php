@@ -13,12 +13,12 @@ use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\User\CreateService;
 use Yiisoft\Rbac\ManagerInterface;
 
-final class CreateUserCommand extends Command
+final readonly class CreateUserCommand extends Command
 {
     public function __construct(
-        private readonly CreateService $userCreateService,
-        private readonly UserRepository $userRepository,
-        private readonly ManagerInterface $authManager,
+        private CreateService $userCreateService,
+        private UserRepository $userRepository,
+        private ManagerInterface $authManager,
     ) {
         parent::__construct();
     }

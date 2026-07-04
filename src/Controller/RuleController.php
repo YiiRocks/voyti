@@ -17,19 +17,19 @@ use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
-final class RuleController
+final readonly class RuleController
 {
     use InputDataTrait;
     use RenderTrait;
 
     public function __construct(
-        private readonly TranslatorInterface $translator,
-        private readonly WebViewRenderer $viewRenderer,
-        private readonly AuthHelper $authHelper,
-        private readonly UrlGeneratorInterface $url,
-        private readonly ValidatorInterface $validator,
-        private readonly RuleEditionService $authRuleEditionService,
-        private readonly ResponseFactoryInterface $responseFactory,
+        private TranslatorInterface $translator,
+        private WebViewRenderer $viewRenderer,
+        private AuthHelper $authHelper,
+        private UrlGeneratorInterface $url,
+        private ValidatorInterface $validator,
+        private RuleEditionService $authRuleEditionService,
+        private ResponseFactoryInterface $responseFactory,
     ) {
     }
 

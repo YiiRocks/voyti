@@ -13,13 +13,13 @@ use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\UserTokenRepository;
 use Yiisoft\Security\PasswordHasher;
 
-final class ResetService
+final readonly class ResetService
 {
     public function __construct(
-        private readonly PasswordHasher $passwordHasher,
-        private readonly ModuleConfig $config,
-        private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly UserTokenRepository $userTokenRepository,
+        private PasswordHasher $passwordHasher,
+        private ModuleConfig $config,
+        private EventDispatcherInterface $eventDispatcher,
+        private UserTokenRepository $userTokenRepository,
     ) {
     }
 

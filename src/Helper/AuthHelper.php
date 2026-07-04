@@ -14,14 +14,14 @@ use Yiisoft\Rbac\Permission;
 use Yiisoft\Rbac\Role;
 use Yiisoft\User\CurrentUser;
 
-final class AuthHelper
+final readonly class AuthHelper
 {
     public function __construct(
-        private readonly ManagerInterface $authManager,
-        private readonly ItemsStorageInterface $itemsStorage,
-        private readonly AssignmentsStorageInterface $assignmentsStorage,
-        private readonly ModuleConfig $config,
-        private readonly CurrentUser $currentUser,
+        private ManagerInterface $authManager,
+        private ItemsStorageInterface $itemsStorage,
+        private AssignmentsStorageInterface $assignmentsStorage,
+        private ModuleConfig $config,
+        private CurrentUser $currentUser,
     ) {
     }
 

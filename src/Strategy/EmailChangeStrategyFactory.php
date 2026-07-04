@@ -9,17 +9,17 @@ use YiiRocks\Voyti\Factory\MailFactory;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
 
-final class EmailChangeStrategyFactory
+final readonly class EmailChangeStrategyFactory
 {
-    private const MAP = [
+    private const array MAP = [
         MailChangeStrategyInterface::TYPE_INSECURE => InsecureEmailChangeStrategy::class,
         MailChangeStrategyInterface::TYPE_DEFAULT => DefaultEmailChangeStrategy::class,
         MailChangeStrategyInterface::TYPE_SECURE => SecureEmailChangeStrategy::class,
     ];
 
     public function __construct(
-        private readonly UserTokenFactory $tokenFactory,
-        private readonly MailFactory $mailFactory,
+        private UserTokenFactory $tokenFactory,
+        private MailFactory $mailFactory,
     ) {
     }
 

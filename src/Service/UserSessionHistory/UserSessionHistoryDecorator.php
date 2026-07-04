@@ -10,12 +10,12 @@ use YiiRocks\Voyti\Entity\UserSessionHistory;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Session\SessionInterface;
 
-final class UserSessionHistoryDecorator
+final readonly class UserSessionHistoryDecorator
 {
     public function __construct(
-        private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly ModuleConfig $config,
-        private readonly ?SessionInterface $session = null,
+        private EventDispatcherInterface $eventDispatcher,
+        private ModuleConfig $config,
+        private ?SessionInterface $session = null,
     ) {
     }
 

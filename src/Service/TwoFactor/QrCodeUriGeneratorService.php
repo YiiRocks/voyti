@@ -10,10 +10,10 @@ use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Security\Random;
 
-final class QrCodeUriGeneratorService
+final readonly class QrCodeUriGeneratorService
 {
     public function __construct(
-        private readonly ModuleConfig $config,
+        private ModuleConfig $config,
     ) {
     }
 

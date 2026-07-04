@@ -18,8 +18,8 @@ use Yiisoft\Validator\RulesProviderInterface;
 
 final class RecoveryForm extends FormModel implements RulesProviderInterface
 {
-    public const SCENARIO_REQUEST = 'request';
-    public const SCENARIO_RESET = 'reset';
+    public const string SCENARIO_REQUEST = 'request';
+    public const string SCENARIO_RESET = 'reset';
 
     public string $email = '';
 

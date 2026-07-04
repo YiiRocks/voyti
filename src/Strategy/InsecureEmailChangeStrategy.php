@@ -6,10 +6,10 @@ namespace YiiRocks\Voyti\Strategy;
 
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
 
-final class InsecureEmailChangeStrategy implements MailChangeStrategyInterface
+final readonly class InsecureEmailChangeStrategy implements MailChangeStrategyInterface
 {
     public function __construct(
-        private readonly SettingsForm $form,
+        private SettingsForm $form,
     ) {
     }
 

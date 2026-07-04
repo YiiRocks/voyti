@@ -14,9 +14,9 @@ use Yiisoft\User\Login\Cookie\CookieLoginIdentityInterface;
 final class User extends ActiveRecord implements IdentityInterface, CookieLoginIdentityInterface
 {
     use PrivatePropertiesTrait;
-    public const NEW_EMAIL_CONFIRMED = 0b10;
+    public const int NEW_EMAIL_CONFIRMED = 0b10;
 
-    public const OLD_EMAIL_CONFIRMED = 0b01;
+    public const int OLD_EMAIL_CONFIRMED = 0b01;
 
     public ?string $password = null;
     private string $auth_key = '';

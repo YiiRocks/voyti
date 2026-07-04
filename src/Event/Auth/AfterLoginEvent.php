@@ -7,11 +7,11 @@ namespace YiiRocks\Voyti\Event\Auth;
 use YiiRocks\Voyti\Entity\User;
 use Yiisoft\Router\CurrentRoute;
 
-final class AfterLoginEvent
+final readonly class AfterLoginEvent
 {
     public function __construct(
-        private readonly User $user,
-        private readonly ?CurrentRoute $route = null,
+        private User $user,
+        private ?CurrentRoute $route = null,
     ) {
     }
 

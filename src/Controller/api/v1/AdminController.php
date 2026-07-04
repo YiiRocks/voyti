@@ -15,16 +15,16 @@ use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Security\Random;
 use Yiisoft\Translator\TranslatorInterface;
 
-final class AdminController
+final readonly class AdminController
 {
     use InputDataTrait;
 
     public function __construct(
-        private readonly TranslatorInterface $translator,
-        private readonly UserRepository $userRepository,
-        private readonly PasswordHasher $passwordHasher,
-        private readonly ModuleConfig $config,
-        private readonly DataResponseFactoryInterface $responseFactory,
+        private TranslatorInterface $translator,
+        private UserRepository $userRepository,
+        private PasswordHasher $passwordHasher,
+        private ModuleConfig $config,
+        private DataResponseFactoryInterface $responseFactory,
     ) {
     }
 

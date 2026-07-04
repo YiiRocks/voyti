@@ -17,24 +17,24 @@ use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
-final class ProfileController
+final readonly class ProfileController
 {
     use RenderTrait;
-    public const PROFILE_VISIBILITY_ADMIN = 1;
+    public const int PROFILE_VISIBILITY_ADMIN = 1;
 
-    public const PROFILE_VISIBILITY_OWNER = 0;
-    public const PROFILE_VISIBILITY_PUBLIC = 3;
-    public const PROFILE_VISIBILITY_USERS = 2;
+    public const int PROFILE_VISIBILITY_OWNER = 0;
+    public const int PROFILE_VISIBILITY_PUBLIC = 3;
+    public const int PROFILE_VISIBILITY_USERS = 2;
 
     public function __construct(
-        private readonly TranslatorInterface $translator,
-        private readonly WebViewRenderer $viewRenderer,
-        private readonly UrlGeneratorInterface $url,
-        private readonly UserProfileRepository $userProfileRepository,
-        private readonly UserRepository $userRepository,
-        private readonly AuthHelper $authHelper,
-        private readonly ModuleConfig $config,
-        private readonly CurrentUser $currentUser,
+        private TranslatorInterface $translator,
+        private WebViewRenderer $viewRenderer,
+        private UrlGeneratorInterface $url,
+        private UserProfileRepository $userProfileRepository,
+        private UserRepository $userRepository,
+        private AuthHelper $authHelper,
+        private ModuleConfig $config,
+        private CurrentUser $currentUser,
     ) {
     }
 
@@ -43,24 +43,15 @@ final class ProfileController
         $identity = $this->currentUser->getIdentity();
         $userId = $identity instanceof IdentityInterface ? $identity->getId() : null;
 
-        switch ($this->config->profileVisibility) {
-            case self::PROFILE_VISIBILITY_OWNER:
-                if ($userId === null || (string) $id !== $userId) {
-                    return $this->renderError('voyti.userProfile.forbidden');
-                }
-                break;
-            case self::PROFILE_VISIBILITY_ADMIN:
-                if ((string) $id !== $userId && !$this->isAdmin($identity)) {
-                    return $this->renderError('voyti.userProfile.forbidden');
-                }
-                break;
-            case self::PROFILE_VISIBILITY_USERS:
-                if ($userId === null) {
-                    return $this->renderError('voyti.userProfile.forbidden');
-                }
-                break;
-            case self::PROFILE_VISIBILITY_PUBLIC:
-                break;
+        $forbidden = match ($this->config->profileVisibility) {
+            self::PROFILE_VISIBILITY_OWNER => $userId === null || (string) $id !== $userId,
+            self::PROFILE_VISIBILITY_ADMIN => (string) $id !== $userId && !$this->isAdmin($identity),
+            self::PROFILE_VISIBILITY_USERS => $userId === null,
+            default => false,
+        };
+
+        if ($forbidden) {
+            return $this->renderError('voyti.userProfile.forbidden');
         }
 
         $userProfile = $this->userProfileRepository->findByUserId($id);

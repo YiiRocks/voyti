@@ -9,12 +9,12 @@ use Yiisoft\Rbac\Assignment;
 use Yiisoft\Rbac\AssignmentsStorageInterface;
 use Yiisoft\Rbac\ManagerInterface;
 
-final class UpdateAssignmentsService
+final readonly class UpdateAssignmentsService
 {
     public function __construct(
-        private readonly ManagerInterface $authManager,
-        private readonly AssignmentsStorageInterface $assignmentsStorage,
-        private readonly ItemsValidator $itemsValidator,
+        private ManagerInterface $authManager,
+        private AssignmentsStorageInterface $assignmentsStorage,
+        private ItemsValidator $itemsValidator,
     ) {
     }
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\AuthClient;
 
-final class VKontakte extends AbstractAuthClient
+final readonly class VKontakte extends AbstractAuthClient
 {
     /**
      * @param array<string, mixed> $config

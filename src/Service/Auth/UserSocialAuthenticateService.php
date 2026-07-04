@@ -16,15 +16,15 @@ use Yiisoft\Security\Random;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\User\CurrentUser;
 
-final class UserSocialAuthenticateService
+final readonly class UserSocialAuthenticateService
 {
     public function __construct(
-        private readonly ModuleConfig $config,
-        private readonly UserSocialAccountRepository $userSocialAccountRepository,
-        private readonly UserRepository $userRepository,
-        private readonly CurrentUser $currentUser,
-        private readonly SessionInterface $session,
-        private readonly EventDispatcherInterface $eventDispatcher,
+        private ModuleConfig $config,
+        private UserSocialAccountRepository $userSocialAccountRepository,
+        private UserRepository $userRepository,
+        private CurrentUser $currentUser,
+        private SessionInterface $session,
+        private EventDispatcherInterface $eventDispatcher,
     ) {
     }
 

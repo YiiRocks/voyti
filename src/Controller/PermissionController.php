@@ -16,7 +16,7 @@ use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
-final class PermissionController extends AbstractAuthItemController
+final readonly class PermissionController extends AbstractAuthItemController
 {
     public function __construct(
         TranslatorInterface $translator,

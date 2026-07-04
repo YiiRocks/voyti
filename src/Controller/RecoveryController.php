@@ -21,22 +21,22 @@ use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
-final class RecoveryController
+final readonly class RecoveryController
 {
     use RenderTrait;
 
     public function __construct(
-        private readonly TranslatorInterface $translator,
-        private readonly WebViewRenderer $viewRenderer,
-        private readonly UrlGeneratorInterface $url,
-        private readonly RecoveryService $passwordRecoveryService,
-        private readonly ResetService $resetPasswordService,
-        private readonly UserRepository $userRepository,
-        private readonly UserTokenRepository $userTokenRepository,
-        private readonly ValidatorInterface $validator,
-        private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly ModuleConfig $config,
-        private readonly HydratorInterface $hydrator,
+        private TranslatorInterface $translator,
+        private WebViewRenderer $viewRenderer,
+        private UrlGeneratorInterface $url,
+        private RecoveryService $passwordRecoveryService,
+        private ResetService $resetPasswordService,
+        private UserRepository $userRepository,
+        private UserTokenRepository $userTokenRepository,
+        private ValidatorInterface $validator,
+        private EventDispatcherInterface $eventDispatcher,
+        private ModuleConfig $config,
+        private HydratorInterface $hydrator,
     ) {
     }
 

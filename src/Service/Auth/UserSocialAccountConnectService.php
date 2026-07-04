@@ -8,10 +8,10 @@ use YiiRocks\Voyti\Entity\UserSocialAccount;
 use YiiRocks\Voyti\Repository\UserSocialAccountRepository;
 use YiiRocks\Voyti\Service\ServiceResult;
 
-final class UserSocialAccountConnectService
+final readonly class UserSocialAccountConnectService
 {
     public function __construct(
-        private readonly UserSocialAccountRepository $userSocialAccountRepository,
+        private UserSocialAccountRepository $userSocialAccountRepository,
     ) {
     }
 

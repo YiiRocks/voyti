@@ -10,13 +10,13 @@ use YiiRocks\Voyti\Repository\UserSocialAccountRepository;
 use YiiRocks\Voyti\Service\ServiceResult;
 use Yiisoft\Session\SessionInterface;
 
-final class PendingSocialAccountService
+final readonly class PendingSocialAccountService
 {
-    private const SESSION_KEY = 'social_network_account_code';
+    private const string SESSION_KEY = 'social_network_account_code';
 
     public function __construct(
-        private readonly UserSocialAccountRepository $userSocialAccountRepository,
-        private readonly SessionInterface $session,
+        private UserSocialAccountRepository $userSocialAccountRepository,
+        private SessionInterface $session,
     ) {
     }
 

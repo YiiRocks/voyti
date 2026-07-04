@@ -6,29 +6,29 @@ namespace YiiRocks\Voyti\Event\User;
 
 use YiiRocks\Voyti\Entity\User;
 
-final class UserEvent
+final readonly class UserEvent
 {
-    public const AFTER_ACCOUNT_UPDATE = 'afterAccountUpdate';
-    public const AFTER_BLOCK = 'afterBlock';
-    public const AFTER_CONFIRMATION = 'afterConfirmation';
-    public const AFTER_CREATE = 'afterCreate';
-    public const AFTER_DELETE = 'afterDelete';
-    public const AFTER_LOGOUT = 'afterLogout';
-    public const AFTER_PROFILE_UPDATE = 'afterProfileUpdate';
-    public const AFTER_SWITCH_IDENTITY = 'afterSwitchIdentity';
-    public const AFTER_UNBLOCK = 'afterUnblock';
-    public const BEFORE_ACCOUNT_UPDATE = 'beforeAccountUpdate';
-    public const BEFORE_BLOCK = 'beforeBlock';
-    public const BEFORE_CONFIRMATION = 'beforeConfirmation';
-    public const BEFORE_CREATE = 'beforeCreate';
-    public const BEFORE_DELETE = 'beforeDelete';
-    public const BEFORE_LOGOUT = 'beforeLogout';
-    public const BEFORE_PROFILE_UPDATE = 'beforeProfileUpdate';
-    public const BEFORE_SWITCH_IDENTITY = 'beforeSwitchIdentity';
-    public const BEFORE_UNBLOCK = 'beforeUnblock';
+    public const string AFTER_ACCOUNT_UPDATE = 'afterAccountUpdate';
+    public const string AFTER_BLOCK = 'afterBlock';
+    public const string AFTER_CONFIRMATION = 'afterConfirmation';
+    public const string AFTER_CREATE = 'afterCreate';
+    public const string AFTER_DELETE = 'afterDelete';
+    public const string AFTER_LOGOUT = 'afterLogout';
+    public const string AFTER_PROFILE_UPDATE = 'afterProfileUpdate';
+    public const string AFTER_SWITCH_IDENTITY = 'afterSwitchIdentity';
+    public const string AFTER_UNBLOCK = 'afterUnblock';
+    public const string BEFORE_ACCOUNT_UPDATE = 'beforeAccountUpdate';
+    public const string BEFORE_BLOCK = 'beforeBlock';
+    public const string BEFORE_CONFIRMATION = 'beforeConfirmation';
+    public const string BEFORE_CREATE = 'beforeCreate';
+    public const string BEFORE_DELETE = 'beforeDelete';
+    public const string BEFORE_LOGOUT = 'beforeLogout';
+    public const string BEFORE_PROFILE_UPDATE = 'beforeProfileUpdate';
+    public const string BEFORE_SWITCH_IDENTITY = 'beforeSwitchIdentity';
+    public const string BEFORE_UNBLOCK = 'beforeUnblock';
 
     public function __construct(
-        private readonly User $user,
+        private User $user,
     ) {
     }
 

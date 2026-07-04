@@ -8,11 +8,11 @@ use YiiRocks\Voyti\Event\Auth\AfterRegisterEvent;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\MailService;
 
-final class AdminNotificationListener
+final readonly class AdminNotificationListener
 {
     public function __construct(
-        private readonly MailService $mailService,
-        private readonly ModuleConfig $config,
+        private MailService $mailService,
+        private ModuleConfig $config,
     ) {
     }
 

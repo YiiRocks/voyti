@@ -6,16 +6,16 @@ namespace YiiRocks\Voyti\Event\Auth;
 
 use YiiRocks\Voyti\Entity\UserSocialAccount;
 
-final class UserSocialAuthEvent
+final readonly class UserSocialAuthEvent
 {
-    public const AFTER_AUTHENTICATE = 'afterAuthenticate';
-    public const AFTER_CONNECT = 'afterConnect';
-    public const BEFORE_AUTHENTICATE = 'beforeAuthenticate';
-    public const BEFORE_CONNECT = 'beforeConnect';
+    public const string AFTER_AUTHENTICATE = 'afterAuthenticate';
+    public const string AFTER_CONNECT = 'afterConnect';
+    public const string BEFORE_AUTHENTICATE = 'beforeAuthenticate';
+    public const string BEFORE_CONNECT = 'beforeConnect';
 
     public function __construct(
-        private readonly UserSocialAccount $account,
-        private readonly object $client,
+        private UserSocialAccount $account,
+        private object $client,
     ) {
     }
 

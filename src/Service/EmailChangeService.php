@@ -11,12 +11,12 @@ use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Strategy\MailChangeStrategyInterface;
 
-final class EmailChangeService
+final readonly class EmailChangeService
 {
     public function __construct(
-        private readonly ModuleConfig $config,
-        private readonly UserTokenRepository $userTokenRepository,
-        private readonly UserRepository $userRepository,
+        private ModuleConfig $config,
+        private UserTokenRepository $userTokenRepository,
+        private UserRepository $userRepository,
     ) {
     }
 

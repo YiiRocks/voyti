@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service;
 
-final class ServiceResult
+final readonly class ServiceResult
 {
     public function __construct(
-        private readonly ServiceResultStatus $status,
-        private readonly string $message = '',
-        private readonly array $errors = [],
+        private ServiceResultStatus $status,
+        private string $message = '',
+        private array $errors = [],
     ) {
     }
 

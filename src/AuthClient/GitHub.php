@@ -6,7 +6,7 @@ namespace YiiRocks\Voyti\AuthClient;
 
 use YiiRocks\Voyti\Http\ClientInterface;
 
-final class GitHub extends AbstractAuthClient
+final readonly class GitHub extends AbstractAuthClient
 {
     /**
      * @param array<string, mixed> $config

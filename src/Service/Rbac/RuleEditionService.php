@@ -9,11 +9,11 @@ use YiiRocks\Voyti\Validator\Rbac\RuleValidator;
 use Yiisoft\Rbac\ItemsStorageInterface;
 use Yiisoft\Rbac\Role;
 
-final class RuleEditionService
+final readonly class RuleEditionService
 {
     public function __construct(
-        private readonly ItemsStorageInterface $itemsStorage,
-        private readonly RuleValidator $ruleValidator,
+        private ItemsStorageInterface $itemsStorage,
+        private RuleValidator $ruleValidator,
     ) {
     }
 

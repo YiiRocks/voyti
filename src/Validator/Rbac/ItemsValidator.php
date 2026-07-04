@@ -7,10 +7,10 @@ namespace YiiRocks\Voyti\Validator\Rbac;
 use Yiisoft\Rbac\ItemsStorageInterface;
 use Yiisoft\Validator\Result;
 
-final class ItemsValidator
+final readonly class ItemsValidator
 {
     public function __construct(
-        private readonly ItemsStorageInterface $itemsStorage,
+        private ItemsStorageInterface $itemsStorage,
     ) {
     }
 

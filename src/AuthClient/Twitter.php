@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\AuthClient;
 
-final class Twitter extends AbstractAuthClient
+final readonly class Twitter extends AbstractAuthClient
 {
     /**
      * @param array<string, mixed> $config

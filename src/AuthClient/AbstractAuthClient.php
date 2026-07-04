@@ -7,19 +7,19 @@ namespace YiiRocks\Voyti\AuthClient;
 use RuntimeException;
 use YiiRocks\Voyti\Http\ClientInterface;
 
-abstract class AbstractAuthClient implements AuthClientInterface
+abstract readonly class AbstractAuthClient implements AuthClientInterface
 {
     /**
      * @param array<string, mixed> $config
      */
     public function __construct(
-        private readonly string $name,
-        private readonly string $title,
-        private readonly string $authUrl,
-        private readonly string $tokenUrl,
-        private readonly string $userInfoUrl,
-        private readonly string $scope = '',
-        private readonly array $config = [],
+        private string $name,
+        private string $title,
+        private string $authUrl,
+        private string $tokenUrl,
+        private string $userInfoUrl,
+        private string $scope = '',
+        private array $config = [],
     ) {
     }
 

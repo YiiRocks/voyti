@@ -15,14 +15,14 @@ use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
 
-final class AccessRuleMiddleware implements MiddlewareInterface
+final readonly class AccessRuleMiddleware implements MiddlewareInterface
 {
     public function __construct(
-        private readonly CurrentUser $currentUser,
-        private readonly ModuleConfig $config,
-        private readonly AuthHelper $authHelper,
-        private readonly ResponseFactoryInterface $responseFactory,
-        private readonly UrlGeneratorInterface $url,
+        private CurrentUser $currentUser,
+        private ModuleConfig $config,
+        private AuthHelper $authHelper,
+        private ResponseFactoryInterface $responseFactory,
+        private UrlGeneratorInterface $url,
     ) {
     }
 

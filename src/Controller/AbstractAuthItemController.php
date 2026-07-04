@@ -24,21 +24,21 @@ use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
-abstract class AbstractAuthItemController
+abstract readonly class AbstractAuthItemController
 {
     use InputDataTrait;
     use RenderTrait;
 
     public function __construct(
-        protected readonly TranslatorInterface $translator,
-        protected readonly WebViewRenderer $viewRenderer,
-        protected readonly UrlGeneratorInterface $url,
-        protected readonly ValidatorInterface $validator,
-        protected readonly ResponseFactoryInterface $responseFactory,
-        protected readonly UserRepository $userRepository,
-        protected readonly ItemsStorageInterface $itemsStorage,
-        protected readonly ManagerInterface $managerInterface,
-        protected readonly AssignmentsStorageInterface $assignmentsStorage,
+        protected TranslatorInterface $translator,
+        protected WebViewRenderer $viewRenderer,
+        protected UrlGeneratorInterface $url,
+        protected ValidatorInterface $validator,
+        protected ResponseFactoryInterface $responseFactory,
+        protected UserRepository $userRepository,
+        protected ItemsStorageInterface $itemsStorage,
+        protected ManagerInterface $managerInterface,
+        protected AssignmentsStorageInterface $assignmentsStorage,
     ) {
     }
 

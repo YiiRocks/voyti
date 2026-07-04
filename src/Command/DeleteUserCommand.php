@@ -10,10 +10,10 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Repository\UserRepository;
 
-final class DeleteUserCommand extends Command
+final readonly class DeleteUserCommand extends Command
 {
     public function __construct(
-        private readonly UserRepository $userRepository,
+        private UserRepository $userRepository,
     ) {
         parent::__construct();
     }

@@ -342,7 +342,7 @@ final class AbstractAuthClientTest extends TestCase
     }
 }
 
-final class TestAuthClient extends AbstractAuthClient
+final readonly class TestAuthClient extends AbstractAuthClient
 {
     /**
      * @param array<string, mixed> $config

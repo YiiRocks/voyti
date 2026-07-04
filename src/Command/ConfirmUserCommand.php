@@ -11,11 +11,11 @@ use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 
-final class ConfirmUserCommand extends Command
+final readonly class ConfirmUserCommand extends Command
 {
     public function __construct(
-        private readonly UserRepository $userRepository,
-        private readonly ConfirmationService $userConfirmationService,
+        private UserRepository $userRepository,
+        private ConfirmationService $userConfirmationService,
     ) {
         parent::__construct();
     }

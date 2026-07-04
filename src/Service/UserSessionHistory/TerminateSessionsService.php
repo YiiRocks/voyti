@@ -6,10 +6,10 @@ namespace YiiRocks\Voyti\Service\UserSessionHistory;
 
 use Yiisoft\Db\Connection\ConnectionInterface;
 
-final class TerminateSessionsService implements TerminateSessionsServiceInterface
+final readonly class TerminateSessionsService implements TerminateSessionsServiceInterface
 {
     public function __construct(
-        private readonly ConnectionInterface $db,
+        private ConnectionInterface $db,
     ) {
     }
 

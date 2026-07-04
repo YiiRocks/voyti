@@ -8,11 +8,11 @@ use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\ExpireService;
 
-final class PasswordExpirationListener
+final readonly class PasswordExpirationListener
 {
     public function __construct(
-        private readonly ExpireService $passwordExpireService,
-        private readonly ModuleConfig $config,
+        private ExpireService $passwordExpireService,
+        private ModuleConfig $config,
     ) {
     }
 

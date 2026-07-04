@@ -6,10 +6,10 @@ namespace YiiRocks\Voyti\Event\User;
 
 use YiiRocks\Voyti\Entity\UserProfile;
 
-final class UserProfileEvent
+final readonly class UserProfileEvent
 {
     public function __construct(
-        private readonly UserProfile $userProfile,
+        private UserProfile $userProfile,
     ) {
     }
 

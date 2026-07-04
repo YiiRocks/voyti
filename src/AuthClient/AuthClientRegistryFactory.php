@@ -6,10 +6,10 @@ namespace YiiRocks\Voyti\AuthClient;
 
 use YiiRocks\Voyti\ModuleConfig;
 
-final class AuthClientRegistryFactory
+final readonly class AuthClientRegistryFactory
 {
     public function __construct(
-        private readonly ModuleConfig $config,
+        private ModuleConfig $config,
     ) {
     }
 

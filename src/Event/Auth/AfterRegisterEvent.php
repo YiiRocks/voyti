@@ -6,10 +6,10 @@ namespace YiiRocks\Voyti\Event\Auth;
 
 use YiiRocks\Voyti\Entity\User;
 
-final class AfterRegisterEvent
+final readonly class AfterRegisterEvent
 {
     public function __construct(
-        private readonly User $user,
+        private User $user,
     ) {
     }
 

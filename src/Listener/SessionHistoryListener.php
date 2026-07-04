@@ -8,11 +8,11 @@ use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\UserSessionHistory\UserSessionHistoryDecorator;
 
-final class SessionHistoryListener
+final readonly class SessionHistoryListener
 {
     public function __construct(
-        private readonly UserSessionHistoryDecorator $sessionHistoryDecorator,
-        private readonly ModuleConfig $config,
+        private UserSessionHistoryDecorator $sessionHistoryDecorator,
+        private ModuleConfig $config,
     ) {
     }
 

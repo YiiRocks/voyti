@@ -8,10 +8,10 @@ use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Repository\UserTokenRepository;
 use Yiisoft\Security\Random;
 
-final class UserTokenFactory
+final readonly class UserTokenFactory
 {
     public function __construct(
-        private readonly UserTokenRepository $userTokenRepository,
+        private UserTokenRepository $userTokenRepository,
     ) {
     }
 

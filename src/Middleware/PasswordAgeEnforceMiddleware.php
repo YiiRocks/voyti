@@ -16,14 +16,14 @@ use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
 
-final class PasswordAgeEnforceMiddleware implements MiddlewareInterface
+final readonly class PasswordAgeEnforceMiddleware implements MiddlewareInterface
 {
     public function __construct(
-        private readonly CurrentUser $currentUser,
-        private readonly ModuleConfig $config,
-        private readonly TranslatorInterface $translator,
-        private readonly ResponseFactoryInterface $responseFactory,
-        private readonly UrlGeneratorInterface $url,
+        private CurrentUser $currentUser,
+        private ModuleConfig $config,
+        private TranslatorInterface $translator,
+        private ResponseFactoryInterface $responseFactory,
+        private UrlGeneratorInterface $url,
     ) {
     }
 

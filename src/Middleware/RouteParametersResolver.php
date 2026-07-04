@@ -11,10 +11,10 @@ use Yiisoft\Router\CurrentRoute;
 
 use function array_key_exists;
 
-final class RouteParametersResolver implements ParametersResolverInterface
+final readonly class RouteParametersResolver implements ParametersResolverInterface
 {
     public function __construct(
-        private readonly CurrentRoute $currentRoute,
+        private CurrentRoute $currentRoute,
     ) {
     }
 

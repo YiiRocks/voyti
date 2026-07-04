@@ -17,14 +17,14 @@ use YiiRocks\Voyti\Service\ServiceResult;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Security\Random;
 
-final class CreateService
+final readonly class CreateService
 {
     public function __construct(
-        private readonly UserRepository $userRepository,
-        private readonly MailService $mailService,
-        private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly PasswordHasher $passwordHasher,
-        private readonly ModuleConfig $config,
+        private UserRepository $userRepository,
+        private MailService $mailService,
+        private EventDispatcherInterface $eventDispatcher,
+        private PasswordHasher $passwordHasher,
+        private ModuleConfig $config,
     ) {
     }
 

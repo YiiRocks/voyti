@@ -7,10 +7,10 @@ namespace YiiRocks\Voyti\Service\TwoFactor;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Service\MailService;
 
-final class EmailCodeGeneratorService
+final readonly class EmailCodeGeneratorService
 {
     public function __construct(
-        private readonly MailService $mailService,
+        private MailService $mailService,
     ) {
     }
 

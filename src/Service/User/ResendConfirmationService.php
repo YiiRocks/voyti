@@ -10,11 +10,11 @@ use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\MailService;
 use Yiisoft\Security\Random;
 
-final class ResendConfirmationService
+final readonly class ResendConfirmationService
 {
     public function __construct(
-        private readonly UserTokenRepository $userTokenRepository,
-        private readonly MailService $mailService,
+        private UserTokenRepository $userTokenRepository,
+        private MailService $mailService,
     ) {
     }
 

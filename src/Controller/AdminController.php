@@ -38,36 +38,36 @@ use Yiisoft\User\CurrentUser;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
-final class AdminController
+final readonly class AdminController
 {
     use InputDataTrait;
     use RenderTrait;
 
     public function __construct(
-        private readonly TranslatorInterface $translator,
-        private readonly WebViewRenderer $viewRenderer,
-        private readonly UserRepository $userRepository,
-        private readonly UserProfileRepository $userProfileRepository,
-        private readonly CreateService $userCreateService,
-        private readonly BlockService $userBlockService,
-        private readonly ConfirmationService $userConfirmationService,
-        private readonly RecoveryService $passwordRecoveryService,
-        private readonly ExpireService $passwordExpireService,
-        private readonly SwitchIdentityService $switchIdentityService,
-        private readonly UpdateAssignmentsService $updateAuthAssignmentsService,
-        private readonly UserSessionHistoryRepository $userSessionHistoryRepository,
-        private readonly AuthHelper $authHelper,
-        private readonly PasswordHasher $passwordHasher,
-        private readonly PasswordGeneratorInterface $passwordGenerator,
-        private readonly ValidatorInterface $validator,
-        private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly UrlGeneratorInterface $url,
-        private readonly ModuleConfig $config,
-        private readonly HydratorInterface $hydrator,
-        private readonly CurrentUser $currentUser,
-        private readonly ResponseFactoryInterface $responseFactory,
-        private readonly ItemsStorageInterface $itemsStorage,
-        private readonly AssignmentsStorageInterface $assignmentsStorage,
+        private TranslatorInterface $translator,
+        private WebViewRenderer $viewRenderer,
+        private UserRepository $userRepository,
+        private UserProfileRepository $userProfileRepository,
+        private CreateService $userCreateService,
+        private BlockService $userBlockService,
+        private ConfirmationService $userConfirmationService,
+        private RecoveryService $passwordRecoveryService,
+        private ExpireService $passwordExpireService,
+        private SwitchIdentityService $switchIdentityService,
+        private UpdateAssignmentsService $updateAuthAssignmentsService,
+        private UserSessionHistoryRepository $userSessionHistoryRepository,
+        private AuthHelper $authHelper,
+        private PasswordHasher $passwordHasher,
+        private PasswordGeneratorInterface $passwordGenerator,
+        private ValidatorInterface $validator,
+        private EventDispatcherInterface $eventDispatcher,
+        private UrlGeneratorInterface $url,
+        private ModuleConfig $config,
+        private HydratorInterface $hydrator,
+        private CurrentUser $currentUser,
+        private ResponseFactoryInterface $responseFactory,
+        private ItemsStorageInterface $itemsStorage,
+        private AssignmentsStorageInterface $assignmentsStorage,
     ) {
     }
 

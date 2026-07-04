@@ -8,11 +8,11 @@ use Yiisoft\FormModel\FormModel;
 use Yiisoft\Validator\Result;
 use Yiisoft\Validator\ValidatorInterface;
 
-final class AjaxRequestModelValidator
+final readonly class AjaxRequestModelValidator
 {
     public function __construct(
-        private readonly FormModel $form,
-        private readonly ValidatorInterface $validator,
+        private FormModel $form,
+        private ValidatorInterface $validator,
     ) {
     }
 

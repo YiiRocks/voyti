@@ -6,11 +6,11 @@ namespace YiiRocks\Voyti\Event\Security;
 
 use YiiRocks\Voyti\Entity\User;
 
-final class EmailChangeEvent
+final readonly class EmailChangeEvent
 {
     public function __construct(
-        private readonly User $user,
-        private readonly string $newEmail,
+        private User $user,
+        private string $newEmail,
     ) {
     }
 

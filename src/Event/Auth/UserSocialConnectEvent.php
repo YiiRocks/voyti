@@ -7,16 +7,16 @@ namespace YiiRocks\Voyti\Event\Auth;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserSocialAccount;
 
-final class UserSocialConnectEvent
+final readonly class UserSocialConnectEvent
 {
-    public const AFTER_CONNECT = 'afterConnect';
-    public const AFTER_DISCONNECT = 'afterDisconnect';
-    public const BEFORE_CONNECT = 'beforeConnect';
-    public const BEFORE_DISCONNECT = 'beforeDisconnect';
+    public const string AFTER_CONNECT = 'afterConnect';
+    public const string AFTER_DISCONNECT = 'afterDisconnect';
+    public const string BEFORE_CONNECT = 'beforeConnect';
+    public const string BEFORE_DISCONNECT = 'beforeDisconnect';
 
     public function __construct(
-        private readonly User $user,
-        private readonly UserSocialAccount $account,
+        private User $user,
+        private UserSocialAccount $account,
     ) {
     }
 

@@ -26,7 +26,7 @@ final class MailServiceTest extends TestCase
                 $mailPath . '/html/welcome.php',
                 <<<'PHP'
 <?php
-echo 'custom-html-' . $username;
+echo 'custom-html-' . $username . '-' . $translator->getLocale();
 PHP
             );
             mkdir($mailPath . '/text');
@@ -34,7 +34,7 @@ PHP
                 $mailPath . '/text/welcome.php',
                 <<<'PHP'
 <?php
-echo 'custom-text-' . $username;
+echo 'custom-text-' . $username . '-' . $translator->getLocale();
 PHP
             );
 
@@ -52,8 +52,8 @@ PHP
             self::assertCount(1, $messages);
             $message = $messages[0];
             self::assertInstanceOf(MessageInterface::class, $message);
-            self::assertSame('custom-html-alice', $message->getHtmlBody());
-            self::assertSame('custom-text-alice', $message->getTextBody());
+            self::assertSame('custom-html-alice-en', $message->getHtmlBody());
+            self::assertSame('custom-text-alice-en', $message->getTextBody());
         } finally {
             $this->removeTempMailPath($mailPath);
         }
@@ -71,6 +71,7 @@ PHP
         self::assertTrue($service->sendWelcome($user, 'secret'));
 
         self::assertSame('voyti.mail.welcome_subject', $translator->ids[0]);
+        self::assertSame(['app' => 'Voyti'], $translator->parametersLog[0]);
     }
 
     public function testSendIsPubliclyCallable(): void
@@ -81,6 +82,51 @@ PHP
 
         self::assertTrue($service->send('custom', 'to@example.com', 'Subject', 'nonexistent'));
         self::assertCount(1, $mailer->messages());
+    }
+
+    public function testSendReconfirmationRendersUsernameConfirmationUrlAndTranslatorLocale(): void
+    {
+        $mailPath = $this->createTempMailPath();
+        try {
+            mkdir($mailPath . '/html');
+            file_put_contents(
+                $mailPath . '/html/reconfirmation.php',
+                <<<'PHP'
+<?php
+echo 'html-' . $username . '-' . $confirmationUrl . '-' . $translator->getLocale();
+PHP
+            );
+            mkdir($mailPath . '/text');
+            file_put_contents(
+                $mailPath . '/text/reconfirmation.php',
+                <<<'PHP'
+<?php
+echo 'text-' . $username . '-' . $confirmationUrl . '-' . $translator->getLocale();
+PHP
+            );
+
+            $mailer = new MailCapture();
+            $url = new RecordingUrlGenerator();
+            $service = new MailService($mailer, $mailPath, new Translator('en'), $url);
+
+            $user = new User();
+            $user->setUsername('alice');
+            $user->setEmail('alice@example.com');
+
+            $userToken = new UserToken();
+            $userToken->setCode('secret-code-123');
+
+            self::assertTrue($service->sendReconfirmation($user, $userToken));
+
+            $messages = $mailer->messages();
+            self::assertCount(1, $messages);
+            $message = $messages[0];
+            self::assertInstanceOf(MessageInterface::class, $message);
+            self::assertSame('html-alice-https://example.test/voyti/settings-confirm-en', $message->getHtmlBody());
+            self::assertSame('text-alice-https://example.test/voyti/settings-confirm-en', $message->getTextBody());
+        } finally {
+            $this->removeTempMailPath($mailPath, 'reconfirmation.php');
+        }
     }
 
     public function testSendReconfirmationUsesTokenCodeInConfirmationUrl(): void
@@ -109,16 +155,16 @@ PHP
         return $path;
     }
 
-    private function removeTempMailPath(string $path): void
+    private function removeTempMailPath(string $path, string $viewFile = 'welcome.php'): void
     {
-        if (is_file($path . '/html/welcome.php')) {
-            unlink($path . '/html/welcome.php');
+        if (is_file($path . '/html/' . $viewFile)) {
+            unlink($path . '/html/' . $viewFile);
         }
         if (is_dir($path . '/html')) {
             rmdir($path . '/html');
         }
-        if (is_file($path . '/text/welcome.php')) {
-            unlink($path . '/text/welcome.php');
+        if (is_file($path . '/text/' . $viewFile)) {
+            unlink($path . '/text/' . $viewFile);
         }
         if (is_dir($path . '/text')) {
             rmdir($path . '/text');
@@ -162,6 +208,9 @@ final class RecordingTranslator implements TranslatorInterface
     /** @var list<string> */
     public array $ids = [];
 
+    /** @var list<array<string, scalar>> */
+    public array $parametersLog = [];
+
     public function addCategorySources(\Yiisoft\Translator\CategorySource ...$categories): static
     {
         return $this;
@@ -184,6 +233,7 @@ final class RecordingTranslator implements TranslatorInterface
         ?string $locale = null
     ): string {
         $this->ids[] = (string) $id;
+        $this->parametersLog[] = $parameters;
         return (string) $id;
     }
 

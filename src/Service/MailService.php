@@ -11,14 +11,14 @@ use Yiisoft\Mailer\Message;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 
-final class MailService
+final readonly class MailService
 {
     public function __construct(
-        private readonly MailerInterface $mailer,
-        private readonly string $mailPath,
-        private readonly TranslatorInterface $translator,
-        private readonly UrlGeneratorInterface $url,
-        private readonly string $appName = 'Voyti',
+        private MailerInterface $mailer,
+        private string $mailPath,
+        private TranslatorInterface $translator,
+        private UrlGeneratorInterface $url,
+        private string $appName = 'Voyti',
     ) {
     }
 

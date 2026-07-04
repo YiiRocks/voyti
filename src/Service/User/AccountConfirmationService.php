@@ -8,10 +8,10 @@ use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Repository\UserTokenRepository;
 
-final class AccountConfirmationService
+final readonly class AccountConfirmationService
 {
     public function __construct(
-        private readonly UserTokenRepository $userTokenRepository,
+        private UserTokenRepository $userTokenRepository,
     ) {
     }
 

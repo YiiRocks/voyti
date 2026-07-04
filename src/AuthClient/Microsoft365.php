@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\AuthClient;
 
-final class Microsoft365 extends AbstractAuthClient
+final readonly class Microsoft365 extends AbstractAuthClient
 {
     /**
      * @param array<string, mixed> $config

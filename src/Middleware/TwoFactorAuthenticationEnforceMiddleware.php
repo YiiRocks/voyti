@@ -16,14 +16,14 @@ use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
 
-final class TwoFactorAuthenticationEnforceMiddleware implements MiddlewareInterface
+final readonly class TwoFactorAuthenticationEnforceMiddleware implements MiddlewareInterface
 {
     public function __construct(
-        private readonly CurrentUser $currentUser,
-        private readonly ModuleConfig $config,
-        private readonly ManagerInterface $authManager,
-        private readonly ResponseFactoryInterface $responseFactory,
-        private readonly UrlGeneratorInterface $url,
+        private CurrentUser $currentUser,
+        private ModuleConfig $config,
+        private ManagerInterface $authManager,
+        private ResponseFactoryInterface $responseFactory,
+        private UrlGeneratorInterface $url,
     ) {
     }
 

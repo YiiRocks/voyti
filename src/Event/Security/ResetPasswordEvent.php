@@ -9,8 +9,8 @@ use Yiisoft\FormModel\FormModel;
 
 final class ResetPasswordEvent
 {
-    public const AFTER_RESET = 'afterReset';
-    public const BEFORE_TOKEN_VALIDATE = 'beforeTokenValidate';
+    public const string AFTER_RESET = 'afterReset';
+    public const string BEFORE_TOKEN_VALIDATE = 'beforeTokenValidate';
 
     public function __construct(
         private readonly UserToken $userToken,

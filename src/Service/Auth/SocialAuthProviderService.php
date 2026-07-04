@@ -11,13 +11,13 @@ use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Security\Random;
 use Yiisoft\Session\SessionInterface;
 
-final class SocialAuthProviderService
+final readonly class SocialAuthProviderService
 {
     public function __construct(
-        private readonly AuthClientRegistry $authClientRegistry,
-        private readonly ClientInterface $httpClient,
-        private readonly SessionInterface $session,
-        private readonly UrlGeneratorInterface $url,
+        private AuthClientRegistry $authClientRegistry,
+        private ClientInterface $httpClient,
+        private SessionInterface $session,
+        private UrlGeneratorInterface $url,
     ) {
     }
 
