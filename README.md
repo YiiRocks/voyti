@@ -13,7 +13,7 @@ Ported from [2amigos/yii2-usuario](https://github.com/2amigos/yii2-usuario) and 
 [![Packagist Version](https://img.shields.io/packagist/v/yiirocks/voyti.svg)](https://packagist.org/packages/yiirocks/voyti)
 [![PHP from Packagist](https://img.shields.io/packagist/php-v/yiirocks/voyti.svg)](https://php.net/)
 [![Packagist](https://img.shields.io/packagist/dt/yiirocks/voyti.svg)](https://packagist.org/packages/yiirocks/voyti)
-[![GitHub](https://img.shields.io/github/license/yiirocks/voyti.svg)](https://github.com/yiirocks/voyti/blob/master/LICENSE)
+[![GitHub](https://img.shields.io/github/license/yiirocks/voyti.svg)](https://github.com/yiirocks/voyti/blob/main/LICENSE.md)
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/yiirocks/voyti/build.yml?branch=main)](https://github.com/yiirocks/voyti/actions)
 
 ---
@@ -27,7 +27,8 @@ Ported from [2amigos/yii2-usuario](https://github.com/2amigos/yii2-usuario) and 
 5. [Middleware](#middleware)
 6. [RBAC](#rbac)
 7. [Routes](#routes)
-8. [Testing](#testing)
+8. [Events & Listeners](#events--listeners)
+9. [Testing](#testing)
 
 ## Features
 
@@ -400,6 +401,28 @@ The library does not provide a menu model or navigation contract. It only expose
 | `voyti/rules-update` | `GET`, `POST` | `rules/update/{name}` | Update rule |
 | `voyti/rules-delete` | `POST` | `rules/delete/{name}` | Delete rule |
 
+## Events & Listeners
+
+Voyti dispatches events at key points in the user lifecycle, allowing your application to react, log, or extend behaviour. Each event carries a `const string` name to distinguish before/after variants. Attach your own listeners through the Yii3 event dispatcher configuration.
+
+### Events with default listeners
+
+| Event | Trigger | Default behavior |
+|-------|---------|-------------------|
+| `AfterLoginEvent` | User logs in | Triggers password expiration check and session history tracking |
+| `AfterRegisterEvent` | New user registration | Sends admin notification email |
+| `EmailChangeEvent` | User requests email change | Sends confirmation email |
+
+### Additional events (no default listeners)
+
+- **UserEvent** — Variants: create, delete, block/unblock, confirmation, account/profile update, switch identity, logout
+- **UserProfileEvent** — Profile-related changes
+- **GdprEvent** — Specifically: delete operation
+- **ResetPasswordEvent** — Password reset flow
+- **SessionEvent** — Variants: created, updated, terminated
+- **UserSocialAuthEvent** — Social authentication activities
+- **UserSocialConnectEvent** — Social account connection activities
+
 ## Testing
 
 ```bash
@@ -413,10 +436,6 @@ composer infection
 composer psalm
 ```
 
-## Credits
-
-Originally based on [2amigos/yii2-usuario](https://github.com/2amigos/yii2-usuario) by 2amigOS.
-
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE.md)
