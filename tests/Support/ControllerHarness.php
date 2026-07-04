@@ -11,8 +11,10 @@ use Psr\Http\Message\ServerRequestInterface;
 use Stringable;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistryFactory;
 use YiiRocks\Voyti\Controller\AdminController;
+use YiiRocks\Voyti\Controller\PermissionController;
 use YiiRocks\Voyti\Controller\RecoveryController;
 use YiiRocks\Voyti\Controller\RegistrationController;
+use YiiRocks\Voyti\Controller\RoleController;
 use YiiRocks\Voyti\Controller\SecurityController;
 use YiiRocks\Voyti\Controller\SettingsController;
 use YiiRocks\Voyti\Factory\MailFactory;
@@ -96,6 +98,7 @@ final class ControllerHarness
     public readonly ModuleConfig $moduleConfig;
     public readonly PasswordGeneratorInterface $passwordGenerator;
     public readonly PasswordHasher $passwordHasher;
+    public readonly PermissionController $permissionController;
     public readonly QrCodeUriGeneratorService $qrCodeUriGeneratorService;
     public readonly HarnessRbacAssignmentsStorage $rbacAssignmentsStorage;
     public readonly HarnessRbacItemsStorage $rbacItemsStorage;
@@ -108,6 +111,7 @@ final class ControllerHarness
     public readonly ResendConfirmationService $resendConfirmationService;
     public readonly ResendForm $resendFormPrototype;
     public readonly ResetService $resetPasswordService;
+    public readonly RoleController $roleController;
     public readonly SecurityController $securityController;
     public readonly FakeSession $session;
     public readonly SettingsController $settingsController;
@@ -365,6 +369,30 @@ final class ControllerHarness
             $this->currentUser,
             $responseFactory,
             $this->rbacItemsStorage,
+            $this->rbacAssignmentsStorage,
+        );
+
+        $this->permissionController = new PermissionController(
+            $this->translator,
+            $this->webViewRenderer,
+            $this->url,
+            $this->validator(),
+            $responseFactory,
+            $this->users,
+            $this->rbacItemsStorage,
+            $this->rbacManager,
+            $this->rbacAssignmentsStorage,
+        );
+
+        $this->roleController = new RoleController(
+            $this->translator,
+            $this->webViewRenderer,
+            $this->url,
+            $this->validator(),
+            $responseFactory,
+            $this->users,
+            $this->rbacItemsStorage,
+            $this->rbacManager,
             $this->rbacAssignmentsStorage,
         );
     }

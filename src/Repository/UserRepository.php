@@ -63,6 +63,16 @@ final class UserRepository extends BaseRepository
         return $user;
     }
 
+    /**
+     * @param list<int> $ids
+     *
+     * @psalm-return list<User>
+     */
+    public function findByIds(array $ids): array
+    {
+        return $this->findAll(User::class, ['id' => $ids]);
+    }
+
     public function findByUsername(string $username): ?User
     {
         /** @var ?User $user */

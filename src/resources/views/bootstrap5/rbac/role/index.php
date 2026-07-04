@@ -11,6 +11,7 @@ use Yiisoft\View\WebView;
 /**
  * @var WebView $this
  * @var array $items Array of Role objects
+ * @var array<string, list<string>> $itemChildren
  * @var string $filterName
  * @var string $filterDescription
  * @var UrlGeneratorInterface $url
@@ -66,8 +67,7 @@ foreach ($items as $role) {
     echo Html::div()->class('row py-2 border-bottom align-items-center')->open();
     echo Html::div($role->getName())->class('col-3 text-break');
     echo Html::div($role->getDescription())->class('col-4 text-break');
-    /** @psalm-suppress MixedArgument, UndefinedMethod */
-    echo Html::div(implode(', ', array_map(fn (\Yiisoft\Rbac\Role $c): string => $c->getName(), $role->getChildren())))->class('col-2 text-break');
+    echo Html::div(implode(', ', $itemChildren[$role->getName()] ?? []))->class('col-2 text-break');
     echo Html::div()->class('col-3 text-end')->open();
     echo Html::a($translator->translate('voyti.view.update_link', category: 'voyti'), $url->generate('voyti/roles-update', ['name' => $role->getName()]))->class('btn', 'btn-sm', 'btn-outline-secondary', 'me-1');
 

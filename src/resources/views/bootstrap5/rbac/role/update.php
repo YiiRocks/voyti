@@ -14,11 +14,10 @@ use Yiisoft\View\WebView;
  * @var WebView $this
  * @var RoleForm $model
  * @var array<string, list<string>> $errors
- * @var array $unassignedItems
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
  * @var string $csrf
- * @var list<array{user: User, assigned: bool}> $users
+ * @var list<User> $users
  */
 
 /** @psalm-suppress InvalidScope */
@@ -53,29 +52,14 @@ echo Field::text($model, 'rule');
 
 echo Html::h3($translator->translate('voyti.view.assignments.title', category: 'voyti'))->class('mb-3');
 
-echo Html::div()->class('row g-3 mb-3')->open();
-echo Html::div()->class('col-md-6')->open();
+echo Html::div()->class('mb-3')->open();
 echo Html::div($translator->translate('voyti.view.assignments.assigned', category: 'voyti'))->class('fw-bold mb-2');
-foreach ($users as $userData) {
-    if ($userData['assigned']) {
-        echo Html::div()->class('form-check')->open();
-        echo Html::input('checkbox')->class('form-check-input')->name('assignedUsers[]')->value((string) $userData['user']->getId())->addAttributes(['checked' => true]);
-        echo Html::label($userData['user']->getUsername())->class('form-check-label');
-        echo Html::div()->close();
-    }
+foreach ($users as $user) {
+    echo Html::div()->class('form-check')->open();
+    echo Html::input('checkbox')->class('form-check-input')->name('assignedUsers[]')->value((string) $user->getId())->addAttributes(['checked' => true]);
+    echo Html::label($user->getUsername())->class('form-check-label');
+    echo Html::div()->close();
 }
-echo Html::div()->close();
-echo Html::div()->class('col-md-6')->open();
-echo Html::div($translator->translate('voyti.view.assignments.available', category: 'voyti'))->class('fw-bold mb-2');
-foreach ($users as $userData) {
-    if (!$userData['assigned']) {
-        echo Html::div()->class('form-check')->open();
-        echo Html::input('checkbox')->class('form-check-input')->name('assignedUsers[]')->value((string) $userData['user']->getId());
-        echo Html::label($userData['user']->getUsername())->class('form-check-label');
-        echo Html::div()->close();
-    }
-}
-echo Html::div()->close();
 echo Html::div()->close();
 
 echo Field::buttonGroup()

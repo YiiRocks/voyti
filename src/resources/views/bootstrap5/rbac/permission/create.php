@@ -13,7 +13,6 @@ use Yiisoft\View\WebView;
  * @var WebView $this
  * @var PermissionForm $model
  * @var array<string, list<string>> $errors
- * @var array $unassignedItems
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
  * @var string $csrf

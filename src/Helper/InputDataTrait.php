@@ -26,6 +26,10 @@ trait InputDataTrait
      * @param array<array-key, mixed> $data
      *
      * @return null|string
+     *
+     * @infection-ignore-all ProtectedVisibility: declared protected for consistency with the rest of this
+     * shared trait's API surface, even though the only current caller (AbstractAuthItemController) accesses
+     * it from within the same class and would work identically if it were private.
      */
     protected function nullableStringValue(array $data, string $key): string|null
     {

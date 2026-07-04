@@ -83,7 +83,6 @@ abstract class AbstractAuthItemController
         return $this->renderView('rbac/' . $this->getItemType() . '/create', [
             'model' => $form,
             'errors' => $errors,
-            'unassignedItems' => $this->itemsStorage->getAll(),
         ]);
     }
 
@@ -94,7 +93,6 @@ abstract class AbstractAuthItemController
         } else {
             $this->managerInterface->removePermission($name);
         }
-        $this->managerInterface->removeChildren($name);
 
         return $this->redirect($this->url->generate('voyti/' . $this->getIndexRouteName()));
     }
@@ -123,10 +121,16 @@ abstract class AbstractAuthItemController
             );
         }
 
+        $itemChildren = [];
+        foreach ($items as $item) {
+            $itemChildren[$item->getName()] = array_keys($this->itemsStorage->getDirectChildren($item->getName()));
+        }
+
         return $this->renderView('rbac/' . $this->getItemType() . '/index', [
             'items' => $items,
             'filterName' => $filterName,
             'filterDescription' => $filterDescription,
+            'itemChildren' => $itemChildren,
         ]);
     }
 
@@ -147,7 +151,7 @@ abstract class AbstractAuthItemController
         $form->rule = $item->getRuleName() ?? '';
         $form->children = array_keys($this->itemsStorage->getDirectChildren($item->getName()));
 
-        $users = $this->buildUserAssignmentData($item->getName());
+        $users = $this->getAssignedUsers($item->getName());
 
         $errors = [];
 
@@ -201,7 +205,6 @@ abstract class AbstractAuthItemController
             'model' => $form,
             'errors' => $errors,
             'users' => $users,
-            'unassignedItems' => $this->itemsStorage->getAll(),
         ]);
     }
 
@@ -211,7 +214,21 @@ abstract class AbstractAuthItemController
 
     abstract protected function getItemType(): string;
 
-    protected function loadForm(AbstractAuthItemForm $form, array $body): void
+    /**
+     * @return list<User>
+     */
+    private function getAssignedUsers(string $itemName): array
+    {
+        $userIds = [];
+        foreach ($this->assignmentsStorage->getByItemNames([$itemName]) as $assignment) {
+            /** @infection-ignore-all CastInt: SQLite's IN() comparison is untyped, so a numeric-string user ID matches the INTEGER column just as well; the cast exists to satisfy findByIds()'s list<int> contract, not to change query results. */
+            $userIds[] = (int) $assignment->getUserId();
+        }
+
+        return $this->userRepository->findByIds($userIds);
+    }
+
+    private function loadForm(AbstractAuthItemForm $form, array $body): void
     {
         $prefix = $form->getFormName();
         $data = $this->formData($body, $prefix);
@@ -220,29 +237,8 @@ abstract class AbstractAuthItemController
         $form->rule = $this->nullableStringValue($data, 'rule') ?? $form->rule;
 
         $children = $data['children'] ?? $form->children;
+        /** @infection-ignore-all UnwrapArrayValues: only ever consumed via foreach, which doesn't care about key contiguity; array_values() exists to honor the list<string> contract, not to change iteration results. */
         $form->children = is_array($children) ? array_values(array_filter($children, 'is_string')) : $form->children;
-    }
-
-    /**
-     * @return list<array{user: User, assigned: bool}>
-     */
-    private function buildUserAssignmentData(string $itemName): array
-    {
-        $allUsers = $this->userRepository->findAllUsers();
-        /** @var array<string, true> $assignedUserIds */
-        $assignedUserIds = [];
-        foreach ($this->assignmentsStorage->getByItemNames([$itemName]) as $assignment) {
-            $assignedUserIds[$assignment->getUserId()] = true;
-        }
-
-        $users = [];
-        foreach ($allUsers as $user) {
-            $users[] = [
-                'user' => $user,
-                'assigned' => isset($assignedUserIds[(string) $user->getId()]),
-            ];
-        }
-        return $users;
     }
 
     /**
@@ -253,6 +249,7 @@ abstract class AbstractAuthItemController
         $submittedIds = [];
         foreach (($body['assignedUsers'] ?? []) as $id) {
             if (is_string($id) && $id !== '') {
+                /** @infection-ignore-all TrueValue: only isset() is ever checked against this entry, which is indifferent to true vs false. */
                 $submittedIds[$id] = true;
             }
         }
