@@ -76,6 +76,36 @@ final class UserRepositoryTest extends TestCase
         parent::tearDown();
     }
 
+    public function testCountByFiltersAppliesEmailFilter(): void
+    {
+        $repository = new UserRepository();
+        $this->insertUser('alice', 'alice@example.com');
+        $this->insertUser('bob', 'bob@example.com');
+
+        self::assertSame(2, $repository->countByFilters([]));
+        self::assertSame(1, $repository->countByFilters(['email' => 'bob@']));
+    }
+
+    public function testCountByFiltersAppliesUsernameFilter(): void
+    {
+        $repository = new UserRepository();
+        $this->insertUser('alice', 'alice@example.com');
+        $this->insertUser('bob', 'bob@example.com');
+
+        self::assertSame(2, $repository->countByFilters([]));
+        self::assertSame(1, $repository->countByFilters(['username' => 'ali']));
+    }
+
+    public function testCountByFiltersCombinesUsernameAndEmailFilters(): void
+    {
+        $repository = new UserRepository();
+        $this->insertUser('alice', 'alice@example.com');
+        $this->insertUser('bob', 'bob@example.com');
+
+        self::assertSame(1, $repository->countByFilters(['username' => 'alice', 'email' => 'alice@']));
+        self::assertSame(0, $repository->countByFilters(['username' => 'alice', 'email' => 'bob@']));
+    }
+
     public function testFindAllHonoursNonEmptyCondition(): void
     {
         $this->insertUser('alice', 'alice@example.com');
@@ -219,6 +249,109 @@ final class UserRepositoryTest extends TestCase
 
         self::assertNull($user->getId());
         self::assertSame(0, $profile->getUserId());
+    }
+
+    public function testSearchAppliesEmailFilter(): void
+    {
+        $repository = new UserRepository();
+        $this->insertUser('alice', 'alice@example.com');
+        $this->insertUser('bob', 'bob@example.com');
+
+        $results = $repository->search(['email' => 'bob@']);
+
+        self::assertCount(1, $results);
+        self::assertSame('bob', $results[0]->getUsername());
+    }
+
+    public function testSearchAppliesLimitAndPageOffset(): void
+    {
+        $repository = new UserRepository();
+        foreach (['alice', 'bob', 'carol', 'dave'] as $name) {
+            $this->insertUser($name, "{$name}@example.com");
+        }
+
+        $results = $repository->search(['limit' => 2, 'page' => 2]);
+
+        self::assertCount(2, $results);
+        self::assertSame('carol', $results[0]->getUsername());
+        self::assertSame('dave', $results[1]->getUsername());
+    }
+
+    public function testSearchAppliesStatusFilter(): void
+    {
+        $repository = new UserRepository();
+        $blocked = $this->insertUser('blockeduser', 'blocked@example.com');
+        $blocked->setBlockedAt(time());
+        $blocked->setConfirmedAt(time());
+        $blocked->save();
+        $confirmed = $this->insertUser('confirmeduser', 'confirmed@example.com');
+        $confirmed->setConfirmedAt(time());
+        $confirmed->save();
+        $this->insertUser('unconfirmeduser', 'unconfirmed@example.com');
+
+        $blockedResults = $repository->search(['status' => 'blocked']);
+        self::assertCount(1, $blockedResults);
+        self::assertSame('blockeduser', $blockedResults[0]->getUsername());
+
+        $confirmedResults = $repository->search(['status' => 'confirmed']);
+        self::assertCount(2, $confirmedResults);
+        self::assertSame('blockeduser', $confirmedResults[0]->getUsername());
+        self::assertSame('confirmeduser', $confirmedResults[1]->getUsername());
+
+        $unconfirmedResults = $repository->search(['status' => 'unconfirmed']);
+        self::assertCount(1, $unconfirmedResults);
+        self::assertSame('unconfirmeduser', $unconfirmedResults[0]->getUsername());
+    }
+
+    public function testSearchAppliesUsernameFilter(): void
+    {
+        $repository = new UserRepository();
+        $this->insertUser('alice', 'alice@example.com');
+        $this->insertUser('bob', 'bob@example.com');
+
+        $results = $repository->search(['username' => 'ali']);
+
+        self::assertCount(1, $results);
+        self::assertSame('alice', $results[0]->getUsername());
+    }
+
+    public function testSearchCastsStringLimitFilterToInt(): void
+    {
+        $repository = new UserRepository();
+        foreach (['alice', 'bob', 'carol'] as $name) {
+            $this->insertUser($name, "{$name}@example.com");
+        }
+
+        $results = $repository->search(['limit' => '2']);
+
+        self::assertCount(2, $results);
+    }
+
+    public function testSearchClampsNonPositivePageToFirstPage(): void
+    {
+        $repository = new UserRepository();
+        foreach (['alice', 'bob'] as $name) {
+            $this->insertUser($name, "{$name}@example.com");
+        }
+
+        $results = $repository->search(['page' => 0, 'limit' => 1]);
+
+        self::assertCount(1, $results);
+        self::assertSame('alice', $results[0]->getUsername());
+    }
+
+    public function testSearchDefaultLimitIsFifty(): void
+    {
+        $repository = new UserRepository();
+        for ($i = 1; $i <= 51; $i++) {
+            $this->insertUser("user{$i}", "user{$i}@example.com");
+        }
+
+        $results = $repository->search([]);
+
+        self::assertCount(50, $results);
+        self::assertSame('user1', $results[0]->getUsername());
+        self::assertSame('user50', $results[49]->getUsername());
     }
 
     private function createUser(string $username, string $email): User

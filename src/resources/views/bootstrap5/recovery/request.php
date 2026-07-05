@@ -33,13 +33,16 @@ echo Html::form()
 
 echo Field::errorSummary($model);
 
-echo Field::email($model, 'email');
+$tabindex = 0;
+
+echo Field::email($model, 'email')->tabIndex(++$tabindex);
 
 echo RecaptchaHelper::render($model, $config);
 
 echo Field::buttonGroup()
     ->buttons(
-        Html::submitButton($translator->translate('voyti.view.recovery.send_link_button', category: 'voyti'))
+        Html::resetButton($translator->translate('voyti.view.reset_button', category: 'voyti'))->attribute('tabindex', $tabindex + 2),
+        Html::submitButton($translator->translate('voyti.view.recovery.send_link_button', category: 'voyti'))->attribute('tabindex', ++$tabindex),
     );
 
 echo Html::div()->class('mt-3')->open();

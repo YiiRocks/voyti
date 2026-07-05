@@ -30,6 +30,14 @@ final readonly class CreateService
 
     public function run(string $email, string $username, string $password): ServiceResult
     {
+        if ($this->userRepository->findByEmail($email) !== null) {
+            return ServiceResult::failure('Email already exists');
+        }
+
+        if ($this->userRepository->findByUsername($username) !== null) {
+            return ServiceResult::failure('Username already exists');
+        }
+
         $user = new User();
         $user->setUsername($username);
         $user->setEmail($email);

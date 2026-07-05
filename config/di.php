@@ -8,8 +8,7 @@ use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistryFactory;
-use YiiRocks\Voyti\Factory\MailFactory;
-use YiiRocks\Voyti\Factory\TokenFactory;
+use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Helper\GravatarHelper;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
@@ -45,6 +44,7 @@ use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\CreateService;
 use YiiRocks\Voyti\Service\User\RegisterService;
 use YiiRocks\Voyti\Service\User\ResendConfirmationService;
+use YiiRocks\Voyti\Service\UserSessionHistory\TerminateUserSessionsService;
 use YiiRocks\Voyti\Service\UserSessionHistory\UserSessionHistoryDecorator;
 use YiiRocks\Voyti\Strategy\EmailChangeStrategyFactory;
 use YiiRocks\Voyti\Validator\Rbac\ItemsValidator;
@@ -122,8 +122,9 @@ return [
     ) => new AccountConfirmationService($tokenRepository),
     ResendConfirmationService::class => fn (
         UserTokenRepository $tokenRepository,
+        UserTokenFactory $userTokenFactory,
         MailService $mailService,
-    ) => new ResendConfirmationService($tokenRepository, $mailService),
+    ) => new ResendConfirmationService($tokenRepository, $userTokenFactory, $mailService),
     SwitchIdentityService::class => fn (
         ModuleConfig $config,
         UserRepository $userRepository,
@@ -143,8 +144,9 @@ return [
     CreateService::class => CreateService::class,
     RegisterService::class => RegisterService::class,
     BlockService::class => fn (
-        EventDispatcherInterface $eventDispatcher
-    ) => new BlockService($eventDispatcher),
+        EventDispatcherInterface $eventDispatcher,
+        TerminateUserSessionsService $terminateUserSessionsService
+    ) => new BlockService($eventDispatcher, $terminateUserSessionsService),
     ConfirmationService::class => fn (
         EventDispatcherInterface $eventDispatcher,
         UserTokenRepository $tokenRepository
@@ -165,6 +167,7 @@ return [
         ModuleConfig $config,
         ?SessionInterface $session = null
     ) => new UserSessionHistoryDecorator($eventDispatcher, $config, $session),
+    TerminateUserSessionsService::class => TerminateUserSessionsService::class,
     PendingSocialAccountService::class => PendingSocialAccountService::class,
     SocialAuthProviderService::class => SocialAuthProviderService::class,
 
@@ -184,12 +187,10 @@ return [
         $eventDispatcher,
     ),
 
-    TokenFactory::class => TokenFactory::class,
-    MailFactory::class => MailFactory::class,
+    UserTokenFactory::class => UserTokenFactory::class,
     EmailChangeStrategyFactory::class => EmailChangeStrategyFactory::class,
 
     Listener\AdminNotificationListener::class => Listener\AdminNotificationListener::class,
-    Listener\MailChangeConfirmationListener::class => Listener\MailChangeConfirmationListener::class,
     Listener\PasswordExpirationListener::class => Listener\PasswordExpirationListener::class,
     Listener\SessionHistoryListener::class => Listener\SessionHistoryListener::class,
 

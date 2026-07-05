@@ -187,30 +187,6 @@ final class AuthHelperTest extends TestCase
         self::assertTrue($helper->isAdmin(1));
     }
 
-    public function testRemoveItemRemovesPermissionAndItsChildren(): void
-    {
-        $authManager = $this->createMock(ManagerInterface::class);
-        $authManager->expects(self::once())->method('removePermission')->with('some_permission');
-        $authManager->expects(self::once())->method('removeChildren')->with('some_permission');
-
-        $helper = $this->createHelper($authManager, new ModuleConfig());
-        $item = new Permission('some_permission');
-
-        self::assertTrue($helper->removeItem($item));
-    }
-
-    public function testRemoveItemRemovesRoleAndItsChildren(): void
-    {
-        $authManager = $this->createMock(ManagerInterface::class);
-        $authManager->expects(self::once())->method('removeRole')->with('some_role');
-        $authManager->expects(self::once())->method('removeChildren')->with('some_role');
-
-        $helper = $this->createHelper($authManager, new ModuleConfig());
-        $item = new Role('some_role');
-
-        self::assertTrue($helper->removeItem($item));
-    }
-
     private function createHelper(
         ManagerInterface $authManager,
         ModuleConfig $config,

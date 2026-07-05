@@ -7,11 +7,13 @@ namespace YiiRocks\Voyti\Service\User;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Event\User\UserEvent;
+use YiiRocks\Voyti\Service\UserSessionHistory\TerminateUserSessionsService;
 
 final readonly class BlockService
 {
     public function __construct(
         private EventDispatcherInterface $eventDispatcher,
+        private TerminateUserSessionsService $terminateUserSessionsService,
     ) {
     }
 
@@ -28,6 +30,16 @@ final readonly class BlockService
         $user->save();
         $result = true;
         $this->eventDispatcher->dispatch(new UserEvent($user));
+
+        if ($user->isBlocked()) {
+            $this->terminateUserSessionsService->run($this->getUserId($user));
+        }
+
         return $result;
+    }
+
+    private function getUserId(User $user): int
+    {
+        return $user->getId() !== null ? (int) $user->getId() : 0;
     }
 }

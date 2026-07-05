@@ -41,17 +41,19 @@ echo Html::form()
 
 echo Field::errorSummary(null)->errors($errors);
 
-echo Field::text($model, 'username')->name('user[username]')->value($model->username);
+$tabindex = 0;
 
-echo Field::email($model, 'email')->name('user[email]')->value($model->email);
+echo Field::text($model, 'username')->name('user[username]')->value($model->username)->tabIndex(++$tabindex);
 
-echo Field::password($model, 'password')->name('user[password]');
+echo Field::email($model, 'email')->name('user[email]')->value($model->email)->tabIndex(++$tabindex);
+
+echo Field::password($model, 'password')->name('user[password]')->tabIndex(++$tabindex);
 
 echo Html::h3($translator->translate('voyti.view.assignments.title', category: 'voyti'))->class('mb-3');
 
 foreach ($allItems as $name => $item) {
     echo Html::div()->class('form-check')->open();
-    $checkbox = Html::input('checkbox')->class('form-check-input')->name('assignedItems[]')->value($name);
+    $checkbox = Html::input('checkbox')->class('form-check-input')->name('assignedItems[]')->value($name)->attribute('tabindex', ++$tabindex);
     if (in_array($name, $assignedItems, true)) {
         $checkbox = $checkbox->addAttributes(['checked' => true]);
     }
@@ -62,7 +64,8 @@ foreach ($allItems as $name => $item) {
 
 echo Field::buttonGroup()
     ->buttons(
-        Html::submitButton($translator->translate('voyti.view.update_button', category: 'voyti'))
+        Html::resetButton($translator->translate('voyti.view.reset_button', category: 'voyti'))->attribute('tabindex', $tabindex + 2),
+        Html::submitButton($translator->translate('voyti.view.update_button', category: 'voyti'))->attribute('tabindex', ++$tabindex),
     );
 
 echo Html::form()->close();

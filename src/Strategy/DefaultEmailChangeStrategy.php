@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Strategy;
 
-use YiiRocks\Voyti\Factory\MailFactory;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
+use YiiRocks\Voyti\Service\MailService;
 
 final readonly class DefaultEmailChangeStrategy implements MailChangeStrategyInterface
 {
     public function __construct(
         private SettingsForm $form,
         private UserTokenFactory $tokenFactory,
-        private MailFactory $mailFactory,
+        private MailService $mailService,
     ) {
     }
 
@@ -28,7 +28,7 @@ final readonly class DefaultEmailChangeStrategy implements MailChangeStrategyInt
 
         $userToken = $this->tokenFactory->makeConfirmNewMailToken((int) ($user->getId() ?? 0));
 
-        if ($this->mailFactory->sendReconfirmation($user, $userToken)) {
+        if ($this->mailService->sendReconfirmation($user, $userToken)) {
             $user->save();
             return true;
         }

@@ -39,6 +39,14 @@ final readonly class RegisterService
             : $this->passwordGenerator->generate(12);
         $gdprConsent = (bool) ($data['gdprConsent'] ?? false);
 
+        if ($this->userRepository->findByEmail($email) !== null) {
+            return ServiceResult::failure('Email already exists', ['Email already exists']);
+        }
+
+        if ($this->userRepository->findByUsername($username) !== null) {
+            return ServiceResult::failure('Username already exists', ['Username already exists']);
+        }
+
         $user = new User();
         $user->setUsername($username);
         $user->setEmail($email);

@@ -17,6 +17,7 @@ use Yiisoft\View\WebView;
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
  * @var string $csrf
+ * @var string $method
  */
 
 /** @psalm-suppress InvalidScope */
@@ -25,6 +26,10 @@ $this->setTitle($translator->translate('voyti.view.two_factor.title', category: 
 echo Html::div()->open();
 echo Html::H1($translator->translate('voyti.view.two_factor.title', category: 'voyti'));
 
+if ($method === 'email') {
+    echo Html::p($translator->translate('voyti.view.two_factor_email.enter_code', category: 'voyti'));
+}
+
 echo Html::form()
     ->post($url->generate('voyti/confirm'))
     ->csrf($csrf)
@@ -32,11 +37,14 @@ echo Html::form()
 
 echo Field::errorSummary($model);
 
-echo Field::text($model, 'twoFactorAuthenticationCode')->inputAttributes(['autocomplete' => 'one-time-code']);
+$tabindex = 0;
+
+echo Field::text($model, 'twoFactorAuthenticationCode')->inputAttributes(['autocomplete' => 'one-time-code'])->tabIndex(++$tabindex);
 
 echo Field::buttonGroup()
     ->buttons(
-        Html::submitButton($translator->translate('voyti.view.two_factor.verify_button', category: 'voyti'))
+        Html::resetButton($translator->translate('voyti.view.reset_button', category: 'voyti'))->attribute('tabindex', $tabindex + 2),
+        Html::submitButton($translator->translate('voyti.view.two_factor.verify_button', category: 'voyti'))->attribute('tabindex', ++$tabindex),
     );
 
 echo Html::form()->close();

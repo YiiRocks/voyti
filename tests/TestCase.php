@@ -109,4 +109,12 @@ abstract class TestCase extends BaseTestCase
     {
         return $this->db !== null;
     }
+
+    /**
+     * Normalizes CRLF line endings to LF so console output assertions are stable across platforms.
+     */
+    protected function normalizeLineEndings(string $value): string
+    {
+        return str_replace("\r\n", "\n", $value);
+    }
 }

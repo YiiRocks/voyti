@@ -9,11 +9,12 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\User\CreateService;
 use Yiisoft\Rbac\ManagerInterface;
 
-final readonly class CreateUserCommand extends Command
+final class CreateUserCommand extends Command
 {
     public function __construct(
         private CreateService $userCreateService,
@@ -75,8 +76,7 @@ final readonly class CreateUserCommand extends Command
             if (is_string($role) && $role !== '') {
                 $user = $this->userRepository->findByEmail($email);
                 if ($user !== null) {
-                    $userId = $user->getId() !== null ? (int) $user->getId() : 0;
-                    $this->authManager->assign($role, $userId);
+                    $this->authManager->assign($role, $this->getUserId($user));
                     $output->writeln("<info>Role assigned: {$role}</info>");
                 }
             }
@@ -86,5 +86,10 @@ final readonly class CreateUserCommand extends Command
 
         $output->writeln("<error>{$result->getMessage()}</error>");
         return Command::FAILURE;
+    }
+
+    private function getUserId(User $user): int
+    {
+        return $user->getId() !== null ? (int) $user->getId() : 0;
     }
 }

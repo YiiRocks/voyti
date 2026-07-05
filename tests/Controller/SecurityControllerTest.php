@@ -50,6 +50,26 @@ final class SecurityControllerTest extends TestCase
         parent::tearDown();
     }
 
+    public function testConfirmComputesGoogleMethodWithoutCrashingWhenSessionUserNoLongerExists(): void
+    {
+        // findByUsernameOrEmail() legitimately returns null here (the login in the stale
+        // session credentials was never registered), so the nullsafe operator on the
+        // method-lookup line must short-circuit rather than call getAuthTfType() on null.
+        $this->harness->session->set('credentials', [
+            'login' => 'ghost-never-registered@example.test',
+            'pwd' => 'whatever',
+            'rememberMe' => false,
+        ]);
+
+        $response = $this->harness->securityController->confirm(
+            $this->harness->request(Method::GET),
+        );
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertStringNotContainsString('Authenticated', $this->harness->responseBody($response));
+        $this->assertTrue($this->harness->currentUser->isGuest());
+    }
+
     public function testConfirmDoesNotRememberWhenRememberMeIsOffString(): void
     {
         $user = $this->registerAndConfirmUser('petr', 'petr@example.test', 'secret123');
@@ -148,6 +168,35 @@ final class SecurityControllerTest extends TestCase
         $this->assertTrue($this->harness->currentUser->isGuest());
     }
 
+    public function testConfirmFailsWithInvalidEmailTwoFactorCode(): void
+    {
+        $user = $this->registerAndConfirmUser('quinn', 'quinn@example.test', 'secret123');
+        $user->setAuthTfEnabled(true);
+        $user->setAuthTfType('email');
+        $user->setAuthTfKey('654321');
+        $user->save();
+
+        $this->harness->session->set('credentials', [
+            'login' => 'quinn@example.test',
+            'pwd' => 'secret123',
+            'rememberMe' => false,
+        ]);
+
+        $response = $this->harness->securityController->confirm(
+            $this->harness->request(
+                Method::POST,
+                $this->harness->formPayload(
+                    new LoginForm($this->harness->moduleConfig, $this->harness->translator),
+                    ['twoFactorAuthenticationCode' => '000000'],
+                ),
+            ),
+        );
+
+        $html = $this->harness->responseBody($response);
+        $this->assertStringNotContainsString('Authenticated', $html);
+        $this->assertTrue($this->harness->currentUser->isGuest());
+    }
+
     public function testConfirmHydratesLoginFromRequestBodyOverridingSessionCredentials(): void
     {
         $user = $this->registerAndConfirmUser('theo', 'theo@example.test', 'secret123');
@@ -228,6 +277,36 @@ final class SecurityControllerTest extends TestCase
         // twoFactorAuthenticationCode field itself, which only renders when
         // the error's value path actually names that property.
         $this->assertSame(2, substr_count($html, 'Two factor authentication is not configured.'));
+    }
+
+    public function testConfirmSucceedsWithValidEmailTwoFactorCode(): void
+    {
+        $this->registerAndConfirmUser('petra', 'petra@example.test', 'secret123');
+        $user = $this->harness->users->findByEmail('petra@example.test');
+        $this->assertInstanceOf(User::class, $user);
+        $user->setAuthTfEnabled(true);
+        $user->setAuthTfType('email');
+        $user->setAuthTfKey('654321');
+        $user->save();
+
+        $this->harness->session->set('credentials', [
+            'login' => 'petra@example.test',
+            'pwd' => 'secret123',
+            'rememberMe' => false,
+        ]);
+
+        $response = $this->harness->securityController->confirm(
+            $this->harness->request(
+                Method::POST,
+                $this->harness->formPayload(
+                    new LoginForm($this->harness->moduleConfig, $this->harness->translator),
+                    ['twoFactorAuthenticationCode' => '654321'],
+                ),
+            ),
+        );
+
+        $this->assertResponseContains($response, 'Authenticated');
+        $this->assertFalse($this->harness->currentUser->isGuest());
     }
 
     public function testConfirmSuccessRemovesCredentialsUpdatesMetadataConnectsPendingAccountAndSetsAuthTimeout(): void
@@ -468,6 +547,44 @@ final class SecurityControllerTest extends TestCase
         $lastFormEvent = $formEvents[count($formEvents) - 1];
         $this->assertInstanceOf(LoginForm::class, $lastFormEvent->getForm());
         $this->assertSame('walt@example.test', $lastFormEvent->getForm()->login);
+    }
+
+    public function testLoginTwoFactorEmailFlowSendsCodeAndRendersEmailHint(): void
+    {
+        $this->harness = new ControllerHarness(
+            dirname(__DIR__, 2),
+            new ModuleConfig(
+                enableEmailConfirmation: true,
+                enableTwoFactorAuthentication: true,
+            ),
+        );
+
+        $user = $this->registerAndConfirmUser('oona', 'oona@example.test', 'secret123');
+        $user->setAuthTfEnabled(true);
+        $user->setAuthTfType('email');
+        $user->save();
+
+        $messagesBefore = count($this->harness->mailer->messages());
+
+        $response = $this->harness->securityController->login(
+            $this->harness->request(
+                Method::POST,
+                $this->harness->formPayload(
+                    new LoginForm($this->harness->moduleConfig, $this->harness->translator),
+                    ['login' => 'oona@example.test', 'password' => 'secret123'],
+                ),
+            ),
+        );
+
+        $html = $this->harness->responseBody($response);
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertStringContainsString('Enter the verification code sent to your email', $html);
+        $this->assertTrue($this->harness->currentUser->isGuest());
+        $this->assertCount($messagesBefore + 1, $this->harness->mailer->messages());
+
+        $reloaded = $this->harness->users->findById((int) $user->getId());
+        $this->assertInstanceOf(User::class, $reloaded);
+        $this->assertNotNull($reloaded->getAuthTfKey());
     }
 
     public function testLoginTwoFactorFlowStoresExactSessionCredentialsAndRendersConfirmPage(): void

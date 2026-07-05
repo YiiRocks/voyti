@@ -154,6 +154,64 @@ final class RegisterServiceTest extends TestCase
         self::assertNull($user->getGdprConsentDate());
     }
 
+    public function testRunFailsWhenEmailAlreadyExists(): void
+    {
+        $this->createExistingUser('taken@example.com', 'original');
+
+        $dispatcher = new RegisterEventCollector();
+        $mailer = new MailCapture();
+        $hasher = $this->createHasher();
+        $service = $this->createService(
+            ModuleConfig::fromArray(['enableEmailConfirmation' => false]),
+            $dispatcher,
+            $mailer,
+            $hasher,
+        );
+
+        $result = $service->run([
+            'username' => 'newusername',
+            'email' => 'taken@example.com',
+            'password' => 'secret',
+            'gdprConsent' => false,
+        ]);
+
+        self::assertTrue($result->isFailure());
+        self::assertSame('Email already exists', $result->getMessage());
+        self::assertSame(['Email already exists'], $result->getErrors());
+        self::assertCount(1, User::query()->all());
+        self::assertCount(0, $dispatcher->events());
+        self::assertCount(0, $mailer->messages());
+    }
+
+    public function testRunFailsWhenUsernameAlreadyExists(): void
+    {
+        $this->createExistingUser('original@example.com', 'taken');
+
+        $dispatcher = new RegisterEventCollector();
+        $mailer = new MailCapture();
+        $hasher = $this->createHasher();
+        $service = $this->createService(
+            ModuleConfig::fromArray(['enableEmailConfirmation' => false]),
+            $dispatcher,
+            $mailer,
+            $hasher,
+        );
+
+        $result = $service->run([
+            'username' => 'taken',
+            'email' => 'new@example.com',
+            'password' => 'secret',
+            'gdprConsent' => false,
+        ]);
+
+        self::assertTrue($result->isFailure());
+        self::assertSame('Username already exists', $result->getMessage());
+        self::assertSame(['Username already exists'], $result->getErrors());
+        self::assertCount(1, User::query()->all());
+        self::assertCount(0, $dispatcher->events());
+        self::assertCount(0, $mailer->messages());
+    }
+
     public function testRunGeneratesRandomPasswordWhenPasswordIsEmptyString(): void
     {
         $dispatcher = new RegisterEventCollector();
@@ -399,6 +457,20 @@ final class RegisterServiceTest extends TestCase
 
         self::assertTrue($result->isSuccess());
         self::assertSame([], $passwordGenerator->requestedLengths);
+    }
+
+    private function createExistingUser(string $email, string $username): User
+    {
+        $user = new User();
+        $user->setUsername($username);
+        $user->setEmail($email);
+        $user->setPasswordHash('hash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $user->save();
+
+        return $user;
     }
 
     private function createHasher(): PasswordHasher

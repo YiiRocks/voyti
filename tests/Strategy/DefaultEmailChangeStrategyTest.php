@@ -6,7 +6,6 @@ namespace YiiRocks\Voyti\tests\Strategy;
 
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserToken;
-use YiiRocks\Voyti\Factory\MailFactory;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Repository\UserTokenRepository;
@@ -105,9 +104,9 @@ final class DefaultEmailChangeStrategyTest extends TestCase
 
         $tokenFactory = new UserTokenFactory(new UserTokenRepository());
         $mailer = new MailCapture();
-        $mailFactory = new MailFactory(new MailService($mailer, dirname(__DIR__, 2) . '/src/resources/mail', $this->getTranslator(), new TestUrlGenerator()));
+        $mailService = new MailService($mailer, dirname(__DIR__, 2) . '/src/resources/mail', $this->getTranslator(), new TestUrlGenerator());
 
-        $strategy = new DefaultEmailChangeStrategy($form, $tokenFactory, $mailFactory);
+        $strategy = new DefaultEmailChangeStrategy($form, $tokenFactory, $mailService);
 
         self::assertFalse($strategy->run());
         self::assertCount(0, $mailer->messages());
@@ -164,9 +163,8 @@ final class DefaultEmailChangeStrategyTest extends TestCase
 
         $tokenFactory = new UserTokenFactory(new UserTokenRepository());
         $mailService = new MailService($mailer, dirname(__DIR__, 2) . '/src/resources/mail', $this->getTranslator(), new TestUrlGenerator());
-        $mailFactory = new MailFactory($mailService);
 
-        return new DefaultEmailChangeStrategy($form, $tokenFactory, $mailFactory);
+        return new DefaultEmailChangeStrategy($form, $tokenFactory, $mailService);
     }
 }
 

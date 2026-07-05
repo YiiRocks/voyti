@@ -233,6 +233,7 @@ final class RecoveryControllerTest extends TestCase
             $this->harness->url,
             new RecoveryService(
                 $this->harness->users,
+                $this->harness->userTokenFactory,
                 $this->harness->mailService,
                 $this->harness->moduleConfig,
                 $this->harness->translator,

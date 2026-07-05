@@ -35,8 +35,6 @@ return [
     'voyti.settings.account_deletion_disabled' => 'Удаление аккаунта отключено',
     'voyti.settings.account_deleted' => 'Ваш аккаунт удалён',
     'voyti.settings.gdpr_consent_saved' => 'Согласие GDPR сохранено',
-    'voyti.settings.two_factor_enabled' => 'Двухфакторная аутентификация включена',
-    'voyti.settings.two_factor_disabled' => 'Двухфакторная аутентификация отключена',
     'voyti.settings.email_changed' => 'Ваш email-адрес изменён',
     'voyti.settings.email_change_failed' => 'Не удалось изменить email-адрес',
     'voyti.settings.network_disconnected' => 'Сеть отключена',
@@ -192,6 +190,7 @@ return [
     'voyti.view.admin.info_link' => 'Информация',
     'voyti.view.admin.registered_label' => 'Зарегистрирован',
     'voyti.view.admin.session_history' => 'История сессий',
+    'voyti.view.admin.sessions_link' => 'Сессии',
     'voyti.view.admin.terminate_sessions' => 'Завершить сессии',
 
     // RBAC views
@@ -265,6 +264,7 @@ return [
     // Common buttons / links
     'voyti.view.create_button' => 'Создать',
     'voyti.view.save_button' => 'Сохранить',
+    'voyti.view.reset_button' => 'Сбросить',
     'voyti.view.update_button' => 'Обновить',
     'voyti.view.update_link' => 'Обновить',
     'voyti.view.delete_button' => 'Удалить',

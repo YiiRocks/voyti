@@ -37,8 +37,6 @@ return [
     'voyti.settings.account_deletion_disabled' => 'Account deletion is disabled',
     'voyti.settings.account_deleted' => 'Your account has been deleted',
     'voyti.settings.gdpr_consent_saved' => 'GDPR consent has been saved',
-    'voyti.settings.two_factor_enabled' => 'Two-factor authentication has been enabled',
-    'voyti.settings.two_factor_disabled' => 'Two-factor authentication has been disabled',
     'voyti.settings.email_changed' => 'Your email has been changed',
     'voyti.settings.email_change_failed' => 'Failed to change email',
     'voyti.settings.network_disconnected' => 'Network has been disconnected',
@@ -194,6 +192,7 @@ return [
     'voyti.view.admin.info_link' => 'Info',
     'voyti.view.admin.registered_label' => 'Registered',
     'voyti.view.admin.session_history' => 'Session history',
+    'voyti.view.admin.sessions_link' => 'Sessions',
     'voyti.view.admin.terminate_sessions' => 'Terminate sessions',
 
     // RBAC views
@@ -267,6 +266,7 @@ return [
     // Common buttons / links
     'voyti.view.create_button' => 'Create',
     'voyti.view.save_button' => 'Save',
+    'voyti.view.reset_button' => 'Reset',
     'voyti.view.update_button' => 'Update',
     'voyti.view.update_link' => 'Update',
     'voyti.view.delete_button' => 'Delete',

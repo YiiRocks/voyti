@@ -191,6 +191,64 @@ final class CreateServiceTest extends TestCase
         self::assertSame('alice@example.com', $events[1]->getUser()->getEmail());
     }
 
+    public function testRunFailsWhenEmailAlreadyExists(): void
+    {
+        $this->createExistingUser('taken@example.com', 'original');
+
+        $dispatcher = new CreateEventCollector();
+        $mailer = new CreateMailCapture();
+        $service = $this->createService(
+            ModuleConfig::fromArray(['enableEmailConfirmation' => false]),
+            $dispatcher,
+            $mailer,
+            $this->createHasher(),
+        );
+
+        $result = $service->run('taken@example.com', 'newusername', 'secret');
+
+        self::assertTrue($result->isFailure());
+        self::assertSame('Email already exists', $result->getMessage());
+        self::assertCount(1, User::query()->all());
+        self::assertCount(0, $dispatcher->events());
+        self::assertCount(0, $mailer->messages());
+    }
+
+    public function testRunFailsWhenUsernameAlreadyExists(): void
+    {
+        $this->createExistingUser('original@example.com', 'taken');
+
+        $dispatcher = new CreateEventCollector();
+        $mailer = new CreateMailCapture();
+        $service = $this->createService(
+            ModuleConfig::fromArray(['enableEmailConfirmation' => false]),
+            $dispatcher,
+            $mailer,
+            $this->createHasher(),
+        );
+
+        $result = $service->run('new@example.com', 'taken', 'secret');
+
+        self::assertTrue($result->isFailure());
+        self::assertSame('Username already exists', $result->getMessage());
+        self::assertCount(1, User::query()->all());
+        self::assertCount(0, $dispatcher->events());
+        self::assertCount(0, $mailer->messages());
+    }
+
+    private function createExistingUser(string $email, string $username): User
+    {
+        $user = new User();
+        $user->setUsername($username);
+        $user->setEmail($email);
+        $user->setPasswordHash('hash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $user->save();
+
+        return $user;
+    }
+
     private function createHasher(): PasswordHasher
     {
         return new PasswordHasher(PASSWORD_BCRYPT, ['cost' => 4]);

@@ -158,7 +158,7 @@ final class LoginFormTest extends TestCase
         $form = $this->createForm();
         $labels = $form->getPropertyLabels();
 
-        $this->assertEmpty($labels);
+        $this->assertSame($form->getAttributeLabels(), $labels);
     }
 
     public function testValidData(): void

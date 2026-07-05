@@ -62,14 +62,9 @@ final class RecoveryForm extends FormModel implements RulesProviderInterface
     }
 
     #[\Override]
-    public function getPropertyLabel(string $property): string
+    public function getPropertyLabels(): array
     {
-        /** @var array<string, string> $labels */
-        $labels = $this->getAttributeLabels();
-        if (isset($labels[$property])) {
-            return $labels[$property];
-        }
-        return parent::getPropertyLabel($property);
+        return $this->getAttributeLabels();
     }
 
     #[\Override]

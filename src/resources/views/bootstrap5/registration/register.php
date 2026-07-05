@@ -33,23 +33,26 @@ echo Html::form()
 
 echo Field::errorSummary($model);
 
-echo Field::text($model, 'username');
+$tabindex = 0;
 
-echo Field::email($model, 'email');
+echo Field::text($model, 'username')->tabIndex(++$tabindex);
 
-echo Field::password($model, 'password');
+echo Field::email($model, 'email')->tabIndex(++$tabindex);
 
-echo Field::password($model, 'passwordRepeat');
+echo Field::password($model, 'password')->tabIndex(++$tabindex);
+
+echo Field::password($model, 'passwordRepeat')->tabIndex(++$tabindex);
 
 if ($config->enableGdprCompliance) {
-    echo Field::checkbox($model, 'gdprConsent');
+    echo Field::checkbox($model, 'gdprConsent')->tabIndex(++$tabindex);
 }
 
 echo RecaptchaHelper::render($model, $config);
 
 echo Field::buttonGroup()
     ->buttons(
-        Html::submitButton($translator->translate('voyti.view.registration.register_button', category: 'voyti'))
+        Html::resetButton($translator->translate('voyti.view.reset_button', category: 'voyti'))->attribute('tabindex', $tabindex + 2),
+        Html::submitButton($translator->translate('voyti.view.registration.register_button', category: 'voyti'))->attribute('tabindex', ++$tabindex),
     );
 
 echo Html::div()->class('mt-3')->open();

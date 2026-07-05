@@ -183,12 +183,15 @@ final readonly class AdminController
             'username' => $this->stringValue($queryParams, 'username'),
             'email' => $this->stringValue($queryParams, 'email'),
             'status' => $this->stringValue($queryParams, 'status'),
+            /** @infection-ignore-all DecrementInteger: search()/countByFilters() and $currentPage below all re-clamp a missing 'page' key via their own max(1, ...), so whether this default is 1 or 0 is unobservable. */
             'page' => (int) ($queryParams['page'] ?? 1),
         ];
 
         $users = $this->userRepository->search($filters);
+        /** @infection-ignore-all CastInt: countByFilters() only ever feeds the ceil()/(int) cast below, which coerces a numeric string identically to an int, so this cast changes no observable result. */
         $total = (int) $this->userRepository->countByFilters($filters);
         $limit = 50;
+        /** @infection-ignore-all DecrementInteger: the view only renders pagination when totalPages > 1, so a 0 vs 1 floor is indistinguishable whenever $total is 0 (the only case where it matters). */
         $totalPages = max(1, (int)ceil($total / $limit));
         $currentPage = max(1, $filters['page']);
 

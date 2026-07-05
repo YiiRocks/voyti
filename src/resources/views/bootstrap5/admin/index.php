@@ -38,13 +38,15 @@ echo Html::form()
     ->method('get')
     ->open();
 
+$tabindex = 0;
+
 echo Html::div()->class('row mb-3 g-2')->open();
 echo Html::div()->class('col')->open();
-echo Html::input('text')->class('form-control')->name('username')->value($filters['username'] ?? '')->addAttributes(['placeholder' => $translator->translate('voyti.view.username_header', category: 'voyti')]);
+echo Html::input('text')->class('form-control')->name('username')->value($filters['username'] ?? '')->addAttributes(['placeholder' => $translator->translate('voyti.view.username_header', category: 'voyti')])->attribute('tabindex', ++$tabindex);
 echo Html::div()->close();
 
 echo Html::div()->class('col')->open();
-echo Html::input('text')->class('form-control')->name('email')->value($filters['email'] ?? '')->addAttributes(['placeholder' => $translator->translate('voyti.view.email_header', category: 'voyti')]);
+echo Html::input('text')->class('form-control')->name('email')->value($filters['email'] ?? '')->addAttributes(['placeholder' => $translator->translate('voyti.view.email_header', category: 'voyti')])->attribute('tabindex', ++$tabindex);
 echo Html::div()->close();
 
 echo Html::div()->class('col')->open();
@@ -56,13 +58,16 @@ echo Html::select('status')
         'unconfirmed' => $translator->translate('voyti.view.status_pending', category: 'voyti'),
         'blocked' => $translator->translate('voyti.view.status_blocked', category: 'voyti'),
     ])
-    ->value($filters['status'] ?? '');
+    ->value($filters['status'] ?? '')
+    ->attribute('tabindex', ++$tabindex);
 echo Html::div()->close();
 
 echo Html::div()->class('col-auto')->open();
 echo Field::buttonGroup()
+    ->containerClass('btn-group')
     ->buttons(
-        Html::submitButton($translator->translate('voyti.view.filter_button', category: 'voyti'))->class('btn', 'btn-outline-secondary')
+        Html::resetButton($translator->translate('voyti.view.reset_button', category: 'voyti'))->class('btn', 'btn-outline-secondary')->attribute('tabindex', $tabindex + 2),
+        Html::submitButton($translator->translate('voyti.view.filter_button', category: 'voyti'))->class('btn', 'btn-outline-secondary')->attribute('tabindex', ++$tabindex),
     );
 echo Html::div()->close();
 echo Html::div()->close();
@@ -105,7 +110,17 @@ foreach ($users as $user) {
             ->csrf($csrf)
             ->class('d-inline')
             ->open();
-        echo Html::submitButton($translator->translate('voyti.view.confirm_button', category: 'voyti'))->class('btn', 'btn-sm', 'btn-success');
+        echo Html::submitButton($translator->translate('voyti.view.confirm_button', category: 'voyti'))->class('btn', 'btn-sm', 'btn-success', 'me-1')->attribute('tabindex', 1);
+        echo Html::form()->close();
+    }
+
+    if ($config->enablePasswordExpiration) {
+        echo Html::form()
+            ->post($url->generate('voyti/admin-force-password', ['id' => $user->getId()]))
+            ->csrf($csrf)
+            ->class('d-inline')
+            ->open();
+        echo Html::submitButton($translator->translate('voyti.view.force_password_change_button', category: 'voyti'))->class('btn', 'btn-sm', 'btn-outline-secondary', 'me-1')->attribute('tabindex', 1);
         echo Html::form()->close();
     }
 
@@ -116,25 +131,15 @@ foreach ($users as $user) {
         ->open();
     echo Html::submitButton(
         $translator->translate($user->isBlocked() ? 'voyti.view.unblock_button' : 'voyti.view.block_button', category: 'voyti')
-    )->class('btn', 'btn-sm', 'btn-warning');
+    )->class('btn', 'btn-sm', 'btn-outline-warning')->attribute('tabindex', 1);
     echo Html::form()->close();
-
-    if ($config->enablePasswordExpiration) {
-        echo Html::form()
-            ->post($url->generate('voyti/admin-force-password', ['id' => $user->getId()]))
-            ->csrf($csrf)
-            ->class('d-inline')
-            ->open();
-        echo Html::submitButton($translator->translate('voyti.view.force_password_change_button', category: 'voyti'))->class('btn', 'btn-sm', 'btn-outline-secondary');
-        echo Html::form()->close();
-    }
 
     echo Html::form()
         ->post($url->generate('voyti/admin-delete', ['id' => $user->getId()]))
         ->csrf($csrf)
         ->class('d-inline')
         ->open();
-    echo Html::submitButton($translator->translate('voyti.view.delete_button', category: 'voyti'))->class('btn', 'btn-sm', 'btn-outline-danger');
+    echo Html::submitButton($translator->translate('voyti.view.delete_button', category: 'voyti'))->class('btn', 'btn-sm', 'btn-outline-danger')->attribute('tabindex', 1);
     echo Html::form()->close();
     echo Html::div()->close();
     echo Html::div()->close();
@@ -175,6 +180,7 @@ if ($totalPages > 1) {
 
     echo Html::nav()
         ->attribute('aria-label', $translator->translate('voyti.view.pagination_navigation', category: 'voyti'))
-        ->content("\n" . Html::ul()->class('pagination', 'justify-content-center')->items(...$items)->render() . "\n");
+        ->content(Html::ul()->class('pagination', 'justify-content-center')->items(...$items))
+        ->encode(false);
 }
 echo Html::div()->close();

@@ -28,10 +28,10 @@ final readonly class QrCodeUriGeneratorService
             return '';
         }
 
-        $qrcode = new QRCode([
-            'scale' => 4,
-            'outputBase64' => false,
-        ]);
+        $options = ['outputBase64' => false];
+        /** @infection-ignore-all scale: the default SVG output module ignores this option entirely (module size follows the viewBox, not scale), so any value here is unobservable in the rendered markup; it's kept only in case the output type is ever switched to a raster format. */
+        $options['scale'] = 4;
+        $qrcode = new QRCode($options);
         return (string) $qrcode->render($uri);
     }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use YiiRocks\Voyti\Entity\UserSocialAccount;
+use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -38,8 +39,12 @@ if (empty($accounts)) {
             ->post($url->generate('voyti/settings-disconnect', ['id' => $account->getId() ?? 0]))
             ->csrf($csrf)
             ->open()
-            . Html::submitButton($translator->translate('voyti.view.disconnect_button', category: 'voyti'))
-                ->class('btn', 'btn-outline-danger', 'btn-sm')
+            . Field::buttonGroup()
+                ->buttons(
+                    Html::submitButton($translator->translate('voyti.view.disconnect_button', category: 'voyti'))
+                        ->class('btn', 'btn-outline-danger', 'btn-sm')
+                        ->attribute('tabindex', 1),
+                )
                 ->render()
             . Html::form()->close();
 

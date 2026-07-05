@@ -20,6 +20,7 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 final readonly class RuleController
 {
     use InputDataTrait;
+    use RedirectTrait;
     use RenderTrait;
 
     public function __construct(
@@ -114,9 +115,4 @@ final readonly class RuleController
         ]);
     }
 
-    private function redirect(string $url): ResponseInterface
-    {
-        return $this->responseFactory->createResponse(302)
-            ->withHeader('Location', $url);
-    }
 }

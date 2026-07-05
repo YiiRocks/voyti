@@ -17,7 +17,6 @@ use YiiRocks\Voyti\Controller\RegistrationController;
 use YiiRocks\Voyti\Controller\RoleController;
 use YiiRocks\Voyti\Controller\SecurityController;
 use YiiRocks\Voyti\Controller\SettingsController;
-use YiiRocks\Voyti\Factory\MailFactory;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Form\Auth\RecoveryForm;
 use YiiRocks\Voyti\Form\Auth\RegistrationForm;
@@ -42,6 +41,7 @@ use YiiRocks\Voyti\Service\Password\ResetService;
 use YiiRocks\Voyti\Service\Rbac\UpdateAssignmentsService;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\Service\SwitchIdentityService;
+use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
 use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
 use YiiRocks\Voyti\Service\User\AccountConfirmationService;
 use YiiRocks\Voyti\Service\User\BlockService;
@@ -49,6 +49,7 @@ use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\CreateService;
 use YiiRocks\Voyti\Service\User\RegisterService;
 use YiiRocks\Voyti\Service\User\ResendConfirmationService;
+use YiiRocks\Voyti\Service\UserSessionHistory\TerminateUserSessionsService;
 use YiiRocks\Voyti\Strategy\EmailChangeStrategyFactory;
 use YiiRocks\Voyti\Validator\Rbac\ItemsValidator;
 use Yiisoft\Aliases\Aliases;
@@ -93,7 +94,6 @@ final class ControllerHarness
     public readonly EventCaptureDispatcher $eventDispatcher;
     public readonly HydratorInterface $hydrator;
     public readonly MailCapture $mailer;
-    public readonly MailFactory $mailFactory;
     public readonly MailService $mailService;
     public readonly ModuleConfig $moduleConfig;
     public readonly PasswordGeneratorInterface $passwordGenerator;
@@ -117,6 +117,7 @@ final class ControllerHarness
     public readonly SettingsController $settingsController;
     public readonly UserSocialAccountRepository $socialAccounts;
     public readonly TranslatorInterface $translator;
+    public readonly EmailCodeGeneratorService $twoFactorEmailCodeService;
     public readonly FakeUrlGenerator $url;
     public readonly ConfirmationService $userConfirmationService;
     public readonly UserProfileRepository $userProfiles;
@@ -174,10 +175,10 @@ final class ControllerHarness
             $this->translator,
             $this->url,
         );
-        $this->mailFactory = new MailFactory($this->mailService);
-        $this->emailChangeStrategyFactory = new EmailChangeStrategyFactory($this->userTokenFactory, $this->mailFactory);
+        $this->emailChangeStrategyFactory = new EmailChangeStrategyFactory($this->userTokenFactory, $this->mailService);
         $this->emailChangeService = new EmailChangeService($this->moduleConfig, $this->userTokens, $this->users);
         $this->qrCodeUriGeneratorService = new QrCodeUriGeneratorService($this->moduleConfig);
+        $this->twoFactorEmailCodeService = new EmailCodeGeneratorService($this->mailService);
         $this->currentUser = (new CurrentUser(
             new IdentityRepository($this->users),
             $this->eventDispatcher,
@@ -215,7 +216,7 @@ final class ControllerHarness
         );
         $this->userConfirmationService = new ConfirmationService($this->eventDispatcher, $this->userTokens);
         $this->accountConfirmationService = new AccountConfirmationService($this->userTokens);
-        $this->resendConfirmationService = new ResendConfirmationService($this->userTokens, $this->mailService);
+        $this->resendConfirmationService = new ResendConfirmationService($this->userTokens, $this->userTokenFactory, $this->mailService);
         $this->resetPasswordService = new ResetService(
             $this->passwordHasher,
             $this->moduleConfig,
@@ -247,7 +248,10 @@ final class ControllerHarness
             $this->passwordHasher,
             $this->moduleConfig,
         );
-        $blockService = new BlockService($this->eventDispatcher);
+        $blockService = new BlockService(
+            $this->eventDispatcher,
+            new TerminateUserSessionsService($this->eventDispatcher),
+        );
         $expireService = new ExpireService($this->moduleConfig);
         $switchIdentityService = new SwitchIdentityService(
             $this->moduleConfig,
@@ -308,6 +312,7 @@ final class ControllerHarness
             ),
             new \YiiRocks\Voyti\Service\Auth\UserSocialAccountConnectService($this->socialAccounts),
             $this->hydrator,
+            $this->twoFactorEmailCodeService,
         );
 
         $this->settingsController = new SettingsController(
@@ -324,11 +329,13 @@ final class ControllerHarness
             $authClientRegistry,
             $this->emailChangeStrategyFactory,
             $this->qrCodeUriGeneratorService,
+            $this->twoFactorEmailCodeService,
             $this->emailChangeService,
             $this->userTokens,
             $this->hydrator,
             $this->currentUser,
             $responseFactory,
+            new TerminateUserSessionsService($this->eventDispatcher),
         );
 
         $this->recoveryController = new RecoveryController(
@@ -454,6 +461,7 @@ final class ControllerHarness
     {
         return new RecoveryService(
             $this->users,
+            $this->userTokenFactory,
             $this->mailService,
             $this->moduleConfig,
             $this->translator,

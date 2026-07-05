@@ -28,11 +28,14 @@ echo Html::form()
     ->csrf($csrf)
     ->open();
 
-echo Field::checkbox($model, 'consent');
+$tabindex = 0;
+
+echo Field::checkbox($model, 'consent')->tabIndex(++$tabindex);
 
 echo Field::buttonGroup()
     ->buttons(
-        Html::submitButton($translator->translate('voyti.view.save_button', category: 'voyti'))
+        Html::resetButton($translator->translate('voyti.view.reset_button', category: 'voyti'))->attribute('tabindex', $tabindex + 2),
+        Html::submitButton($translator->translate('voyti.view.save_button', category: 'voyti'))->attribute('tabindex', ++$tabindex),
     );
 
 echo Html::form()->close();

@@ -35,8 +35,6 @@ return [
     'voyti.settings.account_deletion_disabled' => 'Accountverwijdering is uitgeschakeld',
     'voyti.settings.account_deleted' => 'Uw account is verwijderd',
     'voyti.settings.gdpr_consent_saved' => 'AVG-toestemming is opgeslagen',
-    'voyti.settings.two_factor_enabled' => 'Tweefactorauthenticatie is ingeschakeld',
-    'voyti.settings.two_factor_disabled' => 'Tweefactorauthenticatie is uitgeschakeld',
     'voyti.settings.email_changed' => 'Uw e-mailadres is gewijzigd',
     'voyti.settings.email_change_failed' => 'E-mailadres kon niet worden gewijzigd',
     'voyti.settings.network_disconnected' => 'Netwerk is ontkoppeld',
@@ -192,6 +190,7 @@ return [
     'voyti.view.admin.info_link' => 'Info',
     'voyti.view.admin.registered_label' => 'Geregistreerd',
     'voyti.view.admin.session_history' => 'Sessiegeschiedenis',
+    'voyti.view.admin.sessions_link' => 'Sessies',
     'voyti.view.admin.terminate_sessions' => 'Sessies beëindigen',
 
     // RBAC views
@@ -265,6 +264,7 @@ return [
     // Common buttons / links
     'voyti.view.create_button' => 'Aanmaken',
     'voyti.view.save_button' => 'Opslaan',
+    'voyti.view.reset_button' => 'Resetten',
     'voyti.view.update_button' => 'Bijwerken',
     'voyti.view.update_link' => 'Bijwerken',
     'voyti.view.delete_button' => 'Verwijderen',

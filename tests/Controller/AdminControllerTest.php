@@ -39,6 +39,76 @@ final class AdminControllerTest extends TestCase
         parent::tearDown();
     }
 
+    public function testIndexAppliesUsernameEmailAndStatusFiltersFromQueryParams(): void
+    {
+        $this->registerAndConfirmUser('filter-user', 'filter-user@example.test', 'secret123');
+
+        $response = $this->harness->adminController->index(
+            $this->harness->request(Method::GET, queryParams: [
+                'username' => 'filter-us',
+                'email' => 'filter-user@',
+                'status' => 'confirmed',
+            ]),
+        );
+
+        $this->assertSame(200, $response->getStatusCode());
+        $html = $this->harness->responseBody($response);
+        $this->assertStringContainsString('name="username" value="filter-us"', $html);
+        $this->assertStringContainsString('name="email" value="filter-user@"', $html);
+        $this->assertStringContainsString('value="confirmed" selected', $html);
+        $this->assertStringContainsString('>filter-user<', $html);
+    }
+
+    public function testIndexHidesPaginationNavWhenAllUsersFitOnOnePage(): void
+    {
+        $this->registerAndConfirmUser('lone-user', 'lone-user@example.test', 'secret123');
+
+        $response = $this->harness->adminController->index($this->harness->request(Method::GET));
+
+        $this->assertSame(200, $response->getStatusCode());
+        $html = $this->harness->responseBody($response);
+        $this->assertStringNotContainsString('pagination', $html);
+    }
+
+    public function testIndexPaginatesAcrossExactlyTwoPagesFor51Users(): void
+    {
+        for ($i = 1; $i <= 51; $i++) {
+            $this->registerAndConfirmUser("page-user-{$i}", "page-user-{$i}@example.test", 'secret123');
+        }
+
+        $defaultResponse = $this->harness->adminController->index($this->harness->request(Method::GET));
+        $defaultHtml = $this->harness->responseBody($defaultResponse);
+        $this->assertStringContainsString('class="page-item active"><a href="/voyti/admin?page=1', $defaultHtml);
+        $this->assertStringNotContainsString('class="page-item active"><a href="/voyti/admin?page=2', $defaultHtml);
+        $this->assertStringNotContainsString('page=3', $defaultHtml);
+
+        $page2Response = $this->harness->adminController->index(
+            $this->harness->request(Method::GET, queryParams: ['page' => '2']),
+        );
+        $page2Html = $this->harness->responseBody($page2Response);
+        $this->assertStringContainsString('class="page-item active"><a href="/voyti/admin?page=2', $page2Html);
+        $this->assertStringNotContainsString('class="page-item active"><a href="/voyti/admin?page=1', $page2Html);
+
+        $zeroPageResponse = $this->harness->adminController->index(
+            $this->harness->request(Method::GET, queryParams: ['page' => '0']),
+        );
+        $zeroPageHtml = $this->harness->responseBody($zeroPageResponse);
+        $this->assertStringContainsString('class="page-item active"><a href="/voyti/admin?page=1', $zeroPageHtml);
+    }
+
+    public function testInfoShowsSessionsLink(): void
+    {
+        $user = $this->registerAndConfirmUser('sess-info', 'sess-info@example.test', 'secret123');
+        $userId = (int) $user->getId();
+
+        $response = $this->harness->adminController->info($userId);
+
+        $this->assertSame(200, $response->getStatusCode());
+        $html = $this->harness->responseBody($response);
+        $this->assertStringContainsString('>Sessions<', $html);
+        $this->assertStringContainsString("voyti/admin-session-history/{$userId}", $html);
+    }
+
     public function testSwitchIdentityFailureMessageIsPassedAsViewTitle(): void
     {
         $target = $this->registerAndConfirmUser('blocked-target', 'blocked-target@example.test', 'secret123');

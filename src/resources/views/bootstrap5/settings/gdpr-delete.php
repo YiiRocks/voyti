@@ -34,13 +34,16 @@ echo Html::form()
 
 echo Field::errorSummary($model);
 
-echo Field::password($model, 'password');
+$tabindex = 0;
 
-echo Field::checkbox($model, 'consent');
+echo Field::password($model, 'password')->tabIndex(++$tabindex);
+
+echo Field::checkbox($model, 'consent')->tabIndex(++$tabindex);
 
 echo Field::buttonGroup()
     ->buttons(
-        Html::submitButton($translator->translate('voyti.view.gdpr.delete_button', category: 'voyti'))
+        Html::resetButton($translator->translate('voyti.view.reset_button', category: 'voyti'))->attribute('tabindex', $tabindex + 2),
+        Html::submitButton($translator->translate('voyti.view.gdpr.delete_button', category: 'voyti'))->attribute('tabindex', ++$tabindex),
     );
 
 echo Html::form()->close();

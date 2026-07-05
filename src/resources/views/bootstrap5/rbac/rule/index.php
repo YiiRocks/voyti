@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -43,7 +44,10 @@ foreach ($rules as $ruleName) {
         ->csrf($csrf)
         ->class('d-inline')
         ->open();
-    echo Html::submitButton($translator->translate('voyti.view.delete_button', category: 'voyti'))->class('btn', 'btn-sm', 'btn-outline-danger');
+    echo Field::buttonGroup()
+        ->buttons(
+            Html::submitButton($translator->translate('voyti.view.delete_button', category: 'voyti'))->class('btn', 'btn-sm', 'btn-outline-danger')->attribute('tabindex', 1),
+        );
     echo Html::form()->close();
     echo Html::div()->close();
     echo Html::div()->close();

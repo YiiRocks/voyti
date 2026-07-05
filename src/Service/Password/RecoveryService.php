@@ -5,18 +5,18 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Service\Password;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
-use YiiRocks\Voyti\Entity\UserToken;
+use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\ServiceResult;
-use Yiisoft\Security\Random;
 use Yiisoft\Translator\TranslatorInterface;
 
 final readonly class RecoveryService
 {
     public function __construct(
         private UserRepository $userRepository,
+        private UserTokenFactory $userTokenFactory,
         private MailService $mailService,
         private ModuleConfig $config,
         private TranslatorInterface $translator,
@@ -35,12 +35,7 @@ final readonly class RecoveryService
             return ServiceResult::success($this->translator->translate('voyti.recovery.message_sent_if_exists', category: 'voyti'));
         }
 
-        $userToken = new UserToken();
-        $userToken->setUserId((int) $user->getId());
-        $userToken->setType(UserToken::TYPE_RECOVERY);
-        $userToken->setCreatedAt(time());
-        $userToken->setCode(Random::string(32));
-        $userToken->save();
+        $userToken = $this->userTokenFactory->makeRecoveryToken((int) $user->getId());
 
         $this->mailService->sendRecovery($user->getUsername(), $email, $userToken);
 

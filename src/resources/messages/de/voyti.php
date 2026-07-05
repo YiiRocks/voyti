@@ -35,8 +35,6 @@ return [
     'voyti.settings.account_deletion_disabled' => 'Die Kontolöschung ist deaktiviert',
     'voyti.settings.account_deleted' => 'Ihr Konto wurde gelöscht',
     'voyti.settings.gdpr_consent_saved' => 'DSGVO-Einwilligung wurde gespeichert',
-    'voyti.settings.two_factor_enabled' => 'Die Zwei-Faktor-Authentifizierung wurde aktiviert',
-    'voyti.settings.two_factor_disabled' => 'Die Zwei-Faktor-Authentifizierung wurde deaktiviert',
     'voyti.settings.email_changed' => 'Ihre E-Mail-Adresse wurde geändert',
     'voyti.settings.email_change_failed' => 'E-Mail-Adresse konnte nicht geändert werden',
     'voyti.settings.network_disconnected' => 'Das Netzwerk wurde getrennt',
@@ -192,6 +190,7 @@ return [
     'voyti.view.admin.info_link' => 'Info',
     'voyti.view.admin.registered_label' => 'Registriert',
     'voyti.view.admin.session_history' => 'Sitzungsverlauf',
+    'voyti.view.admin.sessions_link' => 'Sitzungen',
     'voyti.view.admin.terminate_sessions' => 'Sitzungen beenden',
 
     // RBAC views
@@ -265,6 +264,7 @@ return [
     // Common buttons / links
     'voyti.view.create_button' => 'Erstellen',
     'voyti.view.save_button' => 'Speichern',
+    'voyti.view.reset_button' => 'Zurücksetzen',
     'voyti.view.update_button' => 'Aktualisieren',
     'voyti.view.update_link' => 'Aktualisieren',
     'voyti.view.delete_button' => 'Löschen',

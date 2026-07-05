@@ -4,15 +4,21 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Controller;
 
+use chillerlan\Authenticator\Authenticator;
+use chillerlan\Authenticator\AuthenticatorOptions;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserProfile;
+use YiiRocks\Voyti\Entity\UserSessionHistory;
 use YiiRocks\Voyti\Entity\UserSocialAccount;
 use YiiRocks\Voyti\Event\Gdpr\GdprEvent;
+use YiiRocks\Voyti\Event\Session\SessionEvent;
 use YiiRocks\Voyti\Event\User\UserEvent;
+use YiiRocks\Voyti\Event\User\UserProfileEvent;
 use YiiRocks\Voyti\Form\Settings\GdprConsentForm;
 use YiiRocks\Voyti\Form\Settings\GdprDeleteForm;
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Form\Settings\UserProfileForm;
+use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Auth\IdentityInterface;
@@ -149,6 +155,7 @@ final class SettingsControllerTest extends TestCase
     {
         $user = $this->createUser('dana', 'dana@example.test');
         $userId = (int) $user->getId();
+        $this->insertSession($userId, 'dana-sess');
         $this->harness->currentUser->overrideIdentity($user);
 
         $response = $this->harness->settingsController->delete(
@@ -157,12 +164,21 @@ final class SettingsControllerTest extends TestCase
 
         $this->assertResponseContains($response, 'Your account has been deleted');
         $this->assertNull($this->harness->users->findById($userId));
+        $this->assertCount(0, UserSessionHistory::query()->where(['user_id' => $userId])->all());
 
         $userEvents = array_values(array_filter(
             $this->harness->eventDispatcher->events(),
             static fn (object $event): bool => $event instanceof UserEvent,
         ));
         $this->assertCount(2, $userEvents);
+
+        $sessionEvents = array_values(array_filter(
+            $this->harness->eventDispatcher->events(),
+            static fn (object $event): bool => $event instanceof SessionEvent,
+        ));
+        $this->assertCount(1, $sessionEvents);
+        $this->assertSame($userId, $sessionEvents[0]->getUserId());
+        $this->assertSame(['type' => SessionEvent::SESSION_TERMINATED], $sessionEvents[0]->getData());
     }
 
     public function testDeleteActionUsesZeroWhenIdentityIdIsNull(): void
@@ -316,6 +332,7 @@ final class SettingsControllerTest extends TestCase
         $user = $this->createUser('holly', 'holly@example.test', 'correct-password');
         $originalAuthKey = $user->getAuthKey();
         $userId = (int) $user->getId();
+        $this->insertSession($userId, 'holly-sess');
         $this->harness->currentUser->overrideIdentity($user);
 
         $response = $this->harness->settingsController->gdprDelete(
@@ -337,12 +354,21 @@ final class SettingsControllerTest extends TestCase
         $this->assertTrue($reloaded->isGdprDeleted());
         $this->assertTrue($reloaded->isBlocked());
         $this->assertNotSame($originalAuthKey, $reloaded->getAuthKey());
+        $this->assertCount(0, UserSessionHistory::query()->where(['user_id' => $userId])->all());
 
         $gdprEvents = array_values(array_filter(
             $this->harness->eventDispatcher->events(),
             static fn (object $event): bool => $event instanceof GdprEvent,
         ));
         $this->assertCount(2, $gdprEvents);
+
+        $sessionEvents = array_values(array_filter(
+            $this->harness->eventDispatcher->events(),
+            static fn (object $event): bool => $event instanceof SessionEvent,
+        ));
+        $this->assertCount(1, $sessionEvents);
+        $this->assertSame($userId, $sessionEvents[0]->getUserId());
+        $this->assertSame(['type' => SessionEvent::SESSION_TERMINATED], $sessionEvents[0]->getData());
     }
 
     public function testGdprDeleteUsesZeroWhenIdentityIdIsNull(): void
@@ -371,6 +397,26 @@ final class SettingsControllerTest extends TestCase
 
         $ghostOne = $this->harness->users->findById(1);
         $this->assertFalse($ghostOne->isGdprDeleted());
+    }
+
+    public function testGetUserIdUsesZeroFallbackWhenUserHasNoId(): void
+    {
+        // An unsaved user has a null id; the private getUserId() fallback must be
+        // exactly 0 (not -1 or 1). save() always populates the primary key on
+        // insert, so the null branch cannot be observed by going through the
+        // delete()/gdprDelete() actions; we invoke the private method directly.
+        $user = new User();
+        $user->setUsername('unsaved');
+        $user->setEmail('unsaved@example.test');
+        $user->setPasswordHash('hash');
+        $user->setAuthKey('key');
+
+        $this->assertNull($user->getId());
+
+        $method = new \ReflectionMethod(\YiiRocks\Voyti\Controller\SettingsController::class, 'getUserId');
+        $result = $method->invoke($this->harness->settingsController, $user);
+
+        $this->assertSame(0, $result);
     }
 
     public function testNetworksActionFiltersOutFalsyProviderNamesBeforeExcluding(): void
@@ -430,6 +476,434 @@ final class SettingsControllerTest extends TestCase
         $this->assertStringContainsString('No connected networks', $html);
         $this->assertStringNotContainsString('ghost-provider-negative', $html);
         $this->assertStringNotContainsString('ghost-provider-one', $html);
+    }
+
+    public function testTwoFactorDisableClearsAllTwoFactorFields(): void
+    {
+        $this->harness = $this->twoFactorHarness();
+        $user = $this->createUser('finn', 'finn@example.test');
+        $user->setAuthTfEnabled(true);
+        $user->setAuthTfType('google');
+        $user->setAuthTfKey('some-secret');
+        $user->save();
+        $userId = (int) $user->getId();
+        $this->harness->currentUser->overrideIdentity($user);
+
+        $response = $this->harness->settingsController->twoFactorDisable(
+            $this->harness->request(Method::POST),
+        );
+
+        $this->assertSame(302, $response->getStatusCode());
+        $this->assertSame('/voyti/settings-two-factor', $response->getHeaderLine('Location'));
+
+        $reloaded = $this->harness->users->findById($userId);
+        $this->assertInstanceOf(User::class, $reloaded);
+        $this->assertFalse($reloaded->isAuthTfEnabled());
+        $this->assertNull($reloaded->getAuthTfKey());
+        $this->assertNull($reloaded->getAuthTfType());
+    }
+
+    public function testTwoFactorDisableReturnsNotAuthenticatedForGuest(): void
+    {
+        $this->harness = $this->twoFactorHarness();
+
+        $response = $this->harness->settingsController->twoFactorDisable(
+            $this->harness->request(Method::POST),
+        );
+
+        $this->assertResponseContains($response, 'Not authenticated');
+    }
+
+    public function testTwoFactorDisableReturnsNotAvailableWhenFeatureDisabled(): void
+    {
+        $response = $this->harness->settingsController->twoFactorDisable(
+            $this->harness->request(Method::POST),
+        );
+
+        $this->assertResponseContains($response, 'Not available');
+    }
+
+    public function testTwoFactorDisableReturnsUserNotFoundWhenIdentityIdIsNull(): void
+    {
+        $this->harness = $this->twoFactorHarness();
+        $this->insertGhostUser(-1, 'ghost-negative');
+        $this->insertGhostUser(1, 'ghost-one');
+        $this->harness->currentUser->overrideIdentity(new SettingsNullIdIdentity());
+
+        $response = $this->harness->settingsController->twoFactorDisable(
+            $this->harness->request(Method::POST),
+        );
+
+        $this->assertResponseContains($response, 'User not found');
+    }
+
+    public function testTwoFactorEnableRetryWithGoogleMethodDiscardsLeftoverEmailCode(): void
+    {
+        // Reproduces the reported bug scenario directly: the user switched to the email
+        // tab (leaving a 6-digit numeric code in the shared auth_tf_key column) and then
+        // retries with the wrong TOTP code on the google tab. The retry path must discard
+        // that leftover value and generate a fresh TOTP secret, not reuse the numeric code.
+        $this->harness = $this->twoFactorHarness();
+        $user = $this->createUser('opal2', 'opal2@example.test');
+        $userId = (int) $user->getId();
+        $this->harness->currentUser->overrideIdentity($user);
+
+        $this->harness->settingsController->twoFactor(
+            $this->harness->request(Method::GET, queryParams: ['method' => 'email']),
+        );
+        $leftoverEmailCode = $this->harness->users->findById($userId)?->getAuthTfKey();
+        $this->assertNotNull($leftoverEmailCode);
+        $this->assertMatchesRegularExpression('/^\d{6}$/', $leftoverEmailCode);
+
+        $response = $this->harness->settingsController->twoFactorEnable(
+            $this->harness->request(Method::POST, ['method' => 'google', 'code' => '000000']),
+        );
+
+        $html = $this->harness->responseBody($response);
+        $this->assertStringNotContainsString($leftoverEmailCode, $html);
+
+        $reloaded = $this->harness->users->findById($userId);
+        $this->assertInstanceOf(User::class, $reloaded);
+        $this->assertSame('google', $reloaded->getAuthTfType());
+        $this->assertNotSame($leftoverEmailCode, $reloaded->getAuthTfKey());
+        $this->assertNotNull($reloaded->getAuthTfKey());
+    }
+
+    public function testTwoFactorEnableReturnsNotAuthenticatedForGuest(): void
+    {
+        $this->harness = $this->twoFactorHarness();
+
+        $response = $this->harness->settingsController->twoFactorEnable(
+            $this->harness->request(Method::POST),
+        );
+
+        $this->assertResponseContains($response, 'Not authenticated');
+    }
+
+    public function testTwoFactorEnableReturnsNotAvailableWhenFeatureDisabled(): void
+    {
+        $response = $this->harness->settingsController->twoFactorEnable(
+            $this->harness->request(Method::POST),
+        );
+
+        $this->assertResponseContains($response, 'Not available');
+    }
+
+    public function testTwoFactorEnableReturnsUserNotFoundWhenIdentityIdIsNull(): void
+    {
+        $this->harness = $this->twoFactorHarness();
+        $this->insertGhostUser(-1, 'ghost-negative');
+        $this->insertGhostUser(1, 'ghost-one');
+        $this->harness->currentUser->overrideIdentity(new SettingsNullIdIdentity());
+
+        $response = $this->harness->settingsController->twoFactorEnable(
+            $this->harness->request(Method::POST),
+        );
+
+        $this->assertResponseContains($response, 'User not found');
+    }
+
+    public function testTwoFactorEnableWithGoogleMethodTranslatesUnconfiguredValidatorError(): void
+    {
+        // No prior GET step: the user has no authTfKey at all, so CodeValidator hits its
+        // "not configured" branch, which only ever produces translated text when
+        // setTranslator() was actually called on it.
+        $this->harness = $this->twoFactorHarness();
+        $user = $this->createUser('nash', 'nash@example.test');
+        $this->harness->currentUser->overrideIdentity($user);
+
+        $response = $this->harness->settingsController->twoFactorEnable(
+            $this->harness->request(Method::POST, ['method' => 'google', 'code' => '000000']),
+        );
+
+        $html = $this->harness->responseBody($response);
+        $this->assertStringContainsString('Two factor authentication is not configured.', $html);
+        $this->assertStringNotContainsString('voyti.validator.two_factor_not_configured', $html);
+    }
+
+    public function testTwoFactorEnableWithInvalidEmailCodeShowsErrorAndDoesNotEnable(): void
+    {
+        $this->harness = $this->twoFactorHarness();
+        $user = $this->createUser('hank', 'hank@example.test');
+        $userId = (int) $user->getId();
+        $this->harness->currentUser->overrideIdentity($user);
+
+        $this->harness->settingsController->twoFactor(
+            $this->harness->request(Method::GET, queryParams: ['method' => 'email']),
+        );
+
+        $response = $this->harness->settingsController->twoFactorEnable(
+            $this->harness->request(Method::POST, ['method' => 'email', 'code' => 'wrong-code']),
+        );
+
+        $this->assertSame(200, $response->getStatusCode());
+        $html = $this->harness->responseBody($response);
+        $this->assertStringContainsString('Invalid verification code.', $html);
+
+        // authTfType is already 'email' at this point: twoFactor(method=email) marks it as
+        // the pending method as soon as the code is sent, before the user ever confirms it.
+        // isAuthTfEnabled() is the only reliable "not enabled yet" signal.
+        $reloaded = $this->harness->users->findById($userId);
+        $this->assertInstanceOf(User::class, $reloaded);
+        $this->assertFalse($reloaded->isAuthTfEnabled());
+    }
+
+    public function testTwoFactorEnableWithInvalidGoogleCodeShowsErrorAndDoesNotEnable(): void
+    {
+        $this->harness = $this->twoFactorHarness();
+        $user = $this->createUser('jill', 'jill@example.test');
+        $userId = (int) $user->getId();
+        $this->harness->currentUser->overrideIdentity($user);
+
+        $this->harness->settingsController->twoFactor($this->harness->request(Method::GET));
+        $originalSecret = $this->harness->users->findById($userId)?->getAuthTfKey();
+        $this->assertNotNull($originalSecret);
+
+        $response = $this->harness->settingsController->twoFactorEnable(
+            $this->harness->request(Method::POST, ['method' => 'google', 'code' => '000000']),
+        );
+
+        $this->assertSame(200, $response->getStatusCode());
+        $html = $this->harness->responseBody($response);
+        $this->assertStringContainsString($originalSecret, $html);
+        $this->assertStringContainsString('Invalid verification code.', $html);
+
+        $reloaded = $this->harness->users->findById($userId);
+        $this->assertInstanceOf(User::class, $reloaded);
+        $this->assertFalse($reloaded->isAuthTfEnabled());
+        $this->assertSame($originalSecret, $reloaded->getAuthTfKey());
+    }
+
+    public function testTwoFactorEnableWithValidEmailCodeEnablesEmailTwoFactor(): void
+    {
+        $this->harness = $this->twoFactorHarness();
+        $user = $this->createUser('gabi', 'gabi@example.test');
+        $userId = (int) $user->getId();
+        $this->harness->currentUser->overrideIdentity($user);
+
+        $this->harness->settingsController->twoFactor(
+            $this->harness->request(Method::GET, queryParams: ['method' => 'email']),
+        );
+
+        $this->assertCount(1, $this->harness->mailer->messages());
+
+        $sentUser = $this->harness->users->findById($userId);
+        $this->assertInstanceOf(User::class, $sentUser);
+        $sentCode = $sentUser->getAuthTfKey();
+        $this->assertNotNull($sentCode);
+
+        $response = $this->harness->settingsController->twoFactorEnable(
+            $this->harness->request(Method::POST, ['method' => 'email', 'code' => $sentCode]),
+        );
+
+        $this->assertSame(302, $response->getStatusCode());
+        $this->assertSame('/voyti/settings-two-factor', $response->getHeaderLine('Location'));
+
+        $reloaded = $this->harness->users->findById($userId);
+        $this->assertInstanceOf(User::class, $reloaded);
+        $this->assertTrue($reloaded->isAuthTfEnabled());
+        $this->assertSame('email', $reloaded->getAuthTfType());
+    }
+
+    public function testTwoFactorEnableWithValidEmailCodeSetsTypeWhenNotAlreadyEmail(): void
+    {
+        // Bypasses the GET step (which would already mark authTfType as 'email') so the
+        // setAuthTfType('email') call inside the success branch has an observable effect.
+        $this->harness = $this->twoFactorHarness();
+        $user = $this->createUser('koa', 'koa@example.test');
+        $userId = (int) $user->getId();
+        $user->setAuthTfKey('654321');
+        $user->save();
+        $this->assertNull($user->getAuthTfType());
+        $this->harness->currentUser->overrideIdentity($user);
+
+        $response = $this->harness->settingsController->twoFactorEnable(
+            $this->harness->request(Method::POST, ['method' => 'email', 'code' => '654321']),
+        );
+
+        $this->assertSame(302, $response->getStatusCode());
+        $this->assertSame('/voyti/settings-two-factor', $response->getHeaderLine('Location'));
+
+        $reloaded = $this->harness->users->findById($userId);
+        $this->assertInstanceOf(User::class, $reloaded);
+        $this->assertSame('email', $reloaded->getAuthTfType());
+    }
+
+    public function testTwoFactorEnableWithValidGoogleCodeEnablesTotp(): void
+    {
+        $this->harness = $this->twoFactorHarness();
+        $user = $this->createUser('ivan', 'ivan@example.test');
+        $userId = (int) $user->getId();
+        $this->harness->currentUser->overrideIdentity($user);
+
+        $this->harness->settingsController->twoFactor($this->harness->request(Method::GET));
+
+        $secretUser = $this->harness->users->findById($userId);
+        $this->assertInstanceOf(User::class, $secretUser);
+        $secret = $secretUser->getAuthTfKey();
+        $this->assertNotNull($secret);
+
+        $authenticator = new Authenticator(new AuthenticatorOptions());
+        $authenticator->setSecret($secret);
+        $code = $authenticator->code();
+
+        $response = $this->harness->settingsController->twoFactorEnable(
+            $this->harness->request(Method::POST, ['method' => 'google', 'code' => $code]),
+        );
+
+        $this->assertSame(302, $response->getStatusCode());
+        $this->assertSame('/voyti/settings-two-factor', $response->getHeaderLine('Location'));
+
+        $reloaded = $this->harness->users->findById($userId);
+        $this->assertInstanceOf(User::class, $reloaded);
+        $this->assertTrue($reloaded->isAuthTfEnabled());
+        $this->assertSame('google', $reloaded->getAuthTfType());
+    }
+
+    public function testTwoFactorEnableWithValidGoogleCodeSetsTypeWhenNotAlreadyGoogle(): void
+    {
+        // Bypasses the GET step (which would already mark authTfType as 'google') so the
+        // setAuthTfType('google') call inside the success branch has an observable effect.
+        $this->harness = $this->twoFactorHarness();
+        $user = $this->createUser('mabel', 'mabel@example.test');
+        $userId = (int) $user->getId();
+
+        $authenticator = new Authenticator(new AuthenticatorOptions());
+        $secret = $authenticator->createSecret();
+        $user->setAuthTfKey($secret);
+        $user->setAuthTfType('email');
+        $user->save();
+        $this->harness->currentUser->overrideIdentity($user);
+
+        $authenticator->setSecret($secret);
+        $code = $authenticator->code();
+
+        $response = $this->harness->settingsController->twoFactorEnable(
+            $this->harness->request(Method::POST, ['method' => 'google', 'code' => $code]),
+        );
+
+        $this->assertSame(302, $response->getStatusCode());
+        $this->assertSame('/voyti/settings-two-factor', $response->getHeaderLine('Location'));
+
+        $reloaded = $this->harness->users->findById($userId);
+        $this->assertInstanceOf(User::class, $reloaded);
+        $this->assertSame('google', $reloaded->getAuthTfType());
+    }
+
+    public function testTwoFactorGetDefaultMethodGeneratesQrCode(): void
+    {
+        $this->harness = $this->twoFactorHarness();
+        $user = $this->createUser('lena', 'lena@example.test');
+        $userId = (int) $user->getId();
+        $this->harness->currentUser->overrideIdentity($user);
+
+        $response = $this->harness->settingsController->twoFactor($this->harness->request(Method::GET));
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertCount(0, $this->harness->mailer->messages());
+
+        $reloaded = $this->harness->users->findById($userId);
+        $this->assertInstanceOf(User::class, $reloaded);
+        $this->assertNotNull($reloaded->getAuthTfKey());
+
+        $html = $this->harness->responseBody($response);
+        $this->assertStringContainsString((string) $reloaded->getAuthTfKey(), $html);
+    }
+
+    public function testTwoFactorGetEmailMethodSendsCodeAndShowsInstructions(): void
+    {
+        $this->harness = $this->twoFactorHarness();
+        $user = $this->createUser('mira', 'mira@example.test');
+        $userId = (int) $user->getId();
+        $this->harness->currentUser->overrideIdentity($user);
+
+        $response = $this->harness->settingsController->twoFactor(
+            $this->harness->request(Method::GET, queryParams: ['method' => 'email']),
+        );
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertCount(1, $this->harness->mailer->messages());
+        $this->assertResponseContains($response, 'Enter the verification code sent to your email');
+
+        // Marks 'email' as the pending method as soon as the code is sent, so the
+        // TOTP QR page (default method) knows to regenerate a fresh secret instead
+        // of reusing the leftover numeric email code.
+        $reloaded = $this->harness->users->findById($userId);
+        $this->assertInstanceOf(User::class, $reloaded);
+        $this->assertSame('email', $reloaded->getAuthTfType());
+    }
+
+    public function testTwoFactorGetWhenAlreadyEnabledShowsCurrentMethod(): void
+    {
+        $this->harness = $this->twoFactorHarness();
+        $user = $this->createUser('noor', 'noor@example.test');
+        $userId = (int) $user->getId();
+        $user->setAuthTfEnabled(true);
+        $user->setAuthTfType('email');
+        $user->setAuthTfKey('123456');
+        $user->save();
+        $this->harness->currentUser->overrideIdentity($user);
+
+        $response = $this->harness->settingsController->twoFactor($this->harness->request(Method::GET));
+
+        $html = $this->harness->responseBody($response);
+        $this->assertResponseContains($response, 'Two-factor authentication is enabled');
+        $this->assertStringContainsString('Two-factor authentication via email', $html);
+        $this->assertCount(0, $this->harness->mailer->messages());
+
+        // The already-enabled branch must return immediately without touching the
+        // stored key: falling through would treat the email code as a foreign TOTP
+        // secret (or regenerate one), corrupting the value the user already has.
+        $reloaded = $this->harness->users->findById($userId);
+        $this->assertInstanceOf(User::class, $reloaded);
+        $this->assertSame('123456', $reloaded->getAuthTfKey());
+        $this->assertSame('email', $reloaded->getAuthTfType());
+    }
+
+    public function testTwoFactorGetWhenAlreadyEnabledWithNullTypeDefaultsToGoogleMethod(): void
+    {
+        $this->harness = $this->twoFactorHarness();
+        $user = $this->createUser('opal', 'opal@example.test');
+        $user->setAuthTfEnabled(true);
+        $user->setAuthTfKey('some-legacy-secret');
+        $user->save();
+        $this->assertNull($user->getAuthTfType());
+        $this->harness->currentUser->overrideIdentity($user);
+
+        $response = $this->harness->settingsController->twoFactor($this->harness->request(Method::GET));
+
+        $html = $this->harness->responseBody($response);
+        $this->assertResponseContains($response, 'Two-factor authentication is enabled');
+        $this->assertStringContainsString('Two-Factor Authentication)', $html);
+        $this->assertStringNotContainsString('Two-factor authentication via email', $html);
+    }
+
+    public function testTwoFactorReturnsNotAuthenticatedForGuest(): void
+    {
+        $this->harness = $this->twoFactorHarness();
+
+        $response = $this->harness->settingsController->twoFactor($this->harness->request(Method::GET));
+
+        $this->assertResponseContains($response, 'Not authenticated');
+    }
+
+    public function testTwoFactorReturnsNotAvailableWhenFeatureDisabled(): void
+    {
+        $response = $this->harness->settingsController->twoFactor($this->harness->request(Method::GET));
+
+        $this->assertResponseContains($response, 'Not available');
+    }
+
+    public function testTwoFactorReturnsUserNotFoundWhenIdentityIdIsNull(): void
+    {
+        $this->harness = $this->twoFactorHarness();
+        $this->insertGhostUser(-1, 'ghost-negative');
+        $this->insertGhostUser(1, 'ghost-one');
+        $this->harness->currentUser->overrideIdentity(new SettingsNullIdIdentity());
+
+        $response = $this->harness->settingsController->twoFactor($this->harness->request(Method::GET));
+
+        $this->assertResponseContains($response, 'User not found');
     }
 
     public function testUserProfileGetPrefillsFormFromExistingProfile(): void
@@ -514,6 +988,14 @@ final class SettingsControllerTest extends TestCase
         $this->assertSame('Laura Example', $profile->getName());
 
         $this->assertNull($this->harness->userProfiles->findByUserId(1));
+
+        $profileEvents = array_values(array_filter(
+            $this->harness->eventDispatcher->events(),
+            static fn (object $event): bool => $event instanceof UserProfileEvent,
+        ));
+        $this->assertCount(1, $profileEvents);
+        $this->assertSame($userId, $profileEvents[0]->getProfile()->getUserId());
+        $this->assertSame('Laura Example', $profileEvents[0]->getProfile()->getName());
     }
 
     public function testUserProfilePostPersistsAllProfileFields(): void
@@ -576,11 +1058,13 @@ final class SettingsControllerTest extends TestCase
             $registry,
             $this->harness->emailChangeStrategyFactory,
             $this->harness->qrCodeUriGeneratorService,
+            $this->harness->twoFactorEmailCodeService,
             $this->harness->emailChangeService,
             $this->harness->userTokens,
             $this->harness->hydrator,
             $this->harness->currentUser,
             new \Nyholm\Psr7\Factory\Psr17Factory(),
+            new \YiiRocks\Voyti\Service\UserSessionHistory\TerminateUserSessionsService($this->harness->eventDispatcher),
         );
     }
 
@@ -605,11 +1089,13 @@ final class SettingsControllerTest extends TestCase
             new \YiiRocks\Voyti\AuthClient\AuthClientRegistry(),
             $this->harness->emailChangeStrategyFactory,
             $this->harness->qrCodeUriGeneratorService,
+            $this->harness->twoFactorEmailCodeService,
             $this->harness->emailChangeService,
             $this->harness->userTokens,
             $this->harness->hydrator,
             $this->harness->currentUser,
             new \Nyholm\Psr7\Factory\Psr17Factory(),
+            new \YiiRocks\Voyti\Service\UserSessionHistory\TerminateUserSessionsService($this->harness->eventDispatcher),
         );
     }
 
@@ -676,6 +1162,15 @@ final class SettingsControllerTest extends TestCase
             created_at INTEGER NOT NULL,
             PRIMARY KEY (user_id, code, type)
         )')->execute();
+        $db->createCommand('CREATE TABLE IF NOT EXISTS {{%user_session_history}} (
+            user_id INTEGER NOT NULL,
+            session_id VARCHAR(255) NOT NULL,
+            user_agent TEXT,
+            ip VARCHAR(45),
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL,
+            PRIMARY KEY (user_id, session_id)
+        )')->execute();
     }
 
     private function createUser(string $username, string $email, string $password = 'secret123'): User
@@ -695,6 +1190,7 @@ final class SettingsControllerTest extends TestCase
 
     private function dropSchema(ConnectionInterface $db): void
     {
+        $db->createCommand('DROP TABLE IF EXISTS {{%user_session_history}}')->execute();
         $db->createCommand('DROP TABLE IF EXISTS {{%user_token}}')->execute();
         $db->createCommand('DROP TABLE IF EXISTS {{%user_social_account}}')->execute();
         $db->createCommand('DROP TABLE IF EXISTS {{%user_profile}}')->execute();
@@ -713,6 +1209,24 @@ final class SettingsControllerTest extends TestCase
             'updated_at' => time(),
             'gdpr_consent' => $gdprConsent ? 1 : 0,
         ])->execute();
+    }
+
+    private function insertSession(int $userId, string $sessionId): void
+    {
+        $session = new UserSessionHistory();
+        $session->setUserId($userId);
+        $session->setSessionId($sessionId);
+        $session->setCreatedAt(time());
+        $session->setUpdatedAt(time());
+        $session->save();
+    }
+
+    private function twoFactorHarness(): ControllerHarness
+    {
+        return new ControllerHarness(
+            dirname(__DIR__, 2),
+            new ModuleConfig(enableTwoFactorAuthentication: true),
+        );
     }
 }
 

@@ -20,10 +20,10 @@ final class UserRepository extends BaseRepository
         $query = $this->query(User::class);
 
         if (!empty($filters['username'])) {
-            $query = $query->where(['like', 'username', $filters['username']]);
+            $query = $query->andWhere(['like', 'username', $filters['username']]);
         }
         if (!empty($filters['email'])) {
-            $query = $query->where(['like', 'email', $filters['email']]);
+            $query = $query->andWhere(['like', 'email', $filters['email']]);
         }
 
         return $query->count();
@@ -119,22 +119,23 @@ final class UserRepository extends BaseRepository
         $query = $this->query(User::class);
 
         if (!empty($filters['username'])) {
-            $query = $query->where(['like', 'username', $filters['username']]);
+            $query = $query->andWhere(['like', 'username', $filters['username']]);
         }
         if (!empty($filters['email'])) {
-            $query = $query->where(['like', 'email', $filters['email']]);
+            $query = $query->andWhere(['like', 'email', $filters['email']]);
         }
         if (!empty($filters['status'])) {
             if ($filters['status'] === 'blocked') {
-                $query = $query->where(['not', ['blocked_at' => null]]);
+                $query = $query->andWhere(['not', ['blocked_at' => null]]);
             } elseif ($filters['status'] === 'confirmed') {
-                $query = $query->where(['not', ['confirmed_at' => null]]);
+                $query = $query->andWhere(['not', ['confirmed_at' => null]]);
             } elseif ($filters['status'] === 'unconfirmed') {
-                $query = $query->where(['confirmed_at' => null]);
+                $query = $query->andWhere(['confirmed_at' => null]);
             }
         }
 
         $limit = (int)($filters['limit'] ?? 50);
+        /** @infection-ignore-all DecrementInteger: the surrounding max(1, ...) already clamps a missing 'page' key to 1 regardless of whether the coalesce default here is 1 or 0, so that specific mutation is unobservable. */
         $page = max(1, (int)($filters['page'] ?? 1));
         $offset = ($page - 1) * $limit;
 

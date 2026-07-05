@@ -36,19 +36,22 @@ echo Html::form()
     ->class('mb-3')
     ->open();
 
+$tabindex = 0;
+
 echo Html::div()->class('row g-2')->open();
 echo Html::div()->class('col')->open();
-echo Html::input('text')->class('form-control')->name('name')->value($filterName)->addAttributes(['placeholder' => $translator->translate('voyti.view.name_label', category: 'voyti')]);
+echo Html::input('text')->class('form-control')->name('name')->value($filterName)->addAttributes(['placeholder' => $translator->translate('voyti.view.name_label', category: 'voyti')])->attribute('tabindex', ++$tabindex);
 echo Html::div()->close();
 
 echo Html::div()->class('col')->open();
-echo Html::input('text')->class('form-control')->name('description')->value($filterDescription)->addAttributes(['placeholder' => $translator->translate('voyti.view.description_label', category: 'voyti')]);
+echo Html::input('text')->class('form-control')->name('description')->value($filterDescription)->addAttributes(['placeholder' => $translator->translate('voyti.view.description_label', category: 'voyti')])->attribute('tabindex', ++$tabindex);
 echo Html::div()->close();
 
 echo Html::div()->class('col-auto')->open();
 echo Field::buttonGroup()
     ->buttons(
-        Html::submitButton($translator->translate('voyti.view.filter_button', category: 'voyti'))->class('btn', 'btn-outline-secondary')
+        Html::resetButton($translator->translate('voyti.view.reset_button', category: 'voyti'))->class('btn', 'btn-outline-secondary')->attribute('tabindex', $tabindex + 2),
+        Html::submitButton($translator->translate('voyti.view.filter_button', category: 'voyti'))->class('btn', 'btn-outline-secondary')->attribute('tabindex', ++$tabindex),
     );
 echo Html::div()->close();
 echo Html::div()->close();
@@ -76,7 +79,10 @@ foreach ($items as $role) {
         ->csrf($csrf)
         ->class('d-inline')
         ->open();
-    echo Html::submitButton($translator->translate('voyti.view.delete_button', category: 'voyti'))->class('btn', 'btn-sm', 'btn-outline-danger');
+    echo Field::buttonGroup()
+        ->buttons(
+            Html::submitButton($translator->translate('voyti.view.delete_button', category: 'voyti'))->class('btn', 'btn-sm', 'btn-outline-danger')->attribute('tabindex', 1),
+        );
     echo Html::form()->close();
     echo Html::div()->close();
     echo Html::div()->close();

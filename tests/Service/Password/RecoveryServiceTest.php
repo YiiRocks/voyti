@@ -7,8 +7,10 @@ namespace YiiRocks\Voyti\tests\Service\Password;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserToken;
+use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\UserRepository;
+use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
 use YiiRocks\Voyti\tests\TestCase;
@@ -154,6 +156,7 @@ final class RecoveryServiceTest extends TestCase
 
         return new RecoveryService(
             new UserRepository(),
+            new UserTokenFactory(new UserTokenRepository()),
             $mailService,
             $config,
             $this->getTranslator(),

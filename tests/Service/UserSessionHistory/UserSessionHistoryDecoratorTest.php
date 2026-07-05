@@ -7,6 +7,7 @@ namespace YiiRocks\Voyti\tests\Service\UserSessionHistory;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserSessionHistory;
+use YiiRocks\Voyti\Event\Session\SessionEvent;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\UserSessionHistory\UserSessionHistoryDecorator;
 use YiiRocks\Voyti\tests\TestCase;
@@ -90,6 +91,39 @@ final class UserSessionHistoryDecoratorTest extends TestCase
         $rows = UserSessionHistory::query()->where(['user_id' => 0, 'session_id' => 'anon-sess'])->all();
         self::assertCount(1, $rows);
         self::assertSame(0, $rows[0]->getUserId());
+    }
+
+    public function testRegisterLoginDispatchesSessionCreatedEvent(): void
+    {
+        $config = ModuleConfig::fromArray([
+            'enableSessionHistory' => true,
+            'numberSessionHistory' => false,
+        ]);
+        $user = $this->createUser('gina', 'gina@example.com');
+        $userId = (int) $user->getId();
+
+        $dispatcher = new EventCollector();
+        $decorator = new UserSessionHistoryDecorator($dispatcher, $config, new FakeSession('gina-session'));
+        $decorator->registerLogin($user);
+
+        $events = $dispatcher->events();
+        self::assertCount(1, $events);
+        self::assertInstanceOf(SessionEvent::class, $events[0]);
+        self::assertSame($userId, $events[0]->getUserId());
+        self::assertSame('gina-session', $events[0]->getSessionId());
+        self::assertSame(['type' => SessionEvent::SESSION_CREATED], $events[0]->getData());
+    }
+
+    public function testRegisterLoginDoesNotDispatchEventWhenSessionHistoryDisabled(): void
+    {
+        $config = ModuleConfig::fromArray(['enableSessionHistory' => false]);
+        $user = $this->createUser('holly', 'holly@example.com');
+
+        $dispatcher = new EventCollector();
+        $decorator = new UserSessionHistoryDecorator($dispatcher, $config, new FakeSession('holly-session'));
+        $decorator->registerLogin($user);
+
+        self::assertCount(0, $dispatcher->events());
     }
 
     public function testRegisterLoginDoesNotPruneWhenSessionHistoryLimitDisabled(): void
@@ -290,10 +324,22 @@ final class UserSessionHistoryDecoratorTest extends TestCase
 
 final class EventCollector implements EventDispatcherInterface
 {
+    /** @var list<object> */
+    private array $events = [];
+
     #[\Override]
     public function dispatch(object $event): object
     {
+        $this->events[] = $event;
         return $event;
+    }
+
+    /**
+     * @return list<object>
+     */
+    public function events(): array
+    {
+        return $this->events;
     }
 }
 

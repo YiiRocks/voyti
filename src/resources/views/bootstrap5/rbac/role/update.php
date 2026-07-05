@@ -44,11 +44,13 @@ if (!empty($errors)) {
     echo Html::div()->close();
 }
 
-echo Field::text($model, 'name');
+$tabindex = 0;
 
-echo Field::text($model, 'description');
+echo Field::text($model, 'name')->tabIndex(++$tabindex);
 
-echo Field::text($model, 'rule');
+echo Field::text($model, 'description')->tabIndex(++$tabindex);
+
+echo Field::text($model, 'rule')->tabIndex(++$tabindex);
 
 echo Html::h3($translator->translate('voyti.view.assignments.title', category: 'voyti'))->class('mb-3');
 
@@ -56,7 +58,7 @@ echo Html::div()->class('mb-3')->open();
 echo Html::div($translator->translate('voyti.view.assignments.assigned', category: 'voyti'))->class('fw-bold mb-2');
 foreach ($users as $user) {
     echo Html::div()->class('form-check')->open();
-    echo Html::input('checkbox')->class('form-check-input')->name('assignedUsers[]')->value((string) $user->getId())->addAttributes(['checked' => true]);
+    echo Html::input('checkbox')->class('form-check-input')->name('assignedUsers[]')->value((string) $user->getId())->addAttributes(['checked' => true])->attribute('tabindex', ++$tabindex);
     echo Html::label($user->getUsername())->class('form-check-label');
     echo Html::div()->close();
 }
@@ -64,7 +66,8 @@ echo Html::div()->close();
 
 echo Field::buttonGroup()
     ->buttons(
-        Html::submitButton($translator->translate('voyti.view.update_button', category: 'voyti'))
+        Html::resetButton($translator->translate('voyti.view.reset_button', category: 'voyti'))->attribute('tabindex', $tabindex + 2),
+        Html::submitButton($translator->translate('voyti.view.update_button', category: 'voyti'))->attribute('tabindex', ++$tabindex),
     );
 
 echo Html::form()->close();

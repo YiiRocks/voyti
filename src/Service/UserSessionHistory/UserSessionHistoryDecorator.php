@@ -7,6 +7,7 @@ namespace YiiRocks\Voyti\Service\UserSessionHistory;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserSessionHistory;
+use YiiRocks\Voyti\Event\Session\SessionEvent;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Session\SessionInterface;
 
@@ -25,14 +26,19 @@ final readonly class UserSessionHistoryDecorator
             return;
         }
 
+        $userId = $user->getId() !== null ? (int) $user->getId() : 0;
+        $sessionId = $this->session?->getId() ?? '';
+
         $userSessionHistory = new UserSessionHistory();
-        $userSessionHistory->setUserId($user->getId() !== null ? (int) $user->getId() : 0);
-        $userSessionHistory->setSessionId($this->session?->getId() ?? '');
+        $userSessionHistory->setUserId($userId);
+        $userSessionHistory->setSessionId($sessionId);
         $userSessionHistory->setIp($this->config->disableIpLogging ? '127.0.0.1' : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1'));
         $userSessionHistory->setUserAgent($_SERVER['HTTP_USER_AGENT'] ?? null);
         $userSessionHistory->setCreatedAt(time());
         $userSessionHistory->setUpdatedAt(time());
         $userSessionHistory->save();
+
+        $this->eventDispatcher->dispatch(new SessionEvent($userId, $sessionId, ['type' => SessionEvent::SESSION_CREATED]));
 
         $this->pruneOldSessions($user);
     }

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Strategy;
 
 use InvalidArgumentException;
-use YiiRocks\Voyti\Factory\MailFactory;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
+use YiiRocks\Voyti\Service\MailService;
 
 final readonly class EmailChangeStrategyFactory
 {
@@ -19,7 +19,7 @@ final readonly class EmailChangeStrategyFactory
 
     public function __construct(
         private UserTokenFactory $tokenFactory,
-        private MailFactory $mailFactory,
+        private MailService $mailService,
     ) {
     }
 
@@ -30,13 +30,13 @@ final readonly class EmailChangeStrategyFactory
             MailChangeStrategyInterface::TYPE_DEFAULT => new DefaultEmailChangeStrategy(
                 $form,
                 $this->tokenFactory,
-                $this->mailFactory,
+                $this->mailService,
             ),
             MailChangeStrategyInterface::TYPE_SECURE => new SecureEmailChangeStrategy(
                 $form,
                 $this->tokenFactory,
-                $this->mailFactory,
-                new DefaultEmailChangeStrategy($form, $this->tokenFactory, $this->mailFactory),
+                $this->mailService,
+                new DefaultEmailChangeStrategy($form, $this->tokenFactory, $this->mailService),
             ),
             default => throw new InvalidArgumentException('Unknown strategy type'),
         };

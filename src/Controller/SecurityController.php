@@ -22,7 +22,9 @@ use YiiRocks\Voyti\Service\Auth\SocialAuthProviderService;
 use YiiRocks\Voyti\Service\Auth\UserSocialAccountConnectService;
 use YiiRocks\Voyti\Service\Auth\UserSocialAuthenticateService;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
+use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
 use YiiRocks\Voyti\Validator\TwoFactor\CodeValidator;
+use YiiRocks\Voyti\Validator\TwoFactor\EmailValidator;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -38,6 +40,7 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 final readonly class SecurityController
 {
     use InputDataTrait;
+    use RedirectTrait;
     use RenderTrait;
 
     public function __construct(
@@ -59,6 +62,7 @@ final readonly class SecurityController
         private UserSocialAuthenticateService $socialNetworkAuthenticateService,
         private UserSocialAccountConnectService $socialNetworkAccountConnectService,
         private HydratorInterface $hydrator,
+        private EmailCodeGeneratorService $twoFactorEmailCodeService,
     ) {
     }
 
@@ -117,6 +121,7 @@ final readonly class SecurityController
         $form = new LoginForm($this->config, $this->translator);
         $form->login = $this->stringValue($credentials, 'login');
         $form->password = $this->stringValue($credentials, 'pwd');
+        $method = $this->userRepository->findByUsernameOrEmail($form->login)?->getAuthTfType() ?? 'google';
 
         if ($request->getMethod() === Method::POST) {
             $body = $this->parsedBody($request);
@@ -126,10 +131,20 @@ final readonly class SecurityController
             $user = $this->userRepository->findByUsernameOrEmail($form->login);
 
             if ($user !== null && $this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
-                $codeValidator = new CodeValidator($user, $form->twoFactorAuthenticationCode ?? '');
-                $codeValidator->setTranslator($this->translator);
+                $code = $form->twoFactorAuthenticationCode ?? '';
 
-                if ($codeValidator->validate()) {
+                if ($method === 'email') {
+                    $emailValidator = new EmailValidator($user, $code);
+                    $isValid = $emailValidator->validate();
+                    $errorMessage = $emailValidator->getErrorMessage();
+                } else {
+                    $codeValidator = new CodeValidator($user, $code);
+                    $codeValidator->setTranslator($this->translator);
+                    $isValid = $codeValidator->validate();
+                    $errorMessage = $codeValidator->getErrorMessage();
+                }
+
+                if ($isValid) {
                     $this->session->remove('credentials');
                     $currentUser = $this->boolValue($credentials, 'rememberMe')
                         ? $this->currentUser->withAuthTimeout($this->config->rememberLoginLifespan)
@@ -147,7 +162,6 @@ final readonly class SecurityController
                     return $response;
                 }
 
-                $errorMessage = $codeValidator->getErrorMessage();
                 $form->addError(
                     $errorMessage !== '' ? $errorMessage : $this->translator->translate('voyti.validator.invalid_verification_code', category: 'voyti'),
                     ['twoFactorAuthenticationCode'],
@@ -155,7 +169,7 @@ final readonly class SecurityController
             }
         }
 
-        return $this->renderView('security/confirm', ['model' => $form]);
+        return $this->renderView('security/confirm', ['model' => $form, 'method' => $method]);
     }
 
     public function connect(ServerRequestInterface $request, string $provider): ResponseInterface
@@ -209,12 +223,19 @@ final readonly class SecurityController
                     $form->addError($this->translator->translate('voyti.security.need_email_confirmation', category: 'voyti'), ['login']);
                 } else {
                     if ($this->config->enableTwoFactorAuthentication && $user->isAuthTfEnabled()) {
+                        if ($user->getAuthTfType() === 'email') {
+                            $this->twoFactorEmailCodeService->run($user);
+                        }
+
                         $this->session->set('credentials', [
                             'login' => $form->login,
                             'pwd' => $form->password,
                             'rememberMe' => $form->rememberMe,
                         ]);
-                        return $this->renderView('security/confirm', ['model' => $form]);
+                        return $this->renderView('security/confirm', [
+                            'model' => $form,
+                            'method' => $user->getAuthTfType() ?? 'google',
+                        ]);
                     }
 
                     $userToLogin = $this->currentUser;
@@ -271,13 +292,6 @@ final readonly class SecurityController
         $boolValue = filter_var($value, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
 
         return $boolValue ?? (bool) $value;
-    }
-
-    private function redirect(string $url): ResponseInterface
-    {
-        return $this->responseFactory
-            ->createResponse(302)
-            ->withHeader('Location', $url);
     }
 
     /**

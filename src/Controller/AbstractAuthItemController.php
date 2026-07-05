@@ -27,6 +27,7 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 abstract readonly class AbstractAuthItemController
 {
     use InputDataTrait;
+    use RedirectTrait;
     use RenderTrait;
 
     public function __construct(
@@ -268,9 +269,4 @@ abstract readonly class AbstractAuthItemController
         }
     }
 
-    private function redirect(string $url): ResponseInterface
-    {
-        return $this->responseFactory->createResponse(302)
-            ->withHeader('Location', $url);
-    }
 }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
 use YiiRocks\Voyti\Event\Auth\AfterRegisterEvent;
-use YiiRocks\Voyti\Event\Security\EmailChangeEvent;
 use YiiRocks\Voyti\Listener;
 
 return [
@@ -14,8 +13,5 @@ return [
     ],
     AfterRegisterEvent::class => [
         [Listener\AdminNotificationListener::class, 'onAfterRegister'],
-    ],
-    EmailChangeEvent::class => [
-        [Listener\MailChangeConfirmationListener::class, 'onEmailChange'],
     ],
 ];

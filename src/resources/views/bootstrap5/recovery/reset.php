@@ -28,13 +28,16 @@ echo Html::form()
     ->csrf($csrf)
     ->open();
 
-echo Field::password($model, 'password');
+$tabindex = 0;
 
-echo Field::password($model, 'passwordRepeat');
+echo Field::password($model, 'password')->tabIndex(++$tabindex);
+
+echo Field::password($model, 'passwordRepeat')->tabIndex(++$tabindex);
 
 echo Field::buttonGroup()
     ->buttons(
-        Html::submitButton($translator->translate('voyti.view.recovery.reset_button', category: 'voyti'))
+        Html::resetButton($translator->translate('voyti.view.reset_button', category: 'voyti'))->attribute('tabindex', $tabindex + 2),
+        Html::submitButton($translator->translate('voyti.view.recovery.reset_button', category: 'voyti'))->attribute('tabindex', ++$tabindex),
     );
 
 echo Html::form()->close();

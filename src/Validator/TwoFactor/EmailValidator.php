@@ -26,6 +26,11 @@ final class EmailValidator
         return $this->generatedCode;
     }
 
+    public function getErrorMessage(): string
+    {
+        return $this->error;
+    }
+
     public function getSuccessMessage(): string
     {
         return 'Email two factor authentication has been enabled.';

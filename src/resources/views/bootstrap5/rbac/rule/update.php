@@ -43,13 +43,16 @@ if (!empty($errors)) {
     echo Html::div()->close();
 }
 
-echo Field::text($model, 'name');
+$tabindex = 0;
 
-echo Field::text($model, 'class');
+echo Field::text($model, 'name')->tabIndex(++$tabindex);
+
+echo Field::text($model, 'class')->tabIndex(++$tabindex);
 
 echo Field::buttonGroup()
     ->buttons(
-        Html::submitButton($translator->translate('voyti.view.update_button', category: 'voyti'))
+        Html::resetButton($translator->translate('voyti.view.reset_button', category: 'voyti'))->attribute('tabindex', $tabindex + 2),
+        Html::submitButton($translator->translate('voyti.view.update_button', category: 'voyti'))->attribute('tabindex', ++$tabindex),
     );
 
 echo Html::form()->close();

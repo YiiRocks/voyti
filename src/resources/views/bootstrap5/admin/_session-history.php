@@ -45,7 +45,7 @@ echo Html::form()
 
 echo Field::buttonGroup()
     ->buttons(
-        Html::submitButton($translator->translate('voyti.view.admin.terminate_sessions', category: 'voyti'))->class('btn', 'btn-danger')
+        Html::submitButton($translator->translate('voyti.view.admin.terminate_sessions', category: 'voyti'))->class('btn', 'btn-danger')->attribute('tabindex', 1),
     );
 
 echo Html::form()->close();

@@ -7,7 +7,6 @@ namespace YiiRocks\Voyti\Helper;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Rbac\Assignment;
 use Yiisoft\Rbac\AssignmentsStorageInterface;
-use Yiisoft\Rbac\Item;
 use Yiisoft\Rbac\ItemsStorageInterface;
 use Yiisoft\Rbac\ManagerInterface;
 use Yiisoft\Rbac\Permission;
@@ -77,19 +76,4 @@ final readonly class AuthHelper
         }
         return false;
     }
-
-    /**
-     * @return true
-     */
-    public function removeItem(Item $item): bool
-    {
-        if ($item instanceof Role) {
-            $this->authManager->removeRole($item->getName());
-        } else {
-            $this->authManager->removePermission($item->getName());
-        }
-        $this->authManager->removeChildren($item->getName());
-        return true;
-    }
-
 }

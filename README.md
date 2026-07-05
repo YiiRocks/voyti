@@ -411,17 +411,16 @@ Voyti dispatches events at key points in the user lifecycle, allowing your appli
 |-------|---------|-------------------|
 | `AfterLoginEvent` | User logs in | Triggers password expiration check and session history tracking |
 | `AfterRegisterEvent` | New user registration | Sends admin notification email |
-| `EmailChangeEvent` | User requests email change | Sends confirmation email |
 
 ### Additional events (no default listeners)
 
+Dispatched by the library, but nothing consumes them by default — attach your own listener via the event dispatcher configuration if you need to react to them.
+
 - **UserEvent** — Variants: create, delete, block/unblock, confirmation, account/profile update, switch identity, logout
-- **UserProfileEvent** — Profile-related changes
+- **UserProfileEvent** — Dispatched when a user updates their profile
 - **GdprEvent** — Specifically: delete operation
 - **ResetPasswordEvent** — Password reset flow
-- **SessionEvent** — Variants: created, updated, terminated
-- **UserSocialAuthEvent** — Social authentication activities
-- **UserSocialConnectEvent** — Social account connection activities
+- **SessionEvent** — Dispatched with type `SESSION_CREATED` on login, and with type `SESSION_TERMINATED` whenever a user's sessions are terminated (account deletion, GDPR anonymization, or being blocked). The `SESSION_UPDATED` type is defined but not currently dispatched.
 
 ## Testing
 

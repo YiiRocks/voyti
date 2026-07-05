@@ -12,11 +12,13 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var UserProfile $userProfile
  * @var TranslatorInterface $translator
  * @var string|null $profilePreviewClass
+ * @var bool|null $showAdminFields
  */
 
 $displayName = $userProfile->getName() ?: $user->getUsername();
 $gravatarId = $userProfile->getGravatarId();
 $profilePreviewClass ??= 'list-group mb-4';
+$showAdminFields ??= false;
 
 echo Html::ul()->class($profilePreviewClass)->open();
 
@@ -24,10 +26,32 @@ echo Html::li()->class('list-group-item text-center py-3')->open();
 echo Html::h3(Html::encode($displayName))->class('h4 mb-3');
 if ($gravatarId) {
     echo Html::img('https://www.gravatar.com/avatar/' . $gravatarId . '?s=256&d=mp')
-        ->class('rounded-circle')
-        ->alt('');
+        ->class('rounded-circle');
 }
 echo Html::li()->close();
+
+if ($showAdminFields) {
+    echo Html::li()->class('list-group-item list-group-item-primary')->open();
+    echo Html::b($translator->translate('voyti.view.email_label', category: 'voyti'))->render() . ': ';
+    echo Html::encode($user->getEmail());
+    echo Html::li()->close();
+
+    echo Html::li()->class('list-group-item list-group-item-primary')->open();
+    echo Html::b($translator->translate('voyti.view.admin.registered_label', category: 'voyti'))->render() . ': ';
+    echo date('Y-m-d H:i:s', $user->getCreatedAt());
+    echo Html::li()->close();
+
+    echo Html::li()->class('list-group-item list-group-item-primary')->open();
+    echo Html::b($translator->translate('voyti.view.status_header', category: 'voyti'))->render() . ': ';
+    if ($user->isBlocked()) {
+        echo Html::span($translator->translate('voyti.view.status_blocked', category: 'voyti'))->class('badge', 'bg-danger');
+    } elseif ($user->isConfirmed()) {
+        echo Html::span($translator->translate('voyti.view.status_active', category: 'voyti'))->class('badge', 'bg-success');
+    } else {
+        echo Html::span($translator->translate('voyti.view.status_pending', category: 'voyti'))->class('badge', 'bg-warning text-dark');
+    }
+    echo Html::li()->close();
+}
 
 $publicEmail = $userProfile->getPublicEmail();
 echo Html::li()->class('list-group-item')->open();

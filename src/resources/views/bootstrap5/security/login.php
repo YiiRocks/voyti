@@ -36,17 +36,20 @@ echo Html::form()
 
 echo Field::errorSummary($model);
 
-echo Field::text($model, 'login');
+$tabindex = 0;
 
-echo Field::password($model, 'password');
+echo Field::text($model, 'login')->tabIndex(++$tabindex);
 
-echo Field::checkbox($model, 'rememberMe');
+echo Field::password($model, 'password')->tabIndex(++$tabindex);
+
+echo Field::checkbox($model, 'rememberMe')->tabIndex(++$tabindex);
 
 echo RecaptchaHelper::render($model, $config);
 
 echo Field::buttonGroup()
     ->buttons(
-        Html::submitButton($translator->translate('voyti.view.login.sign_in_button', category: 'voyti'))
+        Html::resetButton($translator->translate('voyti.view.reset_button', category: 'voyti'))->attribute('tabindex', $tabindex + 2),
+        Html::submitButton($translator->translate('voyti.view.login.sign_in_button', category: 'voyti'))->attribute('tabindex', ++$tabindex),
     );
 
 echo Html::form()->close();

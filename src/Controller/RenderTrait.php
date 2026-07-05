@@ -24,6 +24,7 @@ trait RenderTrait
             'translator' => $this->translator,
         ]);
     }
+
     protected function viewPath(): string
     {
         return dirname(__DIR__) . '/resources/views/bootstrap5';

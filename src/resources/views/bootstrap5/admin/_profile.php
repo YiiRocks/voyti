@@ -35,25 +35,29 @@ echo Html::form()
 
 echo Field::errorSummary($model);
 
-echo Field::text($model, 'name');
+$tabindex = 0;
 
-echo Field::email($model, 'publicEmail');
+echo Field::text($model, 'name')->tabIndex(++$tabindex);
 
-echo Field::email($model, 'gravatarEmail');
+echo Field::email($model, 'publicEmail')->tabIndex(++$tabindex);
 
-echo Field::text($model, 'location');
+echo Field::email($model, 'gravatarEmail')->tabIndex(++$tabindex);
 
-echo Field::text($model, 'website');
+echo Field::text($model, 'location')->tabIndex(++$tabindex);
+
+echo Field::text($model, 'website')->tabIndex(++$tabindex);
 
 echo Field::select($model, 'timezone')
     ->prompt('')
-    ->optionsData(TimezoneHelper::getAll());
+    ->optionsData(TimezoneHelper::getAll())
+    ->tabIndex(++$tabindex);
 
-echo Field::textarea($model, 'bio')->rows(3);
+echo Field::textarea($model, 'bio')->tabIndex(++$tabindex);
 
 echo Field::buttonGroup()
     ->buttons(
-        Html::submitButton($translator->translate('voyti.view.update_button', category: 'voyti'))
+        Html::resetButton($translator->translate('voyti.view.reset_button', category: 'voyti'))->attribute('tabindex', $tabindex + 2),
+        Html::submitButton($translator->translate('voyti.view.update_button', category: 'voyti'))->attribute('tabindex', ++$tabindex),
     );
 
 echo Html::form()->close();
