@@ -7,7 +7,6 @@ namespace YiiRocks\Voyti\Service\Rbac;
 use YiiRocks\Voyti\Form\Rbac\RuleForm;
 use YiiRocks\Voyti\Validator\Rbac\RuleValidator;
 use Yiisoft\Rbac\ItemsStorageInterface;
-use Yiisoft\Rbac\Role;
 
 final readonly class RuleEditionService
 {
@@ -26,12 +25,7 @@ final readonly class RuleEditionService
     {
         foreach ($this->itemsStorage->getAll() as $item) {
             if ($item->getRuleName() === $ruleClass) {
-                $updated = $item->withRuleName(null);
-                if ($item instanceof Role) {
-                    $this->itemsStorage->update($item->getName(), $updated);
-                } else {
-                    $this->itemsStorage->update($item->getName(), $updated);
-                }
+                $this->itemsStorage->update($item->getName(), $item->withRuleName(null));
             }
         }
     }

@@ -122,7 +122,8 @@ final class RegistrationControllerTest extends TestCase
             ),
         );
 
-        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame(302, $response->getStatusCode());
+        $this->assertSame('/voyti/login', $response->getHeaderLine('Location'));
 
         $user = $this->harness->users->findByEmail('rachel@example.test');
         $this->assertTrue($user->isGdprConsent());
@@ -146,7 +147,8 @@ final class RegistrationControllerTest extends TestCase
             ),
         );
 
-        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame(302, $response->getStatusCode());
+        $this->assertSame('/voyti/login', $response->getHeaderLine('Location'));
 
         $user = $this->harness->users->findByEmail('quentin@example.test');
         $this->assertSame('quentin', $user->getUsername());
@@ -169,7 +171,12 @@ final class RegistrationControllerTest extends TestCase
             ),
         );
 
-        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame(302, $response->getStatusCode());
+        $this->assertSame('/voyti/login', $response->getHeaderLine('Location'));
+        $this->assertSame(
+            'Account created. Check your email for the confirmation link.',
+            $this->harness->flash->get('success'),
+        );
 
         $formEvents = array_filter(
             $this->harness->eventDispatcher->events(),
@@ -208,6 +215,8 @@ final class RegistrationControllerTest extends TestCase
             $this->harness->moduleConfig,
             $pendingSocialAccountService,
             $this->harness->hydrator,
+            new \Nyholm\Psr7\Factory\Psr17Factory(),
+            $this->harness->flash,
         );
     }
 

@@ -109,6 +109,7 @@ final class PermissionControllerTest extends TestCase
             $this->harness->rbacItemsStorage,
             $spyManager,
             $this->harness->rbacAssignmentsStorage,
+            $this->harness->flash,
         );
 
         $controller->delete('manage-articles');
@@ -384,6 +385,7 @@ final class PermissionControllerTest extends TestCase
             $this->harness->rbacItemsStorage,
             $this->harness->rbacManager,
             $this->harness->rbacAssignmentsStorage,
+            $this->harness->flash,
         );
     }
 

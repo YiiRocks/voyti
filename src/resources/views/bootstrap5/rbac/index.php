@@ -6,6 +6,7 @@ use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Rbac\Item;
 use Yiisoft\Router\UrlGeneratorInterface;
+use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\View\WebView;
 
@@ -18,6 +19,7 @@ use Yiisoft\View\WebView;
  * @var string $filterDescription
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
+ * @var FlashInterface $flash
  * @var string $csrf
  */
 
@@ -30,7 +32,10 @@ $actionsColClass = $isRole ? 'col-3 text-end' : 'col-4 text-end';
 $this->setTitle($translator->translate('voyti.view.' . $itemType . '.title', category: 'voyti'));
 
 echo Html::div()->open();
-include dirname(__DIR__) . '/shared/_admin-menu.php';
+/** @psalm-suppress InvalidScope */
+echo $this->render('../shared/_admin-menu', ['url' => $url, 'translator' => $translator]);
+/** @psalm-suppress InvalidScope */
+echo $this->render('../shared/_flash', ['flash' => $flash]);
 
 echo Html::div()->class('d-flex justify-content-between align-items-center mb-3')->open();
 echo Html::H1($translator->translate('voyti.view.' . $itemType . '.title', category: 'voyti'));

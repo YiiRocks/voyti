@@ -112,7 +112,11 @@ final class SettingsControllerTest extends TestCase
             ),
         );
 
-        $this->assertResponseContains($response, 'Your account details have been updated');
+        $this->assertRedirectWithFlash(
+            $response,
+            '/voyti/settings-account',
+            'Your account details have been updated',
+        );
 
         $reloaded = $this->harness->users->findById($userId);
         $this->assertInstanceOf(User::class, $reloaded);
@@ -197,6 +201,56 @@ final class SettingsControllerTest extends TestCase
         $this->assertNotNull($this->harness->users->findById(1));
     }
 
+    public function testDisconnectRemovesAccountAndRedirectsWithFlash(): void
+    {
+        $user = $this->createUser('dana-network', 'dana-network@example.test');
+        $this->createGhostSocialAccount((int) $user->getId(), 'mastodon');
+        $this->harness->currentUser->overrideIdentity($user);
+
+        $account = $this->harness->socialAccounts->findByProviderAndClientId('mastodon', 'client-mastodon');
+        $this->assertInstanceOf(UserSocialAccount::class, $account);
+
+        $response = $this->harness->settingsController->disconnect(
+            $this->harness->request(Method::POST),
+            (int) $account->getId(),
+        );
+
+        $this->assertRedirectWithFlash($response, '/voyti/settings-networks', 'Network has been disconnected');
+        $this->assertNull($this->harness->socialAccounts->findByProviderAndClientId('mastodon', 'client-mastodon'));
+    }
+
+    public function testDisconnectReturnsNetworkNotFoundForUnknownAccountId(): void
+    {
+        $user = $this->createUser('elle-network', 'elle-network@example.test');
+        $this->harness->currentUser->overrideIdentity($user);
+
+        $response = $this->harness->settingsController->disconnect(
+            $this->harness->request(Method::POST),
+            999999,
+        );
+
+        $this->assertResponseContains($response, 'Network not found');
+    }
+
+    public function testDisconnectUsesZeroWhenIdentityIdIsNull(): void
+    {
+        $this->createGhostSocialAccount(-1, 'ghost-provider-negative');
+        $this->createGhostSocialAccount(0, 'ghost-provider-zero');
+        $this->createGhostSocialAccount(1, 'ghost-provider-one');
+        $this->harness->currentUser->overrideIdentity(new SettingsNullIdIdentity());
+
+        $zeroAccount = $this->harness->socialAccounts->findByProviderAndClientId('ghost-provider-zero', 'client-ghost-provider-zero');
+        $this->assertInstanceOf(UserSocialAccount::class, $zeroAccount);
+
+        $response = $this->harness->settingsController->disconnect(
+            $this->harness->request(Method::POST),
+            (int) $zeroAccount->getId(),
+        );
+
+        $this->assertRedirectWithFlash($response, '/voyti/settings-networks', 'Network has been disconnected');
+        $this->assertNull($this->harness->socialAccounts->findByProviderAndClientId('ghost-provider-zero', 'client-ghost-provider-zero'));
+    }
+
     public function testGdprConsentGetReflectsExistingConsentForRealUser(): void
     {
         $user = $this->createUser('erin', 'erin@example.test');
@@ -244,7 +298,7 @@ final class SettingsControllerTest extends TestCase
             ),
         );
 
-        $this->assertResponseContains($response, 'GDPR consent has been saved');
+        $this->assertRedirectWithFlash($response, '/voyti/gdpr-consent', 'GDPR consent has been saved');
 
         $reloaded = $this->harness->users->findById($userId);
         $this->assertInstanceOf(User::class, $reloaded);
@@ -493,8 +547,11 @@ final class SettingsControllerTest extends TestCase
             $this->harness->request(Method::POST),
         );
 
-        $this->assertSame(302, $response->getStatusCode());
-        $this->assertSame('/voyti/settings-two-factor', $response->getHeaderLine('Location'));
+        $this->assertRedirectWithFlash(
+            $response,
+            '/voyti/settings-two-factor',
+            'Two-factor authentication has been disabled',
+        );
 
         $reloaded = $this->harness->users->findById($userId);
         $this->assertInstanceOf(User::class, $reloaded);
@@ -696,8 +753,11 @@ final class SettingsControllerTest extends TestCase
             $this->harness->request(Method::POST, ['method' => 'email', 'code' => $sentCode]),
         );
 
-        $this->assertSame(302, $response->getStatusCode());
-        $this->assertSame('/voyti/settings-two-factor', $response->getHeaderLine('Location'));
+        $this->assertRedirectWithFlash(
+            $response,
+            '/voyti/settings-two-factor',
+            'Two-factor authentication has been enabled',
+        );
 
         $reloaded = $this->harness->users->findById($userId);
         $this->assertInstanceOf(User::class, $reloaded);
@@ -721,8 +781,11 @@ final class SettingsControllerTest extends TestCase
             $this->harness->request(Method::POST, ['method' => 'email', 'code' => '654321']),
         );
 
-        $this->assertSame(302, $response->getStatusCode());
-        $this->assertSame('/voyti/settings-two-factor', $response->getHeaderLine('Location'));
+        $this->assertRedirectWithFlash(
+            $response,
+            '/voyti/settings-two-factor',
+            'Two-factor authentication has been enabled',
+        );
 
         $reloaded = $this->harness->users->findById($userId);
         $this->assertInstanceOf(User::class, $reloaded);
@@ -751,8 +814,11 @@ final class SettingsControllerTest extends TestCase
             $this->harness->request(Method::POST, ['method' => 'google', 'code' => $code]),
         );
 
-        $this->assertSame(302, $response->getStatusCode());
-        $this->assertSame('/voyti/settings-two-factor', $response->getHeaderLine('Location'));
+        $this->assertRedirectWithFlash(
+            $response,
+            '/voyti/settings-two-factor',
+            'Two-factor authentication has been enabled',
+        );
 
         $reloaded = $this->harness->users->findById($userId);
         $this->assertInstanceOf(User::class, $reloaded);
@@ -782,8 +848,11 @@ final class SettingsControllerTest extends TestCase
             $this->harness->request(Method::POST, ['method' => 'google', 'code' => $code]),
         );
 
-        $this->assertSame(302, $response->getStatusCode());
-        $this->assertSame('/voyti/settings-two-factor', $response->getHeaderLine('Location'));
+        $this->assertRedirectWithFlash(
+            $response,
+            '/voyti/settings-two-factor',
+            'Two-factor authentication has been enabled',
+        );
 
         $reloaded = $this->harness->users->findById($userId);
         $this->assertInstanceOf(User::class, $reloaded);
@@ -980,7 +1049,7 @@ final class SettingsControllerTest extends TestCase
             ),
         );
 
-        $this->assertSame(302, $response->getStatusCode());
+        $this->assertRedirectWithFlash($response, '/voyti/settings', 'Your profile has been updated');
 
         $profile = $this->harness->userProfiles->findByUserId($userId);
         $this->assertInstanceOf(UserProfile::class, $profile);
@@ -1035,6 +1104,13 @@ final class SettingsControllerTest extends TestCase
         $this->assertSame('Hello there', $profile->getBio());
     }
 
+    private function assertRedirectWithFlash(\Psr\Http\Message\ResponseInterface $response, string $expectedLocation, string $expectedMessage): void
+    {
+        $this->assertSame(302, $response->getStatusCode());
+        $this->assertSame($expectedLocation, $response->getHeaderLine('Location'));
+        $this->assertSame($expectedMessage, $this->harness->flash->get('success'));
+    }
+
     private function assertResponseContains(\Psr\Http\Message\ResponseInterface $response, string $expected): void
     {
         $this->assertSame(200, $response->getStatusCode());
@@ -1065,6 +1141,7 @@ final class SettingsControllerTest extends TestCase
             $this->harness->currentUser,
             new \Nyholm\Psr7\Factory\Psr17Factory(),
             new \YiiRocks\Voyti\Service\UserSessionHistory\TerminateUserSessionsService($this->harness->eventDispatcher),
+            $this->harness->flash,
         );
     }
 
@@ -1096,6 +1173,7 @@ final class SettingsControllerTest extends TestCase
             $this->harness->currentUser,
             new \Nyholm\Psr7\Factory\Psr17Factory(),
             new \YiiRocks\Voyti\Service\UserSessionHistory\TerminateUserSessionsService($this->harness->eventDispatcher),
+            $this->harness->flash,
         );
     }
 

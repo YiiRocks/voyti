@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use YiiRocks\Voyti\Entity\UserSocialAccount;
+use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
+use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\View\WebView;
 
@@ -16,16 +18,21 @@ use Yiisoft\View\WebView;
  * @var AuthClientRegistry $authClients
  * @var list<string> $excludedProviders
  * @var string $connectRouteName
+ * @var ModuleConfig $config
  * @var UrlGeneratorInterface $url
  * @var string $csrf
  * @var TranslatorInterface $translator
+ * @var FlashInterface $flash
  */
 
 /** @psalm-suppress InvalidScope */
 $this->setTitle($translator->translate('voyti.view.networks.title', category: 'voyti'));
 
 echo Html::div()->open();
-include dirname(__DIR__) . '/shared/_menu.php';
+/** @psalm-suppress InvalidScope */
+echo $this->render('../shared/_menu', ['config' => $config, 'url' => $url, 'translator' => $translator]);
+/** @psalm-suppress InvalidScope */
+echo $this->render('../shared/_flash', ['flash' => $flash]);
 
 echo Html::H1($translator->translate('voyti.view.networks.title', category: 'voyti'));
 
@@ -62,7 +69,13 @@ if (empty($accounts)) {
 if ($authClients->all() !== []) {
     echo Html::div()->class('mt-4')->open();
     $routeName = $connectRouteName;
-    include dirname(__DIR__) . '/shared/_connect.php';
+    /** @psalm-suppress InvalidScope */
+    echo $this->render('../shared/_connect', [
+        'authClients' => $authClients,
+        'excludedProviders' => $excludedProviders,
+        'routeName' => $routeName,
+        'url' => $url,
+    ]);
     echo Html::div()->close();
 }
 

@@ -33,6 +33,7 @@ use Yiisoft\Rbac\AssignmentsStorageInterface;
 use Yiisoft\Rbac\ItemsStorageInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Security\PasswordHasher;
+use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\Validator\ValidatorInterface;
@@ -41,6 +42,7 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 final readonly class AdminController
 {
     use InputDataTrait;
+    use RedirectTrait;
     use RenderTrait;
 
     public function __construct(
@@ -68,6 +70,7 @@ final readonly class AdminController
         private ResponseFactoryInterface $responseFactory,
         private ItemsStorageInterface $itemsStorage,
         private AssignmentsStorageInterface $assignmentsStorage,
+        private FlashInterface $flash,
     ) {
     }
 
@@ -102,15 +105,15 @@ final readonly class AdminController
         if ($user !== null) {
             $this->userBlockService->run($user);
         }
-        return $this->responseFactory->createResponse(302)
-            ->withHeader('Location', $this->url->generate('voyti/admin'));
+
+        return $this->redirectWithFlash($this->url->generate('voyti/admin'), 'voyti.admin.user_status_changed');
     }
 
     public function confirm(int $id): ResponseInterface
     {
         $user = $this->userRepository->findById($id);
         if ($user !== null && $this->userConfirmationService->run($user)) {
-            return $this->renderSuccess('voyti.admin.user_confirmed');
+            return $this->redirectWithFlash($this->url->generate('voyti/admin'), 'voyti.admin.user_confirmed');
         }
         return $this->renderError('voyti.admin.unable_to_confirm');
     }
@@ -137,8 +140,7 @@ final readonly class AdminController
                         $this->updateAuthAssignmentsService->run((int) $user->getId(), $items);
                     }
                 }
-                return $this->responseFactory->createResponse(302)
-                    ->withHeader('Location', $this->url->generate('voyti/admin'));
+                return $this->redirectWithFlash($this->url->generate('voyti/admin'), 'voyti.admin.user_created');
             }
             $errors = $result->getErrors();
         }
@@ -162,7 +164,7 @@ final readonly class AdminController
         $user = $this->userRepository->findById($id);
         if ($user !== null) {
             $this->userRepository->delete($user);
-            return $this->renderSuccess('voyti.admin.user_deleted');
+            return $this->redirectWithFlash($this->url->generate('voyti/admin'), 'voyti.admin.user_deleted');
         }
         return $this->renderError('voyti.admin.user_not_found');
     }
@@ -171,7 +173,7 @@ final readonly class AdminController
     {
         $user = $this->userRepository->findById($id);
         if ($user !== null && $this->passwordExpireService->run($user)) {
-            return $this->renderSuccess('voyti.admin.password_change_required');
+            return $this->redirectWithFlash($this->url->generate('voyti/admin'), 'voyti.admin.password_change_required');
         }
         return $this->renderError('voyti.admin.error_occurred');
     }
@@ -201,6 +203,7 @@ final readonly class AdminController
             'filters' => $filters,
             'totalPages' => $totalPages,
             'currentPage' => $currentPage,
+            'flash' => $this->flash,
         ]);
     }
 
@@ -244,7 +247,10 @@ final readonly class AdminController
             $session->delete();
         }
 
-        return $this->renderSuccess('voyti.admin.sessions_terminated');
+        return $this->redirectWithFlash(
+            $this->url->generate('voyti/admin-session-history', ['id' => $id]),
+            'voyti.admin.sessions_terminated',
+        );
     }
 
     public function update(ServerRequestInterface $request, int $id): ResponseInterface
@@ -278,8 +284,7 @@ final readonly class AdminController
             $items = is_array($items) ? $items : [];
             $this->updateAuthAssignmentsService->run($id, $items);
 
-            return $this->responseFactory->createResponse(302)
-                ->withHeader('Location', $this->url->generate('voyti/admin'));
+            return $this->redirectWithFlash($this->url->generate('voyti/admin'), 'voyti.admin.account_updated');
         }
 
         $assignments = $this->assignmentsStorage->getByUserId((string) $id);
@@ -331,11 +336,14 @@ final readonly class AdminController
                 $userProfile->setTimezone($model->timezone !== '' ? $model->timezone : null);
                 $userProfile->setBio($model->bio !== '' ? $model->bio : null);
                 $userProfile->save();
-                return $this->renderSuccess('voyti.admin.profile_details_updated');
+                return $this->redirectWithFlash(
+                    $this->url->generate('voyti/admin-update-profile', ['id' => $id]),
+                    'voyti.admin.profile_details_updated',
+                );
             }
         }
 
-        return $this->renderView('admin/_profile', ['user' => $user, 'model' => $model]);
+        return $this->renderView('admin/_profile', ['user' => $user, 'model' => $model, 'flash' => $this->flash]);
     }
 
     public function userSessionHistory(int $id): ResponseInterface
@@ -349,6 +357,7 @@ final readonly class AdminController
         return $this->renderView('admin/_session-history', [
             'user' => $user,
             'sessions' => $sessions,
+            'flash' => $this->flash,
         ]);
     }
 

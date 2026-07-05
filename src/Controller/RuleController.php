@@ -13,6 +13,7 @@ use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Service\Rbac\RuleEditionService;
 use Yiisoft\Http\Method;
 use Yiisoft\Router\UrlGeneratorInterface;
+use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
@@ -31,6 +32,7 @@ final readonly class RuleController
         private ValidatorInterface $validator,
         private RuleEditionService $authRuleEditionService,
         private ResponseFactoryInterface $responseFactory,
+        private FlashInterface $flash,
     ) {
     }
 
@@ -49,10 +51,7 @@ final readonly class RuleController
 
             if ($result->isValid()) {
                 if ($this->authRuleEditionService->create($form)) {
-                    return $this->renderView('shared/message', [
-                        'title' => $this->translator->translate('voyti.rule.added', category: 'voyti'),
-                        'translator' => $this->translator,
-                    ]);
+                    return $this->redirectWithFlash($this->url->generate('voyti/rules'), 'voyti.rule.added');
                 }
                 $errors['class'] = [$this->translator->translate('voyti.rule.invalid_class', category: 'voyti')];
             } else {
@@ -70,7 +69,7 @@ final readonly class RuleController
     {
         $this->authRuleEditionService->remove($name);
 
-        return $this->redirect($this->url->generate('voyti/rules'));
+        return $this->redirectWithFlash($this->url->generate('voyti/rules'), 'voyti.rule.deleted');
     }
 
     public function index(): ResponseInterface
@@ -79,6 +78,7 @@ final readonly class RuleController
 
         return $this->renderView('rbac/rule/index', [
             'rules' => $rules,
+            'flash' => $this->flash,
         ]);
     }
 
@@ -101,7 +101,7 @@ final readonly class RuleController
 
             if ($result->isValid()) {
                 if ($this->authRuleEditionService->update($form)) {
-                    return $this->redirect($this->url->generate('voyti/rules'));
+                    return $this->redirectWithFlash($this->url->generate('voyti/rules'), 'voyti.rule.updated');
                 }
                 $errors['class'] = [$this->translator->translate('voyti.rule.invalid_class', category: 'voyti')];
             } else {

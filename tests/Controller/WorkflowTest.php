@@ -89,14 +89,18 @@ final class WorkflowTest extends TestCase
         $this->assertStringContainsString('Test Agent/1.0', $historyHtml);
 
         $terminateResponse = $this->harness->adminController->terminateSessions((int) $user->getId());
-        $this->assertResponseContains($terminateResponse, 'Sessions have been terminated');
+        $this->assertRedirectWithFlash(
+            $terminateResponse,
+            '/voyti/admin-session-history/' . $user->getId(),
+            'Sessions have been terminated',
+        );
         $this->assertSame([], $this->harness->userSessionHistory->findByUserId((int) $user->getId()));
 
         $deleteResponse = $this->harness->adminController->delete(
             $this->harness->request(Method::POST),
             (int) $user->getId(),
         );
-        $this->assertResponseContains($deleteResponse, 'User has been deleted');
+        $this->assertRedirectWithFlash($deleteResponse, '/voyti/admin', 'User has been deleted');
         $this->assertNull($this->harness->users->findById((int) $user->getId()));
     }
 
@@ -119,12 +123,16 @@ final class WorkflowTest extends TestCase
         $userId = (int) $user->getId();
 
         $confirmResponse = $this->harness->adminController->confirm($userId);
-        $this->assertResponseContains($confirmResponse, 'User has been confirmed');
+        $this->assertRedirectWithFlash($confirmResponse, '/voyti/admin', 'User has been confirmed');
         $confirmedUser = $this->harness->users->findById($userId);
         $this->assertTrue($confirmedUser->isConfirmed());
 
         $forcePasswordChangeResponse = $this->harness->adminController->forcePasswordChange($userId);
-        $this->assertResponseContains($forcePasswordChangeResponse, 'User will be required to change password at next login');
+        $this->assertRedirectWithFlash(
+            $forcePasswordChangeResponse,
+            '/voyti/admin',
+            'User will be required to change password at next login',
+        );
         $expiredUser = $this->harness->users->findById($userId);
         $this->assertSame(0, $expiredUser->getPasswordChangedAt());
 
@@ -272,6 +280,7 @@ final class WorkflowTest extends TestCase
             'config' => $this->harness->moduleConfig,
             'translator' => $this->harness->translator,
             'url' => $this->harness->url,
+            'flash' => $this->harness->flash,
         ]);
 
         $this->assertStringContainsString('voyti/admin', $html);
@@ -391,7 +400,7 @@ final class WorkflowTest extends TestCase
                 ),
             ),
         );
-        $this->assertResponseContains($consentResponse, 'GDPR consent has been saved');
+        $this->assertRedirectWithFlash($consentResponse, '/voyti/gdpr-consent', 'GDPR consent has been saved');
 
         $consentedUser = $this->harness->users->findById((int) $user->getId());
         $this->assertTrue($consentedUser->isGdprConsent());
@@ -511,7 +520,7 @@ final class WorkflowTest extends TestCase
                 ),
             ),
         );
-        $this->assertResponseContains($requestResponse, 'Recovery message sent');
+        $this->assertRedirectWithFlash($requestResponse, '/voyti/login', 'Recovery message sent');
 
         $tokens = $this->harness->userTokens->findByUserId((int) $user->getId());
         $recoveryToken = null;
@@ -534,7 +543,7 @@ final class WorkflowTest extends TestCase
             (int) $user->getId(),
             $recoveryToken->getCode(),
         );
-        $this->assertResponseContains($resetResponse, 'Password has been changed');
+        $this->assertRedirectWithFlash($resetResponse, '/voyti/login', 'Password has been changed');
 
         $reloaded = $this->harness->users->findById((int) $user->getId());
         $this->assertInstanceOf(User::class, $reloaded);
@@ -569,8 +578,7 @@ final class WorkflowTest extends TestCase
                 ),
             ),
         );
-        $this->assertSame(302, $profileResponse->getStatusCode());
-        $this->assertSame('/voyti/settings', $profileResponse->getHeaderLine('Location'));
+        $this->assertRedirectWithFlash($profileResponse, '/voyti/settings', 'Your profile has been updated');
 
         $profile = $this->harness->userProfiles->findByUserId((int) $user->getId());
         $this->assertSame('Bob Example', $profile->getName());
@@ -590,7 +598,11 @@ final class WorkflowTest extends TestCase
                 ),
             ),
         );
-        $this->assertResponseContains($accountResponse, 'Your account details have been updated');
+        $this->assertRedirectWithFlash(
+            $accountResponse,
+            '/voyti/settings-account',
+            'Your account details have been updated',
+        );
 
         $updatedUser = $this->harness->users->findById((int) $user->getId());
         $this->assertInstanceOf(User::class, $updatedUser);
@@ -854,7 +866,11 @@ final class WorkflowTest extends TestCase
                 ),
             ),
         );
-        $this->assertResponseContains($registerResponse, 'Account created. Check your email for the confirmation link.');
+        $this->assertRedirectWithFlash(
+            $registerResponse,
+            '/voyti/login',
+            'Account created. Check your email for the confirmation link.',
+        );
 
         $registeredUser = $this->harness->users->findByEmail('new-user@example.test');
         $this->assertInstanceOf(User::class, $registeredUser);
@@ -937,6 +953,13 @@ final class WorkflowTest extends TestCase
         $this->assertCount(1, $history);
         $this->assertStringStartsWith('test-session-', $history[0]->getSessionId());
         $this->assertSame($this->remoteAddr, $history[0]->getIp());
+    }
+
+    private function assertRedirectWithFlash(\Psr\Http\Message\ResponseInterface $response, string $expectedLocation, string $expectedMessage): void
+    {
+        $this->assertSame(302, $response->getStatusCode());
+        $this->assertSame($expectedLocation, $response->getHeaderLine('Location'));
+        $this->assertSame($expectedMessage, $this->harness->flash->get('success'));
     }
 
     private function assertResponseContains(\Psr\Http\Message\ResponseInterface $response, string $expected): void
@@ -1034,7 +1057,11 @@ final class WorkflowTest extends TestCase
                 ),
             ),
         );
-        $this->assertResponseContains($registerResponse, 'Account created. Check your email for the confirmation link.');
+        $this->assertRedirectWithFlash(
+            $registerResponse,
+            '/voyti/login',
+            'Account created. Check your email for the confirmation link.',
+        );
 
         $user = $this->harness->users->findByEmail($email);
         $this->assertInstanceOf(User::class, $user);
@@ -1047,7 +1074,7 @@ final class WorkflowTest extends TestCase
             (int) $user->getId(),
             $token->getCode(),
         );
-        $this->assertResponseContains($confirmResponse, 'Thank you, registration is now complete.');
+        $this->assertRedirectWithFlash($confirmResponse, '/voyti/login', 'Thank you, registration is now complete.');
 
         $confirmedUser = $this->harness->users->findById((int) $user->getId());
         $this->assertInstanceOf(User::class, $confirmedUser);

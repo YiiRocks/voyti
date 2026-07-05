@@ -7,6 +7,7 @@ use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
+use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\View\WebView;
 
@@ -20,6 +21,7 @@ use Yiisoft\View\WebView;
  * @var array<string, list<string>> $errors
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
+ * @var FlashInterface $flash
  * @var string $csrf
  */
 
@@ -27,7 +29,10 @@ use Yiisoft\View\WebView;
 $this->setTitle($translator->translate('voyti.view.two_factor.title', category: 'voyti'));
 
 echo Html::div()->open();
-include dirname(__DIR__) . '/shared/_menu.php';
+/** @psalm-suppress InvalidScope */
+echo $this->render('../shared/_menu', ['config' => $config, 'url' => $url, 'translator' => $translator]);
+/** @psalm-suppress InvalidScope */
+echo $this->render('../shared/_flash', ['flash' => $flash]);
 
 echo Html::H1($translator->translate('voyti.view.two_factor.title', category: 'voyti'));
 

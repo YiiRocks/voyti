@@ -8,8 +8,10 @@ use Yiisoft\Html\Html;
 use Yiisoft\Rbac\Item;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\View\WebView;
 
 /**
+ * @var WebView $this
  * @var User $user
  * @var string[] $assignments Array of assigned item names
  * @var array<array-key, Item> $available Array of unassigned items (name => Item)
@@ -19,7 +21,8 @@ use Yiisoft\Translator\TranslatorInterface;
  */
 
 echo Html::div()->open();
-include dirname(__DIR__) . '/shared/_admin-menu.php';
+/** @psalm-suppress InvalidScope */
+echo $this->render('../shared/_admin-menu', ['url' => $url, 'translator' => $translator]);
 
 Html::H3()->class('mb-3')->open();
 echo $translator->translate('voyti.view.assignments.title', category: 'voyti');

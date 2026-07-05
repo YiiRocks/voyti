@@ -7,18 +7,25 @@ use YiiRocks\Voyti\Entity\UserSessionHistory;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
+use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\View\WebView;
 
 /**
+ * @var WebView $this
  * @var User $user
  * @var UserSessionHistory[] $sessions
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
+ * @var FlashInterface $flash
  * @var string $csrf
  */
 
 echo Html::div()->open();
-include dirname(__DIR__) . '/shared/_admin-menu.php';
+/** @psalm-suppress InvalidScope */
+echo $this->render('../shared/_admin-menu', ['url' => $url, 'translator' => $translator]);
+/** @psalm-suppress InvalidScope */
+echo $this->render('../shared/_flash', ['flash' => $flash]);
 
 Html::H3()->class('mb-3')->open();
 echo $translator->translate('voyti.view.admin.session_history', category: 'voyti');

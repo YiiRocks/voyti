@@ -22,7 +22,8 @@ use Yiisoft\View\WebView;
 $this->setTitle($user->getUsername());
 
 echo Html::div()->open();
-include dirname(__DIR__) . '/shared/_admin-menu.php';
+/** @psalm-suppress InvalidScope */
+echo $this->render('../shared/_admin-menu', ['url' => $url, 'translator' => $translator]);
 
 echo Html::div()->class('d-flex justify-content-between align-items-center mb-3')->open();
 echo Html::H1($user->getUsername());
@@ -34,8 +35,13 @@ echo Html::a($translator->translate('voyti.view.admin.sessions_link', category: 
 echo Html::div()->close();
 echo Html::div()->close();
 
-$showAdminFields = true;
-$profilePreviewClass = 'list-group list-group-flush';
-include dirname(__DIR__) . '/shared/view_profile.php';
+/** @psalm-suppress InvalidScope */
+echo $this->render('../shared/view_profile', [
+    'user' => $user,
+    'userProfile' => $userProfile,
+    'translator' => $translator,
+    'showAdminFields' => true,
+    'profilePreviewClass' => 'list-group list-group-flush',
+]);
 
 echo Html::div()->close();

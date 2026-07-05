@@ -15,6 +15,7 @@ use YiiRocks\Voyti\Controller\PermissionController;
 use YiiRocks\Voyti\Controller\RecoveryController;
 use YiiRocks\Voyti\Controller\RegistrationController;
 use YiiRocks\Voyti\Controller\RoleController;
+use YiiRocks\Voyti\Controller\RuleController;
 use YiiRocks\Voyti\Controller\SecurityController;
 use YiiRocks\Voyti\Controller\SettingsController;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
@@ -38,6 +39,7 @@ use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\Password\RandomPasswordGenerator;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
 use YiiRocks\Voyti\Service\Password\ResetService;
+use YiiRocks\Voyti\Service\Rbac\RuleEditionService;
 use YiiRocks\Voyti\Service\Rbac\UpdateAssignmentsService;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\Service\SwitchIdentityService;
@@ -52,6 +54,7 @@ use YiiRocks\Voyti\Service\User\ResendConfirmationService;
 use YiiRocks\Voyti\Service\UserSessionHistory\TerminateUserSessionsService;
 use YiiRocks\Voyti\Strategy\EmailChangeStrategyFactory;
 use YiiRocks\Voyti\Validator\Rbac\ItemsValidator;
+use YiiRocks\Voyti\Validator\Rbac\RuleValidator;
 use Yiisoft\Aliases\Aliases;
 use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\Auth\IdentityRepositoryInterface;
@@ -70,6 +73,7 @@ use Yiisoft\Rbac\Role;
 use Yiisoft\Rbac\SimpleAssignmentsStorage;
 use Yiisoft\Rbac\SimpleItemsStorage;
 use Yiisoft\Security\PasswordHasher;
+use Yiisoft\Session\Flash\Flash;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\Translator\CategorySource;
 use Yiisoft\Translator\Message\Php\MessageSource;
@@ -92,6 +96,7 @@ final class ControllerHarness
     public readonly EmailChangeService $emailChangeService;
     public readonly EmailChangeStrategyFactory $emailChangeStrategyFactory;
     public readonly EventCaptureDispatcher $eventDispatcher;
+    public readonly Flash $flash;
     public readonly HydratorInterface $hydrator;
     public readonly MailCapture $mailer;
     public readonly MailService $mailService;
@@ -112,6 +117,7 @@ final class ControllerHarness
     public readonly ResendForm $resendFormPrototype;
     public readonly ResetService $resetPasswordService;
     public readonly RoleController $roleController;
+    public readonly RuleController $ruleController;
     public readonly SecurityController $securityController;
     public readonly FakeSession $session;
     public readonly SettingsController $settingsController;
@@ -158,6 +164,7 @@ final class ControllerHarness
 
         $this->eventDispatcher = new EventCaptureDispatcher();
         $this->session = new FakeSession();
+        $this->flash = new Flash($this->session);
         $this->url = new FakeUrlGenerator();
         $responseFactory = new Psr17Factory();
         $this->hydrator = new Hydrator();
@@ -284,6 +291,8 @@ final class ControllerHarness
             $this->moduleConfig,
             $pendingSocialAccountService,
             $this->hydrator,
+            $responseFactory,
+            $this->flash,
         );
 
         $this->securityController = new SecurityController(
@@ -313,6 +322,7 @@ final class ControllerHarness
             new \YiiRocks\Voyti\Service\Auth\UserSocialAccountConnectService($this->socialAccounts),
             $this->hydrator,
             $this->twoFactorEmailCodeService,
+            $this->flash,
         );
 
         $this->settingsController = new SettingsController(
@@ -336,6 +346,7 @@ final class ControllerHarness
             $this->currentUser,
             $responseFactory,
             new TerminateUserSessionsService($this->eventDispatcher),
+            $this->flash,
         );
 
         $this->recoveryController = new RecoveryController(
@@ -350,6 +361,8 @@ final class ControllerHarness
             $this->eventDispatcher,
             $this->moduleConfig,
             $this->hydrator,
+            $responseFactory,
+            $this->flash,
         );
 
         $this->adminController = new AdminController(
@@ -377,6 +390,7 @@ final class ControllerHarness
             $responseFactory,
             $this->rbacItemsStorage,
             $this->rbacAssignmentsStorage,
+            $this->flash,
         );
 
         $this->permissionController = new PermissionController(
@@ -389,6 +403,7 @@ final class ControllerHarness
             $this->rbacItemsStorage,
             $this->rbacManager,
             $this->rbacAssignmentsStorage,
+            $this->flash,
         );
 
         $this->roleController = new RoleController(
@@ -401,6 +416,18 @@ final class ControllerHarness
             $this->rbacItemsStorage,
             $this->rbacManager,
             $this->rbacAssignmentsStorage,
+            $this->flash,
+        );
+
+        $this->ruleController = new RuleController(
+            $this->translator,
+            $this->webViewRenderer,
+            $this->authHelper,
+            $this->url,
+            $this->validator(),
+            new RuleEditionService($this->rbacItemsStorage, new RuleValidator()),
+            $responseFactory,
+            $this->flash,
         );
     }
 

@@ -20,9 +20,11 @@ final class QrCodeUriGeneratorServiceTest extends TestCase
         $svg = $service->generateQrCodeSvg($user);
         $uri = $service->run($user);
 
-        $expected = (string) (new QRCode(['scale' => 4, 'outputBase64' => false]))->render($uri);
+        $expected = (string) (new QRCode(['scale' => 4, 'outputBase64' => false, 'connectPaths' => true]))->render($uri);
+        $withoutConnectPaths = (string) (new QRCode(['scale' => 4, 'outputBase64' => false, 'connectPaths' => false]))->render($uri);
 
         self::assertSame($expected, $svg);
+        self::assertNotSame($withoutConnectPaths, $svg);
     }
 
     public function testRunReusesExistingSecretAndBuildsOtpauthUri(): void

@@ -55,6 +55,26 @@ final class RuleFormTest extends TestCase
         $this->assertFalse($result->isPropertyValid('name'));
     }
 
+    public function testGetAttributeLabels(): void
+    {
+        $form = $this->createForm();
+
+        $this->assertSame(
+            [
+                'name' => 'voyti.view.name_label',
+                'class' => 'voyti.view.rule.class_label',
+            ],
+            $form->getAttributeLabels(),
+        );
+    }
+
+    public function testGetPropertyLabelsMatchesAttributeLabels(): void
+    {
+        $form = $this->createForm();
+
+        $this->assertSame($form->getAttributeLabels(), $form->getPropertyLabels());
+    }
+
     public function testGetRules(): void
     {
         $form = $this->createForm();

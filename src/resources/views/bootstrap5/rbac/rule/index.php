@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
+use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\View\WebView;
 
@@ -13,6 +14,7 @@ use Yiisoft\View\WebView;
  * @var array $rules Array of rule class names (string[])
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
+ * @var FlashInterface $flash
  * @var string $csrf
  */
 
@@ -20,7 +22,10 @@ use Yiisoft\View\WebView;
 $this->setTitle($translator->translate('voyti.view.rule.title', category: 'voyti'));
 
 echo Html::div()->open();
-include dirname(__DIR__, 2) . '/shared/_admin-menu.php';
+/** @psalm-suppress InvalidScope */
+echo $this->render('../../shared/_admin-menu', ['url' => $url, 'translator' => $translator]);
+/** @psalm-suppress InvalidScope */
+echo $this->render('../../shared/_flash', ['flash' => $flash]);
 
 echo Html::div()->class('d-flex justify-content-between align-items-center mb-3')->open();
 echo Html::H1($translator->translate('voyti.view.rule.title', category: 'voyti'));

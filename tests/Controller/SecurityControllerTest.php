@@ -637,7 +637,7 @@ final class SecurityControllerTest extends TestCase
 
         $response = $this->harness->securityController->logout();
 
-        $this->assertResponseContains($response, 'Logged out');
+        $this->assertRedirectWithFlash($response, '/voyti/login', 'Logged out');
 
         $reloaded = $this->harness->users->findById((int) $user->getId());
         $this->assertInstanceOf(User::class, $reloaded);
@@ -655,7 +655,7 @@ final class SecurityControllerTest extends TestCase
 
         $response = $this->harness->securityController->logout();
 
-        $this->assertResponseContains($response, 'Logged out');
+        $this->assertRedirectWithFlash($response, '/voyti/login', 'Logged out');
 
         $reloaded = $this->harness->users->findById((int) $user->getId());
         $this->assertInstanceOf(User::class, $reloaded);
@@ -717,6 +717,13 @@ final class SecurityControllerTest extends TestCase
 
         $this->assertResponseContains($response, 'Authenticated');
         $this->assertStringContainsString('autoLogin=', $response->getHeaderLine('Set-Cookie'));
+    }
+
+    private function assertRedirectWithFlash(\Psr\Http\Message\ResponseInterface $response, string $expectedLocation, string $expectedMessage): void
+    {
+        $this->assertSame(302, $response->getStatusCode());
+        $this->assertSame($expectedLocation, $response->getHeaderLine('Location'));
+        $this->assertSame($expectedMessage, $this->harness->flash->get('success'));
     }
 
     private function assertResponseContains(\Psr\Http\Message\ResponseInterface $response, string $expected): void
@@ -828,7 +835,11 @@ final class SecurityControllerTest extends TestCase
                 ),
             ),
         );
-        $this->assertResponseContains($registerResponse, 'Account created. Check your email for the confirmation link.');
+        $this->assertRedirectWithFlash(
+            $registerResponse,
+            '/voyti/login',
+            'Account created. Check your email for the confirmation link.',
+        );
 
         $user = $this->harness->users->findByEmail($email);
         $this->assertInstanceOf(User::class, $user);
@@ -841,7 +852,7 @@ final class SecurityControllerTest extends TestCase
             (int) $user->getId(),
             $token->getCode(),
         );
-        $this->assertResponseContains($confirmResponse, 'Thank you, registration is now complete.');
+        $this->assertRedirectWithFlash($confirmResponse, '/voyti/login', 'Thank you, registration is now complete.');
 
         $confirmedUser = $this->harness->users->findById((int) $user->getId());
         $this->assertInstanceOf(User::class, $confirmedUser);

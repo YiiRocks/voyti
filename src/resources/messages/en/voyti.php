@@ -42,6 +42,8 @@ return [
     'voyti.settings.network_disconnected' => 'Network has been disconnected',
     'voyti.settings.network_not_found' => 'Network not found',
     'voyti.settings.data_exported' => 'Your data has been exported',
+    'voyti.settings.two_factor_enabled' => 'Two-factor authentication has been enabled',
+    'voyti.settings.two_factor_disabled' => 'Two-factor authentication has been disabled',
 
     // ProfileController
     'voyti.userProfile.forbidden' => 'Forbidden',
@@ -57,12 +59,20 @@ return [
     'voyti.admin.error_occurred' => 'There was an error',
     'voyti.admin.cannot_delete_self' => 'You cannot delete your own account',
     'voyti.admin.sessions_terminated' => 'Sessions have been terminated',
+    'voyti.admin.user_status_changed' => 'User status has been updated',
+    'voyti.admin.user_created' => 'User has been created',
+    'voyti.admin.account_updated' => 'Account has been updated',
 
     // RuleController
     'voyti.rule.added' => 'Authorization rule has been added',
+    'voyti.rule.updated' => 'Authorization rule has been updated',
+    'voyti.rule.deleted' => 'Authorization rule has been removed',
     'voyti.rule.invalid_class' => 'Invalid rule class',
 
     'voyti.auth_item.not_found' => 'Authorization item not found',
+    'voyti.auth_item.created' => 'Authorization item has been created',
+    'voyti.auth_item.updated' => 'Authorization item has been updated',
+    'voyti.auth_item.deleted' => 'Authorization item has been removed',
 
     // API AdminController
     'voyti.api.not_found' => 'Not found',

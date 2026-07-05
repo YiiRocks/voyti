@@ -40,6 +40,8 @@ return [
     'voyti.settings.network_disconnected' => 'Das Netzwerk wurde getrennt',
     'voyti.settings.network_not_found' => 'Netzwerk nicht gefunden',
     'voyti.settings.data_exported' => 'Ihre Daten wurden exportiert',
+    'voyti.settings.two_factor_enabled' => 'Zwei-Faktor-Authentifizierung wurde aktiviert',
+    'voyti.settings.two_factor_disabled' => 'Zwei-Faktor-Authentifizierung wurde deaktiviert',
 
     // ProfileController
     'voyti.userProfile.forbidden' => 'Verboten',
@@ -55,12 +57,20 @@ return [
     'voyti.admin.error_occurred' => 'Es ist ein Fehler aufgetreten',
     'voyti.admin.cannot_delete_self' => 'Sie können Ihr eigenes Konto nicht löschen',
     'voyti.admin.sessions_terminated' => 'Sitzungen wurden beendet',
+    'voyti.admin.user_status_changed' => 'Benutzerstatus wurde aktualisiert',
+    'voyti.admin.user_created' => 'Benutzer wurde erstellt',
+    'voyti.admin.account_updated' => 'Konto wurde aktualisiert',
 
     // RuleController
     'voyti.rule.added' => 'Autorisierungsregel wurde hinzugefügt',
+    'voyti.rule.updated' => 'Autorisierungsregel wurde aktualisiert',
+    'voyti.rule.deleted' => 'Autorisierungsregel wurde entfernt',
     'voyti.rule.invalid_class' => 'Ungültige Regelklasse',
 
     'voyti.auth_item.not_found' => 'Autorisierungselement nicht gefunden',
+    'voyti.auth_item.created' => 'Autorisierungselement wurde erstellt',
+    'voyti.auth_item.updated' => 'Autorisierungselement wurde aktualisiert',
+    'voyti.auth_item.deleted' => 'Autorisierungselement wurde entfernt',
 
     // API AdminController
     'voyti.api.not_found' => 'Nicht gefunden',

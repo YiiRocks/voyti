@@ -30,6 +30,7 @@ use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Security\Random;
+use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
@@ -63,6 +64,7 @@ final readonly class SecurityController
         private UserSocialAccountConnectService $socialNetworkAccountConnectService,
         private HydratorInterface $hydrator,
         private EmailCodeGeneratorService $twoFactorEmailCodeService,
+        private FlashInterface $flash,
     ) {
     }
 
@@ -115,6 +117,7 @@ final readonly class SecurityController
                 'model' => new LoginForm($this->config, $this->translator),
                 'config' => $this->config,
                 'authClients' => $this->authClientRegistry,
+                'flash' => $this->flash,
             ]);
         }
 
@@ -263,6 +266,7 @@ final readonly class SecurityController
             'model' => $form,
             'config' => $this->config,
             'authClients' => $this->authClientRegistry,
+            'flash' => $this->flash,
         ]);
     }
 
@@ -275,7 +279,9 @@ final readonly class SecurityController
             $identity->save();
         }
 
-        return $this->rememberMeCookieService->expireCookie($this->renderSuccess('voyti.security.logged_out'));
+        return $this->rememberMeCookieService->expireCookie(
+            $this->redirectWithFlash($this->url->generate($this->config->loginRoute), 'voyti.security.logged_out'),
+        );
     }
 
     protected function viewPath(): string

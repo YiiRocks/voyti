@@ -109,10 +109,10 @@ final class RecoveryControllerTest extends TestCase
 
         $response = $this->harness->recoveryController->request($request);
 
-        $this->assertSame(200, $response->getStatusCode());
-        $this->assertStringContainsString(
+        $this->assertRedirectWithFlash(
+            $response,
+            '/voyti/login',
             'If the email exists, a recovery message has been sent',
-            $this->harness->responseBody($response),
         );
     }
 
@@ -157,11 +157,7 @@ final class RecoveryControllerTest extends TestCase
             $token->getCode(),
         );
 
-        $this->assertSame(200, $response->getStatusCode());
-        $this->assertStringContainsString(
-            'Password has been changed',
-            $this->harness->responseBody($response),
-        );
+        $this->assertRedirectWithFlash($response, '/voyti/login', 'Password has been changed');
 
         $reloaded = $this->harness->users->findById((int) $user->getId());
         $this->assertTrue((new PasswordHasher())->validate('new-secret123', $reloaded->getPasswordHash()));
@@ -182,7 +178,7 @@ final class RecoveryControllerTest extends TestCase
         );
     }
 
-    public function testResetActionSuccessRendersPasswordChangedMessageWithTranslatorContext(): void
+    public function testResetActionSuccessRedirectsToLoginWithFlash(): void
     {
         $user = $this->registerUser('nina', 'nina@example.test', 'secret123');
         $token = $this->createRecoveryToken((int) $user->getId());
@@ -199,12 +195,7 @@ final class RecoveryControllerTest extends TestCase
             $token->getCode(),
         );
 
-        $body = $this->harness->responseBody($response);
-        $this->assertSame(200, $response->getStatusCode());
-        $this->assertStringContainsString('Password has been changed', $body);
-        // Rendered via translator injected in the message view; proves the
-        // 'translator' array key survived (ArrayItem mutant breaks this key).
-        $this->assertStringContainsString('Go home', $body);
+        $this->assertRedirectWithFlash($response, '/voyti/login', 'Password has been changed');
     }
 
     public function testResetActionTokenWithMissingUserReturnsLinkInvalidMessage(): void
@@ -223,6 +214,13 @@ final class RecoveryControllerTest extends TestCase
             'Recovery link is invalid or expired',
             $this->harness->responseBody($response),
         );
+    }
+
+    private function assertRedirectWithFlash(\Psr\Http\Message\ResponseInterface $response, string $expectedLocation, string $expectedMessage): void
+    {
+        $this->assertSame(302, $response->getStatusCode());
+        $this->assertSame($expectedLocation, $response->getHeaderLine('Location'));
+        $this->assertSame($expectedMessage, $this->harness->flash->get('success'));
     }
 
     private function buildControllerWithValidator(\Yiisoft\Validator\ValidatorInterface $validator): RecoveryController
@@ -246,6 +244,8 @@ final class RecoveryControllerTest extends TestCase
             $this->harness->eventDispatcher,
             $this->harness->moduleConfig,
             $this->harness->hydrator,
+            new \Nyholm\Psr7\Factory\Psr17Factory(),
+            $this->harness->flash,
         );
     }
 

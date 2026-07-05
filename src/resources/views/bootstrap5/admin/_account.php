@@ -30,7 +30,8 @@ $username = $user->getUsername();
 $this->setTitle($translator->translate('voyti.view.admin.update_user_title', ['username' => $username], category: 'voyti'));
 
 echo Html::div()->open();
-include dirname(__DIR__) . '/shared/_admin-menu.php';
+/** @psalm-suppress InvalidScope */
+echo $this->render('../shared/_admin-menu', ['url' => $url, 'translator' => $translator]);
 
 echo Html::H1($translator->translate('voyti.view.admin.update_user_title', ['username' => $username], category: 'voyti'));
 

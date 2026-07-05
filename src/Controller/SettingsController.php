@@ -36,6 +36,7 @@ use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Security\Random;
+use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
@@ -69,6 +70,7 @@ final readonly class SettingsController
         private CurrentUser $currentUser,
         private ResponseFactoryInterface $responseFactory,
         private TerminateUserSessionsService $terminateUserSessionsService,
+        private FlashInterface $flash,
     ) {
     }
 
@@ -113,11 +115,14 @@ final readonly class SettingsController
                 $user->setUpdatedAt(time());
                 $user->save();
 
-                return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.account_details_updated', category: 'voyti')]);
+                return $this->redirectWithFlash(
+                    $this->url->generate('voyti/settings-account'),
+                    'voyti.settings.account_details_updated',
+                );
             }
         }
 
-        return $this->renderView('settings/account', ['model' => $form, 'config' => $this->config]);
+        return $this->renderView('settings/account', ['model' => $form, 'config' => $this->config, 'flash' => $this->flash]);
     }
 
     public function confirm(ServerRequestInterface $request, string $code): ResponseInterface
@@ -164,7 +169,7 @@ final readonly class SettingsController
     {
         $identity = $this->currentUser->getIdentity();
         if ($identity instanceof GuestIdentityInterface) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated', category: 'voyti'), 'translator' => $this->translator]);
+            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated', category: 'voyti')]);
         }
 
         $account = null;
@@ -178,10 +183,13 @@ final readonly class SettingsController
 
         if ($account !== null) {
             $account->delete();
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.network_disconnected', category: 'voyti'), 'translator' => $this->translator]);
+            return $this->redirectWithFlash(
+                $this->url->generate('voyti/settings-networks'),
+                'voyti.settings.network_disconnected',
+            );
         }
 
-        return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.network_not_found', category: 'voyti'), 'translator' => $this->translator]);
+        return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.network_not_found', category: 'voyti')]);
     }
 
     public function export(ServerRequestInterface $request): ResponseInterface
@@ -233,7 +241,10 @@ final readonly class SettingsController
                 $user->setGdprConsent($form->consent);
                 $user->setGdprConsentDate($form->consent ? time() : null);
                 $user->save();
-                return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.gdpr_consent_saved', category: 'voyti')]);
+                return $this->redirectWithFlash(
+                    $this->url->generate('voyti/gdpr-consent'),
+                    'voyti.settings.gdpr_consent_saved',
+                );
             }
         }
 
@@ -244,7 +255,7 @@ final readonly class SettingsController
             }
         }
 
-        return $this->renderView('settings/gdpr-consent', ['model' => $form]);
+        return $this->renderView('settings/gdpr-consent', ['model' => $form, 'flash' => $this->flash]);
     }
 
     public function gdprDelete(ServerRequestInterface $request): ResponseInterface
@@ -307,6 +318,7 @@ final readonly class SettingsController
             'authClients' => $this->authClientRegistry,
             'connectRouteName' => 'voyti/connect',
             'excludedProviders' => $connectedProviders,
+            'flash' => $this->flash,
         ]);
     }
 
@@ -342,6 +354,7 @@ final readonly class SettingsController
                 'secret' => null,
                 'config' => $this->config,
                 'errors' => [],
+                'flash' => $this->flash,
             ]);
         }
 
@@ -363,6 +376,7 @@ final readonly class SettingsController
                 'secret' => null,
                 'config' => $this->config,
                 'errors' => [],
+                'flash' => $this->flash,
             ]);
         }
 
@@ -376,6 +390,7 @@ final readonly class SettingsController
             'secret' => $user->getAuthTfKey(),
             'config' => $this->config,
             'errors' => [],
+            'flash' => $this->flash,
         ]);
     }
 
@@ -400,7 +415,10 @@ final readonly class SettingsController
         $user->setAuthTfType(null);
         $user->save();
 
-        return $this->redirect($this->url->generate('voyti/settings-two-factor'));
+        return $this->redirectWithFlash(
+            $this->url->generate('voyti/settings-two-factor'),
+            'voyti.settings.two_factor_disabled',
+        );
     }
 
     public function twoFactorEnable(ServerRequestInterface $request): ResponseInterface
@@ -433,6 +451,7 @@ final readonly class SettingsController
                     'secret' => null,
                     'config' => $this->config,
                     'errors' => ['code' => [$this->twoFactorErrorMessage($emailValidator->getErrorMessage())]],
+                    'flash' => $this->flash,
                 ]);
             }
 
@@ -450,6 +469,7 @@ final readonly class SettingsController
                     'secret' => $user->getAuthTfKey(),
                     'config' => $this->config,
                     'errors' => ['code' => [$this->twoFactorErrorMessage($codeValidator->getErrorMessage())]],
+                    'flash' => $this->flash,
                 ]);
             }
 
@@ -459,7 +479,10 @@ final readonly class SettingsController
         $user->setAuthTfEnabled(true);
         $user->save();
 
-        return $this->redirect($this->url->generate('voyti/settings-two-factor'));
+        return $this->redirectWithFlash(
+            $this->url->generate('voyti/settings-two-factor'),
+            'voyti.settings.two_factor_enabled',
+        );
     }
 
     public function userProfile(ServerRequestInterface $request): ResponseInterface
@@ -503,7 +526,7 @@ final readonly class SettingsController
 
             $userProfile->save();
             $this->eventDispatcher->dispatch(new UserProfileEvent($userProfile));
-            return $this->redirect($this->url->generate('voyti/settings'));
+            return $this->redirectWithFlash($this->url->generate('voyti/settings'), 'voyti.settings.profile_updated');
         }
 
         return $this->renderView('settings/profile', [
@@ -512,6 +535,7 @@ final readonly class SettingsController
             'userProfile' => $userProfile,
             'errors' => [],
             'config' => $this->config,
+            'flash' => $this->flash,
         ]);
     }
 

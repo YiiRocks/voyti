@@ -40,6 +40,8 @@ return [
     'voyti.settings.network_disconnected' => 'Сеть отключена',
     'voyti.settings.network_not_found' => 'Сеть не найдена',
     'voyti.settings.data_exported' => 'Ваши данные экспортированы',
+    'voyti.settings.two_factor_enabled' => 'Двухфакторная аутентификация включена',
+    'voyti.settings.two_factor_disabled' => 'Двухфакторная аутентификация отключена',
 
     // ProfileController
     'voyti.userProfile.forbidden' => 'Доступ запрещён',
@@ -55,12 +57,20 @@ return [
     'voyti.admin.error_occurred' => 'Произошла ошибка',
     'voyti.admin.cannot_delete_self' => 'Вы не можете удалить свой собственный аккаунт',
     'voyti.admin.sessions_terminated' => 'Сессии завершены',
+    'voyti.admin.user_status_changed' => 'Статус пользователя обновлён',
+    'voyti.admin.user_created' => 'Пользователь создан',
+    'voyti.admin.account_updated' => 'Аккаунт обновлён',
 
     // RuleController
     'voyti.rule.added' => 'Правило авторизации добавлено',
+    'voyti.rule.updated' => 'Правило авторизации обновлено',
+    'voyti.rule.deleted' => 'Правило авторизации удалено',
     'voyti.rule.invalid_class' => 'Недопустимый класс правила',
 
     'voyti.auth_item.not_found' => 'Элемент авторизации не найден',
+    'voyti.auth_item.created' => 'Элемент авторизации создан',
+    'voyti.auth_item.updated' => 'Элемент авторизации обновлён',
+    'voyti.auth_item.deleted' => 'Элемент авторизации удалён',
 
     // API AdminController
     'voyti.api.not_found' => 'Не найдено',

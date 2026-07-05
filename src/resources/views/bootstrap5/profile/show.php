@@ -17,4 +17,5 @@ use Yiisoft\View\WebView;
 /** @psalm-suppress InvalidScope */
 $this->setTitle($userProfile->getName() ?: $user->getUsername());
 
-include dirname(__DIR__) . '/shared/view_profile.php';
+/** @psalm-suppress InvalidScope */
+echo $this->render('../shared/view_profile', ['user' => $user, 'userProfile' => $userProfile, 'translator' => $translator]);

@@ -328,7 +328,7 @@ final class AdminControllerTest extends TestCase
                 ),
             ),
         );
-        $this->assertSame(200, $registerResponse->getStatusCode());
+        $this->assertSame(302, $registerResponse->getStatusCode());
 
         $user = $this->harness->users->findByEmail($email);
 
@@ -339,7 +339,7 @@ final class AdminControllerTest extends TestCase
             (int) $user->getId(),
             $token->getCode(),
         );
-        $this->assertSame(200, $confirmResponse->getStatusCode());
+        $this->assertSame(302, $confirmResponse->getStatusCode());
 
         $confirmedUser = $this->harness->users->findById((int) $user->getId());
         $this->assertTrue($confirmedUser->isConfirmed());

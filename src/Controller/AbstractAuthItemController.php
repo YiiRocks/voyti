@@ -20,6 +20,7 @@ use Yiisoft\Rbac\ManagerInterface;
 use Yiisoft\Rbac\Permission;
 use Yiisoft\Rbac\Role;
 use Yiisoft\Router\UrlGeneratorInterface;
+use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
@@ -40,6 +41,7 @@ abstract readonly class AbstractAuthItemController
         protected ItemsStorageInterface $itemsStorage,
         protected ManagerInterface $managerInterface,
         protected AssignmentsStorageInterface $assignmentsStorage,
+        protected FlashInterface $flash,
     ) {
     }
 
@@ -76,7 +78,10 @@ abstract readonly class AbstractAuthItemController
                     }
                 }
 
-                return $this->redirect($this->url->generate('voyti/' . $this->getIndexRouteName()));
+                return $this->redirectWithFlash(
+                    $this->url->generate('voyti/' . $this->getIndexRouteName()),
+                    'voyti.auth_item.created',
+                );
             }
             $errors = $result->getErrorMessagesIndexedByProperty();
         }
@@ -96,7 +101,10 @@ abstract readonly class AbstractAuthItemController
             $this->managerInterface->removePermission($name);
         }
 
-        return $this->redirect($this->url->generate('voyti/' . $this->getIndexRouteName()));
+        return $this->redirectWithFlash(
+            $this->url->generate('voyti/' . $this->getIndexRouteName()),
+            'voyti.auth_item.deleted',
+        );
     }
 
     public function index(ServerRequestInterface $request): ResponseInterface
@@ -134,6 +142,7 @@ abstract readonly class AbstractAuthItemController
             'filterName' => $filterName,
             'filterDescription' => $filterDescription,
             'itemChildren' => $itemChildren,
+            'flash' => $this->flash,
         ]);
     }
 
@@ -199,7 +208,10 @@ abstract readonly class AbstractAuthItemController
 
                 $this->processUserAssignments($body, $form->name);
 
-                return $this->redirect($this->url->generate('voyti/' . $this->getIndexRouteName()));
+                return $this->redirectWithFlash(
+                    $this->url->generate('voyti/' . $this->getIndexRouteName()),
+                    'voyti.auth_item.updated',
+                );
             }
             $errors = $result->getErrorMessagesIndexedByProperty();
         }

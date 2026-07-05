@@ -40,6 +40,8 @@ return [
     'voyti.settings.network_disconnected' => 'Netwerk is ontkoppeld',
     'voyti.settings.network_not_found' => 'Netwerk niet gevonden',
     'voyti.settings.data_exported' => 'Uw gegevens zijn geëxporteerd',
+    'voyti.settings.two_factor_enabled' => 'Tweefactorauthenticatie is ingeschakeld',
+    'voyti.settings.two_factor_disabled' => 'Tweefactorauthenticatie is uitgeschakeld',
 
     // ProfileController
     'voyti.userProfile.forbidden' => 'Verboden',
@@ -55,12 +57,20 @@ return [
     'voyti.admin.error_occurred' => 'Er is een fout opgetreden',
     'voyti.admin.cannot_delete_self' => 'U kunt uw eigen account niet verwijderen',
     'voyti.admin.sessions_terminated' => 'Sessies zijn beëindigd',
+    'voyti.admin.user_status_changed' => 'Gebruikersstatus is bijgewerkt',
+    'voyti.admin.user_created' => 'Gebruiker is aangemaakt',
+    'voyti.admin.account_updated' => 'Account is bijgewerkt',
 
     // RuleController
     'voyti.rule.added' => 'Autorisatieregel is toegevoegd',
+    'voyti.rule.updated' => 'Autorisatieregel is bijgewerkt',
+    'voyti.rule.deleted' => 'Autorisatieregel is verwijderd',
     'voyti.rule.invalid_class' => 'Ongeldige regelklasse',
 
     'voyti.auth_item.not_found' => 'Autorisatie-item niet gevonden',
+    'voyti.auth_item.created' => 'Autorisatie-item is aangemaakt',
+    'voyti.auth_item.updated' => 'Autorisatie-item is bijgewerkt',
+    'voyti.auth_item.deleted' => 'Autorisatie-item is verwijderd',
 
     // API AdminController
     'voyti.api.not_found' => 'Niet gevonden',

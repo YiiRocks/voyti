@@ -6,6 +6,7 @@ use YiiRocks\Voyti\Form\Settings\GdprConsentForm;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
+use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\View\WebView;
 
@@ -14,6 +15,7 @@ use Yiisoft\View\WebView;
  * @var GdprConsentForm $model
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
+ * @var FlashInterface $flash
  * @var string $csrf
  */
 
@@ -21,6 +23,8 @@ use Yiisoft\View\WebView;
 $this->setTitle($translator->translate('voyti.view.gdpr.consent_title', category: 'voyti'));
 
 echo Html::div()->open();
+/** @psalm-suppress InvalidScope */
+echo $this->render('../shared/_flash', ['flash' => $flash]);
 echo Html::H1($translator->translate('voyti.view.gdpr.consent_title', category: 'voyti'));
 
 echo Html::form()

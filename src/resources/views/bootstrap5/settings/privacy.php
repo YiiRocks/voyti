@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -9,6 +10,7 @@ use Yiisoft\View\WebView;
 
 /**
  * @var WebView $this
+ * @var ModuleConfig $config
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
  */
@@ -17,7 +19,8 @@ use Yiisoft\View\WebView;
 $this->setTitle($translator->translate('voyti.view.privacy.title', category: 'voyti'));
 
 echo Html::div()->open();
-include dirname(__DIR__) . '/shared/_menu.php';
+/** @psalm-suppress InvalidScope */
+echo $this->render('../shared/_menu', ['config' => $config, 'url' => $url, 'translator' => $translator]);
 
 echo Html::H1($translator->translate('voyti.view.privacy.title', category: 'voyti'));
 

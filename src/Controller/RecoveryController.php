@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Controller;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
+use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Entity\UserToken;
@@ -17,12 +18,14 @@ use YiiRocks\Voyti\Service\Password\ResetService;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
+use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 final readonly class RecoveryController
 {
+    use RedirectTrait;
     use RenderTrait;
 
     public function __construct(
@@ -37,6 +40,8 @@ final readonly class RecoveryController
         private EventDispatcherInterface $eventDispatcher,
         private ModuleConfig $config,
         private HydratorInterface $hydrator,
+        private ResponseFactoryInterface $responseFactory,
+        private FlashInterface $flash,
     ) {
     }
 
@@ -57,7 +62,9 @@ final readonly class RecoveryController
 
             if ($result->isValid()) {
                 $serviceResult = $this->passwordRecoveryService->run($form->email);
-                return $this->renderView('shared/message', ['title' => $serviceResult->getMessage()]);
+                $this->flash->set('success', $serviceResult->getMessage());
+
+                return $this->redirect($this->url->generate($this->config->loginRoute));
             }
         }
 
@@ -93,7 +100,11 @@ final readonly class RecoveryController
 
             if ($result->isValid()) {
                 $this->resetPasswordService->run($form->password, $user, $userToken);
-                return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.recovery.password_changed', category: 'voyti')]);
+
+                return $this->redirectWithFlash(
+                    $this->url->generate($this->config->loginRoute),
+                    'voyti.recovery.password_changed',
+                );
             }
             $errors = $result->getErrorMessages();
         }

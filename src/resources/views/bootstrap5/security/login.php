@@ -9,6 +9,7 @@ use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
+use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\View\WebView;
 
@@ -19,12 +20,15 @@ use Yiisoft\View\WebView;
  * @var AuthClientRegistry $authClients
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
+ * @var FlashInterface $flash
  */
 
 /** @psalm-suppress InvalidScope */
 $this->setTitle($translator->translate('voyti.view.login.title', category: 'voyti'));
 
 echo Html::div()->open();
+/** @psalm-suppress InvalidScope */
+echo $this->render('../shared/_flash', ['flash' => $flash]);
 echo Html::H1($translator->translate('voyti.view.login.title', category: 'voyti'));
 
 /** @var string $csrf */
@@ -58,7 +62,13 @@ if ($authClients->all() !== []) {
     echo Html::div()->class('mt-4 text-center')->open();
     $routeName = 'voyti/auth';
     $excludedProviders = [];
-    include dirname(__DIR__) . '/shared/_connect.php';
+    /** @psalm-suppress InvalidScope */
+    echo $this->render('../shared/_connect', [
+        'authClients' => $authClients,
+        'excludedProviders' => $excludedProviders,
+        'routeName' => $routeName,
+        'url' => $url,
+    ]);
     echo Html::div()->close();
 }
 

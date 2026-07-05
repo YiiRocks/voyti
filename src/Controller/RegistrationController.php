@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Controller;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
+use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Event\User\FormEvent;
@@ -22,6 +23,7 @@ use YiiRocks\Voyti\Service\User\ResendConfirmationService;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
+use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
@@ -29,6 +31,7 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 final readonly class RegistrationController
 {
     use InputDataTrait;
+    use RedirectTrait;
     use RenderTrait;
 
     public function __construct(
@@ -46,6 +49,8 @@ final readonly class RegistrationController
         private ModuleConfig $config,
         private PendingSocialAccountService $pendingSocialAccountService,
         private HydratorInterface $hydrator,
+        private ResponseFactoryInterface $responseFactory,
+        private FlashInterface $flash,
     ) {
     }
 
@@ -58,11 +63,11 @@ final readonly class RegistrationController
         }
 
         if ($user->isConfirmed()) {
-            return $this->renderSuccess('voyti.registration.complete');
+            return $this->redirectWithFlash($this->url->generate($this->config->loginRoute), 'voyti.registration.complete');
         }
 
         if ($this->accountConfirmationService->run($code, $user, $this->userConfirmationService)) {
-            return $this->renderSuccess('voyti.registration.complete');
+            return $this->redirectWithFlash($this->url->generate($this->config->loginRoute), 'voyti.registration.complete');
         }
 
         return $this->renderError('voyti.registration.confirmation_link_invalid');
@@ -108,9 +113,11 @@ final readonly class RegistrationController
                         $this->pendingSocialAccountService->connect($user);
                     }
                     $this->eventDispatcher->dispatch(new FormEvent($form));
-                    return $this->renderView('shared/message', [
-                        'title' => $this->translator->translate($serviceResult->getMessage(), category: 'voyti'),
-                    ]);
+
+                    return $this->redirectWithFlash(
+                        $this->url->generate($this->config->loginRoute),
+                        $serviceResult->getMessage(),
+                    );
                 }
                 foreach ($serviceResult->getErrors() as $error) {
                     if (is_string($error)) {
@@ -142,7 +149,10 @@ final readonly class RegistrationController
             if ($result->isValid()) {
                 $user = $this->userRepository->findByEmail($form->email);
                 if ($user !== null && $this->resendConfirmationService->run($user)) {
-                    return $this->renderSuccess('voyti.registration.new_confirmation_sent');
+                    return $this->redirectWithFlash(
+                        $this->url->generate($this->config->loginRoute),
+                        'voyti.registration.new_confirmation_sent',
+                    );
                 }
             }
         }

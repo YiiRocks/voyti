@@ -10,6 +10,7 @@ use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
+use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\View\WebView;
 
@@ -22,6 +23,7 @@ use Yiisoft\View\WebView;
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
  * @var array<string, list<string>> $errors
+ * @var FlashInterface $flash
  * @var string $csrf
  */
 
@@ -29,15 +31,23 @@ use Yiisoft\View\WebView;
 $this->setTitle($translator->translate('voyti.view.edit_profile.title', category: 'voyti'));
 
 echo Html::div()->open();
-include dirname(__DIR__) . '/shared/_menu.php';
+/** @psalm-suppress InvalidScope */
+echo $this->render('../shared/_menu', ['config' => $config, 'url' => $url, 'translator' => $translator]);
+/** @psalm-suppress InvalidScope */
+echo $this->render('../shared/_flash', ['flash' => $flash]);
 
 echo Html::H1($translator->translate('voyti.view.edit_profile.title', category: 'voyti'));
 echo Html::div()->class('card border-primary mb-4')->open();
 echo Html::div()->class('card-header bg-primary text-white')->open();
 echo Html::H2($translator->translate('voyti.view.userProfile.title', category: 'voyti'))->class('h5 mb-0');
 echo Html::div()->close();
-$profilePreviewClass = 'list-group list-group-flush';
-include dirname(__DIR__) . '/shared/view_profile.php';
+/** @psalm-suppress InvalidScope */
+echo $this->render('../shared/view_profile', [
+    'user' => $user,
+    'userProfile' => $userProfile,
+    'translator' => $translator,
+    'profilePreviewClass' => 'list-group list-group-flush',
+]);
 echo Html::div()->close();
 
 echo Html::form()
