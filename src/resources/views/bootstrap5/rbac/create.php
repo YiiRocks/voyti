@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use YiiRocks\Voyti\Form\Rbac\PermissionForm;
+use YiiRocks\Voyti\Form\Rbac\AbstractAuthItemForm;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -11,7 +11,8 @@ use Yiisoft\View\WebView;
 
 /**
  * @var WebView $this
- * @var PermissionForm $model
+ * @var string $itemType 'role' or 'permission'
+ * @var AbstractAuthItemForm $model
  * @var array<string, list<string>> $errors
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
@@ -19,15 +20,15 @@ use Yiisoft\View\WebView;
  */
 
 /** @psalm-suppress InvalidScope */
-$this->setTitle($translator->translate('voyti.view.permission.create_title', category: 'voyti'));
+$this->setTitle($translator->translate('voyti.view.' . $itemType . '.create_title', category: 'voyti'));
 
 echo Html::div()->open();
-include dirname(__DIR__, 2) . '/shared/_admin-menu.php';
+include dirname(__DIR__) . '/shared/_admin-menu.php';
 
-echo Html::H1($translator->translate('voyti.view.permission.create_title', category: 'voyti'));
+echo Html::H1($translator->translate('voyti.view.' . $itemType . '.create_title', category: 'voyti'));
 
 echo Html::form()
-    ->post($url->generate('voyti/permissions-create'))
+    ->post($url->generate('voyti/' . $itemType . 's-create'))
     ->csrf($csrf)
     ->open();
 

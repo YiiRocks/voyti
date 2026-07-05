@@ -81,7 +81,8 @@ abstract readonly class AbstractAuthItemController
             $errors = $result->getErrorMessagesIndexedByProperty();
         }
 
-        return $this->renderView('rbac/' . $this->getItemType() . '/create', [
+        return $this->renderView('rbac/create', [
+            'itemType' => $this->getItemType(),
             'model' => $form,
             'errors' => $errors,
         ]);
@@ -127,7 +128,8 @@ abstract readonly class AbstractAuthItemController
             $itemChildren[$item->getName()] = array_keys($this->itemsStorage->getDirectChildren($item->getName()));
         }
 
-        return $this->renderView('rbac/' . $this->getItemType() . '/index', [
+        return $this->renderView('rbac/index', [
+            'itemType' => $this->getItemType(),
             'items' => $items,
             'filterName' => $filterName,
             'filterDescription' => $filterDescription,
@@ -202,7 +204,8 @@ abstract readonly class AbstractAuthItemController
             $errors = $result->getErrorMessagesIndexedByProperty();
         }
 
-        return $this->renderView('rbac/' . $this->getItemType() . '/update', [
+        return $this->renderView('rbac/update', [
+            'itemType' => $this->getItemType(),
             'model' => $form,
             'errors' => $errors,
             'users' => $users,

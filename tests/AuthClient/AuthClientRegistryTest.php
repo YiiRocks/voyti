@@ -7,11 +7,9 @@ namespace YiiRocks\Voyti\tests\AuthClient;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use YiiRocks\Voyti\AuthClient\Facebook;
+use YiiRocks\Voyti\AuthClient\GenericAuthClient;
 use YiiRocks\Voyti\AuthClient\GitHub;
-use YiiRocks\Voyti\AuthClient\Google;
 use YiiRocks\Voyti\AuthClient\Keycloak;
-use YiiRocks\Voyti\AuthClient\LinkedIn;
-use YiiRocks\Voyti\AuthClient\Microsoft365;
 use YiiRocks\Voyti\AuthClient\Twitter;
 use YiiRocks\Voyti\AuthClient\VKontakte;
 use YiiRocks\Voyti\AuthClient\Yandex;
@@ -23,10 +21,10 @@ final class AuthClientRegistryTest extends TestCase
         $registry = new AuthClientRegistry(
             new Facebook(),
             new GitHub(),
-            new Google(),
+            new GenericAuthClient('google', 'Google', 'https://auth.example.com', 'https://token.example.com', 'https://userinfo.example.com'),
             new Keycloak(),
-            new LinkedIn(),
-            new Microsoft365(),
+            new GenericAuthClient('linkedin', 'LinkedIn', 'https://auth.example.com', 'https://token.example.com', 'https://userinfo.example.com'),
+            new GenericAuthClient('microsoft365', 'Microsoft 365', 'https://auth.example.com', 'https://token.example.com', 'https://userinfo.example.com'),
             new Twitter(),
             new VKontakte(),
             new Yandex(),

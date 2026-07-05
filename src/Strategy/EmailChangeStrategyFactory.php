@@ -11,12 +11,6 @@ use YiiRocks\Voyti\Service\MailService;
 
 final readonly class EmailChangeStrategyFactory
 {
-    private const array MAP = [
-        MailChangeStrategyInterface::TYPE_INSECURE => InsecureEmailChangeStrategy::class,
-        MailChangeStrategyInterface::TYPE_DEFAULT => DefaultEmailChangeStrategy::class,
-        MailChangeStrategyInterface::TYPE_SECURE => SecureEmailChangeStrategy::class,
-    ];
-
     public function __construct(
         private UserTokenFactory $tokenFactory,
         private MailService $mailService,

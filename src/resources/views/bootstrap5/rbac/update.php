@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use YiiRocks\Voyti\Entity\User;
-use YiiRocks\Voyti\Form\Rbac\RoleForm;
+use YiiRocks\Voyti\Form\Rbac\AbstractAuthItemForm;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -12,7 +12,8 @@ use Yiisoft\View\WebView;
 
 /**
  * @var WebView $this
- * @var RoleForm $model
+ * @var string $itemType 'role' or 'permission'
+ * @var AbstractAuthItemForm $model
  * @var array<string, list<string>> $errors
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
@@ -21,15 +22,15 @@ use Yiisoft\View\WebView;
  */
 
 /** @psalm-suppress InvalidScope */
-$this->setTitle($translator->translate('voyti.view.role.update_title', ['name' => $model->itemName], category: 'voyti'));
+$this->setTitle($translator->translate('voyti.view.' . $itemType . '.update_title', ['name' => $model->itemName], category: 'voyti'));
 
 echo Html::div()->open();
-include dirname(__DIR__, 2) . '/shared/_admin-menu.php';
+include dirname(__DIR__) . '/shared/_admin-menu.php';
 
-echo Html::H1($translator->translate('voyti.view.role.update_title', ['name' => $model->itemName], category: 'voyti'));
+echo Html::H1($translator->translate('voyti.view.' . $itemType . '.update_title', ['name' => $model->itemName], category: 'voyti'));
 
 echo Html::form()
-    ->post($url->generate('voyti/roles-update', ['name' => $model->itemName]))
+    ->post($url->generate('voyti/' . $itemType . 's-update', ['name' => $model->itemName]))
     ->csrf($csrf)
     ->open();
 
