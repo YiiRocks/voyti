@@ -4,198 +4,256 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Controller;
 
+use Nyholm\Psr7\ServerRequest;
+use PHPUnit\Framework\MockObject\MockObject;
+use Psr\Http\Message\ResponseFactoryInterface;
+use Psr\Http\Message\ResponseInterface;
+use YiiRocks\Voyti\Controller\RoleController;
 use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\TestCase;
-use Yiisoft\Db\Connection\ConnectionInterface;
-use Yiisoft\Db\Connection\ConnectionProvider;
-use Yiisoft\Http\Method;
-use Yiisoft\Rbac\Assignment;
+use Yiisoft\Rbac\AssignmentsStorageInterface;
+use Yiisoft\Rbac\ItemsStorageInterface;
+use Yiisoft\Rbac\ManagerInterface;
 use Yiisoft\Rbac\Role;
+use Yiisoft\Session\Flash\FlashInterface;
+use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\Validator\Result;
+use Yiisoft\Validator\ValidatorInterface;
+use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
-/**
- * Covers only the branches of AbstractAuthItemController that differ for roles
- * (addRole/updateRole/removeRole/getRoles, and the "assign a new user" loop in
- * processUserAssignments, which is exercised here rather than in
- * PermissionControllerTest because direct permission-to-user assignment is
- * disabled by default in Yiisoft\Rbac\Manager). Branches shared verbatim with
- * permissions (invalid-form handling, item-not-found, filtering) are already
- * covered there and are not repeated here.
- */
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class RoleControllerTest extends TestCase
 {
-    private ?ConnectionInterface $db = null;
+    private AssignmentsStorageInterface $assignmentsStorage;
+    private ModuleConfig $config;
+    private FlashInterface&MockObject $flash;
     private ControllerHarness $harness;
+    private ItemsStorageInterface $itemsStorage;
+    private ManagerInterface $manager;
+    private ResponseFactoryInterface&MockObject $responseFactory;
+    private TranslatorInterface $translator;
+    private UserRepository&MockObject $userRepository;
+    private ValidatorInterface&MockObject $validator;
+    private WebViewRenderer&MockObject $viewRenderer;
 
     protected function setUp(): void
     {
-        parent::setUp();
-
-        $this->db = $this->getDb();
-        ConnectionProvider::set($this->db);
-        $this->createSchema($this->db);
-
-        $this->harness = new ControllerHarness(dirname(__DIR__, 2));
+        $this->config = new ModuleConfig();
+        $this->harness = new ControllerHarness($this->config);
+        $this->userRepository = $this->createMock(UserRepository::class);
+        $this->translator = $this->createTranslator();
+        $this->viewRenderer = $this->createMock(WebViewRenderer::class);
+        $this->validator = $this->createMock(ValidatorInterface::class);
+        $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
+        $this->flash = $this->createMock(FlashInterface::class);
+        $this->itemsStorage = $this->harness->getItemsStorage();
+        $this->assignmentsStorage = $this->harness->getAssignmentsStorage();
+        $this->manager = $this->harness->getAuthManager();
     }
 
-    protected function tearDown(): void
+    public function testCreateGetShowsForm(): void
     {
-        if ($this->db !== null) {
-            $this->dropSchema($this->db);
-            ConnectionProvider::clear();
-        }
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
 
-        parent::tearDown();
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('rbac/create', $this->anything())
+            ->willReturn($response);
+
+        $result = $controller->create($request);
+
+        $this->assertSame($response, $result);
     }
 
-    public function testCreateAddsRoleWithRuleAndChildren(): void
+    public function testCreatePostSuccessful(): void
     {
-        $this->harness->seedRbacRole('child-role');
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['role' => ['name' => 'editor', 'description' => 'Editors', 'rule' => '', 'children' => ['']]]);
 
-        $response = $this->harness->roleController->create($this->harness->request(
-            Method::POST,
-            [
-                'role' => [
-                    'name' => 'manager',
-                    'description' => 'Manages the team',
-                    'rule' => 'IsTeamLeadRule',
-                    'children' => ['child-role'],
-                ],
-            ],
-        ));
+        $this->validator->method('validate')->willReturn(new Result());
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->willReturnSelf();
 
-        $this->assertSame(302, $response->getStatusCode());
-        $this->assertSame('/voyti/roles', $response->getHeaderLine('Location'));
+        $result = $controller->create($request);
 
-        $role = $this->harness->rbacManager->getRole('manager');
-        $this->assertNotNull($role);
-        $this->assertSame('Manages the team', $role->getDescription());
-        $this->assertSame('IsTeamLeadRule', $role->getRuleName());
-        $this->assertArrayHasKey('child-role', $this->harness->rbacItemsStorage->getDirectChildren('manager'));
+        $this->assertSame($response, $result);
+        $this->assertNotNull($this->itemsStorage->getRole('editor'));
     }
 
-    public function testDeleteRemovesRoleAndChildren(): void
+    public function testCreatePostWithChildren(): void
     {
-        $this->harness->seedRbacRole('child-role');
-        $this->harness->rbacItemsStorage->add(new Role('manager'));
-        $this->harness->rbacManager->addChild('manager', 'child-role');
+        $controller = $this->createController();
+        $this->itemsStorage->add(new Role('child-role'));
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['role' => ['name' => 'parent', 'description' => '', 'rule' => '', 'children' => ['child-role']]]);
 
-        $response = $this->harness->roleController->delete('manager');
+        $this->validator->method('validate')->willReturn(new Result());
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->willReturnSelf();
 
-        $this->assertSame(302, $response->getStatusCode());
-        $this->assertNull($this->harness->rbacManager->getRole('manager'));
+        $result = $controller->create($request);
+
+        $this->assertSame($response, $result);
+        $this->assertTrue($this->itemsStorage->hasChild('parent', 'child-role'));
     }
 
-    public function testIndexListsRoleItems(): void
+    public function testDeleteRemovesRole(): void
     {
-        $this->harness->seedRbacRole('manager');
-        $this->harness->seedRbacRole('editor');
+        $controller = $this->createController();
+        $this->itemsStorage->add(new Role('editor'));
 
-        $response = $this->harness->roleController->index($this->harness->request(Method::GET));
-        $html = $this->harness->responseBody($response);
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->willReturnSelf();
 
-        $this->assertStringContainsString('manager', $html);
-        $this->assertStringContainsString('editor', $html);
+        $result = $controller->delete('editor');
+
+        $this->assertSame($response, $result);
+        $this->assertNull($this->itemsStorage->getRole('editor'));
     }
 
-    public function testIndexShowsDirectChildRoleNames(): void
+    public function testIndexShowsRoles(): void
     {
-        $this->harness->seedRbacRole('editor');
-        $this->harness->rbacItemsStorage->add(new Role('manager'));
-        $this->harness->rbacManager->addChild('manager', 'editor');
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
 
-        $response = $this->harness->roleController->index($this->harness->request(Method::GET));
-        $html = $this->harness->responseBody($response);
+        $this->itemsStorage->add(new Role('admin'));
 
-        $this->assertStringContainsString(
-            '<div class="col-3 text-break">manager</div><div class="col-4 text-break"></div><div class="col-2 text-break">editor</div>',
-            $html,
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('rbac/index', $this->anything())
+            ->willReturn($response);
+
+        $result = $controller->index($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testIndexWithFilters(): void
+    {
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/?name=admin&description=test');
+
+        $this->itemsStorage->add(new Role('admin'));
+        $this->itemsStorage->add(new Role('editor'));
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturn($response);
+
+        $result = $controller->index($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testUpdateGetShowsForm(): void
+    {
+        $controller = $this->createController();
+        $this->itemsStorage->add(new Role('editor'));
+
+        $user = $this->createMock(User::class);
+        $this->userRepository->method('findByIds')->willReturn([]);
+
+        $request = new ServerRequest('GET', '/');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('rbac/update', $this->anything())
+            ->willReturn($response);
+
+        $result = $controller->update($request, 'editor');
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testUpdateNonExistentShowsError(): void
+    {
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturn($response);
+
+        $result = $controller->update($request, 'nonexistent');
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testUpdatePostSuccessful(): void
+    {
+        $controller = $this->createController();
+        $this->itemsStorage->add(new Role('editor'));
+
+        $user = $this->createMock(User::class);
+        $this->userRepository->method('findByIds')->willReturn([]);
+
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['role' => ['name' => 'editor', 'description' => 'Updated', 'rule' => '', 'children' => ['']], 'assignedUsers' => []]);
+
+        $this->validator->method('validate')->willReturn(new Result());
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->willReturnSelf();
+
+        $result = $controller->update($request, 'editor');
+
+        $this->assertSame($response, $result);
+    }
+
+    private function createController(): RoleController
+    {
+        return $this->harness->createRoleController(
+            userRepository: $this->userRepository,
+            translator: $this->translator,
+            viewRenderer: $this->viewRenderer,
+            validator: $this->validator,
+            responseFactory: $this->responseFactory,
+            flash: $this->flash,
         );
-    }
-
-    public function testUpdateRenamesRoleAndAssignsNewlyCheckedUser(): void
-    {
-        $this->harness->rbacItemsStorage->add(new Role('manager'));
-        $alice = $this->createUser('alice', 'alice@example.test');
-        $bob = $this->createUser('bob', 'bob@example.test');
-        $this->harness->rbacAssignmentsStorage->add(new Assignment((string) $alice->getId(), 'manager', time()));
-
-        $response = $this->harness->roleController->update(
-            $this->harness->request(
-                Method::POST,
-                [
-                    'role' => [
-                        'name' => 'team-lead',
-                        'description' => 'Leads the team',
-                        'rule' => 'IsTeamLeadRule',
-                        'children' => [],
-                    ],
-                    'assignedUsers' => [(string) $alice->getId(), (string) $bob->getId()],
-                ],
-            ),
-            'manager',
-        );
-
-        $this->assertSame(302, $response->getStatusCode());
-
-        $renamed = $this->harness->rbacManager->getRole('team-lead');
-        $this->assertNotNull($renamed);
-        $this->assertSame('IsTeamLeadRule', $renamed->getRuleName());
-        $this->assertNull($this->harness->rbacManager->getRole('manager'));
-
-        $assignedIds = array_map(
-            static fn (Assignment $assignment): string => $assignment->getUserId(),
-            $this->harness->rbacAssignmentsStorage->getByItemNames(['team-lead']),
-        );
-        sort($assignedIds);
-        $expectedIds = [(string) $alice->getId(), (string) $bob->getId()];
-        sort($expectedIds);
-        $this->assertSame($expectedIds, $assignedIds);
-    }
-
-    private function createSchema(ConnectionInterface $db): void
-    {
-        $db->createCommand('CREATE TABLE IF NOT EXISTS {{%user}} (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username VARCHAR(255) NOT NULL,
-            email VARCHAR(255) NOT NULL,
-            password_hash VARCHAR(255) NOT NULL,
-            auth_key VARCHAR(32) NOT NULL,
-            auth_tf_enabled INTEGER NOT NULL DEFAULT 0,
-            auth_tf_key VARCHAR(64),
-            auth_tf_type VARCHAR(20),
-            blocked_at INTEGER,
-            confirmed_at INTEGER,
-            created_at INTEGER NOT NULL,
-            flags INTEGER NOT NULL DEFAULT 0,
-            gdpr_consent INTEGER NOT NULL DEFAULT 0,
-            gdpr_consent_date INTEGER,
-            gdpr_deleted INTEGER NOT NULL DEFAULT 0,
-            last_login_at INTEGER,
-            last_login_ip VARCHAR(45),
-            password_changed_at INTEGER,
-            registration_ip VARCHAR(45),
-            unconfirmed_email VARCHAR(255),
-            updated_at INTEGER NOT NULL
-        )')->execute();
-    }
-
-    private function createUser(string $username, string $email): User
-    {
-        $user = new User();
-        $user->setUsername($username);
-        $user->setEmail($email);
-        $user->setPasswordHash('hash');
-        $user->setAuthKey(bin2hex(random_bytes(16)));
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-
-        return $user;
-    }
-
-    private function dropSchema(ConnectionInterface $db): void
-    {
-        $db->createCommand('DROP TABLE IF EXISTS {{%user}}')->execute();
     }
 }

@@ -20,12 +20,7 @@ final readonly class UpdateAssignmentsService
 
     public function run(int $userId, array $items): bool
     {
-        /**
-         * @infection-ignore-all
-         *
-         * array_values() only re-indexes to satisfy the list<string> type; validate(),
-         * array_diff(), and the foreach loops below never depend on key order.
-         */
+        /** @var list<string> $itemsList */
         $itemsList = array_values(array_filter($items, 'is_string'));
 
         $validationResult = $this->itemsValidator->validate($itemsList);

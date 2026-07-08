@@ -23,6 +23,10 @@ abstract class TestCase extends BaseTestCase
     private ?ContainerInterface $container = null;
     private ?ConnectionInterface $db = null;
     private ?TranslatorInterface $translator = null;
+    public static function setUpBeforeClass(): void
+    {
+        \DG\BypassFinals::enable();
+    }
 
     protected function createContainer(): ContainerInterface
     {

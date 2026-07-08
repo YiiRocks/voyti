@@ -33,9 +33,8 @@ final readonly class GitHub extends AbstractAuthClient
     protected function loadUserAttributes(array $tokenData, ClientInterface $httpClient): array
     {
         $attributes = parent::loadUserAttributes($tokenData, $httpClient);
-        $email = $attributes['email'] ?? null;
 
-        if (is_string($email) && $email !== '') {
+        if (is_string($attributes['email'] ?? null) && $attributes['email'] !== '') {
             return $attributes;
         }
 
@@ -55,7 +54,9 @@ final readonly class GitHub extends AbstractAuthClient
                 continue;
             }
 
+            /** @var bool $primary */
             $primary = $entry['primary'] ?? false;
+            /** @var bool $verified */
             $verified = $entry['verified'] ?? false;
             if ($primary || $verified) {
                 $attributes['email'] = $candidate;

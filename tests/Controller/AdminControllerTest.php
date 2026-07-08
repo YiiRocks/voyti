@@ -4,346 +4,869 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Controller;
 
+use Nyholm\Psr7\ServerRequest;
+use PHPUnit\Framework\MockObject\MockObject;
+use Psr\Http\Message\ResponseFactoryInterface;
+use Psr\Http\Message\ResponseInterface;
+use YiiRocks\Voyti\Controller\AdminController;
 use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\Entity\UserProfile;
+use YiiRocks\Voyti\Helper\AuthHelper;
+use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Repository\UserProfileRepository;
+use YiiRocks\Voyti\Repository\UserRepository;
+use YiiRocks\Voyti\Repository\UserSessionHistoryRepository;
+use YiiRocks\Voyti\Service\Password\ExpireService;
+use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
+use YiiRocks\Voyti\Service\Password\RecoveryService;
+use YiiRocks\Voyti\Service\Rbac\UpdateAssignmentsService;
+use YiiRocks\Voyti\Service\ServiceResult;
+use YiiRocks\Voyti\Service\SwitchIdentityService;
+use YiiRocks\Voyti\Service\User\BlockService;
+use YiiRocks\Voyti\Service\User\ConfirmationService;
+use YiiRocks\Voyti\Service\User\CreateService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\TestCase;
-use Yiisoft\Db\Connection\ConnectionInterface;
-use Yiisoft\Db\Connection\ConnectionProvider;
-use Yiisoft\Http\Method;
+use Yiisoft\Hydrator\HydratorInterface;
+use Yiisoft\Security\PasswordHasher;
+use Yiisoft\Session\Flash\FlashInterface;
+use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\User\CurrentUser;
+use Yiisoft\Validator\Result;
+use Yiisoft\Validator\ValidatorInterface;
+use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class AdminControllerTest extends TestCase
 {
-    private ?ConnectionInterface $db = null;
+    private AuthHelper&MockObject $authHelper;
+    private BlockService&MockObject $blockService;
+    private ModuleConfig $config;
+    private ConfirmationService&MockObject $confirmationService;
+    private CreateService&MockObject $createService;
+    private CurrentUser&MockObject $currentUser;
+    private ExpireService&MockObject $expireService;
+    private FlashInterface&MockObject $flash;
     private ControllerHarness $harness;
-    private string $remoteAddr = '198.51.100.42';
+    private HydratorInterface&MockObject $hydrator;
+    private PasswordGeneratorInterface&MockObject $passwordGenerator;
+    private PasswordHasher $passwordHasher;
+    private RecoveryService&MockObject $recoveryService;
+    private ResponseFactoryInterface&MockObject $responseFactory;
+    private SwitchIdentityService&MockObject $switchIdentityService;
+    private TranslatorInterface $translator;
+    private UpdateAssignmentsService&MockObject $updateAssignmentsService;
+    private UserProfileRepository&MockObject $userProfileRepository;
+    private UserRepository&MockObject $userRepository;
+    private UserSessionHistoryRepository&MockObject $userSessionHistoryRepository;
+    private ValidatorInterface&MockObject $validator;
+    private WebViewRenderer&MockObject $viewRenderer;
 
     protected function setUp(): void
     {
-        parent::setUp();
-
-        $this->db = $this->getDb();
-        ConnectionProvider::set($this->db);
-        $this->createSchema($this->db);
-
-        $_SERVER['REMOTE_ADDR'] = $this->remoteAddr;
-        $this->harness = new ControllerHarness(dirname(__DIR__, 2));
+        $this->config = new ModuleConfig();
+        $this->harness = new ControllerHarness($this->config);
+        $this->userRepository = $this->createMock(UserRepository::class);
+        $this->userProfileRepository = $this->createMock(UserProfileRepository::class);
+        $this->translator = $this->createTranslator();
+        $this->viewRenderer = $this->createMock(WebViewRenderer::class);
+        $this->validator = $this->createMock(ValidatorInterface::class);
+        $this->currentUser = $this->createMock(CurrentUser::class);
+        $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
+        $this->hydrator = $this->createMock(HydratorInterface::class);
+        $this->flash = $this->createMock(FlashInterface::class);
+        $this->passwordHasher = new PasswordHasher();
+        $this->passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
+        $this->createService = $this->createMock(CreateService::class);
+        $this->blockService = $this->createMock(BlockService::class);
+        $this->confirmationService = $this->createMock(ConfirmationService::class);
+        $this->recoveryService = $this->createMock(RecoveryService::class);
+        $this->expireService = $this->createMock(ExpireService::class);
+        $this->switchIdentityService = $this->createMock(SwitchIdentityService::class);
+        $this->updateAssignmentsService = $this->createMock(UpdateAssignmentsService::class);
+        $this->userSessionHistoryRepository = $this->createMock(UserSessionHistoryRepository::class);
+        $this->authHelper = $this->createMock(AuthHelper::class);
     }
 
-    protected function tearDown(): void
+    public function testAssignmentsGetShowsAssignments(): void
     {
-        if ($this->db !== null) {
-            $this->dropSchema($this->db);
-            ConnectionProvider::clear();
-        }
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
 
-        parent::tearDown();
+        $user = $this->createMock(User::class);
+        $user->method('getId')->willReturn('1');
+        $this->userRepository->method('findById')->willReturn($user);
+        $this->authHelper->method('getUnassignedItems')->willReturn([]);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('admin/_assignments', $this->anything())
+            ->willReturn($response);
+
+        $result = $controller->assignments($request, 1);
+
+        $this->assertSame($response, $result);
     }
 
-    public function testIndexAppliesUsernameEmailAndStatusFiltersFromQueryParams(): void
+    public function testAssignmentsPostUpdates(): void
     {
-        $this->registerAndConfirmUser('filter-user', 'filter-user@example.test', 'secret123');
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['items' => ['admin', 'editor']]);
 
-        $response = $this->harness->adminController->index(
-            $this->harness->request(Method::GET, queryParams: [
-                'username' => 'filter-us',
-                'email' => 'filter-user@',
-                'status' => 'confirmed',
-            ]),
+        $user = $this->createMock(User::class);
+        $user->method('getId')->willReturn('1');
+        $this->userRepository->method('findById')->willReturn($user);
+        $this->updateAssignmentsService->expects($this->once())->method('run')->with(1, ['admin', 'editor']);
+        $this->authHelper->method('getUnassignedItems')->willReturn([]);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturn($response);
+
+        $result = $controller->assignments($request, 1);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testAssignmentsUserNotFoundShowsError(): void
+    {
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $this->userRepository->method('findById')->willReturn(null);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturn($response);
+
+        $result = $controller->assignments($request, 999);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testBlockNonExistentUserStillRedirects(): void
+    {
+        $controller = $this->createController();
+
+        $this->userRepository->method('findById')->willReturn(null);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->willReturnSelf();
+
+        $result = $controller->block(999);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testBlockTogglesUserBlock(): void
+    {
+        $controller = $this->createController();
+
+        $user = $this->createMock(User::class);
+        $user->method('getId')->willReturn('1');
+        $this->userRepository->method('findById')->willReturn($user);
+        $this->blockService->expects($this->once())->method('run')->with($user);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->willReturnSelf();
+
+        $result = $controller->block(1);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testConfirmFailureShowsError(): void
+    {
+        $controller = $this->createController();
+
+        $user = $this->createMock(User::class);
+        $user->method('getId')->willReturn('1');
+        $this->userRepository->method('findById')->willReturn($user);
+        $this->confirmationService->expects($this->once())->method('run')->willReturn(false);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturn($response);
+
+        $result = $controller->confirm(1);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testConfirmSuccessful(): void
+    {
+        $controller = $this->createController();
+
+        $user = $this->createMock(User::class);
+        $user->method('getId')->willReturn('1');
+        $this->userRepository->method('findById')->willReturn($user);
+        $this->confirmationService->expects($this->once())->method('run')->willReturn(true);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->willReturnSelf();
+
+        $result = $controller->confirm(1);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testCreateGetShowsForm(): void
+    {
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('admin/create', $this->anything())
+            ->willReturn($response);
+
+        $result = $controller->create($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testCreatePostSuccessful(): void
+    {
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['register' => ['username' => 'newuser', 'email' => 'new@example.com', 'password' => '', 'passwordRepeat' => '']]);
+
+        $this->passwordGenerator->method('generate')->willReturn('autogenerated123');
+        $this->createService->expects($this->once())
+            ->method('run')
+            ->willReturn(ServiceResult::success('User created'));
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->willReturnSelf();
+
+        $result = $controller->create($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testCreatePostWithServiceFailure(): void
+    {
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['register' => ['username' => 'existing', 'email' => 'existing@example.com', 'password' => 'password123', 'passwordRepeat' => 'password123']]);
+
+        $this->createService->expects($this->once())
+            ->method('run')
+            ->willReturn(ServiceResult::failure('Email already exists', ['Email already exists']));
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturn($response);
+
+        $result = $controller->create($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testDeleteDifferentUser(): void
+    {
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $user = $this->createMock(User::class);
+        $user->method('getId')->willReturn('2');
+        $this->userRepository->method('findById')->willReturn($user);
+        $this->userRepository->expects($this->once())->method('delete')->with($user);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->willReturnSelf();
+
+        $result = $controller->delete($request, 2);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testDeleteNonExistentUserShowsError(): void
+    {
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->userRepository->method('findById')->willReturn(null);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturn($response);
+
+        $result = $controller->delete($request, 999);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testDeleteOwnUserShowsError(): void
+    {
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturn($response);
+
+        $result = $controller->delete($request, 1);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testForcePasswordChangeFailsShowsError(): void
+    {
+        $controller = $this->createController();
+
+        $this->userRepository->method('findById')->willReturn(null);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturn($response);
+
+        $result = $controller->forcePasswordChange(999);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testForcePasswordChangeUserFound(): void
+    {
+        $controller = $this->createController();
+
+        $user = $this->createMock(User::class);
+        $user->method('getId')->willReturn('1');
+        $this->userRepository->method('findById')->willReturn($user);
+        $this->expireService->expects($this->once())->method('run')->willReturn(true);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->willReturnSelf();
+
+        $result = $controller->forcePasswordChange(1);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testIndexComputesTotalPagesWithMinimumOfOne(): void
+    {
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $this->userRepository->method('search')->willReturn([]);
+        $this->userRepository->method('countByFilters')->willReturn(0);
+
+        $captured = [];
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturnCallback(function (string $view, array $params) use (&$captured, $response): ResponseInterface {
+                $captured = $params;
+                return $response;
+            });
+
+        $controller->index($request);
+
+        $this->assertArrayHasKey('totalPages', $captured);
+        $this->assertSame(1, $captured['totalPages']);
+        $this->assertSame(1, $captured['currentPage']);
+    }
+
+    public function testIndexShowsUserList(): void
+    {
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $this->userRepository->method('search')->willReturn([]);
+        $this->userRepository->method('countByFilters')->willReturn(0);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('admin/index', $this->anything())
+            ->willReturn($response);
+
+        $result = $controller->index($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testInfoShowsUserInfo(): void
+    {
+        $controller = $this->createController();
+
+        $user = $this->createMock(User::class);
+        $user->method('getProfile')->willReturn($this->createMock(UserProfile::class));
+        $this->userRepository->method('findById')->willReturn($user);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('admin/_info', $this->anything())
+            ->willReturn($response);
+
+        $result = $controller->info(1);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testInfoUserNotFoundShowsError(): void
+    {
+        $controller = $this->createController();
+
+        $this->userRepository->method('findById')->willReturn(null);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturn($response);
+
+        $result = $controller->info(999);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testPasswordResetUserFound(): void
+    {
+        $controller = $this->createController();
+
+        $user = $this->createMock(User::class);
+        $user->method('getEmail')->willReturn('test@example.com');
+        $this->userRepository->method('findById')->willReturn($user);
+        $this->recoveryService->expects($this->once())
+            ->method('run')
+            ->with('test@example.com')
+            ->willReturn(ServiceResult::success('Email sent'));
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturn($response);
+
+        $result = $controller->passwordReset(1);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testPasswordResetUserNotFoundShowsError(): void
+    {
+        $controller = $this->createController();
+
+        $this->userRepository->method('findById')->willReturn(null);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturn($response);
+
+        $result = $controller->passwordReset(999);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testSwitchIdentity(): void
+    {
+        $controller = $this->createController();
+
+        $this->switchIdentityService->expects($this->once())
+            ->method('run')
+            ->willReturn(ServiceResult::success());
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturn($response);
+
+        $result = $controller->switchIdentity(1);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testTerminateSessionsUserFound(): void
+    {
+        $controller = $this->createController();
+
+        $user = $this->createMock(User::class);
+        $user->method('getId')->willReturn('1');
+        $this->userRepository->method('findById')->willReturn($user);
+        $this->userSessionHistoryRepository->method('findByUserId')->willReturn([]);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->willReturnSelf();
+
+        $result = $controller->terminateSessions(1);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testTerminateSessionsUserNotFoundShowsError(): void
+    {
+        $controller = $this->createController();
+
+        $this->userRepository->method('findById')->willReturn(null);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturn($response);
+
+        $result = $controller->terminateSessions(999);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testUpdateGetShowsForm(): void
+    {
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $user = $this->createMock(User::class);
+        $user->method('getUsername')->willReturn('testuser');
+        $user->method('getEmail')->willReturn('test@example.com');
+        $user->method('getId')->willReturn('1');
+
+        $this->userRepository->method('findById')->willReturn($user);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('admin/_account', $this->anything())
+            ->willReturn($response);
+
+        $result = $controller->update($request, 1);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testUpdatePostSuccessful(): void
+    {
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['user' => ['username' => 'updated', 'email' => 'updated@example.com', 'password' => ''], 'assignedItems' => []]);
+
+        $user = $this->createMock(User::class);
+        $user->method('getId')->willReturn('1');
+        $user->method('getUsername')->willReturn('testuser');
+        $user->method('getEmail')->willReturn('test@example.com');
+        $user->expects($this->once())->method('setUsername');
+        $user->expects($this->once())->method('setEmail');
+        $user->expects($this->once())->method('setUpdatedAt');
+        $user->expects($this->once())->method('save');
+
+        $this->userRepository->method('findById')->willReturn($user);
+        $this->updateAssignmentsService->expects($this->once())->method('run');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->willReturnSelf();
+
+        $result = $controller->update($request, 1);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testUpdatePostWithPasswordChange(): void
+    {
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['user' => ['username' => 'updated', 'email' => 'updated@example.com', 'password' => 'newpass'], 'assignedItems' => []]);
+
+        $user = $this->createMock(User::class);
+        $user->method('getId')->willReturn('1');
+        $user->method('getUsername')->willReturn('testuser');
+        $user->method('getEmail')->willReturn('test@example.com');
+        $user->expects($this->once())->method('setPasswordHash');
+        $user->expects($this->once())->method('setPasswordChangedAt');
+        $user->expects($this->once())->method('save');
+
+        $this->userRepository->method('findById')->willReturn($user);
+        $this->updateAssignmentsService->expects($this->once())->method('run');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->willReturnSelf();
+
+        $result = $controller->update($request, 1);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testUpdateProfileGetShowsForm(): void
+    {
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $user = $this->createMock(User::class);
+        $user->method('getId')->willReturn('1');
+        $userProfile = $this->createMock(UserProfile::class);
+        $userProfile->method('getName')->willReturn('John');
+        $user->method('getProfile')->willReturn($userProfile);
+        $this->userRepository->method('findById')->willReturn($user);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('admin/_profile', $this->anything())
+            ->willReturn($response);
+
+        $result = $controller->updateProfile($request, 1);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testUpdateProfilePostSuccessful(): void
+    {
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['userProfile' => ['name' => 'Updated', 'publicEmail' => '', 'gravatarEmail' => '', 'location' => '', 'website' => '', 'timezone' => '', 'bio' => '']]);
+
+        $this->validator->method('validate')->willReturn(new Result());
+        $user = $this->createMock(User::class);
+        $user->method('getId')->willReturn('1');
+        $userProfile = $this->createMock(UserProfile::class);
+        $userProfile->method('getName')->willReturn('Updated');
+        $user->method('getProfile')->willReturn($userProfile);
+        $userProfile->expects($this->once())->method('save');
+        $this->userRepository->method('findById')->willReturn($user);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->willReturnSelf();
+
+        $result = $controller->updateProfile($request, 1);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testUpdateProfileUserNotFoundShowsError(): void
+    {
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $this->userRepository->method('findById')->willReturn(null);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturn($response);
+
+        $result = $controller->updateProfile($request, 999);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testUpdateUserNotFoundShowsError(): void
+    {
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $this->userRepository->method('findById')->willReturn(null);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturn($response);
+
+        $result = $controller->update($request, 999);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testUserSessionHistoryUserFound(): void
+    {
+        $controller = $this->createController();
+
+        $user = $this->createMock(User::class);
+        $user->method('getId')->willReturn('1');
+        $this->userRepository->method('findById')->willReturn($user);
+        $this->userSessionHistoryRepository->method('findByUserId')->willReturn([]);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('admin/_session-history', $this->anything())
+            ->willReturn($response);
+
+        $result = $controller->userSessionHistory(1);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testUserSessionHistoryUserNotFoundShowsError(): void
+    {
+        $controller = $this->createController();
+
+        $this->userRepository->method('findById')->willReturn(null);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturn($response);
+
+        $result = $controller->userSessionHistory(999);
+
+        $this->assertSame($response, $result);
+    }
+
+    private function createController(): AdminController
+    {
+        return $this->harness->createAdminController(
+            userRepository: $this->userRepository,
+            userProfileRepository: $this->userProfileRepository,
+            translator: $this->translator,
+            viewRenderer: $this->viewRenderer,
+            validator: $this->validator,
+            currentUser: $this->currentUser,
+            responseFactory: $this->responseFactory,
+            hydrator: $this->hydrator,
+            flash: $this->flash,
+            passwordHasher: $this->passwordHasher,
+            passwordGenerator: $this->passwordGenerator,
+            createService: $this->createService,
+            blockService: $this->blockService,
+            confirmationService: $this->confirmationService,
+            recoveryService: $this->recoveryService,
+            expireService: $this->expireService,
+            switchIdentityService: $this->switchIdentityService,
+            updateAssignmentsService: $this->updateAssignmentsService,
+            userSessionHistoryRepository: $this->userSessionHistoryRepository,
+            authHelper: $this->authHelper,
         );
-
-        $this->assertSame(200, $response->getStatusCode());
-        $html = $this->harness->responseBody($response);
-        $this->assertStringContainsString('name="username" value="filter-us"', $html);
-        $this->assertStringContainsString('name="email" value="filter-user@"', $html);
-        $this->assertStringContainsString('value="confirmed" selected', $html);
-        $this->assertStringContainsString('>filter-user<', $html);
-    }
-
-    public function testIndexHidesPaginationNavWhenAllUsersFitOnOnePage(): void
-    {
-        $this->registerAndConfirmUser('lone-user', 'lone-user@example.test', 'secret123');
-
-        $response = $this->harness->adminController->index($this->harness->request(Method::GET));
-
-        $this->assertSame(200, $response->getStatusCode());
-        $html = $this->harness->responseBody($response);
-        $this->assertStringNotContainsString('pagination', $html);
-    }
-
-    public function testIndexPaginatesAcrossExactlyTwoPagesFor51Users(): void
-    {
-        for ($i = 1; $i <= 51; $i++) {
-            $this->registerAndConfirmUser("page-user-{$i}", "page-user-{$i}@example.test", 'secret123');
-        }
-
-        $defaultResponse = $this->harness->adminController->index($this->harness->request(Method::GET));
-        $defaultHtml = $this->harness->responseBody($defaultResponse);
-        $this->assertStringContainsString('class="page-item active"><a href="/voyti/admin?page=1', $defaultHtml);
-        $this->assertStringNotContainsString('class="page-item active"><a href="/voyti/admin?page=2', $defaultHtml);
-        $this->assertStringNotContainsString('page=3', $defaultHtml);
-
-        $page2Response = $this->harness->adminController->index(
-            $this->harness->request(Method::GET, queryParams: ['page' => '2']),
-        );
-        $page2Html = $this->harness->responseBody($page2Response);
-        $this->assertStringContainsString('class="page-item active"><a href="/voyti/admin?page=2', $page2Html);
-        $this->assertStringNotContainsString('class="page-item active"><a href="/voyti/admin?page=1', $page2Html);
-
-        $zeroPageResponse = $this->harness->adminController->index(
-            $this->harness->request(Method::GET, queryParams: ['page' => '0']),
-        );
-        $zeroPageHtml = $this->harness->responseBody($zeroPageResponse);
-        $this->assertStringContainsString('class="page-item active"><a href="/voyti/admin?page=1', $zeroPageHtml);
-    }
-
-    public function testInfoShowsSessionsLink(): void
-    {
-        $user = $this->registerAndConfirmUser('sess-info', 'sess-info@example.test', 'secret123');
-        $userId = (int) $user->getId();
-
-        $response = $this->harness->adminController->info($userId);
-
-        $this->assertSame(200, $response->getStatusCode());
-        $html = $this->harness->responseBody($response);
-        $this->assertStringContainsString('>Sessions<', $html);
-        $this->assertStringContainsString("voyti/admin-session-history/{$userId}", $html);
-    }
-
-    public function testSwitchIdentityFailureMessageIsPassedAsViewTitle(): void
-    {
-        $target = $this->registerAndConfirmUser('blocked-target', 'blocked-target@example.test', 'secret123');
-        $target->setBlockedAt(time());
-        $target->save();
-
-        $response = $this->harness->adminController->switchIdentity((int) $target->getId());
-
-        $this->assertSame(200, $response->getStatusCode());
-        $this->assertStringContainsString(
-            'Cannot switch to a blocked user',
-            $this->harness->responseBody($response),
-        );
-    }
-
-    public function testUpdateChangesUsernameEmailAndPassword(): void
-    {
-        $user = $this->registerAndConfirmUser('origname', 'orig@example.test', 'secret123');
-        $originalHash = $user->getPasswordHash();
-        $originalPasswordChangedAt = $user->getPasswordChangedAt();
-        $originalUpdatedAt = $user->getUpdatedAt();
-
-        // Ensure clock progresses so updated_at / password_changed_at differ.
-        sleep(1);
-
-        $response = $this->harness->adminController->update(
-            $this->harness->request(
-                Method::POST,
-                [
-                    'user' => [
-                        'username' => 'newname',
-                        'email' => 'newemail@example.test',
-                        'password' => 'newsecret456',
-                    ],
-                    'assignedItems' => [],
-                ],
-            ),
-            (int) $user->getId(),
-        );
-        $this->assertSame(302, $response->getStatusCode());
-
-        $updatedUser = $this->harness->users->findById((int) $user->getId());
-        $this->assertSame('newname', $updatedUser->getUsername());
-        $this->assertSame('newemail@example.test', $updatedUser->getEmail());
-        $this->assertNotSame($originalHash, $updatedUser->getPasswordHash());
-        $this->assertGreaterThan((int) $originalPasswordChangedAt, $updatedUser->getPasswordChangedAt());
-        $this->assertGreaterThan((int) $originalUpdatedAt, $updatedUser->getUpdatedAt());
-    }
-
-    public function testUpdateNonArrayUserDataKeepsExistingUsernameAndEmail(): void
-    {
-        $user = $this->registerAndConfirmUser('nonarray', 'nonarray@example.test', 'secret123');
-        $originalUsername = $user->getUsername();
-        $originalEmail = $user->getEmail();
-
-        $response = $this->harness->adminController->update(
-            $this->harness->request(
-                Method::POST,
-                [
-                    'user' => 'not-an-array',
-                ],
-            ),
-            (int) $user->getId(),
-        );
-        $this->assertSame(302, $response->getStatusCode());
-
-        $updatedUser = $this->harness->users->findById((int) $user->getId());
-        $this->assertSame($originalUsername, $updatedUser->getUsername());
-        $this->assertSame($originalEmail, $updatedUser->getEmail());
-    }
-
-    public function testUpdateViewChecksAssignedRbacItemCheckboxes(): void
-    {
-        $this->harness->seedRbacRole('manager');
-        $this->harness->seedRbacRole('editor');
-        $user = $this->registerAndConfirmUser('walt', 'walt@example.test', 'secret123');
-
-        $assignResponse = $this->harness->adminController->update(
-            $this->harness->request(
-                Method::POST,
-                [
-                    'user' => [
-                        'username' => $user->getUsername(),
-                        'email' => $user->getEmail(),
-                        'password' => '',
-                    ],
-                    'assignedItems' => ['manager'],
-                ],
-            ),
-            (int) $user->getId(),
-        );
-        $this->assertSame(302, $assignResponse->getStatusCode());
-
-        $viewResponse = $this->harness->adminController->update(
-            $this->harness->request(Method::GET),
-            (int) $user->getId(),
-        );
-        $html = $this->harness->responseBody($viewResponse);
-
-        $this->assertMatchesRegularExpression('/name="assignedItems\[\]" value="manager"[^>]*checked/', $html);
-        $this->assertDoesNotMatchRegularExpression('/name="assignedItems\[\]" value="editor"[^>]*checked/', $html);
-    }
-
-    public function testUpdateWithEmptyPasswordDoesNotChangePasswordHash(): void
-    {
-        $user = $this->registerAndConfirmUser('keeppass', 'keeppass@example.test', 'secret123');
-        $originalHash = $user->getPasswordHash();
-        $originalPasswordChangedAt = $user->getPasswordChangedAt();
-
-        $response = $this->harness->adminController->update(
-            $this->harness->request(
-                Method::POST,
-                [
-                    'user' => [
-                        'username' => $user->getUsername(),
-                        'email' => $user->getEmail(),
-                        'password' => '',
-                    ],
-                    'assignedItems' => [],
-                ],
-            ),
-            (int) $user->getId(),
-        );
-        $this->assertSame(302, $response->getStatusCode());
-
-        $updatedUser = $this->harness->users->findById((int) $user->getId());
-        $this->assertSame($originalHash, $updatedUser->getPasswordHash());
-        $this->assertSame($originalPasswordChangedAt, $updatedUser->getPasswordChangedAt());
-    }
-
-    private function createSchema(ConnectionInterface $db): void
-    {
-        $db->createCommand('CREATE TABLE IF NOT EXISTS {{%user}} (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username VARCHAR(255) NOT NULL,
-            email VARCHAR(255) NOT NULL,
-            password_hash VARCHAR(255) NOT NULL,
-            auth_key VARCHAR(32) NOT NULL,
-            auth_tf_enabled INTEGER NOT NULL DEFAULT 0,
-            auth_tf_key VARCHAR(64),
-            auth_tf_type VARCHAR(20),
-            blocked_at INTEGER,
-            confirmed_at INTEGER,
-            created_at INTEGER NOT NULL,
-            flags INTEGER NOT NULL DEFAULT 0,
-            gdpr_consent INTEGER NOT NULL DEFAULT 0,
-            gdpr_consent_date INTEGER,
-            gdpr_deleted INTEGER NOT NULL DEFAULT 0,
-            last_login_at INTEGER,
-            last_login_ip VARCHAR(45),
-            password_changed_at INTEGER,
-            registration_ip VARCHAR(45),
-            unconfirmed_email VARCHAR(255),
-            updated_at INTEGER NOT NULL
-        )')->execute();
-        $db->createCommand('CREATE TABLE IF NOT EXISTS {{%user_profile}} (
-            user_id INTEGER NOT NULL PRIMARY KEY,
-            bio TEXT,
-            gravatar_email VARCHAR(255),
-            location VARCHAR(255),
-            name VARCHAR(255),
-            public_email VARCHAR(255),
-            timezone VARCHAR(40),
-            website VARCHAR(255)
-        )')->execute();
-        $db->createCommand('CREATE TABLE IF NOT EXISTS {{%user_social_account}} (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            provider VARCHAR(255) NOT NULL,
-            client_id VARCHAR(255) NOT NULL,
-            code VARCHAR(32),
-            email VARCHAR(255),
-            username VARCHAR(255),
-            data TEXT,
-            created_at INTEGER NOT NULL
-        )')->execute();
-        $db->createCommand('CREATE TABLE IF NOT EXISTS {{%user_token}} (
-            user_id INTEGER NOT NULL,
-            code VARCHAR(32) NOT NULL,
-            type INTEGER NOT NULL,
-            created_at INTEGER NOT NULL,
-            PRIMARY KEY (user_id, code, type)
-        )')->execute();
-        $db->createCommand('CREATE TABLE IF NOT EXISTS {{%user_session_history}} (
-            user_id INTEGER NOT NULL,
-            session_id VARCHAR(255) NOT NULL,
-            user_agent TEXT,
-            ip VARCHAR(45) NOT NULL,
-            created_at INTEGER NOT NULL,
-            updated_at INTEGER NOT NULL,
-            PRIMARY KEY (user_id, session_id)
-        )')->execute();
-    }
-
-    private function dropSchema(ConnectionInterface $db): void
-    {
-        $db->createCommand('DROP TABLE IF EXISTS {{%user_session_history}}')->execute();
-        $db->createCommand('DROP TABLE IF EXISTS {{%user_token}}')->execute();
-        $db->createCommand('DROP TABLE IF EXISTS {{%user_social_account}}')->execute();
-        $db->createCommand('DROP TABLE IF EXISTS {{%user_profile}}')->execute();
-        $db->createCommand('DROP TABLE IF EXISTS {{%user}}')->execute();
-    }
-
-    private function registerAndConfirmUser(string $username, string $email, string $password): User
-    {
-        $registerResponse = $this->harness->registrationController->register(
-            $this->harness->request(
-                Method::POST,
-                $this->harness->formPayload(
-                    new \YiiRocks\Voyti\Form\Auth\RegistrationForm($this->harness->moduleConfig, $this->harness->translator),
-                    [
-                        'username' => $username,
-                        'email' => $email,
-                        'password' => $password,
-                        'gdprConsent' => true,
-                    ],
-                ),
-            ),
-        );
-        $this->assertSame(302, $registerResponse->getStatusCode());
-
-        $user = $this->harness->users->findByEmail($email);
-
-        $token = $this->harness->userTokens->findByUserId((int) $user->getId())[0] ?? null;
-
-        $confirmResponse = $this->harness->registrationController->confirm(
-            $this->harness->request(Method::GET),
-            (int) $user->getId(),
-            $token->getCode(),
-        );
-        $this->assertSame(302, $confirmResponse->getStatusCode());
-
-        $confirmedUser = $this->harness->users->findById((int) $user->getId());
-        $this->assertTrue($confirmedUser->isConfirmed());
-
-        return $confirmedUser;
     }
 }

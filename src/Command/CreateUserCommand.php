@@ -44,10 +44,12 @@ final class CreateUserCommand extends Command
     #[\Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $email = $input->getArgument('email');
-        $username = $input->getArgument('username');
+        /** @var mixed $rawEmail */
+        $rawEmail = $input->getArgument('email');
+        /** @var mixed $rawUsername */
+        $rawUsername = $input->getArgument('username');
 
-        if (!is_string($email) || !is_string($username) || $email === '' || $username === '') {
+        if (!is_string($rawEmail) || !is_string($rawUsername) || $rawEmail === '' || $rawUsername === '') {
             $output->writeln('<error>Missing required arguments.</error>');
             $output->writeln('');
             $output->writeln('Usage: voyti:create [options] [--] <email> <username>');
@@ -61,23 +63,23 @@ final class CreateUserCommand extends Command
             return Command::INVALID;
         }
 
-        $password = $input->getOption('password');
-        if (!is_string($password) || $password === '') {
-            $password = bin2hex(random_bytes(8));
-        }
+        /** @var mixed $optionPassword */
+        $optionPassword = $input->getOption('password');
+        $password = is_string($optionPassword) && $optionPassword !== '' ? $optionPassword : bin2hex(random_bytes(8));
 
-        $result = $this->userCreateService->run($email, $username, $password);
+        $result = $this->userCreateService->run($rawEmail, $rawUsername, $password);
 
         if ($result->isSuccess()) {
-            $output->writeln("<info>User created: {$username} ({$email})</info>");
+            $output->writeln("<info>User created: {$rawUsername} ({$rawEmail})</info>");
             $output->writeln("<comment>Password: {$password}</comment>");
 
-            $role = $input->getOption('role');
-            if (is_string($role) && $role !== '') {
-                $user = $this->userRepository->findByEmail($email);
+            /** @var mixed $optionRole */
+            $optionRole = $input->getOption('role');
+            if (is_string($optionRole) && $optionRole !== '') {
+                $user = $this->userRepository->findByEmail($rawEmail);
                 if ($user !== null) {
-                    $this->authManager->assign($role, $this->getUserId($user));
-                    $output->writeln("<info>Role assigned: {$role}</info>");
+                    $this->authManager->assign($optionRole, $this->getUserId($user));
+                    $output->writeln("<info>Role assigned: {$optionRole}</info>");
                 }
             }
 

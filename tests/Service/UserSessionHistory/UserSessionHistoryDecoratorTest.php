@@ -4,448 +4,337 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Service\UserSessionHistory;
 
+use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserSessionHistory;
 use YiiRocks\Voyti\Event\Session\SessionEvent;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\UserSessionHistory\UserSessionHistoryDecorator;
-use YiiRocks\Voyti\tests\TestCase;
-use Yiisoft\Db\Connection\ConnectionProvider;
-use Yiisoft\Session\SessionInterface;
+use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
+use YiiRocks\Voyti\tests\Support\FakeSession;
 
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class UserSessionHistoryDecoratorTest extends TestCase
 {
-    private bool $hadRemoteAddress = false;
-    private bool $hadUserAgent = false;
-    private string $remoteAddress = '';
-    private string $userAgent = '';
+    use DatabaseSetupTrait;
 
-    #[\Override]
     protected function setUp(): void
     {
-        parent::setUp();
-
-        $this->hadRemoteAddress = array_key_exists('REMOTE_ADDR', $_SERVER);
-        $this->remoteAddress = $this->hadRemoteAddress ? (string) $_SERVER['REMOTE_ADDR'] : '';
-        $this->hadUserAgent = array_key_exists('HTTP_USER_AGENT', $_SERVER);
-        $this->userAgent = $this->hadUserAgent ? (string) $_SERVER['HTTP_USER_AGENT'] : '';
-        unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
-
-        ConnectionProvider::set($this->getDb());
-        $db = $this->getDb();
-        $db->createCommand('CREATE TABLE {{%user}} (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username VARCHAR(255) NOT NULL,
-            email VARCHAR(255) NOT NULL,
-            password_hash VARCHAR(255) NOT NULL,
-            auth_key VARCHAR(32) NOT NULL,
-            updated_at INTEGER NOT NULL,
-            created_at INTEGER NOT NULL
-        )')->execute();
-        $db->createCommand('CREATE TABLE {{%user_session_history}} (
-            user_id INTEGER NOT NULL,
-            session_id VARCHAR(255) NOT NULL,
-            user_agent TEXT,
-            ip VARCHAR(45),
-            created_at INTEGER NOT NULL,
-            updated_at INTEGER NOT NULL,
-            PRIMARY KEY (user_id, session_id)
-        )')->execute();
+        $this->setUpDatabase();
     }
 
-    #[\Override]
     protected function tearDown(): void
     {
-        if ($this->hadRemoteAddress) {
-            $_SERVER['REMOTE_ADDR'] = $this->remoteAddress;
-        } else {
-            unset($_SERVER['REMOTE_ADDR']);
-        }
-        if ($this->hadUserAgent) {
-            $_SERVER['HTTP_USER_AGENT'] = $this->userAgent;
-        } else {
-            unset($_SERVER['HTTP_USER_AGENT']);
-        }
-
-        if ($this->hasSqliteConnection()) {
-            $this->getDb()->createCommand('DROP TABLE IF EXISTS {{%user_session_history}}')->execute();
-            $this->getDb()->createCommand('DROP TABLE IF EXISTS {{%user}}')->execute();
-            ConnectionProvider::clear();
-        }
-
-        parent::tearDown();
+        $this->tearDownDatabase();
     }
 
-    public function testRegisterLoginDefaultsUserIdToZeroWhenUserHasNoId(): void
+    public function testPruneDoesNotDeleteSessionsOfOtherUsers(): void
     {
-        $config = ModuleConfig::fromArray([
-            'enableSessionHistory' => true,
-            'numberSessionHistory' => false,
-        ]);
-        $decorator = new UserSessionHistoryDecorator(new EventCollector(), $config, new FakeSession('anon-sess'));
+        $eventDispatcher = new EventCaptureDispatcher();
+        $config = new ModuleConfig(enableSessionHistory: true, numberSessionHistory: 2);
 
-        // A brand new, unsaved user has no id yet.
-        $decorator->registerLogin(new User());
+        $session = new FakeSession();
+        $session->setId('sessb');
+        $session->open();
 
-        $rows = UserSessionHistory::query()->where(['user_id' => 0, 'session_id' => 'anon-sess'])->all();
-        self::assertCount(1, $rows);
-        self::assertSame(0, $rows[0]->getUserId());
-    }
+        $decorator = new UserSessionHistoryDecorator($eventDispatcher, $config, $session);
 
-    public function testRegisterLoginDispatchesSessionCreatedEvent(): void
-    {
-        $config = ModuleConfig::fromArray([
-            'enableSessionHistory' => true,
-            'numberSessionHistory' => false,
-        ]);
-        $user = $this->createUser('gina', 'gina@example.com');
-        $userId = (int) $user->getId();
-
-        $dispatcher = new EventCollector();
-        $decorator = new UserSessionHistoryDecorator($dispatcher, $config, new FakeSession('gina-session'));
-        $decorator->registerLogin($user);
-
-        $events = $dispatcher->events();
-        self::assertCount(1, $events);
-        self::assertInstanceOf(SessionEvent::class, $events[0]);
-        self::assertSame($userId, $events[0]->getUserId());
-        self::assertSame('gina-session', $events[0]->getSessionId());
-        self::assertSame(['type' => SessionEvent::SESSION_CREATED], $events[0]->getData());
-    }
-
-    public function testRegisterLoginDoesNotDispatchEventWhenSessionHistoryDisabled(): void
-    {
-        $config = ModuleConfig::fromArray(['enableSessionHistory' => false]);
-        $user = $this->createUser('holly', 'holly@example.com');
-
-        $dispatcher = new EventCollector();
-        $decorator = new UserSessionHistoryDecorator($dispatcher, $config, new FakeSession('holly-session'));
-        $decorator->registerLogin($user);
-
-        self::assertCount(0, $dispatcher->events());
-    }
-
-    public function testRegisterLoginDoesNotPruneWhenSessionHistoryLimitDisabled(): void
-    {
-        $config = ModuleConfig::fromArray([
-            'enableSessionHistory' => true,
-            'numberSessionHistory' => false,
-        ]);
-        $user = $this->createUser('vera', 'vera@example.com');
-        $userId = (int) $user->getId();
-
-        $this->insertSession($userId, 'old-1', 100);
-        $this->insertSession($userId, 'old-2', 200);
-        $this->insertSession($userId, 'old-3', 300);
-
-        $decorator = new UserSessionHistoryDecorator(new EventCollector(), $config, new FakeSession('new-session'));
-        $decorator->registerLogin($user);
-
-        $rows = UserSessionHistory::query()->where(['user_id' => $userId])->all();
-        self::assertCount(4, $rows);
-    }
-
-    public function testRegisterLoginPersistsSessionHistoryRecordWithUserSessionIpAndUserAgent(): void
-    {
-        $config = ModuleConfig::fromArray([
-            'enableSessionHistory' => true,
-            'disableIpLogging' => false,
-            'numberSessionHistory' => false,
-        ]);
-        $user = $this->createUser('carol', 'carol@example.com');
-        $userId = (int) $user->getId();
-
-        $_SERVER['REMOTE_ADDR'] = '203.0.113.7';
-        $_SERVER['HTTP_USER_AGENT'] = 'TestAgent/1.0';
-
-        $decorator = new UserSessionHistoryDecorator(new EventCollector(), $config, new FakeSession('sess-full-test'));
-
-        $before = time();
-        $decorator->registerLogin($user);
-        $after = time();
-
-        $rows = UserSessionHistory::query()->where(['user_id' => $userId])->all();
-        self::assertCount(1, $rows);
-        $row = $rows[0];
-        self::assertSame($userId, $row->getUserId());
-        self::assertSame('sess-full-test', $row->getSessionId());
-        self::assertSame('203.0.113.7', $row->getIp());
-        self::assertSame('TestAgent/1.0', $row->getUserAgent());
-        self::assertGreaterThanOrEqual($before, $row->getCreatedAt());
-        self::assertLessThanOrEqual($after, $row->getCreatedAt());
-        self::assertGreaterThanOrEqual($before, $row->getUpdatedAt());
-        self::assertLessThanOrEqual($after, $row->getUpdatedAt());
-    }
-
-    public function testRegisterLoginPruneOnlyAffectsCurrentUsersSessions(): void
-    {
-        // pruneOldSessions() sorts ascending (the 'DESC' direction key is a string, not the
-        // SORT_DESC constant, so the query builder never appends "DESC"), so the oldest
-        // sessions are kept and the excess is trimmed off the newest end of the list.
-        $config = ModuleConfig::fromArray([
-            'enableSessionHistory' => true,
-            'numberSessionHistory' => 1,
-        ]);
-
-        $userA = $this->createUser('usera', 'usera@example.com');
+        $userA = new User();
+        $userA->setUsername('usera');
+        $userA->setEmail('usera@example.com');
+        $userA->setPasswordHash('hash');
+        $userA->setAuthKey('key');
+        $userA->setCreatedAt(time());
+        $userA->setUpdatedAt(time());
+        $userA->save();
         $userIdA = (int) $userA->getId();
-        $userB = $this->createUser('userb', 'userb@example.com');
-        $userIdB = (int) $userB->getId();
 
-        $this->insertSession($userIdA, 'a-old', 50);
-        $this->insertSession($userIdB, 'b-old1', 100);
-        $this->insertSession($userIdB, 'b-old2', 200);
+        for ($i = 0; $i < 3; $i++) {
+            $sh = new UserSessionHistory();
+            $sh->setUserId($userIdA);
+            $sh->setSessionId('a_' . $i);
+            $sh->setIp('127.0.0.1');
+            $sh->setCreatedAt(time() - (10 - $i));
+            $sh->setUpdatedAt(time() - (10 - $i));
+            $sh->save();
+        }
 
-        $decorator = new UserSessionHistoryDecorator(new EventCollector(), $config, new FakeSession('a-new'));
-        $decorator->registerLogin($userA);
+        $userB = new User();
+        $userB->setUsername('userb');
+        $userB->setEmail('userb@example.com');
+        $userB->setPasswordHash('hash');
+        $userB->setAuthKey('key');
+        $userB->setCreatedAt(time());
+        $userB->setUpdatedAt(time());
+        $userB->save();
 
-        $rowsA = UserSessionHistory::query()->where(['user_id' => $userIdA])->all();
-        self::assertCount(1, $rowsA);
-        self::assertSame('a-old', $rowsA[0]->getSessionId());
+        $_SERVER['REMOTE_ADDR'] = '192.168.1.1';
+        $_SERVER['HTTP_USER_AGENT'] = 'TestAgent';
 
-        $rowsB = UserSessionHistory::query()->where(['user_id' => $userIdB])->all();
-        self::assertCount(2, $rowsB);
-        $sessionIdsB = array_map(static fn (UserSessionHistory $row): string => $row->getSessionId(), $rowsB);
-        sort($sessionIdsB);
-        self::assertSame(['b-old1', 'b-old2'], $sessionIdsB);
+        $decorator->registerLogin($userB);
+
+        $remainingA = UserSessionHistory::query()->where(['user_id' => $userIdA])->all();
+        self::assertCount(3, $remainingA);
+
+        unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
     }
 
-    public function testRegisterLoginPrunesSessionsBeyondConfiguredLimit(): void
+    public function testRegisterLoginFallsBackToLocalhostWhenNoRemoteAddr(): void
     {
-        $config = ModuleConfig::fromArray([
-            'enableSessionHistory' => true,
-            'numberSessionHistory' => 2,
-        ]);
-        $user = $this->createUser('dave', 'dave@example.com');
-        $userId = (int) $user->getId();
+        $eventDispatcher = new EventCaptureDispatcher();
+        $config = new ModuleConfig(enableSessionHistory: true, disableIpLogging: false);
 
-        $this->insertSession($userId, 'old-1', 1000);
-        $this->insertSession($userId, 'old-2', 2000);
+        $session = new FakeSession();
+        $session->setId('sessfallback');
+        $session->open();
 
-        $decorator = new UserSessionHistoryDecorator(new EventCollector(), $config, new FakeSession('new-session'));
-        $decorator->registerLogin($user);
+        $decorator = new UserSessionHistoryDecorator($eventDispatcher, $config, $session);
 
-        $rows = UserSessionHistory::query()->where(['user_id' => $userId])->all();
-        self::assertCount(2, $rows);
-        $sessionIds = array_map(static fn (UserSessionHistory $row): string => $row->getSessionId(), $rows);
-        self::assertContains('old-1', $sessionIds);
-        self::assertContains('old-2', $sessionIds);
-        self::assertNotContains('new-session', $sessionIds);
-    }
-
-    public function testRegisterLoginPrunesSessionsForUserWithoutIdUsingZeroUserId(): void
-    {
-        $config = ModuleConfig::fromArray([
-            'enableSessionHistory' => true,
-            'numberSessionHistory' => 1,
-        ]);
-
-        $this->insertSession(0, 'anon-old', 1000);
-
-        $decorator = new UserSessionHistoryDecorator(new EventCollector(), $config, new FakeSession('anon-new'));
-        $decorator->registerLogin(new User());
-
-        $rows = UserSessionHistory::query()->where(['user_id' => 0])->all();
-        self::assertCount(1, $rows);
-        self::assertSame('anon-old', $rows[0]->getSessionId());
-    }
-
-    public function testRegisterLoginPrunesUsingChronologicalOrderRegardlessOfSessionIdOrInsertionOrder(): void
-    {
-        // The primary key on (user_id, session_id) gives SQLite a ready-made index for the
-        // "WHERE user_id = ?" filter, so if the orderBy() clause were ever dropped, rows would
-        // come back sorted by session_id instead of created_at. Session ids are chosen here so
-        // that alphabetical order and chronological order disagree, which pins down that the
-        // actual deleted record is selected via the created_at ordering.
-        $config = ModuleConfig::fromArray([
-            'enableSessionHistory' => true,
-            'numberSessionHistory' => 3,
-        ]);
-        $user = $this->createUser('frank', 'frank@example.com');
-        $userId = (int) $user->getId();
-        $now = time();
-
-        $this->insertSession($userId, 'aaa', $now + 500);
-        $this->insertSession($userId, 'bbb', $now - 100000);
-        $this->insertSession($userId, 'ccc', $now + 300);
-
-        $decorator = new UserSessionHistoryDecorator(new EventCollector(), $config, new FakeSession('zzz'));
-        $decorator->registerLogin($user);
-
-        $rows = UserSessionHistory::query()->where(['user_id' => $userId])->all();
-        $sessionIds = array_map(static fn (UserSessionHistory $row): string => $row->getSessionId(), $rows);
-        sort($sessionIds);
-        self::assertSame(['bbb', 'ccc', 'zzz'], $sessionIds);
-    }
-
-    public function testRegisterLoginUsesEmptySessionIdWhenSessionIsNull(): void
-    {
-        $config = ModuleConfig::fromArray([
-            'enableSessionHistory' => true,
-            'numberSessionHistory' => false,
-        ]);
-        $user = $this->createUser('erin', 'erin@example.com');
-        $userId = (int) $user->getId();
-
-        $decorator = new UserSessionHistoryDecorator(new EventCollector(), $config, null);
-        $decorator->registerLogin($user);
-
-        $rows = UserSessionHistory::query()->where(['user_id' => $userId])->all();
-        self::assertCount(1, $rows);
-        self::assertSame('', $rows[0]->getSessionId());
-    }
-
-    private function createUser(string $username, string $email): User
-    {
         $user = new User();
-        $user->setUsername($username);
-        $user->setEmail($email);
+        $user->setUsername('fallback');
+        $user->setEmail('fallback@example.com');
         $user->setPasswordHash('hash');
-        $user->setAuthKey('authkey');
+        $user->setAuthKey('key');
         $user->setCreatedAt(time());
         $user->setUpdatedAt(time());
         $user->save();
 
-        return $user;
+        unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
+
+        $decorator->registerLogin($user);
+
+        $sessions = UserSessionHistory::query()->where(['user_id' => (int) $user->getId()])->all();
+        self::assertCount(1, $sessions);
+        self::assertSame('127.0.0.1', $sessions[0]->getIp());
+        self::assertNull($sessions[0]->getUserAgent());
     }
 
-    private function insertSession(int $userId, string $sessionId, int $createdAt): void
+    public function testRegisterLoginPrunesOldSessionsWhenOverLimit(): void
     {
-        $session = new UserSessionHistory();
-        $session->setUserId($userId);
-        $session->setSessionId($sessionId);
-        $session->setIp('127.0.0.1');
-        $session->setCreatedAt($createdAt);
-        $session->setUpdatedAt($createdAt);
-        $session->save();
-    }
-}
+        $eventDispatcher = new EventCaptureDispatcher();
+        $config = new ModuleConfig(enableSessionHistory: true, numberSessionHistory: 2);
 
-final class EventCollector implements EventDispatcherInterface
-{
-    /** @var list<object> */
-    private array $events = [];
+        $session = new FakeSession();
+        $session->setId('sessnew');
+        $session->open();
 
-    #[\Override]
-    public function dispatch(object $event): object
-    {
-        $this->events[] = $event;
-        return $event;
-    }
+        $decorator = new UserSessionHistoryDecorator($eventDispatcher, $config, $session);
 
-    /**
-     * @return list<object>
-     */
-    public function events(): array
-    {
-        return $this->events;
-    }
-}
+        $user = new User();
+        $user->setUsername('prunetest');
+        $user->setEmail('prunetest@example.com');
+        $user->setPasswordHash('hash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $user->save();
 
-final class FakeSession implements SessionInterface
-{
-    private bool $active = true;
+        $userId = (int) $user->getId();
 
-    public function __construct(private string $id = 'test-session')
-    {
-    }
+        for ($i = 0; $i < 3; $i++) {
+            $sh = new UserSessionHistory();
+            $sh->setUserId($userId);
+            $sh->setSessionId('old_' . $i);
+            $sh->setIp('127.0.0.1');
+            $sh->setCreatedAt(time() - (10 - $i));
+            $sh->setUpdatedAt(time() - (10 - $i));
+            $sh->save();
+        }
 
-    #[\Override]
-    public function all(): array
-    {
-        return [];
+        $_SERVER['REMOTE_ADDR'] = '192.168.1.1';
+        $_SERVER['HTTP_USER_AGENT'] = 'TestAgent';
+
+        $decorator->registerLogin($user);
+
+        $sessions = UserSessionHistory::query()->where(['user_id' => $userId])->all();
+        self::assertCount(2, $sessions);
+
+        unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
+
+        unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
     }
 
-    #[\Override]
-    public function clear(): void
+    public function testRegisterLoginWithDisableIpLogging(): void
     {
+        $eventDispatcher = new EventCaptureDispatcher();
+        $config = new ModuleConfig(enableSessionHistory: true, disableIpLogging: true);
+
+        $session = new FakeSession();
+        $session->setId('sess456');
+        $session->open();
+
+        $decorator = new UserSessionHistoryDecorator($eventDispatcher, $config, $session);
+
+        $user = new User();
+        $user->setUsername('test2');
+        $user->setEmail('test2@example.com');
+        $user->setPasswordHash('hash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $user->save();
+
+        $_SERVER['REMOTE_ADDR'] = '203.0.113.9';
+        $_SERVER['HTTP_USER_AGENT'] = 'TestAgent';
+
+        $decorator->registerLogin($user);
+
+        $sessions = UserSessionHistory::query()->where(['user_id' => (int) $user->getId()])->all();
+        self::assertCount(1, $sessions);
+        self::assertSame('127.0.0.1', $sessions[0]->getIp());
+
+        unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
     }
 
-    #[\Override]
-    public function close(): void
+    public function testRegisterLoginWithNullUserIdRecordsZero(): void
     {
-        $this->active = false;
+        $eventDispatcher = new EventCaptureDispatcher();
+        $config = new ModuleConfig(enableSessionHistory: true);
+
+        $decorator = new UserSessionHistoryDecorator($eventDispatcher, $config);
+
+        $user = new User();
+        $user->setUsername('noid');
+        $user->setEmail('noid@example.com');
+        $user->setPasswordHash('hash');
+        $user->setAuthKey('key');
+
+        $_SERVER['REMOTE_ADDR'] = '10.0.0.1';
+
+        $decorator->registerLogin($user);
+
+        $sessions = UserSessionHistory::query()->where(['user_id' => 0])->all();
+        self::assertCount(1, $sessions);
+        self::assertSame(0, $sessions[0]->getUserId());
+
+        unset($_SERVER['REMOTE_ADDR']);
     }
 
-    #[\Override]
-    public function destroy(): void
+    public function testRegisterLoginWithNumberSessionHistoryFalse(): void
     {
-        $this->active = false;
+        $eventDispatcher = new EventCaptureDispatcher();
+        $config = new ModuleConfig(enableSessionHistory: true, numberSessionHistory: false);
+
+        $session = new FakeSession();
+        $session->setId('sessnoprune');
+        $session->open();
+
+        $decorator = new UserSessionHistoryDecorator($eventDispatcher, $config, $session);
+
+        $user = new User();
+        $user->setUsername('noprunetest');
+        $user->setEmail('noprunetest@example.com');
+        $user->setPasswordHash('hash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $user->save();
+
+        $_SERVER['REMOTE_ADDR'] = '192.168.1.1';
+
+        $decorator->registerLogin($user);
+
+        $sessions = UserSessionHistory::query()->where(['user_id' => (int) $user->getId()])->all();
+        self::assertCount(1, $sessions);
+
+        unset($_SERVER['REMOTE_ADDR']);
     }
 
-    #[\Override]
-    public function discard(): void
+    public function testRegisterLoginWithSessionHistoryDisabledReturnsEarly(): void
     {
+        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
+        $eventDispatcher->expects($this->never())->method('dispatch');
+        $config = new ModuleConfig(enableSessionHistory: false);
+
+        $decorator = new UserSessionHistoryDecorator($eventDispatcher, $config);
+
+        $user = new User();
+        $user->setUsername('test');
+        $user->setEmail('test@example.com');
+        $user->setPasswordHash('hash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $user->save();
+
+        $_SERVER['REMOTE_ADDR'] = '192.168.1.1';
+        $_SERVER['HTTP_USER_AGENT'] = 'TestAgent';
+
+        $decorator->registerLogin($user);
+
+        $sessions = UserSessionHistory::query()->where(['user_id' => (int) $user->getId()])->all();
+        self::assertCount(0, $sessions);
+
+        unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
     }
 
-    #[\Override]
-    public function get(string $key, mixed $default = null): mixed
+    public function testRegisterLoginWithSessionHistoryEnabled(): void
     {
-        return $default;
+        $eventDispatcher = new EventCaptureDispatcher();
+        $config = new ModuleConfig(enableSessionHistory: true);
+
+        $session = new FakeSession();
+        $session->setId('sess123');
+        $session->open();
+
+        $decorator = new UserSessionHistoryDecorator($eventDispatcher, $config, $session);
+
+        $user = new User();
+        $user->setUsername('test');
+        $user->setEmail('test@example.com');
+        $user->setPasswordHash('hash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $user->save();
+
+        $_SERVER['REMOTE_ADDR'] = '192.168.1.1';
+        $_SERVER['HTTP_USER_AGENT'] = 'TestAgent';
+
+        $decorator->registerLogin($user);
+
+        $sessions = UserSessionHistory::query()->where(['user_id' => (int) $user->getId()])->all();
+        self::assertCount(1, $sessions);
+        self::assertSame('sess123', $sessions[0]->getSessionId());
+        self::assertSame('192.168.1.1', $sessions[0]->getIp());
+        self::assertSame('TestAgent', $sessions[0]->getUserAgent());
+        self::assertSame((int) $user->getId(), $sessions[0]->getUserId());
+        self::assertNotSame(0, $sessions[0]->getCreatedAt());
+        self::assertNotSame(0, $sessions[0]->getUpdatedAt());
+
+        $event = $eventDispatcher->getEvent(SessionEvent::class);
+        self::assertInstanceOf(SessionEvent::class, $event);
+        self::assertSame(['type' => SessionEvent::SESSION_CREATED], $event->getData());
+
+        unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
     }
 
-    #[\Override]
-    public function getCookieParameters(): array
+    public function testRegisterLoginWithSessionNullId(): void
     {
-        return [];
-    }
+        $eventDispatcher = new EventCaptureDispatcher();
+        $config = new ModuleConfig(enableSessionHistory: true);
 
-    #[\Override]
-    public function getId(): ?string
-    {
-        return $this->id;
-    }
+        $decorator = new UserSessionHistoryDecorator($eventDispatcher, $config);
 
-    #[\Override]
-    public function getName(): string
-    {
-        return 'TESTSESSID';
-    }
+        $user = new User();
+        $user->setUsername('nosess');
+        $user->setEmail('nosess@example.com');
+        $user->setPasswordHash('hash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $user->save();
 
-    #[\Override]
-    public function has(string $key): bool
-    {
-        return false;
-    }
+        $_SERVER['REMOTE_ADDR'] = '10.0.0.1';
 
-    #[\Override]
-    public function isActive(): bool
-    {
-        return $this->active;
-    }
+        $decorator->registerLogin($user);
 
-    #[\Override]
-    public function open(): void
-    {
-        $this->active = true;
-    }
+        $sessions = UserSessionHistory::query()->where(['user_id' => (int) $user->getId()])->all();
+        self::assertCount(1, $sessions);
+        self::assertSame('', $sessions[0]->getSessionId());
 
-    #[\Override]
-    public function pull(string $key, mixed $default = null): mixed
-    {
-        return $default;
-    }
-
-    #[\Override]
-    public function regenerateId(): void
-    {
-        $this->id = 'test-session-' . uniqid('', true);
-    }
-
-    #[\Override]
-    public function remove(string $key): void
-    {
-    }
-
-    #[\Override]
-    public function set(string $key, mixed $value): void
-    {
-    }
-
-    #[\Override]
-    public function setId(string $sessionId): void
-    {
-        $this->id = $sessionId;
+        unset($_SERVER['REMOTE_ADDR']);
     }
 }

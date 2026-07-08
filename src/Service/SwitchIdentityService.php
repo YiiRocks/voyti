@@ -27,6 +27,7 @@ final readonly class SwitchIdentityService
             return ServiceResult::failure('No original identity to restore');
         }
 
+        /** @var mixed $originalId */
         $originalId = $this->session->get($sessionKey);
         if ($originalId === null) {
             return ServiceResult::failure('No original identity to restore');

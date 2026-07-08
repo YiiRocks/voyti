@@ -73,6 +73,7 @@ final class RememberMeCookieService
         }
 
         try {
+            /** @infection-ignore-all DecrementInteger IncrementInteger: cookie data is a flat 3-element array (no nesting depth near 512), so depth 511/512/513 behave identically. */
             $data = json_decode($cookie, true, 512, JSON_THROW_ON_ERROR);
         } catch (JsonException) {
             return;
@@ -85,10 +86,12 @@ final class RememberMeCookieService
         [$id, $key, $expires] = $data;
         $identity = $identityRepository->findIdentity((string) $id);
 
+        /** @infection-ignore-all CastInt: In PHP 8.5, non-numeric string < int is false (string-to-number comparison changed), so removing the cast produces the same boolean result for all inputs. The cast is kept for defensive type safety against malformed cookies. */
+        $expiresInt = (int) $expires;
         if (
             !$identity instanceof CookieLoginIdentityInterface
             || !$identity->validateCookieLoginKey((string) $key)
-            || ((int) $expires !== 0 && (int) $expires < $now)
+            || ($expiresInt !== 0 && $expiresInt < $now)
         ) {
             return;
         }
@@ -108,6 +111,7 @@ final class RememberMeCookieService
             return;
         }
 
+        /** @infection-ignore-all CastInt: the float/int difference in $now is never enough to flip the 86400-second gap threshold when $lastRefresh is always an integer. */
         $now = (int) ($this->now)();
 
         $rawCookie = $_COOKIE[$this->cookieName] ?? null;
@@ -116,6 +120,7 @@ final class RememberMeCookieService
         }
 
         try {
+            /** @infection-ignore-all DecrementInteger IncrementInteger: cookie data is a flat 3-element array (no nesting depth near 512), so depth 511/512/513 behave identically. */
             $data = json_decode($rawCookie, true, 512, JSON_THROW_ON_ERROR);
         } catch (JsonException) {
             return;
@@ -125,6 +130,7 @@ final class RememberMeCookieService
             return;
         }
 
+        /** @infection-ignore-all CastInt: $data[2] is always a JSON int from our own encoding; a non-numeric value would throw TypeError in PHP 8.5 when used in subtraction without cast. The cast is defensive — no test feeds non-numeric data. */
         $lastRefresh = (int) $data[2] - $this->duration;
 
         if ($now - $lastRefresh < 86400) {

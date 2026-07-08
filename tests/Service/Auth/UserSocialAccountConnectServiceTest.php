@@ -4,114 +4,108 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Service\Auth;
 
+use PHPUnit\Framework\TestCase;
+use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserSocialAccount;
 use YiiRocks\Voyti\Repository\UserSocialAccountRepository;
 use YiiRocks\Voyti\Service\Auth\UserSocialAccountConnectService;
-use YiiRocks\Voyti\tests\TestCase;
-use Yiisoft\Db\Connection\ConnectionProvider;
+use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 
 final class UserSocialAccountConnectServiceTest extends TestCase
 {
-    #[\Override]
+    use DatabaseSetupTrait;
+
     protected function setUp(): void
     {
-        parent::setUp();
-
-        ConnectionProvider::set($this->getDb());
-        $this->getDb()->createCommand('CREATE TABLE {{%user_social_account}} (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            provider VARCHAR(255) NOT NULL,
-            client_id VARCHAR(255) NOT NULL,
-            user_id INTEGER,
-            username VARCHAR(255),
-            email VARCHAR(255),
-            code VARCHAR(255),
-            data TEXT,
-            created_at INTEGER NOT NULL
-        )')->execute();
+        $this->setUpDatabase();
     }
 
-    #[\Override]
     protected function tearDown(): void
     {
-        if ($this->hasSqliteConnection()) {
-            $this->getDb()->createCommand('DROP TABLE IF EXISTS {{%user_social_account}}')->execute();
-            ConnectionProvider::clear();
-        }
-
-        parent::tearDown();
+        $this->tearDownDatabase();
     }
 
-    public function testRunClearsUsernameEmailAndCodeOnConnect(): void
+    public function testRunExistingConnectedAccountReturnsFailure(): void
     {
-        $existing = new UserSocialAccount();
-        $existing->setProvider('github');
-        $existing->setClientId('client-4');
-        $existing->setUserId(null);
-        $existing->setUsername('octocat');
-        $existing->setEmail('octocat@example.com');
-        $existing->setCode('secret-code');
-        $existing->setCreatedAt(time());
-        $existing->save();
+        $user = new User();
+        $user->setUsername('test');
+        $user->setEmail('test@example.com');
+        $user->setPasswordHash('hash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $user->save();
 
-        $service = $this->createService();
+        $account = new UserSocialAccount();
+        $account->setProvider('github');
+        $account->setClientId('client123');
+        $account->setData('{}');
+        $account->setUserId((int) $user->getId());
+        $account->setCreatedAt(time());
+        $account->save();
 
-        $result = $service->run('github', 'client-4', ['id' => 'client-4'], 11);
+        $repository = new UserSocialAccountRepository();
+        $service = new UserSocialAccountConnectService($repository);
 
-        self::assertTrue($result->isSuccess());
+        $result = $service->run('github', 'client123', ['email' => 'test@example.com'], 42);
 
-        $reloaded = UserSocialAccount::query()->where(['provider' => 'github', 'client_id' => 'client-4'])->one();
-        self::assertInstanceOf(UserSocialAccount::class, $reloaded);
-        self::assertSame(11, $reloaded->getUserId());
-        self::assertNull($reloaded->getUsername());
-        self::assertNull($reloaded->getEmail());
-        self::assertNull($reloaded->getCode());
-    }
-
-    public function testRunCreatesNewAccountWithEncodedDataAndCreationTimestamp(): void
-    {
-        $service = $this->createService();
-
-        $before = time();
-        $result = $service->run('github', 'client-3', ['id' => 'client-3', 'name' => 'Octo Cat'], 7);
-        $after = time();
-
-        self::assertTrue($result->isSuccess());
-
-        $reloaded = UserSocialAccount::query()->where(['provider' => 'github', 'client_id' => 'client-3'])->one();
-        self::assertInstanceOf(UserSocialAccount::class, $reloaded);
-        self::assertSame(7, $reloaded->getUserId());
-        self::assertSame(
-            json_encode(['id' => 'client-3', 'name' => 'Octo Cat'], JSON_THROW_ON_ERROR),
-            $reloaded->getData(),
-        );
-        self::assertGreaterThanOrEqual($before, $reloaded->getCreatedAt());
-        self::assertLessThanOrEqual($after, $reloaded->getCreatedAt());
-    }
-
-    public function testRunFailsWhenAccountAlreadyConnectedToAnotherUser(): void
-    {
-        $existing = new UserSocialAccount();
-        $existing->setProvider('github');
-        $existing->setClientId('client-1');
-        $existing->setUserId(999);
-        $existing->setCreatedAt(time());
-        $existing->save();
-
-        $service = $this->createService();
-
-        $result = $service->run('github', 'client-1', ['id' => 'client-1'], 1);
-
-        self::assertFalse($result->isSuccess());
+        self::assertTrue($result->isFailure());
         self::assertSame('This account has already been connected to another user', $result->getMessage());
-
-        $reloaded = UserSocialAccount::query()->where(['provider' => 'github', 'client_id' => 'client-1'])->one();
-        self::assertInstanceOf(UserSocialAccount::class, $reloaded);
-        self::assertSame(999, $reloaded->getUserId());
     }
 
-    private function createService(): UserSocialAccountConnectService
+    public function testRunExistingUnconnectedAccountUpdatesAndConnects(): void
     {
-        return new UserSocialAccountConnectService(new UserSocialAccountRepository());
+        $user = new User();
+        $user->setUsername('target');
+        $user->setEmail('target@example.com');
+        $user->setPasswordHash('hash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $user->save();
+
+        $account = new UserSocialAccount();
+        $account->setProvider('github');
+        $account->setClientId('existing_unconnected');
+        $account->setCode('old_code');
+        $account->setUsername('olduser');
+        $account->setEmail('old@example.com');
+        $account->setData('{}');
+        $account->setCreatedAt(time());
+        $account->save();
+
+        $repository = new UserSocialAccountRepository();
+        $service = new UserSocialAccountConnectService($repository);
+
+        $result = $service->run('github', 'existing_unconnected', ['email' => 'new@example.com'], (int) $user->getId());
+
+        self::assertTrue($result->isSuccess());
+
+        $saved = $repository->findByProviderAndClientId('github', 'existing_unconnected');
+        self::assertNotNull($saved);
+        self::assertSame((int) $user->getId(), $saved->getUserId());
+        self::assertNull($saved->getCode());
+        self::assertNull($saved->getUsername());
+        self::assertNull($saved->getEmail());
+    }
+
+    public function testRunNewAccountCreatesAndConnects(): void
+    {
+        $repository = new UserSocialAccountRepository();
+        $service = new UserSocialAccountConnectService($repository);
+
+        $attributes = ['email' => 'new@example.com'];
+        $result = $service->run('github', 'new_client', $attributes, 100);
+
+        self::assertTrue($result->isSuccess());
+
+        $saved = $repository->findByProviderAndClientId('github', 'new_client');
+        self::assertNotNull($saved);
+        self::assertSame(100, $saved->getUserId());
+        self::assertSame(json_encode($attributes, JSON_THROW_ON_ERROR), $saved->getData());
+        self::assertGreaterThan(0, $saved->getCreatedAt());
+        self::assertNull($saved->getEmail());
+        self::assertNull($saved->getUsername());
+        self::assertNull($saved->getCode());
     }
 }

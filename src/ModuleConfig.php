@@ -57,6 +57,7 @@ final readonly class ModuleConfig
         public string $adminRestPrefix = 'api/v1',
     ) {
     }
+
     /**
      * @return (array|bool|int|null|string)[]
      *

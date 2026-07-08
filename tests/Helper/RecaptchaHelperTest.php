@@ -5,124 +5,105 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Helper;
 
 use PHPUnit\Framework\TestCase;
-use Psr\Http\Client\ClientInterface;
-use Psr\Http\Message\RequestFactoryInterface;
-use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\StreamFactoryInterface;
-use Psr\Http\Message\StreamInterface;
-use RuntimeException;
-use YiiRocks\Recaptcha\RecaptchaClient;
-use YiiRocks\Recaptcha\RecaptchaConfig;
 use YiiRocks\Recaptcha\RecaptchaRegistry;
-use YiiRocks\Voyti\Form\Auth\RegistrationForm;
 use YiiRocks\Voyti\Helper\RecaptchaHelper;
 use YiiRocks\Voyti\ModuleConfig;
-use Yiisoft\Translator\CategorySource;
-use Yiisoft\Translator\Message\Php\MessageSource;
-use Yiisoft\Translator\SimpleMessageFormatter;
-use Yiisoft\Translator\Translator;
-use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\FormModel\FormModel;
+use Yiisoft\FormModel\FormModelInterface;
 
+final class RecaptchaTestForm extends FormModel
+{
+    public string $gRecaptchaResponse = '';
+
+    public function getFormName(): string
+    {
+        return 'recaptchaTestForm';
+    }
+}
+
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class RecaptchaHelperTest extends TestCase
 {
-    protected function tearDown(): void
+    protected function setUp(): void
     {
         RecaptchaRegistry::reset();
-        parent::tearDown();
     }
 
-    public function testIsAvailableReturnsTrueWhenPackageInstalled(): void
+    public function testIsAvailableReturnsTrue(): void
     {
-        $this->assertTrue(RecaptchaHelper::isAvailable());
+        self::assertTrue(RecaptchaHelper::isAvailable());
     }
 
-    public function testRenderReturnsEmptyStringWhenRecaptchaDisabled(): void
+    public function testRenderReturnsEmptyStringWhenRecaptchaVersionIsNull(): void
     {
-        $config = new ModuleConfig();
-        $result = RecaptchaHelper::render(
-            $this->createStub(\Yiisoft\FormModel\FormModelInterface::class),
-            $config,
-        );
+        $config = new ModuleConfig(recaptchaVersion: null);
+        $form = $this->createMock(FormModelInterface::class);
 
-        $this->assertSame('', $result);
+        self::assertSame('', RecaptchaHelper::render($form, $config));
     }
 
-    public function testRenderReturnsV2MarkupContainingSiteKeyWhenVersionIsV2(): void
+    public function testRenderV2ProducesV2MarkupWithConfiguredKey(): void
     {
-        RecaptchaRegistry::configure($this->createRecaptchaClient('site-key-v2', 'site-key-v3'));
+        $client = $this->buildClient('v2-site-key', 'v3-site-key');
+        RecaptchaRegistry::configure($client);
 
         $config = new ModuleConfig(recaptchaVersion: 'v2');
-        $form = new RegistrationForm($config, $this->createTranslator());
+        $form = new RecaptchaTestForm();
 
-        $result = RecaptchaHelper::render($form, $config);
+        $html = RecaptchaHelper::render($form, $config);
 
-        $this->assertStringContainsString('data-sitekey="site-key-v2"', $result);
-        $this->assertStringContainsString('g-recaptcha', $result);
+        self::assertStringContainsString('data-sitekey="v2-site-key"', $html);
+        self::assertStringNotContainsString('grecaptcha.execute', $html);
     }
 
-    public function testRenderReturnsV3MarkupContainingSiteKeyWhenVersionIsV3(): void
+    public function testRenderV3ProducesV3MarkupWithConfiguredKey(): void
     {
-        RecaptchaRegistry::configure($this->createRecaptchaClient('site-key-v2', 'site-key-v3'));
+        $client = $this->buildClient('v2-site-key', 'v3-site-key');
+        RecaptchaRegistry::configure($client);
 
         $config = new ModuleConfig(recaptchaVersion: 'v3');
-        $form = new RegistrationForm($config, $this->createTranslator());
+        $form = new RecaptchaTestForm();
 
-        $result = RecaptchaHelper::render($form, $config);
+        $html = RecaptchaHelper::render($form, $config);
 
-        $this->assertStringContainsString('site-key-v3', $result);
-        $this->assertStringContainsString('voyti_register', $result);
+        self::assertStringContainsString('grecaptcha.execute', $html);
+        self::assertStringContainsString('action', $html);
+        self::assertStringNotContainsString('data-sitekey="v2-site-key"', $html);
     }
 
-    private function createRecaptchaClient(string $siteKeyV2, string $siteKeyV3): RecaptchaClient
+    public function testRenderWithV2ThrowsMissingSiteKeyException(): void
     {
-        $httpClient = new class implements ClientInterface {
-            public function sendRequest(RequestInterface $request): ResponseInterface
-            {
-                throw new RuntimeException('not used');
-            }
-        };
-        $requestFactory = new class implements RequestFactoryInterface {
-            public function createRequest(string $method, $uri): RequestInterface
-            {
-                throw new RuntimeException('not used');
-            }
-        };
-        $streamFactory = new class implements StreamFactoryInterface {
-            public function createStream(string $content = ''): StreamInterface
-            {
-                throw new RuntimeException('not used');
-            }
+        $config = new ModuleConfig(recaptchaVersion: 'v2');
+        $form = $this->createMock(FormModelInterface::class);
+        $form->method('getFormName')->willReturn('registerForm');
 
-            public function createStreamFromFile(string $filename, string $mode = 'r'): StreamInterface
-            {
-                throw new RuntimeException('not used');
-            }
+        $this->expectException(\YiiRocks\Recaptcha\Exception\MissingSiteKeyException::class);
 
-            public function createStreamFromResource($resource): StreamInterface
-            {
-                throw new RuntimeException('not used');
-            }
-        };
-
-        return new RecaptchaClient(
-            new RecaptchaConfig(siteKeyV2: $siteKeyV2, siteKeyV3: $siteKeyV3),
-            $httpClient,
-            $requestFactory,
-            $streamFactory,
-        );
+        RecaptchaHelper::render($form, $config);
     }
 
-    private function createTranslator(): TranslatorInterface
+    public function testRenderWithV3ThrowsMissingSiteKeyException(): void
     {
-        $translator = new Translator('en', null, 'voyti');
-        $translator->addCategorySources(
-            new CategorySource(
-                'voyti',
-                new MessageSource(dirname(__DIR__, 2) . '/src/resources/messages'),
-                new SimpleMessageFormatter(),
-            ),
+        $config = new ModuleConfig(recaptchaVersion: 'v3');
+        $form = $this->createMock(FormModelInterface::class);
+        $form->method('getFormName')->willReturn('registerForm');
+
+        $this->expectException(\YiiRocks\Recaptcha\Exception\MissingSiteKeyException::class);
+
+        RecaptchaHelper::render($form, $config);
+    }
+
+    private function buildClient(string $siteKeyV2, string $siteKeyV3): \YiiRocks\Recaptcha\RecaptchaClient
+    {
+        $config = new \YiiRocks\Recaptcha\RecaptchaConfig(
+            siteKeyV2: $siteKeyV2,
+            siteKeyV3: $siteKeyV3,
         );
-        return $translator;
+
+        $httpClient = $this->createMock(\Psr\Http\Client\ClientInterface::class);
+        $requestFactory = $this->createMock(\Psr\Http\Message\RequestFactoryInterface::class);
+        $streamFactory = $this->createMock(\Psr\Http\Message\StreamFactoryInterface::class);
+
+        return new \YiiRocks\Recaptcha\RecaptchaClient($config, $httpClient, $requestFactory, $streamFactory);
     }
 }

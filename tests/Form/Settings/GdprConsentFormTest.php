@@ -1,0 +1,54 @@
+<?php
+
+declare(strict_types=1);
+
+namespace YiiRocks\Voyti\tests\Form\Settings;
+
+use PHPUnit\Framework\TestCase;
+use YiiRocks\Voyti\Form\Settings\GdprConsentForm;
+use Yiisoft\Translator\TranslatorInterface;
+
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+final class GdprConsentFormTest extends TestCase
+{
+
+    public function testConstruct(): void
+    {
+        $form = new GdprConsentForm($this->createTranslator());
+        $this->assertFalse($form->consent);
+    }
+
+    public function testGetAttributeLabels(): void
+    {
+        $form = new GdprConsentForm($this->createTranslator());
+        $labels = $form->getAttributeLabels();
+        $this->assertArrayHasKey('consent', $labels);
+    }
+
+    public function testGetFormName(): void
+    {
+        $form = new GdprConsentForm($this->createTranslator());
+        $this->assertSame('gdpr-consent', $form->getFormName());
+    }
+
+    public function testGetPropertyLabels(): void
+    {
+        $form = new GdprConsentForm($this->createTranslator());
+        $this->assertSame($form->getAttributeLabels(), $form->getPropertyLabels());
+    }
+
+    public function testSetConsent(): void
+    {
+        $form = new GdprConsentForm($this->createTranslator());
+        $form->consent = true;
+        $this->assertTrue($form->consent);
+    }
+    private function createTranslator(): TranslatorInterface
+    {
+        $translator = $this->createMock(TranslatorInterface::class);
+        $translator->method('translate')->willReturnCallback(
+            fn (string $id) => $id,
+        );
+        return $translator;
+    }
+}

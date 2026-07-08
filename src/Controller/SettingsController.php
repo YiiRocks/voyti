@@ -208,13 +208,15 @@ final readonly class SettingsController
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found', category: 'voyti'), 'translator' => $this->translator]);
         }
 
-        $data = [];
-        foreach ($this->config->gdprExportProperties as $property) {
-            $value = $this->exportValue($user, $property);
-            if ($value !== null) {
-                $data[$property] = $value;
-            }
-        }
+        $values = array_map(
+            fn (string $property): mixed => $this->exportValue($user, $property),
+            $this->config->gdprExportProperties,
+        );
+        /** @var array<array-key, mixed> $data */
+        $data = array_filter(
+            array_combine($this->config->gdprExportProperties, $values),
+            static fn (mixed $v): bool => $v !== null,
+        );
 
         $csv = implode(',', array_keys($data)) . "\n" . implode(',', array_map(
             static fn (mixed $v): string => '"' . str_replace('"', '""', (string) $v) . '"',
@@ -301,16 +303,10 @@ final readonly class SettingsController
         }
 
         $accounts = $this->userSocialAccountRepository->findByUserId((int) ($identity->getId() ?? 0));
-        /**
-         * @infection-ignore-all
-         *
-         * array_values() only re-indexes to satisfy the list<string> type; the sole
-         * consumer (_connect.php's in_array() check) never depends on key order.
-         */
-        $connectedProviders = array_values(array_filter(array_map(
+        $connectedProviders = array_filter(array_map(
             static fn (\YiiRocks\Voyti\Entity\UserSocialAccount $account): string => $account->getProvider(),
             $accounts,
-        )));
+        ));
 
         return $this->renderView('settings/networks', [
             'accounts' => $accounts,
@@ -363,7 +359,6 @@ final readonly class SettingsController
         if ($method === 'email') {
             if ($user->getAuthTfType() !== 'email') {
                 $user->setAuthTfType('email');
-                /** @infection-ignore-all MethodCallRemoval: EmailCodeGeneratorService::run() below unconditionally calls $user->save() again, persisting this attribute regardless of whether this save runs. */
                 $user->save();
             }
 
@@ -556,7 +551,6 @@ final readonly class SettingsController
         if ($user->getAuthTfType() !== 'google') {
             $user->setAuthTfType('google');
             $user->setAuthTfKey(null);
-            /** @infection-ignore-all MethodCallRemoval: the QrCodeUriGeneratorService::run() call that always follows this method saves a freshly generated secret itself whenever the key is null, persisting these attributes regardless of whether this save runs. */
             $user->save();
         }
     }

@@ -135,7 +135,7 @@ final class UserRepository extends BaseRepository
         }
 
         $limit = (int)($filters['limit'] ?? 50);
-        /** @infection-ignore-all DecrementInteger: the surrounding max(1, ...) already clamps a missing 'page' key to 1 regardless of whether the coalesce default here is 1 or 0, so that specific mutation is unobservable. */
+        /** @infection-ignore-all DecrementInteger: the surrounding max(1, ...) already clamps a missing 'page' key to 1 regardless of whether the coalesce default is 1 or 0, so that specific mutation is unobservable. */
         $page = max(1, (int)($filters['page'] ?? 1));
         $offset = ($page - 1) * $limit;
 

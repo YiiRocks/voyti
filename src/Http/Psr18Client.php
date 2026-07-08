@@ -72,6 +72,7 @@ final readonly class Psr18Client implements ClientInterface
      */
     private function decode(string $body): array
     {
+        /** @var mixed $decoded */
         $decoded = json_decode($body, true);
         if (is_array($decoded)) {
             return $decoded;
@@ -88,17 +89,20 @@ final readonly class Psr18Client implements ClientInterface
     private function errorMessage(array $data): string
     {
         foreach (['error_description', 'message', 'error', 'error_summary'] as $key) {
-            $value = $data[$key] ?? null;
-            if (is_string($value) && $value !== '') {
-                return $value;
+            /** @var mixed $rawValue */
+            $rawValue = $data[$key] ?? null;
+            if (is_string($rawValue) && $rawValue !== '') {
+                return $rawValue;
             }
         }
 
+        /** @var mixed $error */
         $error = $data['error'] ?? null;
         if (is_array($error)) {
-            $message = $error['message'] ?? null;
-            if (is_string($message) && $message !== '') {
-                return $message;
+            /** @var mixed $rawMessage */
+            $rawMessage = $error['message'] ?? null;
+            if (is_string($rawMessage) && $rawMessage !== '') {
+                return $rawMessage;
             }
         }
 

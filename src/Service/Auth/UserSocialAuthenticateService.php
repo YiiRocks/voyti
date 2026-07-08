@@ -39,6 +39,7 @@ final readonly class UserSocialAuthenticateService
         }
 
         if ($clientId === '') {
+            /** @var mixed $oauthData */
             $oauthData = $this->session->get('oauth_client_data');
             if ($oauthData !== null && is_array($oauthData)) {
                 $clientId = (string)($oauthData['user_id'] ?? '');
@@ -125,6 +126,7 @@ final readonly class UserSocialAuthenticateService
      */
     private function remoteAddr(array $serverParams): string
     {
+        /** @var mixed $remoteAddr */
         $remoteAddr = $serverParams['REMOTE_ADDR'] ?? null;
 
         return is_string($remoteAddr) && $remoteAddr !== '' ? $remoteAddr : '127.0.0.1';
@@ -137,6 +139,7 @@ final readonly class UserSocialAuthenticateService
      */
     private function stringAttribute(array $attributes, string $key): string|null
     {
+        /** @var mixed $value */
         $value = $attributes[$key] ?? null;
 
         return is_string($value) && $value !== '' ? $value : null;

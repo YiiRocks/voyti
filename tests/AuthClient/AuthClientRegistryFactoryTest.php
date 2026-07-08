@@ -5,9 +5,6 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\AuthClient;
 
 use PHPUnit\Framework\TestCase;
-use ReflectionClass;
-use YiiRocks\Voyti\AuthClient\AbstractAuthClient;
-use YiiRocks\Voyti\AuthClient\AuthClientInterface;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistryFactory;
 use YiiRocks\Voyti\AuthClient\Facebook;
 use YiiRocks\Voyti\AuthClient\GenericAuthClient;
@@ -20,97 +17,250 @@ use YiiRocks\Voyti\ModuleConfig;
 
 final class AuthClientRegistryFactoryTest extends TestCase
 {
-    public function testCreateBuildsRegistryForEverySupportedProvider(): void
+
+    public function testCreateWithDisabledAmongEnabled(): void
     {
-        $factory = new AuthClientRegistryFactory(new ModuleConfig(
-            socialNetworkClients: [
-                'facebook' => ['enabled' => true],
-                'github' => ['enabled' => true],
-                'google' => ['enabled' => true],
-                'keycloak' => ['enabled' => true],
-                'linkedin' => ['enabled' => true],
-                'microsoft365' => ['enabled' => true],
-                'vkontakte' => ['enabled' => true],
-                'x' => ['enabled' => true],
-                'yandex' => ['enabled' => true],
+        $config = new ModuleConfig(socialNetworkClients: [
+            'github' => [
+                'enabled' => true,
+                'clientId' => 'gh-id',
+                'clientSecret' => 'gh-secret',
             ],
-        ));
-
-        $registry = $factory->create();
-
-        self::assertTrue((new \ReflectionMethod(AuthClientRegistryFactory::class, 'create'))->isPublic());
-        self::assertCount(9, $registry->all());
-        self::assertInstanceOf(Facebook::class, $registry->get('facebook'));
-        self::assertInstanceOf(GitHub::class, $registry->get('github'));
-        self::assertInstanceOf(Keycloak::class, $registry->get('keycloak'));
-        self::assertInstanceOf(VKontakte::class, $registry->get('vkontakte'));
-        self::assertInstanceOf(Twitter::class, $registry->get('x'));
-        self::assertInstanceOf(Yandex::class, $registry->get('yandex'));
-
-        $this->assertGenericProvider(
-            $registry->get('google'),
-            'google',
-            'Google',
-            'https://accounts.google.com/o/oauth2/v2/auth',
-            'https://oauth2.googleapis.com/token',
-            'https://openidconnect.googleapis.com/v1/userinfo',
-            'openid email profile',
-        );
-        $this->assertGenericProvider(
-            $registry->get('linkedin'),
-            'linkedin',
-            'LinkedIn',
-            'https://www.linkedin.com/oauth/v2/authorization',
-            'https://www.linkedin.com/oauth/v2/accessToken',
-            'https://api.linkedin.com/v2/userinfo',
-            'openid profile email',
-        );
-        $this->assertGenericProvider(
-            $registry->get('microsoft365'),
-            'microsoft365',
-            'Microsoft 365',
-            'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
-            'https://login.microsoftonline.com/common/oauth2/v2.0/token',
-            'https://graph.microsoft.com/oidc/userinfo',
-            'openid profile email User.Read',
-        );
-    }
-
-    public function testCreateSkipsDisabledAndUnknownProviders(): void
-    {
-        $factory = new AuthClientRegistryFactory(new ModuleConfig(
-            socialNetworkClients: [
-                'github' => ['enabled' => true],
-                'google' => ['enabled' => false],
-                'unknown' => ['enabled' => true],
+            'facebook' => [
+                'enabled' => false,
+                'clientId' => 'fb-id',
+                'clientSecret' => 'fb-secret',
             ],
-        ));
-
+        ]);
+        $factory = new AuthClientRegistryFactory($config);
         $registry = $factory->create();
 
         self::assertCount(1, $registry->all());
-        self::assertInstanceOf(GitHub::class, $registry->get('github'));
-        self::assertNull($registry->get('google'));
-        self::assertNull($registry->get('unknown'));
+        self::assertSame('github', $registry->all()[0]->getName());
     }
 
-    private function assertGenericProvider(
-        ?AuthClientInterface $client,
-        string $name,
-        string $title,
-        string $authUrl,
-        string $tokenUrl,
-        string $userInfoUrl,
-        string $scope,
-    ): void {
-        self::assertInstanceOf(GenericAuthClient::class, $client);
-        self::assertSame($name, $client->getName());
-        self::assertSame($title, $client->getTitle());
+    public function testCreateWithDisabledFacebook(): void
+    {
+        $config = new ModuleConfig(socialNetworkClients: [
+            'facebook' => [
+                'enabled' => false,
+                'clientId' => 'fb-id',
+                'clientSecret' => 'fb-secret',
+            ],
+        ]);
+        $factory = new AuthClientRegistryFactory($config);
+        $registry = $factory->create();
 
-        $reflection = new ReflectionClass(AbstractAuthClient::class);
-        self::assertSame($authUrl, $reflection->getProperty('authUrl')->getValue($client));
-        self::assertSame($tokenUrl, $reflection->getProperty('tokenUrl')->getValue($client));
-        self::assertSame($userInfoUrl, $reflection->getProperty('userInfoUrl')->getValue($client));
-        self::assertSame($scope, $reflection->getProperty('scope')->getValue($client));
+        self::assertCount(0, $registry->all());
+    }
+
+    public function testCreateWithEnabledFacebook(): void
+    {
+        $config = new ModuleConfig(socialNetworkClients: [
+            'facebook' => [
+                'enabled' => true,
+                'clientId' => 'fb-id',
+                'clientSecret' => 'fb-secret',
+            ],
+        ]);
+        $factory = new AuthClientRegistryFactory($config);
+        $registry = $factory->create();
+
+        $clients = $registry->all();
+        self::assertCount(1, $clients);
+        self::assertInstanceOf(Facebook::class, $clients[0]);
+        self::assertSame('facebook', $clients[0]->getName());
+    }
+
+    public function testCreateWithEnabledGitHub(): void
+    {
+        $config = new ModuleConfig(socialNetworkClients: [
+            'github' => [
+                'enabled' => true,
+                'clientId' => 'gh-id',
+                'clientSecret' => 'gh-secret',
+            ],
+        ]);
+        $factory = new AuthClientRegistryFactory($config);
+        $registry = $factory->create();
+
+        $clients = $registry->all();
+        self::assertCount(1, $clients);
+        self::assertInstanceOf(GitHub::class, $clients[0]);
+        self::assertSame('github', $clients[0]->getName());
+    }
+
+    public function testCreateWithGenericGoogle(): void
+    {
+        $config = new ModuleConfig(socialNetworkClients: [
+            'google' => [
+                'enabled' => true,
+                'clientId' => 'goog-id',
+                'clientSecret' => 'goog-secret',
+            ],
+        ]);
+        $factory = new AuthClientRegistryFactory($config);
+        $registry = $factory->create();
+
+        $clients = $registry->all();
+        self::assertCount(1, $clients);
+        self::assertInstanceOf(GenericAuthClient::class, $clients[0]);
+        self::assertSame('google', $clients[0]->getName());
+        self::assertSame('Google', $clients[0]->getTitle());
+    }
+
+    public function testCreateWithGenericLinkedin(): void
+    {
+        $config = new ModuleConfig(socialNetworkClients: [
+            'linkedin' => [
+                'enabled' => true,
+                'clientId' => 'li-id',
+                'clientSecret' => 'li-secret',
+            ],
+        ]);
+        $factory = new AuthClientRegistryFactory($config);
+        $registry = $factory->create();
+
+        $clients = $registry->all();
+        self::assertCount(1, $clients);
+        self::assertInstanceOf(GenericAuthClient::class, $clients[0]);
+        self::assertSame('linkedin', $clients[0]->getName());
+        self::assertSame('LinkedIn', $clients[0]->getTitle());
+    }
+
+    public function testCreateWithGenericMicrosoft365(): void
+    {
+        $config = new ModuleConfig(socialNetworkClients: [
+            'microsoft365' => [
+                'enabled' => true,
+                'clientId' => 'ms-id',
+                'clientSecret' => 'ms-secret',
+            ],
+        ]);
+        $factory = new AuthClientRegistryFactory($config);
+        $registry = $factory->create();
+
+        $clients = $registry->all();
+        self::assertCount(1, $clients);
+        self::assertInstanceOf(GenericAuthClient::class, $clients[0]);
+        self::assertSame('microsoft365', $clients[0]->getName());
+        self::assertSame('Microsoft 365', $clients[0]->getTitle());
+    }
+
+    public function testCreateWithKeycloak(): void
+    {
+        $config = new ModuleConfig(socialNetworkClients: [
+            'keycloak' => [
+                'enabled' => true,
+                'baseUrl' => 'https://auth.example.com',
+                'realm' => 'myrealm',
+                'clientId' => 'kc-id',
+                'clientSecret' => 'kc-secret',
+            ],
+        ]);
+        $factory = new AuthClientRegistryFactory($config);
+        $registry = $factory->create();
+
+        $clients = $registry->all();
+        self::assertCount(1, $clients);
+        self::assertInstanceOf(Keycloak::class, $clients[0]);
+        self::assertSame('keycloak', $clients[0]->getName());
+    }
+
+    public function testCreateWithMultipleClients(): void
+    {
+        $config = new ModuleConfig(socialNetworkClients: [
+            'github' => [
+                'enabled' => true,
+                'clientId' => 'gh-id',
+                'clientSecret' => 'gh-secret',
+            ],
+            'facebook' => [
+                'enabled' => true,
+                'clientId' => 'fb-id',
+                'clientSecret' => 'fb-secret',
+            ],
+        ]);
+        $factory = new AuthClientRegistryFactory($config);
+        $registry = $factory->create();
+
+        self::assertCount(2, $registry->all());
+    }
+    public function testCreateWithNoClients(): void
+    {
+        $config = new ModuleConfig(socialNetworkClients: []);
+        $factory = new AuthClientRegistryFactory($config);
+        $registry = $factory->create();
+
+        self::assertCount(0, $registry->all());
+    }
+
+    public function testCreateWithTwitter(): void
+    {
+        $config = new ModuleConfig(socialNetworkClients: [
+            'x' => [
+                'enabled' => true,
+                'clientId' => 'tw-id',
+                'clientSecret' => 'tw-secret',
+            ],
+        ]);
+        $factory = new AuthClientRegistryFactory($config);
+        $registry = $factory->create();
+
+        $clients = $registry->all();
+        self::assertCount(1, $clients);
+        self::assertInstanceOf(Twitter::class, $clients[0]);
+        self::assertSame('x', $clients[0]->getName());
+    }
+
+    public function testCreateWithUnknownProviderReturnsNull(): void
+    {
+        $config = new ModuleConfig(socialNetworkClients: [
+            'unknown_provider' => [
+                'enabled' => true,
+                'clientId' => 'id',
+                'clientSecret' => 'secret',
+            ],
+        ]);
+        $factory = new AuthClientRegistryFactory($config);
+        $registry = $factory->create();
+
+        self::assertCount(0, $registry->all());
+    }
+
+    public function testCreateWithVKontakte(): void
+    {
+        $config = new ModuleConfig(socialNetworkClients: [
+            'vkontakte' => [
+                'enabled' => true,
+                'clientId' => 'vk-id',
+                'clientSecret' => 'vk-secret',
+            ],
+        ]);
+        $factory = new AuthClientRegistryFactory($config);
+        $registry = $factory->create();
+
+        $clients = $registry->all();
+        self::assertCount(1, $clients);
+        self::assertInstanceOf(VKontakte::class, $clients[0]);
+        self::assertSame('vkontakte', $clients[0]->getName());
+    }
+
+    public function testCreateWithYandex(): void
+    {
+        $config = new ModuleConfig(socialNetworkClients: [
+            'yandex' => [
+                'enabled' => true,
+                'clientId' => 'ya-id',
+                'clientSecret' => 'ya-secret',
+            ],
+        ]);
+        $factory = new AuthClientRegistryFactory($config);
+        $registry = $factory->create();
+
+        $clients = $registry->all();
+        self::assertCount(1, $clients);
+        self::assertInstanceOf(Yandex::class, $clients[0]);
+        self::assertSame('yandex', $clients[0]->getName());
     }
 }

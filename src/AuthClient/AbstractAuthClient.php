@@ -84,7 +84,10 @@ abstract readonly class AbstractAuthClient implements AuthClientInterface
     #[\Override]
     public function isEnabled(): bool
     {
-        return (bool) ($this->config['enabled'] ?? true);
+        /** @var mixed $rawEnabled */
+        $rawEnabled = $this->config['enabled'] ?? true;
+
+        return (bool) $rawEnabled;
     }
 
     /**
@@ -92,31 +95,34 @@ abstract readonly class AbstractAuthClient implements AuthClientInterface
      */
     protected function authorizationParameters(): array
     {
-        $parameters = $this->config['authorizationParams'] ?? [];
+        /** @var mixed $params */
+        $params = $this->config['authorizationParams'] ?? [];
 
-        return is_array($parameters) ? $this->stringMap($parameters) : [];
+        return $this->stringMap(is_array($params) ? $params : []);
     }
 
     protected function clientId(): string
     {
-        $clientId = $this->config['clientId'] ?? '';
+        /** @var mixed $rawClientId */
+        $rawClientId = $this->config['clientId'] ?? '';
 
-        if (!is_string($clientId) || $clientId === '') {
+        if (!is_string($rawClientId) || $rawClientId === '') {
             throw new RuntimeException("The '{$this->name}' clientId is not configured.");
         }
 
-        return $clientId;
+        return $rawClientId;
     }
 
     protected function clientSecret(): string
     {
-        $clientSecret = $this->config['clientSecret'] ?? '';
+        /** @var mixed $rawClientSecret */
+        $rawClientSecret = $this->config['clientSecret'] ?? '';
 
-        if (!is_string($clientSecret) || $clientSecret === '') {
+        if (!is_string($rawClientSecret) || $rawClientSecret === '') {
             throw new RuntimeException("The '{$this->name}' clientSecret is not configured.");
         }
 
-        return $clientSecret;
+        return $rawClientSecret;
     }
 
     /**
@@ -128,12 +134,14 @@ abstract readonly class AbstractAuthClient implements AuthClientInterface
     protected function firstString(array $data, array $keys): string|null
     {
         foreach ($keys as $key) {
-            $value = $data[$key] ?? null;
-            if (is_string($value) && $value !== '') {
-                return $value;
+            if (!array_key_exists($key, $data)) {
+                continue;
             }
-            if (is_int($value) || is_float($value)) {
-                return (string) $value;
+            if (is_string($data[$key]) && $data[$key] !== '') {
+                return $data[$key];
+            }
+            if (is_int($data[$key]) || is_float($data[$key])) {
+                return (string) $data[$key];
             }
         }
 
@@ -193,7 +201,8 @@ abstract readonly class AbstractAuthClient implements AuthClientInterface
         }
 
         if ($username === null && $email !== null) {
-            $username = strstr($email, '@', true) ?: $email;
+            $prefix = strstr($email, '@', true);
+            $username = is_string($prefix) && $prefix !== '' ? $prefix : $email;
         }
 
         return [
@@ -206,20 +215,22 @@ abstract readonly class AbstractAuthClient implements AuthClientInterface
 
     protected function resolveRedirectUri(string $fallback): string
     {
-        $redirectUri = $this->config['redirectUri'] ?? $fallback;
+        /** @var mixed $rawRedirectUri */
+        $rawRedirectUri = $this->config['redirectUri'] ?? $fallback;
 
-        if (!is_string($redirectUri) || $redirectUri === '') {
+        if (!is_string($rawRedirectUri) || $rawRedirectUri === '') {
             throw new RuntimeException("The '{$this->name}' redirect URI is not configured.");
         }
 
-        return $redirectUri;
+        return $rawRedirectUri;
     }
 
     protected function scope(): string
     {
-        $scope = $this->config['scope'] ?? $this->scope;
+        /** @var mixed $configScope */
+        $configScope = $this->config['scope'] ?? null;
 
-        return is_string($scope) ? $scope : $this->scope;
+        return is_string($configScope) ? $configScope : $this->scope;
     }
 
     /**
@@ -247,9 +258,10 @@ abstract readonly class AbstractAuthClient implements AuthClientInterface
      */
     protected function userInfoQuery(array $tokenData): array
     {
+        /** @var mixed $query */
         $query = $this->config['userInfoQuery'] ?? [];
 
-        return is_array($query) ? $this->stringMap($query) : [];
+        return $this->stringMap(is_array($query) ? $query : []);
     }
 
     /**
@@ -311,14 +323,17 @@ abstract readonly class AbstractAuthClient implements AuthClientInterface
     {
         $mapped = [];
 
-        foreach ($values as $key => $value) {
-            if (!is_string($key) || $key === '') {
-                continue;
-            }
-            if (is_string($value) || is_int($value) || is_float($value) || is_bool($value)) {
-                $mapped[$key] = (string) $value;
-            }
-        }
+        array_walk(
+            $values,
+            function (mixed $value, mixed $key) use (&$mapped): void {
+                if (!is_string($key) || $key === '') {
+                    return;
+                }
+                if (is_string($value) || is_int($value) || is_float($value) || is_bool($value)) {
+                    $mapped[$key] = (string) $value;
+                }
+            },
+        );
 
         return $mapped;
     }
@@ -338,10 +353,11 @@ abstract readonly class AbstractAuthClient implements AuthClientInterface
             'redirect_uri' => $this->resolveRedirectUri($redirectUri),
         ];
 
-        $tokenParameters = $this->config['tokenParams'] ?? [];
+        /** @var mixed $tokenParams */
+        $tokenParams = $this->config['tokenParams'] ?? [];
 
-        return is_array($tokenParameters)
-            ? array_merge($body, $this->stringMap($tokenParameters))
+        return is_array($tokenParams)
+            ? array_merge($body, $this->stringMap($tokenParams))
             : $body;
     }
 }

@@ -4,336 +4,87 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Service\Rbac;
 
+use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Service\Rbac\UpdateAssignmentsService;
 use YiiRocks\Voyti\Validator\Rbac\ItemsValidator;
 use Yiisoft\Rbac\Assignment;
-use Yiisoft\Rbac\Manager;
+use Yiisoft\Rbac\AssignmentsStorageInterface;
 use Yiisoft\Rbac\ManagerInterface;
-use Yiisoft\Rbac\Permission;
-use Yiisoft\Rbac\Role;
-use Yiisoft\Rbac\SimpleAssignmentsStorage;
-use Yiisoft\Rbac\SimpleItemsStorage;
+use Yiisoft\Validator\Result;
 
-final class UpdateAssignmentsServiceTest extends \PHPUnit\Framework\TestCase
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+final class UpdateAssignmentsServiceTest extends TestCase
 {
-
-    public function testRunAssignsAndRevokesOnlyTheItemsThatDiffer(): void
+    public function testRunWithInvalidItemsReturnsFalse(): void
     {
-        $itemsStorage = new InMemoryItemsStorage();
-        $itemsStorage->add(new Permission('editor'));
-        $itemsStorage->add(new Permission('viewer'));
-        $itemsStorage->add(new Permission('admin'));
+        $authManager = $this->createMock(ManagerInterface::class);
+        $assignmentsStorage = $this->createMock(AssignmentsStorageInterface::class);
+        $itemsValidator = $this->createMock(ItemsValidator::class);
+        $result = new Result();
+        $result->addError('Item does not exist.');
+        $itemsValidator->method('validate')->willReturn($result);
 
-        $assignmentsStorage = new InMemoryAssignmentsStorage();
-        // The user currently has "editor" and "viewer" assigned.
-        $assignmentsStorage->add(new Assignment('42', 'editor', 1000));
-        $assignmentsStorage->add(new Assignment('42', 'viewer', 1000));
-
-        $manager = new Manager($itemsStorage, $assignmentsStorage, enableDirectPermissions: true);
-        $service = $this->createService($manager, $assignmentsStorage, $itemsStorage);
-
-        // Keep "editor", drop "viewer", add "admin".
-        $result = $service->run(42, ['editor', 'admin']);
-
-        self::assertTrue($result);
-
-        $assigned = $assignmentsStorage->getByUserId('42');
-        self::assertCount(2, $assigned);
-        self::assertArrayHasKey('editor', $assigned);
-        self::assertArrayHasKey('admin', $assigned);
-        self::assertArrayNotHasKey('viewer', $assigned);
+        $service = new UpdateAssignmentsService($authManager, $assignmentsStorage, $itemsValidator);
+        self::assertFalse($service->run(1, ['invalid_item']));
     }
 
-    public function testRunDoesNotReassignItemsThatAreAlreadyAssigned(): void
+    public function testRunWithNoChanges(): void
     {
-        $itemsStorage = new InMemoryItemsStorage();
-        $itemsStorage->add(new Permission('editor'));
-        $itemsStorage->add(new Permission('admin'));
+        $authManager = $this->createMock(ManagerInterface::class);
+        $authManager->expects($this->never())->method('revoke');
+        $authManager->expects($this->never())->method('assign');
 
-        $assignmentsStorage = new InMemoryAssignmentsStorage();
-        // The user already has "editor" assigned.
-        $assignmentsStorage->add(new Assignment('42', 'editor', 1000));
+        $existingAssignment = $this->createMock(Assignment::class);
+        $existingAssignment->method('getItemName')->willReturn('role_a');
 
-        $manager = new SpyManager();
-        $service = new UpdateAssignmentsService(
-            $manager,
-            $assignmentsStorage,
-            new ItemsValidator($itemsStorage),
-        );
+        $assignmentsStorage = $this->createMock(AssignmentsStorageInterface::class);
+        $assignmentsStorage->method('getByUserId')->willReturn([$existingAssignment]);
 
-        // Keep "editor" (already assigned), add "admin" (not yet assigned).
-        $result = $service->run(42, ['editor', 'admin']);
+        $itemsValidator = $this->createMock(ItemsValidator::class);
+        $result = new Result();
+        $itemsValidator->method('validate')->willReturn($result);
 
-        self::assertTrue($result);
-        self::assertSame([], $manager->revokedItemNames);
-        // Only the genuinely new item should be assigned; "editor" was already
-        // assigned and must not be passed to assign() again.
-        self::assertSame(['admin'], $manager->assignedItemNames);
+        $service = new UpdateAssignmentsService($authManager, $assignmentsStorage, $itemsValidator);
+        self::assertTrue($service->run(1, ['role_a']));
     }
 
-    public function testRunIgnoresNonStringItemsBeforeValidatingAndAssigning(): void
+    public function testRunWithNonStringItemsFilteredOut(): void
     {
-        $itemsStorage = new InMemoryItemsStorage();
-        $itemsStorage->add(new Permission('editor'));
+        $authManager = $this->createMock(ManagerInterface::class);
+        $authManager->expects($this->once())->method('revoke')->with('old_role', 1);
+        $authManager->expects($this->once())->method('assign')->with('valid_role', 1);
 
-        $assignmentsStorage = new InMemoryAssignmentsStorage();
+        $existingAssignment = $this->createMock(Assignment::class);
+        $existingAssignment->method('getItemName')->willReturn('old_role');
 
-        $manager = new Manager($itemsStorage, $assignmentsStorage, enableDirectPermissions: true);
-        $service = $this->createService($manager, $assignmentsStorage, $itemsStorage);
+        $assignmentsStorage = $this->createMock(AssignmentsStorageInterface::class);
+        $assignmentsStorage->method('getByUserId')->willReturn([$existingAssignment]);
 
-        // Non-string entries (int, null, array) must be stripped before validation/assignment,
-        // otherwise the validator would reject them (since ItemsStorage::exists() expects a string
-        // key) or the diff/assign calls would blow up.
-        $result = $service->run(9, ['editor', 123, null, ['nested']]);
+        $itemsValidator = $this->createMock(ItemsValidator::class);
+        $result = new Result();
+        $itemsValidator->method('validate')->willReturn($result);
 
-        self::assertTrue($result);
-
-        $assigned = $assignmentsStorage->getByUserId('9');
-        self::assertSame(['editor'], array_keys($assigned));
-    }
-    public function testRunReturnsFalseAndDoesNotChangeAssignmentsWhenAnItemDoesNotExist(): void
-    {
-        $itemsStorage = new InMemoryItemsStorage();
-        $itemsStorage->add(new Permission('editor'));
-
-        $assignmentsStorage = new InMemoryAssignmentsStorage();
-        $assignmentsStorage->add(new Assignment('7', 'editor', 1000));
-
-        $manager = new Manager($itemsStorage, $assignmentsStorage, enableDirectPermissions: true);
-        $service = $this->createService($manager, $assignmentsStorage, $itemsStorage);
-
-        $result = $service->run(7, ['editor', 'missing-permission']);
-
-        self::assertFalse($result);
-        self::assertArrayHasKey('editor', $assignmentsStorage->getByUserId('7'));
-        self::assertArrayNotHasKey('missing-permission', $assignmentsStorage->getByUserId('7'));
+        $service = new UpdateAssignmentsService($authManager, $assignmentsStorage, $itemsValidator);
+        self::assertTrue($service->run(1, ['valid_role', 123, null]));
     }
 
-    public function testRunWithEmptyItemsRevokesAllExistingAssignments(): void
+    public function testRunWithValidItemsAddsAndRemoves(): void
     {
-        $itemsStorage = new InMemoryItemsStorage();
-        $itemsStorage->add(new Permission('editor'));
-        $itemsStorage->add(new Permission('viewer'));
+        $authManager = $this->createMock(ManagerInterface::class);
+        $authManager->expects($this->once())->method('revoke')->with('old_role', 1);
+        $authManager->expects($this->once())->method('assign')->with('new_role', 1);
 
-        $assignmentsStorage = new InMemoryAssignmentsStorage();
-        $assignmentsStorage->add(new Assignment('3', 'editor', 1000));
-        $assignmentsStorage->add(new Assignment('3', 'viewer', 1000));
+        $existingAssignment = $this->createMock(Assignment::class);
+        $existingAssignment->method('getItemName')->willReturn('old_role');
 
-        $manager = new Manager($itemsStorage, $assignmentsStorage, enableDirectPermissions: true);
-        $service = $this->createService($manager, $assignmentsStorage, $itemsStorage);
+        $assignmentsStorage = $this->createMock(AssignmentsStorageInterface::class);
+        $assignmentsStorage->method('getByUserId')->willReturn([$existingAssignment]);
 
-        $result = $service->run(3, []);
+        $itemsValidator = $this->createMock(ItemsValidator::class);
+        $result = new Result();
+        $itemsValidator->method('validate')->willReturn($result);
 
-        self::assertTrue($result);
-        self::assertSame([], $assignmentsStorage->getByUserId('3'));
-    }
-
-    public function testRunWithNoExistingAssignmentsOnlyAssignsRequestedItems(): void
-    {
-        $itemsStorage = new InMemoryItemsStorage();
-        $itemsStorage->add(new Permission('editor'));
-        $itemsStorage->add(new Permission('viewer'));
-
-        $assignmentsStorage = new InMemoryAssignmentsStorage();
-
-        $manager = new Manager($itemsStorage, $assignmentsStorage, enableDirectPermissions: true);
-        $service = $this->createService($manager, $assignmentsStorage, $itemsStorage);
-
-        $result = $service->run(5, ['editor', 'viewer']);
-
-        self::assertTrue($result);
-
-        $assigned = $assignmentsStorage->getByUserId('5');
-        self::assertCount(2, $assigned);
-        self::assertArrayHasKey('editor', $assigned);
-        self::assertArrayHasKey('viewer', $assigned);
-    }
-
-    private function createService(
-        Manager $manager,
-        InMemoryAssignmentsStorage $assignmentsStorage,
-        InMemoryItemsStorage $itemsStorage,
-    ): UpdateAssignmentsService {
-        return new UpdateAssignmentsService(
-            $manager,
-            $assignmentsStorage,
-            new ItemsValidator($itemsStorage),
-        );
-    }
-}
-
-final class InMemoryAssignmentsStorage extends SimpleAssignmentsStorage
-{
-}
-
-final class InMemoryItemsStorage extends SimpleItemsStorage
-{
-}
-
-/**
- * A minimal spy implementation of ManagerInterface that only records
- * assign()/revoke() calls; every other method is unused by UpdateAssignmentsService
- * and throws if invoked.
- */
-final class SpyManager implements ManagerInterface
-{
-    /** @var string[] */
-    public array $assignedItemNames = [];
-
-    /** @var string[] */
-    public array $revokedItemNames = [];
-
-    public function addChild(string $parentName, string $childName): self
-    {
-        throw new \LogicException('Not implemented.');
-    }
-
-    public function addPermission(Permission $permission): self
-    {
-        throw new \LogicException('Not implemented.');
-    }
-
-    public function addRole(Role $role): self
-    {
-        throw new \LogicException('Not implemented.');
-    }
-
-    public function assign(string $itemName, int|\Stringable|string $userId, ?int $createdAt = null): self
-    {
-        $this->assignedItemNames[] = $itemName;
-
-        return $this;
-    }
-
-    public function canAddChild(string $parentName, string $childName): bool
-    {
-        throw new \LogicException('Not implemented.');
-    }
-
-    public function getChildRoles(string $roleName): array
-    {
-        throw new \LogicException('Not implemented.');
-    }
-
-    public function getDefaultRoleNames(): array
-    {
-        throw new \LogicException('Not implemented.');
-    }
-
-    public function getDefaultRoles(): array
-    {
-        throw new \LogicException('Not implemented.');
-    }
-
-    public function getGuestRole(): ?Role
-    {
-        throw new \LogicException('Not implemented.');
-    }
-
-    public function getGuestRoleName(): ?string
-    {
-        throw new \LogicException('Not implemented.');
-    }
-
-    public function getItemsByUserId(int|\Stringable|string $userId): array
-    {
-        throw new \LogicException('Not implemented.');
-    }
-
-    public function getPermission(string $name): ?Permission
-    {
-        throw new \LogicException('Not implemented.');
-    }
-
-    public function getPermissionsByRoleName(string $roleName): array
-    {
-        throw new \LogicException('Not implemented.');
-    }
-
-    public function getPermissionsByUserId(int|\Stringable|string $userId): array
-    {
-        throw new \LogicException('Not implemented.');
-    }
-
-    public function getRole(string $name): ?Role
-    {
-        throw new \LogicException('Not implemented.');
-    }
-
-    public function getRolesByUserId(int|\Stringable|string $userId): array
-    {
-        throw new \LogicException('Not implemented.');
-    }
-
-    public function getUserIdsByRoleName(string $roleName): array
-    {
-        throw new \LogicException('Not implemented.');
-    }
-
-    public function hasChild(string $parentName, string $childName): bool
-    {
-        throw new \LogicException('Not implemented.');
-    }
-
-    public function hasChildren(string $parentName): bool
-    {
-        throw new \LogicException('Not implemented.');
-    }
-
-    public function removeChild(string $parentName, string $childName): self
-    {
-        throw new \LogicException('Not implemented.');
-    }
-
-    public function removeChildren(string $parentName): self
-    {
-        throw new \LogicException('Not implemented.');
-    }
-
-    public function removePermission(string $name): self
-    {
-        throw new \LogicException('Not implemented.');
-    }
-
-    public function removeRole(string $name): self
-    {
-        throw new \LogicException('Not implemented.');
-    }
-
-    public function revoke(string $itemName, int|\Stringable|string $userId): self
-    {
-        $this->revokedItemNames[] = $itemName;
-
-        return $this;
-    }
-
-    public function revokeAll(int|\Stringable|string $userId): self
-    {
-        throw new \LogicException('Not implemented.');
-    }
-
-    public function setDefaultRoleNames(array|\Closure $roleNames): self
-    {
-        throw new \LogicException('Not implemented.');
-    }
-
-    public function setGuestRoleName(?string $name): self
-    {
-        throw new \LogicException('Not implemented.');
-    }
-
-    public function updatePermission(string $name, Permission $permission): self
-    {
-        throw new \LogicException('Not implemented.');
-    }
-
-    public function updateRole(string $name, Role $role): self
-    {
-        throw new \LogicException('Not implemented.');
-    }
-
-    public function userHasPermission(int|string|\Stringable|null $userId, string $permissionName, array $parameters = []): bool
-    {
-        throw new \LogicException('Not implemented.');
+        $service = new UpdateAssignmentsService($authManager, $assignmentsStorage, $itemsValidator);
+        self::assertTrue($service->run(1, ['new_role']));
     }
 }

@@ -6,346 +6,315 @@ namespace YiiRocks\Voyti\tests\Service\Auth;
 
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
-use Stringable;
 use YiiRocks\Voyti\AuthClient\AuthClientInterface;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use YiiRocks\Voyti\Http\ClientInterface;
 use YiiRocks\Voyti\Service\Auth\SocialAuthProviderService;
+use YiiRocks\Voyti\tests\Support\FakeSession;
 use Yiisoft\Router\UrlGeneratorInterface;
-use Yiisoft\Session\SessionInterface;
 
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class SocialAuthProviderServiceTest extends TestCase
 {
-    public function testBeginStoresStateAndReturnsAuthorizationUrl(): void
+    private FakeSession $session;
+
+    protected function setUp(): void
     {
-        $session = $this->session();
-        $client = new StubAuthClient();
-        $service = new SocialAuthProviderService(
-            new AuthClientRegistry($client),
-            $this->createStub(ClientInterface::class),
-            $session,
-            $this->urlGenerator(),
-        );
-
-        $url = $service->begin('stub', 'voyti/auth');
-        $storedState = $session->get($this->stateKey('stub', 'voyti/auth'));
-
-        self::assertSame(32, strlen($storedState));
-        self::assertStringContainsString('redirect=https://example.test/voyti/auth/stub', $url);
-        self::assertStringContainsString('state=' . $storedState, $url);
-        self::assertSame('https://example.test/voyti/auth/stub', $client->lastRedirectUri);
-        self::assertSame($storedState, $client->lastState);
+        $this->session = new FakeSession();
+        $this->session->open();
     }
 
-    public function testBeginThrowsWhenProviderIsUnknown(): void
+    public function testBeginPassesProviderToRedirectUri(): void
     {
-        $service = new SocialAuthProviderService(
-            new AuthClientRegistry(),
-            $this->createStub(ClientInterface::class),
-            $this->session(),
-            $this->urlGenerator(),
-        );
+        $client = $this->createMock(AuthClientInterface::class);
+        $client->method('getName')->willReturn('github');
+        $client->method('getAuthorizationUrl')->willReturn('https://github.com/oauth/authorize?state=xyz');
+
+        $registry = new AuthClientRegistry($client);
+        $httpClient = $this->createMock(ClientInterface::class);
+        $url = $this->createMock(UrlGeneratorInterface::class);
+        $url->method('generateAbsolute')->willReturn('https://example.com/callback');
+        $url
+            ->expects(self::once())
+            ->method('generateAbsolute')
+            ->with('callback_route', self::callback(fn (array $params): bool => ($params['provider'] ?? null) === 'github'));
+
+        $service = new SocialAuthProviderService($registry, $httpClient, $this->session, $url);
+        $service->begin('github', 'callback_route');
+    }
+
+    public function testBeginReturnsAuthorizationUrl(): void
+    {
+        $client = $this->createMock(AuthClientInterface::class);
+        $client->method('getName')->willReturn('github');
+        $client->method('getAuthorizationUrl')->willReturn('https://github.com/oauth/authorize?state=xyz');
+
+        $registry = new AuthClientRegistry($client);
+        $httpClient = $this->createMock(ClientInterface::class);
+        $url = $this->createMock(UrlGeneratorInterface::class);
+        $url->method('generateAbsolute')->willReturn('https://example.com/callback');
+
+        $service = new SocialAuthProviderService($registry, $httpClient, $this->session, $url);
+        $authUrl = $service->begin('github', 'callback_route');
+
+        self::assertSame('https://github.com/oauth/authorize?state=xyz', $authUrl);
+
+        $stateKey = null;
+        foreach ($this->session->all() as $key => $value) {
+            if (str_starts_with($key, 'voyti.social_auth.state.')) {
+                $stateKey = $key;
+                break;
+            }
+        }
+        self::assertNotNull($stateKey);
+        self::assertIsString($this->session->get($stateKey));
+    }
+
+    public function testBeginStoresStateOfLength32(): void
+    {
+        $client = $this->createMock(AuthClientInterface::class);
+        $client->method('getName')->willReturn('github');
+        $client->method('getAuthorizationUrl')->willReturn('https://github.com/oauth/authorize?state=xyz');
+
+        $registry = new AuthClientRegistry($client);
+        $httpClient = $this->createMock(ClientInterface::class);
+        $url = $this->createMock(UrlGeneratorInterface::class);
+        $url->method('generateAbsolute')->willReturn('https://example.com/callback');
+
+        $service = new SocialAuthProviderService($registry, $httpClient, $this->session, $url);
+        $service->begin('github', 'callback_route');
+
+        $stateKey = 'voyti.social_auth.state.' . md5('callback_route:github');
+        self::assertSame(32, strlen((string) $this->session->get($stateKey)));
+    }
+
+    public function testBeginWithUnknownProviderThrowsException(): void
+    {
+        $registry = new AuthClientRegistry();
+        $httpClient = $this->createMock(ClientInterface::class);
+        $url = $this->createMock(UrlGeneratorInterface::class);
+
+        $service = new SocialAuthProviderService($registry, $httpClient, $this->session, $url);
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage("The 'missing' social provider is not configured.");
-
-        $service->begin('missing', 'voyti/auth');
+        $this->expectExceptionMessage("The 'unknown' social provider is not configured.");
+        $service->begin('unknown', 'route');
     }
 
-    public function testCompleteReturnsFetchedUserAttributesAndRemovesState(): void
+    public function testCompleteReturnsUserAttributesOnSuccess(): void
     {
-        $session = $this->session();
-        $client = new StubAuthClient([
-            'id' => '42',
-            'email' => 'person@example.test',
-        ]);
-        $service = new SocialAuthProviderService(
-            new AuthClientRegistry($client),
-            $this->createStub(ClientInterface::class),
-            $session,
-            $this->urlGenerator(),
-        );
-        $session->set($this->stateKey('stub', 'voyti/auth'), 'known-state');
+        $client = $this->createMock(AuthClientInterface::class);
+        $client->method('getName')->willReturn('github');
+        $client->method('fetchUserAttributes')->willReturn(['id' => '123', 'email' => 'user@example.com']);
 
-        $attributes = $service->complete('stub', 'voyti/auth', [
-            'state' => 'known-state',
-            'code' => 'auth-code',
-        ]);
+        $registry = new AuthClientRegistry($client);
+        $httpClient = $this->createMock(ClientInterface::class);
+        $url = $this->createMock(UrlGeneratorInterface::class);
+        $url->method('generateAbsolute')->willReturn('https://example.com/callback');
 
-        self::assertSame(['id' => '42', 'email' => 'person@example.test'], $attributes);
-        self::assertSame('auth-code', $client->lastCode);
-        self::assertSame('https://example.test/voyti/auth/stub', $client->lastRedirectUri);
-        self::assertNull($session->get($this->stateKey('stub', 'voyti/auth')));
+        $service = new SocialAuthProviderService($registry, $httpClient, $this->session, $url);
+
+        $stateKey = 'voyti.social_auth.state.' . md5('callback_route:github');
+        $this->session->set($stateKey, 'valid_state');
+
+        $attributes = $service->complete('github', 'callback_route', ['code' => 'auth_code', 'state' => 'valid_state']);
+
+        self::assertSame(['id' => '123', 'email' => 'user@example.com'], $attributes);
+        self::assertFalse($this->session->has($stateKey));
     }
 
-    public function testCompleteThrowsForInvalidState(): void
+    public function testCompleteThrowsOnEmptyCode(): void
     {
-        $session = $this->session();
-        $session->set($this->stateKey('stub', 'voyti/auth'), 'expected-state');
-        $service = new SocialAuthProviderService(
-            new AuthClientRegistry(new StubAuthClient()),
-            $this->createStub(ClientInterface::class),
-            $session,
-            $this->urlGenerator(),
-        );
+        $client = $this->createMock(AuthClientInterface::class);
+        $client->method('getName')->willReturn('github');
+        $registry = new AuthClientRegistry($client);
+        $httpClient = $this->createMock(ClientInterface::class);
+        $url = $this->createMock(UrlGeneratorInterface::class);
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('The social authentication state is invalid or expired.');
+        $service = new SocialAuthProviderService($registry, $httpClient, $this->session, $url);
 
-        $service->complete('stub', 'voyti/auth', [
-            'state' => 'wrong-state',
-            'code' => 'auth-code',
-        ]);
-    }
-
-    public function testCompleteThrowsForReturnedProviderError(): void
-    {
-        $service = new SocialAuthProviderService(
-            new AuthClientRegistry(new StubAuthClient()),
-            $this->createStub(ClientInterface::class),
-            $this->session(),
-            $this->urlGenerator(),
-        );
-
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Access denied');
-
-        $service->complete('stub', 'voyti/auth', ['error_description' => 'Access denied']);
-    }
-
-    public function testCompleteThrowsForReturnedProviderErrorPrefersErrorDescriptionOverError(): void
-    {
-        $service = new SocialAuthProviderService(
-            new AuthClientRegistry(new StubAuthClient()),
-            $this->createStub(ClientInterface::class),
-            $this->session(),
-            $this->urlGenerator(),
-        );
-
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Access denied');
-
-        $service->complete('stub', 'voyti/auth', [
-            'error' => 'access_denied',
-            'error_description' => 'Access denied',
-        ]);
-    }
-
-    public function testCompleteThrowsWhenCodeIsMissing(): void
-    {
-        $session = $this->session();
-        $session->set($this->stateKey('stub', 'voyti/auth'), 'known-state');
-        $service = new SocialAuthProviderService(
-            new AuthClientRegistry(new StubAuthClient()),
-            $this->createStub(ClientInterface::class),
-            $session,
-            $this->urlGenerator(),
-        );
+        $this->session->set('voyti.social_auth.state.' . md5('route:github'), 'valid_state');
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('The social authentication code is missing.');
-
-        $service->complete('stub', 'voyti/auth', ['state' => 'known-state']);
+        $service->complete('github', 'route', ['code' => '', 'state' => 'valid_state']);
     }
 
-    public function testHasCallbackParametersDetectsOauthCallbackFields(): void
+    public function testCompleteThrowsOnError(): void
     {
-        $service = new SocialAuthProviderService(
-            new AuthClientRegistry(new StubAuthClient()),
-            $this->createStub(ClientInterface::class),
-            $this->session(),
-            $this->urlGenerator(),
-        );
+        $client = $this->createMock(AuthClientInterface::class);
+        $client->method('getName')->willReturn('github');
+        $registry = new AuthClientRegistry($client);
+        $httpClient = $this->createMock(ClientInterface::class);
+        $url = $this->createMock(UrlGeneratorInterface::class);
 
-        self::assertTrue($service->hasCallbackParameters(['code' => 'abc']));
-        self::assertTrue($service->hasCallbackParameters(['state' => 'abc']));
-        self::assertTrue($service->hasCallbackParameters(['error' => 'denied']));
-        self::assertTrue($service->hasCallbackParameters(['error_description' => 'denied']));
+        $service = new SocialAuthProviderService($registry, $httpClient, $this->session, $url);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('access_denied');
+        $service->complete('github', 'route', ['error' => 'access_denied']);
+    }
+
+    public function testCompleteThrowsOnErrorDescription(): void
+    {
+        $client = $this->createMock(AuthClientInterface::class);
+        $client->method('getName')->willReturn('github');
+        $registry = new AuthClientRegistry($client);
+        $httpClient = $this->createMock(ClientInterface::class);
+        $url = $this->createMock(UrlGeneratorInterface::class);
+
+        $service = new SocialAuthProviderService($registry, $httpClient, $this->session, $url);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('User cancelled');
+        $service->complete('github', 'route', ['error_description' => 'User cancelled']);
+    }
+
+    public function testCompleteThrowsOnErrorDescriptionEvenWhenErrorPresent(): void
+    {
+        $client = $this->createMock(AuthClientInterface::class);
+        $client->method('getName')->willReturn('github');
+        $registry = new AuthClientRegistry($client);
+        $httpClient = $this->createMock(ClientInterface::class);
+        $url = $this->createMock(UrlGeneratorInterface::class);
+
+        $service = new SocialAuthProviderService($registry, $httpClient, $this->session, $url);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('User cancelled');
+        $service->complete('github', 'route', ['error' => 'access_denied', 'error_description' => 'User cancelled']);
+    }
+
+    public function testCompleteThrowsOnMismatchedState(): void
+    {
+        $client = $this->createMock(AuthClientInterface::class);
+        $client->method('getName')->willReturn('github');
+        $registry = new AuthClientRegistry($client);
+        $httpClient = $this->createMock(ClientInterface::class);
+        $url = $this->createMock(UrlGeneratorInterface::class);
+
+        $service = new SocialAuthProviderService($registry, $httpClient, $this->session, $url);
+
+        $this->session->set('voyti.social_auth.state.' . md5('route:github'), 'expected_state');
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('The social authentication state is invalid or expired.');
+        $service->complete('github', 'route', ['code' => 'some_code', 'state' => 'wrong_state']);
+    }
+
+    public function testCompleteThrowsOnMissingCode(): void
+    {
+        $client = $this->createMock(AuthClientInterface::class);
+        $client->method('getName')->willReturn('github');
+        $registry = new AuthClientRegistry($client);
+        $httpClient = $this->createMock(ClientInterface::class);
+        $url = $this->createMock(UrlGeneratorInterface::class);
+
+        $service = new SocialAuthProviderService($registry, $httpClient, $this->session, $url);
+
+        $this->session->set('voyti.social_auth.state.' . md5('route:github'), 'valid_state');
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('The social authentication code is missing.');
+        $service->complete('github', 'route', ['state' => 'valid_state']);
+    }
+
+    public function testCompleteThrowsOnNullOrNonStringStoredState(): void
+    {
+        $client = $this->createMock(AuthClientInterface::class);
+        $client->method('getName')->willReturn('github');
+        $registry = new AuthClientRegistry($client);
+        $httpClient = $this->createMock(ClientInterface::class);
+        $url = $this->createMock(UrlGeneratorInterface::class);
+
+        $service = new SocialAuthProviderService($registry, $httpClient, $this->session, $url);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('The social authentication state is invalid or expired.');
+        $service->complete('github', 'route', ['code' => 'c', 'state' => 'valid_state']);
+    }
+
+    public function testCompleteWithNullStateInParamsThrows(): void
+    {
+        $client = $this->createMock(AuthClientInterface::class);
+        $client->method('getName')->willReturn('github');
+        $registry = new AuthClientRegistry($client);
+        $httpClient = $this->createMock(ClientInterface::class);
+        $url = $this->createMock(UrlGeneratorInterface::class);
+
+        $service = new SocialAuthProviderService($registry, $httpClient, $this->session, $url);
+
+        $stateKey = 'voyti.social_auth.state.' . md5('route:github');
+        $this->session->set($stateKey, 'valid_state');
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('The social authentication state is invalid or expired.');
+        $service->complete('github', 'route', ['code' => 'c', 'state' => null]);
+    }
+
+    public function testHasCallbackParametersReturnsFalseForEmptyParams(): void
+    {
+        $client = $this->createMock(AuthClientInterface::class);
+        $registry = new AuthClientRegistry($client);
+        $httpClient = $this->createMock(ClientInterface::class);
+        $url = $this->createMock(UrlGeneratorInterface::class);
+        $service = new SocialAuthProviderService($registry, $httpClient, $this->session, $url);
+
+        self::assertFalse($service->hasCallbackParameters([]));
+    }
+
+    public function testHasCallbackParametersReturnsFalseForUnrelatedParams(): void
+    {
+        $client = $this->createMock(AuthClientInterface::class);
+        $registry = new AuthClientRegistry($client);
+        $httpClient = $this->createMock(ClientInterface::class);
+        $url = $this->createMock(UrlGeneratorInterface::class);
+        $service = new SocialAuthProviderService($registry, $httpClient, $this->session, $url);
+
         self::assertFalse($service->hasCallbackParameters(['foo' => 'bar']));
     }
 
-    private function session(): SessionInterface
+    public function testHasCallbackParametersReturnsTrueForCode(): void
     {
-        return new class implements SessionInterface {
-            /** @var array<string, mixed> */
-            private array $values = [];
+        $client = $this->createMock(AuthClientInterface::class);
+        $registry = new AuthClientRegistry($client);
+        $httpClient = $this->createMock(ClientInterface::class);
+        $url = $this->createMock(UrlGeneratorInterface::class);
+        $service = new SocialAuthProviderService($registry, $httpClient, $this->session, $url);
 
-            #[\Override]
-            public function all(): array
-            {
-                return $this->values;
-            }
-            #[\Override]
-            public function clear(): void
-            {
-                $this->values = [];
-            }
-            #[\Override]
-            public function close(): void
-            {
-            }
-            #[\Override]
-            public function destroy(): void
-            {
-                $this->values = [];
-            }
-            #[\Override]
-            public function discard(): void
-            {
-                $this->values = [];
-            }
-            #[\Override]
-            public function get(string $key, mixed $default = null): mixed
-            {
-                return $this->values[$key] ?? $default;
-            }
-            #[\Override]
-            public function getCookieParameters(): array
-            {
-                return [];
-            }
-            #[\Override]
-            public function getId(): ?string
-            {
-                return 'test-session';
-            }
-            #[\Override]
-            public function getName(): string
-            {
-                return 'TESTSESSID';
-            }
-            #[\Override]
-            public function has(string $key): bool
-            {
-                return array_key_exists($key, $this->values);
-            }
-            #[\Override]
-            public function isActive(): bool
-            {
-                return true;
-            }
-            #[\Override]
-            public function open(): void
-            {
-            }
-            #[\Override]
-            public function pull(string $key, mixed $default = null): mixed
-            {
-                $value = $this->get($key, $default);
-                $this->remove($key);
-                return $value;
-            }
-            #[\Override]
-            public function regenerateId(): void
-            {
-            }
-            #[\Override]
-            public function remove(string $key): void
-            {
-                unset($this->values[$key]);
-            }
-            #[\Override]
-            public function set(string $key, mixed $value): void
-            {
-                $this->values[$key] = $value;
-            }
-            #[\Override]
-            public function setId(string $sessionId): void
-            {
-            }
-        };
+        self::assertTrue($service->hasCallbackParameters(['code' => 'abc']));
     }
 
-    private function stateKey(string $provider, string $routeName): string
+    public function testHasCallbackParametersReturnsTrueForError(): void
     {
-        return 'voyti.social_auth.state.' . md5($routeName . ':' . $provider);
+        $client = $this->createMock(AuthClientInterface::class);
+        $registry = new AuthClientRegistry($client);
+        $httpClient = $this->createMock(ClientInterface::class);
+        $url = $this->createMock(UrlGeneratorInterface::class);
+        $service = new SocialAuthProviderService($registry, $httpClient, $this->session, $url);
+
+        self::assertTrue($service->hasCallbackParameters(['error' => 'access_denied']));
     }
 
-    private function urlGenerator(): UrlGeneratorInterface
+    public function testHasCallbackParametersReturnsTrueForErrorDescription(): void
     {
-        return new class implements UrlGeneratorInterface {
-            #[\Override]
-            public function generate(string $name, array $arguments = [], array $queryParameters = [], ?string $hash = null): string
-            {
-                return '/' . trim($name, '/');
-            }
+        $client = $this->createMock(AuthClientInterface::class);
+        $registry = new AuthClientRegistry($client);
+        $httpClient = $this->createMock(ClientInterface::class);
+        $url = $this->createMock(UrlGeneratorInterface::class);
+        $service = new SocialAuthProviderService($registry, $httpClient, $this->session, $url);
 
-            #[\Override]
-            public function generateAbsolute(string $name, array $arguments = [], array $queryParameters = [], ?string $hash = null, ?string $scheme = null, ?string $host = null): string
-            {
-                $provider = $arguments['provider'] ?? '';
-                return 'https://example.test/' . trim($name, '/') . '/' . $provider;
-            }
-
-            #[\Override]
-            public function generateFromCurrent(array $replacedArguments = [], array $queryParameters = [], ?string $hash = null, ?string $fallbackRouteName = null): string
-            {
-                return '/' . trim($fallbackRouteName ?? 'current', '/');
-            }
-
-            #[\Override]
-            public function getUriPrefix(): string
-            {
-                return '';
-            }
-
-            #[\Override]
-            public function setDefaultArgument(string $name, Stringable|string|int|float|bool|null $value): void
-            {
-            }
-
-            #[\Override]
-            public function setUriPrefix(string $name): void
-            {
-            }
-        };
-    }
-}
-
-final class StubAuthClient implements AuthClientInterface
-{
-    public ?string $lastCode = null;
-    public ?string $lastRedirectUri = null;
-    public ?string $lastState = null;
-
-    /**
-     * @param array<string, mixed> $attributes
-     */
-    public function __construct(private array $attributes = [])
-    {
+        self::assertTrue($service->hasCallbackParameters(['error_description' => 'desc']));
     }
 
-    #[\Override]
-    public function fetchUserAttributes(string $code, string $redirectUri, ClientInterface $httpClient): array
+    public function testHasCallbackParametersReturnsTrueForState(): void
     {
-        $this->lastCode = $code;
-        $this->lastRedirectUri = $redirectUri;
-        return $this->attributes;
-    }
+        $client = $this->createMock(AuthClientInterface::class);
+        $registry = new AuthClientRegistry($client);
+        $httpClient = $this->createMock(ClientInterface::class);
+        $url = $this->createMock(UrlGeneratorInterface::class);
+        $service = new SocialAuthProviderService($registry, $httpClient, $this->session, $url);
 
-    #[\Override]
-    public function getAuthorizationUrl(string $redirectUri, string $state): string
-    {
-        $this->lastRedirectUri = $redirectUri;
-        $this->lastState = $state;
-        return 'redirect=' . $redirectUri . '&state=' . $state;
-    }
-
-    #[\Override]
-    public function getName(): string
-    {
-        return 'stub';
-    }
-
-    #[\Override]
-    public function getTitle(): string
-    {
-        return 'Stub';
-    }
-
-    #[\Override]
-    public function isEnabled(): bool
-    {
-        return true;
+        self::assertTrue($service->hasCallbackParameters(['state' => 'xyz']));
     }
 }

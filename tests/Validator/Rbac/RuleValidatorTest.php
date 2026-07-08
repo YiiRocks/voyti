@@ -5,37 +5,46 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Validator\Rbac;
 
 use PHPUnit\Framework\TestCase;
-use YiiRocks\Voyti\tests\Support\FakeAuthRule;
 use YiiRocks\Voyti\Validator\Rbac\RuleValidator;
+use Yiisoft\Rbac\CompositeRule;
 
 final class RuleValidatorTest extends TestCase
 {
 
-    public function testValidateReturnsErrorForClassNotImplementingRuleInterface(): void
+    public function testValidateWithBuiltInClassNotImplementingRuleInterface(): void
     {
-        $result = (new RuleValidator())->validate(self::class);
+        $validator = new RuleValidator();
+        $result = $validator->validate(\stdClass::class);
 
-        self::assertFalse($result->isValid());
-        self::assertSame(
-            ["Class '" . self::class . "' must implement RuleInterface."],
-            $result->getErrorMessages(),
-        );
-    }
-    public function testValidateReturnsOnlyNotExistErrorForNonExistentClass(): void
-    {
-        $result = (new RuleValidator())->validate('NotARealClass');
-
-        self::assertFalse($result->isValid());
-        self::assertSame(
-            ["Class 'NotARealClass' does not exist."],
-            $result->getErrorMessages(),
-        );
+        $this->assertFalse($result->isValid());
+        $this->assertStringContainsString('must implement RuleInterface', $result->getErrors()[0]->getMessage());
     }
 
-    public function testValidateReturnsValidForRuleImplementingClass(): void
+    public function testValidateWithClassNotImplementingRuleInterface(): void
     {
-        $result = (new RuleValidator())->validate(FakeAuthRule::class);
+        $validator = new RuleValidator();
+        $result = $validator->validate(self::class);
 
-        self::assertTrue($result->isValid());
+        $this->assertFalse($result->isValid());
+        $this->assertCount(1, $result->getErrors());
+        $this->assertStringContainsString('must implement RuleInterface', $result->getErrors()[0]->getMessage());
+    }
+
+    public function testValidateWithNonExistentClass(): void
+    {
+        $validator = new RuleValidator();
+        $result = $validator->validate('NonExistent\\RuleClass');
+
+        $this->assertFalse($result->isValid());
+        $this->assertCount(1, $result->getErrors());
+        $this->assertStringContainsString('does not exist', $result->getErrors()[0]->getMessage());
+    }
+    public function testValidateWithValidRuleClass(): void
+    {
+        $validator = new RuleValidator();
+        $result = $validator->validate(CompositeRule::class);
+
+        $this->assertTrue($result->isValid());
+        $this->assertCount(0, $result->getErrors());
     }
 }

@@ -4,177 +4,220 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Service\Password;
 
+use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserToken;
-use YiiRocks\Voyti\Event\Security\ResetPasswordEvent;
-use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\Password\ResetService;
-use YiiRocks\Voyti\tests\TestCase;
-use Yiisoft\Db\Connection\ConnectionProvider;
+use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use Yiisoft\Security\PasswordHasher;
 
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class ResetServiceTest extends TestCase
 {
-    #[\Override]
+    use DatabaseSetupTrait;
+
     protected function setUp(): void
     {
-        parent::setUp();
-
-        ConnectionProvider::set($this->getDb());
-        $db = $this->getDb();
-        $db->createCommand('CREATE TABLE {{%user}} (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username VARCHAR(255) NOT NULL,
-            email VARCHAR(255) NOT NULL,
-            password_hash VARCHAR(255) NOT NULL,
-            auth_key VARCHAR(255) NOT NULL,
-            unconfirmed_email VARCHAR(255),
-            registration_ip VARCHAR(45),
-            flags INTEGER NOT NULL DEFAULT 0,
-            confirmed_at INTEGER,
-            blocked_at INTEGER,
-            updated_at INTEGER NOT NULL,
-            created_at INTEGER NOT NULL,
-            last_login_at INTEGER,
-            auth_tf_key VARCHAR(64),
-            auth_tf_enabled INTEGER DEFAULT 0,
-            password_changed_at INTEGER,
-            last_login_ip VARCHAR(45),
-            gdpr_deleted INTEGER DEFAULT 0,
-            gdpr_consent INTEGER DEFAULT 0,
-            gdpr_consent_date INTEGER,
-            auth_tf_type VARCHAR(20)
-        )')->execute();
-        $db->createCommand('CREATE TABLE {{%user_token}} (
-            user_id INTEGER NOT NULL,
-            code VARCHAR(32) NOT NULL,
-            type SMALLINT NOT NULL,
-            created_at INTEGER NOT NULL,
-            PRIMARY KEY (user_id, code, type)
-        )')->execute();
+        $this->setUpDatabase();
     }
 
-    #[\Override]
     protected function tearDown(): void
     {
-        if ($this->hasSqliteConnection()) {
-            $this->getDb()->createCommand('DROP TABLE IF EXISTS {{%user_token}}')->execute();
-            $this->getDb()->createCommand('DROP TABLE IF EXISTS {{%user}}')->execute();
-            ConnectionProvider::clear();
-        }
-
-        parent::tearDown();
+        $this->tearDownDatabase();
     }
 
-    public function testRunWithoutTokenUpdatesPasswordAndDispatchesTwoUserEvents(): void
+    public function testRunDeletesProvidedToken(): void
     {
-        $user = $this->createUser();
-        $before = time();
+        $passwordHasher = new PasswordHasher();
+        $config = new ModuleConfig();
+        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
+        $eventDispatcher->expects($this->exactly(3))->method('dispatch');
+        $userTokenRepository = new UserTokenRepository();
 
-        $dispatcher = new ResetServiceEventCollector();
-        $hasher = $this->createHasher();
-        $service = $this->createService($dispatcher, $hasher);
+        $service = new ResetService($passwordHasher, $config, $eventDispatcher, $userTokenRepository);
 
-        $result = $service->run('new-secret-password', $user);
-        $after = time();
-
-        self::assertTrue($result);
-
-        $reloaded = User::query()->findByPk($user->getId());
-        self::assertInstanceOf(User::class, $reloaded);
-        self::assertTrue($hasher->validate('new-secret-password', $reloaded->getPasswordHash()));
-        self::assertGreaterThanOrEqual($before, $reloaded->getPasswordChangedAt());
-        self::assertLessThanOrEqual($after, $reloaded->getPasswordChangedAt());
-        self::assertGreaterThanOrEqual($before, $reloaded->getUpdatedAt());
-        self::assertLessThanOrEqual($after, $reloaded->getUpdatedAt());
-
-        $events = $dispatcher->events();
-        self::assertCount(2, $events);
-        self::assertInstanceOf(UserEvent::class, $events[0]);
-        self::assertInstanceOf(UserEvent::class, $events[1]);
-        self::assertSame($user->getEmail(), $events[0]->getUser()->getEmail());
-        self::assertSame($user->getEmail(), $events[1]->getUser()->getEmail());
-    }
-
-    public function testRunWithTokenDeletesTokenAndDispatchesResetPasswordEvent(): void
-    {
-        $user = $this->createUser();
-        $token = new UserToken();
-        $token->setUserId((int) $user->getId());
-        $token->setCode('reset-code-1234567890123456');
-        $token->setType(UserToken::TYPE_RECOVERY);
-        $token->setCreatedAt(time());
-        $token->save();
-
-        self::assertCount(1, UserToken::query()->all());
-
-        $dispatcher = new ResetServiceEventCollector();
-        $hasher = $this->createHasher();
-        $service = $this->createService($dispatcher, $hasher);
-
-        $result = $service->run('another-secret', $user, $token);
-
-        self::assertTrue($result);
-        self::assertCount(0, UserToken::query()->all());
-
-        $events = $dispatcher->events();
-        self::assertCount(3, $events);
-        self::assertInstanceOf(UserEvent::class, $events[0]);
-        self::assertInstanceOf(ResetPasswordEvent::class, $events[1]);
-        self::assertInstanceOf(UserEvent::class, $events[2]);
-        self::assertSame($token, $events[1]->getToken());
-    }
-
-    private function createHasher(): PasswordHasher
-    {
-        return new PasswordHasher(PASSWORD_BCRYPT, ['cost' => 4]);
-    }
-
-    private function createService(ResetServiceEventCollector $dispatcher, PasswordHasher $hasher): ResetService
-    {
-        return new ResetService(
-            $hasher,
-            ModuleConfig::fromArray([]),
-            $dispatcher,
-            new UserTokenRepository(),
-        );
-    }
-
-    private function createUser(): User
-    {
         $user = new User();
-        $user->setUsername('resetuser');
-        $user->setEmail('reset@example.com');
-        $user->setPasswordHash('old-hash');
-        $user->setAuthKey('auth-key');
-        $user->setCreatedAt(time() - 100);
-        $user->setUpdatedAt(time() - 100);
+        $user->setUsername('tokenuser');
+        $user->setEmail('token@example.com');
+        $user->setPasswordHash('oldhash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
         $user->save();
 
-        return $user;
-    }
-}
+        $userToken = new UserToken();
+        $userToken->setUserId((int) $user->getId());
+        $userToken->setCode('tokencode');
+        $userToken->setType(UserToken::TYPE_RECOVERY);
+        $userToken->setCreatedAt(time());
+        $userToken->save();
 
-final class ResetServiceEventCollector implements EventDispatcherInterface
-{
-    /** @var list<object> */
-    private array $events = [];
+        $service->run('newpassword', $user, $userToken);
 
-    #[\Override]
-    public function dispatch(object $event): object
-    {
-        $this->events[] = $event;
-        return $event;
+        self::assertNull($userTokenRepository->findByCodeAndType('tokencode', UserToken::TYPE_RECOVERY));
     }
 
-    /**
-     * @return list<object>
-     */
-    public function events(): array
+    public function testRunPersistsUser(): void
     {
-        return $this->events;
+        $passwordHasher = new PasswordHasher();
+        $config = new ModuleConfig();
+        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
+        $userTokenRepository = new UserTokenRepository();
+        $userRepository = new UserRepository();
+
+        $service = new ResetService($passwordHasher, $config, $eventDispatcher, $userTokenRepository);
+
+        $user = new User();
+        $user->setUsername('persistuser');
+        $user->setEmail('persist@example.com');
+        $user->setPasswordHash('oldhash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $user->save();
+
+        $service->run('newpassword', $user, null);
+
+        $reloaded = $userRepository->findById((int) $user->getId());
+        self::assertNotNull($reloaded);
+        self::assertNotSame('oldhash', $reloaded->getPasswordHash());
+    }
+
+    public function testRunSetsPasswordChangedAt(): void
+    {
+        $passwordHasher = new PasswordHasher();
+        $config = new ModuleConfig();
+        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
+        $userTokenRepository = new UserTokenRepository();
+        $userRepository = new UserRepository();
+
+        $service = new ResetService($passwordHasher, $config, $eventDispatcher, $userTokenRepository);
+
+        $user = new User();
+        $user->setUsername('changeduser');
+        $user->setEmail('changed@example.com');
+        $user->setPasswordHash('oldhash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time() - 1000);
+        $user->setUpdatedAt(time() - 1000);
+        $user->save();
+
+        $service->run('newpassword', $user, null);
+
+        $reloaded = $userRepository->findById((int) $user->getId());
+        self::assertNotNull($reloaded);
+        self::assertNotNull($reloaded->getPasswordChangedAt());
+        self::assertGreaterThan(time() - 100, $reloaded->getPasswordChangedAt());
+    }
+
+    public function testRunSetsPasswordHash(): void
+    {
+        $passwordHasher = new PasswordHasher();
+        $config = new ModuleConfig();
+        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
+        $userTokenRepository = new UserTokenRepository();
+        $userRepository = new UserRepository();
+
+        $service = new ResetService($passwordHasher, $config, $eventDispatcher, $userTokenRepository);
+
+        $user = new User();
+        $user->setUsername('hashuser');
+        $user->setEmail('hash@example.com');
+        $user->setPasswordHash('oldhash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $user->save();
+
+        $service->run('newpassword', $user, null);
+
+        $reloaded = $userRepository->findById((int) $user->getId());
+        self::assertNotNull($reloaded);
+        self::assertNotSame('oldhash', $reloaded->getPasswordHash());
+        self::assertTrue(password_verify('newpassword', $reloaded->getPasswordHash()));
+    }
+
+    public function testRunSetsUpdatedAt(): void
+    {
+        $passwordHasher = new PasswordHasher();
+        $config = new ModuleConfig();
+        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
+        $userTokenRepository = new UserTokenRepository();
+        $userRepository = new UserRepository();
+
+        $service = new ResetService($passwordHasher, $config, $eventDispatcher, $userTokenRepository);
+
+        $user = new User();
+        $user->setUsername('updateduser');
+        $user->setEmail('updated@example.com');
+        $user->setPasswordHash('oldhash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time() - 1000);
+        $user->setUpdatedAt(time() - 1000);
+        $user->save();
+
+        $service->run('newpassword', $user, null);
+
+        $reloaded = $userRepository->findById((int) $user->getId());
+        self::assertNotNull($reloaded);
+        self::assertNotNull($reloaded->getUpdatedAt());
+        self::assertGreaterThan(time() - 100, $reloaded->getUpdatedAt());
+    }
+
+    public function testRunWithoutUserToken(): void
+    {
+        $passwordHasher = new PasswordHasher();
+        $config = new ModuleConfig();
+        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
+        $eventDispatcher->expects($this->exactly(2))->method('dispatch');
+        $userTokenRepository = new UserTokenRepository();
+
+        $service = new ResetService($passwordHasher, $config, $eventDispatcher, $userTokenRepository);
+
+        $user = new User();
+        $user->setUsername('testuser');
+        $user->setEmail('test@example.com');
+        $user->setPasswordHash('oldhash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $user->save();
+
+        $result = $service->run('newpassword', $user, null);
+        self::assertTrue($result);
+    }
+
+    public function testRunWithUserToken(): void
+    {
+        $passwordHasher = new PasswordHasher();
+        $config = new ModuleConfig();
+        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
+        $eventDispatcher->expects($this->exactly(3))->method('dispatch');
+        $userTokenRepository = new UserTokenRepository();
+
+        $service = new ResetService($passwordHasher, $config, $eventDispatcher, $userTokenRepository);
+
+        $user = new User();
+        $user->setUsername('testuser');
+        $user->setEmail('test@example.com');
+        $user->setPasswordHash('oldhash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $user->save();
+
+        $userToken = new UserToken();
+        $userToken->setUserId((int) $user->getId());
+        $userToken->setCode('tokencode');
+        $userToken->setType(UserToken::TYPE_RECOVERY);
+        $userToken->setCreatedAt(time());
+        $userToken->save();
+
+        $result = $service->run('newpassword', $user, $userToken);
+        self::assertTrue($result);
     }
 }

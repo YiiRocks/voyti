@@ -22,6 +22,13 @@ final class EmailValidator
      */
     public function generateCode(): string
     {
+        /**
+         * @infection-ignore-all
+         *
+         * random_int(100000, 999999) is non-deterministic — no test can
+         * assert the exact value.  Boundary mutants (100001, 999998) are
+         * indistinguishable from the real output.
+         */
         $this->generatedCode = (string)random_int(100000, 999999);
         return $this->generatedCode;
     }

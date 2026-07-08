@@ -4,316 +4,426 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Controller;
 
+use Nyholm\Psr7\ServerRequest;
+use PHPUnit\Framework\MockObject\MockObject;
+use Psr\Http\Message\ResponseFactoryInterface;
+use Psr\Http\Message\ResponseInterface;
+use YiiRocks\Voyti\Controller\RegistrationController;
 use YiiRocks\Voyti\Entity\User;
-use YiiRocks\Voyti\Event\User\FormEvent;
-use YiiRocks\Voyti\Form\Auth\RegistrationForm;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Repository\UserRepository;
+use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
+use YiiRocks\Voyti\Service\ServiceResult;
+use YiiRocks\Voyti\Service\User\AccountConfirmationService;
+use YiiRocks\Voyti\Service\User\ConfirmationService;
+use YiiRocks\Voyti\Service\User\RegisterService;
+use YiiRocks\Voyti\Service\User\ResendConfirmationService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\TestCase;
-use Yiisoft\Db\Connection\ConnectionInterface;
-use Yiisoft\Db\Connection\ConnectionProvider;
-use Yiisoft\Http\Method;
-use Yiisoft\Security\Random;
+use Yiisoft\Hydrator\HydratorInterface;
+use Yiisoft\Session\Flash\FlashInterface;
+use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\Result;
-use Yiisoft\Validator\ValidationContext;
 use Yiisoft\Validator\ValidatorInterface;
+use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class RegistrationControllerTest extends TestCase
 {
-    private ?ConnectionInterface $db = null;
+    private AccountConfirmationService&MockObject $accountConfirmationService;
+    private ModuleConfig $config;
+    private ConfirmationService&MockObject $confirmationService;
+    private FlashInterface&MockObject $flash;
     private ControllerHarness $harness;
+    private HydratorInterface&MockObject $hydrator;
+    private PendingSocialAccountService&MockObject $pendingSocialAccountService;
+    private RegisterService&MockObject $registerService;
+    private ResendConfirmationService&MockObject $resendConfirmationService;
+    private ResponseFactoryInterface&MockObject $responseFactory;
+    private TranslatorInterface $translator;
+    private UserRepository&MockObject $userRepository;
+    private UserTokenRepository&MockObject $userTokenRepository;
+    private ValidatorInterface&MockObject $validator;
+    private WebViewRenderer&MockObject $viewRenderer;
 
     protected function setUp(): void
     {
-        parent::setUp();
-
-        $this->db = $this->getDb();
-        ConnectionProvider::set($this->db);
-        $this->createSchema($this->db);
-
-        $_SERVER['REMOTE_ADDR'] = '198.51.100.42';
-        $this->harness = new ControllerHarness(dirname(__DIR__, 2));
+        $this->config = new ModuleConfig();
+        $this->harness = new ControllerHarness($this->config);
+        $this->userRepository = $this->createMock(UserRepository::class);
+        $this->userTokenRepository = $this->createMock(UserTokenRepository::class);
+        $this->translator = $this->createTranslator();
+        $this->viewRenderer = $this->createMock(WebViewRenderer::class);
+        $this->validator = $this->createMock(ValidatorInterface::class);
+        $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
+        $this->hydrator = $this->createMock(HydratorInterface::class);
+        $this->flash = $this->createMock(FlashInterface::class);
+        $this->registerService = $this->createMock(RegisterService::class);
+        $this->confirmationService = $this->createMock(ConfirmationService::class);
+        $this->accountConfirmationService = $this->createMock(AccountConfirmationService::class);
+        $this->resendConfirmationService = $this->createMock(ResendConfirmationService::class);
+        $this->pendingSocialAccountService = $this->createMock(PendingSocialAccountService::class);
     }
 
-    protected function tearDown(): void
+    public function testConfirmAlreadyConfirmedUser(): void
     {
-        if ($this->db !== null) {
-            $this->dropSchema($this->db);
-            ConnectionProvider::clear();
-        }
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
 
-        parent::tearDown();
+        $user = $this->createMock(User::class);
+        $user->method('isConfirmed')->willReturn(true);
+
+        $this->userRepository->method('findById')->willReturn($user);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->willReturnSelf();
+
+        $result = $controller->confirm($request, 1, 'code123');
+
+        $this->assertSame($response, $result);
     }
 
-    public function testConfirmReturnsInvalidLinkErrorWhenEmailConfirmationDisabledEvenForExistingUser(): void
+    public function testConfirmSuccessful(): void
     {
-        $this->harness = new ControllerHarness(
-            dirname(__DIR__, 2),
-            new ModuleConfig(
-                enableRegistration: true,
-                enableEmailConfirmation: false,
-            ),
-        );
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
 
-        $user = new User();
-        $user->setUsername('quinn');
-        $user->setEmail('quinn@example.test');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey(Random::string());
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
+        $user = $this->createMock(User::class);
+        $user->method('isConfirmed')->willReturn(false);
+        $user->method('getId')->willReturn('1');
 
-        $response = $this->harness->registrationController->confirm(
-            $this->harness->request(Method::GET),
-            (int) $user->getId(),
-            'irrelevant-code',
-        );
+        $this->userRepository->method('findById')->willReturn($user);
+        $this->accountConfirmationService->expects($this->once())
+            ->method('run')
+            ->willReturn(true);
 
-        $this->assertSame(200, $response->getStatusCode());
-        $this->assertStringContainsString('Invalid confirmation link', $this->harness->responseBody($response));
-        $this->assertStringNotContainsString(
-            'The confirmation link is invalid or expired.',
-            $this->harness->responseBody($response),
-        );
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->willReturnSelf();
+
+        $result = $controller->confirm($request, 1, 'code123');
+
+        $this->assertSame($response, $result);
     }
 
-    public function testRegisterFormRerendersWithValidationErrorsWhenSubmissionIsInvalid(): void
+    public function testConfirmWithInvalidCodeShowsError(): void
     {
-        $controller = $this->buildControllerWithValidator(
-            new RejectingValidatorStub('This value is not acceptable.'),
-        );
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
 
-        $response = $controller->register(
-            $this->harness->request(
-                Method::POST,
-                $this->harness->formPayload(
-                    new RegistrationForm($this->harness->moduleConfig, $this->harness->translator),
-                    [
-                        'username' => 'quincy',
-                        'email' => 'quincy@example.test',
-                        'password' => 'secret123',
-                        'gdprConsent' => true,
-                    ],
-                ),
-            ),
-        );
+        $user = $this->createMock(User::class);
+        $user->method('isConfirmed')->willReturn(false);
 
-        $html = $this->harness->responseBody($response);
-        $this->assertSame(200, $response->getStatusCode());
-        $this->assertStringContainsString('This value is not acceptable.', $html);
+        $this->userRepository->method('findById')->willReturn($user);
+        $this->accountConfirmationService->expects($this->once())
+            ->method('run')
+            ->willReturn(false);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturn($response);
+
+        $result = $controller->confirm($request, 1, 'code123');
+
+        $this->assertSame($response, $result);
     }
 
-    public function testRegisterPassesGdprConsentToRegisterService(): void
+    public function testConfirmWithInvalidUserOrDisabledConfig(): void
     {
-        $response = $this->harness->registrationController->register(
-            $this->harness->request(
-                Method::POST,
-                $this->harness->formPayload(
-                    new RegistrationForm($this->harness->moduleConfig, $this->harness->translator),
-                    [
-                        'username' => 'rachel',
-                        'email' => 'rachel@example.test',
-                        'password' => 'secret123',
-                        'gdprConsent' => true,
-                    ],
-                ),
-            ),
-        );
+        $config = new ModuleConfig(enableEmailConfirmation: false);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
 
-        $this->assertSame(302, $response->getStatusCode());
-        $this->assertSame('/voyti/login', $response->getHeaderLine('Location'));
+        $this->userRepository->method('findById')->willReturn(null);
 
-        $user = $this->harness->users->findByEmail('rachel@example.test');
-        $this->assertTrue($user->isGdprConsent());
-        $this->assertNotNull($user->getGdprConsentDate());
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturn($response);
+
+        $result = $controller->confirm($request, 1, 'code123');
+
+        $this->assertSame($response, $result);
     }
 
-    public function testRegisterPassesSubmittedUsernameToRegisterService(): void
+    public function testConnectWithInvalidCodeShowsError(): void
     {
-        $response = $this->harness->registrationController->register(
-            $this->harness->request(
-                Method::POST,
-                $this->harness->formPayload(
-                    new RegistrationForm($this->harness->moduleConfig, $this->harness->translator),
-                    [
-                        'username' => 'quentin',
-                        'email' => 'quentin@example.test',
-                        'password' => 'secret123',
-                        'gdprConsent' => true,
-                    ],
-                ),
-            ),
-        );
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
 
-        $this->assertSame(302, $response->getStatusCode());
-        $this->assertSame('/voyti/login', $response->getHeaderLine('Location'));
+        $this->pendingSocialAccountService->expects($this->once())
+            ->method('useCode')
+            ->willReturn(null);
 
-        $user = $this->harness->users->findByEmail('quentin@example.test');
-        $this->assertSame('quentin', $user->getUsername());
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturn($response);
+
+        $result = $controller->connect($request, 'code123');
+
+        $this->assertSame($response, $result);
     }
 
-    public function testSuccessfulRegistrationDispatchesFormEvent(): void
+    public function testConnectWithValidCodeShowsForm(): void
     {
-        $response = $this->harness->registrationController->register(
-            $this->harness->request(
-                Method::POST,
-                $this->harness->formPayload(
-                    new RegistrationForm($this->harness->moduleConfig, $this->harness->translator),
-                    [
-                        'username' => 'sofia',
-                        'email' => 'sofia@example.test',
-                        'password' => 'secret123',
-                        'gdprConsent' => true,
-                    ],
-                ),
-            ),
-        );
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
 
-        $this->assertSame(302, $response->getStatusCode());
-        $this->assertSame('/voyti/login', $response->getHeaderLine('Location'));
-        $this->assertSame(
-            'Account created. Check your email for the confirmation link.',
-            $this->harness->flash->get('success'),
-        );
+        $account = $this->createMock(\YiiRocks\Voyti\Entity\UserSocialAccount::class);
+        $this->pendingSocialAccountService->expects($this->once())
+            ->method('useCode')
+            ->willReturn($account);
 
-        $formEvents = array_filter(
-            $this->harness->eventDispatcher->events(),
-            static fn (object $event): bool => $event instanceof FormEvent,
-        );
-        $this->assertNotEmpty($formEvents);
-        $dispatchedForm = reset($formEvents);
-        $this->assertInstanceOf(FormEvent::class, $dispatchedForm);
-        $this->assertInstanceOf(RegistrationForm::class, $dispatchedForm->getForm());
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('registration/connect', $this->anything())
+            ->willReturn($response);
+
+        $result = $controller->connect($request, 'code123');
+
+        $this->assertSame($response, $result);
     }
 
-    /**
-     * Builds a RegistrationController wired to the given validator, instead of the harness's
-     * always-valid stub, so a chosen validation outcome can be exercised.
-     */
-    private function buildControllerWithValidator(
-        ValidatorInterface $validator,
-    ): \YiiRocks\Voyti\Controller\RegistrationController {
-        $pendingSocialAccountService = new PendingSocialAccountService(
-            $this->harness->socialAccounts,
-            $this->harness->session,
-        );
-
-        return new \YiiRocks\Voyti\Controller\RegistrationController(
-            $this->harness->translator,
-            $this->harness->webViewRenderer,
-            $this->harness->userRegisterService,
-            $this->harness->users,
-            $this->harness->userTokens,
-            $this->harness->userConfirmationService,
-            $this->harness->accountConfirmationService,
-            $this->harness->resendConfirmationService,
-            $validator,
-            $this->harness->eventDispatcher,
-            $this->harness->url,
-            $this->harness->moduleConfig,
-            $pendingSocialAccountService,
-            $this->harness->hydrator,
-            new \Nyholm\Psr7\Factory\Psr17Factory(),
-            $this->harness->flash,
-        );
-    }
-
-    private function createSchema(ConnectionInterface $db): void
+    public function testRegisterGetShowsForm(): void
     {
-        $db->createCommand('CREATE TABLE IF NOT EXISTS {{%user}} (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username VARCHAR(255) NOT NULL,
-            email VARCHAR(255) NOT NULL,
-            password_hash VARCHAR(255) NOT NULL,
-            auth_key VARCHAR(32) NOT NULL,
-            auth_tf_enabled INTEGER NOT NULL DEFAULT 0,
-            auth_tf_key VARCHAR(64),
-            auth_tf_type VARCHAR(20),
-            blocked_at INTEGER,
-            confirmed_at INTEGER,
-            created_at INTEGER NOT NULL,
-            flags INTEGER NOT NULL DEFAULT 0,
-            gdpr_consent INTEGER NOT NULL DEFAULT 0,
-            gdpr_consent_date INTEGER,
-            gdpr_deleted INTEGER NOT NULL DEFAULT 0,
-            last_login_at INTEGER,
-            last_login_ip VARCHAR(45),
-            password_changed_at INTEGER,
-            registration_ip VARCHAR(45),
-            unconfirmed_email VARCHAR(255),
-            updated_at INTEGER NOT NULL
-        )')->execute();
-        $db->createCommand('CREATE TABLE IF NOT EXISTS {{%user_profile}} (
-            user_id INTEGER NOT NULL PRIMARY KEY,
-            bio TEXT,
-            gravatar_email VARCHAR(255),
-            location VARCHAR(255),
-            name VARCHAR(255),
-            public_email VARCHAR(255),
-            timezone VARCHAR(40),
-            website VARCHAR(255)
-        )')->execute();
-        $db->createCommand('CREATE TABLE IF NOT EXISTS {{%user_social_account}} (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            provider VARCHAR(255) NOT NULL,
-            client_id VARCHAR(255) NOT NULL,
-            code VARCHAR(32),
-            email VARCHAR(255),
-            username VARCHAR(255),
-            data TEXT,
-            created_at INTEGER NOT NULL
-        )')->execute();
-        $db->createCommand('CREATE TABLE IF NOT EXISTS {{%user_token}} (
-            user_id INTEGER NOT NULL,
-            code VARCHAR(32) NOT NULL,
-            type INTEGER NOT NULL,
-            created_at INTEGER NOT NULL,
-            PRIMARY KEY (user_id, code, type)
-        )')->execute();
-        $db->createCommand('CREATE TABLE IF NOT EXISTS {{%user_session_history}} (
-            user_id INTEGER NOT NULL,
-            session_id VARCHAR(255) NOT NULL,
-            user_agent TEXT,
-            ip VARCHAR(45) NOT NULL,
-            created_at INTEGER NOT NULL,
-            updated_at INTEGER NOT NULL,
-            PRIMARY KEY (user_id, session_id)
-        )')->execute();
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('registration/register', $this->arrayHasKey('model'))
+            ->willReturn($response);
+
+        $result = $controller->register($request);
+
+        $this->assertSame($response, $result);
     }
 
-    private function dropSchema(ConnectionInterface $db): void
+    public function testRegisterPostSuccessful(): void
     {
-        $db->createCommand('DROP TABLE IF EXISTS {{%user_session_history}}')->execute();
-        $db->createCommand('DROP TABLE IF EXISTS {{%user_token}}')->execute();
-        $db->createCommand('DROP TABLE IF EXISTS {{%user_social_account}}')->execute();
-        $db->createCommand('DROP TABLE IF EXISTS {{%user_profile}}')->execute();
-        $db->createCommand('DROP TABLE IF EXISTS {{%user}}')->execute();
-    }
-}
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['register' => ['username' => 'testuser', 'email' => 'test@example.com', 'password' => 'password123', 'passwordRepeat' => 'password123']]);
 
-/**
- * A validator stub that always returns an invalid Result without itself notifying the
- * data object of the outcome, unlike Yiisoft\Validator\Validator (which, for data objects
- * implementing PostValidationHookInterface, calls processValidationResult() automatically).
- * This isolates and exercises the controller's own explicit processValidationResult() call.
- */
-final class RejectingValidatorStub implements ValidatorInterface
-{
-    public function __construct(private readonly string $message)
+        $this->validator->method('validate')->willReturn(new Result());
+        $this->registerService->expects($this->once())
+            ->method('run')
+            ->willReturn(ServiceResult::success('voyti.registration.account_created_check_email'));
+
+        $user = $this->createMock(User::class);
+        $user->method('getId')->willReturn('1');
+
+        $this->userRepository->method('findByEmail')->willReturn($user);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->willReturnSelf();
+
+        $result = $controller->register($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testRegisterPostWithServiceFailure(): void
     {
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['register' => ['username' => 'existing', 'email' => 'existing@example.com', 'password' => 'password123', 'passwordRepeat' => 'password123']]);
+
+        $this->validator->method('validate')->willReturn(new Result());
+        $this->registerService->expects($this->once())
+            ->method('run')
+            ->willReturn(ServiceResult::failure('Email already exists', ['Email already exists']));
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturn($response);
+
+        $result = $controller->register($request);
+
+        $this->assertSame($response, $result);
     }
 
-    public function validate(
-        mixed $data,
-        callable|iterable|object|string|null $rules = null,
-        ?ValidationContext $context = null,
-    ): Result {
-        $result = new Result();
-        $result->addError($this->message);
+    public function testRegisterPostWithValidationErrors(): void
+    {
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['register' => ['username' => '', 'email' => '', 'password' => '', 'passwordRepeat' => '']]);
 
-        return $result;
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturn($response);
+
+        $result = $controller->register($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testRegisterWhenDisabledShowsError(): void
+    {
+        $config = new ModuleConfig(enableRegistration: false);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturn($response);
+
+        $result = $controller->register($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testResendGetShowsForm(): void
+    {
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('registration/resend', $this->anything())
+            ->willReturn($response);
+
+        $result = $controller->resend($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testResendPostSuccessful(): void
+    {
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['resend' => ['email' => 'test@example.com']]);
+
+        $this->validator->method('validate')->willReturn(new Result());
+        $user = $this->createMock(User::class);
+        $user->method('getId')->willReturn('1');
+
+        $this->userRepository->method('findByEmail')->willReturn($user);
+        $this->resendConfirmationService->expects($this->once())
+            ->method('run')
+            ->willReturn(true);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->willReturnSelf();
+
+        $result = $controller->resend($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testResendPostUserNotFound(): void
+    {
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['resend' => ['email' => 'nonexistent@example.com']]);
+
+        $this->userRepository->method('findByEmail')->willReturn(null);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturn($response);
+
+        $result = $controller->resend($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testResendWhenDisabledShowsError(): void
+    {
+        $config = new ModuleConfig(enableEmailConfirmation: false);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturn($response);
+
+        $result = $controller->resend($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    private function createController(): RegistrationController
+    {
+        return $this->harness->createRegistrationController(
+            userRepository: $this->userRepository,
+            userTokenRepository: $this->userTokenRepository,
+            translator: $this->translator,
+            viewRenderer: $this->viewRenderer,
+            validator: $this->validator,
+            responseFactory: $this->responseFactory,
+            hydrator: $this->hydrator,
+            flash: $this->flash,
+            registerService: $this->registerService,
+            confirmationService: $this->confirmationService,
+            accountConfirmationService: $this->accountConfirmationService,
+            resendConfirmationService: $this->resendConfirmationService,
+            pendingSocialAccountService: $this->pendingSocialAccountService,
+        );
     }
 }

@@ -5,52 +5,74 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\AuthClient;
 
 use PHPUnit\Framework\TestCase;
+use YiiRocks\Voyti\AuthClient\AuthClientInterface;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
-use YiiRocks\Voyti\AuthClient\Facebook;
-use YiiRocks\Voyti\AuthClient\GenericAuthClient;
-use YiiRocks\Voyti\AuthClient\GitHub;
-use YiiRocks\Voyti\AuthClient\Keycloak;
-use YiiRocks\Voyti\AuthClient\Twitter;
-use YiiRocks\Voyti\AuthClient\VKontakte;
-use YiiRocks\Voyti\AuthClient\Yandex;
 
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class AuthClientRegistryTest extends TestCase
 {
-    public function testAllClientsAreRegistered(): void
+
+    public function testAllReturnsEmptyArrayWhenNoClients(): void
     {
-        $registry = new AuthClientRegistry(
-            new Facebook(),
-            new GitHub(),
-            new GenericAuthClient('google', 'Google', 'https://auth.example.com', 'https://token.example.com', 'https://userinfo.example.com'),
-            new Keycloak(),
-            new GenericAuthClient('linkedin', 'LinkedIn', 'https://auth.example.com', 'https://token.example.com', 'https://userinfo.example.com'),
-            new GenericAuthClient('microsoft365', 'Microsoft 365', 'https://auth.example.com', 'https://token.example.com', 'https://userinfo.example.com'),
-            new Twitter(),
-            new VKontakte(),
-            new Yandex(),
-        );
-
-        $clients = $registry->all();
-
-        self::assertCount(9, $clients);
-        self::assertSame('facebook', $clients[0]->getName());
-        self::assertSame('github', $clients[1]->getName());
-        self::assertSame('google', $clients[2]->getName());
-        self::assertSame('keycloak', $clients[3]->getName());
-        self::assertSame('linkedin', $clients[4]->getName());
-        self::assertSame('microsoft365', $clients[5]->getName());
-        self::assertSame('vkontakte', $clients[7]->getName());
-        self::assertSame('x', $clients[6]->getName());
-        self::assertSame('yandex', $clients[8]->getName());
+        $registry = new AuthClientRegistry();
+        self::assertSame([], $registry->all());
     }
 
-    public function testGetReturnsClientByName(): void
+    public function testAllReturnsListOfClients(): void
     {
-        $registry = new AuthClientRegistry(new GitHub());
+        $client = $this->createMock(AuthClientInterface::class);
+        $client->method('getName')->willReturn('github');
 
-        $client = $registry->get('github');
+        $registry = new AuthClientRegistry($client);
+        $all = $registry->all();
+        self::assertIsArray($all);
+        self::assertContainsOnlyInstancesOf(AuthClientInterface::class, $all);
+        self::assertCount(1, $all);
+    }
 
-        self::assertSame('GitHub', $client?->getTitle());
-        self::assertNull($registry->get('missing'));
+    public function testConstructWithClients(): void
+    {
+        $client1 = $this->createMock(AuthClientInterface::class);
+        $client1->method('getName')->willReturn('client1');
+
+        $client2 = $this->createMock(AuthClientInterface::class);
+        $client2->method('getName')->willReturn('client2');
+
+        $registry = new AuthClientRegistry($client1, $client2);
+        self::assertCount(2, $registry->all());
+    }
+
+    public function testConstructWithDuplicateNameOverwrites(): void
+    {
+        $client1 = $this->createMock(AuthClientInterface::class);
+        $client1->method('getName')->willReturn('github');
+
+        $client2 = $this->createMock(AuthClientInterface::class);
+        $client2->method('getName')->willReturn('github');
+
+        $registry = new AuthClientRegistry($client1, $client2);
+        $all = $registry->all();
+        self::assertCount(1, $all);
+        self::assertSame($client2, $all[0]);
+    }
+    public function testConstructWithNoClients(): void
+    {
+        $registry = new AuthClientRegistry();
+        self::assertSame([], $registry->all());
+    }
+
+    public function testGetReturnsClient(): void
+    {
+        $client = $this->createMock(AuthClientInterface::class);
+        $client->method('getName')->willReturn('github');
+
+        $registry = new AuthClientRegistry($client);
+        self::assertSame($client, $registry->get('github'));
+    }
+
+    public function testGetReturnsNullForUnknownClient(): void
+    {
+        $registry = new AuthClientRegistry();
+        self::assertNull($registry->get('nonexistent'));
     }
 }

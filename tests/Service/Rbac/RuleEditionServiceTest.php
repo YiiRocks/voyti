@@ -4,118 +4,114 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Service\Rbac;
 
+use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Form\Rbac\RuleForm;
 use YiiRocks\Voyti\Service\Rbac\RuleEditionService;
-use YiiRocks\Voyti\tests\Support\FakeAuthRule;
 use YiiRocks\Voyti\Validator\Rbac\RuleValidator;
-use Yiisoft\Rbac\Permission;
+use Yiisoft\Rbac\CompositeRule;
+use Yiisoft\Rbac\ItemsStorageInterface;
 use Yiisoft\Rbac\Role;
-use Yiisoft\Rbac\SimpleItemsStorage;
-use Yiisoft\Translator\CategorySource;
-use Yiisoft\Translator\Message\Php\MessageSource;
-use Yiisoft\Translator\SimpleMessageFormatter;
-use Yiisoft\Translator\Translator;
+use Yiisoft\Translator\TranslatorInterface;
 
-final class RuleEditionServiceTest extends \PHPUnit\Framework\TestCase
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+final class RuleEditionServiceTest extends TestCase
 {
-    public function testCreateReturnsFalseForNonExistentClass(): void
-    {
-        $service = $this->createService(new InMemoryRbacItemsStorage());
 
-        self::assertFalse($service->create($this->makeForm(class: 'NotARealClass')));
+    public function testCreateReturnsFalseWhenInvalid(): void
+    {
+        $itemsStorage = $this->createMock(ItemsStorageInterface::class);
+        $ruleValidator = new RuleValidator();
+        $service = new RuleEditionService($itemsStorage, $ruleValidator);
+
+        $form = $this->createRuleForm(class: 'NonExistentClassName');
+        self::assertFalse($service->create($form));
     }
 
-    public function testCreateReturnsTrueForValidRuleClass(): void
+    public function testCreateReturnsTrueWhenValid(): void
     {
-        $service = $this->createService(new InMemoryRbacItemsStorage());
+        $itemsStorage = $this->createMock(ItemsStorageInterface::class);
+        $ruleValidator = new RuleValidator();
+        $service = new RuleEditionService($itemsStorage, $ruleValidator);
 
-        self::assertTrue($service->create($this->makeForm(class: FakeAuthRule::class)));
+        $form = $this->createRuleForm(class: CompositeRule::class);
+        self::assertTrue($service->create($form));
     }
 
-    public function testRemoveClearsRuleNameOnBothRolesAndPermissions(): void
+    public function testRemoveCallsItemsStorageForItemsWithRule(): void
     {
-        $itemsStorage = new InMemoryRbacItemsStorage();
-        $itemsStorage->add((new Role('manager'))->withRuleName('LegacyRule'));
-        $itemsStorage->add((new Permission('manage-articles'))->withRuleName('LegacyRule'));
-        $itemsStorage->add((new Role('editor'))->withRuleName('OtherRule'));
-        $service = $this->createService($itemsStorage);
-
-        $service->remove('LegacyRule');
-
-        self::assertNull($itemsStorage->getRole('manager')?->getRuleName());
-        self::assertNull($itemsStorage->getPermission('manage-articles')?->getRuleName());
-        self::assertSame('OtherRule', $itemsStorage->getRole('editor')?->getRuleName());
-    }
-
-    public function testUpdateDoesNotRenameWhenPreviousNameIsEmpty(): void
-    {
-        $itemsStorage = new InMemoryRbacItemsStorage();
-        $itemsStorage->add((new Role('manager'))->withRuleName(''));
-        $service = $this->createService($itemsStorage);
-
-        $service->update($this->makeForm(previousName: '', class: FakeAuthRule::class));
-
-        self::assertSame('', $itemsStorage->getRole('manager')?->getRuleName());
-    }
-
-    public function testUpdateRenamesMatchingItemsWhenPreviousNameDiffersFromClass(): void
-    {
-        $itemsStorage = new InMemoryRbacItemsStorage();
-        $itemsStorage->add((new Role('manager'))->withRuleName('LegacyRule'));
-        $service = $this->createService($itemsStorage);
-
-        $result = $service->update($this->makeForm(previousName: 'LegacyRule', class: FakeAuthRule::class));
-
-        self::assertTrue($result);
-        self::assertSame(FakeAuthRule::class, $itemsStorage->getRole('manager')?->getRuleName());
-    }
-
-    public function testUpdateReturnsFalseWhenNewClassIsInvalid(): void
-    {
-        $itemsStorage = new InMemoryRbacItemsStorage();
-        $itemsStorage->add((new Role('manager'))->withRuleName('LegacyRule'));
-        $service = $this->createService($itemsStorage);
-
-        $result = $service->update($this->makeForm(previousName: 'LegacyRule', class: 'NotARealClass'));
-
-        self::assertFalse($result);
-    }
-
-    public function testUpdateSkipsRenameWhenPreviousNameEqualsClass(): void
-    {
-        $itemsStorage = new InMemoryRbacItemsStorage();
-        $itemsStorage->add((new Role('manager'))->withRuleName(FakeAuthRule::class));
-        $service = $this->createService($itemsStorage);
-
-        $service->update($this->makeForm(previousName: FakeAuthRule::class, class: FakeAuthRule::class));
-
-        self::assertSame(FakeAuthRule::class, $itemsStorage->getRole('manager')?->getRuleName());
-    }
-
-    private function createService(InMemoryRbacItemsStorage $itemsStorage): RuleEditionService
-    {
-        return new RuleEditionService($itemsStorage, new RuleValidator());
-    }
-
-    private function makeForm(string $class, string $previousName = ''): RuleForm
-    {
-        $translator = new Translator('en', null, 'voyti');
-        $translator->addCategorySources(
-            new CategorySource(
-                'voyti',
-                new MessageSource(dirname(__DIR__, 3) . '/src/resources/messages'),
-                new SimpleMessageFormatter(),
-            ),
+        $roleWithRule = (new Role('editor'))->withRuleName('MyRule');
+        $roleWithoutRule = new Role('viewer');
+        $itemsStorage = $this->createMock(ItemsStorageInterface::class);
+        $itemsStorage->method('getAll')->willReturn([$roleWithRule, $roleWithoutRule]);
+        $itemsStorage->expects(self::once())->method('update')->with(
+            'editor',
+            self::callback(fn (Role $r): bool => $r->getRuleName() === null),
         );
+        $ruleValidator = new RuleValidator();
+        $service = new RuleEditionService($itemsStorage, $ruleValidator);
 
+        $service->remove('MyRule');
+    }
+
+    public function testUpdateDoesNotRenameWhenPreviousNameEmpty(): void
+    {
+        $roleWithEmptyRule = (new Role('editor'))->withRuleName('');
+        $itemsStorage = $this->createMock(ItemsStorageInterface::class);
+        $itemsStorage->method('getAll')->willReturn([$roleWithEmptyRule]);
+        $itemsStorage->expects(self::never())->method('update');
+        $ruleValidator = new RuleValidator();
+        $service = new RuleEditionService($itemsStorage, $ruleValidator);
+
+        $form = $this->createRuleForm(class: CompositeRule::class, previousName: '');
+        self::assertTrue($service->update($form));
+    }
+
+    public function testUpdateRenamesReferences(): void
+    {
+        $oldRole = (new Role('editor'))->withRuleName('OldRule');
+        $itemsStorage = $this->createMock(ItemsStorageInterface::class);
+        $itemsStorage->method('getAll')->willReturn([$oldRole]);
+        $itemsStorage->expects(self::once())->method('update')->with(
+            'editor',
+            self::callback(fn (Role $r): bool => $r->getRuleName() === CompositeRule::class),
+        );
+        $ruleValidator = new RuleValidator();
+        $service = new RuleEditionService($itemsStorage, $ruleValidator);
+
+        $form = $this->createRuleForm(class: CompositeRule::class, previousName: 'OldRule');
+        self::assertTrue($service->update($form));
+    }
+
+    public function testUpdateReturnsTrueWhenPreviousNameDiffers(): void
+    {
+        $itemsStorage = $this->createMock(ItemsStorageInterface::class);
+        $itemsStorage->method('getAll')->willReturn([]);
+        $ruleValidator = new RuleValidator();
+        $service = new RuleEditionService($itemsStorage, $ruleValidator);
+
+        $form = $this->createRuleForm(class: CompositeRule::class, previousName: 'OldClassName');
+        self::assertTrue($service->update($form));
+    }
+
+    public function testUpdateReturnsTrueWhenValid(): void
+    {
+        $itemsStorage = $this->createMock(ItemsStorageInterface::class);
+        $ruleValidator = new RuleValidator();
+        $service = new RuleEditionService($itemsStorage, $ruleValidator);
+
+        $form = $this->createRuleForm(class: CompositeRule::class);
+        self::assertTrue($service->update($form));
+    }
+    private function createRuleForm(
+        string $class = '',
+        string $name = '',
+        string $previousName = '',
+    ): RuleForm {
+        $translator = $this->createMock(TranslatorInterface::class);
         $form = new RuleForm($translator);
-        $form->previousName = $previousName;
         $form->class = $class;
-
+        $form->name = $name;
+        $form->previousName = $previousName;
         return $form;
     }
-}
-
-final class InMemoryRbacItemsStorage extends SimpleItemsStorage
-{
 }

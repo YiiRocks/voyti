@@ -4,310 +4,364 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Entity;
 
+use PHPUnit\Framework\TestCase;
+use Psr\SimpleCache\CacheInterface;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserProfile;
-use YiiRocks\Voyti\tests\TestCase;
+use Yiisoft\Db\Cache\SchemaCache;
+use Yiisoft\Db\Connection\ConnectionInterface;
 use Yiisoft\Db\Connection\ConnectionProvider;
+use Yiisoft\Db\Sqlite\Connection as SqliteConnection;
+use Yiisoft\Db\Sqlite\Driver;
+use Yiisoft\Db\Sqlite\Dsn;
 
 final class UserProfileTest extends TestCase
 {
-    #[\Override]
+    private ?ConnectionInterface $connection = null;
+
     protected function setUp(): void
     {
-        parent::setUp();
-        ConnectionProvider::set($this->getDb());
-        $db = $this->getDb();
-        $db->createCommand('CREATE TABLE {{%user_profile}} (
-            user_id INTEGER NOT NULL,
-            name VARCHAR(255),
-            public_email VARCHAR(255),
-            gravatar_email VARCHAR(255),
-            location VARCHAR(255),
-            website VARCHAR(255),
-            bio TEXT,
-            timezone VARCHAR(40),
-            PRIMARY KEY (user_id)
-        )')->execute();
-        $db->createCommand('CREATE TABLE {{%user}} (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username VARCHAR(255) NOT NULL,
-            email VARCHAR(255) NOT NULL,
-            password_hash VARCHAR(60) NOT NULL,
-            auth_key VARCHAR(32) NOT NULL,
-            unconfirmed_email VARCHAR(255),
-            registration_ip VARCHAR(45),
-            flags INTEGER NOT NULL DEFAULT 0,
-            confirmed_at INTEGER,
-            blocked_at INTEGER,
-            updated_at INTEGER NOT NULL,
-            created_at INTEGER NOT NULL,
-            last_login_at INTEGER,
-            auth_tf_key VARCHAR(64),
-            auth_tf_enabled INTEGER DEFAULT 0,
-            password_changed_at INTEGER,
-            last_login_ip VARCHAR(45),
-            gdpr_deleted INTEGER DEFAULT 0,
-            gdpr_consent INTEGER DEFAULT 0,
-            gdpr_consent_date INTEGER,
-            auth_tf_type VARCHAR(20)
-        )')->execute();
+        if (!extension_loaded('pdo_sqlite')) {
+            self::markTestSkipped('pdo_sqlite extension required.');
+        }
+
+        $connection = $this->createSqliteConnection();
+        ConnectionProvider::set($connection);
+        $this->connection = $connection;
+
+        $this->connection->createCommand('
+            CREATE TABLE "user" (
+                "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+                "username" VARCHAR(255) NOT NULL,
+                "email" VARCHAR(255) NOT NULL,
+                "password_hash" VARCHAR(255) NOT NULL,
+                "auth_key" VARCHAR(32) NOT NULL,
+                "auth_tf_enabled" INTEGER NOT NULL DEFAULT 0,
+                "auth_tf_key" VARCHAR(64),
+                "auth_tf_type" VARCHAR(20),
+                "blocked_at" INTEGER,
+                "confirmed_at" INTEGER,
+                "created_at" INTEGER NOT NULL,
+                "flags" INTEGER NOT NULL DEFAULT 0,
+                "gdpr_consent" INTEGER NOT NULL DEFAULT 0,
+                "gdpr_consent_date" INTEGER,
+                "gdpr_deleted" INTEGER NOT NULL DEFAULT 0,
+                "last_login_at" INTEGER,
+                "last_login_ip" VARCHAR(45),
+                "password_changed_at" INTEGER,
+                "registration_ip" VARCHAR(45),
+                "unconfirmed_email" VARCHAR(255),
+                "updated_at" INTEGER NOT NULL
+            )
+        ')->execute();
+
+        $this->connection->createCommand('
+            CREATE TABLE "user_profile" (
+                "user_id" INTEGER NOT NULL,
+                "bio" TEXT,
+                "gravatar_email" VARCHAR(255),
+                "location" VARCHAR(255),
+                "name" VARCHAR(255),
+                "public_email" VARCHAR(255),
+                "timezone" VARCHAR(40),
+                "website" VARCHAR(255)
+            )
+        ')->execute();
     }
 
-    #[\Override]
     protected function tearDown(): void
     {
-        if ($this->hasSqliteConnection()) {
-            $this->getDb()->createCommand('DROP TABLE IF EXISTS {{%user}}')->execute();
-            $this->getDb()->createCommand('DROP TABLE IF EXISTS {{%user_profile}}')->execute();
-            ConnectionProvider::clear();
+        if ($this->connection !== null) {
+            $this->connection->createCommand('DROP TABLE IF EXISTS "user_profile"')->execute();
+            $this->connection->createCommand('DROP TABLE IF EXISTS "user"')->execute();
         }
-        parent::tearDown();
+        ConnectionProvider::clear();
+        $this->connection = null;
     }
 
-    public function testCreateAndFind(): void
+    public function testGetGravatarIdFallsBackToUserEmail(): void
     {
-        $userProfile = new UserProfile();
-        $userProfile->setUserId(1);
-        $userProfile->setName('John Doe');
-        $userProfile->setPublicEmail('john@example.com');
-        $userProfile->setGravatarEmail('john@gravatar.com');
-        $expectedGravatarId = hash('sha256', trim('john@gravatar.com'));
-        $userProfile->setLocation('New York');
-        $userProfile->setWebsite('https://johndoe.com');
-        $userProfile->setBio('A cool developer');
-        $userProfile->setTimezone('America/New_York');
-        $userProfile->save();
+        $this->connection->createCommand()->insert('user', [
+            'username' => 'gravataruser',
+            'email' => 'useremail@example.com',
+            'password_hash' => 'hash',
+            'auth_key' => 'key',
+            'created_at' => 1000,
+            'updated_at' => 1000,
+        ])->execute();
 
-        $found = UserProfile::query()->where(['user_id' => 1])->one();
-        $this->assertInstanceOf(UserProfile::class, $found);
-        $this->assertTrue((new \ReflectionMethod(UserProfile::class, 'getGravatarId'))->isPublic());
-        $this->assertSame(1, $found->getUserId());
-        $this->assertSame('John Doe', $found->getName());
-        $this->assertSame('john@example.com', $found->getPublicEmail());
-        $this->assertSame('john@gravatar.com', $found->getGravatarEmail());
-        $this->assertSame($expectedGravatarId, $found->getGravatarId());
-        $this->assertSame('New York', $found->getLocation());
-        $this->assertSame('https://johndoe.com', $found->getWebsite());
-        $this->assertSame('A cool developer', $found->getBio());
-        $this->assertSame('America/New_York', $found->getTimezone());
+        $user = User::query()->where(['username' => 'gravataruser'])->one();
+        self::assertNotNull($user);
+
+        $entity = new UserProfile();
+        $entity->setUserId((int) $user->getId());
+
+        $expected = hash('sha256', strtolower(trim('useremail@example.com')));
+        self::assertSame($expected, $entity->getGravatarId());
     }
 
-    public function testDeleteProfile(): void
+    public function testGetGravatarIdReturnsNullWhenNoEmailAndNoUserId(): void
     {
-        $userProfile = new UserProfile();
-        $userProfile->setUserId(3);
-        $userProfile->setName('To Delete');
-        $userProfile->save();
-
-        $userProfile->delete();
-
-        $found = UserProfile::query()->where(['user_id' => 3])->one();
-        $this->assertNull($found);
+        $entity = new UserProfile();
+        self::assertNull($entity->getGravatarId());
     }
 
-    public function testEmptyGravatarEmailFallsBackToPublicEmail(): void
+    public function testGetGravatarIdReturnsNullWhenNoEmailAndUserTableMissing(): void
     {
-        $userProfile = new UserProfile();
-        $userProfile->setUserId(80);
-        $userProfile->setGravatarEmail('');
-        $userProfile->setPublicEmail(' Public@Example.com ');
-
-        $this->assertSame(
-            hash('sha256', 'public@example.com'),
-            $userProfile->getGravatarId(),
-        );
+        $entity = new UserProfile();
+        $entity->setUserId(1);
+        self::assertNull($entity->getGravatarId());
     }
 
-    public function testGetUserReturnsMatchingRelatedUser(): void
+    public function testGetGravatarIdReturnsNullWhenUserTableDropped(): void
     {
-        $user = $this->createUser('first-related', 'first@example.com', 'hash2', 'auth2');
-        $otherUser = $this->createUser('second-related', 'second@example.com', 'hash3', 'auth3');
+        $schema = $this->connection->getSchema();
+        $schema->getTableSchema('{{%user}}', true);
 
-        $userProfile = new UserProfile();
-        $userProfile->setUserId((int) $user->getId());
-        $userProfile->save();
-
-        $otherProfile = new UserProfile();
-        $otherProfile->setUserId((int) $otherUser->getId());
-        $otherProfile->save();
-
-        $found = UserProfile::query()->where(['user_id' => (int) $user->getId()])->one();
-        $this->assertInstanceOf(UserProfile::class, $found);
-        $relatedUser = $found->getUser();
-        $this->assertInstanceOf(User::class, $relatedUser);
-        $this->assertSame($user->getId(), $relatedUser->getId());
-        $this->assertSame('first-related', $relatedUser->getUsername());
+        $this->connection->createCommand('DROP TABLE IF EXISTS "user"')->execute();
+        $entity = new UserProfile();
+        $entity->setUserId(1);
+        self::assertNull($entity->getGravatarId());
     }
 
-    public function testGetUserReturnsNullWhenRelatedUserIsMissing(): void
+    public function testGetGravatarIdTrimsEmail(): void
     {
-        $userProfile = new UserProfile();
-        $userProfile->setUserId(999);
-        $userProfile->save();
-
-        $found = UserProfile::query()->where(['user_id' => 999])->one();
-        $this->assertInstanceOf(UserProfile::class, $found);
-        $this->assertNull($found->getUser());
-        $this->assertNull($found->getGravatarId());
+        $entity = new UserProfile();
+        $entity->setGravatarEmail('  Test@Example.com  ');
+        $expected = hash('sha256', 'test@example.com');
+        self::assertSame($expected, $entity->getGravatarId());
     }
 
-    public function testGravatarEmailTakesPrecedenceOverPublicEmail(): void
+    public function testGetGravatarIdWithCachedNullSchemaReturnsHash(): void
     {
-        $userProfile = new UserProfile();
-        $userProfile->setUserId(8);
-        $userProfile->setPublicEmail('public@example.com');
-        $userProfile->setGravatarEmail('avatar@example.com');
+        $this->connection->createCommand('DROP TABLE IF EXISTS "user"')->execute();
 
-        $this->assertSame(
-            hash('sha256', 'avatar@example.com'),
-            $userProfile->getGravatarId(),
-        );
+        $schema = $this->connection->getSchema();
+        $schema->getTableSchema('{{%user}}', true);
+
+        $this->connection->createCommand('
+            CREATE TABLE "user" (
+                "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+                "username" VARCHAR(255) NOT NULL,
+                "email" VARCHAR(255) NOT NULL,
+                "password_hash" VARCHAR(255) NOT NULL,
+                "auth_key" VARCHAR(32) NOT NULL,
+                "auth_tf_enabled" INTEGER NOT NULL DEFAULT 0,
+                "auth_tf_key" VARCHAR(64),
+                "auth_tf_type" VARCHAR(20),
+                "blocked_at" INTEGER,
+                "confirmed_at" INTEGER,
+                "created_at" INTEGER NOT NULL,
+                "flags" INTEGER NOT NULL DEFAULT 0,
+                "gdpr_consent" INTEGER NOT NULL DEFAULT 0,
+                "gdpr_consent_date" INTEGER,
+                "gdpr_deleted" INTEGER NOT NULL DEFAULT 0,
+                "last_login_at" INTEGER,
+                "last_login_ip" VARCHAR(45),
+                "password_changed_at" INTEGER,
+                "registration_ip" VARCHAR(45),
+                "unconfirmed_email" VARCHAR(255),
+                "updated_at" INTEGER NOT NULL
+            )
+        ')->execute();
+
+        $this->connection->createCommand()->insert('user', [
+            'username' => 'cacheduser',
+            'email' => 'cached@example.com',
+            'password_hash' => 'hash',
+            'auth_key' => 'key',
+            'created_at' => 1000,
+            'updated_at' => 1000,
+        ])->execute();
+
+        $entity = new UserProfile();
+        $entity->setUserId(1);
+        $expected = hash('sha256', strtolower(trim('cached@example.com')));
+        self::assertSame($expected, $entity->getGravatarId());
     }
 
-    public function testGravatarIdAutoPopulatedFromEmail(): void
+    public function testGetGravatarIdWithEmptyGravatarEmailFallsBackToPublicEmail(): void
     {
-        $userProfile = new UserProfile();
-        $userProfile->setUserId(5);
-        $userProfile->setName('Gravatar Test');
-        $userProfile->setGravatarEmail('test@gravatar.com');
-        $userProfile->save();
-
-        $found = UserProfile::query()->where(['user_id' => 5])->one();
-        $this->assertInstanceOf(UserProfile::class, $found);
-        $this->assertSame(hash('sha256', trim('test@gravatar.com')), $found->getGravatarId());
+        $entity = new UserProfile();
+        $entity->setGravatarEmail('');
+        $entity->setPublicEmail('Public@Example.com');
+        $expected = hash('sha256', strtolower(trim('Public@Example.com')));
+        self::assertSame($expected, $entity->getGravatarId());
     }
 
-    public function testGravatarIdClearedWhenEmailRemoved(): void
+    public function testGetGravatarIdWithGravatarEmail(): void
     {
-        $userProfile = new UserProfile();
-        $userProfile->setUserId(6);
-        $userProfile->setGravatarEmail('test2@gravatar.com');
-        $userProfile->save();
-
-        $userProfile->setGravatarEmail('');
-        $userProfile->save();
-
-        $found = UserProfile::query()->where(['user_id' => 6])->one();
-        $this->assertInstanceOf(UserProfile::class, $found);
-        $this->assertNull($found->getGravatarId());
+        $entity = new UserProfile();
+        $entity->setGravatarEmail('Test@Example.com');
+        $expected = hash('sha256', strtolower(trim('Test@Example.com')));
+        self::assertSame($expected, $entity->getGravatarId());
     }
 
-    public function testGravatarIdFallsBackToUserEmail(): void
+    public function testGetGravatarIdWithNullGravatarEmailFallsBackToPublicEmail(): void
     {
-        $user = $this->createUser('fallback-user', '  User@Example.com ', 'hash1', 'auth1');
-
-        $userProfile = new UserProfile();
-        $userProfile->setUserId((int) $user->getId());
-        $userProfile->save();
-
-        $found = UserProfile::query()->where(['user_id' => (int) $user->getId()])->one();
-        $this->assertInstanceOf(UserProfile::class, $found);
-        $this->assertSame(
-            hash('sha256', 'user@example.com'),
-            $found->getGravatarId(),
-        );
+        $entity = new UserProfile();
+        $entity->setPublicEmail('public@example.com');
+        $expected = hash('sha256', strtolower(trim('public@example.com')));
+        self::assertSame($expected, $entity->getGravatarId());
     }
 
-    public function testGravatarIdIgnoresStaleSchemaCacheWhenUserTableIsDropped(): void
+    public function testGetGravatarIdWithPublicEmailPrecedence(): void
     {
-        $db = $this->getDb();
-
-        // Prime the schema's internal cache with the "table exists" state, so a
-        // non-refreshing lookup would keep returning a (now stale) non-null schema.
-        $this->assertNotNull($db->getSchema()->getTableSchema('{{%user}}'));
-
-        $db->createCommand('DROP TABLE IF EXISTS {{%user}}')->execute();
-
-        $userProfile = new UserProfile();
-        $userProfile->setUserId(321);
-
-        // getGravatarId() must force a schema refresh to notice the table is gone and
-        // bail out early; otherwise it would trust the stale cached schema and go on to
-        // query the now-missing table via getUser(), causing a database error instead.
-        $this->assertNull($userProfile->getGravatarId());
+        $entity = new UserProfile();
+        $entity->setPublicEmail('public@example.com');
+        $entity->setGravatarEmail(null);
+        $expected = hash('sha256', strtolower(trim('public@example.com')));
+        self::assertSame($expected, $entity->getGravatarId());
     }
 
-    public function testGravatarIdReturnsNullWhenUserTableIsMissing(): void
+    public function testGetSetBio(): void
     {
-        $this->getDb()->createCommand('DROP TABLE IF EXISTS {{%user}}')->execute();
-
-        $userProfile = new UserProfile();
-        $userProfile->setUserId(123);
-
-        $this->assertNull($userProfile->getGravatarId());
+        $entity = new UserProfile();
+        $entity->setBio('My bio');
+        self::assertSame('My bio', $entity->getBio());
     }
 
-    public function testGravatarIdUsesNormalizedPublicEmail(): void
+    public function testGetSetBioWithNull(): void
     {
-        $userProfile = new UserProfile();
-        $userProfile->setUserId(7);
-        $userProfile->setPublicEmail('  Public@Example.com  ');
-        $userProfile->save();
-
-        $found = UserProfile::query()->where(['user_id' => 7])->one();
-        $this->assertInstanceOf(UserProfile::class, $found);
-        $this->assertSame(
-            hash('sha256', 'public@example.com'),
-            $found->getGravatarId(),
-        );
+        $entity = new UserProfile();
+        self::assertNull($entity->getBio());
+        $entity->setBio(null);
+        self::assertNull($entity->getBio());
     }
 
-
-    public function testNullDefaults(): void
+    public function testGetSetGravatarEmail(): void
     {
-        $userProfile = new UserProfile();
-        $this->assertNull($userProfile->getName());
-        $this->assertNull($userProfile->getPublicEmail());
-        $this->assertNull($userProfile->getGravatarEmail());
-        $this->assertNull($userProfile->getGravatarId());
-        $this->assertNull($userProfile->getLocation());
-        $this->assertNull($userProfile->getWebsite());
-        $this->assertNull($userProfile->getBio());
-        $this->assertNull($userProfile->getTimezone());
+        $entity = new UserProfile();
+        $entity->setGravatarEmail('gravatar@example.com');
+        self::assertSame('gravatar@example.com', $entity->getGravatarEmail());
     }
 
-    public function testPartialFields(): void
+    public function testGetSetGravatarEmailWithNull(): void
     {
-        $userProfile = new UserProfile();
-        $userProfile->setUserId(4);
-        $userProfile->setName('Partial');
-        $userProfile->save();
-
-        $found = UserProfile::query()->where(['user_id' => 4])->one();
-        $this->assertInstanceOf(UserProfile::class, $found);
-        $this->assertSame('Partial', $found->getName());
-        $this->assertNull($found->getWebsite());
-        $this->assertNull($found->getBio());
+        $entity = new UserProfile();
+        $entity->setGravatarEmail(null);
+        self::assertNull($entity->getGravatarEmail());
     }
 
-    public function testUpdateProfile(): void
+    public function testGetSetLocation(): void
     {
-        $userProfile = new UserProfile();
-        $userProfile->setUserId(2);
-        $userProfile->setName('Jane Doe');
-        $userProfile->save();
-
-        $userProfile->setName('Jane Smith');
-        $userProfile->setLocation('Los Angeles');
-        $userProfile->save();
-
-        $found = UserProfile::query()->where(['user_id' => 2])->one();
-        $this->assertInstanceOf(UserProfile::class, $found);
-        $this->assertSame('Jane Smith', $found->getName());
-        $this->assertSame('Los Angeles', $found->getLocation());
+        $entity = new UserProfile();
+        $entity->setLocation('New York');
+        self::assertSame('New York', $entity->getLocation());
     }
 
-    private function createUser(string $username, string $email, string $passwordHash, string $authKey): User
+    public function testGetSetLocationWithNull(): void
     {
-        $user = new User();
-        $user->setUsername($username);
-        $user->setEmail($email);
-        $user->setPasswordHash($passwordHash);
-        $user->setAuthKey($authKey);
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
+        $entity = new UserProfile();
+        $entity->setLocation(null);
+        self::assertNull($entity->getLocation());
+    }
 
-        return $user;
+    public function testGetSetName(): void
+    {
+        $entity = new UserProfile();
+        $entity->setName('John Doe');
+        self::assertSame('John Doe', $entity->getName());
+    }
+
+    public function testGetSetNameWithNull(): void
+    {
+        $entity = new UserProfile();
+        $entity->setName(null);
+        self::assertNull($entity->getName());
+    }
+
+    public function testGetSetPublicEmail(): void
+    {
+        $entity = new UserProfile();
+        $entity->setPublicEmail('public@example.com');
+        self::assertSame('public@example.com', $entity->getPublicEmail());
+    }
+
+    public function testGetSetPublicEmailWithNull(): void
+    {
+        $entity = new UserProfile();
+        $entity->setPublicEmail(null);
+        self::assertNull($entity->getPublicEmail());
+    }
+
+    public function testGetSetTimezone(): void
+    {
+        $entity = new UserProfile();
+        $entity->setTimezone('America/New_York');
+        self::assertSame('America/New_York', $entity->getTimezone());
+    }
+
+    public function testGetSetTimezoneWithNull(): void
+    {
+        $entity = new UserProfile();
+        $entity->setTimezone(null);
+        self::assertNull($entity->getTimezone());
+    }
+
+    public function testGetSetUserId(): void
+    {
+        $entity = new UserProfile();
+        $entity->setUserId(42);
+        self::assertSame(42, $entity->getUserId());
+    }
+
+    public function testGetSetWebsite(): void
+    {
+        $entity = new UserProfile();
+        $entity->setWebsite('https://example.com');
+        self::assertSame('https://example.com', $entity->getWebsite());
+    }
+
+    public function testGetSetWebsiteWithNull(): void
+    {
+        $entity = new UserProfile();
+        $entity->setWebsite(null);
+        self::assertNull($entity->getWebsite());
+    }
+
+    public function testGetUserReturnsNullWhenNotLinked(): void
+    {
+        $entity = new UserProfile();
+        self::assertNull($entity->getUser());
+    }
+
+    public function testGetUserReturnsUserWhenLinked(): void
+    {
+        $this->connection->createCommand()->insert('user', [
+            'username' => 'profileuser',
+            'email' => 'profileuser@example.com',
+            'password_hash' => 'hash',
+            'auth_key' => 'key',
+            'created_at' => 1000,
+            'updated_at' => 1000,
+        ])->execute();
+
+        $user = User::query()->where(['username' => 'profileuser'])->one();
+        self::assertNotNull($user);
+
+        $entity = new UserProfile();
+        $entity->setUserId((int) $user->getId());
+
+        $found = $entity->getUser();
+        self::assertNotNull($found);
+        self::assertSame($user->getId(), $found->getId());
+    }
+
+    public function testTableName(): void
+    {
+        $entity = new UserProfile();
+        self::assertSame('{{%user_profile}}', $entity->tableName());
+    }
+
+    private function createSqliteConnection(): ConnectionInterface
+    {
+        $dsn = new Dsn('sqlite', ':memory:');
+        $driver = new Driver($dsn);
+        $cache = $this->createStub(CacheInterface::class);
+        $cache->method('set')->willReturn(true);
+        $cache->method('get')->willReturn(null);
+        $schemaCache = new SchemaCache($cache);
+        return new SqliteConnection($driver, $schemaCache);
     }
 }

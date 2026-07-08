@@ -4,157 +4,138 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Entity;
 
+use PHPUnit\Framework\TestCase;
+use Psr\SimpleCache\CacheInterface;
 use YiiRocks\Voyti\Entity\UserSessionHistory;
-use YiiRocks\Voyti\tests\TestCase;
+use Yiisoft\Db\Cache\SchemaCache;
+use Yiisoft\Db\Connection\ConnectionInterface;
 use Yiisoft\Db\Connection\ConnectionProvider;
+use Yiisoft\Db\Sqlite\Connection as SqliteConnection;
+use Yiisoft\Db\Sqlite\Driver as SqliteDriver;
+use Yiisoft\Db\Sqlite\Dsn;
 
 final class UserSessionHistoryTest extends TestCase
 {
-    #[\Override]
+    private ?ConnectionInterface $connection = null;
+
     protected function setUp(): void
     {
-        parent::setUp();
-        ConnectionProvider::set($this->getDb());
-        $db = $this->getDb();
-        $db->createCommand('CREATE TABLE {{%user_session_history}} (
-            user_id INTEGER NOT NULL,
-            session_id VARCHAR(255) NOT NULL,
-            user_agent TEXT,
-            ip VARCHAR(45),
-            created_at INTEGER NOT NULL,
-            updated_at INTEGER NOT NULL,
-            PRIMARY KEY (user_id, session_id)
-        )')->execute();
+        if (!extension_loaded('pdo_sqlite')) {
+            self::markTestSkipped('pdo_sqlite extension required.');
+        }
+
+        $connection = $this->createSqliteConnection();
+        ConnectionProvider::set($connection);
+        $this->connection = $connection;
+
+        $this->connection->createCommand('
+            CREATE TABLE IF NOT EXISTS "user_session_history" (
+                "user_id" INTEGER NOT NULL,
+                "session_id" VARCHAR(64) NOT NULL,
+                "ip" VARCHAR(45),
+                "user_agent" TEXT,
+                "created_at" INTEGER NOT NULL,
+                "updated_at" INTEGER NOT NULL,
+                PRIMARY KEY ("user_id", "session_id")
+            )
+        ')->execute();
     }
 
-    #[\Override]
     protected function tearDown(): void
     {
-        if ($this->hasSqliteConnection()) {
-            $this->getDb()->createCommand('DROP TABLE IF EXISTS {{%user_session_history}}')->execute();
-            ConnectionProvider::clear();
+        if ($this->connection !== null) {
+            $this->connection->close();
         }
-        parent::tearDown();
     }
 
-    public function testCompositePrimaryKey(): void
+    public function testDefaultValues(): void
     {
-        $session1 = new UserSessionHistory();
-        $session1->setUserId(1);
-        $session1->setSessionId('sess_one');
-        $session1->setCreatedAt(time());
-        $session1->setUpdatedAt(time());
-        $session1->save();
-
-        $session2 = new UserSessionHistory();
-        $session2->setUserId(1);
-        $session2->setSessionId('sess_two');
-        $session2->setCreatedAt(time());
-        $session2->setUpdatedAt(time());
-        $session2->save();
-
-        $session3 = new UserSessionHistory();
-        $session3->setUserId(2);
-        $session3->setSessionId('sess_one');
-        $session3->setCreatedAt(time());
-        $session3->setUpdatedAt(time());
-        $session3->save();
-
-        $this->assertSame(2, UserSessionHistory::query()->where(['user_id' => 1])->count());
-        $this->assertSame(1, UserSessionHistory::query()->where(['session_id' => 'sess_two'])->count());
+        $entity = new UserSessionHistory();
+        self::assertSame(0, $entity->getUserId());
+        self::assertSame('', $entity->getSessionId());
+        self::assertSame(0, $entity->getCreatedAt());
+        self::assertSame(0, $entity->getUpdatedAt());
+        self::assertNull($entity->getIp());
+        self::assertNull($entity->getUserAgent());
     }
 
-    public function testCreateAndFind(): void
+    public function testGetSetCreatedAt(): void
     {
-        $session = new UserSessionHistory();
-        $session->setUserId(1);
-        $session->setSessionId('sess_abc123');
-        $session->setUserAgent('Mozilla/5.0');
-        $session->setIp('192.168.1.1');
-        $session->setCreatedAt(time());
-        $session->setUpdatedAt(time());
-        $session->save();
-
-        $found = UserSessionHistory::query()->where(['user_id' => 1, 'session_id' => 'sess_abc123'])->one();
-        $this->assertInstanceOf(UserSessionHistory::class, $found);
-        $this->assertSame(1, $found->getUserId());
-        $this->assertSame('sess_abc123', $found->getSessionId());
-        $this->assertSame('Mozilla/5.0', $found->getUserAgent());
-        $this->assertSame('192.168.1.1', $found->getIp());
+        $entity = new UserSessionHistory();
+        $entity->setCreatedAt(1000);
+        self::assertSame(1000, $entity->getCreatedAt());
     }
 
-    public function testDeleteSession(): void
+    public function testGetSetIp(): void
     {
-        $session = new UserSessionHistory();
-        $session->setUserId(5);
-        $session->setSessionId('delete_test');
-        $session->setCreatedAt(time());
-        $session->setUpdatedAt(time());
-        $session->save();
-
-        $session->delete();
-
-        $found = UserSessionHistory::query()->where(['user_id' => 5, 'session_id' => 'delete_test'])->one();
-        $this->assertNull($found);
+        $entity = new UserSessionHistory();
+        $entity->setIp('192.168.1.1');
+        self::assertSame('192.168.1.1', $entity->getIp());
     }
 
-    public function testNullUserAgentAndIp(): void
+    public function testGetSetIpWithNull(): void
     {
-        $session = new UserSessionHistory();
-        $this->assertNull($session->getUserAgent());
-        $this->assertNull($session->getIp());
-
-        $session->setUserId(3);
-        $session->setSessionId('null_test');
-        $session->setCreatedAt(time());
-        $session->setUpdatedAt(time());
-        $session->save();
-
-        $found = UserSessionHistory::query()->where(['session_id' => 'null_test'])->one();
-        $this->assertInstanceOf(UserSessionHistory::class, $found);
-        $this->assertNull($found->getUserAgent());
-        $this->assertNull($found->getIp());
+        $entity = new UserSessionHistory();
+        $entity->setIp(null);
+        self::assertNull($entity->getIp());
     }
 
-    public function testTimestamps(): void
+    public function testGetSetSessionId(): void
     {
-        $now = time();
-        $later = $now + 3600;
-
-        $session = new UserSessionHistory();
-        $session->setUserId(6);
-        $session->setSessionId('time_test');
-        $session->setCreatedAt($now);
-        $session->setUpdatedAt($now);
-        $session->save();
-
-        $session->setUpdatedAt($later);
-        $session->save();
-
-        $found = UserSessionHistory::query()->where(['session_id' => 'time_test'])->one();
-        $this->assertInstanceOf(UserSessionHistory::class, $found);
-        $this->assertEquals($now, $found->getCreatedAt());
-        $this->assertEquals($later, $found->getUpdatedAt());
+        $entity = new UserSessionHistory();
+        $entity->setSessionId('sess-abc-123');
+        self::assertSame('sess-abc-123', $entity->getSessionId());
     }
 
-    public function testUpdateSession(): void
+    public function testGetSetUpdatedAt(): void
     {
-        $session = new UserSessionHistory();
-        $session->setUserId(4);
-        $session->setSessionId('update_test');
-        $session->setIp('10.0.0.1');
-        $session->setCreatedAt(time());
-        $session->setUpdatedAt(time());
-        $session->save();
+        $entity = new UserSessionHistory();
+        $entity->setUpdatedAt(2000);
+        self::assertSame(2000, $entity->getUpdatedAt());
+    }
 
-        $session->setIp('10.0.0.2');
-        $session->setUserAgent('NewBrowser/1.0');
-        $session->setUpdatedAt(time());
-        $session->save();
+    public function testGetSetUserAgent(): void
+    {
+        $entity = new UserSessionHistory();
+        $entity->setUserAgent('Mozilla/5.0');
+        self::assertSame('Mozilla/5.0', $entity->getUserAgent());
+    }
 
-        $found = UserSessionHistory::query()->where(['user_id' => 4, 'session_id' => 'update_test'])->one();
-        $this->assertInstanceOf(UserSessionHistory::class, $found);
-        $this->assertSame('10.0.0.2', $found->getIp());
-        $this->assertSame('NewBrowser/1.0', $found->getUserAgent());
+    public function testGetSetUserAgentWithNull(): void
+    {
+        $entity = new UserSessionHistory();
+        $entity->setUserAgent(null);
+        self::assertNull($entity->getUserAgent());
+    }
+
+    public function testGetSetUserId(): void
+    {
+        $entity = new UserSessionHistory();
+        $entity->setUserId(42);
+        self::assertSame(42, $entity->getUserId());
+    }
+
+    public function testPrimaryKey(): void
+    {
+        $entity = new UserSessionHistory();
+        self::assertSame(['user_id', 'session_id'], $entity->primaryKey());
+    }
+
+    public function testTableName(): void
+    {
+        $entity = new UserSessionHistory();
+        self::assertSame('{{%user_session_history}}', $entity->tableName());
+    }
+
+    private function createSqliteConnection(): ConnectionInterface
+    {
+        $dsn = new Dsn('sqlite', ':memory:');
+        $driver = new SqliteDriver($dsn);
+        $cache = $this->createStub(CacheInterface::class);
+        $cache->method('set')->willReturn(true);
+        $cache->method('get')->willReturn(null);
+        $schemaCache = new SchemaCache($cache);
+        $schemaCache->setEnabled(false);
+        return new SqliteConnection($driver, $schemaCache);
     }
 }

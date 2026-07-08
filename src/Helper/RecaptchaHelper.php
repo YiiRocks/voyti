@@ -17,9 +17,8 @@ final class RecaptchaHelper
         /**
          * @infection-ignore-all
          *
-         * yiirocks/recaptcha is a hard require, so both classes are always present in
-         * this codebase's own test suite; a host app without the package is the only
-         * way either half of this check can ever be false, which no test here can simulate.
+         * Both classes are always present via composer's autoload (hard
+         * require), so no test can ever make either class_exists() false.
          */
         return class_exists(RecaptchaV3Field::class)
             || class_exists(RecaptchaV2Field::class);
@@ -47,6 +46,7 @@ final class RecaptchaHelper
         if (!class_exists(RecaptchaV3Field::class)) {
             return '';
         }
+        /** @infection-ignore-all Concat ConcatOperandRemoval: both branches throw MissingSiteKeyException in tests, so the action string is never observable. */
         return RecaptchaV3Field::field($form, $attribute)
             ->withBadge(RecaptchaV3Badge::Hidden)
             ->withAction('voyti_' . $formName)

@@ -15,7 +15,7 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var bool|null $showAdminFields
  */
 
-$displayName = $userProfile->getName() ?: $user->getUsername();
+$displayName = $userProfile->getName() ?? $user->getUsername();
 $gravatarId = $userProfile->getGravatarId();
 $profilePreviewClass ??= 'list-group mb-4';
 $showAdminFields ??= false;
@@ -24,7 +24,7 @@ echo Html::ul()->class($profilePreviewClass)->open();
 
 echo Html::li()->class('list-group-item text-center py-3')->open();
 echo Html::h3(Html::encode($displayName))->class('h4 mb-3');
-if ($gravatarId) {
+if ($gravatarId !== null && $gravatarId !== '') {
     echo Html::img('https://www.gravatar.com/avatar/' . $gravatarId . '?s=256&d=mp')
         ->class('rounded-circle');
 }
@@ -56,31 +56,31 @@ if ($showAdminFields) {
 $publicEmail = $userProfile->getPublicEmail();
 echo Html::li()->class('list-group-item')->open();
 echo Html::b($translator->translate('voyti.view.public_email_label', category: 'voyti'))->render() . ': ';
-echo $publicEmail ? Html::encode($publicEmail) : Html::span($translator->translate('voyti.view.not_set', category: 'voyti'))->class('text-muted fst-italic');
+echo $publicEmail !== null ? Html::encode($publicEmail) : Html::span($translator->translate('voyti.view.not_set', category: 'voyti'))->class('text-muted fst-italic');
 echo Html::li()->close();
 
 $location = $userProfile->getLocation();
 echo Html::li()->class('list-group-item')->open();
 echo Html::b($translator->translate('voyti.view.location_label', category: 'voyti'))->render() . ': ';
-echo $location ? Html::encode($location) : Html::span($translator->translate('voyti.view.not_set', category: 'voyti'))->class('text-muted fst-italic');
+echo $location !== null ? Html::encode($location) : Html::span($translator->translate('voyti.view.not_set', category: 'voyti'))->class('text-muted fst-italic');
 echo Html::li()->close();
 
 $website = $userProfile->getWebsite();
 echo Html::li()->class('list-group-item')->open();
 echo Html::b($translator->translate('voyti.view.website_label', category: 'voyti'))->render() . ': ';
-echo $website ? Html::a(Html::encode($website), $website)->rel('noopener noreferrer')->target('_blank') : Html::span($translator->translate('voyti.view.not_set', category: 'voyti'))->class('text-muted fst-italic');
+echo $website !== null ? Html::a(Html::encode($website), $website)->rel('noopener noreferrer')->target('_blank') : Html::span($translator->translate('voyti.view.not_set', category: 'voyti'))->class('text-muted fst-italic');
 echo Html::li()->close();
 
 $timezone = $userProfile->getTimezone();
 echo Html::li()->class('list-group-item')->open();
 echo Html::b($translator->translate('voyti.view.timezone_label', category: 'voyti'))->render() . ': ';
-echo $timezone ? Html::encode($timezone) : Html::span($translator->translate('voyti.view.not_set', category: 'voyti'))->class('text-muted fst-italic');
+echo $timezone !== null ? Html::encode($timezone) : Html::span($translator->translate('voyti.view.not_set', category: 'voyti'))->class('text-muted fst-italic');
 echo Html::li()->close();
 
 $bio = $userProfile->getBio();
 echo Html::li()->class('list-group-item')->open();
 echo Html::b($translator->translate('voyti.view.bio_label', category: 'voyti'))->render() . ': ';
-echo $bio ? nl2br(Html::encode($bio)) : Html::span($translator->translate('voyti.view.not_set', category: 'voyti'))->class('text-muted fst-italic');
+echo $bio !== null ? nl2br(Html::encode($bio)) : Html::span($translator->translate('voyti.view.not_set', category: 'voyti'))->class('text-muted fst-italic');
 echo Html::li()->close();
 
 echo Html::ul()->close();

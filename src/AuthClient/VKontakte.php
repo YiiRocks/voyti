@@ -33,9 +33,11 @@ final readonly class VKontakte extends AbstractAuthClient
     #[\Override]
     protected function normalizeUserAttributes(array $attributes, array $tokenData): array
     {
-        $response = $attributes['response'] ?? [];
-        /** @var array $account */
-        $account = is_array($response) && isset($response[0]) && is_array($response[0]) ? $response[0] : [];
+        $account = is_array($attributes['response'] ?? null)
+            && isset($attributes['response'][0])
+            && is_array($attributes['response'][0])
+            ? $attributes['response'][0]
+            : [];
         $firstName = $this->firstString($account, ['first_name']);
         $lastName = $this->firstString($account, ['last_name']);
 
@@ -43,7 +45,7 @@ final readonly class VKontakte extends AbstractAuthClient
             'id' => $this->firstString($account, ['id']) ?? $this->firstString($tokenData, ['user_id']) ?? '',
             'email' => $this->firstString($tokenData, ['email']),
             'username' => $this->firstString($account, ['screen_name']),
-            'name' => trim(implode(' ', array_filter([$firstName, $lastName]))) ?: null,
+            'name' => trim(implode(' ', [$firstName, $lastName])) ?: null,
         ];
     }
 

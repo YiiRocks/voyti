@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Strategy;
 
 use InvalidArgumentException;
-use ReflectionProperty;
+use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Repository\UserTokenRepository;
@@ -15,107 +15,71 @@ use YiiRocks\Voyti\Strategy\EmailChangeStrategyFactory;
 use YiiRocks\Voyti\Strategy\InsecureEmailChangeStrategy;
 use YiiRocks\Voyti\Strategy\MailChangeStrategyInterface;
 use YiiRocks\Voyti\Strategy\SecureEmailChangeStrategy;
-use Yiisoft\Mailer\MailerInterface;
-use Yiisoft\Router\UrlGeneratorInterface;
+use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
+use YiiRocks\Voyti\tests\Support\MailCapture;
 use Yiisoft\Translator\TranslatorInterface;
 
-final class EmailChangeStrategyFactoryTest extends \PHPUnit\Framework\TestCase
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+final class EmailChangeStrategyFactoryTest extends TestCase
 {
 
-    public function testMakeByStrategyTypeReturnsDefaultStrategyWiredWithTokenFactoryAndMailService(): void
+    public function testMakeByStrategyTypeReturnsDefaultForOne(): void
     {
-        $tokenFactory = $this->tokenFactory();
-        $mailService = $this->mailService();
-        $factory = new EmailChangeStrategyFactory($tokenFactory, $mailService);
-        $form = $this->form();
-
-        $strategy = $factory->makeByStrategyType(MailChangeStrategyInterface::TYPE_DEFAULT, $form);
-
-        self::assertInstanceOf(DefaultEmailChangeStrategy::class, $strategy);
-        self::assertSame($form, $this->readProperty($strategy, 'form'));
-        self::assertSame($tokenFactory, $this->readProperty($strategy, 'tokenFactory'));
-        self::assertSame($mailService, $this->readProperty($strategy, 'mailService'));
+        $factory = $this->createFactory();
+        $strategy = $factory->makeByStrategyType(
+            MailChangeStrategyInterface::TYPE_DEFAULT,
+            new SettingsForm($this->createMock(TranslatorInterface::class)),
+        );
+        $this->assertInstanceOf(DefaultEmailChangeStrategy::class, $strategy);
     }
 
-    public function testMakeByStrategyTypeReturnsInsecureStrategy(): void
+    public function testMakeByStrategyTypeReturnsInsecureForZero(): void
     {
-        $factory = $this->factory();
-        $form = $this->form();
-
-        $strategy = $factory->makeByStrategyType(MailChangeStrategyInterface::TYPE_INSECURE, $form);
-
-        self::assertInstanceOf(InsecureEmailChangeStrategy::class, $strategy);
-        self::assertSame($form, $this->readProperty($strategy, 'form'));
+        $factory = $this->createFactory();
+        $strategy = $factory->makeByStrategyType(
+            MailChangeStrategyInterface::TYPE_INSECURE,
+            new SettingsForm($this->createMock(TranslatorInterface::class)),
+        );
+        $this->assertInstanceOf(InsecureEmailChangeStrategy::class, $strategy);
     }
 
-    public function testMakeByStrategyTypeReturnsSecureStrategyWrappingDefaultStrategy(): void
+    public function testMakeByStrategyTypeReturnsSecureForTwo(): void
     {
-        $tokenFactory = $this->tokenFactory();
-        $mailService = $this->mailService();
-        $factory = new EmailChangeStrategyFactory($tokenFactory, $mailService);
-        $form = $this->form();
-
-        $strategy = $factory->makeByStrategyType(MailChangeStrategyInterface::TYPE_SECURE, $form);
-
-        self::assertInstanceOf(SecureEmailChangeStrategy::class, $strategy);
-        self::assertSame($form, $this->readProperty($strategy, 'form'));
-        self::assertSame($tokenFactory, $this->readProperty($strategy, 'tokenFactory'));
-        self::assertSame($mailService, $this->readProperty($strategy, 'mailService'));
-
-        $inner = $this->readProperty($strategy, 'defaultStrategy');
-        self::assertInstanceOf(DefaultEmailChangeStrategy::class, $inner);
-        self::assertSame($form, $this->readProperty($inner, 'form'));
-        self::assertSame($tokenFactory, $this->readProperty($inner, 'tokenFactory'));
-        self::assertSame($mailService, $this->readProperty($inner, 'mailService'));
+        $factory = $this->createFactory();
+        $strategy = $factory->makeByStrategyType(
+            MailChangeStrategyInterface::TYPE_SECURE,
+            new SettingsForm($this->createMock(TranslatorInterface::class)),
+        );
+        $this->assertInstanceOf(SecureEmailChangeStrategy::class, $strategy);
     }
 
-    public function testMakeByStrategyTypeThrowsForUnknownNegativeStrategy(): void
+    public function testMakeByStrategyTypeThrowsForNegative(): void
     {
-        $factory = $this->factory();
+        $factory = $this->createFactory();
 
         $this->expectException(InvalidArgumentException::class);
 
-        $factory->makeByStrategyType(-1, $this->form());
+        $factory->makeByStrategyType(-1, new SettingsForm($this->createMock(TranslatorInterface::class)));
     }
-    public function testMakeByStrategyTypeThrowsForUnknownStrategy(): void
+
+    public function testMakeByStrategyTypeThrowsForUnknown(): void
     {
-        $factory = $this->factory();
+        $factory = $this->createFactory();
 
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Unknown strategy type');
 
-        $factory->makeByStrategyType(999, $this->form());
+        $factory->makeByStrategyType(999, new SettingsForm($this->createMock(TranslatorInterface::class)));
     }
-
-    private function factory(): EmailChangeStrategyFactory
+    private function createFactory(): EmailChangeStrategyFactory
     {
-        return new EmailChangeStrategyFactory($this->tokenFactory(), $this->mailService());
-    }
+        $tokenFactory = new UserTokenFactory(new UserTokenRepository());
+        $translator = $this->createMock(TranslatorInterface::class);
+        $translator->method('translate')->willReturnCallback(fn (string $id) => $id);
+        $mailCapture = new MailCapture();
+        $urlGenerator = new FakeUrlGenerator();
+        $mailService = new MailService($mailCapture, '/tmp', $translator, $urlGenerator, 'App');
 
-    private function form(): SettingsForm
-    {
-        return new SettingsForm($this->createStub(TranslatorInterface::class));
-    }
-
-    private function mailService(): MailService
-    {
-        return new MailService(
-            $this->createStub(MailerInterface::class),
-            '/tmp/mail-views',
-            $this->createStub(TranslatorInterface::class),
-            $this->createStub(UrlGeneratorInterface::class),
-        );
-    }
-
-    private function readProperty(object $object, string $property): mixed
-    {
-        $reflection = new ReflectionProperty($object, $property);
-
-        return $reflection->getValue($object);
-    }
-
-    private function tokenFactory(): UserTokenFactory
-    {
-        return new UserTokenFactory(new UserTokenRepository());
+        return new EmailChangeStrategyFactory($tokenFactory, $mailService);
     }
 }

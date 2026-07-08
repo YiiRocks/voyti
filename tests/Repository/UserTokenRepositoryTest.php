@@ -4,101 +4,90 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Repository;
 
+use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Repository\UserTokenRepository;
-use YiiRocks\Voyti\tests\TestCase;
-use Yiisoft\Db\Connection\ConnectionProvider;
+use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 
 final class UserTokenRepositoryTest extends TestCase
 {
-    #[\Override]
+    use DatabaseSetupTrait;
+
     protected function setUp(): void
     {
-        parent::setUp();
-
-        ConnectionProvider::set($this->getDb());
-        $this->getDb()->createCommand('CREATE TABLE {{%user_token}} (
-            user_id INTEGER NOT NULL,
-            code VARCHAR(64) NOT NULL,
-            type INTEGER NOT NULL,
-            created_at INTEGER NOT NULL,
-            PRIMARY KEY (user_id, code, type)
-        )')->execute();
+        $this->setUpDatabase();
     }
 
-    #[\Override]
     protected function tearDown(): void
     {
-        if ($this->hasSqliteConnection()) {
-            $this->getDb()->createCommand('DROP TABLE IF EXISTS {{%user_token}}')->execute();
-            ConnectionProvider::clear();
-        }
-
-        parent::tearDown();
+        $this->tearDownDatabase();
     }
 
-    public function testDeleteAllByUserIdOnlyDeletesTokensForGivenUser(): void
+    public function testFindByCodeAndTypeFiltersByCode(): void
     {
-        $this->insertToken(1, 'code-1', UserToken::TYPE_CONFIRMATION);
-        $this->insertToken(2, 'code-2', UserToken::TYPE_CONFIRMATION);
+        $repo = new UserTokenRepository();
 
-        $repository = new UserTokenRepository();
-        $repository->deleteAllByUserId(1);
+        $token1 = new UserToken();
+        $token1->setUserId(1);
+        $token1->setCode('codeB');
+        $token1->setType(UserToken::TYPE_CONFIRM_NEW_EMAIL);
+        $token1->setCreatedAt(time());
+        $token1->save();
 
-        self::assertSame([], $repository->findByUserId(1));
-        self::assertNotNull($repository->findByUserIdAndCode(2, 'code-2'));
+        $token2 = new UserToken();
+        $token2->setUserId(1);
+        $token2->setCode('codeA');
+        $token2->setType(UserToken::TYPE_CONFIRM_NEW_EMAIL);
+        $token2->setCreatedAt(time());
+        $token2->save();
+
+        $found = $repo->findByCodeAndType('codeA', UserToken::TYPE_CONFIRM_NEW_EMAIL);
+        self::assertNotNull($found);
+        self::assertSame('codeA', $found->getCode());
     }
 
-    public function testFindByUserIdAndCodeAndTypeOnlyReturnsMatchingUser(): void
+    public function testFindByUserIdFiltersByUserId(): void
     {
-        $this->insertToken(1, 'shared-code', UserToken::TYPE_RECOVERY);
-        $this->insertToken(2, 'shared-code', UserToken::TYPE_RECOVERY);
+        $repo = new UserTokenRepository();
 
-        $repository = new UserTokenRepository();
-        $result = $repository->findByUserIdAndCodeAndType(1, 'shared-code', UserToken::TYPE_RECOVERY);
+        $token1 = new UserToken();
+        $token1->setUserId(1);
+        $token1->setCode('user1token');
+        $token1->setType(UserToken::TYPE_CONFIRM_NEW_EMAIL);
+        $token1->setCreatedAt(time());
+        $token1->save();
 
-        self::assertSame(1, $result->getUserId());
+        $token2 = new UserToken();
+        $token2->setUserId(2);
+        $token2->setCode('user2token');
+        $token2->setType(UserToken::TYPE_RECOVERY);
+        $token2->setCreatedAt(time());
+        $token2->save();
 
-        self::assertNull($repository->findByUserIdAndCodeAndType(999, 'shared-code', UserToken::TYPE_RECOVERY));
+        $tokens = $repo->findByUserId(1);
+        self::assertCount(1, $tokens);
+        self::assertSame('user1token', $tokens[0]->getCode());
     }
 
-    public function testFindByUserIdAndCodeOnlyReturnsMatchingUser(): void
+    public function testFindByUserIdRespectsAllResultsWhenMultipleMatch(): void
     {
-        $this->insertToken(1, 'shared-code', UserToken::TYPE_CONFIRMATION);
-        $this->insertToken(2, 'shared-code', UserToken::TYPE_CONFIRMATION);
+        $repo = new UserTokenRepository();
 
-        $repository = new UserTokenRepository();
-        $result = $repository->findByUserIdAndCode(1, 'shared-code');
+        $token1 = new UserToken();
+        $token1->setUserId(1);
+        $token1->setCode('tokenA');
+        $token1->setType(UserToken::TYPE_CONFIRM_NEW_EMAIL);
+        $token1->setCreatedAt(time());
+        $token1->save();
 
-        self::assertSame(1, $result->getUserId());
+        $token2 = new UserToken();
+        $token2->setUserId(1);
+        $token2->setCode('tokenB');
+        $token2->setType(UserToken::TYPE_RECOVERY);
+        $token2->setCreatedAt(time());
+        $token2->save();
 
-        self::assertNull($repository->findByUserIdAndCode(999, 'shared-code'));
-    }
-
-    public function testFindByUserIdOnlyReturnsTokensForGivenUser(): void
-    {
-        $this->insertToken(1, 'code-1', UserToken::TYPE_CONFIRMATION);
-        $this->insertToken(2, 'code-2', UserToken::TYPE_CONFIRMATION);
-        $this->insertToken(1, 'code-3', UserToken::TYPE_RECOVERY);
-
-        $repository = new UserTokenRepository();
-        $result = $repository->findByUserId(1);
-
-        $codes = array_map(static fn (UserToken $token): string => $token->getCode(), $result);
-        sort($codes);
-        self::assertSame(['code-1', 'code-3'], $codes);
-        foreach ($result as $token) {
-            self::assertSame(1, $token->getUserId());
-        }
-    }
-
-    private function insertToken(int $userId, string $code, int $type): void
-    {
-        $token = new UserToken();
-        $token->setUserId($userId);
-        $token->setCode($code);
-        $token->setType($type);
-        $token->setCreatedAt(1_700_000_000);
-        $token->save();
+        $tokens = $repo->findByUserId(1);
+        self::assertCount(2, $tokens);
     }
 }

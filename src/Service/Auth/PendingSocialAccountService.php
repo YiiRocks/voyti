@@ -77,6 +77,7 @@ final readonly class PendingSocialAccountService
 
     private function code(): string|null
     {
+        /** @var mixed $code */
         $code = $this->session->get(self::SESSION_KEY);
 
         return is_string($code) && $code !== '' ? $code : null;

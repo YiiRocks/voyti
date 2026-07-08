@@ -17,197 +17,235 @@ use Yiisoft\Rbac\Permission;
 use Yiisoft\Rbac\Role;
 use Yiisoft\User\CurrentUser;
 
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class AuthHelperTest extends TestCase
 {
-    public function testGetRuleNamesReturnsEmptyArrayWhenNoRulesConfigured(): void
+
+    public function testGetRuleNamesReturnsEmptyWhenNoItems(): void
     {
         $itemsStorage = $this->createMock(ItemsStorageInterface::class);
-        $itemsStorage->expects(self::once())->method('getAll')->willReturn(['admin' => new Role('admin')]);
-        $authManager = $this->createStub(ManagerInterface::class);
-        $helper = $this->createHelper($authManager, new ModuleConfig(), $itemsStorage);
+        $itemsStorage->expects(self::once())->method('getAll')->willReturn([]);
 
-        $ruleNames = $helper->getRuleNames();
-        self::assertSame([], $ruleNames);
+        $helper = $this->createHelper(itemsStorage: $itemsStorage);
+
+        self::assertSame([], $helper->getRuleNames());
     }
 
-    public function testGetRuleNamesReturnsUniqueRuleClassNames(): void
+    public function testGetRuleNamesReturnsUniqueRuleNames(): void
     {
-        $role1 = (new Role('admin'))->withRuleName('App\\Rule\\AdminRule');
-        $role2 = (new Role('user'))->withRuleName('App\\Rule\\AdminRule');
-        $perm = (new Permission('read'))->withRuleName('App\\Rule\\ReadRule');
+        $role1 = new Role('admin');
+        $role1 = $role1->withRuleName('isAdmin');
+        $role2 = new Role('editor');
+        $role2 = $role2->withRuleName('isEditor');
+        $permission = new Permission('write');
+        $permission = $permission->withRuleName('canWrite');
+        $roleNoRule = new Role('user');
+
         $itemsStorage = $this->createMock(ItemsStorageInterface::class);
         $itemsStorage->expects(self::once())->method('getAll')->willReturn([
             'admin' => $role1,
-            'user' => $role2,
-            'read' => $perm,
+            'editor' => $role2,
+            'write' => $permission,
+            'user' => $roleNoRule,
         ]);
-        $authManager = $this->createStub(ManagerInterface::class);
-        $helper = $this->createHelper($authManager, new ModuleConfig(), $itemsStorage);
 
-        $ruleNames = $helper->getRuleNames();
-        self::assertCount(2, $ruleNames);
-        self::assertContains('App\\Rule\\AdminRule', $ruleNames);
-        self::assertContains('App\\Rule\\ReadRule', $ruleNames);
-        self::assertSame([0, 1], array_keys($ruleNames));
+        $helper = $this->createHelper(itemsStorage: $itemsStorage);
+        $rules = $helper->getRuleNames();
+
+        sort($rules);
+        self::assertSame(['canWrite', 'isAdmin', 'isEditor'], $rules);
     }
 
-    public function testGetUnassignedItemsReturnsItemsNotAssignedToUser(): void
+    public function testGetRuleNamesReturnsUniqueValues(): void
     {
+        $role1 = (new Role('admin'))->withRuleName('isAdmin');
+        $role2 = (new Role('superadmin'))->withRuleName('isAdmin');
+
         $itemsStorage = $this->createMock(ItemsStorageInterface::class);
         $itemsStorage->expects(self::once())->method('getAll')->willReturn([
-            'admin' => new Role('admin'),
-            'user' => new Role('user'),
-            'editor' => new Role('editor'),
+            'admin' => $role1,
+            'superadmin' => $role2,
         ]);
+
+        $helper = $this->createHelper(itemsStorage: $itemsStorage);
+        $rules = $helper->getRuleNames();
+
+        self::assertCount(1, $rules);
+        self::assertSame(['isAdmin'], $rules);
+    }
+
+    public function testGetUnassignedItemsFiltersAssigned(): void
+    {
+        $items = [
+            'read' => new Permission('read'),
+            'write' => new Permission('write'),
+            'admin' => new Role('admin'),
+        ];
+
+        $assigned = [new Assignment('1', 'read', 1234567890)];
+
         $assignmentsStorage = $this->createMock(AssignmentsStorageInterface::class);
-        $assignmentsStorage->expects(self::once())
-            ->method('getByUserId')
-            ->with('1')
-            ->willReturn(['admin' => new Assignment('admin', 'admin', 1000)]);
-        $authManager = $this->createStub(ManagerInterface::class);
-        $helper = $this->createHelper($authManager, new ModuleConfig(), $itemsStorage, $assignmentsStorage);
+        $assignmentsStorage->expects(self::once())->method('getByUserId')->with('1')->willReturn($assigned);
+
+        $itemsStorage = $this->createMock(ItemsStorageInterface::class);
+        $itemsStorage->expects(self::once())->method('getAll')->willReturn($items);
+
+        $helper = $this->createHelper(
+            itemsStorage: $itemsStorage,
+            assignmentsStorage: $assignmentsStorage,
+        );
 
         $unassigned = $helper->getUnassignedItems(1);
         self::assertCount(2, $unassigned);
-        self::assertArrayHasKey('user', $unassigned);
-        self::assertArrayHasKey('editor', $unassigned);
-        self::assertArrayNotHasKey('admin', $unassigned);
+        self::assertArrayHasKey('write', $unassigned);
+        self::assertArrayHasKey('admin', $unassigned);
+        self::assertArrayNotHasKey('read', $unassigned);
     }
 
-    public function testHasRolePassesUserIdToManager(): void
+    public function testGetUnassignedItemsReturnsAllWhenNoneAssigned(): void
     {
-        $authManager = $this->createMock(ManagerInterface::class);
-        $authManager->expects(self::once())
-            ->method('getItemsByUserId')
-            ->with(42)
-            ->willReturn([]);
+        $items = [
+            'read' => new Permission('read'),
+            'write' => new Permission('write'),
+        ];
 
-        $helper = $this->createHelper($authManager, new ModuleConfig());
+        $assignmentsStorage = $this->createMock(AssignmentsStorageInterface::class);
+        $assignmentsStorage->expects(self::once())->method('getByUserId')->with('1')->willReturn([]);
 
-        $helper->hasRole(42, 'editor');
+        $itemsStorage = $this->createMock(ItemsStorageInterface::class);
+        $itemsStorage->expects(self::once())->method('getAll')->willReturn($items);
+
+        $helper = $this->createHelper(
+            itemsStorage: $itemsStorage,
+            assignmentsStorage: $assignmentsStorage,
+        );
+
+        self::assertSame($items, $helper->getUnassignedItems(1));
     }
 
-    public function testHasRoleReturnsFalseForEmptyAssignments(): void
+    public function testHasRoleReturnsFalseWhenRoleMissing(): void
     {
         $authManager = $this->createMock(ManagerInterface::class);
-        $authManager->expects(self::once())
-            ->method('getItemsByUserId')
-            ->willReturn([]);
+        $authManager->expects(self::once())->method('getItemsByUserId')->with(1)->willReturn([]);
 
-        $helper = $this->createHelper($authManager, new ModuleConfig());
-
-        self::assertFalse($helper->hasRole(1, 'editor'));
-    }
-
-    public function testHasRoleReturnsFalseWhenUserDoesNotHaveRole(): void
-    {
-        $authManager = $this->createMock(ManagerInterface::class);
-        $authManager->expects(self::once())
-            ->method('getItemsByUserId')
-            ->willReturn(['editor' => new Role('editor')]);
-
-        $helper = $this->createHelper($authManager, new ModuleConfig());
+        $helper = $this->createHelper(authManager: $authManager);
 
         self::assertFalse($helper->hasRole(1, 'admin'));
     }
 
-    public function testHasRoleReturnsTrueWhenUserHasRole(): void
+    public function testHasRoleReturnsTrueWhenRoleExists(): void
     {
         $authManager = $this->createMock(ManagerInterface::class);
-        $authManager->expects(self::once())
-            ->method('getItemsByUserId')
-            ->willReturn(['editor' => new Role('editor')]);
+        $authManager->expects(self::once())->method('getItemsByUserId')->with(1)->willReturn([
+            'admin' => new Role('admin'),
+            'editor' => new Role('editor'),
+        ]);
 
-        $helper = $this->createHelper($authManager, new ModuleConfig());
+        $helper = $this->createHelper(authManager: $authManager);
 
-        self::assertTrue($helper->hasRole(1, 'editor'));
+        self::assertTrue($helper->hasRole(1, 'admin'));
     }
 
-    public function testIsAdminPassesUserIdToManager(): void
+    public function testIsAdminWithGivenUserIdAndUserIsAdmin(): void
     {
-        $authManager = $this->createMock(ManagerInterface::class);
-        $authManager->expects(self::once())
-            ->method('getItemsByUserId')
-            ->with(42)
-            ->willReturn([]);
-
         $config = new ModuleConfig(administratorPermissionName: 'admin');
-        $helper = $this->createHelper($authManager, $config);
 
-        $helper->isAdmin(42);
+        $authManager = $this->createMock(ManagerInterface::class);
+        $authManager->expects(self::once())->method('getItemsByUserId')->with(3)->willReturn([
+            'admin' => new Permission('admin'),
+        ]);
+
+        $helper = $this->createHelper(
+            authManager: $authManager,
+            config: $config,
+        );
+
+        self::assertTrue($helper->isAdmin(3));
     }
 
-    public function testIsAdminReturnsFalseForEmptyAssignments(): void
+    public function testIsAdminWithGivenUserIdAndUserNotAdmin(): void
     {
-        $authManager = $this->createMock(ManagerInterface::class);
-        $authManager->expects(self::once())
-            ->method('getItemsByUserId')
-            ->willReturn([]);
-
         $config = new ModuleConfig(administratorPermissionName: 'admin');
-        $helper = $this->createHelper($authManager, $config);
 
-        self::assertFalse($helper->isAdmin(1));
+        $authManager = $this->createMock(ManagerInterface::class);
+        $authManager->expects(self::once())->method('getItemsByUserId')->with(2)->willReturn([]);
+
+        $helper = $this->createHelper(
+            authManager: $authManager,
+            config: $config,
+        );
+
+        self::assertFalse($helper->isAdmin(2));
     }
 
-    public function testIsAdminReturnsFalseWhenNoAdminPermissionConfigured(): void
+    public function testIsAdminWithNullUserIdAndNoAdminPermission(): void
     {
-        $authManager = $this->createMock(ManagerInterface::class);
-        $authManager->expects(self::never())->method('getItemsByUserId');
+        $identity = $this->createMock(\Yiisoft\Auth\IdentityInterface::class);
+        $identity->expects(self::once())->method('getId')->willReturn('1');
+        $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
+        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
+        $currentUser = new CurrentUser($identityRepository, $eventDispatcher);
+        $currentUser->overrideIdentity($identity);
 
         $config = new ModuleConfig(administratorPermissionName: null);
-        $helper = $this->createHelper($authManager, $config);
 
-        self::assertFalse($helper->isAdmin(1));
+        $helper = $this->createHelper(config: $config, currentUser: $currentUser);
+
+        self::assertFalse($helper->isAdmin());
     }
 
-    public function testIsAdminReturnsFalseWhenUserDoesNotHaveAdminPermission(): void
+    public function testIsAdminWithNullUserIdAndUserIsAdmin(): void
     {
-        $authManager = $this->createMock(ManagerInterface::class);
-        $authManager->expects(self::once())
-            ->method('getItemsByUserId')
-            ->willReturn(['user' => new Role('user')]);
+        $identity = $this->createMock(\Yiisoft\Auth\IdentityInterface::class);
+        $identity->expects(self::once())->method('getId')->willReturn('1');
+        $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
+        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
+        $currentUser = new CurrentUser($identityRepository, $eventDispatcher);
+        $currentUser->overrideIdentity($identity);
 
         $config = new ModuleConfig(administratorPermissionName: 'admin');
-        $helper = $this->createHelper($authManager, $config);
 
-        self::assertFalse($helper->isAdmin(1));
-    }
-
-    public function testIsAdminReturnsTrueWhenUserHasAdminPermission(): void
-    {
         $authManager = $this->createMock(ManagerInterface::class);
-        $authManager->expects(self::once())
-            ->method('getItemsByUserId')
-            ->willReturn(['admin' => new Role('admin')]);
+        $authManager->expects(self::once())->method('getItemsByUserId')->with(1)->willReturn([
+            'admin' => new Permission('admin'),
+        ]);
 
-        $config = new ModuleConfig(administratorPermissionName: 'admin');
-        $helper = $this->createHelper($authManager, $config);
+        $helper = $this->createHelper(
+            authManager: $authManager,
+            config: $config,
+            currentUser: $currentUser,
+        );
 
-        self::assertTrue($helper->isAdmin(1));
+        self::assertTrue($helper->isAdmin());
     }
 
+    public function testIsAdminWithNullUserIdReturnsFalseWhenNoCurrentUser(): void
+    {
+        $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
+        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
+        $currentUser = new CurrentUser($identityRepository, $eventDispatcher);
+
+        $helper = $this->createHelper(currentUser: $currentUser);
+
+        self::assertFalse($helper->isAdmin());
+    }
     private function createHelper(
-        ManagerInterface $authManager,
-        ModuleConfig $config,
+        ?ManagerInterface $authManager = null,
         ?ItemsStorageInterface $itemsStorage = null,
         ?AssignmentsStorageInterface $assignmentsStorage = null,
+        ?ModuleConfig $config = null,
         ?CurrentUser $currentUser = null,
     ): AuthHelper {
+        $currentUser ??= new CurrentUser(
+            $this->createMock(IdentityRepositoryInterface::class),
+            $this->createMock(EventDispatcherInterface::class),
+        );
         return new AuthHelper(
-            $authManager,
-            $itemsStorage ?? $this->createStub(ItemsStorageInterface::class),
-            $assignmentsStorage ?? $this->createStub(AssignmentsStorageInterface::class),
-            $config,
-            $currentUser ?? new CurrentUser(
-                $this->createStub(IdentityRepositoryInterface::class),
-                new class implements EventDispatcherInterface {
-                    public function dispatch(object $event): object
-                    {
-                        return $event;
-                    }
-                },
-            ),
+            $authManager ?? $this->createMock(ManagerInterface::class),
+            $itemsStorage ?? $this->createMock(ItemsStorageInterface::class),
+            $assignmentsStorage ?? $this->createMock(AssignmentsStorageInterface::class),
+            $config ?? new ModuleConfig(),
+            $currentUser,
         );
     }
 }

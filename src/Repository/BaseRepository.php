@@ -62,11 +62,11 @@ abstract class BaseRepository
      */
     protected function findOne(string $class, array $condition): ?ActiveRecordInterface
     {
-        /** @var TEntity|null $row */
-        $row = (new ActiveQuery(new $class()))
+        /** @var TEntity|null $record */
+        $record = (new ActiveQuery(new $class()))
             ->where($condition)
-            ->one() ?: null;
-        return $row;
+            ->one();
+        return $record instanceof ActiveRecordInterface ? $record : null;
     }
 
     /**

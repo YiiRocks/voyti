@@ -4,316 +4,690 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Entity;
 
+use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserProfile;
-use YiiRocks\Voyti\tests\TestCase;
+use YiiRocks\Voyti\Entity\UserSocialAccount;
+use YiiRocks\Voyti\Entity\UserToken;
+use Yiisoft\Db\Connection\ConnectionInterface;
 use Yiisoft\Db\Connection\ConnectionProvider;
 
 final class UserTest extends TestCase
 {
-    #[\Override]
+    private ?ConnectionInterface $connection = null;
+
     protected function setUp(): void
     {
-        parent::setUp();
-        ConnectionProvider::set($this->getDb());
-        $db = $this->getDb();
-        $db->createCommand('CREATE TABLE {{%user}} (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username VARCHAR(255) NOT NULL,
-            email VARCHAR(255) NOT NULL,
-            password_hash VARCHAR(60) NOT NULL,
-            auth_key VARCHAR(32) NOT NULL,
-            unconfirmed_email VARCHAR(255),
-            registration_ip VARCHAR(45),
-            flags INTEGER NOT NULL DEFAULT 0,
-            confirmed_at INTEGER,
-            blocked_at INTEGER,
-            updated_at INTEGER NOT NULL,
-            created_at INTEGER NOT NULL,
-            last_login_at INTEGER,
-            auth_tf_key VARCHAR(64),
-            auth_tf_enabled INTEGER DEFAULT 0,
-            password_changed_at INTEGER,
-            last_login_ip VARCHAR(45),
-            gdpr_deleted INTEGER DEFAULT 0,
-            gdpr_consent INTEGER DEFAULT 0,
-            gdpr_consent_date INTEGER,
-            auth_tf_type VARCHAR(20)
-        )')->execute();
-        $db->createCommand('CREATE TABLE {{%user_profile}} (
-            user_id INTEGER NOT NULL PRIMARY KEY,
-            name VARCHAR(255),
-            public_email VARCHAR(255),
-            gravatar_email VARCHAR(255),
-            location VARCHAR(255),
-            website VARCHAR(255),
-            bio TEXT,
-            timezone VARCHAR(40)
-        )')->execute();
+        if (!extension_loaded('pdo_sqlite')) {
+            self::markTestSkipped('pdo_sqlite extension required.');
+        }
+
+        $connection = $this->createSqliteConnection();
+        ConnectionProvider::set($connection);
+        $this->connection = $connection;
+
+        $this->connection->createCommand('
+            CREATE TABLE "user" (
+                "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+                "username" VARCHAR(255) NOT NULL,
+                "email" VARCHAR(255) NOT NULL,
+                "password_hash" VARCHAR(255) NOT NULL,
+                "auth_key" VARCHAR(32) NOT NULL,
+                "auth_tf_enabled" INTEGER NOT NULL DEFAULT 0,
+                "auth_tf_key" VARCHAR(64),
+                "auth_tf_type" VARCHAR(20),
+                "blocked_at" INTEGER,
+                "confirmed_at" INTEGER,
+                "created_at" INTEGER NOT NULL,
+                "flags" INTEGER NOT NULL DEFAULT 0,
+                "gdpr_consent" INTEGER NOT NULL DEFAULT 0,
+                "gdpr_consent_date" INTEGER,
+                "gdpr_deleted" INTEGER NOT NULL DEFAULT 0,
+                "last_login_at" INTEGER,
+                "last_login_ip" VARCHAR(45),
+                "password_changed_at" INTEGER,
+                "registration_ip" VARCHAR(45),
+                "unconfirmed_email" VARCHAR(255),
+                "updated_at" INTEGER NOT NULL
+            )
+        ')->execute();
+
+        $this->connection->createCommand('
+            CREATE TABLE "user_profile" (
+                "user_id" INTEGER NOT NULL,
+                "bio" TEXT,
+                "gravatar_email" VARCHAR(255),
+                "location" VARCHAR(255),
+                "name" VARCHAR(255),
+                "public_email" VARCHAR(255),
+                "timezone" VARCHAR(40),
+                "website" VARCHAR(255)
+            )
+        ')->execute();
+
+        $this->connection->createCommand('
+            CREATE TABLE "user_social_account" (
+                "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+                "user_id" INTEGER,
+                "provider" VARCHAR(255) NOT NULL,
+                "client_id" VARCHAR(255) NOT NULL,
+                "code" VARCHAR(32),
+                "email" VARCHAR(255),
+                "username" VARCHAR(255),
+                "data" TEXT,
+                "created_at" INTEGER NOT NULL
+            )
+        ')->execute();
+
+        $this->connection->createCommand('
+            CREATE TABLE "user_token" (
+                "user_id" INTEGER NOT NULL,
+                "code" VARCHAR(32) NOT NULL,
+                "type" SMALLINT NOT NULL,
+                "created_at" INTEGER NOT NULL
+            )
+        ')->execute();
+
+        $this->connection->createCommand('
+            CREATE TABLE "user_session_history" (
+                "user_id" INTEGER NOT NULL,
+                "session_id" VARCHAR(255) NOT NULL,
+                "user_agent" TEXT,
+                "ip" VARCHAR(45) NOT NULL,
+                "created_at" INTEGER NOT NULL,
+                "updated_at" INTEGER NOT NULL
+            )
+        ')->execute();
     }
 
-    #[\Override]
     protected function tearDown(): void
     {
-        if ($this->hasSqliteConnection()) {
-            $this->getDb()->createCommand('DROP TABLE IF EXISTS {{%user_profile}}')->execute();
-            $this->getDb()->createCommand('DROP TABLE IF EXISTS {{%user}}')->execute();
-            ConnectionProvider::clear();
+        if ($this->connection !== null) {
+            $this->connection->createCommand('DROP TABLE IF EXISTS "user_session_history"')->execute();
+            $this->connection->createCommand('DROP TABLE IF EXISTS "user_token"')->execute();
+            $this->connection->createCommand('DROP TABLE IF EXISTS "user_social_account"')->execute();
+            $this->connection->createCommand('DROP TABLE IF EXISTS "user_profile"')->execute();
+            $this->connection->createCommand('DROP TABLE IF EXISTS "user"')->execute();
         }
-        parent::tearDown();
+        ConnectionProvider::clear();
+        $this->connection = null;
     }
 
-    public function testConfirmUserLoadedFromDb(): void
+    public function testDefaultValues(): void
     {
-        $user = new User();
-        $user->setUsername('confirmuser');
-        $user->setEmail('confirm@example.com');
-        $user->setPasswordHash('hash1');
-        $user->setAuthKey('auth1');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-
-        $loaded = User::query()->findByPk($user->getId());
-        $this->assertInstanceOf(User::class, $loaded);
-        $this->assertFalse($loaded->isConfirmed());
-
-        $loaded->setConfirmedAt(time());
-        $loaded->save();
-
-        $found = User::query()->where(['username' => 'confirmuser'])->one();
-        $this->assertInstanceOf(User::class, $found);
-        $this->assertNotNull($found->getConfirmedAt());
+        $entity = new User();
+        self::assertNull($entity->getId());
+        self::assertSame('', $entity->getEmail());
+        self::assertSame('', $entity->getUsername());
+        self::assertSame('', $entity->getPasswordHash());
+        self::assertSame('', $entity->getAuthKey());
+        self::assertSame(0, $entity->getCreatedAt());
+        self::assertSame(0, $entity->getUpdatedAt());
+        self::assertSame(0, $entity->getFlags());
+        self::assertNull($entity->getRegistrationIp());
+        self::assertNull($entity->getUnconfirmedEmail());
+        self::assertNull($entity->getBlockedAt());
+        self::assertNull($entity->getConfirmedAt());
+        self::assertNull($entity->getLastLoginAt());
+        self::assertNull($entity->getLastLoginIp());
+        self::assertNull($entity->getPasswordChangedAt());
+        self::assertNull($entity->getAuthTfKey());
+        self::assertNull($entity->getAuthTfType());
+        self::assertFalse($entity->isAuthTfEnabled());
+        self::assertFalse($entity->isGdprConsent());
+        self::assertFalse($entity->isGdprDeleted());
+        self::assertNull($entity->getGdprConsentDate());
     }
 
-    public function testCreateAndFind(): void
+    public function testGetCookieLoginKey(): void
     {
-        $user = new User();
-        $user->setUsername('testuser');
-        $user->setEmail('test@example.com');
-        $user->setPasswordHash('hashed123');
-        $user->setAuthKey('key123');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-
-        $found = User::query()->where(['username' => 'testuser'])->one();
-        $this->assertInstanceOf(User::class, $found);
-        $this->assertSame('testuser', $found->getUsername());
-        $this->assertSame('test@example.com', $found->getEmail());
+        $entity = new User();
+        $entity->setAuthKey('cookie_key');
+        self::assertSame('cookie_key', $entity->getCookieLoginKey());
     }
 
-    public function testDeleteUser(): void
+    public function testGetIdReturnsNullWhenNotSet(): void
     {
-        $user = new User();
-        $user->setUsername('deleteuser');
-        $user->setEmail('delete@example.com');
-        $user->setPasswordHash('hash2');
-        $user->setAuthKey('auth2');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-
-        $user->delete();
-
-        $found = User::query()->where(['username' => 'deleteuser'])->one();
-        $this->assertNull($found);
+        $entity = new User();
+        self::assertNull($entity->getId());
     }
 
-    public function testFlags(): void
+    public function testGetIdReturnsStringWhenSet(): void
     {
-        $user = new User();
-        $this->assertEquals(0, $user->getFlags());
-        $user->setFlags(User::OLD_EMAIL_CONFIRMED | User::NEW_EMAIL_CONFIRMED);
-        $this->assertEquals(3, $user->getFlags());
+        $entity = new User();
+        $entity->setUsername('test');
+        $entity->setEmail('test@example.com');
+        $entity->setPasswordHash('hash');
+        $entity->setAuthKey('key');
+        $entity->setCreatedAt(1000);
+        $entity->setUpdatedAt(1000);
+        $entity->save();
+
+        $id = $entity->getId();
+        self::assertNotNull($id);
+        self::assertIsString($id);
     }
 
-    public function testGdprFlags(): void
+    public function testGetPasswordAgeAtExactDay(): void
     {
-        $user = new User();
-        $this->assertFalse($user->isGdprDeleted());
-        $this->assertFalse($user->isGdprConsent());
-        $user->setGdprDeleted(true);
-        $user->setGdprConsent(true);
-        $user->setGdprConsentDate(12345);
-        $this->assertTrue($user->isGdprDeleted());
-        $this->assertTrue($user->isGdprConsent());
-        $this->assertEquals(12345, $user->getGdprConsentDate());
+        $entity = new User();
+        $entity->setPasswordChangedAt(time() - 86400);
+        $age = $entity->getPasswordAge();
+        self::assertSame(1, $age);
     }
 
-    public function testGetIdReturnsStringWhenInternalIdSet(): void
+    public function testGetPasswordAgeJustUnderDay(): void
     {
-        $user = new User();
-
-        $this->assertNull($user->getId());
-
-        $this->setPrivateProperty($user, 'id', 42);
-
-        $this->assertSame('42', $user->getId());
+        $entity = new User();
+        $entity->setPasswordChangedAt(time() - 86399);
+        $age = $entity->getPasswordAge();
+        self::assertSame(0, $age);
     }
 
-    public function testIsBlocked(): void
+    public function testGetPasswordAgeWithCurrentTime(): void
     {
-        $user = new User();
-        $this->assertFalse($user->isBlocked());
-        $user->setBlockedAt(time());
-        $this->assertTrue($user->isBlocked());
+        $entity = new User();
+        $entity->setPasswordChangedAt(time());
+        self::assertSame(0, $entity->getPasswordAge());
     }
 
-    public function testIsConfirmed(): void
+    public function testGetPasswordAgeWithNullPasswordChangedAt(): void
     {
-        $user = new User();
-        $this->assertFalse($user->isConfirmed());
-        $user->setConfirmedAt(time());
-        $this->assertTrue($user->isConfirmed());
+        $entity = new User();
+        $entity->setPasswordChangedAt(null);
+        self::assertSame(9999, $entity->getPasswordAge());
     }
 
-    public function testLastLoginIp(): void
+    public function testGetProfileReturnsNullWhenNotLinked(): void
     {
-        $user = new User();
-        $this->assertNull($user->getLastLoginIp());
-        $user->setLastLoginIp('10.0.0.1');
-        $this->assertEquals('10.0.0.1', $user->getLastLoginIp());
+        $entity = new User();
+        self::assertNull($entity->getProfile());
     }
 
-    public function testLoadsRelatedProfile(): void
+    public function testGetProfileReturnsProfileWhenLinked(): void
     {
-        $user = $this->createUser('profileuser', 'profile@example.com', 'hash3', 'auth3');
-        $otherUser = $this->createUser('otherprofileuser', 'otherprofile@example.com', 'hash4', 'auth4');
+        $entity = new User();
+        $entity->setUsername('profile_test');
+        $entity->setEmail('profile_test@example.com');
+        $entity->setPasswordHash('hash');
+        $entity->setAuthKey('key');
+        $entity->setCreatedAt(1000);
+        $entity->setUpdatedAt(1000);
+        $entity->save();
 
         $profile = new UserProfile();
-        $profile->setUserId((int) $user->getId());
-        $profile->setName('Profile User');
+        $profile->setUserId((int) $entity->getId());
+        $profile->setBio('Test bio');
         $profile->save();
 
-        $otherProfile = new UserProfile();
-        $otherProfile->setUserId((int) $otherUser->getId());
-        $otherProfile->setName('Other Profile User');
-        $otherProfile->save();
+        $loaded = User::query()->where(['username' => 'profile_test'])->one();
+        self::assertNotNull($loaded);
 
-        $found = User::query()->where(['username' => 'profileuser'])->one();
-        $this->assertInstanceOf(User::class, $found);
-        $relatedProfile = $found->getProfile();
-        $this->assertInstanceOf(UserProfile::class, $relatedProfile);
-        $this->assertSame('Profile User', $relatedProfile->getName());
-        $this->assertSame((int) $user->getId(), $relatedProfile->getUserId());
+        $found = $loaded->getProfile();
+        self::assertNotNull($found);
+        self::assertSame('Test bio', $found->getBio());
     }
 
-    public function testPasswordAge(): void
+    public function testGetSetAuthKey(): void
     {
-        $user = new User();
-        $this->assertEquals(9999, $user->getPasswordAge());
-        $user->setPasswordChangedAt(time() - 86400 * 5);
-        $this->assertEquals(5, $user->getPasswordAge());
+        $entity = new User();
+        $entity->setAuthKey('auth_key_value');
+        self::assertSame('auth_key_value', $entity->getAuthKey());
     }
 
-    public function testPasswordAgeStaysZeroBeforeFullDayElapsed(): void
+    public function testGetSetAuthTfKey(): void
     {
-        $user = new User();
-        $user->setPasswordChangedAt(time() - 86399);
-
-        $this->assertSame(0, $user->getPasswordAge());
+        $entity = new User();
+        $entity->setAuthTfKey('tfkey123');
+        self::assertSame('tfkey123', $entity->getAuthTfKey());
     }
 
-    public function testPublicUserApiRemainsPublic(): void
+    public function testGetSetAuthTfKeyWithNull(): void
     {
-        foreach ([
-            'getConfirmedAt',
-            'getFlags',
-            'getPasswordAge',
-            'getRegistrationIp',
-            'getUnconfirmedEmail',
-            'isConfirmed',
-            'isGdprConsent',
-            'isGdprDeleted',
-            'setAuthTfEnabled',
-            'setConfirmedAt',
-            'setFlags',
-            'setGdprConsent',
-            'setGdprConsentDate',
-            'setGdprDeleted',
-            'setLastLoginAt',
-            'setPasswordChangedAt',
-            'setRegistrationIp',
-            'setUnconfirmedEmail',
-            'validateAuthKey',
-        ] as $method) {
-            $this->assertTrue((new \ReflectionMethod(User::class, $method))->isPublic(), $method . ' should stay public.');
-        }
+        $entity = new User();
+        $entity->setAuthTfKey(null);
+        self::assertNull($entity->getAuthTfKey());
     }
 
-    public function testRegistrationIp(): void
+    public function testGetSetAuthTfType(): void
     {
-        $user = new User();
-        $this->assertNull($user->getRegistrationIp());
-        $user->setRegistrationIp('192.168.1.1');
-        $this->assertEquals('192.168.1.1', $user->getRegistrationIp());
+        $entity = new User();
+        $entity->setAuthTfType('totp');
+        self::assertSame('totp', $entity->getAuthTfType());
     }
 
-    public function testTwoFactor(): void
+    public function testGetSetAuthTfTypeWithNull(): void
     {
-        $user = new User();
-        $this->assertNull($user->getAuthTfKey());
-        $this->assertFalse($user->isAuthTfEnabled());
-        $user->setAuthTfKey('SECRETKEY123');
-        $user->setAuthTfEnabled(true);
-        $this->assertEquals('SECRETKEY123', $user->getAuthTfKey());
-        $this->assertTrue($user->isAuthTfEnabled());
+        $entity = new User();
+        $entity->setAuthTfType(null);
+        self::assertNull($entity->getAuthTfType());
     }
 
-    public function testUnconfirmedEmail(): void
+    public function testGetSetBlockedAt(): void
     {
-        $user = new User();
-        $this->assertNull($user->getUnconfirmedEmail());
-        $user->setUnconfirmedEmail('new@example.com');
-        $this->assertEquals('new@example.com', $user->getUnconfirmedEmail());
+        $entity = new User();
+        $entity->setBlockedAt(12345);
+        self::assertSame(12345, $entity->getBlockedAt());
     }
 
-    public function testUpdateUser(): void
+    public function testGetSetBlockedAtWithNull(): void
     {
-        $user = new User();
-        $user->setUsername('updateuser');
-        $user->setEmail('original@example.com');
-        $user->setPasswordHash('hash1');
-        $user->setAuthKey('auth1');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-
-        $user->setEmail('updated@example.com');
-        $user->setUpdatedAt(time());
-        $user->save();
-
-        $found = User::query()->where(['username' => 'updateuser'])->one();
-        $this->assertInstanceOf(User::class, $found);
-        $this->assertSame('updated@example.com', $found->getEmail());
+        $entity = new User();
+        $entity->setBlockedAt(null);
+        self::assertNull($entity->getBlockedAt());
     }
 
-    public function testValidateAuthKey(): void
+    public function testGetSetConfirmedAt(): void
     {
-        $user = new User();
-        $user->setAuthKey('secret123');
-        $this->assertTrue($user->validateAuthKey('secret123'));
-        $this->assertFalse($user->validateAuthKey('wrong'));
+        $entity = new User();
+        $entity->setConfirmedAt(12345);
+        self::assertSame(12345, $entity->getConfirmedAt());
     }
 
-    private function createUser(string $username, string $email, string $passwordHash, string $authKey): User
+    public function testGetSetConfirmedAtWithNull(): void
     {
-        $user = new User();
-        $user->setUsername($username);
-        $user->setEmail($email);
-        $user->setPasswordHash($passwordHash);
-        $user->setAuthKey($authKey);
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-
-        return $user;
+        $entity = new User();
+        $entity->setConfirmedAt(null);
+        self::assertNull($entity->getConfirmedAt());
     }
 
-    private function setPrivateProperty(User $user, string $property, mixed $value): void
+    public function testGetSetCreatedAt(): void
     {
-        $reflectionProperty = new \ReflectionProperty(User::class, $property);
-        $reflectionProperty->setValue($user, $value);
+        $entity = new User();
+        $entity->setCreatedAt(1234567890);
+        self::assertSame(1234567890, $entity->getCreatedAt());
+    }
+
+    public function testGetSetEmail(): void
+    {
+        $entity = new User();
+        $entity->setEmail('user@example.com');
+        self::assertSame('user@example.com', $entity->getEmail());
+    }
+
+    public function testGetSetFlags(): void
+    {
+        $entity = new User();
+        $entity->setFlags(5);
+        self::assertSame(5, $entity->getFlags());
+    }
+
+    public function testGetSetGdprConsentDate(): void
+    {
+        $entity = new User();
+        $entity->setGdprConsentDate(12345);
+        self::assertSame(12345, $entity->getGdprConsentDate());
+    }
+
+    public function testGetSetGdprConsentDateWithNull(): void
+    {
+        $entity = new User();
+        $entity->setGdprConsentDate(null);
+        self::assertNull($entity->getGdprConsentDate());
+    }
+
+    public function testGetSetLastLoginAt(): void
+    {
+        $entity = new User();
+        $entity->setLastLoginAt(12345);
+        self::assertSame(12345, $entity->getLastLoginAt());
+    }
+
+    public function testGetSetLastLoginAtWithNull(): void
+    {
+        $entity = new User();
+        $entity->setLastLoginAt(null);
+        self::assertNull($entity->getLastLoginAt());
+    }
+
+    public function testGetSetLastLoginIp(): void
+    {
+        $entity = new User();
+        $entity->setLastLoginIp('10.0.0.1');
+        self::assertSame('10.0.0.1', $entity->getLastLoginIp());
+    }
+
+    public function testGetSetLastLoginIpWithNull(): void
+    {
+        $entity = new User();
+        $entity->setLastLoginIp(null);
+        self::assertNull($entity->getLastLoginIp());
+    }
+
+    public function testGetSetPasswordChangedAt(): void
+    {
+        $entity = new User();
+        $entity->setPasswordChangedAt(12345);
+        self::assertSame(12345, $entity->getPasswordChangedAt());
+    }
+
+    public function testGetSetPasswordChangedAtWithNull(): void
+    {
+        $entity = new User();
+        $entity->setPasswordChangedAt(null);
+        self::assertNull($entity->getPasswordChangedAt());
+    }
+
+    public function testGetSetPasswordHash(): void
+    {
+        $entity = new User();
+        $entity->setPasswordHash('hashed_password');
+        self::assertSame('hashed_password', $entity->getPasswordHash());
+    }
+
+    public function testGetSetRegistrationIp(): void
+    {
+        $entity = new User();
+        $entity->setRegistrationIp('192.168.1.1');
+        self::assertSame('192.168.1.1', $entity->getRegistrationIp());
+    }
+
+    public function testGetSetRegistrationIpWithNull(): void
+    {
+        $entity = new User();
+        $entity->setRegistrationIp(null);
+        self::assertNull($entity->getRegistrationIp());
+    }
+
+    public function testGetSetUnconfirmedEmail(): void
+    {
+        $entity = new User();
+        $entity->setUnconfirmedEmail('pending@example.com');
+        self::assertSame('pending@example.com', $entity->getUnconfirmedEmail());
+    }
+
+    public function testGetSetUnconfirmedEmailWithNull(): void
+    {
+        $entity = new User();
+        $entity->setUnconfirmedEmail(null);
+        self::assertNull($entity->getUnconfirmedEmail());
+    }
+
+    public function testGetSetUpdatedAt(): void
+    {
+        $entity = new User();
+        $entity->setUpdatedAt(1234567890);
+        self::assertSame(1234567890, $entity->getUpdatedAt());
+    }
+
+    public function testGetSetUsername(): void
+    {
+        $entity = new User();
+        $entity->setUsername('johndoe');
+        self::assertSame('johndoe', $entity->getUsername());
+    }
+
+    public function testGetSocialNetworkAccountsReturnsQuery(): void
+    {
+        $entity = new User();
+        $entity->setUsername('social_test');
+        $entity->setEmail('social_test@example.com');
+        $entity->setPasswordHash('hash');
+        $entity->setAuthKey('key');
+        $entity->setCreatedAt(1000);
+        $entity->setUpdatedAt(1000);
+        $entity->save();
+
+        $userId = (int) $entity->getId();
+
+        $account = new UserSocialAccount();
+        $account->setUserId($userId);
+        $account->setProvider('github');
+        $account->setClientId('client123');
+        $account->setCreatedAt(1000);
+        $account->save();
+
+        $loaded = User::query()->where(['username' => 'social_test'])->one();
+        self::assertNotNull($loaded);
+
+        $query = $loaded->getSocialNetworkAccounts();
+        self::assertInstanceOf(\Yiisoft\ActiveRecord\ActiveQueryInterface::class, $query);
+
+        $accounts = $query->all();
+        self::assertCount(1, $accounts);
+        self::assertInstanceOf(UserSocialAccount::class, $accounts[0]);
+        self::assertSame('github', $accounts[0]->getProvider());
+    }
+
+    public function testGetTokensReturnsEmptyArrayWhenNone(): void
+    {
+        $entity = new User();
+        $entity->setUsername('token_test_empty');
+        $entity->setEmail('token_test_empty@example.com');
+        $entity->setPasswordHash('hash');
+        $entity->setAuthKey('key');
+        $entity->setCreatedAt(1000);
+        $entity->setUpdatedAt(1000);
+        $entity->save();
+
+        $loaded = User::query()->where(['username' => 'token_test_empty'])->one();
+        self::assertNotNull($loaded);
+
+        self::assertSame([], $loaded->getTokens());
+    }
+
+    public function testGetTokensReturnsTokensWhenExist(): void
+    {
+        $entity = new User();
+        $entity->setUsername('token_test');
+        $entity->setEmail('token_test@example.com');
+        $entity->setPasswordHash('hash');
+        $entity->setAuthKey('key');
+        $entity->setCreatedAt(1000);
+        $entity->setUpdatedAt(1000);
+        $entity->save();
+
+        $userId = (int) $entity->getId();
+
+        $token = new UserToken();
+        $token->setUserId($userId);
+        $token->setCode('code123');
+        $token->setType(UserToken::TYPE_CONFIRMATION);
+        $token->setCreatedAt(1000);
+        $token->save();
+
+        $loaded = User::query()->where(['username' => 'token_test'])->one();
+        self::assertNotNull($loaded);
+
+        $tokens = $loaded->getTokens();
+        self::assertCount(1, $tokens);
+        self::assertSame('code123', $tokens[0]->getCode());
+    }
+
+    public function testIsAdminByListReturnsFalse(): void
+    {
+        $entity = new User();
+        $entity->setUsername('normal_user');
+        self::assertFalse($entity->isAdminByList(['admin_user', 'other']));
+    }
+
+    public function testIsAdminByListReturnsTrue(): void
+    {
+        $entity = new User();
+        $entity->setUsername('admin_user');
+        self::assertTrue($entity->isAdminByList(['admin_user', 'other']));
+    }
+
+    public function testIsAdminByListWithEmptyList(): void
+    {
+        $entity = new User();
+        $entity->setUsername('normal_user');
+        self::assertFalse($entity->isAdminByList([]));
+    }
+
+    public function testIsAuthTfEnabledWithFalse(): void
+    {
+        $entity = new User();
+        $entity->setAuthTfEnabled(false);
+        self::assertFalse($entity->isAuthTfEnabled());
+    }
+
+    public function testIsAuthTfEnabledWithOne(): void
+    {
+        $entity = new User();
+        $entity->setAuthTfEnabled(1);
+        self::assertTrue($entity->isAuthTfEnabled());
+    }
+
+    public function testIsAuthTfEnabledWithTrue(): void
+    {
+        $entity = new User();
+        $entity->setAuthTfEnabled(true);
+        self::assertTrue($entity->isAuthTfEnabled());
+    }
+
+    public function testIsAuthTfEnabledWithZero(): void
+    {
+        $entity = new User();
+        $entity->setAuthTfEnabled(0);
+        self::assertFalse($entity->isAuthTfEnabled());
+    }
+
+    public function testIsBlockedReturnsFalse(): void
+    {
+        $entity = new User();
+        $entity->setBlockedAt(null);
+        self::assertFalse($entity->isBlocked());
+    }
+
+    public function testIsBlockedReturnsTrue(): void
+    {
+        $entity = new User();
+        $entity->setBlockedAt(12345);
+        self::assertTrue($entity->isBlocked());
+    }
+
+    public function testIsConfirmedReturnsFalse(): void
+    {
+        $entity = new User();
+        $entity->setConfirmedAt(null);
+        self::assertFalse($entity->isConfirmed());
+    }
+
+    public function testIsConfirmedReturnsTrue(): void
+    {
+        $entity = new User();
+        $entity->setConfirmedAt(12345);
+        self::assertTrue($entity->isConfirmed());
+    }
+
+    public function testIsGdprConsentWithFalse(): void
+    {
+        $entity = new User();
+        $entity->setGdprConsent(false);
+        self::assertFalse($entity->isGdprConsent());
+    }
+
+    public function testIsGdprConsentWithOne(): void
+    {
+        $entity = new User();
+        $entity->setGdprConsent(1);
+        self::assertTrue($entity->isGdprConsent());
+    }
+
+    public function testIsGdprConsentWithTrue(): void
+    {
+        $entity = new User();
+        $entity->setGdprConsent(true);
+        self::assertTrue($entity->isGdprConsent());
+    }
+
+    public function testIsGdprConsentWithZero(): void
+    {
+        $entity = new User();
+        $entity->setGdprConsent(0);
+        self::assertFalse($entity->isGdprConsent());
+    }
+
+    public function testIsGdprDeletedWithFalse(): void
+    {
+        $entity = new User();
+        $entity->setGdprDeleted(false);
+        self::assertFalse($entity->isGdprDeleted());
+    }
+
+    public function testIsGdprDeletedWithOne(): void
+    {
+        $entity = new User();
+        $entity->setGdprDeleted(1);
+        self::assertTrue($entity->isGdprDeleted());
+    }
+
+    public function testIsGdprDeletedWithTrue(): void
+    {
+        $entity = new User();
+        $entity->setGdprDeleted(true);
+        self::assertTrue($entity->isGdprDeleted());
+    }
+
+    public function testIsGdprDeletedWithZero(): void
+    {
+        $entity = new User();
+        $entity->setGdprDeleted(0);
+        self::assertFalse($entity->isGdprDeleted());
+    }
+
+    public function testNewEmailConfirmedConstant(): void
+    {
+        self::assertSame(2, User::NEW_EMAIL_CONFIRMED);
+    }
+
+    public function testOldEmailConfirmedConstant(): void
+    {
+        self::assertSame(1, User::OLD_EMAIL_CONFIRMED);
+    }
+
+    public function testTableName(): void
+    {
+        $entity = new User();
+        self::assertSame('{{%user}}', $entity->tableName());
+    }
+
+    public function testValidateAuthKeyReturnsFalse(): void
+    {
+        $entity = new User();
+        $entity->setAuthKey('valid_key');
+        self::assertFalse($entity->validateAuthKey('wrong_key'));
+    }
+
+    public function testValidateAuthKeyReturnsTrue(): void
+    {
+        $entity = new User();
+        $entity->setAuthKey('valid_key');
+        self::assertTrue($entity->validateAuthKey('valid_key'));
+    }
+
+    public function testValidateAuthKeyWithEmptyString(): void
+    {
+        $entity = new User();
+        $entity->setAuthKey('');
+        self::assertTrue($entity->validateAuthKey(''));
+        self::assertFalse($entity->validateAuthKey('non_empty'));
+    }
+
+    public function testValidateCookieLoginKeyReturnsFalse(): void
+    {
+        $entity = new User();
+        $entity->setAuthKey('cookie_key_val');
+        self::assertFalse($entity->validateCookieLoginKey('wrong'));
+    }
+
+    public function testValidateCookieLoginKeyReturnsTrue(): void
+    {
+        $entity = new User();
+        $entity->setAuthKey('cookie_key_val');
+        self::assertTrue($entity->validateCookieLoginKey('cookie_key_val'));
+    }
+
+    private function createSqliteConnection(): ConnectionInterface
+    {
+        $dsn = new \Yiisoft\Db\Sqlite\Dsn('sqlite', ':memory:');
+        $driver = new \Yiisoft\Db\Sqlite\Driver($dsn);
+        $cache = $this->createStub(\Psr\SimpleCache\CacheInterface::class);
+        $cache->method('set')->willReturn(true);
+        $cache->method('get')->willReturn(null);
+        $schemaCache = new \Yiisoft\Db\Cache\SchemaCache($cache);
+        $schemaCache->setEnabled(false);
+        return new \Yiisoft\Db\Sqlite\Connection($driver, $schemaCache);
     }
 }

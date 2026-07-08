@@ -119,11 +119,15 @@ final readonly class RegistrationController
                         $serviceResult->getMessage(),
                     );
                 }
-                foreach ($serviceResult->getErrors() as $error) {
-                    if (is_string($error)) {
-                        $form->addError($error, []);
-                    }
-                }
+                $errors = $serviceResult->getErrors();
+                array_walk(
+                    $errors,
+                    function (mixed $error) use ($form): void {
+                        if (is_string($error)) {
+                            $form->addError($error, []);
+                        }
+                    },
+                );
             }
         }
 

@@ -38,21 +38,25 @@ final readonly class SocialAuthProviderService
     public function complete(string $provider, string $routeName, array $queryParams): array
     {
         $client = $this->client($provider);
+        /** @var mixed $storedState */
         $storedState = $this->session->get($this->stateKey($provider, $routeName));
         $this->session->remove($this->stateKey($provider, $routeName));
 
+        /** @var mixed $error */
         $error = $queryParams['error_description'] ?? $queryParams['error'] ?? null;
         if (is_string($error) && $error !== '') {
             throw new RuntimeException($error);
         }
 
+        /** @var mixed $state */
         $state = $queryParams['state'] ?? null;
         /**
          * @infection-ignore-all
          *
-         * A mismatched state is never itself a valid non-empty string equal to the stored
-         * one, so the final `$state !== $storedState` term always dominates whenever the
-         * earlier is_string()/empty checks would fire; no input can isolate their operators.
+         * A mismatched state is never itself a valid non-empty string equal
+         * to the stored one, so the final `$state !== $storedState` term
+         * always dominates whenever the earlier is_string()/empty checks
+         * would fire; no input can isolate their operators.
          */
         $isStateInvalid = !is_string($state) || $state === '' || !is_string($storedState) || $storedState === '' || $state !== $storedState;
         if ($isStateInvalid) {

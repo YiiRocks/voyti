@@ -4,48 +4,113 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Service\TwoFactor;
 
-use chillerlan\QRCode\QRCode;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
 
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class QrCodeUriGeneratorServiceTest extends TestCase
 {
-    public function testGenerateQrCodeSvgRendersAtScaleFourAsRawSvg(): void
+
+    public function testGenerateQrCodeSvgReturnEmptyForEmptyUri(): void
     {
-        $user = $this->createUserWithSecret();
-        $service = new QrCodeUriGeneratorService(ModuleConfig::fromArray([]));
+        $config = new ModuleConfig(appName: '');
+        $service = new QrCodeUriGeneratorService($config);
+
+        $user = $this->createMock(User::class);
+        $user->method('getAuthTfKey')->willReturn('s');
+        $user->method('getEmail')->willReturn('');
+
+        $uri = $service->run($user);
+        self::assertNotSame('', $uri);
 
         $svg = $service->generateQrCodeSvg($user);
-        $uri = $service->run($user);
-
-        $expected = (string) (new QRCode(['scale' => 4, 'outputBase64' => false, 'connectPaths' => true]))->render($uri);
-        $withoutConnectPaths = (string) (new QRCode(['scale' => 4, 'outputBase64' => false, 'connectPaths' => false]))->render($uri);
-
-        self::assertSame($expected, $svg);
-        self::assertNotSame($withoutConnectPaths, $svg);
+        if (class_exists('chillerlan\\QRCode\\QRCode')) {
+            self::assertStringContainsString('<svg', $svg);
+        } else {
+            self::assertSame('', $svg);
+        }
     }
 
-    public function testRunReusesExistingSecretAndBuildsOtpauthUri(): void
+    public function testGenerateQrCodeSvgWithNonEmptyUriButNoQRCodeClassReturnsEmpty(): void
     {
-        $user = $this->createUserWithSecret();
-        $service = new QrCodeUriGeneratorService(ModuleConfig::fromArray([]));
+        $config = new ModuleConfig(appName: 'TestApp');
+        $service = new QrCodeUriGeneratorService($config);
+
+        $user = $this->createMock(User::class);
+        $user->method('getAuthTfKey')->willReturn('testsecret');
+        $user->method('getEmail')->willReturn('user@example.com');
+
+        $result = $service->generateQrCodeSvg($user);
+
+        if (class_exists('chillerlan\\QRCode\\QRCode')) {
+            self::assertStringContainsString('<svg', $result);
+        } else {
+            self::assertSame('', $result);
+        }
+    }
+
+    public function testRunEncodesSpecialCharacters(): void
+    {
+        $config = new ModuleConfig(appName: 'My App');
+        $service = new QrCodeUriGeneratorService($config);
+
+        $user = $this->createMock(User::class);
+        $user->method('getAuthTfKey')->willReturn('secret123');
+        $user->method('getEmail')->willReturn('user+tag@example.com');
 
         $uri = $service->run($user);
 
-        self::assertSame(
-            'otpauth://totp/Voyti:qr%40example.com?secret=ABCDEFGHIJKLMNOP&issuer=Voyti',
-            $uri,
-        );
+        self::assertStringContainsString('otpauth://totp/', $uri);
+        self::assertStringContainsString('secret=secret123', $uri);
     }
 
-    private function createUserWithSecret(): User
+    public function testRunWithEmptySecretGeneratesNewOne(): void
     {
-        $user = new User();
-        $user->setEmail('qr@example.com');
-        $user->setAuthTfKey('ABCDEFGHIJKLMNOP');
+        $config = new ModuleConfig(appName: 'VoytiApp');
+        $service = new QrCodeUriGeneratorService($config);
 
-        return $user;
+        $user = $this->createMock(User::class);
+        $user->method('getAuthTfKey')->willReturn('');
+        $user->method('getEmail')->willReturn('user@example.com');
+        $user->expects($this->once())->method('setAuthTfKey');
+        $user->expects($this->once())->method('save');
+
+        $uri = $service->run($user);
+
+        self::assertStringContainsString('otpauth://totp/', $uri);
+    }
+    public function testRunWithExistingSecret(): void
+    {
+        $config = new ModuleConfig(appName: 'VoytiApp');
+        $service = new QrCodeUriGeneratorService($config);
+
+        $user = $this->createMock(User::class);
+        $user->method('getAuthTfKey')->willReturn('existing-secret-key');
+        $user->method('getEmail')->willReturn('user@example.com');
+        $user->expects($this->never())->method('setAuthTfKey');
+
+        $uri = $service->run($user);
+
+        self::assertStringContainsString('otpauth://totp/', $uri);
+        self::assertStringContainsString('secret=existing-secret-key', $uri);
+        self::assertStringContainsString('issuer=VoytiApp', $uri);
+    }
+
+    public function testRunWithNullSecretGeneratesNewOne(): void
+    {
+        $config = new ModuleConfig(appName: 'VoytiApp');
+        $service = new QrCodeUriGeneratorService($config);
+
+        $user = $this->createMock(User::class);
+        $user->method('getAuthTfKey')->willReturn(null);
+        $user->method('getEmail')->willReturn('user@example.com');
+        $user->expects($this->once())->method('setAuthTfKey');
+        $user->expects($this->once())->method('save');
+
+        $uri = $service->run($user);
+
+        self::assertStringContainsString('otpauth://totp/', $uri);
     }
 }

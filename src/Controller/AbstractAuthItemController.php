@@ -237,7 +237,6 @@ abstract readonly class AbstractAuthItemController
     {
         $userIds = [];
         foreach ($this->assignmentsStorage->getByItemNames([$itemName]) as $assignment) {
-            /** @infection-ignore-all CastInt: SQLite's IN() comparison is untyped, so a numeric-string user ID matches the INTEGER column just as well; the cast exists to satisfy findByIds()'s list<int> contract, not to change query results. */
             $userIds[] = (int) $assignment->getUserId();
         }
 
@@ -252,9 +251,11 @@ abstract readonly class AbstractAuthItemController
         $form->description = $this->stringValue($data, 'description', $form->description);
         $form->rule = $this->nullableStringValue($data, 'rule') ?? $form->rule;
 
-        $children = $data['children'] ?? $form->children;
-        /** @infection-ignore-all UnwrapArrayValues: only ever consumed via foreach, which doesn't care about key contiguity; array_values() exists to honor the list<string> contract, not to change iteration results. */
-        $form->children = is_array($children) ? array_values(array_filter($children, 'is_string')) : $form->children;
+        /** @var mixed $children */
+        $children = $data['children'] ?? null;
+        $form->children = is_array($children)
+            ? array_values(array_filter($children, 'is_string'))
+            : $form->children;
     }
 
     /**
@@ -263,12 +264,17 @@ abstract readonly class AbstractAuthItemController
     private function processUserAssignments(array $body, string $itemName): void
     {
         $submittedIds = [];
-        foreach (($body['assignedUsers'] ?? []) as $id) {
-            if (is_string($id) && $id !== '') {
-                /** @infection-ignore-all TrueValue: only isset() is ever checked against this entry, which is indifferent to true vs false. */
-                $submittedIds[$id] = true;
-            }
-        }
+        /** @var mixed $rawAssignedUsers */
+        $rawAssignedUsers = $body['assignedUsers'] ?? [];
+        $assignedUsers = (array) $rawAssignedUsers;
+        array_walk(
+            $assignedUsers,
+            function (mixed $id) use (&$submittedIds): void {
+                if (is_string($id) && $id !== '') {
+                    $submittedIds[$id] = $id;
+                }
+            },
+        );
 
         $currentAssignments = $this->assignmentsStorage->getByItemNames([$itemName]);
         foreach ($currentAssignments as $assignment) {

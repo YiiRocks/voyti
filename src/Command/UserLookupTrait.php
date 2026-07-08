@@ -21,21 +21,24 @@ trait UserLookupTrait
 
     private function findUserFromInput(InputInterface $input, OutputInterface $output, string $commandName): ?User
     {
-        $id = $input->getOption('id');
-        $email = $input->getOption('email');
-        $username = $input->getOption('username');
+        /** @var mixed $rawId */
+        $rawId = $input->getOption('id');
+        /** @var mixed $rawEmail */
+        $rawEmail = $input->getOption('email');
+        /** @var mixed $rawUsername */
+        $rawUsername = $input->getOption('username');
 
         $user = null;
-        if (is_string($id) && $id !== '') {
-            $user = $this->userRepository->findById((int) $id);
-        } elseif (is_string($email) && $email !== '') {
-            $user = $this->userRepository->findByEmail($email);
-        } elseif (is_string($username) && $username !== '') {
-            $user = $this->userRepository->findByUsername($username);
+        if (is_string($rawId) && $rawId !== '') {
+            $user = $this->userRepository->findById((int) $rawId);
+        } elseif (is_string($rawEmail) && $rawEmail !== '') {
+            $user = $this->userRepository->findByEmail($rawEmail);
+        } elseif (is_string($rawUsername) && $rawUsername !== '') {
+            $user = $this->userRepository->findByUsername($rawUsername);
         }
 
         if ($user === null) {
-            if ($id === null && $email === null && $username === null) {
+            if ($rawId === null && $rawEmail === null && $rawUsername === null) {
                 $output->writeln('<error>No identifying option provided.</error>');
                 $output->writeln('');
                 $output->writeln("Usage: {$commandName} [options]");

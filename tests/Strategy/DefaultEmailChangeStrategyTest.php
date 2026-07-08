@@ -4,254 +4,249 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Strategy;
 
+use PHPUnit\Framework\TestCase;
+use Psr\SimpleCache\CacheInterface;
 use YiiRocks\Voyti\Entity\User;
-use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Strategy\DefaultEmailChangeStrategy;
-use YiiRocks\Voyti\tests\TestCase;
+use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
+use YiiRocks\Voyti\tests\Support\MailCapture;
+use Yiisoft\Db\Cache\SchemaCache;
+use Yiisoft\Db\Connection\ConnectionInterface;
 use Yiisoft\Db\Connection\ConnectionProvider;
-use Yiisoft\Mailer\MailerInterface;
-use Yiisoft\Mailer\MessageInterface;
-use Yiisoft\Mailer\SendResults;
-use Yiisoft\Router\UrlGeneratorInterface;
+use Yiisoft\Db\Sqlite\Connection as SqliteConnection;
+use Yiisoft\Db\Sqlite\Driver;
+use Yiisoft\Db\Sqlite\Dsn;
+use Yiisoft\Translator\TranslatorInterface;
 
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class DefaultEmailChangeStrategyTest extends TestCase
 {
-    #[\Override]
+    private ?ConnectionInterface $connection = null;
+
     protected function setUp(): void
     {
-        parent::setUp();
-
-        ConnectionProvider::set($this->getDb());
-        $db = $this->getDb();
-        $db->createCommand('CREATE TABLE {{%user}} (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username VARCHAR(255) NOT NULL,
-            email VARCHAR(255) NOT NULL,
-            password_hash VARCHAR(255) NOT NULL,
-            auth_key VARCHAR(255) NOT NULL,
-            unconfirmed_email VARCHAR(255),
-            registration_ip VARCHAR(45),
-            flags INTEGER NOT NULL DEFAULT 0,
-            confirmed_at INTEGER,
-            blocked_at INTEGER,
-            updated_at INTEGER NOT NULL,
-            created_at INTEGER NOT NULL,
-            last_login_at INTEGER,
-            auth_tf_key VARCHAR(64),
-            auth_tf_enabled INTEGER DEFAULT 0,
-            password_changed_at INTEGER,
-            last_login_ip VARCHAR(45),
-            gdpr_deleted INTEGER DEFAULT 0,
-            gdpr_consent INTEGER DEFAULT 0,
-            gdpr_consent_date INTEGER,
-            auth_tf_type VARCHAR(20)
-        )')->execute();
-        $db->createCommand('CREATE TABLE {{%user_token}} (
-            user_id INTEGER NOT NULL,
-            code VARCHAR(32) NOT NULL,
-            type SMALLINT NOT NULL,
-            created_at INTEGER NOT NULL,
-            PRIMARY KEY (user_id, code, type)
-        )')->execute();
+        if (!extension_loaded('pdo_sqlite')) {
+            $this->markTestSkipped('pdo_sqlite extension required.');
+        }
     }
 
-    #[\Override]
     protected function tearDown(): void
     {
-        if ($this->hasSqliteConnection()) {
-            $this->getDb()->createCommand('DROP TABLE IF EXISTS {{%user_token}}')->execute();
-            $this->getDb()->createCommand('DROP TABLE IF EXISTS {{%user}}')->execute();
-            ConnectionProvider::clear();
+        if ($this->connection !== null) {
+            $this->connection->createCommand('DROP TABLE IF EXISTS "user_token"')->execute();
+            $this->connection->createCommand('DROP TABLE IF EXISTS "user"')->execute();
         }
-
-        parent::tearDown();
+        ConnectionProvider::clear();
+        $this->connection = null;
     }
 
-    public function testRunPersistsUnconfirmedEmailAndReturnsTrueWhenMailSent(): void
+    public function testRunPersistsTokenWithRealUserIdWhenUserSaved(): void
     {
-        $user = $this->createPersistedUser('alice', 'alice@example.com');
+        $this->initDb();
 
-        $mailer = new MailCapture();
-        $strategy = $this->createStrategy($user, 'alice-new@example.com', $mailer);
+        $user = $this->createUser();
+        $translator = $this->createTranslator();
 
-        $result = $strategy->run();
-
-        self::assertTrue($result);
-        self::assertCount(1, $mailer->messages());
-        self::assertSame('alice@example.com', $mailer->messages()[0]->getTo());
-
-        $reloaded = User::query()->findByPk($user->getId());
-        self::assertSame(
-            'alice-new@example.com',
-            $reloaded->getUnconfirmedEmail(),
-            'user->save() must persist the unconfirmed email to the database',
-        );
-
-        $tokens = UserToken::query()->all();
-        self::assertCount(1, $tokens);
-        self::assertSame((int) $user->getId(), $tokens[0]->getUserId());
-        self::assertSame(UserToken::TYPE_CONFIRM_NEW_EMAIL, $tokens[0]->getType());
-    }
-
-    public function testRunReturnsFalseWhenUserIsNull(): void
-    {
-        $form = new SettingsForm($this->getTranslator());
+        $form = new SettingsForm($translator);
+        $form->setUser($user);
         $form->email = 'new@example.com';
 
         $tokenFactory = new UserTokenFactory(new UserTokenRepository());
-        $mailer = new MailCapture();
-        $mailService = new MailService($mailer, dirname(__DIR__, 2) . '/src/resources/mail', $this->getTranslator(), new TestUrlGenerator());
+
+        $mailCapture = new MailCapture();
+        $urlGenerator = new FakeUrlGenerator();
+        $mailService = new MailService(
+            $mailCapture,
+            __DIR__ . '/../../src/resources/mail',
+            $translator,
+            $urlGenerator,
+            'App',
+        );
 
         $strategy = new DefaultEmailChangeStrategy($form, $tokenFactory, $mailService);
 
-        self::assertFalse($strategy->run());
-        self::assertCount(0, $mailer->messages());
-        self::assertCount(0, UserToken::query()->all());
+        $this->assertTrue($strategy->run());
+
+        $this->assertSame(
+            (int) $user->getId(),
+            (int) $this->connection->createCommand(
+                'SELECT "user_id" FROM "user_token" WHERE "type" = :type',
+                ['type' => 2],
+            )->queryScalar(),
+        );
     }
 
-    public function testRunUsesZeroFallbackTokenUserIdWhenUserIdIsNull(): void
+    public function testRunPersistsTokenWithZeroUserIdWhenUserUnsaved(): void
     {
+        $this->initDb();
+
+        $translator = $this->createTranslator();
+
         $user = new User();
-        $user->setUsername('bob');
-        $user->setEmail('bob@example.com');
+        $user->setUsername('testuser');
+        $user->setEmail('old@example.com');
         $user->setPasswordHash('hash');
         $user->setAuthKey('key');
         $user->setCreatedAt(time());
         $user->setUpdatedAt(time());
+        $this->assertNull($user->getId());
 
-        self::assertNull($user->getId());
+        $form = new SettingsForm($translator);
+        $form->setUser($user);
+        $form->email = 'new@example.com';
 
-        $mailer = new MailCapture();
-        $strategy = $this->createStrategy($user, 'bob-new@example.com', $mailer);
+        $tokenFactory = new UserTokenFactory(new UserTokenRepository());
 
-        $result = $strategy->run();
+        $mailCapture = new MailCapture();
+        $urlGenerator = new FakeUrlGenerator();
+        $mailService = new MailService(
+            $mailCapture,
+            __DIR__ . '/../../src/resources/mail',
+            $translator,
+            $urlGenerator,
+            'App',
+        );
 
-        self::assertTrue($result);
+        $strategy = new DefaultEmailChangeStrategy($form, $tokenFactory, $mailService);
 
-        $tokens = UserToken::query()->all();
-        self::assertCount(1, $tokens);
-        self::assertSame(
+        $this->assertTrue($strategy->run());
+
+        $this->assertSame(
             0,
-            $tokens[0]->getUserId(),
-            'when the user has no id yet, the token must fall back to user id 0, not -1 or 1',
+            (int) $this->connection->createCommand(
+                'SELECT "user_id" FROM "user_token" WHERE "type" = :type',
+                ['type' => 2],
+            )->queryScalar(),
         );
     }
 
-    private function createPersistedUser(string $username, string $email): User
+    public function testRunReturnsFalseWhenUserIsNull(): void
+    {
+        $translator = $this->createTranslator();
+        $form = new SettingsForm($translator);
+        $mailCapture = new MailCapture();
+        $urlGenerator = new FakeUrlGenerator();
+        $mailService = new MailService($mailCapture, '/tmp', $translator, $urlGenerator, 'App');
+        $tokenFactory = new UserTokenFactory(new UserTokenRepository());
+
+        $strategy = new DefaultEmailChangeStrategy($form, $tokenFactory, $mailService);
+
+        $this->assertFalse($strategy->run());
+    }
+
+    public function testRunReturnsTrueWhenMailSucceeds(): void
+    {
+        $this->initDb();
+
+        $user = $this->createUser();
+        $translator = $this->createTranslator();
+
+        $form = new SettingsForm($translator);
+        $form->setUser($user);
+        $form->email = 'new@example.com';
+
+        $tokenFactory = new UserTokenFactory(new UserTokenRepository());
+
+        $mailCapture = new MailCapture();
+        $urlGenerator = new FakeUrlGenerator();
+        $mailService = new MailService(
+            $mailCapture,
+            __DIR__ . '/../../src/resources/mail',
+            $translator,
+            $urlGenerator,
+            'App',
+        );
+
+        $strategy = new DefaultEmailChangeStrategy($form, $tokenFactory, $mailService);
+
+        $this->assertTrue($strategy->run());
+        $this->assertSame('new@example.com', $user->getUnconfirmedEmail());
+        $this->assertCount(1, $mailCapture->getSentMessages());
+
+        $this->assertSame(
+            'new@example.com',
+            $this->connection->createCommand(
+                'SELECT "unconfirmed_email" FROM "user" WHERE "id" = :id',
+                ['id' => $user->getId()],
+            )->queryScalar(),
+        );
+    }
+
+    private function createSqliteConnection(): ConnectionInterface
+    {
+        $dsn = new Dsn('sqlite', ':memory:');
+        $driver = new Driver($dsn);
+        $cache = $this->createMock(CacheInterface::class);
+        $cache->method('set')->willReturn(true);
+        $cache->method('get')->willReturn(null);
+        $schemaCache = new SchemaCache($cache);
+        $schemaCache->setEnabled(false);
+        return new SqliteConnection($driver, $schemaCache);
+    }
+
+    private function createTranslator(): TranslatorInterface
+    {
+        $translator = $this->createMock(TranslatorInterface::class);
+        $translator->method('translate')->willReturnCallback(fn (string $id) => $id);
+        return $translator;
+    }
+
+    private function createUser(): User
     {
         $user = new User();
-        $user->setUsername($username);
-        $user->setEmail($email);
+        $user->setUsername('testuser');
+        $user->setEmail('old@example.com');
         $user->setPasswordHash('hash');
         $user->setAuthKey('key');
         $user->setCreatedAt(time());
         $user->setUpdatedAt(time());
         $user->save();
-
         return $user;
     }
 
-    private function createStrategy(User $user, string $newEmail, MailCapture $mailer): DefaultEmailChangeStrategy
+    private function initDb(): void
     {
-        $form = new SettingsForm($this->getTranslator());
-        $form->email = $newEmail;
-        $form->setUser($user);
+        $connection = $this->createSqliteConnection();
+        ConnectionProvider::set($connection);
+        $this->connection = $connection;
 
-        $tokenFactory = new UserTokenFactory(new UserTokenRepository());
-        $mailService = new MailService($mailer, dirname(__DIR__, 2) . '/src/resources/mail', $this->getTranslator(), new TestUrlGenerator());
+        $this->connection->createCommand('
+            CREATE TABLE "user" (
+                "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+                "username" VARCHAR(255) NOT NULL,
+                "email" VARCHAR(255) NOT NULL,
+                "password_hash" VARCHAR(255) NOT NULL,
+                "auth_key" VARCHAR(32) NOT NULL,
+                "auth_tf_enabled" INTEGER NOT NULL DEFAULT 0,
+                "auth_tf_key" VARCHAR(64),
+                "auth_tf_type" VARCHAR(20),
+                "blocked_at" INTEGER,
+                "confirmed_at" INTEGER,
+                "created_at" INTEGER NOT NULL,
+                "flags" INTEGER NOT NULL DEFAULT 0,
+                "gdpr_consent" INTEGER NOT NULL DEFAULT 0,
+                "gdpr_consent_date" INTEGER,
+                "gdpr_deleted" INTEGER NOT NULL DEFAULT 0,
+                "last_login_at" INTEGER,
+                "last_login_ip" VARCHAR(45),
+                "password_changed_at" INTEGER,
+                "registration_ip" VARCHAR(45),
+                "unconfirmed_email" VARCHAR(255),
+                "updated_at" INTEGER NOT NULL
+            )
+        ')->execute();
 
-        return new DefaultEmailChangeStrategy($form, $tokenFactory, $mailService);
-    }
-}
-
-final class MailCapture implements MailerInterface
-{
-    /** @var list<MessageInterface> */
-    private array $messages = [];
-
-    /**
-     * @return list<MessageInterface>
-     */
-    public function messages(): array
-    {
-        return $this->messages;
-    }
-
-    #[\Override]
-    public function send(MessageInterface $message): void
-    {
-        $this->messages[] = $message;
-    }
-
-    #[\Override]
-    public function sendMultiple(array $messages): SendResults
-    {
-        foreach ($messages as $message) {
-            $this->send($message);
-        }
-
-        return new SendResults($this->messages, []);
-    }
-}
-
-final class TestUrlGenerator implements UrlGeneratorInterface
-{
-    private string $uriPrefix = '';
-
-    #[\Override]
-    public function generate(string $name, array $arguments = [], array $queryParameters = [], ?string $hash = null): string
-    {
-        return $this->buildUrl('/' . $name, $arguments, $queryParameters, $hash);
-    }
-
-    #[\Override]
-    public function generateAbsolute(
-        string $name,
-        array $arguments = [],
-        array $queryParameters = [],
-        ?string $hash = null,
-        ?string $scheme = null,
-        ?string $host = null
-    ): string {
-        return 'https://example.test' . $this->generate($name, $arguments, $queryParameters, $hash);
-    }
-
-    #[\Override]
-    public function generateFromCurrent(
-        array $replacedArguments,
-        array $queryParameters = [],
-        ?string $hash = null,
-        ?string $fallbackRouteName = null
-    ): string {
-        return $this->buildUrl('/current', $replacedArguments, $queryParameters, $hash);
-    }
-
-    #[\Override]
-    public function getUriPrefix(): string
-    {
-        return $this->uriPrefix;
-    }
-
-    #[\Override]
-    public function setDefaultArgument(string $name, \Stringable|bool|float|int|string|null $value): void
-    {
-    }
-
-    #[\Override]
-    public function setUriPrefix(string $name): void
-    {
-        $this->uriPrefix = $name;
-    }
-
-    private function buildUrl(string $path, array $arguments, array $queryParameters, ?string $hash): string
-    {
-        $query = array_merge($arguments, $queryParameters);
-        $suffix = $query === [] ? '' : '?' . http_build_query($query);
-        $fragment = $hash === null ? '' : '#' . $hash;
-        return $this->uriPrefix . $path . $suffix . $fragment;
+        $this->connection->createCommand('
+            CREATE TABLE "user_token" (
+                "user_id" INTEGER NOT NULL,
+                "code" VARCHAR(32) NOT NULL,
+                "type" SMALLINT NOT NULL,
+                "created_at" INTEGER NOT NULL
+            )
+        ')->execute();
     }
 }

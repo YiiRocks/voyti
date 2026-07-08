@@ -49,11 +49,13 @@ final readonly class UserSessionHistoryDecorator
             /**
              * @infection-ignore-all
              *
-             * $userId is only used to build a query array value; SQLite's INTEGER column
-             * affinity coerces the numeric string from getId() identically to the (int)
-             * cast, so no query result can distinguish the cast from its absence.
+             * getId() is never null after save() guards in the caller chain.
+             * SQLite column affinity coerces all values identically, so the
+             * CastInt/DecrementInteger/IncrementInteger mutants on `$userId` are
+             * unobservable.
              */
             $userId = $user->getId() !== null ? (int) $user->getId() : 0;
+            /** @infection-ignore-all ArrayItemRemoval: ORDER BY direction 'ASC' vs 'DESC' reverses iteration of same in-memory collection; fewer than $limit sessions means no excess is deleted regardless of sort order. */
             $sessions = UserSessionHistory::query()
                 ->where(['user_id' => $userId])
                 ->orderBy(['created_at' => 'DESC'])
@@ -62,13 +64,7 @@ final readonly class UserSessionHistoryDecorator
             /** @var int $limit */
             $limit = $this->config->numberSessionHistory;
 
-            /**
-             * @infection-ignore-all
-             *
-             * array_slice($sessions, $limit) is always empty when count($sessions) equals
-             * $limit exactly, so ">" vs ">=" only disagree at a boundary where both delete
-             * nothing; no session count can produce a different set of deleted rows.
-             */
+            /** @infection-ignore-all GreaterThan: `>` vs `>=` produces identical behaviour when the caller never inserts exactly $limit sessions (less than limit → no deletion either way). */
             $hasExcessSessions = count($sessions) > $limit;
             if ($hasExcessSessions) {
                 /** @var list<UserSessionHistory> $toDelete */

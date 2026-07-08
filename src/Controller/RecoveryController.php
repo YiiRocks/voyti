@@ -55,8 +55,10 @@ final readonly class RecoveryController
 
         if ($request->getMethod() === Method::POST) {
             $body = (array) $request->getParsedBody();
-            $formData = $body[$form->getFormName()] ?? $body;
-            $this->hydrator->hydrate($form, (array) $formData);
+            /** @var mixed $rawFormData */
+            $rawFormData = $body[$form->getFormName()] ?? null;
+            $formData = is_array($rawFormData) ? $rawFormData : $body;
+            $this->hydrator->hydrate($form, $formData);
             $result = $this->validator->validate($form);
             $form->processValidationResult($result);
 
@@ -94,8 +96,10 @@ final readonly class RecoveryController
 
         if ($request->getMethod() === Method::POST) {
             $body = (array) $request->getParsedBody();
-            $formData = $body[$form->getFormName()] ?? $body;
-            $this->hydrator->hydrate($form, (array) $formData);
+            /** @var mixed $rawFormData */
+            $rawFormData = $body[$form->getFormName()] ?? null;
+            $formData = is_array($rawFormData) ? $rawFormData : $body;
+            $this->hydrator->hydrate($form, $formData);
             $result = $this->validator->validate($form);
 
             if ($result->isValid()) {

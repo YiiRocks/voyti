@@ -9,7 +9,7 @@ use Yiisoft\Session\Flash\FlashInterface;
  * @var FlashInterface $flash
  */
 
-$message = $flash->get('success');
-if (is_string($message) && $message !== '') {
+$message = (string) $flash->get('success');
+if ($message !== '') {
     echo Html::div($message)->class('alert', 'alert-success');
 }

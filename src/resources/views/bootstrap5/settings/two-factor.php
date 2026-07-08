@@ -91,7 +91,7 @@ if ($user->isAuthTfEnabled()) {
             echo $qrCodeUri;
             echo Html::div()->close();
 
-            if (!empty($secret)) {
+            if ($secret !== null) {
                 echo Html::p($translator->translate('voyti.view.two_factor.manual_entry', category: 'voyti') . ' ' . Html::code($secret)->render())->encode(false);
             }
         } else {

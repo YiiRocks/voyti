@@ -79,6 +79,7 @@ final readonly class SecurityController
             }
 
             $identity = $this->socialAuthProviderService->complete($provider, 'voyti/auth', $queryParams);
+            /** @var mixed $clientId */
             $clientId = $identity['id'] ?? '';
             $result = $this->socialNetworkAuthenticateService->run(
                 $provider,
@@ -191,6 +192,7 @@ final readonly class SecurityController
             }
 
             $attributes = $this->socialAuthProviderService->complete($provider, 'voyti/connect', $queryParams);
+            /** @var mixed $clientId */
             $clientId = $attributes['id'] ?? '';
             $result = $this->socialNetworkAccountConnectService->run(
                 $provider,
@@ -294,6 +296,7 @@ final readonly class SecurityController
      */
     private function boolValue(array $data, string $key): bool
     {
+        /** @var mixed $value */
         $value = $data[$key] ?? false;
         $boolValue = filter_var($value, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
 
@@ -305,6 +308,7 @@ final readonly class SecurityController
      */
     private function remoteAddr(array $serverParams): string
     {
+        /** @var mixed $remoteAddr */
         $remoteAddr = $serverParams['REMOTE_ADDR'] ?? null;
 
         return is_string($remoteAddr) && $remoteAddr !== '' ? $remoteAddr : '127.0.0.1';

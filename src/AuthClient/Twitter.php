@@ -33,13 +33,15 @@ final readonly class Twitter extends AbstractAuthClient
     #[\Override]
     protected function normalizeUserAttributes(array $attributes, array $tokenData): array
     {
-        $data = $attributes['data'] ?? [];
+        /** @var mixed $rawData */
+        $rawData = $attributes['data'] ?? null;
+        $data = is_array($rawData) ? $rawData : [];
 
         return [
-            'id' => $this->firstString(is_array($data) ? $data : [], ['id']) ?? '',
+            'id' => $this->firstString($data, ['id']) ?? '',
             'email' => null,
-            'username' => $this->firstString(is_array($data) ? $data : [], ['username']),
-            'name' => $this->firstString(is_array($data) ? $data : [], ['name']),
+            'username' => $this->firstString($data, ['username']),
+            'name' => $this->firstString($data, ['name']),
         ];
     }
 

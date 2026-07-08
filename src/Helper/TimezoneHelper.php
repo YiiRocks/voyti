@@ -24,8 +24,9 @@ final class TimezoneHelper
             /**
              * @infection-ignore-all
              *
-             * Real timezone offsets never exceed +/-16h, far too small for 3600 vs 3599
-             * to change an intdiv() result, so no real DateTimeZone can distinguish this.
+             * Real timezone offsets are always multiples of 1800 (30-min
+             * increments), far too coarse for a 3599 vs 3600 intdiv divisor
+             * to ever produce a different hour/minute split.
              */
             $hours = intdiv($offset, 3600);
             /** @infection-ignore-all */

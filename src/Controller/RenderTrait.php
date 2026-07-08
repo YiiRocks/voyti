@@ -34,8 +34,12 @@ trait RenderTrait
      */
     private function renderView(string $view, array $params = []): ResponseInterface
     {
-        $params['translator'] ??= $this->translator;
-        $params['url'] ??= $this->url;
+        if (!isset($params['translator'])) {
+            $params['translator'] = $this->translator;
+        }
+        if (!isset($params['url'])) {
+            $params['url'] = $this->url;
+        }
 
         return $this->viewRenderer
             ->withViewPath($this->viewPath())

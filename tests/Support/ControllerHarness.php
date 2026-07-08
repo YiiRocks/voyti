@@ -4,26 +4,18 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Support;
 
-use Nyholm\Psr7\Factory\Psr17Factory;
-use Psr\EventDispatcher\EventDispatcherInterface;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
-use Stringable;
-use YiiRocks\Voyti\AuthClient\AuthClientRegistryFactory;
+use Psr\Http\Message\ResponseFactoryInterface;
+use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use YiiRocks\Voyti\Controller\AdminController;
 use YiiRocks\Voyti\Controller\PermissionController;
+use YiiRocks\Voyti\Controller\ProfileController;
 use YiiRocks\Voyti\Controller\RecoveryController;
 use YiiRocks\Voyti\Controller\RegistrationController;
 use YiiRocks\Voyti\Controller\RoleController;
 use YiiRocks\Voyti\Controller\RuleController;
 use YiiRocks\Voyti\Controller\SecurityController;
 use YiiRocks\Voyti\Controller\SettingsController;
-use YiiRocks\Voyti\Factory\UserTokenFactory;
-use YiiRocks\Voyti\Form\Auth\RecoveryForm;
-use YiiRocks\Voyti\Form\Auth\RegistrationForm;
-use YiiRocks\Voyti\Form\Auth\ResendForm;
 use YiiRocks\Voyti\Helper\AuthHelper;
-use YiiRocks\Voyti\Http\ClientInterface;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\UserProfileRepository;
 use YiiRocks\Voyti\Repository\UserRepository;
@@ -32,11 +24,12 @@ use YiiRocks\Voyti\Repository\UserSocialAccountRepository;
 use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\Auth\SocialAuthProviderService;
+use YiiRocks\Voyti\Service\Auth\UserSocialAccountConnectService;
+use YiiRocks\Voyti\Service\Auth\UserSocialAuthenticateService;
 use YiiRocks\Voyti\Service\EmailChangeService;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\Password\ExpireService;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
-use YiiRocks\Voyti\Service\Password\RandomPasswordGenerator;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
 use YiiRocks\Voyti\Service\Password\ResetService;
 use YiiRocks\Voyti\Service\Rbac\RuleEditionService;
@@ -55,714 +48,525 @@ use YiiRocks\Voyti\Service\UserSessionHistory\TerminateUserSessionsService;
 use YiiRocks\Voyti\Strategy\EmailChangeStrategyFactory;
 use YiiRocks\Voyti\Validator\Rbac\ItemsValidator;
 use YiiRocks\Voyti\Validator\Rbac\RuleValidator;
-use Yiisoft\Aliases\Aliases;
-use Yiisoft\Auth\IdentityInterface;
-use Yiisoft\Auth\IdentityRepositoryInterface;
-use Yiisoft\Csrf\CsrfTokenMiddleware;
-use Yiisoft\Csrf\MaskedCsrfToken;
-use Yiisoft\Csrf\StubCsrfToken;
-use Yiisoft\FormModel\FormModel;
-use Yiisoft\Hydrator\Hydrator;
 use Yiisoft\Hydrator\HydratorInterface;
-use Yiisoft\Mailer\MailerInterface;
-use Yiisoft\Mailer\MessageInterface;
-use Yiisoft\Mailer\SendResults;
+use Yiisoft\Rbac\AssignmentsStorageInterface;
+use Yiisoft\Rbac\ItemsStorageInterface;
 use Yiisoft\Rbac\Manager;
-use Yiisoft\Rbac\Permission;
-use Yiisoft\Rbac\Role;
-use Yiisoft\Rbac\SimpleAssignmentsStorage;
-use Yiisoft\Rbac\SimpleItemsStorage;
+use Yiisoft\Rbac\ManagerInterface;
 use Yiisoft\Security\PasswordHasher;
-use Yiisoft\Session\Flash\Flash;
-use Yiisoft\Session\SessionInterface;
-use Yiisoft\Translator\CategorySource;
-use Yiisoft\Translator\Message\Php\MessageSource;
-use Yiisoft\Translator\SimpleMessageFormatter;
-use Yiisoft\Translator\Translator;
+use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
-use Yiisoft\Validator\Result;
 use Yiisoft\Validator\ValidatorInterface;
-use Yiisoft\View\WebView;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 final class ControllerHarness
 {
-    public readonly AccountConfirmationService $accountConfirmationService;
-    public readonly AdminController $adminController;
-    public readonly Aliases $aliases;
-    public readonly AuthHelper $authHelper;
-    public readonly CurrentUser $currentUser;
-    public readonly EmailChangeService $emailChangeService;
-    public readonly EmailChangeStrategyFactory $emailChangeStrategyFactory;
-    public readonly EventCaptureDispatcher $eventDispatcher;
-    public readonly Flash $flash;
-    public readonly HydratorInterface $hydrator;
-    public readonly MailCapture $mailer;
-    public readonly MailService $mailService;
-    public readonly ModuleConfig $moduleConfig;
-    public readonly PasswordGeneratorInterface $passwordGenerator;
-    public readonly PasswordHasher $passwordHasher;
-    public readonly PermissionController $permissionController;
-    public readonly QrCodeUriGeneratorService $qrCodeUriGeneratorService;
-    public readonly HarnessRbacAssignmentsStorage $rbacAssignmentsStorage;
-    public readonly HarnessRbacItemsStorage $rbacItemsStorage;
-    public readonly Manager $rbacManager;
-    public readonly RecoveryController $recoveryController;
-    public readonly RecoveryForm $recoveryFormPrototype;
-    public readonly RegistrationController $registrationController;
-    public readonly RegistrationForm $registrationFormPrototype;
-    public readonly RememberMeCookieService $rememberMeCookieService;
-    public readonly ResendConfirmationService $resendConfirmationService;
-    public readonly ResendForm $resendFormPrototype;
-    public readonly ResetService $resetPasswordService;
-    public readonly RoleController $roleController;
-    public readonly RuleController $ruleController;
-    public readonly SecurityController $securityController;
-    public readonly FakeSession $session;
-    public readonly SettingsController $settingsController;
-    public readonly UserSocialAccountRepository $socialAccounts;
-    public readonly TranslatorInterface $translator;
-    public readonly EmailCodeGeneratorService $twoFactorEmailCodeService;
-    public readonly FakeUrlGenerator $url;
-    public readonly ConfirmationService $userConfirmationService;
-    public readonly UserProfileRepository $userProfiles;
-    public readonly RegisterService $userRegisterService;
-    public readonly UserRepository $users;
-    public readonly UserSessionHistoryRepository $userSessionHistory;
-    public readonly UserTokenFactory $userTokenFactory;
-    public readonly UserTokenRepository $userTokens;
-    public readonly WebViewRenderer $webViewRenderer;
+    private AssignmentsStorageInterface $assignmentsStorage;
+    private AuthClientRegistry $authClientRegistry;
+    private ManagerInterface $authManager;
+    private EventCaptureDispatcher $eventDispatcher;
+    private ItemsStorageInterface $itemsStorage;
+    private MailCapture $mailer;
+    private FakeSession $session;
+    private FakeUrlGenerator $url;
 
     public function __construct(
-        string $projectRoot,
-        ?ModuleConfig $moduleConfig = null,
-        ?ClientInterface $oauthHttpClient = null,
-        ?PasswordGeneratorInterface $passwordGenerator = null,
+        private ModuleConfig $config,
+        ?ItemsStorageInterface $itemsStorage = null,
+        ?AssignmentsStorageInterface $assignmentsStorage = null,
     ) {
-        $this->passwordGenerator = $passwordGenerator ?? new RandomPasswordGenerator();
-        $this->translator = new Translator('en', null, 'voyti');
-        $this->translator->addCategorySources(
-            new CategorySource(
-                'voyti',
-                new MessageSource($projectRoot . '/src/resources/messages'),
-                new SimpleMessageFormatter(),
-            ),
-        );
-
-        $this->moduleConfig = $moduleConfig ?? new ModuleConfig(
-            enableRegistration: true,
-            enableEmailConfirmation: true,
-            enableGdprCompliance: true,
-            allowAccountDelete: true,
-            allowPasswordRecovery: true,
-            allowAdminPasswordRecovery: true,
-            emailChangeStrategy: 1,
-        );
-
-        $this->aliases = new Aliases();
-
+        $this->itemsStorage = $itemsStorage ?? new SimpleItemsStorage();
+        $this->assignmentsStorage = $assignmentsStorage ?? new SimpleAssignmentsStorage();
+        $this->authManager = new Manager($this->itemsStorage, $this->assignmentsStorage);
         $this->eventDispatcher = new EventCaptureDispatcher();
         $this->session = new FakeSession();
-        $this->flash = new Flash($this->session);
         $this->url = new FakeUrlGenerator();
-        $responseFactory = new Psr17Factory();
-        $this->hydrator = new Hydrator();
         $this->mailer = new MailCapture();
-        $this->passwordHasher = new PasswordHasher();
-        $this->userProfiles = new UserProfileRepository();
-        $this->users = new UserRepository();
-        $this->socialAccounts = new UserSocialAccountRepository();
-        $this->userTokens = new UserTokenRepository();
-        $this->userSessionHistory = new UserSessionHistoryRepository();
-        $this->userTokenFactory = new UserTokenFactory($this->userTokens);
-        $this->mailService = new MailService(
-            $this->mailer,
-            $this->moduleConfig->mailPath,
-            $this->translator,
-            $this->url,
-        );
-        $this->emailChangeStrategyFactory = new EmailChangeStrategyFactory($this->userTokenFactory, $this->mailService);
-        $this->emailChangeService = new EmailChangeService($this->moduleConfig, $this->userTokens, $this->users);
-        $this->qrCodeUriGeneratorService = new QrCodeUriGeneratorService($this->moduleConfig);
-        $this->twoFactorEmailCodeService = new EmailCodeGeneratorService($this->mailService);
-        $this->currentUser = (new CurrentUser(
-            new IdentityRepository($this->users),
+        $this->authClientRegistry = new AuthClientRegistry();
+    }
+
+    public function createAdminController(
+        UserRepository $userRepository,
+        UserProfileRepository $userProfileRepository,
+        TranslatorInterface $translator,
+        WebViewRenderer $viewRenderer,
+        ValidatorInterface $validator,
+        CurrentUser $currentUser,
+        ResponseFactoryInterface $responseFactory,
+        HydratorInterface $hydrator,
+        FlashInterface $flash,
+        ?PasswordHasher $passwordHasher = null,
+        ?PasswordGeneratorInterface $passwordGenerator = null,
+        ?CreateService $createService = null,
+        ?BlockService $blockService = null,
+        ?ConfirmationService $confirmationService = null,
+        ?RecoveryService $recoveryService = null,
+        ?ExpireService $expireService = null,
+        ?SwitchIdentityService $switchIdentityService = null,
+        ?UpdateAssignmentsService $updateAssignmentsService = null,
+        ?UserSessionHistoryRepository $userSessionHistoryRepository = null,
+        ?AuthHelper $authHelper = null,
+    ): AdminController {
+        $passwordHasher ??= new PasswordHasher();
+        $passwordGenerator ??= $this->createPasswordGenerator();
+        $createService ??= new CreateService();
+        $expireService ??= new ExpireService($this->config);
+        $authHelper ??= $this->createAuthHelper($currentUser);
+        $confirmationService ??= new ConfirmationService(
             $this->eventDispatcher,
-        ))->withSession($this->session);
-        $this->rememberMeCookieService = new RememberMeCookieService(
-            $this->moduleConfig->rememberLoginLifespan,
+            $this->createUserTokenRepository(),
         );
-        $authClientRegistry = (new AuthClientRegistryFactory($this->moduleConfig))->create();
-        $oauthHttpClient ??= new FakeHttpClient();
-        $pendingSocialAccountService = new PendingSocialAccountService($this->socialAccounts, $this->session);
-        $socialAuthProviderService = new SocialAuthProviderService(
-            $authClientRegistry,
-            $oauthHttpClient,
+        $blockService ??= new BlockService(
+            $this->eventDispatcher,
+            $this->createTerminateUserSessionsService(),
+        );
+        $recoveryService ??= new RecoveryService();
+        $switchIdentityService ??= new SwitchIdentityService(
+            $this->config,
+            $userRepository,
+            $currentUser,
             $this->session,
-            $this->url,
         );
-        $csrfToken = new MaskedCsrfToken(new StubCsrfToken('test-csrf-token'));
-        $csrfMiddleware = new CsrfTokenMiddleware($responseFactory, $csrfToken);
-        $this->webViewRenderer = new WebViewRenderer(
+        $updateAssignmentsService ??= $this->createUpdateAssignmentsService();
+        $userSessionHistoryRepository ??= new UserSessionHistoryRepository();
+
+        return new AdminController(
+            translator: $translator,
+            viewRenderer: $viewRenderer,
+            userRepository: $userRepository,
+            userProfileRepository: $userProfileRepository,
+            userCreateService: $createService,
+            userBlockService: $blockService,
+            userConfirmationService: $confirmationService,
+            passwordRecoveryService: $recoveryService,
+            passwordExpireService: $expireService,
+            switchIdentityService: $switchIdentityService,
+            updateAuthAssignmentsService: $updateAssignmentsService,
+            userSessionHistoryRepository: $userSessionHistoryRepository,
+            authHelper: $authHelper,
+            passwordHasher: $passwordHasher,
+            passwordGenerator: $passwordGenerator,
+            validator: $validator,
+            eventDispatcher: $this->eventDispatcher,
+            url: $this->url,
+            config: $this->config,
+            hydrator: $hydrator,
+            currentUser: $currentUser,
             responseFactory: $responseFactory,
-            streamFactory: $responseFactory,
-            aliases: $this->aliases,
-            view: new WebView($this->moduleConfig->viewPath),
-            injections: [
-                new \Yiisoft\Yii\View\Renderer\CsrfViewInjection($csrfToken, $csrfMiddleware),
-            ],
+            itemsStorage: $this->itemsStorage,
+            assignmentsStorage: $this->assignmentsStorage,
+            flash: $flash,
         );
-        $this->userRegisterService = new RegisterService(
-            $this->users,
-            $this->mailService,
+    }
+
+    public function createPermissionController(
+        UserRepository $userRepository,
+        TranslatorInterface $translator,
+        WebViewRenderer $viewRenderer,
+        ValidatorInterface $validator,
+        ResponseFactoryInterface $responseFactory,
+        FlashInterface $flash,
+    ): PermissionController {
+        return new PermissionController(
+            translator: $translator,
+            viewRenderer: $viewRenderer,
+            url: $this->url,
+            validator: $validator,
+            responseFactory: $responseFactory,
+            userRepository: $userRepository,
+            itemsStorage: $this->itemsStorage,
+            managerInterface: $this->authManager,
+            assignmentsStorage: $this->assignmentsStorage,
+            flash: $flash,
+        );
+    }
+
+    public function createProfileController(
+        UserRepository $userRepository,
+        UserProfileRepository $userProfileRepository,
+        TranslatorInterface $translator,
+        WebViewRenderer $viewRenderer,
+        CurrentUser $currentUser,
+        ?AuthHelper $authHelper = null,
+    ): ProfileController {
+        $authHelper ??= $this->createAuthHelper($currentUser);
+
+        return new ProfileController(
+            translator: $translator,
+            viewRenderer: $viewRenderer,
+            url: $this->url,
+            userProfileRepository: $userProfileRepository,
+            userRepository: $userRepository,
+            authHelper: $authHelper,
+            config: $this->config,
+            currentUser: $currentUser,
+        );
+    }
+
+    public function createRecoveryController(
+        UserRepository $userRepository,
+        UserTokenRepository $userTokenRepository,
+        TranslatorInterface $translator,
+        WebViewRenderer $viewRenderer,
+        ValidatorInterface $validator,
+        ResponseFactoryInterface $responseFactory,
+        HydratorInterface $hydrator,
+        FlashInterface $flash,
+        ?RecoveryService $recoveryService = null,
+        ?ResetService $resetService = null,
+    ): RecoveryController {
+        $recoveryService ??= new RecoveryService();
+        $resetService ??= new ResetService(
+            new PasswordHasher(),
+            $this->config,
             $this->eventDispatcher,
-            $this->passwordHasher,
-            $this->moduleConfig,
-            $this->passwordGenerator,
-        );
-        $this->userConfirmationService = new ConfirmationService($this->eventDispatcher, $this->userTokens);
-        $this->accountConfirmationService = new AccountConfirmationService($this->userTokens);
-        $this->resendConfirmationService = new ResendConfirmationService($this->userTokens, $this->userTokenFactory, $this->mailService);
-        $this->resetPasswordService = new ResetService(
-            $this->passwordHasher,
-            $this->moduleConfig,
-            $this->eventDispatcher,
-            $this->userTokens,
-        );
-        $this->rbacItemsStorage = new HarnessRbacItemsStorage();
-        $this->rbacAssignmentsStorage = new HarnessRbacAssignmentsStorage();
-        $this->rbacManager = new Manager($this->rbacItemsStorage, $this->rbacAssignmentsStorage);
-        $this->authHelper = new AuthHelper($this->rbacManager, $this->rbacItemsStorage, $this->rbacAssignmentsStorage, $this->moduleConfig, new CurrentUser(
-            new class implements IdentityRepositoryInterface {
-                public function findIdentity(string $id): ?IdentityInterface
-                {
-                    return null;
-                }
-            },
-            new class implements EventDispatcherInterface {
-                public function dispatch(object $event): object
-                {
-                    return $event;
-                }
-            },
-        ));
-        $itemsValidator = new ItemsValidator($this->rbacItemsStorage);
-        $createService = new CreateService(
-            $this->users,
-            $this->mailService,
-            $this->eventDispatcher,
-            $this->passwordHasher,
-            $this->moduleConfig,
-        );
-        $blockService = new BlockService(
-            $this->eventDispatcher,
-            new TerminateUserSessionsService($this->eventDispatcher),
-        );
-        $expireService = new ExpireService($this->moduleConfig);
-        $switchIdentityService = new SwitchIdentityService(
-            $this->moduleConfig,
-            $this->users,
-            $this->currentUser,
-            $this->session,
-        );
-        $updateAssignmentsService = new UpdateAssignmentsService(
-            $this->rbacManager,
-            $this->rbacAssignmentsStorage,
-            $itemsValidator,
+            $userTokenRepository,
         );
 
-        $this->registrationFormPrototype = new RegistrationForm($this->moduleConfig, $this->translator);
-        $this->recoveryFormPrototype = new RecoveryForm($this->moduleConfig, $this->translator, RecoveryForm::SCENARIO_REQUEST);
-        $this->resendFormPrototype = new ResendForm($this->moduleConfig, $this->translator);
+        return new RecoveryController(
+            translator: $translator,
+            viewRenderer: $viewRenderer,
+            url: $this->url,
+            passwordRecoveryService: $recoveryService,
+            resetPasswordService: $resetService,
+            userRepository: $userRepository,
+            userTokenRepository: $userTokenRepository,
+            validator: $validator,
+            eventDispatcher: $this->eventDispatcher,
+            config: $this->config,
+            hydrator: $hydrator,
+            responseFactory: $responseFactory,
+            flash: $flash,
+        );
+    }
 
-        $this->registrationController = new RegistrationController(
-            $this->translator,
-            $this->webViewRenderer,
-            $this->userRegisterService,
-            $this->users,
-            $this->userTokens,
-            $this->userConfirmationService,
-            $this->accountConfirmationService,
-            $this->resendConfirmationService,
-            $this->validator(),
+    public function createRegistrationController(
+        UserRepository $userRepository,
+        UserTokenRepository $userTokenRepository,
+        TranslatorInterface $translator,
+        WebViewRenderer $viewRenderer,
+        ValidatorInterface $validator,
+        ResponseFactoryInterface $responseFactory,
+        HydratorInterface $hydrator,
+        FlashInterface $flash,
+        ?RegisterService $registerService = null,
+        ?ConfirmationService $confirmationService = null,
+        ?AccountConfirmationService $accountConfirmationService = null,
+        ?ResendConfirmationService $resendConfirmationService = null,
+        ?PendingSocialAccountService $pendingSocialAccountService = null,
+    ): RegistrationController {
+        $registerService ??= new RegisterService();
+        $confirmationService ??= new ConfirmationService(
             $this->eventDispatcher,
+            $userTokenRepository,
+        );
+        $accountConfirmationService ??= new AccountConfirmationService($userTokenRepository);
+
+        $mailService = new MailService(
+            $this->mailer,
+            $this->config->mailPath,
+            $translator,
             $this->url,
-            $this->moduleConfig,
-            $pendingSocialAccountService,
-            $this->hydrator,
-            $responseFactory,
-            $this->flash,
+            $this->config->appName,
+        );
+        $resendConfirmationService ??= new ResendConfirmationService(
+            $userTokenRepository,
+            new \YiiRocks\Voyti\Factory\UserTokenFactory(),
+            $mailService,
+        );
+        $pendingSocialAccountService ??= new PendingSocialAccountService();
+
+        return new RegistrationController(
+            translator: $translator,
+            viewRenderer: $viewRenderer,
+            userRegisterService: $registerService,
+            userRepository: $userRepository,
+            userTokenRepository: $userTokenRepository,
+            userConfirmationService: $confirmationService,
+            accountConfirmationService: $accountConfirmationService,
+            resendConfirmationService: $resendConfirmationService,
+            validator: $validator,
+            eventDispatcher: $this->eventDispatcher,
+            url: $this->url,
+            config: $this->config,
+            pendingSocialAccountService: $pendingSocialAccountService,
+            hydrator: $hydrator,
+            responseFactory: $responseFactory,
+            flash: $flash,
+        );
+    }
+
+    public function createRoleController(
+        UserRepository $userRepository,
+        TranslatorInterface $translator,
+        WebViewRenderer $viewRenderer,
+        ValidatorInterface $validator,
+        ResponseFactoryInterface $responseFactory,
+        FlashInterface $flash,
+    ): RoleController {
+        return new RoleController(
+            translator: $translator,
+            viewRenderer: $viewRenderer,
+            url: $this->url,
+            validator: $validator,
+            responseFactory: $responseFactory,
+            userRepository: $userRepository,
+            itemsStorage: $this->itemsStorage,
+            managerInterface: $this->authManager,
+            assignmentsStorage: $this->assignmentsStorage,
+            flash: $flash,
+        );
+    }
+
+    public function createRuleController(
+        TranslatorInterface $translator,
+        WebViewRenderer $viewRenderer,
+        ValidatorInterface $validator,
+        ResponseFactoryInterface $responseFactory,
+        FlashInterface $flash,
+        ?AuthHelper $authHelper = null,
+        ?RuleEditionService $ruleEditionService = null,
+    ): RuleController {
+        $authHelper ??= $this->createAuthHelper(
+            new CurrentUser($this->session),
+        );
+        $ruleEditionService ??= new RuleEditionService(
+            $this->itemsStorage,
+            new RuleValidator(),
         );
 
-        $this->securityController = new SecurityController(
-            $this->translator,
-            $this->webViewRenderer,
-            $this->users,
-            $this->currentUser,
-            $this->passwordHasher,
-            $this->validator(),
-            $this->eventDispatcher,
-            $responseFactory,
-            $this->url,
+        return new RuleController(
+            translator: $translator,
+            viewRenderer: $viewRenderer,
+            authHelper: $authHelper,
+            url: $this->url,
+            validator: $validator,
+            authRuleEditionService: $ruleEditionService,
+            responseFactory: $responseFactory,
+            flash: $flash,
+        );
+    }
+
+    public function createSecurityController(
+        UserRepository $userRepository,
+        TranslatorInterface $translator,
+        WebViewRenderer $viewRenderer,
+        ValidatorInterface $validator,
+        CurrentUser $currentUser,
+        ResponseFactoryInterface $responseFactory,
+        HydratorInterface $hydrator,
+        FlashInterface $flash,
+        ?PasswordHasher $passwordHasher = null,
+        ?RememberMeCookieService $rememberMeCookieService = null,
+        ?SocialAuthProviderService $socialAuthProviderService = null,
+        ?PendingSocialAccountService $pendingSocialAccountService = null,
+        ?UserSocialAuthenticateService $socialNetworkAuthenticateService = null,
+        ?UserSocialAccountConnectService $socialNetworkAccountConnectService = null,
+        ?EmailCodeGeneratorService $twoFactorEmailCodeService = null,
+    ): SecurityController {
+        $passwordHasher ??= new PasswordHasher();
+        $rememberMeCookieService ??= new RememberMeCookieService(
+            $this->config->rememberLoginLifespan,
+        );
+        $socialAuthProviderService ??= new SocialAuthProviderService();
+        $pendingSocialAccountService ??= new PendingSocialAccountService();
+        $socialNetworkAuthenticateService ??= new UserSocialAuthenticateService(
+            $this->config,
+            $this->createUserSocialAccountRepository(),
+            $userRepository,
+            $currentUser,
             $this->session,
-            $this->rememberMeCookieService,
-            $this->moduleConfig,
-            $authClientRegistry,
-            $socialAuthProviderService,
-            $pendingSocialAccountService,
-            new \YiiRocks\Voyti\Service\Auth\UserSocialAuthenticateService(
-                $this->moduleConfig,
-                $this->socialAccounts,
-                $this->users,
-                $this->currentUser,
-                $this->session,
-                $this->eventDispatcher,
+            $this->eventDispatcher,
+        );
+        $socialNetworkAccountConnectService ??= new UserSocialAccountConnectService();
+        $twoFactorEmailCodeService ??= new EmailCodeGeneratorService(
+            new MailService(
+                $this->mailer,
+                $this->config->mailPath,
+                $translator,
+                $this->url,
+                $this->config->appName,
             ),
-            new \YiiRocks\Voyti\Service\Auth\UserSocialAccountConnectService($this->socialAccounts),
-            $this->hydrator,
-            $this->twoFactorEmailCodeService,
-            $this->flash,
         );
 
-        $this->settingsController = new SettingsController(
-            $this->translator,
-            $this->webViewRenderer,
-            $this->users,
-            $this->userProfiles,
-            $this->socialAccounts,
-            $this->passwordHasher,
-            $this->validator(),
-            $this->eventDispatcher,
-            $this->url,
-            $this->moduleConfig,
-            $authClientRegistry,
-            $this->emailChangeStrategyFactory,
-            $this->qrCodeUriGeneratorService,
-            $this->twoFactorEmailCodeService,
-            $this->emailChangeService,
-            $this->userTokens,
-            $this->hydrator,
-            $this->currentUser,
-            $responseFactory,
-            new TerminateUserSessionsService($this->eventDispatcher),
-            $this->flash,
-        );
-
-        $this->recoveryController = new RecoveryController(
-            $this->translator,
-            $this->webViewRenderer,
-            $this->url,
-            $this->recoveryService(),
-            $this->resetPasswordService,
-            $this->users,
-            $this->userTokens,
-            $this->validator(),
-            $this->eventDispatcher,
-            $this->moduleConfig,
-            $this->hydrator,
-            $responseFactory,
-            $this->flash,
-        );
-
-        $this->adminController = new AdminController(
-            $this->translator,
-            $this->webViewRenderer,
-            $this->users,
-            $this->userProfiles,
-            $createService,
-            $blockService,
-            $this->userConfirmationService,
-            $this->recoveryService(),
-            $expireService,
-            $switchIdentityService,
-            $updateAssignmentsService,
-            $this->userSessionHistory,
-            $this->authHelper,
-            $this->passwordHasher,
-            $this->passwordGenerator,
-            $this->validator(),
-            $this->eventDispatcher,
-            $this->url,
-            $this->moduleConfig,
-            $this->hydrator,
-            $this->currentUser,
-            $responseFactory,
-            $this->rbacItemsStorage,
-            $this->rbacAssignmentsStorage,
-            $this->flash,
-        );
-
-        $this->permissionController = new PermissionController(
-            $this->translator,
-            $this->webViewRenderer,
-            $this->url,
-            $this->validator(),
-            $responseFactory,
-            $this->users,
-            $this->rbacItemsStorage,
-            $this->rbacManager,
-            $this->rbacAssignmentsStorage,
-            $this->flash,
-        );
-
-        $this->roleController = new RoleController(
-            $this->translator,
-            $this->webViewRenderer,
-            $this->url,
-            $this->validator(),
-            $responseFactory,
-            $this->users,
-            $this->rbacItemsStorage,
-            $this->rbacManager,
-            $this->rbacAssignmentsStorage,
-            $this->flash,
-        );
-
-        $this->ruleController = new RuleController(
-            $this->translator,
-            $this->webViewRenderer,
-            $this->authHelper,
-            $this->url,
-            $this->validator(),
-            new RuleEditionService($this->rbacItemsStorage, new RuleValidator()),
-            $responseFactory,
-            $this->flash,
+        return new SecurityController(
+            translator: $translator,
+            viewRenderer: $viewRenderer,
+            userRepository: $userRepository,
+            currentUser: $currentUser,
+            passwordHasher: $passwordHasher,
+            validator: $validator,
+            eventDispatcher: $this->eventDispatcher,
+            responseFactory: $responseFactory,
+            url: $this->url,
+            session: $this->session,
+            rememberMeCookieService: $rememberMeCookieService,
+            config: $this->config,
+            authClientRegistry: $this->authClientRegistry,
+            socialAuthProviderService: $socialAuthProviderService,
+            pendingSocialAccountService: $pendingSocialAccountService,
+            socialNetworkAuthenticateService: $socialNetworkAuthenticateService,
+            socialNetworkAccountConnectService: $socialNetworkAccountConnectService,
+            hydrator: $hydrator,
+            twoFactorEmailCodeService: $twoFactorEmailCodeService,
+            flash: $flash,
         );
     }
 
-    public function addSessionHistory(\YiiRocks\Voyti\Entity\User $user, string $sessionId, ?string $ip = null, ?string $userAgent = null): void
-    {
-        $history = new \YiiRocks\Voyti\Entity\UserSessionHistory();
-        $history->setUserId((int) ($user->getId() ?? 0));
-        $history->setSessionId($sessionId);
-        $history->setIp($ip);
-        $history->setUserAgent($userAgent);
-        $history->setCreatedAt(time());
-        $history->setUpdatedAt(time());
-        $history->save();
-    }
+    public function createSettingsController(
+        UserRepository $userRepository,
+        UserProfileRepository $userProfileRepository,
+        UserSocialAccountRepository $userSocialAccountRepository,
+        UserTokenRepository $userTokenRepository,
+        TranslatorInterface $translator,
+        WebViewRenderer $viewRenderer,
+        ValidatorInterface $validator,
+        CurrentUser $currentUser,
+        ResponseFactoryInterface $responseFactory,
+        HydratorInterface $hydrator,
+        FlashInterface $flash,
+        ?PasswordHasher $passwordHasher = null,
+        ?EmailChangeStrategyFactory $emailChangeStrategyFactory = null,
+        ?QrCodeUriGeneratorService $twoFactorQrCodeService = null,
+        ?EmailCodeGeneratorService $twoFactorEmailCodeService = null,
+        ?EmailChangeService $emailChangeService = null,
+        ?TerminateUserSessionsService $terminateUserSessionsService = null,
+    ): SettingsController {
+        $passwordHasher ??= new PasswordHasher();
+        $emailChangeStrategyFactory ??= new EmailChangeStrategyFactory(
+            new MailService(
+                $this->mailer,
+                $this->config->mailPath,
+                $translator,
+                $this->url,
+                $this->config->appName,
+            ),
+        );
+        $twoFactorQrCodeService ??= new QrCodeUriGeneratorService($this->config);
+        $twoFactorEmailCodeService ??= new EmailCodeGeneratorService(
+            new MailService(
+                $this->mailer,
+                $this->config->mailPath,
+                $translator,
+                $this->url,
+                $this->config->appName,
+            ),
+        );
+        $emailChangeService ??= new EmailChangeService(
+            $this->config,
+            $userTokenRepository,
+            $userRepository,
+        );
+        $terminateUserSessionsService ??= $this->createTerminateUserSessionsService();
 
-    public function formPayload(FormModel $form, array $data): array
-    {
-        return [$form->getFormName() => $data];
-    }
-
-    public function request(string $method, array $parsedBody = [], array $queryParams = [], array $attributes = [], array $serverParams = []): ServerRequestInterface
-    {
-        $request = new \Nyholm\Psr7\ServerRequest($method, 'https://example.test/', [], null, '1.1', $serverParams);
-
-        if ($parsedBody !== []) {
-            $request = $request->withParsedBody($parsedBody);
-        }
-        if ($queryParams !== []) {
-            $request = $request->withQueryParams($queryParams);
-        }
-        if ($attributes !== []) {
-            foreach ($attributes as $name => $value) {
-                $request = $request->withAttribute($name, $value);
-            }
-        }
-
-        return $request;
-    }
-
-    public function responseBody(ResponseInterface $response): string
-    {
-        $body = $response->getBody();
-        $body->rewind();
-        return $body->getContents();
-    }
-
-    public function seedRbacPermission(string $name): void
-    {
-        $this->rbacItemsStorage->add(new Permission($name));
-    }
-
-    public function seedRbacRole(string $name): void
-    {
-        $this->rbacItemsStorage->add(new Role($name));
-    }
-
-    private function recoveryService(): RecoveryService
-    {
-        return new RecoveryService(
-            $this->users,
-            $this->userTokenFactory,
-            $this->mailService,
-            $this->moduleConfig,
-            $this->translator,
-            $this->eventDispatcher,
+        return new SettingsController(
+            translator: $translator,
+            viewRenderer: $viewRenderer,
+            userRepository: $userRepository,
+            userProfileRepository: $userProfileRepository,
+            userSocialAccountRepository: $userSocialAccountRepository,
+            passwordHasher: $passwordHasher,
+            validator: $validator,
+            eventDispatcher: $this->eventDispatcher,
+            url: $this->url,
+            config: $this->config,
+            authClientRegistry: $this->authClientRegistry,
+            emailChangeStrategyFactory: $emailChangeStrategyFactory,
+            twoFactorQrCodeService: $twoFactorQrCodeService,
+            twoFactorEmailCodeService: $twoFactorEmailCodeService,
+            emailChangeService: $emailChangeService,
+            userTokenRepository: $userTokenRepository,
+            hydrator: $hydrator,
+            currentUser: $currentUser,
+            responseFactory: $responseFactory,
+            terminateUserSessionsService: $terminateUserSessionsService,
+            flash: $flash,
         );
     }
 
-    private function validator(): ValidatorInterface
+    public function getAssignmentsStorage(): AssignmentsStorageInterface
     {
-        return new class implements ValidatorInterface {
-            #[\Override]
-            public function validate(
-                mixed $data,
-                callable|iterable|object|string|null $rules = null,
-                ?\Yiisoft\Validator\ValidationContext $context = null,
-            ): Result {
-                return new Result();
-            }
-        };
-    }
-}
-
-final class EventCaptureDispatcher implements EventDispatcherInterface
-{
-    /** @var list<object> */
-    private array $events = [];
-
-    #[\Override]
-    public function dispatch(object $event): object
-    {
-        $this->events[] = $event;
-        return $event;
+        return $this->assignmentsStorage;
     }
 
-    /**
-     * @return list<object>
-     */
-    public function events(): array
+    public function getAuthClientRegistry(): AuthClientRegistry
     {
-        return $this->events;
-    }
-}
-
-final class FakeSession implements SessionInterface
-{
-    private bool $active = true;
-    private string $id = 'test-session';
-    /** @var array<string, mixed> */
-    private array $values = [];
-
-    #[\Override]
-    public function all(): array
-    {
-        return $this->values;
+        return $this->authClientRegistry;
     }
 
-
-    #[\Override]
-    public function clear(): void
+    public function getAuthManager(): ManagerInterface
     {
-        $this->values = [];
+        return $this->authManager;
     }
 
-    #[\Override]
-    public function close(): void
+    public function getConfig(): ModuleConfig
     {
-        $this->active = false;
+        return $this->config;
     }
 
-    #[\Override]
-    public function destroy(): void
+    public function getEventDispatcher(): EventCaptureDispatcher
     {
-        $this->values = [];
-        $this->active = false;
+        return $this->eventDispatcher;
     }
 
-    #[\Override]
-    public function discard(): void
+    public function getItemsStorage(): ItemsStorageInterface
     {
-        $this->values = [];
+        return $this->itemsStorage;
     }
 
-    #[\Override]
-    public function get(string $key, mixed $default = null): mixed
+    public function getMailer(): MailCapture
     {
-        return $this->values[$key] ?? $default;
+        return $this->mailer;
     }
 
-    #[\Override]
-    public function getCookieParameters(): array
+    public function getSession(): FakeSession
     {
-        return [];
+        return $this->session;
     }
 
-    #[\Override]
-    public function getId(): ?string
+    public function getUrlGenerator(): FakeUrlGenerator
     {
-        return $this->id;
+        return $this->url;
     }
 
-    #[\Override]
-    public function getName(): string
+    private function createAuthHelper(CurrentUser $currentUser): AuthHelper
     {
-        return 'TESTSESSID';
+        return new AuthHelper(
+            $this->authManager,
+            $this->itemsStorage,
+            $this->assignmentsStorage,
+            $this->config,
+            $currentUser,
+        );
     }
 
-    #[\Override]
-    public function has(string $key): bool
+    private function createPasswordGenerator(): PasswordGeneratorInterface
     {
-        return array_key_exists($key, $this->values);
+        return new \YiiRocks\Voyti\Service\Password\RandomPasswordGenerator();
     }
 
-    #[\Override]
-    public function isActive(): bool
+    private function createTerminateUserSessionsService(): TerminateUserSessionsService
     {
-        return $this->active;
+        return new TerminateUserSessionsService();
     }
 
-    #[\Override]
-    public function open(): void
+    private function createUpdateAssignmentsService(): UpdateAssignmentsService
     {
-        $this->active = true;
+        return new UpdateAssignmentsService(
+            $this->authManager,
+            $this->assignmentsStorage,
+            new ItemsValidator($this->itemsStorage),
+        );
     }
 
-    #[\Override]
-    public function pull(string $key, mixed $default = null): mixed
+    private function createUserSocialAccountRepository(): UserSocialAccountRepository
     {
-        $value = $this->get($key, $default);
-        $this->remove($key);
-        return $value;
+        return new UserSocialAccountRepository();
     }
 
-    #[\Override]
-    public function regenerateId(): void
+    private function createUserTokenRepository(): UserTokenRepository
     {
-        $this->id = 'test-session-' . uniqid('', true);
+        return new UserTokenRepository();
     }
-
-    #[\Override]
-    public function remove(string $key): void
-    {
-        unset($this->values[$key]);
-    }
-
-    #[\Override]
-    public function set(string $key, mixed $value): void
-    {
-        $this->values[$key] = $value;
-    }
-
-    #[\Override]
-    public function setId(string $sessionId): void
-    {
-        $this->id = $sessionId;
-    }
-}
-
-final class FakeUrlGenerator implements \Yiisoft\Router\UrlGeneratorInterface
-{
-    #[\Override]
-    public function generate(string $name, array $arguments = [], array $queryParameters = [], ?string $hash = null): string
-    {
-        return $this->format($name, $arguments, $queryParameters, $hash, false);
-    }
-
-    #[\Override]
-    public function generateAbsolute(string $name, array $arguments = [], array $queryParameters = [], ?string $hash = null, ?string $scheme = null, ?string $host = null): string
-    {
-        return $this->format($name, $arguments, $queryParameters, $hash, true, $scheme, $host);
-    }
-
-    #[\Override]
-    public function generateFromCurrent(array $replacedArguments = [], array $queryParameters = [], ?string $hash = null, ?string $fallbackRouteName = null): string
-    {
-        return $this->generate($fallbackRouteName ?? 'current', $replacedArguments, $queryParameters, $hash);
-    }
-
-    #[\Override]
-    public function getUriPrefix(): string
-    {
-        return '';
-    }
-
-    #[\Override]
-    public function setDefaultArgument(string $name, Stringable|string|int|float|bool|null $value): void
-    {
-    }
-
-    #[\Override]
-    public function setUriPrefix(string $name): void
-    {
-    }
-
-    private function format(string $name, array $arguments, array $queryParameters, ?string $hash, bool $absolute, ?string $scheme = null, ?string $host = null): string
-    {
-        $path = '/' . ltrim($name, '/');
-        if ($arguments !== []) {
-            $path .= '/' . implode('/', array_map(static fn (mixed $value): string => (string) $value, $arguments));
-        }
-        if ($queryParameters !== []) {
-            $path .= '?' . http_build_query($queryParameters);
-        }
-        if ($hash !== null) {
-            $path .= '#' . $hash;
-        }
-        if (!$absolute) {
-            return $path;
-        }
-        $scheme ??= 'https';
-        $host ??= 'example.test';
-        return $scheme . '://' . $host . $path;
-    }
-}
-
-final class MailCapture implements MailerInterface
-{
-    /** @var list<MessageInterface> */
-    private array $messages = [];
-
-    /**
-     * @return list<MessageInterface>
-     */
-    public function messages(): array
-    {
-        return $this->messages;
-    }
-
-    #[\Override]
-    public function send(MessageInterface $message): void
-    {
-        $this->messages[] = $message;
-    }
-
-    #[\Override]
-    public function sendMultiple(array $messages): SendResults
-    {
-        foreach ($messages as $message) {
-            $this->send($message);
-        }
-
-        return new SendResults($this->messages, []);
-    }
-}
-
-final class IdentityRepository implements IdentityRepositoryInterface
-{
-    public function __construct(private readonly UserRepository $users)
-    {
-    }
-
-    #[\Override]
-    public function findIdentity(string $id): ?IdentityInterface
-    {
-        return $this->users->findById((int) $id);
-    }
-}
-
-final class RecordingPasswordGenerator implements PasswordGeneratorInterface
-{
-    /** @var list<int> */
-    public array $requestedLengths = [];
-
-    public function generate(int $length): string
-    {
-        $this->requestedLengths[] = $length;
-
-        return str_repeat('x', $length);
-    }
-}
-
-final class HarnessRbacItemsStorage extends SimpleItemsStorage
-{
-}
-
-final class HarnessRbacAssignmentsStorage extends SimpleAssignmentsStorage
-{
 }

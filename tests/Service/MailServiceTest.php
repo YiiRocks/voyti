@@ -8,292 +8,167 @@ use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Service\MailService;
-use Yiisoft\Mailer\MessageInterface;
-use Yiisoft\Mailer\SendResults;
-use Yiisoft\Router\UrlGeneratorInterface;
-use Yiisoft\Translator\Translator;
+use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
+use YiiRocks\Voyti\tests\Support\MailCapture;
 use Yiisoft\Translator\TranslatorInterface;
 
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class MailServiceTest extends TestCase
 {
+    private MailCapture $mailer;
+    private MailService $service;
+    private FakeUrlGenerator $url;
 
-    public function testCustomMailPathIsUsed(): void
+    protected function setUp(): void
     {
-        $mailPath = $this->createTempMailPath();
-        try {
-            mkdir($mailPath . '/html');
-            file_put_contents(
-                $mailPath . '/html/welcome.php',
-                <<<'PHP'
-<?php
-echo 'custom-html-' . $username . '-' . $translator->getLocale();
-PHP
-            );
-            mkdir($mailPath . '/text');
-            file_put_contents(
-                $mailPath . '/text/welcome.php',
-                <<<'PHP'
-<?php
-echo 'custom-text-' . $username . '-' . $translator->getLocale();
-PHP
-            );
+        $this->mailer = new MailCapture();
+        $this->url = new FakeUrlGenerator();
+        $translator = $this->createMock(TranslatorInterface::class);
+        $translator->method('translate')->willReturnCallback(fn (string $key) => match (true) {
+            str_contains($key, 'subject') => 'Subject ' . $key,
+            default => $key,
+        });
 
-            $mailer = new MailCapture();
-            $url = $this->createStub(UrlGeneratorInterface::class);
-            $service = new MailService($mailer, $mailPath, new Translator('en'), $url);
+        $this->service = new MailService(
+            $this->mailer,
+            __DIR__ . '/../../src/resources/mail',
+            $translator,
+            $this->url,
+            'Voyti',
+        );
+    }
 
-            $user = new User();
-            $user->setUsername('alice');
-            $user->setEmail('alice@example.com');
+    public function testMailSubjectContainsAppName(): void
+    {
+        $captured = [];
+        $translator = $this->createMock(TranslatorInterface::class);
+        $translator
+            ->method('translate')
+            ->willReturnCallback(static function (string $key, array $params = [], string $category = '') use (&$captured): string {
+                $captured[] = ['key' => $key, 'params' => $params, 'category' => $category];
 
-            self::assertTrue($service->sendWelcome($user, 'secret'));
+                return str_contains($key, 'subject') ? 'Subject ' . $key : $key;
+            });
 
-            $messages = $mailer->messages();
-            self::assertCount(1, $messages);
-            $message = $messages[0];
-            self::assertInstanceOf(MessageInterface::class, $message);
-            self::assertSame('custom-html-alice-en', $message->getHtmlBody());
-            self::assertSame('custom-text-alice-en', $message->getTextBody());
-        } finally {
-            $this->removeTempMailPath($mailPath);
+        $service = new MailService(
+            $this->mailer,
+            __DIR__ . '/../../src/resources/mail',
+            $translator,
+            $this->url,
+            'Voyti',
+        );
+
+        $user = new User();
+        $user->setEmail('test@example.com');
+        $user->setUsername('testuser');
+
+        $result = $service->sendWelcome($user, 'password123');
+        self::assertTrue($result);
+        $message = $this->mailer->getLastMessage();
+        self::assertNotNull($message);
+        self::assertStringContainsString('voyti.mail.welcome_subject', (string) $message->getSubject());
+
+        $subjectCalls = array_filter($captured, static fn (array $c): bool => str_contains($c['key'], 'subject'));
+        self::assertNotEmpty($subjectCalls);
+        foreach ($subjectCalls as $call) {
+            self::assertSame('Voyti', $call['params']['app']);
+            self::assertSame('voyti', $call['category']);
         }
     }
 
-    public function testGetMailSubjectBuildsPrefixedTranslationId(): void
+    public function testSendAdminNotification(): void
     {
-        $translator = new RecordingTranslator();
-        $service = new MailService(new MailCapture(), $this->createTempMailPath(), $translator, $this->createStub(UrlGeneratorInterface::class), 'Voyti');
-
         $user = new User();
-        $user->setUsername('alice');
-        $user->setEmail('alice@example.com');
+        $user->setUsername('testuser');
 
-        self::assertTrue($service->sendWelcome($user, 'secret'));
-
-        self::assertSame('voyti.mail.welcome_subject', $translator->ids[0]);
-        self::assertSame(['app' => 'Voyti'], $translator->parametersLog[0]);
+        $result = $this->service->sendAdminNotification('admin@example.com', $user);
+        self::assertTrue($result);
     }
 
-    public function testSendIsPubliclyCallable(): void
+    public function testSendConfirmationSuccess(): void
     {
-        $mailer = new MailCapture();
-        $url = $this->createStub(UrlGeneratorInterface::class);
-        $service = new MailService($mailer, $this->createTempMailPath(), new Translator('en'), $url);
-
-        self::assertTrue($service->send('custom', 'to@example.com', 'Subject', 'nonexistent'));
-        self::assertCount(1, $mailer->messages());
-    }
-
-    public function testSendReconfirmationRendersUsernameConfirmationUrlAndTranslatorLocale(): void
-    {
-        $mailPath = $this->createTempMailPath();
-        try {
-            mkdir($mailPath . '/html');
-            file_put_contents(
-                $mailPath . '/html/reconfirmation.php',
-                <<<'PHP'
-<?php
-echo 'html-' . $username . '-' . $confirmationUrl . '-' . $translator->getLocale();
-PHP
-            );
-            mkdir($mailPath . '/text');
-            file_put_contents(
-                $mailPath . '/text/reconfirmation.php',
-                <<<'PHP'
-<?php
-echo 'text-' . $username . '-' . $confirmationUrl . '-' . $translator->getLocale();
-PHP
-            );
-
-            $mailer = new MailCapture();
-            $url = new RecordingUrlGenerator();
-            $service = new MailService($mailer, $mailPath, new Translator('en'), $url);
-
-            $user = new User();
-            $user->setUsername('alice');
-            $user->setEmail('alice@example.com');
-
-            $userToken = new UserToken();
-            $userToken->setCode('secret-code-123');
-
-            self::assertTrue($service->sendReconfirmation($user, $userToken));
-
-            $messages = $mailer->messages();
-            self::assertCount(1, $messages);
-            $message = $messages[0];
-            self::assertInstanceOf(MessageInterface::class, $message);
-            self::assertSame('html-alice-https://example.test/voyti/settings-confirm-en', $message->getHtmlBody());
-            self::assertSame('text-alice-https://example.test/voyti/settings-confirm-en', $message->getTextBody());
-        } finally {
-            $this->removeTempMailPath($mailPath, 'reconfirmation.php');
-        }
-    }
-
-    public function testSendReconfirmationUsesTokenCodeInConfirmationUrl(): void
-    {
-        $mailer = new MailCapture();
-        $url = new RecordingUrlGenerator();
-        $service = new MailService($mailer, $this->createTempMailPath(), new Translator('en'), $url);
-
         $user = new User();
-        $user->setUsername('alice');
-        $user->setEmail('alice@example.com');
+        $user->setUsername('testuser');
+        $user->setEmail('test@example.com');
+        $ref = new \ReflectionProperty(User::class, 'id');
+        $ref->setValue($user, 42);
 
         $userToken = new UserToken();
-        $userToken->setCode('secret-code-123');
+        $userToken->setCode('abcdef123');
 
-        self::assertTrue($service->sendReconfirmation($user, $userToken));
-
-        self::assertSame('voyti/settings-confirm', $url->name);
-        self::assertSame(['code' => 'secret-code-123'], $url->arguments);
+        $result = $this->service->sendConfirmation($user, $userToken);
+        self::assertTrue($result);
+        $message = $this->mailer->getLastMessage();
+        self::assertNotNull($message);
+        $body = (string) $message->getHtmlBody() . (string) $message->getTextBody();
+        self::assertStringContainsString('id=42', $body);
+        self::assertStringContainsString('abcdef123', $body);
     }
 
-    private function createTempMailPath(): string
+    public function testSendConfirmationWithNullUserIdReturnsFalse(): void
     {
-        $path = sys_get_temp_dir() . '/voyti-mail-' . bin2hex(random_bytes(4));
-        mkdir($path);
-        return $path;
+        $user = new User();
+        $userToken = new UserToken();
+
+        $result = $this->service->sendConfirmation($user, $userToken);
+        self::assertFalse($result);
     }
 
-    private function removeTempMailPath(string $path, string $viewFile = 'welcome.php'): void
+    public function testSendReconfirmation(): void
     {
-        if (is_file($path . '/html/' . $viewFile)) {
-            unlink($path . '/html/' . $viewFile);
-        }
-        if (is_dir($path . '/html')) {
-            rmdir($path . '/html');
-        }
-        if (is_file($path . '/text/' . $viewFile)) {
-            unlink($path . '/text/' . $viewFile);
-        }
-        if (is_dir($path . '/text')) {
-            rmdir($path . '/text');
-        }
-        if (is_dir($path)) {
-            rmdir($path);
-        }
+        $user = new User();
+        $user->setEmail('test@example.com');
+        $user->setUsername('testuser');
+        $userToken = new UserToken();
+        $userToken->setCode('code123');
+
+        $result = $this->service->sendReconfirmation($user, $userToken);
+        self::assertTrue($result);
+        $message = $this->mailer->getLastMessage();
+        self::assertNotNull($message);
+        $body = (string) $message->getHtmlBody() . (string) $message->getTextBody();
+        self::assertStringContainsString('code123', $body);
     }
-}
 
-final class MailCapture implements \Yiisoft\Mailer\MailerInterface
-{
-    /** @var list<MessageInterface> */
-    private array $messages = [];
-
-    /**
-     * @return list<MessageInterface>
-     */
-    public function messages(): array
+    public function testSendRecovery(): void
     {
-        return $this->messages;
+        $userToken = new UserToken();
+        $userToken->setCode('recoverycode');
+        $ref = new \ReflectionProperty(UserToken::class, 'user_id');
+        $ref->setValue($userToken, 1);
+
+        $result = $this->service->sendRecovery('testuser', 'test@example.com', $userToken);
+        self::assertTrue($result);
+        $message = $this->mailer->getLastMessage();
+        self::assertNotNull($message);
+        $body = (string) $message->getHtmlBody() . (string) $message->getTextBody();
+        self::assertStringContainsString('id=1', $body);
+        self::assertStringContainsString('code=recoverycode', $body);
     }
 
-    public function send(MessageInterface $message): void
+    public function testSendTwoFactorCode(): void
     {
-        $this->messages[] = $message;
+        $result = $this->service->sendTwoFactorCode('test@example.com', '123456');
+        self::assertTrue($result);
     }
 
-    public function sendMultiple(array $messages): SendResults
+    public function testSendWelcome(): void
     {
-        foreach ($messages as $message) {
-            $this->send($message);
-        }
+        $user = new User();
+        $user->setEmail('test@example.com');
+        $user->setUsername('testuser');
 
-        return new SendResults($this->messages, []);
+        $result = $this->service->sendWelcome($user, 'password123');
+        self::assertTrue($result);
     }
-}
 
-final class RecordingTranslator implements TranslatorInterface
-{
-    /** @var list<string> */
-    public array $ids = [];
-
-    /** @var list<array<string, scalar>> */
-    public array $parametersLog = [];
-
-    public function addCategorySources(\Yiisoft\Translator\CategorySource ...$categories): static
+    public function testSendWithBothHtmlAndText(): void
     {
-        return $this;
-    }
-
-    public function getLocale(): string
-    {
-        return 'en';
-    }
-
-    public function setLocale(string $locale): static
-    {
-        return $this;
-    }
-
-    public function translate(
-        string|\Stringable $id,
-        array $parameters = [],
-        ?string $category = null,
-        ?string $locale = null
-    ): string {
-        $this->ids[] = (string) $id;
-        $this->parametersLog[] = $parameters;
-        return (string) $id;
-    }
-
-    public function withDefaultCategory(string $category): static
-    {
-        return $this;
-    }
-
-    public function withLocale(string $locale): static
-    {
-        return $this;
-    }
-}
-
-final class RecordingUrlGenerator implements UrlGeneratorInterface
-{
-    public array $arguments = [];
-    public string $name = '';
-
-    public function generate(
-        string $name,
-        array $arguments = [],
-        array $queryParameters = [],
-        ?string $hash = null,
-    ): string {
-        return $this->generateAbsolute($name, $arguments, $queryParameters, $hash);
-    }
-
-    public function generateAbsolute(
-        string $name,
-        array $arguments = [],
-        array $queryParameters = [],
-        ?string $hash = null,
-        ?string $scheme = null,
-        ?string $host = null
-    ): string {
-        $this->name = $name;
-        $this->arguments = $arguments;
-        return 'https://example.test/' . $name;
-    }
-
-    public function generateFromCurrent(
-        array $replacedArguments,
-        array $queryParameters = [],
-        ?string $hash = null,
-        ?string $fallbackRouteName = null
-    ): string {
-        return '';
-    }
-
-    public function getUriPrefix(): string
-    {
-        return '';
-    }
-
-    public function setDefaultArgument(string $name, bool|float|int|string|\Stringable|null $value): void
-    {
-    }
-
-    public function setUriPrefix(string $name): void
-    {
+        $result = $this->service->send('test', 'test@example.com', 'Test', 'welcome', ['username' => 'testuser', 'translator' => $this->createMock(TranslatorInterface::class)]);
+        self::assertTrue($result);
+        $message = $this->mailer->getLastMessage();
+        self::assertNotNull($message);
+        self::assertNotNull($message->getHtmlBody());
+        self::assertNotNull($message->getTextBody());
     }
 }

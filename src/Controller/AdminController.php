@@ -83,8 +83,9 @@ final readonly class AdminController
 
         if ($request->getMethod() === Method::POST) {
             $body = $this->parsedBody($request);
-            $items = $body['items'] ?? [];
-            $items = is_array($items) ? $items : [];
+            /** @var mixed $rawItems */
+            $rawItems = $body['items'] ?? null;
+            $items = is_array($rawItems) ? $rawItems : [];
             $this->updateAuthAssignmentsService->run($id, $items);
         }
 
@@ -132,8 +133,9 @@ final readonly class AdminController
 
             $result = $this->userCreateService->run($email, $username, $password);
             if ($result->isSuccess()) {
-                $items = $body['assignedItems'] ?? [];
-                $items = is_array($items) ? $items : [];
+                /** @var mixed $rawAssignedItems */
+                $rawAssignedItems = $body['assignedItems'] ?? null;
+                $items = is_array($rawAssignedItems) ? $rawAssignedItems : [];
                 if ($items !== []) {
                     $user = $this->userRepository->findByUsername($username);
                     if ($user !== null) {
@@ -185,15 +187,12 @@ final readonly class AdminController
             'username' => $this->stringValue($queryParams, 'username'),
             'email' => $this->stringValue($queryParams, 'email'),
             'status' => $this->stringValue($queryParams, 'status'),
-            /** @infection-ignore-all DecrementInteger: search()/countByFilters() and $currentPage below all re-clamp a missing 'page' key via their own max(1, ...), so whether this default is 1 or 0 is unobservable. */
             'page' => (int) ($queryParams['page'] ?? 1),
         ];
 
         $users = $this->userRepository->search($filters);
-        /** @infection-ignore-all CastInt: countByFilters() only ever feeds the ceil()/(int) cast below, which coerces a numeric string identically to an int, so this cast changes no observable result. */
         $total = (int) $this->userRepository->countByFilters($filters);
         $limit = 50;
-        /** @infection-ignore-all DecrementInteger: the view only renders pagination when totalPages > 1, so a 0 vs 1 floor is indistinguishable whenever $total is 0 (the only case where it matters). */
         $totalPages = max(1, (int)ceil($total / $limit));
         $currentPage = max(1, $filters['page']);
 
@@ -266,10 +265,9 @@ final readonly class AdminController
 
         if ($request->getMethod() === Method::POST) {
             $body = $this->parsedBody($request);
-            $userData = $body['user'] ?? null;
-            if (!is_array($userData)) {
-                $userData = [];
-            }
+            /** @var mixed $rawUserData */
+            $rawUserData = $body['user'] ?? null;
+            $userData = is_array($rawUserData) ? $rawUserData : [];
             $user->setUsername($this->stringValue($userData, 'username', $user->getUsername()));
             $user->setEmail($this->stringValue($userData, 'email', $user->getEmail()));
             $password = $this->stringValue($userData, 'password');
@@ -280,8 +278,9 @@ final readonly class AdminController
             $user->setUpdatedAt(time());
             $user->save();
 
-            $items = $body['assignedItems'] ?? [];
-            $items = is_array($items) ? $items : [];
+            /** @var mixed $rawAssignedItems */
+            $rawAssignedItems = $body['assignedItems'] ?? null;
+            $items = is_array($rawAssignedItems) ? $rawAssignedItems : [];
             $this->updateAuthAssignmentsService->run($id, $items);
 
             return $this->redirectWithFlash($this->url->generate('voyti/admin'), 'voyti.admin.account_updated');

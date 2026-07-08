@@ -4,307 +4,209 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Helper;
 
-use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Helper\InputDataTrait;
 use Yiisoft\Session\SessionInterface;
 
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class InputDataTraitTest extends TestCase
 {
+    private object $tester;
 
-    public function testFormDataFallsBackToBodyWhenFormNameMissing(): void
+    protected function setUp(): void
     {
-        $fixture = new InputDataTraitFixture();
+        $this->tester = new class {
+            use InputDataTrait;
 
-        self::assertSame(['name' => 'alice'], $fixture->callFormData(['name' => 'alice'], 'Form'));
+            public function exposedFormData(array $body, string $formName): array
+            {
+                return $this->formData($body, $formName);
+            }
+
+            public function exposedNullableStringValue(array $data, string $key): ?string
+            {
+                return $this->nullableStringValue($data, $key);
+            }
+
+            public function exposedParsedBody(ServerRequestInterface $request): array
+            {
+                return $this->parsedBody($request);
+            }
+
+            public function exposedQueryParams(ServerRequestInterface $request): array
+            {
+                return $this->queryParams($request);
+            }
+
+            public function exposedRequestAttributeString(ServerRequestInterface $request, string $name, string $default = ''): string
+            {
+                return $this->requestAttributeString($request, $name, $default);
+            }
+
+            public function exposedSessionArray(SessionInterface $session, string $key): array
+            {
+                return $this->sessionArray($session, $key);
+            }
+
+            public function exposedStringValue(array $data, string $key, string $default = ''): string
+            {
+                return $this->stringValue($data, $key, $default);
+            }
+        };
     }
-    public function testFormDataIsReachableThroughSubclass(): void
-    {
-        $fixture = new InputDataTraitSubFixture();
 
-        self::assertSame(['name' => 'alice'], $fixture->callFormData(['Form' => ['name' => 'alice']], 'Form'));
+    public function testFormDataReturnsEmptyArrayWhenFormNameIsNotArray(): void
+    {
+        $body = ['user' => 'string', 'other' => 'value'];
+        $result = $this->tester->exposedFormData($body, 'user');
+        self::assertSame([], $result);
     }
 
-    public function testFormDataReturnsEmptyArrayWhenValueIsNotArray(): void
+    public function testFormDataReturnsNestedArrayWhenFormNameExists(): void
     {
-        $fixture = new InputDataTraitFixture();
-
-        self::assertSame([], $fixture->callFormData(['Form' => 'not-an-array'], 'Form'));
+        $result = $this->tester->exposedFormData(
+            ['user' => ['name' => 'John', 'email' => 'john@example.com']],
+            'user',
+        );
+        self::assertSame(['name' => 'John', 'email' => 'john@example.com'], $result);
     }
 
-    public function testParsedBodyIsReachableThroughSubclass(): void
+    public function testFormDataReturnsWholeBodyWhenFormNameMissing(): void
     {
-        $fixture = new InputDataTraitSubFixture();
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['key' => 'value']);
+        $body = ['name' => 'John', 'email' => 'john@example.com'];
+        $result = $this->tester->exposedFormData($body, 'user');
+        self::assertSame($body, $result);
+    }
 
-        self::assertSame(['key' => 'value'], $fixture->callParsedBody($request));
+    public function testFormDataWithEmptyBody(): void
+    {
+        $result = $this->tester->exposedFormData([], 'user');
+        self::assertSame([], $result);
+    }
+
+    public function testNullableStringValueReturnsNullForEmptyString(): void
+    {
+        self::assertNull($this->tester->exposedNullableStringValue(['key' => ''], 'key'));
+    }
+
+    public function testNullableStringValueReturnsNullForMissingKey(): void
+    {
+        self::assertNull($this->tester->exposedNullableStringValue([], 'key'));
+    }
+
+    public function testNullableStringValueReturnsNullForNonString(): void
+    {
+        self::assertNull($this->tester->exposedNullableStringValue(['key' => 123], 'key'));
+    }
+
+    public function testNullableStringValueReturnsString(): void
+    {
+        self::assertSame('hello', $this->tester->exposedNullableStringValue(['key' => 'hello'], 'key'));
+    }
+
+    public function testParsedBodyReturnsArray(): void
+    {
+        $request = $this->createMock(ServerRequestInterface::class);
+        $request->expects(self::once())->method('getParsedBody')->willReturn(['field' => 'value']);
+
+        self::assertSame(['field' => 'value'], $this->tester->exposedParsedBody($request));
     }
 
     public function testParsedBodyReturnsEmptyArrayWhenNotArray(): void
     {
-        $fixture = new InputDataTraitFixture();
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(null);
+        $request = $this->createMock(ServerRequestInterface::class);
+        $request->expects(self::once())->method('getParsedBody')->willReturn(null);
 
-        self::assertSame([], $fixture->callParsedBody($request));
+        self::assertSame([], $this->tester->exposedParsedBody($request));
     }
 
-    public function testQueryParamsIsReachableThroughSubclass(): void
+    public function testParsedBodyReturnsEmptyArrayWhenObject(): void
     {
-        $fixture = new InputDataTraitSubFixture();
-        $request = (new ServerRequest('GET', '/'))->withQueryParams(['q' => 'search']);
+        $request = $this->createMock(ServerRequestInterface::class);
+        $request->expects(self::once())->method('getParsedBody')->willReturn(new \stdClass());
 
-        self::assertSame(['q' => 'search'], $fixture->callQueryParams($request));
+        self::assertSame([], $this->tester->exposedParsedBody($request));
     }
 
-    public function testSessionArrayIsReachableThroughSubclass(): void
+    public function testQueryParamsReturnsParams(): void
     {
-        $fixture = new InputDataTraitSubFixture();
-        $session = new InputDataTraitFakeSession(['flash' => ['a', 'b']]);
+        $request = $this->createMock(ServerRequestInterface::class);
+        $request->expects(self::once())->method('getQueryParams')->willReturn(['page' => '1']);
 
-        self::assertSame(['a', 'b'], $fixture->callSessionArray($session, 'flash'));
+        self::assertSame(['page' => '1'], $this->tester->exposedQueryParams($request));
     }
 
-    public function testSessionArrayReturnsEmptyArrayWhenValueIsNotArray(): void
+    public function testRequestAttributeStringReturnsDefaultForNonString(): void
     {
-        $fixture = new InputDataTraitFixture();
-        $session = new InputDataTraitFakeSession(['flash' => 'not-an-array']);
+        $request = $this->createMock(ServerRequestInterface::class);
+        $request->expects(self::once())->method('getAttribute')->with('id', '')->willReturn(42);
 
-        self::assertSame([], $fixture->callSessionArray($session, 'flash'));
+        self::assertSame('', $this->tester->exposedRequestAttributeString($request, 'id'));
     }
 
-    public function testStringValueDoesNotFallBackToDefaultWhenKeyValueIsPresentString(): void
+    public function testRequestAttributeStringReturnsDefaultWhenMissing(): void
     {
-        // Kills the Coalesce mutant ($default ?? $data[$key]) which would return the
-        // non-empty default instead of the present key value.
-        $fixture = new InputDataTraitFixture();
+        $request = $this->createMock(ServerRequestInterface::class);
+        $request->expects(self::once())->method('getAttribute')->with('id', 'fallback')->willReturn('fallback');
 
-        self::assertSame('present', $fixture->callStringValue(['name' => 'present'], 'name', 'fallback'));
+        self::assertSame('fallback', $this->tester->exposedRequestAttributeString($request, 'id', 'fallback'));
     }
 
-    public function testStringValueIsReachableThroughSubclass(): void
+    public function testRequestAttributeStringReturnsValue(): void
     {
-        $fixture = new InputDataTraitSubFixture();
+        $request = $this->createMock(ServerRequestInterface::class);
+        $request->expects(self::once())->method('getAttribute')->with('id', '')->willReturn('123');
 
-        self::assertSame('alice', $fixture->callStringValue(['name' => 'alice'], 'name'));
+        self::assertSame('123', $this->tester->exposedRequestAttributeString($request, 'id'));
     }
 
-    public function testStringValueUsesDefaultWhenKeyIsMissing(): void
+    public function testSessionArrayReturnsArray(): void
     {
-        $fixture = new InputDataTraitFixture();
+        $session = $this->createMock(SessionInterface::class);
+        $session->expects(self::once())->method('get')->with('cart')->willReturn(['item1' => 'book']);
 
-        self::assertSame('fallback', $fixture->callStringValue(['name' => 'alice'], 'missing', 'fallback'));
+        self::assertSame(['item1' => 'book'], $this->tester->exposedSessionArray($session, 'cart'));
     }
 
-    public function testStringValueUsesDefaultWhenPresentValueIsNotString(): void
+    public function testSessionArrayReturnsEmptyArrayForNonArray(): void
     {
-        $fixture = new InputDataTraitFixture();
+        $session = $this->createMock(SessionInterface::class);
+        $session->expects(self::once())->method('get')->with('cart')->willReturn('string');
 
-        self::assertSame('fallback', $fixture->callStringValue(['name' => 42], 'name', 'fallback'));
-    }
-}
-
-class InputDataTraitFixture
-{
-    use InputDataTrait;
-
-    /**
-     * @param array<array-key, mixed> $body
-     *
-     * @return array<array-key, mixed>
-     */
-    public function callFormData(array $body, string $formName): array
-    {
-        return $this->formData($body, $formName);
+        self::assertSame([], $this->tester->exposedSessionArray($session, 'cart'));
     }
 
-    /**
-     * @return array<array-key, mixed>
-     */
-    public function callParsedBody(ServerRequestInterface $request): array
+    public function testSessionArrayReturnsEmptyArrayForNull(): void
     {
-        return $this->parsedBody($request);
+        $session = $this->createMock(SessionInterface::class);
+        $session->expects(self::once())->method('get')->with('missing')->willReturn(null);
+
+        self::assertSame([], $this->tester->exposedSessionArray($session, 'missing'));
     }
 
-    /**
-     * @return array<array-key, mixed>
-     */
-    public function callQueryParams(ServerRequestInterface $request): array
+    public function testStringValueReturnsDefaultForMissingKey(): void
     {
-        return $this->queryParams($request);
+        self::assertSame('default', $this->tester->exposedStringValue([], 'key', 'default'));
     }
 
-    /**
-     * @return array<array-key, mixed>
-     */
-    public function callSessionArray(SessionInterface $session, string $key): array
+    public function testStringValueReturnsDefaultForNonString(): void
     {
-        return $this->sessionArray($session, $key);
+        self::assertSame('', $this->tester->exposedStringValue(['key' => 42], 'key'));
     }
 
-    /**
-     * @param array<array-key, mixed> $data
-     */
-    public function callStringValue(array $data, string $key, string $default = ''): string
+    public function testStringValueReturnsDefaultForNull(): void
     {
-        return $this->stringValue($data, $key, $default);
-    }
-}
-
-final class InputDataTraitSubFixture extends InputDataTraitFixture
-{
-    /**
-     * @param array<array-key, mixed> $body
-     *
-     * @return array<array-key, mixed>
-     */
-    public function callFormData(array $body, string $formName): array
-    {
-        // Calls the protected trait method directly from a subclass. If the
-        // trait method's visibility is narrowed to private, this call fails
-        // with an Error because private methods are not inherited.
-        return $this->formData($body, $formName);
+        self::assertSame('fallback', $this->tester->exposedStringValue(['key' => null], 'key', 'fallback'));
     }
 
-    /**
-     * @return array<array-key, mixed>
-     */
-    public function callParsedBody(ServerRequestInterface $request): array
+    public function testStringValueReturnsEmptyStringDefaultByDefault(): void
     {
-        return $this->parsedBody($request);
+        self::assertSame('', $this->tester->exposedStringValue(['key' => 42], 'key'));
     }
 
-    /**
-     * @return array<array-key, mixed>
-     */
-    public function callQueryParams(ServerRequestInterface $request): array
+    public function testStringValueReturnsValue(): void
     {
-        return $this->queryParams($request);
-    }
-
-    /**
-     * @return array<array-key, mixed>
-     */
-    public function callSessionArray(SessionInterface $session, string $key): array
-    {
-        return $this->sessionArray($session, $key);
-    }
-
-    /**
-     * @param array<array-key, mixed> $data
-     */
-    public function callStringValue(array $data, string $key, string $default = ''): string
-    {
-        return $this->stringValue($data, $key, $default);
-    }
-}
-
-final class InputDataTraitFakeSession implements SessionInterface
-{
-    /**
-     * @param array<array-key, mixed> $data
-     */
-    public function __construct(private array $data = [])
-    {
-    }
-
-    #[\Override]
-    public function all(): array
-    {
-        return $this->data;
-    }
-
-    #[\Override]
-    public function clear(): void
-    {
-        $this->data = [];
-    }
-
-    #[\Override]
-    public function close(): void
-    {
-    }
-
-    #[\Override]
-    public function destroy(): void
-    {
-        $this->data = [];
-    }
-
-    #[\Override]
-    public function discard(): void
-    {
-    }
-
-    #[\Override]
-    public function get(string $key, $default = null)
-    {
-        return $this->data[$key] ?? $default;
-    }
-
-    #[\Override]
-    public function getCookieParameters(): array
-    {
-        return [];
-    }
-
-    #[\Override]
-    public function getId(): ?string
-    {
-        return 'fake-session-id';
-    }
-
-    #[\Override]
-    public function getName(): string
-    {
-        return 'fake-session';
-    }
-
-    #[\Override]
-    public function has(string $key): bool
-    {
-        return array_key_exists($key, $this->data);
-    }
-
-    #[\Override]
-    public function isActive(): bool
-    {
-        return true;
-    }
-
-    #[\Override]
-    public function open(): void
-    {
-    }
-
-    #[\Override]
-    public function pull(string $key, $default = null)
-    {
-        $value = $this->get($key, $default);
-        unset($this->data[$key]);
-
-        return $value;
-    }
-
-    #[\Override]
-    public function regenerateId(): void
-    {
-    }
-
-    #[\Override]
-    public function remove(string $key): void
-    {
-        unset($this->data[$key]);
-    }
-
-    #[\Override]
-    public function set(string $key, $value): void
-    {
-        $this->data[$key] = $value;
-    }
-
-    #[\Override]
-    public function setId(string $sessionId): void
-    {
+        self::assertSame('hello', $this->tester->exposedStringValue(['key' => 'hello'], 'key'));
     }
 }
