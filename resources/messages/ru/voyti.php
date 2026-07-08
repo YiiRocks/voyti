@@ -7,7 +7,6 @@ return [
     'voyti.security.invalid_login' => 'Неверный логин или пароль',
     'voyti.security.account_blocked' => 'Ваш аккаунт заблокирован',
     'voyti.security.need_email_confirmation' => 'Вам необходимо подтвердить ваш email-адрес',
-    'voyti.security.logged_in' => 'Вы вошли в систему',
     'voyti.security.logged_out' => 'Вы вышли из системы',
     'voyti.security.authenticated' => 'Аутентифицирован',
 
@@ -30,16 +29,13 @@ return [
     'voyti.settings.user_not_found' => 'Пользователь не найден',
     'voyti.settings.profile_updated' => 'Ваш профиль обновлён',
     'voyti.settings.account_details_updated' => 'Данные вашего аккаунта обновлены',
-    'voyti.settings.not_available' => 'Недоступно',
     'voyti.settings.personal_info_removed' => 'Ваша личная информация удалена',
-    'voyti.settings.account_deletion_disabled' => 'Удаление аккаунта отключено',
     'voyti.settings.account_deleted' => 'Ваш аккаунт удалён',
     'voyti.settings.gdpr_consent_saved' => 'Согласие GDPR сохранено',
     'voyti.settings.email_changed' => 'Ваш email-адрес изменён',
     'voyti.settings.email_change_failed' => 'Не удалось изменить email-адрес',
     'voyti.settings.network_disconnected' => 'Сеть отключена',
     'voyti.settings.network_not_found' => 'Сеть не найдена',
-    'voyti.settings.data_exported' => 'Ваши данные экспортированы',
     'voyti.settings.two_factor_enabled' => 'Двухфакторная аутентификация включена',
     'voyti.settings.two_factor_disabled' => 'Двухфакторная аутентификация отключена',
 
@@ -118,6 +114,7 @@ return [
     'voyti.menu.account' => 'Аккаунт',
     'voyti.menu.networks' => 'Сети',
     'voyti.menu.two_factor' => '2FA',
+    'voyti.menu.logout' => 'Выйти',
 
     // Login view
     'voyti.view.login.title' => 'Войти',
@@ -174,22 +171,30 @@ return [
     'voyti.view.networks.title' => 'Сети',
     'voyti.view.privacy.title' => 'Конфиденциальность',
     'voyti.view.privacy.manage_gdpr_consent' => 'Управление согласием GDPR',
-    'voyti.view.privacy.delete_data' => 'Удалить мои данные',
+    'voyti.view.privacy.export_data' => 'Экспортировать мои данные',
+    'voyti.view.privacy.anonymize_data' => 'Анонимизировать мой аккаунт',
+    'voyti.view.privacy.delete_account' => 'Удалить мой аккаунт',
     'voyti.view.settings.privacy' => 'Конфиденциальность',
 
     // GDPR views
     'voyti.view.gdpr.consent_title' => 'Согласие GDPR',
     'voyti.view.gdpr.consent_label' => 'Я даю согласие на обработку моих персональных данных',
-    'voyti.view.gdpr.delete_title' => 'Удалить мой аккаунт',
-    'voyti.view.gdpr.delete_warning' => 'Внимание: Это действие безвозвратно удалит ваш аккаунт и все связанные данные.',
-    'voyti.view.gdpr.delete_confirm_label' => 'Я понимаю, что это действие необратимо',
-    'voyti.view.gdpr.delete_button' => 'Удалить мой аккаунт',
+    'voyti.view.anonymize.title' => 'Анонимизировать мой аккаунт',
+    'voyti.view.anonymize.warning' => 'Внимание: Это действие анонимизирует ваш аккаунт (email и имя пользователя будут заменены) и навсегда заблокирует доступ. Это действие необратимо.',
+    'voyti.view.anonymize.confirm_label' => 'Я понимаю, что это действие необратимо',
+    'voyti.view.anonymize.button' => 'Анонимизировать мой аккаунт',
 
     // Account settings (2FA)
     'voyti.view.account.two_factor_title' => 'Двухфакторная аутентификация',
     'voyti.view.account.two_factor_enabled' => '2FA включена',
     'voyti.view.account.disable_two_factor' => 'Отключить 2FA',
     'voyti.view.account.enable_two_factor' => 'Включить 2FA',
+
+    // Delete account view
+    'voyti.view.delete_account.title' => 'Удалить мой аккаунт',
+    'voyti.view.delete_account.warning' => 'Внимание: Это действие безвозвратно удалит ваш аккаунт и все связанные данные. Это действие необратимо.',
+    'voyti.view.delete_account.confirm_label' => 'Я понимаю, что это действие необратимо',
+    'voyti.view.delete_account.button' => 'Удалить мой аккаунт',
 
     // Admin views
     'voyti.view.admin.title' => 'Пользователи',
@@ -282,6 +287,7 @@ return [
     'voyti.view.unblock_button' => 'Разблокировать',
     'voyti.view.block_button' => 'Заблокировать',
     'voyti.view.force_password_change_button' => 'Принудительная смена пароля',
+    'voyti.view.reset_password_button' => 'Отправить ссылку для сброса пароля',
     'voyti.view.update_profile_link' => 'Редактировать профиль',
     'voyti.view.send_button' => 'Отправить',
     'voyti.view.connect_button' => 'Привязать',

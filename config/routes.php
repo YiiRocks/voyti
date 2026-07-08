@@ -33,16 +33,8 @@ $routes = [
     Route::methods(['GET', 'POST'], 'settings')->name('voyti/settings')->action([Controller\SettingsController::class, 'userProfile']),
     Route::methods(['GET', 'POST'], 'settings/account')->name('voyti/settings-account')->action([Controller\SettingsController::class, 'account']),
     Route::get('settings/networks')->name('voyti/settings-networks')->action([Controller\SettingsController::class, 'networks']),
-    Route::get('settings/privacy')->name('voyti/settings-privacy')->action([Controller\SettingsController::class, 'privacy']),
-    Route::methods(['GET', 'POST'], 'settings/gdpr-consent')->name('voyti/gdpr-consent')->action([Controller\SettingsController::class, 'gdprConsent']),
-    Route::methods(['GET', 'POST'], 'settings/gdpr-delete')->name('voyti/gdpr-delete')->action([Controller\SettingsController::class, 'gdprDelete']),
-    Route::post('settings/delete')->name('voyti/settings-delete')->action([Controller\SettingsController::class, 'delete']),
-    Route::methods(['GET', 'POST'], 'settings/two-factor')->name('voyti/settings-two-factor')->action([Controller\SettingsController::class, 'twoFactor']),
-    Route::post('settings/two-factor-enable')->name('voyti/settings-two-factor-enable')->action([Controller\SettingsController::class, 'twoFactorEnable']),
-    Route::post('settings/two-factor-disable')->name('voyti/settings-two-factor-disable')->action([Controller\SettingsController::class, 'twoFactorDisable']),
     Route::get('settings/confirm/{code}')->name('voyti/settings-confirm')->action([Controller\SettingsController::class, 'confirm']),
-    Route::post('settings/disconnect/{id:\d+}')->name('voyti/settings-disconnect')->action([Controller\SettingsController::class, 'disconnect']),
-    Route::get('settings/export')->name('voyti/settings-export')->action([Controller\SettingsController::class, 'export']),
+    Route::post('settings/networks/disconnect/{id:\d+}')->name('voyti/settings-networks-disconnect')->action([Controller\SettingsController::class, 'disconnect']),
 
     // Admin + RBAC
     Group::create()
@@ -78,6 +70,26 @@ $routes = [
 ];
 
 $moduleConfig = ModuleConfig::fromArray($params['yiirocks/voyti'] ?? []);
+
+if ($moduleConfig->enableGdprCompliance || $moduleConfig->allowAccountDelete) {
+    $routes[] = Route::get('settings/privacy')->name('voyti/settings-privacy')->action([Controller\SettingsController::class, 'privacy']);
+}
+
+if ($moduleConfig->enableGdprCompliance) {
+    $routes[] = Route::methods(['GET', 'POST'], 'settings/privacy/gdpr-consent')->name('voyti/settings-privacy-gdpr-consent')->action([Controller\SettingsController::class, 'gdprConsent']);
+    $routes[] = Route::get('settings/privacy/export')->name('voyti/settings-privacy-export')->action([Controller\SettingsController::class, 'export']);
+    $routes[] = Route::methods(['GET', 'POST'], 'settings/privacy/anonymize')->name('voyti/settings-privacy-anonymize')->action([Controller\SettingsController::class, 'anonymize']);
+}
+
+if ($moduleConfig->allowAccountDelete) {
+    $routes[] = Route::methods(['GET', 'POST'], 'settings/privacy/delete')->name('voyti/settings-privacy-delete')->action([Controller\SettingsController::class, 'delete']);
+}
+
+if ($moduleConfig->enableTwoFactorAuthentication) {
+    $routes[] = Route::methods(['GET', 'POST'], 'settings/two-factor')->name('voyti/settings-two-factor')->action([Controller\SettingsController::class, 'twoFactor']);
+    $routes[] = Route::post('settings/two-factor/enable')->name('voyti/settings-two-factor-enable')->action([Controller\SettingsController::class, 'twoFactorEnable']);
+    $routes[] = Route::post('settings/two-factor/disable')->name('voyti/settings-two-factor-disable')->action([Controller\SettingsController::class, 'twoFactorDisable']);
+}
 
 if ($moduleConfig->enableRestApi) {
     $routes[] = Group::create($moduleConfig->adminRestPrefix . '/')

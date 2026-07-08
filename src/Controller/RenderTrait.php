@@ -27,7 +27,7 @@ trait RenderTrait
 
     protected function viewPath(): string
     {
-        return dirname(__DIR__) . '/resources/views/bootstrap5';
+        return dirname(__DIR__, 2) . '/resources/views/bootstrap5';
     }
     /**
      * @param array<string, mixed> $params

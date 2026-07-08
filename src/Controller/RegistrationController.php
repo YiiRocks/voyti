@@ -8,6 +8,7 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use YiiRocks\Voyti\Event\User\FormEvent;
 use YiiRocks\Voyti\Form\Auth\RegistrationForm;
 use YiiRocks\Voyti\Form\Auth\ResendForm;
@@ -51,6 +52,7 @@ final readonly class RegistrationController
         private HydratorInterface $hydrator,
         private ResponseFactoryInterface $responseFactory,
         private FlashInterface $flash,
+        private AuthClientRegistry $authClientRegistry,
     ) {
     }
 
@@ -82,6 +84,7 @@ final readonly class RegistrationController
 
         return $this->renderView('registration/connect', [
             'account' => $account,
+            'authClients' => $this->authClientRegistry,
         ]);
     }
 

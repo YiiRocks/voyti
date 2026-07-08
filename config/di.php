@@ -197,7 +197,7 @@ return [
     'yiirocks/voyti.translator' => [
         'definition' => static fn () => new CategorySource(
             'voyti',
-            new MessageSource(dirname(__DIR__) . '/src/resources/messages'),
+            new MessageSource(dirname(__DIR__) . '/resources/messages'),
             new SimpleMessageFormatter(),
         ),
         'tags' => ['translation.categorySource'],

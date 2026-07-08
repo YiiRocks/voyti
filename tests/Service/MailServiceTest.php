@@ -31,7 +31,7 @@ final class MailServiceTest extends TestCase
 
         $this->service = new MailService(
             $this->mailer,
-            __DIR__ . '/../../src/resources/mail',
+            __DIR__ . '/../../resources/mail',
             $translator,
             $this->url,
             'Voyti',
@@ -52,7 +52,7 @@ final class MailServiceTest extends TestCase
 
         $service = new MailService(
             $this->mailer,
-            __DIR__ . '/../../src/resources/mail',
+            __DIR__ . '/../../resources/mail',
             $translator,
             $this->url,
             'Voyti',

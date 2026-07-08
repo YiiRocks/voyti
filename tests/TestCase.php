@@ -78,7 +78,7 @@ abstract class TestCase extends BaseTestCase
         $translator->addCategorySources(
             new CategorySource(
                 'voyti',
-                new MessageSource(dirname(__DIR__) . '/src/resources/messages'),
+                new MessageSource(dirname(__DIR__) . '/resources/messages'),
                 new SimpleMessageFormatter(),
             ),
         );

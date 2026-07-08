@@ -7,7 +7,6 @@ return [
     'voyti.security.invalid_login' => 'Ongeldige gebruikersnaam of wachtwoord',
     'voyti.security.account_blocked' => 'Uw account is geblokkeerd',
     'voyti.security.need_email_confirmation' => 'U moet uw e-mailadres bevestigen',
-    'voyti.security.logged_in' => 'Ingelogd',
     'voyti.security.logged_out' => 'Uitgelogd',
     'voyti.security.authenticated' => 'Geverifieerd',
 
@@ -30,16 +29,13 @@ return [
     'voyti.settings.user_not_found' => 'Gebruiker niet gevonden',
     'voyti.settings.profile_updated' => 'Uw profiel is bijgewerkt',
     'voyti.settings.account_details_updated' => 'Uw accountgegevens zijn bijgewerkt',
-    'voyti.settings.not_available' => 'Niet beschikbaar',
     'voyti.settings.personal_info_removed' => 'Uw persoonlijke gegevens zijn verwijderd',
-    'voyti.settings.account_deletion_disabled' => 'Accountverwijdering is uitgeschakeld',
     'voyti.settings.account_deleted' => 'Uw account is verwijderd',
     'voyti.settings.gdpr_consent_saved' => 'AVG-toestemming is opgeslagen',
     'voyti.settings.email_changed' => 'Uw e-mailadres is gewijzigd',
     'voyti.settings.email_change_failed' => 'E-mailadres kon niet worden gewijzigd',
     'voyti.settings.network_disconnected' => 'Netwerk is ontkoppeld',
     'voyti.settings.network_not_found' => 'Netwerk niet gevonden',
-    'voyti.settings.data_exported' => 'Uw gegevens zijn geëxporteerd',
     'voyti.settings.two_factor_enabled' => 'Tweefactorauthenticatie is ingeschakeld',
     'voyti.settings.two_factor_disabled' => 'Tweefactorauthenticatie is uitgeschakeld',
 
@@ -118,6 +114,7 @@ return [
     'voyti.menu.account' => 'Account',
     'voyti.menu.networks' => 'Netwerken',
     'voyti.menu.two_factor' => 'Tweefactorauthenticatie',
+    'voyti.menu.logout' => 'Uitloggen',
 
     // Login view
     'voyti.view.login.title' => 'Inloggen',
@@ -174,22 +171,30 @@ return [
     'voyti.view.networks.title' => 'Netwerken',
     'voyti.view.privacy.title' => 'Privacy',
     'voyti.view.privacy.manage_gdpr_consent' => 'AVG-toestemming beheren',
-    'voyti.view.privacy.delete_data' => 'Mijn gegevens verwijderen',
+    'voyti.view.privacy.export_data' => 'Mijn gegevens exporteren',
+    'voyti.view.privacy.anonymize_data' => 'Mijn account anonimiseren',
+    'voyti.view.privacy.delete_account' => 'Mijn account verwijderen',
     'voyti.view.settings.privacy' => 'Privacy',
 
     // GDPR views
     'voyti.view.gdpr.consent_title' => 'AVG-toestemming',
     'voyti.view.gdpr.consent_label' => 'Ik geef toestemming voor de verwerking van mijn persoonsgegevens',
-    'voyti.view.gdpr.delete_title' => 'Mijn account verwijderen',
-    'voyti.view.gdpr.delete_warning' => 'Waarschuwing: Deze actie verwijdert uw account en alle bijbehorende gegevens permanent.',
-    'voyti.view.gdpr.delete_confirm_label' => 'Ik begrijp dat deze actie onomkeerbaar is',
-    'voyti.view.gdpr.delete_button' => 'Mijn account verwijderen',
+    'voyti.view.anonymize.title' => 'Mijn account anonimiseren',
+    'voyti.view.anonymize.warning' => 'Waarschuwing: Deze actie anonimiseert uw account (e-mail en gebruikersnaam worden vervangen) en blokkeert de toegang permanent. Dit kan niet ongedaan worden gemaakt.',
+    'voyti.view.anonymize.confirm_label' => 'Ik begrijp dat deze actie onomkeerbaar is',
+    'voyti.view.anonymize.button' => 'Mijn account anonimiseren',
 
     // Account settings (2FA)
     'voyti.view.account.two_factor_title' => 'Tweefactorauthenticatie',
     'voyti.view.account.two_factor_enabled' => '2FA is ingeschakeld',
     'voyti.view.account.disable_two_factor' => '2FA uitschakelen',
     'voyti.view.account.enable_two_factor' => '2FA inschakelen',
+
+    // Delete account view
+    'voyti.view.delete_account.title' => 'Mijn account verwijderen',
+    'voyti.view.delete_account.warning' => 'Waarschuwing: Deze actie verwijdert uw account en alle bijbehorende gegevens permanent. Dit kan niet ongedaan worden gemaakt.',
+    'voyti.view.delete_account.confirm_label' => 'Ik begrijp dat deze actie onomkeerbaar is',
+    'voyti.view.delete_account.button' => 'Mijn account verwijderen',
 
     // Admin views
     'voyti.view.admin.title' => 'Gebruikers',
@@ -282,6 +287,7 @@ return [
     'voyti.view.unblock_button' => 'Deblokkeren',
     'voyti.view.block_button' => 'Blokkeren',
     'voyti.view.force_password_change_button' => 'Wachtwoordwijziging afdwingen',
+    'voyti.view.reset_password_button' => 'Wachtwoordherstellink verzenden',
     'voyti.view.update_profile_link' => 'Profiel bijwerken',
     'voyti.view.send_button' => 'Verzenden',
     'voyti.view.connect_button' => 'Koppelen',

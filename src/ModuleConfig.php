@@ -23,6 +23,8 @@ final readonly class ModuleConfig
             'userProfile.location',
             'userProfile.website',
             'userProfile.bio',
+            'userSessionHistory',
+            'userSocialAccount',
         ],
         public string $gdprAnonymizePrefix = 'GDPR',
         public bool $enableTwoFactorAuthentication = false,
@@ -37,6 +39,7 @@ final readonly class ModuleConfig
         public ?string $switchIdentitySessionKey = 'voyti_original_user',
         public string $loginRoute = 'voyti/login',
         public string $accountSettingsRoute = 'voyti/settings-account',
+        public string $homeRoute = 'home',
         public ?string $mailAdminOnRegister = null,
         public bool $enablePasswordExpiration = false,
         public bool $generatePasswords = false,
@@ -51,8 +54,8 @@ final readonly class ModuleConfig
         public int $profileVisibility = 2,
         public ?int $maxPasswordAge = null,
         public bool $disableIpLogging = false,
-        public string $viewPath = __DIR__ . '/resources/views/bootstrap5',
-        public string $mailPath = __DIR__ . '/resources/mail',
+        public string $viewPath = __DIR__ . '/../resources/views/bootstrap5',
+        public string $mailPath = __DIR__ . '/../resources/mail',
         public bool $enableRestApi = false,
         public string $adminRestPrefix = 'api/v1',
     ) {
@@ -61,7 +64,7 @@ final readonly class ModuleConfig
     /**
      * @return (array|bool|int|null|string)[]
      *
-     * @psalm-return array{appName: string, recaptchaVersion: null|string, enableSessionHistory: bool, numberSessionHistory: false|int, enableGdprCompliance: bool, gdprExportProperties: list<string>, gdprAnonymizePrefix: string, enableTwoFactorAuthentication: bool, twoFactorAuthenticationForcedPermissions: array<array-key, string>, enableRegistration: bool, enableSocialNetworkRegistration: bool, socialNetworkClients: array<string, array<string, mixed>>, enableEmailConfirmation: bool, enableSwitchIdentities: bool, switchIdentitySessionKey: null|string, loginRoute: string, accountSettingsRoute: string, mailAdminOnRegister: null|string, enablePasswordExpiration: bool, generatePasswords: bool, allowPasswordRecovery: bool, allowAdminPasswordRecovery: bool, allowAccountDelete: bool, emailChangeStrategy: int, rememberLoginLifespan: int, tokenConfirmationLifespan: int, tokenRecoveryLifespan: int, administratorPermissionName: null|string, profileVisibility: int, maxPasswordAge: int|null, disableIpLogging: bool, viewPath: string, mailPath: string, enableRestApi: bool, adminRestPrefix: string}
+     * @psalm-return array{appName: string, recaptchaVersion: null|string, enableSessionHistory: bool, numberSessionHistory: false|int, enableGdprCompliance: bool, gdprExportProperties: list<string>, gdprAnonymizePrefix: string, enableTwoFactorAuthentication: bool, twoFactorAuthenticationForcedPermissions: array<array-key, string>, enableRegistration: bool, enableSocialNetworkRegistration: bool, socialNetworkClients: array<string, array<string, mixed>>, enableEmailConfirmation: bool, enableSwitchIdentities: bool, switchIdentitySessionKey: null|string, loginRoute: string, accountSettingsRoute: string, homeRoute: string, mailAdminOnRegister: null|string, enablePasswordExpiration: bool, generatePasswords: bool, allowPasswordRecovery: bool, allowAdminPasswordRecovery: bool, allowAccountDelete: bool, emailChangeStrategy: int, rememberLoginLifespan: int, tokenConfirmationLifespan: int, tokenRecoveryLifespan: int, administratorPermissionName: null|string, profileVisibility: int, maxPasswordAge: int|null, disableIpLogging: bool, viewPath: string, mailPath: string, enableRestApi: bool, adminRestPrefix: string}
      */
     public static function defaults(): array
     {

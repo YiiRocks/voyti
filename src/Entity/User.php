@@ -19,6 +19,7 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
     public const int OLD_EMAIL_CONFIRMED = 0b01;
 
     public ?string $password = null;
+    private int|bool $anonymized = false;
     private string $auth_key = '';
     private int|bool $auth_tf_enabled = false;
     private ?string $auth_tf_key = null;
@@ -30,7 +31,6 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
     private int $flags = 0;
     private int|bool $gdpr_consent = false;
     private ?int $gdpr_consent_date = null;
-    private int|bool $gdpr_deleted = false;
     private ?int $id = null;
     private ?int $last_login_at = null;
     private ?string $last_login_ip = null;
@@ -175,6 +175,11 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
         return in_array($this->username, $administrators, true);
     }
 
+    public function isAnonymized(): bool
+    {
+        return (bool) $this->anonymized;
+    }
+
     public function isAuthTfEnabled(): bool
     {
         return (bool) $this->auth_tf_enabled;
@@ -195,9 +200,9 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
         return (bool) $this->gdpr_consent;
     }
 
-    public function isGdprDeleted(): bool
+    public function setAnonymized(int|bool $anonymized): void
     {
-        return (bool) $this->gdpr_deleted;
+        $this->anonymized = $anonymized;
     }
 
     public function setAuthKey(string $authKey): void
@@ -253,11 +258,6 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
     public function setGdprConsentDate(?int $gdprConsentDate): void
     {
         $this->gdpr_consent_date = $gdprConsentDate;
-    }
-
-    public function setGdprDeleted(int|bool $gdprDeleted): void
-    {
-        $this->gdpr_deleted = $gdprDeleted;
     }
 
     public function setLastLoginAt(?int $lastLoginAt): void

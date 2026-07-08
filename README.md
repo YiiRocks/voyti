@@ -123,6 +123,8 @@ return [
 
 When `enableRestApi` is `true`, the API routes are mounted under `adminRestPrefix` and expose user CRUD endpoints.
 
+The privacy/GDPR routes (`settings/privacy`, `settings/privacy/gdpr-consent`, `settings/privacy/export`, `settings/privacy/anonymize`, `settings/privacy/delete`) and the two-factor routes (`settings/two-factor`, `settings/two-factor/enable`, `settings/two-factor/disable`) are likewise only registered when their governing config flag (`enableGdprCompliance`, `allowAccountDelete`, and/or `enableTwoFactorAuthentication`) is `true` — see the route table below. When a flag is off, the corresponding route doesn't exist at all, so a request to it falls through to the host application's own router-level not-found handling.
+
 ### 4. Done
 
 DI bindings, event listeners, and console commands are auto-registered via the
@@ -156,6 +158,7 @@ Below are all top-level `yiirocks/voyti` options, followed by the nested `social
 |--------|------|---------|-------------|
 | `loginRoute` | `string` | `'voyti/login'` | Login route name |
 | `accountSettingsRoute` | `string` | `'voyti/settings-account'` | Route for account settings redirects |
+| `homeRoute` | `string` | `'home'` | Route to redirect to after a successful login (password, 2FA, or social) or logout. Must be a route registered by the host app — an unregistered route name throws a `LogicException` naming the misconfigured option, rather than a bare router exception |
 | `enableRegistration` | `bool` | `true` | Allow new user registration |
 | `enableSocialNetworkRegistration` | `bool` | `true` | Allow social network registration |
 | `socialNetworkClients` | `array` | `[]` | OAuth client IDs, secrets, and provider-specific options |
@@ -193,7 +196,7 @@ Below are all top-level `yiirocks/voyti` options, followed by the nested `social
 |--------|------|---------|-------------|
 | `enableGdprCompliance` | `bool` | `false` | Enable GDPR features |
 | `gdprAnonymizePrefix` | `string` | `'GDPR'` | Prefix for anonymized usernames |
-| `gdprExportProperties` | `array` | `['email', 'username', 'userProfile.public_email', 'userProfile.name', 'userProfile.gravatar_email', 'userProfile.location', 'userProfile.website', 'userProfile.bio']` | Properties included in data export |
+| `gdprExportProperties` | `array` | `['email', 'username', 'userProfile.public_email', 'userProfile.name', 'userProfile.gravatar_email', 'userProfile.location', 'userProfile.website', 'userProfile.bio', 'userSessionHistory', 'userSocialAccount']` | Properties included in the data export (JSON). `userSessionHistory` exports each login's `ip`, `user_agent`, `created_at`, `updated_at` (the internal `session_id` is excluded); `userSocialAccount` exports each linked account's `provider`, `username`, `email`, `created_at`, and `data` (the decoded provider profile payload). The OAuth `code` field is excluded — it's a one-time linking secret, not user data |
 
 ```php
 'yiirocks/voyti' => [
@@ -218,8 +221,8 @@ Below are all top-level `yiirocks/voyti` options, followed by the nested `social
 
 | Option | Type | Default | Description |
 |--------|------|--------|--------------|
-| `viewPath` | `string` | `__DIR__ . '/resources/views/bootstrap5'` | Base path for web templates |
-| `mailPath` | `string` | `__DIR__ . '/resources/mail'` | Base path for mail templates |
+| `viewPath` | `string` | `__DIR__ . '/../resources/views/bootstrap5'` | Base path for web templates |
+| `mailPath` | `string` | `__DIR__ . '/../resources/mail'` | Base path for mail templates |
 
 ### REST API
 
@@ -364,16 +367,16 @@ The library does not provide a menu model or navigation contract. It only expose
 | `voyti/settings` | `GET`, `POST` | `settings` | Profile settings |
 | `voyti/settings-account` | `GET`, `POST` | `settings/account` | Account settings |
 | `voyti/settings-networks` | `GET` | `settings/networks` | Linked social networks |
-| `voyti/settings-privacy` | `GET` | `settings/privacy` | Privacy settings |
-| `voyti/gdpr-consent` | `GET`, `POST` | `settings/gdpr-consent` | GDPR consent |
-| `voyti/gdpr-delete` | `GET`, `POST` | `settings/gdpr-delete` | GDPR data removal |
-| `voyti/settings-delete` | `POST` | `settings/delete` | Account deletion |
-| `voyti/settings-two-factor` | `GET`, `POST` | `settings/two-factor` | Two-factor setup |
-| `voyti/settings-two-factor-enable` | `POST` | `settings/two-factor-enable` | Enable 2FA |
-| `voyti/settings-two-factor-disable` | `POST` | `settings/two-factor-disable` | Disable 2FA |
+| `voyti/settings-networks-disconnect` | `POST` | `settings/networks/disconnect/{id}` | Disconnect social account |
+| `voyti/settings-privacy` | `GET` | `settings/privacy` | Privacy settings. Only registered when `enableGdprCompliance` or `allowAccountDelete` is `true` |
+| `voyti/settings-privacy-gdpr-consent` | `GET`, `POST` | `settings/privacy/gdpr-consent` | GDPR consent. Only registered when `enableGdprCompliance` is `true` |
+| `voyti/settings-privacy-export` | `GET` | `settings/privacy/export` | Export user data. Only registered when `enableGdprCompliance` is `true` |
+| `voyti/settings-privacy-anonymize` | `GET`, `POST` | `settings/privacy/anonymize` | Anonymize account (blanks email/username, blocks login; row is kept). Only registered when `enableGdprCompliance` is `true` |
+| `voyti/settings-privacy-delete` | `GET`, `POST` | `settings/privacy/delete` | Account deletion (hard delete). Only registered when `allowAccountDelete` is `true` |
+| `voyti/settings-two-factor` | `GET`, `POST` | `settings/two-factor` | Two-factor setup. Only registered when `enableTwoFactorAuthentication` is `true` |
+| `voyti/settings-two-factor-enable` | `POST` | `settings/two-factor/enable` | Enable 2FA. Only registered when `enableTwoFactorAuthentication` is `true` |
+| `voyti/settings-two-factor-disable` | `POST` | `settings/two-factor/disable` | Disable 2FA. Only registered when `enableTwoFactorAuthentication` is `true` |
 | `voyti/settings-confirm` | `GET` | `settings/confirm/{code}` | Confirm account changes |
-| `voyti/settings-disconnect` | `POST` | `settings/disconnect/{id}` | Disconnect social account |
-| `voyti/settings-export` | `GET` | `settings/export` | Export user data |
 | `voyti/admin` | `GET` | `admin` | Admin dashboard |
 | `voyti/admin-create` | `GET`, `POST` | `admin/create` | Create user |
 | `voyti/admin-update` | `GET`, `POST` | `admin/update/{id}` | Update user |

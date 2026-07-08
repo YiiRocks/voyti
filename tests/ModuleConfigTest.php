@@ -26,6 +26,7 @@ final class ModuleConfigTest extends TestCase
             switchIdentitySessionKey: null,
             loginRoute: 'custom/login',
             accountSettingsRoute: 'custom/settings',
+            homeRoute: 'custom/home',
             mailAdminOnRegister: 'admin@example.com',
             enablePasswordExpiration: true,
             generatePasswords: true,
@@ -56,6 +57,7 @@ final class ModuleConfigTest extends TestCase
         self::assertNull($config->switchIdentitySessionKey);
         self::assertSame('custom/login', $config->loginRoute);
         self::assertSame('custom/settings', $config->accountSettingsRoute);
+        self::assertSame('custom/home', $config->homeRoute);
         self::assertSame('admin@example.com', $config->mailAdminOnRegister);
         self::assertTrue($config->enablePasswordExpiration);
         self::assertTrue($config->generatePasswords);
@@ -82,7 +84,7 @@ final class ModuleConfigTest extends TestCase
         self::assertTrue($config->enableSessionHistory);
         self::assertSame(50, $config->numberSessionHistory);
         self::assertIsArray($config->gdprExportProperties);
-        self::assertCount(8, $config->gdprExportProperties);
+        self::assertCount(10, $config->gdprExportProperties);
         self::assertSame('GDPR', $config->gdprAnonymizePrefix);
         self::assertFalse($config->enableTwoFactorAuthentication);
         self::assertSame([], $config->twoFactorAuthenticationForcedPermissions);
@@ -90,6 +92,7 @@ final class ModuleConfigTest extends TestCase
         self::assertSame('voyti_original_user', $config->switchIdentitySessionKey);
         self::assertSame('voyti/login', $config->loginRoute);
         self::assertSame('voyti/settings-account', $config->accountSettingsRoute);
+        self::assertSame('home', $config->homeRoute);
         self::assertFalse($config->enablePasswordExpiration);
         self::assertFalse($config->generatePasswords);
         self::assertSame(1, $config->emailChangeStrategy);
@@ -124,6 +127,7 @@ final class ModuleConfigTest extends TestCase
             'switchIdentitySessionKey',
             'loginRoute',
             'accountSettingsRoute',
+            'homeRoute',
             'mailAdminOnRegister',
             'enablePasswordExpiration',
             'generatePasswords',
@@ -190,6 +194,7 @@ final class ModuleConfigTest extends TestCase
         self::assertSame('voyti_original_user', $config->switchIdentitySessionKey);
         self::assertSame('voyti/login', $config->loginRoute);
         self::assertSame('voyti/settings-account', $config->accountSettingsRoute);
+        self::assertSame('home', $config->homeRoute);
         self::assertNull($config->mailAdminOnRegister);
         self::assertFalse($config->enablePasswordExpiration);
         self::assertFalse($config->generatePasswords);
@@ -250,7 +255,7 @@ final class ModuleConfigTest extends TestCase
     public function testMailPathConcatOrder(): void
     {
         $config = new ModuleConfig();
-        self::assertStringContainsString('/src/resources/mail', str_replace('\\', '/', $config->mailPath));
+        self::assertStringContainsString('/src/../resources/mail', str_replace('\\', '/', $config->mailPath));
     }
 
     public function testMailPathNotBareConstant(): void
@@ -263,7 +268,7 @@ final class ModuleConfigTest extends TestCase
     public function testViewPathConcatOrder(): void
     {
         $config = new ModuleConfig();
-        self::assertStringContainsString('/src/resources/views/bootstrap5', str_replace('\\', '/', $config->viewPath));
+        self::assertStringContainsString('/src/../resources/views/bootstrap5', str_replace('\\', '/', $config->viewPath));
     }
 
     public function testViewPathNotBareConstant(): void

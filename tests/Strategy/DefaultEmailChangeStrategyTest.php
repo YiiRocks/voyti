@@ -61,7 +61,7 @@ final class DefaultEmailChangeStrategyTest extends TestCase
         $urlGenerator = new FakeUrlGenerator();
         $mailService = new MailService(
             $mailCapture,
-            __DIR__ . '/../../src/resources/mail',
+            __DIR__ . '/../../resources/mail',
             $translator,
             $urlGenerator,
             'App',
@@ -105,7 +105,7 @@ final class DefaultEmailChangeStrategyTest extends TestCase
         $urlGenerator = new FakeUrlGenerator();
         $mailService = new MailService(
             $mailCapture,
-            __DIR__ . '/../../src/resources/mail',
+            __DIR__ . '/../../resources/mail',
             $translator,
             $urlGenerator,
             'App',
@@ -155,7 +155,7 @@ final class DefaultEmailChangeStrategyTest extends TestCase
         $urlGenerator = new FakeUrlGenerator();
         $mailService = new MailService(
             $mailCapture,
-            __DIR__ . '/../../src/resources/mail',
+            __DIR__ . '/../../resources/mail',
             $translator,
             $urlGenerator,
             'App',
@@ -230,7 +230,7 @@ final class DefaultEmailChangeStrategyTest extends TestCase
                 "flags" INTEGER NOT NULL DEFAULT 0,
                 "gdpr_consent" INTEGER NOT NULL DEFAULT 0,
                 "gdpr_consent_date" INTEGER,
-                "gdpr_deleted" INTEGER NOT NULL DEFAULT 0,
+                "anonymized" INTEGER NOT NULL DEFAULT 0,
                 "last_login_at" INTEGER,
                 "last_login_ip" VARCHAR(45),
                 "password_changed_at" INTEGER,

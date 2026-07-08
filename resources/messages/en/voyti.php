@@ -7,7 +7,6 @@ return [
     'voyti.security.invalid_login' => 'Invalid login or password',
     'voyti.security.account_blocked' => 'Your account has been blocked',
     'voyti.security.need_email_confirmation' => 'You need to confirm your email address',
-    'voyti.security.logged_in' => 'Logged in',
     'voyti.security.logged_out' => 'Logged out',
     'voyti.security.authenticated' => 'Authenticated',
 
@@ -32,16 +31,13 @@ return [
     'voyti.settings.user_not_found' => 'User not found',
     'voyti.settings.profile_updated' => 'Your profile has been updated',
     'voyti.settings.account_details_updated' => 'Your account details have been updated',
-    'voyti.settings.not_available' => 'Not available',
     'voyti.settings.personal_info_removed' => 'Your personal information has been removed',
-    'voyti.settings.account_deletion_disabled' => 'Account deletion is disabled',
     'voyti.settings.account_deleted' => 'Your account has been deleted',
     'voyti.settings.gdpr_consent_saved' => 'GDPR consent has been saved',
     'voyti.settings.email_changed' => 'Your email has been changed',
     'voyti.settings.email_change_failed' => 'Failed to change email',
     'voyti.settings.network_disconnected' => 'Network has been disconnected',
     'voyti.settings.network_not_found' => 'Network not found',
-    'voyti.settings.data_exported' => 'Your data has been exported',
     'voyti.settings.two_factor_enabled' => 'Two-factor authentication has been enabled',
     'voyti.settings.two_factor_disabled' => 'Two-factor authentication has been disabled',
 
@@ -120,6 +116,7 @@ return [
     'voyti.menu.account' => 'Account',
     'voyti.menu.networks' => 'Networks',
     'voyti.menu.two_factor' => 'Two-Factor Auth',
+    'voyti.menu.logout' => 'Logout',
 
     // Login view
     'voyti.view.login.title' => 'Log In',
@@ -176,22 +173,30 @@ return [
     'voyti.view.networks.title' => 'Networks',
     'voyti.view.privacy.title' => 'Privacy',
     'voyti.view.privacy.manage_gdpr_consent' => 'Manage GDPR consent',
-    'voyti.view.privacy.delete_data' => 'Delete my data',
+    'voyti.view.privacy.export_data' => 'Export my data',
+    'voyti.view.privacy.anonymize_data' => 'Anonymize my account',
+    'voyti.view.privacy.delete_account' => 'Delete my account',
     'voyti.view.settings.privacy' => 'Privacy',
 
     // GDPR views
     'voyti.view.gdpr.consent_title' => 'GDPR Consent',
     'voyti.view.gdpr.consent_label' => 'I consent to processing of my personal data',
-    'voyti.view.gdpr.delete_title' => 'Delete my account',
-    'voyti.view.gdpr.delete_warning' => 'Warning: This action permanently deletes your account and all associated data.',
-    'voyti.view.gdpr.delete_confirm_label' => 'I understand this action is irreversible',
-    'voyti.view.gdpr.delete_button' => 'Delete my account',
+    'voyti.view.anonymize.title' => 'Anonymize my account',
+    'voyti.view.anonymize.warning' => 'Warning: This action anonymizes your account (your email and username are replaced) and permanently blocks access. This cannot be undone.',
+    'voyti.view.anonymize.confirm_label' => 'I understand this action is irreversible',
+    'voyti.view.anonymize.button' => 'Anonymize my account',
 
     // Account settings (2FA)
     'voyti.view.account.two_factor_title' => 'Two-Factor Authentication',
     'voyti.view.account.two_factor_enabled' => '2FA is enabled',
     'voyti.view.account.disable_two_factor' => 'Disable 2FA',
     'voyti.view.account.enable_two_factor' => 'Enable 2FA',
+
+    // Delete account view
+    'voyti.view.delete_account.title' => 'Delete my account',
+    'voyti.view.delete_account.warning' => 'Warning: This action permanently deletes your account and all associated data. This cannot be undone.',
+    'voyti.view.delete_account.confirm_label' => 'I understand this action is irreversible',
+    'voyti.view.delete_account.button' => 'Delete my account',
 
     // Admin views
     'voyti.view.admin.title' => 'Users',
@@ -284,6 +289,7 @@ return [
     'voyti.view.unblock_button' => 'Unblock',
     'voyti.view.block_button' => 'Block',
     'voyti.view.force_password_change_button' => 'Force password change',
+    'voyti.view.reset_password_button' => 'Send password reset link',
     'voyti.view.update_profile_link' => 'Update profile',
     'voyti.view.send_button' => 'Send',
     'voyti.view.connect_button' => 'Connect',

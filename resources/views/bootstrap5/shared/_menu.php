@@ -35,12 +35,17 @@ if ($config->enableTwoFactorAuthentication) {
     );
 }
 
-if ($config->enableGdprCompliance) {
+if ($config->enableGdprCompliance || $config->allowAccountDelete) {
     $items[] = Html::li(
         Html::a($translator->translate('voyti.view.settings.privacy', category: 'voyti'), $url->generate('voyti/settings-privacy'))->class('nav-link'),
         ['class' => 'nav-item'],
     );
 }
+
+$items[] = Html::li(
+    Html::a($translator->translate('voyti.menu.logout', category: 'voyti'), $url->generate('voyti/logout'))->class('nav-link'),
+    ['class' => 'nav-item'],
+);
 
 echo Html::ul()
     ->class('nav nav-pills mb-4')

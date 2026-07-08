@@ -28,6 +28,10 @@ $adminMenuItems = [
         Html::a($translator->translate('voyti.view.rule.title', category: 'voyti'), $url->generate('voyti/rules'))->class('nav-link'),
         ['class' => 'nav-item'],
     ),
+    Html::li(
+        Html::a($translator->translate('voyti.menu.logout', category: 'voyti'), $url->generate('voyti/logout'))->class('nav-link'),
+        ['class' => 'nav-item'],
+    ),
 ];
 
 echo Html::ul()

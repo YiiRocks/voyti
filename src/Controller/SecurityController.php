@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Controller;
 
+use LogicException;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -27,6 +28,7 @@ use YiiRocks\Voyti\Validator\TwoFactor\CodeValidator;
 use YiiRocks\Voyti\Validator\TwoFactor\EmailValidator;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
+use Yiisoft\Router\RouteNotFoundException;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Security\Random;
@@ -102,9 +104,7 @@ final readonly class SecurityController
 
         $user = $this->currentUser->getIdentity();
         if ($user instanceof User) {
-            $response = $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.security.authenticated', category: 'voyti')]);
-
-            return $this->rememberMeCookieService->addCookie($user, $response);
+            return $this->rememberMeCookieService->addCookie($user, $this->homeRedirectResponse());
         }
 
         return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.security.authenticated', category: 'voyti'), 'translator' => $this->translator]);
@@ -158,7 +158,7 @@ final readonly class SecurityController
                     $this->pendingSocialAccountService->connect($user);
                     $this->eventDispatcher->dispatch(new AfterLoginEvent($user));
 
-                    $response = $this->renderSuccess('voyti.security.authenticated');
+                    $response = $this->homeRedirectResponse();
                     if ($this->boolValue($credentials, 'rememberMe')) {
                         $response = $this->rememberMeCookieService->addCookie($user, $response);
                     }
@@ -254,7 +254,7 @@ final readonly class SecurityController
                     $this->eventDispatcher->dispatch(new FormEvent($form));
                     $this->eventDispatcher->dispatch(new AfterLoginEvent($user));
 
-                    $response = $this->renderSuccess('voyti.security.logged_in');
+                    $response = $this->homeRedirectResponse();
                     if ($form->rememberMe) {
                         $response = $this->rememberMeCookieService->addCookie($user, $response);
                     }
@@ -282,7 +282,7 @@ final readonly class SecurityController
         }
 
         return $this->rememberMeCookieService->expireCookie(
-            $this->redirectWithFlash($this->url->generate($this->config->loginRoute), 'voyti.security.logged_out'),
+            $this->redirectWithFlash($this->homeRouteUrl(), 'voyti.security.logged_out'),
         );
     }
 
@@ -301,6 +301,27 @@ final readonly class SecurityController
         $boolValue = filter_var($value, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
 
         return $boolValue ?? (bool) $value;
+    }
+
+    private function homeRedirectResponse(): ResponseInterface
+    {
+        return $this->redirect($this->homeRouteUrl());
+    }
+
+    private function homeRouteUrl(): string
+    {
+        try {
+            return $this->url->generate($this->config->homeRoute);
+        } catch (RouteNotFoundException $exception) {
+            throw new LogicException(
+                sprintf(
+                    '"homeRoute" is set to "%s", but no such route is registered. '
+                    . 'Configure "homeRoute" in the "yiirocks/voyti" params to point to a route the application actually defines.',
+                    $this->config->homeRoute,
+                ),
+                previous: $exception,
+            );
+        }
     }
 
     /**

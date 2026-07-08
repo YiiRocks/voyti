@@ -42,7 +42,7 @@ final class UserTest extends TestCase
                 "flags" INTEGER NOT NULL DEFAULT 0,
                 "gdpr_consent" INTEGER NOT NULL DEFAULT 0,
                 "gdpr_consent_date" INTEGER,
-                "gdpr_deleted" INTEGER NOT NULL DEFAULT 0,
+                "anonymized" INTEGER NOT NULL DEFAULT 0,
                 "last_login_at" INTEGER,
                 "last_login_ip" VARCHAR(45),
                 "password_changed_at" INTEGER,
@@ -135,7 +135,7 @@ final class UserTest extends TestCase
         self::assertNull($entity->getAuthTfType());
         self::assertFalse($entity->isAuthTfEnabled());
         self::assertFalse($entity->isGdprConsent());
-        self::assertFalse($entity->isGdprDeleted());
+        self::assertFalse($entity->isAnonymized());
         self::assertNull($entity->getGdprConsentDate());
     }
 
@@ -515,6 +515,34 @@ final class UserTest extends TestCase
         self::assertFalse($entity->isAdminByList([]));
     }
 
+    public function testIsAnonymizedWithFalse(): void
+    {
+        $entity = new User();
+        $entity->setAnonymized(false);
+        self::assertFalse($entity->isAnonymized());
+    }
+
+    public function testIsAnonymizedWithOne(): void
+    {
+        $entity = new User();
+        $entity->setAnonymized(1);
+        self::assertTrue($entity->isAnonymized());
+    }
+
+    public function testIsAnonymizedWithTrue(): void
+    {
+        $entity = new User();
+        $entity->setAnonymized(true);
+        self::assertTrue($entity->isAnonymized());
+    }
+
+    public function testIsAnonymizedWithZero(): void
+    {
+        $entity = new User();
+        $entity->setAnonymized(0);
+        self::assertFalse($entity->isAnonymized());
+    }
+
     public function testIsAuthTfEnabledWithFalse(): void
     {
         $entity = new User();
@@ -597,34 +625,6 @@ final class UserTest extends TestCase
         $entity = new User();
         $entity->setGdprConsent(0);
         self::assertFalse($entity->isGdprConsent());
-    }
-
-    public function testIsGdprDeletedWithFalse(): void
-    {
-        $entity = new User();
-        $entity->setGdprDeleted(false);
-        self::assertFalse($entity->isGdprDeleted());
-    }
-
-    public function testIsGdprDeletedWithOne(): void
-    {
-        $entity = new User();
-        $entity->setGdprDeleted(1);
-        self::assertTrue($entity->isGdprDeleted());
-    }
-
-    public function testIsGdprDeletedWithTrue(): void
-    {
-        $entity = new User();
-        $entity->setGdprDeleted(true);
-        self::assertTrue($entity->isGdprDeleted());
-    }
-
-    public function testIsGdprDeletedWithZero(): void
-    {
-        $entity = new User();
-        $entity->setGdprDeleted(0);
-        self::assertFalse($entity->isGdprDeleted());
     }
 
     public function testNewEmailConfirmedConstant(): void

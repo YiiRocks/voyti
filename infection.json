@@ -2,9 +2,6 @@
     "source": {
         "directories": [
             "src"
-        ],
-        "excludes": [
-            "resources"
         ]
     },
     "timeout": 250,

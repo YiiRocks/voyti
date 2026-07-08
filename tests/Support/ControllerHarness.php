@@ -294,6 +294,7 @@ final class ControllerHarness
             hydrator: $hydrator,
             responseFactory: $responseFactory,
             flash: $flash,
+            authClientRegistry: $this->authClientRegistry,
         );
     }
 
@@ -432,8 +433,10 @@ final class ControllerHarness
         ?EmailCodeGeneratorService $twoFactorEmailCodeService = null,
         ?EmailChangeService $emailChangeService = null,
         ?TerminateUserSessionsService $terminateUserSessionsService = null,
+        ?UserSessionHistoryRepository $userSessionHistoryRepository = null,
     ): SettingsController {
         $passwordHasher ??= new PasswordHasher();
+        $userSessionHistoryRepository ??= new UserSessionHistoryRepository();
         $emailChangeStrategyFactory ??= new EmailChangeStrategyFactory(
             new MailService(
                 $this->mailer,
@@ -465,6 +468,7 @@ final class ControllerHarness
             viewRenderer: $viewRenderer,
             userRepository: $userRepository,
             userProfileRepository: $userProfileRepository,
+            userSessionHistoryRepository: $userSessionHistoryRepository,
             userSocialAccountRepository: $userSocialAccountRepository,
             passwordHasher: $passwordHasher,
             validator: $validator,

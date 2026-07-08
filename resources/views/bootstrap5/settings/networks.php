@@ -43,7 +43,7 @@ if (empty($accounts)) {
 
     foreach ($accounts as $account) {
         $disconnect = Html::form()
-            ->post($url->generate('voyti/settings-disconnect', ['id' => $account->getId() ?? 0]))
+            ->post($url->generate('voyti/settings-networks-disconnect', ['id' => $account->getId() ?? 0]))
             ->csrf($csrf)
             ->open()
             . Field::buttonGroup()
@@ -55,8 +55,10 @@ if (empty($accounts)) {
                 ->render()
             . Html::form()->close();
 
+        $providerTitle = $authClients->get($account->getProvider())?->getTitle() ?? $account->getProvider();
+
         $content = Html::div()->class('d-flex justify-content-between align-items-center gap-3')->open();
-        $content .= Html::span($account->getProvider())->render();
+        $content .= Html::span($providerTitle)->render();
         $content .= $disconnect;
         $content .= Html::div()->close();
 

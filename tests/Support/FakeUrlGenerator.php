@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Support;
 
 use Stringable;
+use Yiisoft\Router\RouteNotFoundException;
 use Yiisoft\Router\UrlGeneratorInterface;
 
 final class FakeUrlGenerator implements UrlGeneratorInterface
 {
     private array $defaultArguments = [];
+    /** @var array<string, true> */
+    private array $missingRoutes = [];
     private string $uriPrefix = '';
 
     /** @var array<string, string> */
@@ -17,6 +20,10 @@ final class FakeUrlGenerator implements UrlGeneratorInterface
 
     public function generate(string $name, array $arguments = [], array $queryParameters = [], ?string $hash = null): string
     {
+        if (isset($this->missingRoutes[$name])) {
+            throw new RouteNotFoundException($name);
+        }
+
         if (isset($this->urls[$name])) {
             $url = $this->urls[$name];
         } else {
@@ -74,6 +81,11 @@ final class FakeUrlGenerator implements UrlGeneratorInterface
     public function setDefaultArgument(string $name, bool|float|int|string|Stringable|null $value): void
     {
         $this->defaultArguments[$name] = $value;
+    }
+
+    public function setMissingRoute(string $name): void
+    {
+        $this->missingRoutes[$name] = true;
     }
 
     public function setUriPrefix(string $name): void

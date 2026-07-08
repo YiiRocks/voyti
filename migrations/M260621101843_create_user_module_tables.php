@@ -34,7 +34,7 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
             'flags' => ColumnBuilder::integer()->notNull()->defaultValue(0),
             'gdpr_consent' => ColumnBuilder::boolean()->notNull()->defaultValue(false),
             'gdpr_consent_date' => ColumnBuilder::integer(),
-            'gdpr_deleted' => ColumnBuilder::boolean()->notNull()->defaultValue(false),
+            'anonymized' => ColumnBuilder::boolean()->notNull()->defaultValue(false),
             'last_login_at' => ColumnBuilder::integer(),
             'last_login_ip' => ColumnBuilder::string(45),
             'password_changed_at' => ColumnBuilder::integer(),

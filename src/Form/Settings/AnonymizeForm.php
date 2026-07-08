@@ -9,7 +9,7 @@ use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\Rule\Required;
 use Yiisoft\Validator\Rule\TrueValue;
 
-final class GdprDeleteForm extends FormModel
+final class AnonymizeForm extends FormModel
 {
 
     #[TrueValue(trueValue: true)]
@@ -31,19 +31,19 @@ final class GdprDeleteForm extends FormModel
     {
         return [
             'password' => $this->translator->translate('voyti.view.current_password_label', category: 'voyti'),
-            'consent' => $this->translator->translate('voyti.view.gdpr.delete_confirm_label', category: 'voyti'),
+            'consent' => $this->translator->translate('voyti.view.anonymize.confirm_label', category: 'voyti'),
         ];
     }
 
     /**
      * @return string
      *
-     * @psalm-return 'gdpr-delete'
+     * @psalm-return 'anonymize'
      */
     #[\Override]
     public function getFormName(): string
     {
-        return 'gdpr-delete';
+        return 'anonymize';
     }
 
     #[\Override]

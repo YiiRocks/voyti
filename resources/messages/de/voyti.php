@@ -7,7 +7,6 @@ return [
     'voyti.security.invalid_login' => 'Ungültiger Login oder falsches Passwort',
     'voyti.security.account_blocked' => 'Ihr Konto wurde gesperrt',
     'voyti.security.need_email_confirmation' => 'Sie müssen Ihre E-Mail-Adresse bestätigen',
-    'voyti.security.logged_in' => 'Angemeldet',
     'voyti.security.logged_out' => 'Abgemeldet',
     'voyti.security.authenticated' => 'Authentifiziert',
 
@@ -30,16 +29,13 @@ return [
     'voyti.settings.user_not_found' => 'Benutzer nicht gefunden',
     'voyti.settings.profile_updated' => 'Ihr Profil wurde aktualisiert',
     'voyti.settings.account_details_updated' => 'Ihre Kontodaten wurden aktualisiert',
-    'voyti.settings.not_available' => 'Nicht verfügbar',
     'voyti.settings.personal_info_removed' => 'Ihre persönlichen Daten wurden entfernt',
-    'voyti.settings.account_deletion_disabled' => 'Die Kontolöschung ist deaktiviert',
     'voyti.settings.account_deleted' => 'Ihr Konto wurde gelöscht',
     'voyti.settings.gdpr_consent_saved' => 'DSGVO-Einwilligung wurde gespeichert',
     'voyti.settings.email_changed' => 'Ihre E-Mail-Adresse wurde geändert',
     'voyti.settings.email_change_failed' => 'E-Mail-Adresse konnte nicht geändert werden',
     'voyti.settings.network_disconnected' => 'Das Netzwerk wurde getrennt',
     'voyti.settings.network_not_found' => 'Netzwerk nicht gefunden',
-    'voyti.settings.data_exported' => 'Ihre Daten wurden exportiert',
     'voyti.settings.two_factor_enabled' => 'Zwei-Faktor-Authentifizierung wurde aktiviert',
     'voyti.settings.two_factor_disabled' => 'Zwei-Faktor-Authentifizierung wurde deaktiviert',
 
@@ -118,6 +114,7 @@ return [
     'voyti.menu.account' => 'Konto',
     'voyti.menu.networks' => 'Netzwerke',
     'voyti.menu.two_factor' => 'Zwei-Faktor-Auth',
+    'voyti.menu.logout' => 'Abmelden',
 
     // Login view
     'voyti.view.login.title' => 'Anmelden',
@@ -174,22 +171,30 @@ return [
     'voyti.view.networks.title' => 'Netzwerke',
     'voyti.view.privacy.title' => 'Datenschutz',
     'voyti.view.privacy.manage_gdpr_consent' => 'DSGVO-Einwilligung verwalten',
-    'voyti.view.privacy.delete_data' => 'Meine Daten löschen',
+    'voyti.view.privacy.export_data' => 'Meine Daten exportieren',
+    'voyti.view.privacy.anonymize_data' => 'Mein Konto anonymisieren',
+    'voyti.view.privacy.delete_account' => 'Mein Konto löschen',
     'voyti.view.settings.privacy' => 'Datenschutz',
 
     // GDPR views
     'voyti.view.gdpr.consent_title' => 'DSGVO-Einwilligung',
     'voyti.view.gdpr.consent_label' => 'Ich stimme der Verarbeitung meiner personenbezogenen Daten zu',
-    'voyti.view.gdpr.delete_title' => 'Mein Konto löschen',
-    'voyti.view.gdpr.delete_warning' => 'Warnung: Diese Aktion löscht Ihr Konto und alle zugehörigen Daten endgültig.',
-    'voyti.view.gdpr.delete_confirm_label' => 'Ich verstehe, dass diese Aktion nicht rückgängig gemacht werden kann',
-    'voyti.view.gdpr.delete_button' => 'Mein Konto löschen',
+    'voyti.view.anonymize.title' => 'Mein Konto anonymisieren',
+    'voyti.view.anonymize.warning' => 'Warnung: Diese Aktion anonymisiert Ihr Konto (E-Mail und Benutzername werden ersetzt) und sperrt den Zugriff dauerhaft. Dies kann nicht rückgängig gemacht werden.',
+    'voyti.view.anonymize.confirm_label' => 'Ich verstehe, dass diese Aktion nicht rückgängig gemacht werden kann',
+    'voyti.view.anonymize.button' => 'Mein Konto anonymisieren',
 
     // Account settings (2FA)
     'voyti.view.account.two_factor_title' => 'Zwei-Faktor-Authentifizierung',
     'voyti.view.account.two_factor_enabled' => '2FA ist aktiviert',
     'voyti.view.account.disable_two_factor' => '2FA deaktivieren',
     'voyti.view.account.enable_two_factor' => '2FA aktivieren',
+
+    // Delete account view
+    'voyti.view.delete_account.title' => 'Mein Konto löschen',
+    'voyti.view.delete_account.warning' => 'Warnung: Diese Aktion löscht Ihr Konto und alle zugehörigen Daten endgültig. Dies kann nicht rückgängig gemacht werden.',
+    'voyti.view.delete_account.confirm_label' => 'Ich verstehe, dass diese Aktion nicht rückgängig gemacht werden kann',
+    'voyti.view.delete_account.button' => 'Mein Konto löschen',
 
     // Admin views
     'voyti.view.admin.title' => 'Benutzer',
@@ -282,6 +287,7 @@ return [
     'voyti.view.unblock_button' => 'Entsperren',
     'voyti.view.block_button' => 'Sperren',
     'voyti.view.force_password_change_button' => 'Passwortänderung erzwingen',
+    'voyti.view.reset_password_button' => 'Passwort-Reset-Link senden',
     'voyti.view.update_profile_link' => 'Profil aktualisieren',
     'voyti.view.send_button' => 'Senden',
     'voyti.view.connect_button' => 'Verbinden',
