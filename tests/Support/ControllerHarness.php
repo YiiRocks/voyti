@@ -127,6 +127,7 @@ final class ControllerHarness
             $userRepository,
             $currentUser,
             $this->session,
+            $this->eventDispatcher,
         );
         $updateAssignmentsService ??= $this->createUpdateAssignmentsService();
         $userSessionHistoryRepository ??= new UserSessionHistoryRepository();
@@ -179,6 +180,7 @@ final class ControllerHarness
             managerInterface: $this->authManager,
             assignmentsStorage: $this->assignmentsStorage,
             flash: $flash,
+            config: $this->config,
         );
     }
 
@@ -317,6 +319,7 @@ final class ControllerHarness
             managerInterface: $this->authManager,
             assignmentsStorage: $this->assignmentsStorage,
             flash: $flash,
+            config: $this->config,
         );
     }
 
@@ -346,6 +349,7 @@ final class ControllerHarness
             authRuleEditionService: $ruleEditionService,
             responseFactory: $responseFactory,
             flash: $flash,
+            config: $this->config,
         );
     }
 
@@ -434,9 +438,17 @@ final class ControllerHarness
         ?EmailChangeService $emailChangeService = null,
         ?TerminateUserSessionsService $terminateUserSessionsService = null,
         ?UserSessionHistoryRepository $userSessionHistoryRepository = null,
+        ?SwitchIdentityService $switchIdentityService = null,
     ): SettingsController {
         $passwordHasher ??= new PasswordHasher();
         $userSessionHistoryRepository ??= new UserSessionHistoryRepository();
+        $switchIdentityService ??= new SwitchIdentityService(
+            $this->config,
+            $userRepository,
+            $currentUser,
+            $this->session,
+            $this->eventDispatcher,
+        );
         $emailChangeStrategyFactory ??= new EmailChangeStrategyFactory(
             new MailService(
                 $this->mailer,
@@ -486,6 +498,7 @@ final class ControllerHarness
             responseFactory: $responseFactory,
             terminateUserSessionsService: $terminateUserSessionsService,
             flash: $flash,
+            switchIdentityService: $switchIdentityService,
         );
     }
 

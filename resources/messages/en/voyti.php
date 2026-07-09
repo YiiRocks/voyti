@@ -58,6 +58,8 @@ return [
     'voyti.admin.user_status_changed' => 'User status has been updated',
     'voyti.admin.user_created' => 'User has been created',
     'voyti.admin.account_updated' => 'Account has been updated',
+    'voyti.admin.switch_identity_success' => 'You are now logged in as this user',
+    'voyti.admin.switch_identity_restored' => 'You have been restored to your original identity',
 
     // RuleController
     'voyti.rule.added' => 'Authorization rule has been added',
@@ -209,6 +211,9 @@ return [
     'voyti.view.admin.session_history' => 'Session history',
     'voyti.view.admin.sessions_link' => 'Sessions',
     'voyti.view.admin.terminate_sessions' => 'Terminate sessions',
+    'voyti.view.admin.switch_button' => 'Switch',
+    'voyti.view.admin.restore_button' => 'Restore',
+    'voyti.view.admin.switched_banner' => 'You are currently logged in as this user. Click Restore to switch back to {username}.',
 
     // RBAC views
     'voyti.view.assignments.title' => 'Assignments',

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Controller;
 
-use LogicException;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -28,7 +27,6 @@ use YiiRocks\Voyti\Validator\TwoFactor\CodeValidator;
 use YiiRocks\Voyti\Validator\TwoFactor\EmailValidator;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
-use Yiisoft\Router\RouteNotFoundException;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Security\Random;
@@ -282,7 +280,7 @@ final readonly class SecurityController
         }
 
         return $this->rememberMeCookieService->expireCookie(
-            $this->redirectWithFlash($this->homeRouteUrl(), 'voyti.security.logged_out'),
+            $this->redirectWithFlash($this->config->getHomeUrl($this->url), 'voyti.security.logged_out'),
         );
     }
 
@@ -305,23 +303,7 @@ final readonly class SecurityController
 
     private function homeRedirectResponse(): ResponseInterface
     {
-        return $this->redirect($this->homeRouteUrl());
-    }
-
-    private function homeRouteUrl(): string
-    {
-        try {
-            return $this->url->generate($this->config->homeRoute);
-        } catch (RouteNotFoundException $exception) {
-            throw new LogicException(
-                sprintf(
-                    '"homeRoute" is set to "%s", but no such route is registered. '
-                    . 'Configure "homeRoute" in the "yiirocks/voyti" params to point to a route the application actually defines.',
-                    $this->config->homeRoute,
-                ),
-                previous: $exception,
-            );
-        }
+        return $this->redirect($this->config->getHomeUrl($this->url));
     }
 
     /**

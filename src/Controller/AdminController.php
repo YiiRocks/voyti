@@ -203,6 +203,9 @@ final readonly class AdminController
             'totalPages' => $totalPages,
             'currentPage' => $currentPage,
             'flash' => $this->flash,
+            'isSwitched' => $this->switchIdentityService->isSwitched(),
+            'originalUser' => $this->switchIdentityService->getOriginalUser(),
+            'currentUserId' => (int) $this->currentUser->getIdentity()->getId(),
         ]);
     }
 
@@ -215,6 +218,9 @@ final readonly class AdminController
         return $this->renderView('admin/_info', [
             'user' => $user,
             'userProfile' => $user->getProfile(),
+            'config' => $this->config,
+            'isSwitched' => $this->switchIdentityService->isSwitched(),
+            'currentUserId' => (int) $this->currentUser->getIdentity()->getId(),
         ]);
     }
 
@@ -231,7 +237,25 @@ final readonly class AdminController
     public function switchIdentity(int $id): ResponseInterface
     {
         $result = $this->switchIdentityService->run($id);
-        return $this->renderView('shared/message', ['title' => $result->getMessage()]);
+        if ($result->isSuccess()) {
+            $this->flash->set('success', $this->translator->translate('voyti.admin.switch_identity_success', category: 'voyti'));
+
+            return $this->redirect($this->url->generate('voyti/settings'));
+        }
+
+        return $this->renderError($result->getMessage() !== '' ? $result->getMessage() : 'voyti.admin.error_occurred');
+    }
+
+    public function switchIdentityRestore(): ResponseInterface
+    {
+        $result = $this->switchIdentityService->restore();
+        if ($result->isSuccess()) {
+            $this->flash->set('success', $this->translator->translate('voyti.admin.switch_identity_restored', category: 'voyti'));
+
+            return $this->redirect($this->url->generate('voyti/settings'));
+        }
+
+        return $this->renderError($result->getMessage() !== '' ? $result->getMessage() : 'voyti.admin.error_occurred');
     }
 
     public function terminateSessions(int $id): ResponseInterface

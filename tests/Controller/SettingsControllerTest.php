@@ -777,6 +777,76 @@ final class SettingsControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
+    public function testProfileGetDoesNotShowSwitchedBannerWhenNotSwitched(): void
+    {
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $user = $this->createMock(User::class);
+        $user->method('getId')->willReturn('1');
+        $userProfile = $this->createMock(UserProfile::class);
+        $userProfile->method('getName')->willReturn('John');
+        $user->method('getProfile')->willReturn($userProfile);
+        $this->userRepository->method('findById')->willReturn($user);
+
+        $captured = [];
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturnCallback(function (string $view, array $params) use (&$captured, $response): ResponseInterface {
+                $captured = $params;
+                return $response;
+            });
+
+        $controller->userProfile($request);
+
+        $this->assertFalse($captured['isSwitched']);
+        $this->assertNull($captured['originalUser']);
+    }
+
+    public function testProfileGetShowsSwitchedBanner(): void
+    {
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $user = $this->createMock(User::class);
+        $user->method('getId')->willReturn('1');
+        $userProfile = $this->createMock(UserProfile::class);
+        $userProfile->method('getName')->willReturn('John');
+        $user->method('getProfile')->willReturn($userProfile);
+        $this->userRepository->method('findById')->willReturn($user);
+
+        $this->harness->getSession()->set('voyti_original_user', '2');
+
+        $captured = [];
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturnCallback(function (string $view, array $params) use (&$captured, $response): ResponseInterface {
+                $captured = $params;
+                return $response;
+            });
+
+        $controller->userProfile($request);
+
+        $this->assertTrue($captured['isSwitched']);
+        $this->assertSame($user, $captured['originalUser']);
+    }
+
     public function testProfilePostUpdatesAndRedirects(): void
     {
         $controller = $this->createController();

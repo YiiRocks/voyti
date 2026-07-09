@@ -129,8 +129,9 @@ return [
         ModuleConfig $config,
         UserRepository $userRepository,
         CurrentUser $currentUser,
-        SessionInterface $session
-    ) => new SwitchIdentityService($config, $userRepository, $currentUser, $session),
+        SessionInterface $session,
+        EventDispatcherInterface $eventDispatcher,
+    ) => new SwitchIdentityService($config, $userRepository, $currentUser, $session, $eventDispatcher),
     ExpireService::class => fn (
         ModuleConfig $config
     ) => new ExpireService($config),

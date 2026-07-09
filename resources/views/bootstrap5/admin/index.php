@@ -21,6 +21,9 @@ use Yiisoft\View\WebView;
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
  * @var FlashInterface $flash
+ * @var bool $isSwitched
+ * @var \YiiRocks\Voyti\Entity\User|null $originalUser
+ * @var int $currentUserId
  * @var string $csrf
  */
 
@@ -78,6 +81,22 @@ echo Html::div()->close();
 echo Html::div()->close();
 
 echo Html::form()->close();
+
+if ($isSwitched && $originalUser !== null) {
+    echo Html::div()->class('alert alert-warning d-flex justify-content-between align-items-center')->open();
+    echo Html::span(
+        $translator->translate('voyti.view.admin.switched_banner', ['username' => $originalUser->getUsername()], category: 'voyti')
+    );
+    echo Html::form()
+        ->post($url->generate('voyti/admin-switch-restore'))
+        ->csrf($csrf)
+        ->open();
+    echo Html::submitButton(
+        $translator->translate('voyti.view.admin.restore_button', category: 'voyti')
+    )->class('btn', 'btn-warning', 'btn-sm');
+    echo Html::form()->close();
+    echo Html::div()->close();
+}
 
 echo Html::div()->class('d-none d-md-flex row fw-bold border-bottom pb-2 mb-2')->open();
 echo Html::div($translator->translate('voyti.view.id_header', category: 'voyti'))->class('col-1');
@@ -151,6 +170,21 @@ foreach ($users as $user) {
     echo Html::submitButton($translator->translate('voyti.view.reset_password_button', category: 'voyti'))->class('dropdown-item')->attribute('tabindex', 1);
     echo Html::form()->close();
     echo Html::li()->close();
+
+    if ($config->enableSwitchIdentities && !$isSwitched) {
+        $switchDisabled = $user->isBlocked() || (int) $user->getId() === $currentUserId;
+        echo Html::li()->open();
+        echo Html::form()
+            ->post($url->generate('voyti/admin-switch', ['id' => $user->getId()]))
+            ->csrf($csrf)
+            ->open();
+        echo Html::submitButton($translator->translate('voyti.view.admin.switch_button', category: 'voyti'))
+            ->class('dropdown-item')
+            ->attribute('tabindex', 1)
+            ->disabled($switchDisabled);
+        echo Html::form()->close();
+        echo Html::li()->close();
+    }
 
     echo Html::li(Html::hr()->class('dropdown-divider'));
 

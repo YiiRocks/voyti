@@ -33,10 +33,11 @@ Ported from [2amigos/yii2-usuario](https://github.com/2amigos/yii2-usuario) and 
 ## Features
 
 - **User Management** — Registration, email confirmation, login/logout with remember-me, password recovery, password expiration
-- **Profile Management** — User profiles with gravatar, timezone, social links
+- **Profile Management** — User profiles with gravatar, timezone, bio, and a personal website link
 - **Social Authentication** — Various built-in auth clients as [listed below](#social-authentication)
 - **Two-Factor Authentication** — TOTP (authenticator app) and email 2FA with enforced-per-permission support
 - **RBAC Management** — Full admin UI for roles, permissions, and rules with parent-child hierarchy, assignment management, and filtering
+- **Identity Switching** — Admins can temporarily switch into another user's identity for support or debugging, then restore their own session with one click
 - **Session Management** — Session history tracking and termination
 - **GDPR Compliance** — Consent management, data export, anonymized deletion with admin notification
 - **Password Policies** — Minimum complexity requirements, max age enforcement via middleware

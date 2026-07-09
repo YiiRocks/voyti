@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti;
 
+use LogicException;
+use Yiisoft\Router\RouteNotFoundException;
+use Yiisoft\Router\UrlGeneratorInterface;
+
 final readonly class ModuleConfig
 {
 
@@ -81,6 +85,26 @@ final readonly class ModuleConfig
         $defaults = self::defaults();
 
         return new self(...array_intersect_key($config, $defaults));
+    }
+
+    /**
+     * @throws LogicException if homeRoute is not registered
+     */
+    public function getHomeUrl(UrlGeneratorInterface $url): string
+    {
+        try {
+            return $url->generate($this->homeRoute);
+        } catch (RouteNotFoundException $exception) {
+            throw new LogicException(
+                sprintf(
+                    '"homeRoute" is set to "%s", but no such route is registered. '
+                    . 'Configure "homeRoute" in the "yiirocks/voyti" params to point to a route the application actually defines.',
+                    $this->homeRoute,
+                ),
+                0,
+                $exception,
+            );
+        }
     }
 
     public function hasNumberSessionHistory(): bool

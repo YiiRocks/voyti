@@ -29,6 +29,7 @@ use YiiRocks\Voyti\Repository\UserSessionHistoryRepository;
 use YiiRocks\Voyti\Repository\UserSocialAccountRepository;
 use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\EmailChangeService;
+use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
 use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
 use YiiRocks\Voyti\Service\UserSessionHistory\TerminateUserSessionsService;
@@ -76,6 +77,7 @@ final readonly class SettingsController
         private ResponseFactoryInterface $responseFactory,
         private TerminateUserSessionsService $terminateUserSessionsService,
         private FlashInterface $flash,
+        private SwitchIdentityService $switchIdentityService,
     ) {
     }
 
@@ -515,6 +517,8 @@ final readonly class SettingsController
             'errors' => [],
             'config' => $this->config,
             'flash' => $this->flash,
+            'isSwitched' => $this->switchIdentityService->isSwitched(),
+            'originalUser' => $this->switchIdentityService->getOriginalUser(),
         ]);
     }
 

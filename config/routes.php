@@ -5,8 +5,44 @@ declare(strict_types=1);
 use YiiRocks\Voyti\Controller;
 use YiiRocks\Voyti\Middleware\AccessRuleMiddleware;
 use YiiRocks\Voyti\ModuleConfig;
+use Yiisoft\Csrf\CsrfMiddleware;
 use Yiisoft\Router\Group;
 use Yiisoft\Router\Route;
+use Yiisoft\Session\SessionMiddleware;
+
+$moduleConfig = ModuleConfig::fromArray($params['yiirocks/voyti'] ?? []);
+
+$adminRoutes = [
+    Route::get('admin')->name('voyti/admin')->action([Controller\AdminController::class, 'index']),
+    Route::methods(['GET', 'POST'], 'admin/create')->name('voyti/admin-create')->action([Controller\AdminController::class, 'create']),
+    Route::methods(['GET', 'POST'], 'admin/update/{id:\d+}')->name('voyti/admin-update')->action([Controller\AdminController::class, 'update']),
+    Route::methods(['GET', 'POST'], 'admin/update-profile/{id:\d+}')->name('voyti/admin-update-profile')->action([Controller\AdminController::class, 'updateProfile']),
+    Route::get('admin/info/{id:\d+}')->name('voyti/admin-info')->action([Controller\AdminController::class, 'info']),
+    Route::post('admin/confirm/{id:\d+}')->name('voyti/admin-confirm')->action([Controller\AdminController::class, 'confirm']),
+    Route::post('admin/delete/{id:\d+}')->name('voyti/admin-delete')->action([Controller\AdminController::class, 'delete']),
+    Route::post('admin/block/{id:\d+}')->name('voyti/admin-block')->action([Controller\AdminController::class, 'block']),
+    Route::post('admin/password-reset/{id:\d+}')->name('voyti/admin-password-reset')->action([Controller\AdminController::class, 'passwordReset']),
+    Route::post('admin/force-password-change/{id:\d+}')->name('voyti/admin-force-password')->action([Controller\AdminController::class, 'forcePasswordChange']),
+    Route::methods(['GET', 'POST'], 'admin/assignments/{id:\d+}')->name('voyti/admin-assignments')->action([Controller\AdminController::class, 'assignments']),
+    Route::get('admin/session-history/{id:\d+}')->name('voyti/admin-session-history')->action([Controller\AdminController::class, 'userSessionHistory']),
+    Route::post('admin/terminate-sessions/{id:\d+}')->name('voyti/admin-terminate-sessions')->action([Controller\AdminController::class, 'terminateSessions']),
+    Route::get('permissions')->name('voyti/permissions')->action([Controller\PermissionController::class, 'index']),
+    Route::methods(['GET', 'POST'], 'permissions/create')->name('voyti/permissions-create')->action([Controller\PermissionController::class, 'create']),
+    Route::methods(['GET', 'POST'], 'permissions/update/{name}')->name('voyti/permissions-update')->action([Controller\PermissionController::class, 'update']),
+    Route::post('permissions/delete/{name}')->name('voyti/permissions-delete')->action([Controller\PermissionController::class, 'delete']),
+    Route::get('roles')->name('voyti/roles')->action([Controller\RoleController::class, 'index']),
+    Route::methods(['GET', 'POST'], 'roles/create')->name('voyti/roles-create')->action([Controller\RoleController::class, 'create']),
+    Route::methods(['GET', 'POST'], 'roles/update/{name}')->name('voyti/roles-update')->action([Controller\RoleController::class, 'update']),
+    Route::post('roles/delete/{name}')->name('voyti/roles-delete')->action([Controller\RoleController::class, 'delete']),
+    Route::get('rules')->name('voyti/rules')->action([Controller\RuleController::class, 'index']),
+    Route::methods(['GET', 'POST'], 'rules/create')->name('voyti/rules-create')->action([Controller\RuleController::class, 'create']),
+    Route::methods(['GET', 'POST'], 'rules/update/{name}')->name('voyti/rules-update')->action([Controller\RuleController::class, 'update']),
+    Route::post('rules/delete/{name}')->name('voyti/rules-delete')->action([Controller\RuleController::class, 'delete']),
+];
+
+if ($moduleConfig->enableSwitchIdentities) {
+    $adminRoutes[] = Route::post('admin/switch-identity/{id:\d+}')->name('voyti/admin-switch')->action([Controller\AdminController::class, 'switchIdentity']);
+}
 
 $routes = [
     // Security
@@ -39,37 +75,13 @@ $routes = [
     // Admin + RBAC
     Group::create()
         ->middleware(AccessRuleMiddleware::class)
-        ->routes(
-            Route::get('admin')->name('voyti/admin')->action([Controller\AdminController::class, 'index']),
-            Route::methods(['GET', 'POST'], 'admin/create')->name('voyti/admin-create')->action([Controller\AdminController::class, 'create']),
-            Route::methods(['GET', 'POST'], 'admin/update/{id:\d+}')->name('voyti/admin-update')->action([Controller\AdminController::class, 'update']),
-            Route::methods(['GET', 'POST'], 'admin/update-profile/{id:\d+}')->name('voyti/admin-update-profile')->action([Controller\AdminController::class, 'updateProfile']),
-            Route::get('admin/info/{id:\d+}')->name('voyti/admin-info')->action([Controller\AdminController::class, 'info']),
-            Route::post('admin/confirm/{id:\d+}')->name('voyti/admin-confirm')->action([Controller\AdminController::class, 'confirm']),
-            Route::post('admin/delete/{id:\d+}')->name('voyti/admin-delete')->action([Controller\AdminController::class, 'delete']),
-            Route::post('admin/block/{id:\d+}')->name('voyti/admin-block')->action([Controller\AdminController::class, 'block']),
-            Route::post('admin/switch-identity/{id:\d+}')->name('voyti/admin-switch')->action([Controller\AdminController::class, 'switchIdentity']),
-            Route::post('admin/password-reset/{id:\d+}')->name('voyti/admin-password-reset')->action([Controller\AdminController::class, 'passwordReset']),
-            Route::post('admin/force-password-change/{id:\d+}')->name('voyti/admin-force-password')->action([Controller\AdminController::class, 'forcePasswordChange']),
-            Route::methods(['GET', 'POST'], 'admin/assignments/{id:\d+}')->name('voyti/admin-assignments')->action([Controller\AdminController::class, 'assignments']),
-            Route::get('admin/session-history/{id:\d+}')->name('voyti/admin-session-history')->action([Controller\AdminController::class, 'userSessionHistory']),
-            Route::post('admin/terminate-sessions/{id:\d+}')->name('voyti/admin-terminate-sessions')->action([Controller\AdminController::class, 'terminateSessions']),
-            Route::get('permissions')->name('voyti/permissions')->action([Controller\PermissionController::class, 'index']),
-            Route::methods(['GET', 'POST'], 'permissions/create')->name('voyti/permissions-create')->action([Controller\PermissionController::class, 'create']),
-            Route::methods(['GET', 'POST'], 'permissions/update/{name}')->name('voyti/permissions-update')->action([Controller\PermissionController::class, 'update']),
-            Route::post('permissions/delete/{name}')->name('voyti/permissions-delete')->action([Controller\PermissionController::class, 'delete']),
-            Route::get('roles')->name('voyti/roles')->action([Controller\RoleController::class, 'index']),
-            Route::methods(['GET', 'POST'], 'roles/create')->name('voyti/roles-create')->action([Controller\RoleController::class, 'create']),
-            Route::methods(['GET', 'POST'], 'roles/update/{name}')->name('voyti/roles-update')->action([Controller\RoleController::class, 'update']),
-            Route::post('roles/delete/{name}')->name('voyti/roles-delete')->action([Controller\RoleController::class, 'delete']),
-            Route::get('rules')->name('voyti/rules')->action([Controller\RuleController::class, 'index']),
-            Route::methods(['GET', 'POST'], 'rules/create')->name('voyti/rules-create')->action([Controller\RuleController::class, 'create']),
-            Route::methods(['GET', 'POST'], 'rules/update/{name}')->name('voyti/rules-update')->action([Controller\RuleController::class, 'update']),
-            Route::post('rules/delete/{name}')->name('voyti/rules-delete')->action([Controller\RuleController::class, 'delete']),
-        ),
+        ->routes(...$adminRoutes),
 ];
 
-$moduleConfig = ModuleConfig::fromArray($params['yiirocks/voyti'] ?? []);
+if ($moduleConfig->enableSwitchIdentities) {
+    // Not admin-gated: restoring must remain reachable while impersonating a non-admin user.
+    $routes[] = Route::post('admin/switch-identity/restore')->name('voyti/admin-switch-restore')->action([Controller\AdminController::class, 'switchIdentityRestore']);
+}
 
 if ($moduleConfig->enableGdprCompliance || $moduleConfig->allowAccountDelete) {
     $routes[] = Route::get('settings/privacy')->name('voyti/settings-privacy')->action([Controller\SettingsController::class, 'privacy']);
@@ -91,9 +103,15 @@ if ($moduleConfig->enableTwoFactorAuthentication) {
     $routes[] = Route::post('settings/two-factor/disable')->name('voyti/settings-two-factor-disable')->action([Controller\SettingsController::class, 'twoFactorDisable']);
 }
 
+$result = [
+    Group::create()
+        ->middleware(SessionMiddleware::class, CsrfMiddleware::class)
+        ->routes(...$routes),
+];
+
 if ($moduleConfig->enableRestApi) {
-    $routes[] = Group::create($moduleConfig->adminRestPrefix . '/')
-        ->middleware(AccessRuleMiddleware::class)
+    $result[] = Group::create($moduleConfig->adminRestPrefix . '/')
+        ->middleware(SessionMiddleware::class, AccessRuleMiddleware::class)
         ->routes(
             Route::get('users')->name('voyti/api-users-index')->action([Controller\api\v1\AdminController::class, 'index']),
             Route::get('users/{id:\d+}')->name('voyti/api-users-view')->action([Controller\api\v1\AdminController::class, 'view']),
@@ -103,4 +121,4 @@ if ($moduleConfig->enableRestApi) {
         );
 }
 
-return $routes;
+return $result;

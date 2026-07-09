@@ -429,6 +429,10 @@ final class AdminControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
         $this->userRepository->method('search')->willReturn([]);
         $this->userRepository->method('countByFilters')->willReturn(0);
 
@@ -456,6 +460,10 @@ final class AdminControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
         $this->userRepository->method('search')->willReturn([]);
         $this->userRepository->method('countByFilters')->willReturn(0);
 
@@ -476,6 +484,10 @@ final class AdminControllerTest extends TestCase
     public function testInfoShowsUserInfo(): void
     {
         $controller = $this->createController();
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
 
         $user = $this->createMock(User::class);
         $user->method('getProfile')->willReturn($this->createMock(UserProfile::class));
@@ -558,13 +570,13 @@ final class AdminControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    public function testSwitchIdentity(): void
+    public function testSwitchIdentityFailureShowsError(): void
     {
         $controller = $this->createController();
 
         $this->switchIdentityService->expects($this->once())
             ->method('run')
-            ->willReturn(ServiceResult::success());
+            ->willReturn(ServiceResult::failure('Cannot switch identity'));
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -573,6 +585,50 @@ final class AdminControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->willReturn($response);
+
+        $result = $controller->switchIdentity(1);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testSwitchIdentityRestoreSuccessRedirects(): void
+    {
+        $controller = $this->createController();
+
+        $this->switchIdentityService->expects($this->once())
+            ->method('restore')
+            ->willReturn(ServiceResult::success());
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->willReturnSelf();
+
+        $result = $controller->switchIdentityRestore();
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testSwitchIdentitySuccessRedirects(): void
+    {
+        $controller = $this->createController();
+
+        $this->switchIdentityService->expects($this->once())
+            ->method('run')
+            ->willReturn(ServiceResult::success());
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->willReturnSelf();
 
         $result = $controller->switchIdentity(1);
 

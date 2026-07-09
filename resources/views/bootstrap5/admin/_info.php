@@ -15,6 +15,9 @@ use Yiisoft\View\WebView;
  * @var UserProfile|null $userProfile
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
+ * @var \YiiRocks\Voyti\ModuleConfig $config
+ * @var bool $isSwitched
+ * @var int $currentUserId
  * @var string $csrf
  */
 
@@ -32,6 +35,17 @@ echo Html::div()->open();
 echo Html::a($translator->translate('voyti.view.update_link', category: 'voyti'), $url->generate('voyti/admin-update', ['id' => $user->getId()]))->class('btn', 'btn-outline-secondary', 'btn-sm', 'me-1');
 echo Html::a($translator->translate('voyti.view.update_profile_link', category: 'voyti'), $url->generate('voyti/admin-update-profile', ['id' => $user->getId()]))->class('btn', 'btn-outline-secondary', 'btn-sm', 'me-1');
 echo Html::a($translator->translate('voyti.view.admin.sessions_link', category: 'voyti'), $url->generate('voyti/admin-session-history', ['id' => $user->getId()]))->class('btn', 'btn-outline-secondary', 'btn-sm');
+if ($config->enableSwitchIdentities && !$isSwitched) {
+    $switchDisabled = $user->isBlocked() || (int) $user->getId() === $currentUserId;
+    echo Html::form()
+        ->post($url->generate('voyti/admin-switch', ['id' => $user->getId()]))
+        ->csrf($csrf)
+        ->open();
+    echo Html::submitButton($translator->translate('voyti.view.admin.switch_button', category: 'voyti'))
+        ->class('btn', 'btn-outline-secondary', 'btn-sm', 'me-1')
+        ->disabled($switchDisabled);
+    echo Html::form()->close();
+}
 echo Html::div()->close();
 echo Html::div()->close();
 

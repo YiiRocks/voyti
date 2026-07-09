@@ -24,6 +24,8 @@ use Yiisoft\View\WebView;
  * @var TranslatorInterface $translator
  * @var array<string, list<string>> $errors
  * @var FlashInterface $flash
+ * @var bool $isSwitched
+ * @var User|null $originalUser
  * @var string $csrf
  */
 
@@ -35,6 +37,22 @@ echo Html::div()->open();
 echo $this->render('../shared/_menu', ['config' => $config, 'url' => $url, 'translator' => $translator]);
 /** @psalm-suppress InvalidScope */
 echo $this->render('../shared/_flash', ['flash' => $flash]);
+
+if ($isSwitched && $originalUser !== null) {
+    echo Html::div()->class('alert alert-warning d-flex justify-content-between align-items-center')->open();
+    echo Html::span(
+        $translator->translate('voyti.view.admin.switched_banner', ['username' => $originalUser->getUsername()], category: 'voyti')
+    );
+    echo Html::form()
+        ->post($url->generate('voyti/admin-switch-restore'))
+        ->csrf($csrf)
+        ->open();
+    echo Html::submitButton(
+        $translator->translate('voyti.view.admin.restore_button', category: 'voyti')
+    )->class('btn', 'btn-warning', 'btn-sm');
+    echo Html::form()->close();
+    echo Html::div()->close();
+}
 
 echo Html::H1($translator->translate('voyti.view.edit_profile.title', category: 'voyti'));
 echo Html::div()->class('card border-primary mb-4')->open();

@@ -9,11 +9,18 @@ use Psr\Http\Message\ResponseInterface;
 trait RenderTrait
 {
 
+    /**
+     * @psalm-suppress UndefinedThisPropertyFetch
+     */
+    protected function homeUrl(): string
+    {
+        return $this->config->getHomeUrl($this->url);
+    }
+
     protected function renderError(string $messageKey): ResponseInterface
     {
         return $this->renderView('shared/message', [
             'title' => $this->translator->translate($messageKey, category: 'voyti'),
-            'translator' => $this->translator,
         ]);
     }
 
@@ -21,7 +28,6 @@ trait RenderTrait
     {
         return $this->renderView('shared/message', [
             'title' => $this->translator->translate($messageKey, category: 'voyti'),
-            'translator' => $this->translator,
         ]);
     }
 
@@ -39,6 +45,9 @@ trait RenderTrait
         }
         if (!isset($params['url'])) {
             $params['url'] = $this->url;
+        }
+        if (!isset($params['homeUrl'])) {
+            $params['homeUrl'] = $this->homeUrl();
         }
 
         return $this->viewRenderer

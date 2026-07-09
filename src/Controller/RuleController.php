@@ -10,6 +10,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Form\Rbac\RuleForm;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Helper\InputDataTrait;
+use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Rbac\RuleEditionService;
 use Yiisoft\Http\Method;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -33,6 +34,7 @@ final readonly class RuleController
         private RuleEditionService $authRuleEditionService,
         private ResponseFactoryInterface $responseFactory,
         private FlashInterface $flash,
+        private ModuleConfig $config,
     ) {
     }
 

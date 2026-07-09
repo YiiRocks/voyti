@@ -11,6 +11,7 @@ use RuntimeException;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Form\Rbac\AbstractAuthItemForm;
 use YiiRocks\Voyti\Helper\InputDataTrait;
+use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\UserRepository;
 use Yiisoft\Http\Method;
 use Yiisoft\Rbac\AssignmentsStorageInterface;
@@ -42,6 +43,7 @@ abstract readonly class AbstractAuthItemController
         protected ManagerInterface $managerInterface,
         protected AssignmentsStorageInterface $assignmentsStorage,
         protected FlashInterface $flash,
+        protected ModuleConfig $config,
     ) {
     }
 
