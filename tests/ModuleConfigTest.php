@@ -29,6 +29,7 @@ final class ModuleConfigTest extends TestCase
             homeRoute: 'custom/home',
             mailAdminOnRegister: 'admin@example.com',
             enablePasswordExpiration: true,
+            enablePasswordComplexity: true,
             generatePasswords: true,
             allowPasswordRecovery: false,
             allowAdminPasswordRecovery: false,
@@ -60,6 +61,7 @@ final class ModuleConfigTest extends TestCase
         self::assertSame('custom/home', $config->homeRoute);
         self::assertSame('admin@example.com', $config->mailAdminOnRegister);
         self::assertTrue($config->enablePasswordExpiration);
+        self::assertTrue($config->enablePasswordComplexity);
         self::assertTrue($config->generatePasswords);
         self::assertFalse($config->allowPasswordRecovery);
         self::assertFalse($config->allowAdminPasswordRecovery);
@@ -94,6 +96,7 @@ final class ModuleConfigTest extends TestCase
         self::assertSame('voyti/settings-account', $config->accountSettingsRoute);
         self::assertSame('home', $config->homeRoute);
         self::assertFalse($config->enablePasswordExpiration);
+        self::assertFalse($config->enablePasswordComplexity);
         self::assertFalse($config->generatePasswords);
         self::assertSame(1, $config->emailChangeStrategy);
         self::assertSame(2592000, $config->rememberLoginLifespan);
@@ -130,6 +133,7 @@ final class ModuleConfigTest extends TestCase
             'homeRoute',
             'mailAdminOnRegister',
             'enablePasswordExpiration',
+            'enablePasswordComplexity',
             'generatePasswords',
             'allowPasswordRecovery',
             'allowAdminPasswordRecovery',
@@ -197,6 +201,7 @@ final class ModuleConfigTest extends TestCase
         self::assertSame('home', $config->homeRoute);
         self::assertNull($config->mailAdminOnRegister);
         self::assertFalse($config->enablePasswordExpiration);
+        self::assertFalse($config->enablePasswordComplexity);
         self::assertFalse($config->generatePasswords);
         self::assertTrue($config->allowPasswordRecovery);
         self::assertTrue($config->allowAdminPasswordRecovery);

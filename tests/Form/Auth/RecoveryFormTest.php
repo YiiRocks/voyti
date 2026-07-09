@@ -101,6 +101,15 @@ final class RecoveryFormTest extends TestCase
         $this->assertSame('===', $rules['passwordRepeat'][1]->getOperator());
     }
 
+    public function testGetRulesForResetScenarioWithPasswordComplexityEnabled(): void
+    {
+        $config = new ModuleConfig(enablePasswordComplexity: true);
+        $form = new RecoveryForm($config, $this->createTranslator(), RecoveryForm::SCENARIO_RESET);
+        $rules = $form->getRules();
+        $this->assertCount(3, $rules['password']);
+        $this->assertInstanceOf(\Yiisoft\Validator\Rule\Regex::class, $rules['password'][2]);
+    }
+
     public function testGetRulesWithoutRecaptchaOnReset(): void
     {
         $config = new ModuleConfig(recaptchaVersion: 'v3');

@@ -9,6 +9,7 @@ use Psr\SimpleCache\CacheInterface;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
+use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Strategy\DefaultEmailChangeStrategy;
@@ -51,7 +52,7 @@ final class DefaultEmailChangeStrategyTest extends TestCase
         $user = $this->createUser();
         $translator = $this->createTranslator();
 
-        $form = new SettingsForm($translator);
+        $form = new SettingsForm(new ModuleConfig(), $translator);
         $form->setUser($user);
         $form->email = 'new@example.com';
 
@@ -95,7 +96,7 @@ final class DefaultEmailChangeStrategyTest extends TestCase
         $user->setUpdatedAt(time());
         $this->assertNull($user->getId());
 
-        $form = new SettingsForm($translator);
+        $form = new SettingsForm(new ModuleConfig(), $translator);
         $form->setUser($user);
         $form->email = 'new@example.com';
 
@@ -127,7 +128,7 @@ final class DefaultEmailChangeStrategyTest extends TestCase
     public function testRunReturnsFalseWhenUserIsNull(): void
     {
         $translator = $this->createTranslator();
-        $form = new SettingsForm($translator);
+        $form = new SettingsForm(new ModuleConfig(), $translator);
         $mailCapture = new MailCapture();
         $urlGenerator = new FakeUrlGenerator();
         $mailService = new MailService($mailCapture, '/tmp', $translator, $urlGenerator, 'App');
@@ -145,7 +146,7 @@ final class DefaultEmailChangeStrategyTest extends TestCase
         $user = $this->createUser();
         $translator = $this->createTranslator();
 
-        $form = new SettingsForm($translator);
+        $form = new SettingsForm(new ModuleConfig(), $translator);
         $form->setUser($user);
         $form->email = 'new@example.com';
 

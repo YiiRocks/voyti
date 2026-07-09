@@ -747,36 +747,6 @@ final class SettingsControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    public function testProfileGetShowsFormWithExistingProfile(): void
-    {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
-        $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $userProfile = $this->createMock(UserProfile::class);
-        $userProfile->method('getName')->willReturn('John');
-        $user->method('getProfile')->willReturn($userProfile);
-        $this->userRepository->method('findById')->willReturn($user);
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('settings/profile', $this->anything())
-            ->willReturn($response);
-
-        $result = $controller->userProfile($request);
-
-        $this->assertSame($response, $result);
-    }
-
     public function testProfileGetDoesNotShowSwitchedBannerWhenNotSwitched(): void
     {
         $controller = $this->createController();
@@ -809,6 +779,36 @@ final class SettingsControllerTest extends TestCase
 
         $this->assertFalse($captured['isSwitched']);
         $this->assertNull($captured['originalUser']);
+    }
+
+    public function testProfileGetShowsFormWithExistingProfile(): void
+    {
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $user = $this->createMock(User::class);
+        $user->method('getId')->willReturn('1');
+        $userProfile = $this->createMock(UserProfile::class);
+        $userProfile->method('getName')->willReturn('John');
+        $user->method('getProfile')->willReturn($userProfile);
+        $this->userRepository->method('findById')->willReturn($user);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('settings/profile', $this->anything())
+            ->willReturn($response);
+
+        $result = $controller->userProfile($request);
+
+        $this->assertSame($response, $result);
     }
 
     public function testProfileGetShowsSwitchedBanner(): void

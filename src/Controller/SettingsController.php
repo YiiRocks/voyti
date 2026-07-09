@@ -93,7 +93,7 @@ final readonly class SettingsController
             return $this->renderError('voyti.settings.user_not_found');
         }
 
-        $form = new SettingsForm($this->translator);
+        $form = new SettingsForm($this->config, $this->translator);
         $form->username = $user->getUsername();
         $form->email = $user->getEmail();
 

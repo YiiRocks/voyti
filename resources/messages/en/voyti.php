@@ -8,6 +8,7 @@ return [
     'voyti.security.account_blocked' => 'Your account has been blocked',
     'voyti.security.need_email_confirmation' => 'You need to confirm your email address',
     'voyti.security.logged_out' => 'Logged out',
+    'voyti.security.password_expired' => 'Your password has expired. Please set a new one.',
     'voyti.security.authenticated' => 'Authenticated',
 
     // RegistrationController
@@ -86,6 +87,7 @@ return [
     'voyti.validator.two_factor_not_configured' => 'Two factor authentication is not configured.',
     'voyti.validator.two_factor_library_missing' => '2FA library (chillerlan/php-authenticator) is not installed.',
     'voyti.validator.invalid_verification_code' => 'Invalid verification code.',
+    'voyti.validator.password_complexity' => 'Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character.',
     'voyti.validator.two_factor_enabled' => 'Two factor authentication has been enabled.',
     'voyti.validator.invalid_code_with_time' => 'Invalid code. Please try again within {timeDuration} seconds.',
     'voyti.validator.invalid_two_factor_code_with_time' => 'Invalid two factor authentication code. Please try again within {timeDuration} seconds.',

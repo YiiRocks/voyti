@@ -9,6 +9,7 @@ use Psr\SimpleCache\CacheInterface;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
+use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Strategy\DefaultEmailChangeStrategy;
@@ -48,7 +49,7 @@ final class SecureEmailChangeStrategyTest extends TestCase
     public function testRunReturnsFalseWhenDefaultFails(): void
     {
         $translator = $this->createTranslator();
-        $form = new SettingsForm($translator);
+        $form = new SettingsForm(new ModuleConfig(), $translator);
         // No user set -> DefaultEmailChangeStrategy returns false
         $tokenFactory = new UserTokenFactory(new UserTokenRepository());
         $mailCapture = new MailCapture();
@@ -68,7 +69,7 @@ final class SecureEmailChangeStrategyTest extends TestCase
         $user = $this->createUser();
         $translator = $this->createTranslator();
 
-        $form = new SettingsForm($translator);
+        $form = new SettingsForm(new ModuleConfig(), $translator);
         $form->setUser($user);
         $form->email = 'new@example.com';
 

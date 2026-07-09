@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\SimpleCache\CacheInterface;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
+use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Strategy\InsecureEmailChangeStrategy;
 use Yiisoft\Db\Cache\SchemaCache;
 use Yiisoft\Db\Connection\ConnectionInterface;
@@ -40,7 +41,7 @@ final class InsecureEmailChangeStrategyTest extends TestCase
 
     public function testRunReturnsFalseWhenUserIsNull(): void
     {
-        $form = new SettingsForm($this->createTranslator());
+        $form = new SettingsForm(new ModuleConfig(), $this->createTranslator());
         $strategy = new InsecureEmailChangeStrategy($form);
 
         $this->assertFalse($strategy->run());
@@ -51,7 +52,7 @@ final class InsecureEmailChangeStrategyTest extends TestCase
         $this->initDb();
 
         $user = $this->createUser();
-        $form = new SettingsForm($this->createTranslator());
+        $form = new SettingsForm(new ModuleConfig(), $this->createTranslator());
         $form->setUser($user);
         $form->email = 'new@example.com';
 

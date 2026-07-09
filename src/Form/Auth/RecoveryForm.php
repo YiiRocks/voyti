@@ -7,6 +7,7 @@ namespace YiiRocks\Voyti\Form\Auth;
 use YiiRocks\Recaptcha\RecaptchaV2Rule;
 use YiiRocks\Recaptcha\RecaptchaV3Rule;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Validator\PasswordComplexityRule;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\Rule\CompareType;
@@ -84,6 +85,7 @@ final class RecoveryForm extends FormModel implements RulesProviderInterface
             $rules['password'] = [
                 new Required(),
                 new Length(min: 6, max: 72),
+                ...PasswordComplexityRule::rules($this->config, $this->translator),
             ];
             $rules['passwordRepeat'] = [
                 new Required(),

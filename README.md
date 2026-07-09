@@ -90,7 +90,7 @@ password expiration, last login IP, etc.) included.
 
 Routes are **not** auto-registered — you must add them to your router configuration.
 
-Pull the `voyti-routes` config group into your router definition. The example below mounts them under a `user/` prefix — omit or change the prefix as needed:
+Pull the `voyti-routes` config group into your router definition. The example below mounts them under a `/user/` prefix as their own group, alongside your app's own routes — change the prefix as needed:
 
 ```php
 use Yiisoft\Config\Config;
@@ -99,6 +99,9 @@ use Yiisoft\Router\Group;
 use Yiisoft\Router\RouteCollection;
 use Yiisoft\Router\RouteCollectionInterface;
 use Yiisoft\Router\RouteCollector;
+use Yiisoft\Session\SessionMiddleware;
+use YiiRocks\Voyti\Middleware\PasswordAgeEnforceMiddleware;
+use YiiRocks\Voyti\Middleware\TwoFactorAuthenticationEnforceMiddleware;
 
 /** @var Config $config */
 
@@ -110,17 +113,26 @@ return [
                 static fn() => (new RouteCollector())
                     ->addRoute(
                         Group::create('/')
-                            ->routes(...[
-                                ...$config->get("routes"), // your routes
-                                Group::create('user/')
-                                    ->routes(...$config->get("voyti-routes"))
-                            ]),
+                            ->middleware(
+                                SessionMiddleware::class,
+                                // Site-wide enforcement (see "Site-wide enforcement" below).
+                                // Safe to scope to this group only: accountSettingsRoute lives
+                                // in the separate voyti-routes group below, so redirecting there
+                                // takes the request out of this group and can't loop.
+                                PasswordAgeEnforceMiddleware::class,
+                                TwoFactorAuthenticationEnforceMiddleware::class,
+                            )
+                            ->routes(...$config->get('routes')), // your own app routes
+                        Group::create('/user/')
+                            ->routes(...$config->get('voyti-routes')),
                     )
             ),
         ],
     ],
 ];
 ```
+
+`voyti-routes` already wraps itself with `SessionMiddleware` and `CsrfMiddleware` internally (see `config/routes.php`), so the second group doesn't need to repeat them. `PasswordAgeEnforceMiddleware` is also already applied inside `voyti-routes` automatically when `enablePasswordExpiration` is `true`, so adding it to your own group above only extends that protection to your app's own pages — it isn't duplicating work. `TwoFactorAuthenticationEnforceMiddleware`, however, is never auto-applied by the extension itself, so add it wherever you want that enforcement.
 
 When `enableRestApi` is `true`, the API routes are mounted under `adminRestPrefix` and expose user CRUD endpoints.
 
@@ -215,6 +227,7 @@ Below are all top-level `yiirocks/voyti` options, followed by the nested `social
 | `disableIpLogging` | `bool` | `false` | Disable IP address logging |
 | `enablePasswordExpiration` | `bool` | `false` | Enable password expiration |
 | `maxPasswordAge` | `?int` | `null` | Max password age in days |
+| `enablePasswordComplexity` | `bool` | `false` | Require passwords to contain an uppercase letter, a lowercase letter, a digit, and a special character |
 | `administratorPermissionName` | `?string` | `'admin'` | Permission/role name granting admin access |
 | `profileVisibility` | `int` | `2` | Profile visibility: `0` = owner only, `1` = owner + admins, `2` = any authenticated user, `3` = public |
 
@@ -329,14 +342,21 @@ With credentials configured:
 
 The extension ships three PSR-15 middleware classes for access control:
 
-| Middleware | Description |
-|-----------|-------------|
-| `AccessRuleMiddleware` | Redirects guests to `loginRoute`; checks `administratorPermissionName` for admin access |
-| `PasswordAgeEnforceMiddleware` | Redirects to `accountSettingsRoute` when `maxPasswordAge` is exceeded |
-| `TwoFactorAuthenticationEnforceMiddleware` | Redirects to `accountSettingsRoute` when required permissions are assigned |
+| Middleware | Description | Auto-registered on the extension's own routes? |
+|-----------|-------------|-----------|
+| `AccessRuleMiddleware` | Redirects guests to `loginRoute`; checks `administratorPermissionName` for admin access | Yes — on `admin/*`, `permissions/*`, `roles/*`, `rules/*`, and the REST API group |
+| `PasswordAgeEnforceMiddleware` | Redirects to `accountSettingsRoute` when `maxPasswordAge` is exceeded | Yes, when `enablePasswordExpiration` is `true` — on the extension's whole web route group |
+| `TwoFactorAuthenticationEnforceMiddleware` | Redirects to `accountSettingsRoute` when required permissions are assigned but 2FA isn't enabled | No |
 
-Register them in your application's middleware pipeline as needed.
-The two redirect targets (`loginRoute` and `accountSettingsRoute`) are configurable via `ModuleConfig`, so you can map them to your own route structure.
+The redirect targets (`loginRoute` and `accountSettingsRoute`) are configurable via `ModuleConfig`, so you can map them to your own route structure.
+
+### Site-wide enforcement
+
+The auto-registration above only covers routes *this extension defines* (`voyti/login`, `voyti/settings`, `voyti/admin`, etc.) — it has no way to reach routes your host application defines itself, since `config/routes.php` can only attach middleware to the route groups it builds. If a user with an expired password or missing 2FA navigates to your app's own dashboard, home page, or any other route outside this extension, nothing stops them.
+
+To actually enforce "the user must fix this before doing anything else" across your own pages too, add `PasswordAgeEnforceMiddleware` and/or `TwoFactorAuthenticationEnforceMiddleware` to the `Group` that wraps your app's own routes — see the [Register routes](#3-register-routes) example above, which applies both alongside `SessionMiddleware`. Add any other middleware your own routes need (CSRF protection, etc.) — the example only lists what's required for login/session state to work. Keep the enforcement middlewares scoped to your own route group (as in that example) rather than the `voyti-routes` group: `accountSettingsRoute` lives inside `voyti-routes`, and `TwoFactorAuthenticationEnforceMiddleware` has no built-in exemption for it, so wrapping `voyti-routes` with it would redirect a user straight back into a loop the moment they try to reach the settings page to actually fix the problem.
+
+If your app instead configures middleware at a level above routing entirely (e.g. a global pipeline in your app skeleton's runner config), the same two classes can go there instead — just place them after session middleware so `CurrentUser` is resolvable, and keep the same caveat in mind for whatever route ends up serving `accountSettingsRoute`.
 
 ## RBAC
 

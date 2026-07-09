@@ -8,6 +8,7 @@ return [
     'voyti.security.account_blocked' => 'Ihr Konto wurde gesperrt',
     'voyti.security.need_email_confirmation' => 'Sie müssen Ihre E-Mail-Adresse bestätigen',
     'voyti.security.logged_out' => 'Abgemeldet',
+    'voyti.security.password_expired' => 'Ihr Passwort ist abgelaufen. Bitte legen Sie ein neues fest.',
     'voyti.security.authenticated' => 'Authentifiziert',
 
     // RegistrationController
@@ -82,6 +83,7 @@ return [
     'voyti.validator.two_factor_not_configured' => 'Die Zwei-Faktor-Authentifizierung ist nicht konfiguriert.',
     'voyti.validator.two_factor_library_missing' => 'Die 2FA-Bibliothek (chillerlan/php-authenticator) ist nicht installiert.',
     'voyti.validator.invalid_verification_code' => 'Ungültiger Verifizierungscode.',
+    'voyti.validator.password_complexity' => 'Das Passwort muss mindestens einen Großbuchstaben, einen Kleinbuchstaben, eine Ziffer und ein Sonderzeichen enthalten.',
     'voyti.validator.two_factor_enabled' => 'Die Zwei-Faktor-Authentifizierung wurde aktiviert.',
     'voyti.validator.invalid_code_with_time' => 'Ungültiger Code. Bitte versuchen Sie es innerhalb von {timeDuration} Sekunden erneut.',
     'voyti.validator.invalid_two_factor_code_with_time' => 'Ungültiger Zwei-Faktor-Authentifizierungscode. Bitte versuchen Sie es innerhalb von {timeDuration} Sekunden erneut.',

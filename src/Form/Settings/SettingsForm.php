@@ -5,16 +5,20 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Form\Settings;
 
 use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Validator\PasswordComplexityRule;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\Validator\Helper\ObjectParser;
 use Yiisoft\Validator\Rule\CompareType;
 use Yiisoft\Validator\Rule\Email;
 use Yiisoft\Validator\Rule\Equal;
 use Yiisoft\Validator\Rule\Length;
 use Yiisoft\Validator\Rule\Regex;
 use Yiisoft\Validator\Rule\Required;
+use Yiisoft\Validator\RulesProviderInterface;
 
-final class SettingsForm extends FormModel
+final class SettingsForm extends FormModel implements RulesProviderInterface
 {
     #[Required]
     #[Email(checkDns: true, enableIdn: true, skipOnEmpty: true)]
@@ -32,6 +36,7 @@ final class SettingsForm extends FormModel
     private ?User $user = null;
 
     public function __construct(
+        private readonly ModuleConfig $config,
         private readonly TranslatorInterface $translator,
     ) {
     }
@@ -71,6 +76,19 @@ final class SettingsForm extends FormModel
     public function getPropertyLabels(): array
     {
         return $this->getAttributeLabels();
+    }
+
+    #[\Override]
+    public function getRules(): iterable
+    {
+        $parser = new ObjectParser($this);
+        $rules = $parser->getRules();
+
+        /** @var list<\Yiisoft\Validator\RuleInterface> $passwordRules */
+        $passwordRules = $rules['password'];
+        $rules['password'] = array_merge($passwordRules, PasswordComplexityRule::rules($this->config, $this->translator));
+
+        return $rules;
     }
 
     public function getUser(): ?User

@@ -7,6 +7,7 @@ namespace YiiRocks\Voyti\Form\Auth;
 use YiiRocks\Recaptcha\RecaptchaV2Rule;
 use YiiRocks\Recaptcha\RecaptchaV3Rule;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Validator\PasswordComplexityRule;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\Helper\ObjectParser;
@@ -86,6 +87,10 @@ final class RegistrationForm extends FormModel implements RulesProviderInterface
     {
         $parser = new ObjectParser($this);
         $rules = $parser->getRules();
+
+        /** @var list<\Yiisoft\Validator\RuleInterface> $passwordRules */
+        $passwordRules = $rules['password'];
+        $rules['password'] = array_merge($passwordRules, PasswordComplexityRule::rules($this->config, $this->translator));
 
         if ($this->config->enableGdprCompliance) {
             $rules['gdprConsent'] = [new TrueValue(trueValue: true)];

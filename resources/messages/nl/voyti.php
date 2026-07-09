@@ -8,6 +8,7 @@ return [
     'voyti.security.account_blocked' => 'Uw account is geblokkeerd',
     'voyti.security.need_email_confirmation' => 'U moet uw e-mailadres bevestigen',
     'voyti.security.logged_out' => 'Uitgelogd',
+    'voyti.security.password_expired' => 'Uw wachtwoord is verlopen. Stel een nieuw wachtwoord in.',
     'voyti.security.authenticated' => 'Geverifieerd',
 
     // RegistrationController
@@ -82,6 +83,7 @@ return [
     'voyti.validator.two_factor_not_configured' => 'Tweefactorauthenticatie is niet geconfigureerd.',
     'voyti.validator.two_factor_library_missing' => '2FA-bibliotheek (chillerlan/php-authenticator) is niet geïnstalleerd.',
     'voyti.validator.invalid_verification_code' => 'Ongeldige verificatiecode.',
+    'voyti.validator.password_complexity' => 'Het wachtwoord moet minstens één hoofdletter, één kleine letter, één cijfer en één speciaal teken bevatten.',
     'voyti.validator.two_factor_enabled' => 'Tweefactorauthenticatie is ingeschakeld.',
     'voyti.validator.invalid_code_with_time' => 'Ongeldige code. Probeer het opnieuw binnen {timeDuration} seconden.',
     'voyti.validator.invalid_two_factor_code_with_time' => 'Ongeldige tweefactorauthenticatiecode. Probeer het opnieuw binnen {timeDuration} seconden.',

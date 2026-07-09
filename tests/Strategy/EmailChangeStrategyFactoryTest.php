@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
+use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Strategy\DefaultEmailChangeStrategy;
@@ -28,7 +29,7 @@ final class EmailChangeStrategyFactoryTest extends TestCase
         $factory = $this->createFactory();
         $strategy = $factory->makeByStrategyType(
             MailChangeStrategyInterface::TYPE_DEFAULT,
-            new SettingsForm($this->createMock(TranslatorInterface::class)),
+            new SettingsForm(new ModuleConfig(), $this->createMock(TranslatorInterface::class)),
         );
         $this->assertInstanceOf(DefaultEmailChangeStrategy::class, $strategy);
     }
@@ -38,7 +39,7 @@ final class EmailChangeStrategyFactoryTest extends TestCase
         $factory = $this->createFactory();
         $strategy = $factory->makeByStrategyType(
             MailChangeStrategyInterface::TYPE_INSECURE,
-            new SettingsForm($this->createMock(TranslatorInterface::class)),
+            new SettingsForm(new ModuleConfig(), $this->createMock(TranslatorInterface::class)),
         );
         $this->assertInstanceOf(InsecureEmailChangeStrategy::class, $strategy);
     }
@@ -48,7 +49,7 @@ final class EmailChangeStrategyFactoryTest extends TestCase
         $factory = $this->createFactory();
         $strategy = $factory->makeByStrategyType(
             MailChangeStrategyInterface::TYPE_SECURE,
-            new SettingsForm($this->createMock(TranslatorInterface::class)),
+            new SettingsForm(new ModuleConfig(), $this->createMock(TranslatorInterface::class)),
         );
         $this->assertInstanceOf(SecureEmailChangeStrategy::class, $strategy);
     }
@@ -59,7 +60,7 @@ final class EmailChangeStrategyFactoryTest extends TestCase
 
         $this->expectException(InvalidArgumentException::class);
 
-        $factory->makeByStrategyType(-1, new SettingsForm($this->createMock(TranslatorInterface::class)));
+        $factory->makeByStrategyType(-1, new SettingsForm(new ModuleConfig(), $this->createMock(TranslatorInterface::class)));
     }
 
     public function testMakeByStrategyTypeThrowsForUnknown(): void
@@ -69,7 +70,7 @@ final class EmailChangeStrategyFactoryTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Unknown strategy type');
 
-        $factory->makeByStrategyType(999, new SettingsForm($this->createMock(TranslatorInterface::class)));
+        $factory->makeByStrategyType(999, new SettingsForm(new ModuleConfig(), $this->createMock(TranslatorInterface::class)));
     }
     private function createFactory(): EmailChangeStrategyFactory
     {

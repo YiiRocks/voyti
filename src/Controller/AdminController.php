@@ -283,7 +283,7 @@ final readonly class AdminController
             return $this->renderError('voyti.admin.user_not_found');
         }
 
-        $model = new SettingsForm($this->translator);
+        $model = new SettingsForm($this->config, $this->translator);
         $model->username = $user->getUsername();
         $model->email = $user->getEmail();
 

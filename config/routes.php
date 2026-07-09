@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use YiiRocks\Voyti\Controller;
 use YiiRocks\Voyti\Middleware\AccessRuleMiddleware;
+use YiiRocks\Voyti\Middleware\PasswordAgeEnforceMiddleware;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Csrf\CsrfMiddleware;
 use Yiisoft\Router\Group;
@@ -103,9 +104,14 @@ if ($moduleConfig->enableTwoFactorAuthentication) {
     $routes[] = Route::post('settings/two-factor/disable')->name('voyti/settings-two-factor-disable')->action([Controller\SettingsController::class, 'twoFactorDisable']);
 }
 
+$webMiddlewares = [SessionMiddleware::class, CsrfMiddleware::class];
+if ($moduleConfig->enablePasswordExpiration) {
+    $webMiddlewares[] = PasswordAgeEnforceMiddleware::class;
+}
+
 $result = [
     Group::create()
-        ->middleware(SessionMiddleware::class, CsrfMiddleware::class)
+        ->middleware(...$webMiddlewares)
         ->routes(...$routes),
 ];
 

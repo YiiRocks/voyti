@@ -83,6 +83,23 @@ final class RegistrationFormTest extends TestCase
         $this->assertArrayNotHasKey('gRecaptchaResponse', $rules);
     }
 
+    public function testGetRulesWithPasswordComplexityDisabled(): void
+    {
+        $config = new ModuleConfig(enablePasswordComplexity: false);
+        $form = new RegistrationForm($config, $this->createTranslator());
+        $rules = $form->getRules();
+        $this->assertCount(1, $rules['password']);
+    }
+
+    public function testGetRulesWithPasswordComplexityEnabled(): void
+    {
+        $config = new ModuleConfig(enablePasswordComplexity: true);
+        $form = new RegistrationForm($config, $this->createTranslator());
+        $rules = $form->getRules();
+        $this->assertCount(2, $rules['password']);
+        $this->assertInstanceOf(\Yiisoft\Validator\Rule\Regex::class, $rules['password'][1]);
+    }
+
     public function testGetRulesWithRecaptchaV2(): void
     {
         $config = new ModuleConfig(recaptchaVersion: 'v2');
