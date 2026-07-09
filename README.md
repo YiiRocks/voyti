@@ -134,7 +134,7 @@ return [
 
 `voyti-routes` already wraps itself with `SessionMiddleware` and `CsrfMiddleware` internally (see `config/routes.php`), so the second group doesn't need to repeat them. `PasswordAgeEnforceMiddleware` is also already applied inside `voyti-routes` automatically when `enablePasswordExpiration` is `true`, so adding it to your own group above only extends that protection to your app's own pages — it isn't duplicating work. `TwoFactorAuthenticationEnforceMiddleware`, however, is never auto-applied by the extension itself, so add it wherever you want that enforcement.
 
-When `enableRestApi` is `true`, the API routes are mounted under `adminRestPrefix` and expose user CRUD endpoints.
+When `enableRestApi` is `true`, the API routes are mounted under `adminRestPrefix . '/v1/'` and expose user CRUD endpoints. The version segment (`v1`) always matches the shipped `Controller\api\v1\AdminController` and isn't configurable — `adminRestPrefix` only controls the base path in front of it (e.g. `api` → `api/v1/users`).
 
 The privacy/GDPR routes (`settings/privacy`, `settings/privacy/gdpr-consent`, `settings/privacy/export`, `settings/privacy/anonymize`, `settings/privacy/delete`) and the two-factor routes (`settings/two-factor`, `settings/two-factor/enable`, `settings/two-factor/disable`) are likewise only registered when their governing config flag (`enableGdprCompliance`, `allowAccountDelete`, and/or `enableTwoFactorAuthentication`) is `true` — see the route table below. When a flag is off, the corresponding route doesn't exist at all, so a request to it falls through to the host application's own router-level not-found handling.
 
@@ -243,7 +243,10 @@ Below are all top-level `yiirocks/voyti` options, followed by the nested `social
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `enableRestApi` | `bool` | `false` | Enable REST API |
-| `adminRestPrefix` | `string` | `'api/v1'` | REST API URL prefix |
+| `adminRestPrefix` | `string` | `'api'` | REST API base URL prefix |
+| `apiTokenLifespan` | `int\|null` | `null` | API token lifetime in seconds; `null` means tokens never expire |
+
+The REST API authenticates via a Bearer token, not the web session/CSRF cookie — issue one with `voyti:api-token:generate` (see [Console commands](#console-commands)) and send it as `Authorization: Bearer <token>`. `AccessRuleMiddleware` still applies afterwards to enforce `administratorPermissionName`.
 
 ### Social Authentication Providers
 
@@ -337,14 +340,17 @@ With credentials configured:
 | `voyti:delete` | Delete a user |
 | `voyti:confirm` | Confirm a user's email |
 | `voyti:password` | Change a user's password |
+| `voyti:api-token:generate` | Generate a REST API access token for a user (printed once) |
+| `voyti:api-token:revoke` | Revoke all REST API access tokens for a user |
 
 ## Middleware
 
-The extension ships three PSR-15 middleware classes for access control:
+The extension ships four PSR-15 middleware classes for access control:
 
 | Middleware | Description | Auto-registered on the extension's own routes? |
 |-----------|-------------|-----------|
 | `AccessRuleMiddleware` | Redirects guests to `loginRoute`; checks `administratorPermissionName` for admin access | Yes — on `admin/*`, `permissions/*`, `roles/*`, `rules/*`, and the REST API group |
+| `ApiTokenAuthenticationMiddleware` | Resolves the `Authorization: Bearer <token>` header to a user for that request only (no session); returns `401` if missing/invalid | Yes — on the REST API group, ahead of `AccessRuleMiddleware`, in place of the session cookie |
 | `PasswordAgeEnforceMiddleware` | Redirects to `accountSettingsRoute` when `maxPasswordAge` is exceeded | Yes, when `enablePasswordExpiration` is `true` — on the extension's whole web route group |
 | `TwoFactorAuthenticationEnforceMiddleware` | Redirects to `accountSettingsRoute` when required permissions are assigned but 2FA isn't enabled | No |
 

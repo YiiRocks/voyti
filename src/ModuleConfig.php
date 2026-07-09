@@ -62,14 +62,15 @@ final readonly class ModuleConfig
         public string $viewPath = __DIR__ . '/../resources/views/bootstrap5',
         public string $mailPath = __DIR__ . '/../resources/mail',
         public bool $enableRestApi = false,
-        public string $adminRestPrefix = 'api/v1',
+        public string $adminRestPrefix = 'api',
+        public ?int $apiTokenLifespan = null,
     ) {
     }
 
     /**
      * @return (array|bool|int|null|string)[]
      *
-     * @psalm-return array{appName: string, recaptchaVersion: null|string, enableSessionHistory: bool, numberSessionHistory: false|int, enableGdprCompliance: bool, gdprExportProperties: list<string>, gdprAnonymizePrefix: string, enableTwoFactorAuthentication: bool, twoFactorAuthenticationForcedPermissions: array<array-key, string>, enableRegistration: bool, enableSocialNetworkRegistration: bool, socialNetworkClients: array<string, array<string, mixed>>, enableEmailConfirmation: bool, enableSwitchIdentities: bool, switchIdentitySessionKey: null|string, loginRoute: string, accountSettingsRoute: string, homeRoute: string, mailAdminOnRegister: null|string, enablePasswordExpiration: bool, enablePasswordComplexity: bool, generatePasswords: bool, allowPasswordRecovery: bool, allowAdminPasswordRecovery: bool, allowAccountDelete: bool, emailChangeStrategy: int, rememberLoginLifespan: int, tokenConfirmationLifespan: int, tokenRecoveryLifespan: int, administratorPermissionName: null|string, profileVisibility: int, maxPasswordAge: int|null, disableIpLogging: bool, viewPath: string, mailPath: string, enableRestApi: bool, adminRestPrefix: string}
+     * @psalm-return array{appName: string, recaptchaVersion: null|string, enableSessionHistory: bool, numberSessionHistory: false|int, enableGdprCompliance: bool, gdprExportProperties: list<string>, gdprAnonymizePrefix: string, enableTwoFactorAuthentication: bool, twoFactorAuthenticationForcedPermissions: array<array-key, string>, enableRegistration: bool, enableSocialNetworkRegistration: bool, socialNetworkClients: array<string, array<string, mixed>>, enableEmailConfirmation: bool, enableSwitchIdentities: bool, switchIdentitySessionKey: null|string, loginRoute: string, accountSettingsRoute: string, homeRoute: string, mailAdminOnRegister: null|string, enablePasswordExpiration: bool, enablePasswordComplexity: bool, generatePasswords: bool, allowPasswordRecovery: bool, allowAdminPasswordRecovery: bool, allowAccountDelete: bool, emailChangeStrategy: int, rememberLoginLifespan: int, tokenConfirmationLifespan: int, tokenRecoveryLifespan: int, administratorPermissionName: null|string, profileVisibility: int, maxPasswordAge: int|null, disableIpLogging: bool, viewPath: string, mailPath: string, enableRestApi: bool, adminRestPrefix: string, apiTokenLifespan: int|null}
      */
     public static function defaults(): array
     {

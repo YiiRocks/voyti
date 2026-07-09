@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use YiiRocks\Voyti\Form\Settings\GdprConsentForm;
+use YiiRocks\Voyti\Helper\TimezoneHelper;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -27,6 +28,13 @@ echo Html::div()->open();
 echo $this->render('../../shared/_flash', ['flash' => $flash]);
 echo Html::H1($translator->translate('voyti.view.gdpr.consent_title', category: 'voyti'));
 
+$isLocked = $model->consent;
+
+if ($isLocked) {
+    $consentDate = $model->consentDate !== null ? TimezoneHelper::formatLocalized($model->consentDate, $translator->getLocale(), $model->timezone) : '';
+    echo Html::p($translator->translate('voyti.view.gdpr.consent_locked', ['date' => $consentDate], category: 'voyti'))->class('text-muted');
+}
+
 echo Html::form()
     ->post($url->generate('voyti/settings-privacy-gdpr-consent'))
     ->csrf($csrf)
@@ -34,13 +42,15 @@ echo Html::form()
 
 $tabindex = 0;
 
-echo Field::checkbox($model, 'consent')->tabIndex(++$tabindex);
+echo Field::checkbox($model, 'consent')->tabIndex(++$tabindex)->disabled($isLocked);
 
-echo Field::buttonGroup()
-    ->buttons(
-        Html::resetButton($translator->translate('voyti.view.reset_button', category: 'voyti'))->attribute('tabindex', $tabindex + 2),
-        Html::submitButton($translator->translate('voyti.view.save_button', category: 'voyti'))->attribute('tabindex', ++$tabindex),
-    );
+if (!$isLocked) {
+    echo Field::buttonGroup()
+        ->buttons(
+            Html::resetButton($translator->translate('voyti.view.reset_button', category: 'voyti'))->attribute('tabindex', $tabindex + 2),
+            Html::submitButton($translator->translate('voyti.view.save_button', category: 'voyti'))->attribute('tabindex', ++$tabindex),
+        );
+}
 
 echo Html::form()->close();
 echo Html::div()->close();

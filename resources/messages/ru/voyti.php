@@ -181,6 +181,7 @@ return [
     // GDPR views
     'voyti.view.gdpr.consent_title' => 'Согласие GDPR',
     'voyti.view.gdpr.consent_label' => 'Я даю согласие на обработку моих персональных данных',
+    'voyti.view.gdpr.consent_locked' => 'Вы уже дали согласие {date}. Это действие необратимо.',
     'voyti.view.anonymize.title' => 'Анонимизировать мой аккаунт',
     'voyti.view.anonymize.warning' => 'Внимание: Это действие анонимизирует ваш аккаунт (email и имя пользователя будут заменены) и навсегда заблокирует доступ. Это действие необратимо.',
     'voyti.view.anonymize.confirm_label' => 'Я понимаю, что это действие необратимо',

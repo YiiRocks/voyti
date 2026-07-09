@@ -181,6 +181,7 @@ return [
     // GDPR views
     'voyti.view.gdpr.consent_title' => 'AVG-toestemming',
     'voyti.view.gdpr.consent_label' => 'Ik geef toestemming voor de verwerking van mijn persoonsgegevens',
+    'voyti.view.gdpr.consent_locked' => 'U heeft al toestemming gegeven op {date}. Dit kan niet ongedaan worden gemaakt.',
     'voyti.view.anonymize.title' => 'Mijn account anonimiseren',
     'voyti.view.anonymize.warning' => 'Waarschuwing: Deze actie anonimiseert uw account (e-mail en gebruikersnaam worden vervangen) en blokkeert de toegang permanent. Dit kan niet ongedaan worden gemaakt.',
     'voyti.view.anonymize.confirm_label' => 'Ik begrijp dat deze actie onomkeerbaar is',

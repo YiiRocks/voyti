@@ -16,6 +16,8 @@ final class GdprConsentFormTest extends TestCase
     {
         $form = new GdprConsentForm($this->createTranslator());
         $this->assertFalse($form->consent);
+        $this->assertNull($form->consentDate);
+        $this->assertNull($form->timezone);
     }
 
     public function testGetAttributeLabels(): void
@@ -43,6 +45,21 @@ final class GdprConsentFormTest extends TestCase
         $form->consent = true;
         $this->assertTrue($form->consent);
     }
+
+    public function testSetConsentDate(): void
+    {
+        $form = new GdprConsentForm($this->createTranslator());
+        $form->consentDate = 1700000000;
+        $this->assertSame(1700000000, $form->consentDate);
+    }
+
+    public function testSetTimezone(): void
+    {
+        $form = new GdprConsentForm($this->createTranslator());
+        $form->timezone = 'America/New_York';
+        $this->assertSame('America/New_York', $form->timezone);
+    }
+
     private function createTranslator(): TranslatorInterface
     {
         $translator = $this->createMock(TranslatorInterface::class);

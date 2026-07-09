@@ -166,7 +166,7 @@ final class SecureEmailChangeStrategyTest extends TestCase
         $this->connection->createCommand('
             CREATE TABLE "user_token" (
                 "user_id" INTEGER NOT NULL,
-                "code" VARCHAR(32) NOT NULL,
+                "code" VARCHAR(64) NOT NULL,
                 "type" SMALLINT NOT NULL,
                 "created_at" INTEGER NOT NULL
             )

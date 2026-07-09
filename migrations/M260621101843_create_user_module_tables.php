@@ -68,7 +68,7 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
 
         $b->createTable('{{%user_token}}', [
             'user_id' => ColumnBuilder::integer()->notNull(),
-            'code' => ColumnBuilder::string(32)->notNull(),
+            'code' => ColumnBuilder::string(64)->notNull(),
             'type' => ColumnBuilder::smallint()->notNull(),
             'created_at' => ColumnBuilder::integer()->notNull(),
         ]);

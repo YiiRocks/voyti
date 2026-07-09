@@ -276,9 +276,11 @@ final readonly class SettingsController
             $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
             $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
             if ($user !== null) {
-                $user->setGdprConsent($form->consent);
-                $user->setGdprConsentDate($form->consent ? time() : null);
-                $user->save();
+                if ($form->consent && !$user->isGdprConsent()) {
+                    $user->setGdprConsent(true);
+                    $user->setGdprConsentDate(time());
+                    $user->save();
+                }
                 return $this->redirectWithFlash(
                     $this->url->generate('voyti/settings-privacy-gdpr-consent'),
                     'voyti.settings.gdpr_consent_saved',
@@ -290,6 +292,8 @@ final readonly class SettingsController
             $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
             if ($user !== null) {
                 $form->consent = $user->isGdprConsent();
+                $form->consentDate = $user->getGdprConsentDate();
+                $form->timezone = $user->getProfile()?->getTimezone();
             }
         }
 

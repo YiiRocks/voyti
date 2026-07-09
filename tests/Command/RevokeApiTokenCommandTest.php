@@ -1,0 +1,119 @@
+<?php
+
+declare(strict_types=1);
+
+namespace YiiRocks\Voyti\tests\Command;
+
+use PHPUnit\Framework\TestCase;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
+use YiiRocks\Voyti\Command\RevokeApiTokenCommand;
+use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\Repository\UserRepository;
+use YiiRocks\Voyti\Service\User\ApiTokenService;
+use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+final class RevokeApiTokenCommandTest extends TestCase
+{
+    use DatabaseSetupTrait;
+
+    protected function setUp(): void
+    {
+        $this->setUpDatabase();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->tearDownDatabase();
+    }
+
+    public function testExecuteByUsernameRevokesTokens(): void
+    {
+        $user = new User();
+        $user->setUsername('apiuser');
+        $user->setEmail('api@example.com');
+        $user->setPasswordHash('hash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(1000);
+        $user->setUpdatedAt(1000);
+        $user->save();
+
+        $input = $this->createMock(InputInterface::class);
+        $input->expects(self::exactly(3))->method('getOption')->willReturnMap([
+            ['id', null],
+            ['email', null],
+            ['username', 'apiuser'],
+        ]);
+
+        $output = $this->createMock(OutputInterface::class);
+        $output->expects(self::once())->method('writeln');
+
+        $userRepository = $this->createMock(UserRepository::class);
+        $userRepository->expects(self::once())->method('findByUsername')->with('apiuser')->willReturn($user);
+
+        $apiTokenService = $this->createMock(ApiTokenService::class);
+        $apiTokenService->expects(self::once())->method('revokeAll')->with($user)->willReturn(2);
+
+        $command = $this->createCommand($userRepository, $apiTokenService);
+        $result = $command->run($input, $output);
+
+        self::assertSame(Command::SUCCESS, $result);
+    }
+
+    public function testExecuteWithNonExistentUserFails(): void
+    {
+        $input = $this->createMock(InputInterface::class);
+        $input->expects(self::exactly(3))->method('getOption')->willReturnMap([
+            ['id', null],
+            ['email', 'ghost@example.com'],
+            ['username', null],
+        ]);
+
+        $output = $this->createMock(OutputInterface::class);
+        $output->expects(self::once())->method('writeln');
+
+        $userRepository = $this->createMock(UserRepository::class);
+        $userRepository->expects(self::once())->method('findByEmail')->with('ghost@example.com')->willReturn(null);
+
+        $apiTokenService = $this->createMock(ApiTokenService::class);
+        $apiTokenService->expects(self::never())->method('revokeAll');
+
+        $command = $this->createCommand($userRepository, $apiTokenService);
+        $result = $command->run($input, $output);
+
+        self::assertSame(Command::FAILURE, $result);
+    }
+
+    public function testExecuteWithNoOptionsFails(): void
+    {
+        $input = $this->createMock(InputInterface::class);
+        $input->expects(self::exactly(3))->method('getOption')->willReturnMap([
+            ['id', null],
+            ['email', null],
+            ['username', null],
+        ]);
+
+        $output = $this->createMock(OutputInterface::class);
+        $output->expects(self::atLeast(4))->method('writeln');
+
+        $apiTokenService = $this->createMock(ApiTokenService::class);
+        $apiTokenService->expects(self::never())->method('revokeAll');
+
+        $command = $this->createCommand(apiTokenService: $apiTokenService);
+        $result = $command->run($input, $output);
+
+        self::assertSame(Command::FAILURE, $result);
+    }
+
+    private function createCommand(
+        ?UserRepository $userRepository = null,
+        ?ApiTokenService $apiTokenService = null,
+    ): RevokeApiTokenCommand {
+        return new RevokeApiTokenCommand(
+            $userRepository ?? $this->createMock(UserRepository::class),
+            $apiTokenService ?? $this->createMock(ApiTokenService::class),
+        );
+    }
+}

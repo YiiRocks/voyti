@@ -4,16 +4,21 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Controller\api\v1;
 
+use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 use YiiRocks\Voyti\Controller\api\v1\AdminController;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\TestCase;
+use Yiisoft\DataResponse\Middleware\JsonDataResponseMiddleware;
+use Yiisoft\DataResponse\ResponseFactory\DataResponseFactory;
 use Yiisoft\DataResponse\ResponseFactory\DataResponseFactoryInterface;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Translator\TranslatorInterface;
@@ -61,6 +66,47 @@ final class AdminControllerTest extends TestCase
         $result = $controller->create($request);
 
         $this->assertSame($response, $result);
+    }
+
+    public function testCreateResponseIsJsonFormattableThroughRealPipeline(): void
+    {
+        $controller = new AdminController(
+            translator: $this->translator,
+            userRepository: new UserRepository(),
+            passwordHasher: $this->passwordHasher,
+            config: $this->config,
+            responseFactory: new DataResponseFactory(new Psr17Factory()),
+        );
+
+        $request = (new ServerRequest('POST', '/'))
+            ->withParsedBody(['email' => 'real@example.com', 'username' => 'realuser', 'password' => 'secret123']);
+
+        $response = $controller->create($request);
+
+        $handler = new class($response) implements RequestHandlerInterface {
+            public function __construct(private readonly ResponseInterface $response)
+            {
+            }
+
+            #[\Override]
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                return $this->response;
+            }
+        };
+
+        $formatted = (new JsonDataResponseMiddleware())->process(
+            $this->createMock(ServerRequestInterface::class),
+            $handler,
+        );
+
+        self::assertSame(201, $formatted->getStatusCode());
+        self::assertStringContainsString('application/json', $formatted->getHeaderLine('Content-Type'));
+
+        /** @var array<string, mixed> $body */
+        $body = json_decode((string) $formatted->getBody(), true);
+        self::assertSame('realuser', $body['username']);
+        self::assertSame('real@example.com', $body['email']);
     }
 
     public function testCreateSuccess(): void

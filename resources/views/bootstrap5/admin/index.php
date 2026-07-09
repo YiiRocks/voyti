@@ -140,6 +140,14 @@ foreach ($users as $user) {
         Html::a($translator->translate('voyti.view.update_link', category: 'voyti'), $url->generate('voyti/admin-update', ['id' => $user->getId()]))->class('dropdown-item'),
     );
 
+    echo Html::li(
+        Html::a($translator->translate('voyti.view.update_profile_link', category: 'voyti'), $url->generate('voyti/admin-update-profile', ['id' => $user->getId()]))->class('dropdown-item'),
+    );
+
+    echo Html::li(
+        Html::a($translator->translate('voyti.view.admin.sessions_link', category: 'voyti'), $url->generate('voyti/admin-session-history', ['id' => $user->getId()]))->class('dropdown-item'),
+    );
+
     if (!$user->isConfirmed()) {
         echo Html::li()->open();
         echo Html::form()

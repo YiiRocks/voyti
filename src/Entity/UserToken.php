@@ -10,6 +10,7 @@ use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
 final class UserToken extends ActiveRecord
 {
     use PrivatePropertiesTrait;
+    public const int TYPE_API_ACCESS = 4;
     public const int TYPE_CONFIRM_NEW_EMAIL = 2;
     public const int TYPE_CONFIRM_OLD_EMAIL = 3;
     public const int TYPE_CONFIRMATION = 0;

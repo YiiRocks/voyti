@@ -622,6 +622,47 @@ final class SettingsControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
+    public function testGdprConsentGetShowsConsentDateWhenAlreadyConsented(): void
+    {
+        $config = new ModuleConfig(enableGdprCompliance: true);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $profile = $this->createMock(UserProfile::class);
+        $profile->method('getTimezone')->willReturn('America/New_York');
+
+        $user = $this->createMock(User::class);
+        $user->method('isGdprConsent')->willReturn(true);
+        $user->method('getGdprConsentDate')->willReturn(1700000000);
+        $user->method('getProfile')->willReturn($profile);
+        $this->userRepository->method('findById')->willReturn($user);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with(
+                'settings/privacy/gdpr-consent',
+                $this->callback(static function (array $params): bool {
+                    return $params['model']->consent === true
+                        && $params['model']->consentDate === 1700000000
+                        && $params['model']->timezone === 'America/New_York';
+                }),
+            )
+            ->willReturn($response);
+
+        $result = $controller->gdprConsent($request);
+
+        $this->assertSame($response, $result);
+    }
+
     public function testGdprConsentGetShowsForm(): void
     {
         $config = new ModuleConfig(enableGdprCompliance: true);
@@ -635,6 +676,8 @@ final class SettingsControllerTest extends TestCase
 
         $user = $this->createMock(User::class);
         $user->method('isGdprConsent')->willReturn(false);
+        $user->method('getGdprConsentDate')->willReturn(null);
+        $user->method('getProfile')->willReturn(null);
         $this->userRepository->method('findById')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
@@ -643,8 +686,95 @@ final class SettingsControllerTest extends TestCase
             ->willReturnSelf();
         $this->viewRenderer->expects($this->once())
             ->method('render')
-            ->with('settings/privacy/gdpr-consent', $this->anything())
+            ->with(
+                'settings/privacy/gdpr-consent',
+                $this->callback(static function (array $params): bool {
+                    return $params['model']->consent === false && $params['model']->timezone === null;
+                }),
+            )
             ->willReturn($response);
+
+        $result = $controller->gdprConsent($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testGdprConsentPostAlreadyConsentedResubmitIsNoop(): void
+    {
+        $config = new ModuleConfig(enableGdprCompliance: true);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['gdpr-consent' => ['consent' => '1']]);
+
+        $this->hydrator->method('hydrate')->willReturnCallback(
+            function (object $object, array $data = []): void {
+                if (property_exists($object, 'consent') && isset($data['consent'])) {
+                    $object->consent = (bool) $data['consent'];
+                }
+            },
+        );
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $user = $this->createMock(User::class);
+        $user->method('getId')->willReturn('1');
+        $user->method('isGdprConsent')->willReturn(true);
+        $user->expects($this->never())->method('setGdprConsent');
+        $user->expects($this->never())->method('setGdprConsentDate');
+        $user->expects($this->never())->method('save');
+        $this->userRepository->method('findById')->willReturn($user);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->willReturnSelf();
+
+        $result = $controller->gdprConsent($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testGdprConsentPostCannotRevokeConsent(): void
+    {
+        $config = new ModuleConfig(enableGdprCompliance: true);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['gdpr-consent' => ['consent' => '0']]);
+
+        $this->hydrator->method('hydrate')->willReturnCallback(
+            function (object $object, array $data = []): void {
+                if (property_exists($object, 'consent') && isset($data['consent'])) {
+                    $object->consent = (bool) $data['consent'];
+                }
+            },
+        );
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $user = $this->createMock(User::class);
+        $user->method('getId')->willReturn('1');
+        $user->method('isGdprConsent')->willReturn(true);
+        $user->expects($this->never())->method('setGdprConsent');
+        $user->expects($this->never())->method('setGdprConsentDate');
+        $user->expects($this->never())->method('save');
+        $this->userRepository->method('findById')->willReturn($user);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->willReturnSelf();
 
         $result = $controller->gdprConsent($request);
 
@@ -658,13 +788,22 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['gdpr-consent' => ['consent' => '1']]);
 
+        $this->hydrator->method('hydrate')->willReturnCallback(
+            function (object $object, array $data = []): void {
+                if (property_exists($object, 'consent') && isset($data['consent'])) {
+                    $object->consent = (bool) $data['consent'];
+                }
+            },
+        );
+
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn('1');
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
         $user = $this->createMock(User::class);
         $user->method('getId')->willReturn('1');
-        $user->expects($this->once())->method('setGdprConsent');
+        $user->method('isGdprConsent')->willReturn(false);
+        $user->expects($this->once())->method('setGdprConsent')->with(true);
         $user->expects($this->once())->method('setGdprConsentDate');
         $user->expects($this->once())->method('save');
         $this->userRepository->method('findById')->willReturn($user);

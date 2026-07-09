@@ -17,6 +17,7 @@ use YiiRocks\Voyti\Http\Psr18Client;
 use YiiRocks\Voyti\Listener;
 use YiiRocks\Voyti\Middleware\RouteParametersResolver;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Repository\IdentityRepository;
 use YiiRocks\Voyti\Repository\UserProfileRepository;
 use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Repository\UserSessionHistoryRepository;
@@ -39,6 +40,7 @@ use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
 use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
 use YiiRocks\Voyti\Service\User\AccountConfirmationService;
+use YiiRocks\Voyti\Service\User\ApiTokenService;
 use YiiRocks\Voyti\Service\User\BlockService;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\CreateService;
@@ -49,6 +51,7 @@ use YiiRocks\Voyti\Service\UserSessionHistory\UserSessionHistoryDecorator;
 use YiiRocks\Voyti\Strategy\EmailChangeStrategyFactory;
 use YiiRocks\Voyti\Validator\Rbac\ItemsValidator;
 use YiiRocks\Voyti\Validator\Rbac\RuleValidator;
+use Yiisoft\Auth\IdentityWithTokenRepositoryInterface;
 use Yiisoft\Mailer\MailerInterface;
 use Yiisoft\Middleware\Dispatcher\ParametersResolverInterface;
 use Yiisoft\Rbac\AssignmentsStorageInterface;
@@ -79,6 +82,8 @@ return [
     UserSocialAccountRepository::class => UserSocialAccountRepository::class,
     UserSessionHistoryRepository::class => UserSessionHistoryRepository::class,
     PasswordGeneratorInterface::class => RandomPasswordGenerator::class,
+    IdentityWithTokenRepositoryInterface::class => IdentityRepository::class,
+    ApiTokenService::class => ApiTokenService::class,
 
     AuthHelper::class => fn (
         ManagerInterface $authManager,

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 use YiiRocks\Voyti\Controller;
 use YiiRocks\Voyti\Middleware\AccessRuleMiddleware;
+use YiiRocks\Voyti\Middleware\ApiTokenAuthenticationMiddleware;
 use YiiRocks\Voyti\Middleware\PasswordAgeEnforceMiddleware;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Csrf\CsrfMiddleware;
+use Yiisoft\DataResponse\Middleware\JsonDataResponseMiddleware;
 use Yiisoft\Router\Group;
 use Yiisoft\Router\Route;
 use Yiisoft\Session\SessionMiddleware;
@@ -116,8 +118,8 @@ $result = [
 ];
 
 if ($moduleConfig->enableRestApi) {
-    $result[] = Group::create($moduleConfig->adminRestPrefix . '/')
-        ->middleware(SessionMiddleware::class, AccessRuleMiddleware::class)
+    $result[] = Group::create($moduleConfig->adminRestPrefix . '/v1/')
+        ->middleware(ApiTokenAuthenticationMiddleware::class, AccessRuleMiddleware::class, JsonDataResponseMiddleware::class)
         ->routes(
             Route::get('users')->name('voyti/api-users-index')->action([Controller\api\v1\AdminController::class, 'index']),
             Route::get('users/{id:\d+}')->name('voyti/api-users-view')->action([Controller\api\v1\AdminController::class, 'view']),

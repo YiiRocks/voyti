@@ -10,6 +10,69 @@ use YiiRocks\Voyti\Helper\TimezoneHelper;
 final class TimezoneHelperTest extends TestCase
 {
 
+    public function testFormatLocalizedWithDutchLocaleUsesDutchDateFormat(): void
+    {
+        $formatted = TimezoneHelper::formatLocalized(1700000000, 'nl');
+        self::assertStringStartsWith('14 nov 2023', $formatted);
+        self::assertStringEndsWith('22:13:20', $formatted);
+    }
+
+    public function testFormatLocalizedWithEnglishLocaleUsesEnglishDateFormat(): void
+    {
+        $formatted = TimezoneHelper::formatLocalized(1700000000, 'en');
+        self::assertStringStartsWith('Nov 14, 2023', $formatted);
+        self::assertMatchesRegularExpression('/[AP]M$/u', $formatted);
+    }
+
+    public function testFormatLocalizedWithGermanLocaleDiffersFromEnglishLocale(): void
+    {
+        $german = TimezoneHelper::formatLocalized(1700000000, 'de');
+        $english = TimezoneHelper::formatLocalized(1700000000, 'en');
+        self::assertNotSame($german, $english);
+    }
+
+    public function testFormatLocalizedWithGermanLocaleUsesGermanDateFormat(): void
+    {
+        $formatted = TimezoneHelper::formatLocalized(1700000000, 'de');
+        self::assertStringStartsWith('14.11.2023', $formatted);
+        self::assertStringEndsWith('22:13:20', $formatted);
+    }
+
+    public function testFormatLocalizedWithInvalidLocaleFallsBackToRfc1123(): void
+    {
+        $timestamp = 1700000000;
+        self::assertSame(date(DATE_RFC1123, $timestamp), TimezoneHelper::formatLocalized($timestamp, 'not-a-locale'));
+    }
+
+    public function testFormatLocalizedWithInvalidTimezoneIsIgnored(): void
+    {
+        $timestamp = 1700000000;
+        $withInvalidTimezone = TimezoneHelper::formatLocalized($timestamp, 'en', 'Invalid/Timezone');
+        $withoutTimezone = TimezoneHelper::formatLocalized($timestamp, 'en');
+        self::assertSame($withoutTimezone, $withInvalidTimezone);
+    }
+
+    public function testFormatLocalizedWithRussianLocaleUsesRussianDateFormat(): void
+    {
+        $formatted = TimezoneHelper::formatLocalized(1700000000, 'ru');
+        self::assertStringStartsWith('14 нояб', $formatted);
+        self::assertStringEndsWith('22:13:20', $formatted);
+    }
+
+    public function testFormatLocalizedWithSpanishLocaleUsesSpanishDateFormat(): void
+    {
+        $formatted = TimezoneHelper::formatLocalized(1700000000, 'es');
+        self::assertStringStartsWith('14 nov 2023', $formatted);
+        self::assertStringEndsWith('22:13:20', $formatted);
+    }
+
+    public function testFormatLocalizedWithTimezoneShiftsDisplayedTime(): void
+    {
+        $formatted = TimezoneHelper::formatLocalized(1700000000, 'en', 'America/New_York');
+        self::assertStringStartsWith('Nov 14, 2023, 5:13:20', $formatted);
+        self::assertMatchesRegularExpression('/PM$/u', $formatted);
+    }
+
     public function testGetAllContainsUtc(): void
     {
         $timezones = TimezoneHelper::getAll();

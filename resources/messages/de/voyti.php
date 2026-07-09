@@ -181,6 +181,7 @@ return [
     // GDPR views
     'voyti.view.gdpr.consent_title' => 'DSGVO-Einwilligung',
     'voyti.view.gdpr.consent_label' => 'Ich stimme der Verarbeitung meiner personenbezogenen Daten zu',
+    'voyti.view.gdpr.consent_locked' => 'Sie haben Ihre Zustimmung am {date} gegeben. Dies kann nicht rückgängig gemacht werden.',
     'voyti.view.anonymize.title' => 'Mein Konto anonymisieren',
     'voyti.view.anonymize.warning' => 'Warnung: Diese Aktion anonymisiert Ihr Konto (E-Mail und Benutzername werden ersetzt) und sperrt den Zugriff dauerhaft. Dies kann nicht rückgängig gemacht werden.',
     'voyti.view.anonymize.confirm_label' => 'Ich verstehe, dass diese Aktion nicht rückgängig gemacht werden kann',

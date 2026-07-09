@@ -10,6 +10,8 @@ use Yiisoft\Translator\TranslatorInterface;
 final class GdprConsentForm extends FormModel
 {
     public bool $consent = false;
+    public ?int $consentDate = null;
+    public ?string $timezone = null;
 
     public function __construct(
         private readonly TranslatorInterface $translator,

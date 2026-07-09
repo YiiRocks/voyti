@@ -218,9 +218,6 @@ final readonly class AdminController
         return $this->renderView('admin/_info', [
             'user' => $user,
             'userProfile' => $user->getProfile(),
-            'config' => $this->config,
-            'isSwitched' => $this->switchIdentityService->isSwitched(),
-            'currentUserId' => (int) $this->currentUser->getIdentity()->getId(),
         ]);
     }
 

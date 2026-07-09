@@ -43,7 +43,8 @@ final class ModuleConfigTest extends TestCase
             maxPasswordAge: 90,
             disableIpLogging: true,
             enableRestApi: true,
-            adminRestPrefix: 'api/v2',
+            adminRestPrefix: 'custom-api',
+            apiTokenLifespan: 3600,
         );
         self::assertSame('Custom', $config->appName);
         self::assertSame('v3', $config->recaptchaVersion);
@@ -75,7 +76,8 @@ final class ModuleConfigTest extends TestCase
         self::assertSame(90, $config->maxPasswordAge);
         self::assertTrue($config->disableIpLogging);
         self::assertTrue($config->enableRestApi);
-        self::assertSame('api/v2', $config->adminRestPrefix);
+        self::assertSame('custom-api', $config->adminRestPrefix);
+        self::assertSame(3600, $config->apiTokenLifespan);
     }
 
     public function testConstructorDefaults(): void
@@ -107,7 +109,8 @@ final class ModuleConfigTest extends TestCase
         self::assertNull($config->maxPasswordAge);
         self::assertFalse($config->disableIpLogging);
         self::assertFalse($config->enableRestApi);
-        self::assertSame('api/v1', $config->adminRestPrefix);
+        self::assertSame('api', $config->adminRestPrefix);
+        self::assertNull($config->apiTokenLifespan);
     }
     public function testDefaultsReturnsAllPropertyKeys(): void
     {
@@ -150,6 +153,7 @@ final class ModuleConfigTest extends TestCase
             'mailPath',
             'enableRestApi',
             'adminRestPrefix',
+            'apiTokenLifespan',
         ];
         foreach ($expectedKeys as $key) {
             self::assertArrayHasKey($key, $defaults);
@@ -215,7 +219,8 @@ final class ModuleConfigTest extends TestCase
         self::assertNull($config->maxPasswordAge);
         self::assertFalse($config->disableIpLogging);
         self::assertFalse($config->enableRestApi);
-        self::assertSame('api/v1', $config->adminRestPrefix);
+        self::assertSame('api', $config->adminRestPrefix);
+        self::assertNull($config->apiTokenLifespan);
     }
 
     public function testGettersReturnExpectedValues(): void

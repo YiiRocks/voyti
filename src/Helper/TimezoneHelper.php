@@ -6,9 +6,33 @@ namespace YiiRocks\Voyti\Helper;
 
 use DateTime;
 use DateTimeZone;
+use IntlDateFormatter;
+use Throwable;
 
 final class TimezoneHelper
 {
+    public static function formatLocalized(int $timestamp, string $locale, ?string $timezone = null): string
+    {
+        if ($timezone !== null && !self::isValid($timezone)) {
+            $timezone = null;
+        }
+
+        try {
+            /**
+             * Depending on the PHP/ICU version, an invalid locale either
+             * throws from the constructor or leaves the formatter
+             * "unconstructed" and throws only once format() is called
+             * (see https://github.com/php/php-src/issues/12561), so both
+             * calls need to be inside the try.
+             */
+            $formatted = (new IntlDateFormatter($locale, IntlDateFormatter::MEDIUM, IntlDateFormatter::MEDIUM, $timezone))->format($timestamp);
+        } catch (Throwable) {
+            return date(DATE_RFC1123, $timestamp);
+        }
+
+        return $formatted !== false ? $formatted : date(DATE_RFC1123, $timestamp);
+    }
+
     /**
      * @return string[]
      *

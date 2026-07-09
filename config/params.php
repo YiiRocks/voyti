@@ -21,6 +21,8 @@ return [
             'voyti:delete' => Command\DeleteUserCommand::class,
             'voyti:confirm' => Command\ConfirmUserCommand::class,
             'voyti:password' => Command\PasswordCommand::class,
+            'voyti:api-token:generate' => Command\GenerateApiTokenCommand::class,
+            'voyti:api-token:revoke' => Command\RevokeApiTokenCommand::class,
         ],
     ],
 ];

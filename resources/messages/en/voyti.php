@@ -185,6 +185,7 @@ return [
     // GDPR views
     'voyti.view.gdpr.consent_title' => 'GDPR Consent',
     'voyti.view.gdpr.consent_label' => 'I consent to processing of my personal data',
+    'voyti.view.gdpr.consent_locked' => 'You have already given consent on {date}. This cannot be undone.',
     'voyti.view.anonymize.title' => 'Anonymize my account',
     'voyti.view.anonymize.warning' => 'Warning: This action anonymizes your account (your email and username are replaced) and permanently blocks access. This cannot be undone.',
     'voyti.view.anonymize.confirm_label' => 'I understand this action is irreversible',
