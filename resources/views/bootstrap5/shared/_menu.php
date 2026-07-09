@@ -44,9 +44,9 @@ if ($config->enableGdprCompliance || $config->allowAccountDelete) {
 
 $items[] = Html::li(
     Html::a($translator->translate('voyti.menu.logout', category: 'voyti'), $url->generate('voyti/logout'))->class('nav-link'),
-    ['class' => 'nav-item'],
+    ['class' => 'nav-item ms-auto'],
 );
 
 echo Html::ul()
-    ->class('nav nav-pills mb-4')
+    ->class('nav nav-tabs mb-4')
     ->items(...$items);
