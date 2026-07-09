@@ -67,7 +67,6 @@
         "friendsofphp/php-cs-fixer": "@stable",
         "infection/infection": "^0.34.0",
         "nyholm/psr7": "^1.8",
-        "phpmd/phpmd": "@stable",
         "phpunit/phpunit": "@stable",
         "squizlabs/php_codesniffer": "@stable",
         "vimeo/psalm": "^6.0",
@@ -95,14 +94,12 @@
     ],
     "scripts": {
         "php-cs-fixer": "@php vendor/bin/php-cs-fixer fix",
-        "phpmd": "@php vendor/bin/phpmd src/ text tests/data/phpmd_ruleset.xml",
         "phpunit": "@php vendor/bin/phpunit",
         "psalm": "@php vendor/bin/psalm",
-        "infection": "@php -d memory_limit=512M vendor/bin/infection --configuration=infection.json --min-msi=100 --min-covered-msi=100"
+        "infection": "@php vendor/bin/infection --configuration=infection.json --min-msi=100 --min-covered-msi=100"
     },
     "scripts-descriptions": {
         "php-cs-fixer": "Cleans to code with PHP Coding Standards Fixer.",
-        "phpmd": "PHP Mess Detector.",
         "phpunit": "PHPUnit - programmer-oriented testing framework.",
         "psalm": "Psalm - static analysis tool for finding errors in PHP applications.",
         "infection": "Infection - PHP Mutation Testing Framework."
