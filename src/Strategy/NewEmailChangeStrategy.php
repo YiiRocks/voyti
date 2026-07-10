@@ -8,7 +8,7 @@ use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Service\MailService;
 
-final readonly class DefaultEmailChangeStrategy implements MailChangeStrategyInterface
+final readonly class NewEmailChangeStrategy implements EmailChangeStrategyInterface
 {
     public function __construct(
         private SettingsForm $form,

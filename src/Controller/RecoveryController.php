@@ -10,6 +10,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Form\Auth\RecoveryForm;
+use YiiRocks\Voyti\Helper\FlashType;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Repository\UserTokenRepository;
@@ -64,7 +65,7 @@ final readonly class RecoveryController
 
             if ($result->isValid()) {
                 $serviceResult = $this->passwordRecoveryService->run($form->email);
-                $this->flash->set('success', $serviceResult->getMessage());
+                $this->flash->set(FlashType::SUCCESS, $serviceResult->getMessage());
 
                 return $this->redirect($this->url->generate($this->config->loginRoute));
             }

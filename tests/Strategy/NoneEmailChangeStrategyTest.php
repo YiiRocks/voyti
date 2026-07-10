@@ -9,7 +9,7 @@ use Psr\SimpleCache\CacheInterface;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Strategy\InsecureEmailChangeStrategy;
+use YiiRocks\Voyti\Strategy\NoneEmailChangeStrategy;
 use Yiisoft\Db\Cache\SchemaCache;
 use Yiisoft\Db\Connection\ConnectionInterface;
 use Yiisoft\Db\Connection\ConnectionProvider;
@@ -19,7 +19,7 @@ use Yiisoft\Db\Sqlite\Dsn;
 use Yiisoft\Translator\TranslatorInterface;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
-final class InsecureEmailChangeStrategyTest extends TestCase
+final class NoneEmailChangeStrategyTest extends TestCase
 {
     private ?ConnectionInterface $connection = null;
 
@@ -42,7 +42,7 @@ final class InsecureEmailChangeStrategyTest extends TestCase
     public function testRunReturnsFalseWhenUserIsNull(): void
     {
         $form = new SettingsForm(new ModuleConfig(), $this->createTranslator());
-        $strategy = new InsecureEmailChangeStrategy($form);
+        $strategy = new NoneEmailChangeStrategy($form);
 
         $this->assertFalse($strategy->run());
     }
@@ -56,7 +56,7 @@ final class InsecureEmailChangeStrategyTest extends TestCase
         $form->setUser($user);
         $form->email = 'new@example.com';
 
-        $strategy = new InsecureEmailChangeStrategy($form);
+        $strategy = new NoneEmailChangeStrategy($form);
 
         $this->assertTrue($strategy->run());
         $this->assertSame('new@example.com', $user->getEmail());

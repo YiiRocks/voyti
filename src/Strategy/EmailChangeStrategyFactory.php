@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Strategy;
 
-use InvalidArgumentException;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Service\MailService;
@@ -17,22 +16,21 @@ final readonly class EmailChangeStrategyFactory
     ) {
     }
 
-    public function makeByStrategyType(int $strategy, SettingsForm $form): InsecureEmailChangeStrategy|DefaultEmailChangeStrategy|SecureEmailChangeStrategy
+    public function makeByStrategyType(EmailChangeConfirmation $confirmation, SettingsForm $form): NoneEmailChangeStrategy|NewEmailChangeStrategy|BothEmailChangeStrategy
     {
-        return match ($strategy) {
-            MailChangeStrategyInterface::TYPE_INSECURE => new InsecureEmailChangeStrategy($form),
-            MailChangeStrategyInterface::TYPE_DEFAULT => new DefaultEmailChangeStrategy(
+        return match ($confirmation) {
+            EmailChangeConfirmation::NONE => new NoneEmailChangeStrategy($form),
+            EmailChangeConfirmation::NEW => new NewEmailChangeStrategy(
                 $form,
                 $this->tokenFactory,
                 $this->mailService,
             ),
-            MailChangeStrategyInterface::TYPE_SECURE => new SecureEmailChangeStrategy(
+            EmailChangeConfirmation::BOTH => new BothEmailChangeStrategy(
                 $form,
                 $this->tokenFactory,
                 $this->mailService,
-                new DefaultEmailChangeStrategy($form, $this->tokenFactory, $this->mailService),
+                new NewEmailChangeStrategy($form, $this->tokenFactory, $this->mailService),
             ),
-            default => throw new InvalidArgumentException('Unknown strategy type'),
         };
     }
 }

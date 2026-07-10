@@ -39,7 +39,7 @@ echo Field::errorSummary($model);
 
 $tabindex = 0;
 
-echo Field::text($model, 'twoFactorAuthenticationCode')->inputAttributes(['autocomplete' => 'one-time-code'])->tabIndex(++$tabindex);
+echo Field::text($model, 'twoFactorAuthenticationCode')->addInputAttributes(['autocomplete' => 'one-time-code', 'inputmode' => 'numeric'])->tabIndex(++$tabindex);
 
 echo Field::buttonGroup()
     ->buttons(

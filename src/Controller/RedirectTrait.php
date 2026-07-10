@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Controller;
 
 use Psr\Http\Message\ResponseInterface;
+use YiiRocks\Voyti\Helper\FlashType;
 use Yiisoft\Http\Header;
 use Yiisoft\Http\Status;
 
@@ -18,7 +19,7 @@ trait RedirectTrait
 
     private function redirectWithFlash(string $url, string $messageKey): ResponseInterface
     {
-        $this->flash->set('success', $this->translator->translate($messageKey, category: 'voyti'));
+        $this->flash->set(FlashType::SUCCESS, $this->translator->translate($messageKey, category: 'voyti'));
 
         return $this->redirect($url);
     }

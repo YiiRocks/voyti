@@ -6,6 +6,7 @@ namespace YiiRocks\Voyti\tests\Form\Auth;
 
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Form\Auth\RecoveryForm;
+use YiiRocks\Voyti\Helper\RecaptchaVersion;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\Rule\CompareType;
@@ -112,7 +113,7 @@ final class RecoveryFormTest extends TestCase
 
     public function testGetRulesWithoutRecaptchaOnReset(): void
     {
-        $config = new ModuleConfig(recaptchaVersion: 'v3');
+        $config = new ModuleConfig(recaptchaVersion: RecaptchaVersion::V3);
         $form = new RecoveryForm($config, $this->createTranslator(), RecoveryForm::SCENARIO_RESET);
         $rules = $form->getRules();
         $this->assertArrayNotHasKey('gRecaptchaResponse', $rules);
@@ -120,7 +121,7 @@ final class RecoveryFormTest extends TestCase
 
     public function testGetRulesWithRecaptchaV2OnRequest(): void
     {
-        $config = new ModuleConfig(recaptchaVersion: 'v2');
+        $config = new ModuleConfig(recaptchaVersion: RecaptchaVersion::V2);
         $form = new RecoveryForm($config, $this->createTranslator(), RecoveryForm::SCENARIO_REQUEST);
         $rules = $form->getRules();
         $this->assertArrayHasKey('gRecaptchaResponse', $rules);
@@ -128,7 +129,7 @@ final class RecoveryFormTest extends TestCase
 
     public function testGetRulesWithRecaptchaV3OnRequest(): void
     {
-        $config = new ModuleConfig(recaptchaVersion: 'v3');
+        $config = new ModuleConfig(recaptchaVersion: RecaptchaVersion::V3);
         $form = new RecoveryForm($config, $this->createTranslator(), RecoveryForm::SCENARIO_REQUEST);
         $rules = $form->getRules();
         $this->assertArrayHasKey('gRecaptchaResponse', $rules);

@@ -6,6 +6,7 @@ namespace YiiRocks\Voyti\tests\Form\Auth;
 
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Form\Auth\RegistrationForm;
+use YiiRocks\Voyti\Helper\RecaptchaVersion;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Translator\TranslatorInterface;
 
@@ -102,7 +103,7 @@ final class RegistrationFormTest extends TestCase
 
     public function testGetRulesWithRecaptchaV2(): void
     {
-        $config = new ModuleConfig(recaptchaVersion: 'v2');
+        $config = new ModuleConfig(recaptchaVersion: RecaptchaVersion::V2);
         $form = new RegistrationForm($config, $this->createTranslator());
         $rules = $form->getRules();
         $this->assertArrayHasKey('gRecaptchaResponse', $rules);
@@ -111,7 +112,7 @@ final class RegistrationFormTest extends TestCase
 
     public function testGetRulesWithRecaptchaV3(): void
     {
-        $config = new ModuleConfig(recaptchaVersion: 'v3');
+        $config = new ModuleConfig(recaptchaVersion: RecaptchaVersion::V3);
         $form = new RegistrationForm($config, $this->createTranslator());
         $rules = $form->getRules();
         $this->assertArrayHasKey('gRecaptchaResponse', $rules);

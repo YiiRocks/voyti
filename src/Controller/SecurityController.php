@@ -44,6 +44,8 @@ final readonly class SecurityController
     use RedirectTrait;
     use RenderTrait;
 
+    private const string SESSION_KEY_CREDENTIALS = 'credentials';
+
     public function __construct(
         private TranslatorInterface $translator,
         private WebViewRenderer $viewRenderer,
@@ -110,7 +112,7 @@ final readonly class SecurityController
 
     public function confirm(ServerRequestInterface $request): ResponseInterface
     {
-        $credentials = $this->sessionArray($this->session, 'credentials');
+        $credentials = $this->sessionArray($this->session, self::SESSION_KEY_CREDENTIALS);
         if ($credentials === []) {
             return $this->renderView('security/login', [
                 'model' => new LoginForm($this->config, $this->translator),
@@ -120,7 +122,7 @@ final readonly class SecurityController
             ]);
         }
 
-        $form = new LoginForm($this->config, $this->translator);
+        $form = new LoginForm($this->config, $this->translator, requireTwoFactorAuthenticationCode: true);
         $form->login = $this->stringValue($credentials, 'login');
         $form->password = $this->stringValue($credentials, 'pwd');
         $method = $this->userRepository->findByUsernameOrEmail($form->login)?->getAuthTfType() ?? 'google';
@@ -147,7 +149,7 @@ final readonly class SecurityController
                 }
 
                 if ($isValid) {
-                    $this->session->remove('credentials');
+                    $this->session->remove(self::SESSION_KEY_CREDENTIALS);
                     $currentUser = $this->boolValue($credentials, 'rememberMe')
                         ? $this->currentUser->withAuthTimeout($this->config->rememberLoginLifespan)
                         : $this->currentUser;
@@ -230,7 +232,7 @@ final readonly class SecurityController
                             $this->twoFactorEmailCodeService->run($user);
                         }
 
-                        $this->session->set('credentials', [
+                        $this->session->set(self::SESSION_KEY_CREDENTIALS, [
                             'login' => $form->login,
                             'pwd' => $form->password,
                             'rememberMe' => $form->rememberMe,

@@ -11,6 +11,7 @@ use YiiRocks\Voyti\Controller\ProfileController;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserProfile;
 use YiiRocks\Voyti\Helper\AuthHelper;
+use YiiRocks\Voyti\Helper\ProfileVisibility;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\UserProfileRepository;
 use YiiRocks\Voyti\Repository\UserRepository;
@@ -48,7 +49,7 @@ final class ProfileControllerTest extends TestCase
 
     public function testIsAdminReturnsFalseForGuestIdentity(): void
     {
-        $config = new ModuleConfig(profileVisibility: ProfileController::PROFILE_VISIBILITY_ADMIN);
+        $config = new ModuleConfig(profileVisibility: ProfileVisibility::ADMIN);
         $this->harness = new ControllerHarness($config);
 
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
@@ -71,7 +72,7 @@ final class ProfileControllerTest extends TestCase
 
     public function testIsAdminReturnsFalseForIdentityWithNullId(): void
     {
-        $config = new ModuleConfig(profileVisibility: ProfileController::PROFILE_VISIBILITY_ADMIN);
+        $config = new ModuleConfig(profileVisibility: ProfileVisibility::ADMIN);
         $this->harness = new ControllerHarness($config);
 
         $identity = $this->createMock(User::class);
@@ -96,7 +97,7 @@ final class ProfileControllerTest extends TestCase
 
     public function testShowProfileNotFound(): void
     {
-        $config = new ModuleConfig(profileVisibility: ProfileController::PROFILE_VISIBILITY_PUBLIC);
+        $config = new ModuleConfig(profileVisibility: ProfileVisibility::PUBLIC);
         $this->harness = new ControllerHarness($config);
         $this->currentUser->method('getIdentity')->willReturn(new GuestIdentity());
 
@@ -120,7 +121,7 @@ final class ProfileControllerTest extends TestCase
 
     public function testShowProfileVisibilityAdminDifferentUserAdminAllowed(): void
     {
-        $config = new ModuleConfig(profileVisibility: ProfileController::PROFILE_VISIBILITY_ADMIN);
+        $config = new ModuleConfig(profileVisibility: ProfileVisibility::ADMIN);
         $this->harness = new ControllerHarness($config);
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn('2');
@@ -151,7 +152,7 @@ final class ProfileControllerTest extends TestCase
 
     public function testShowProfileVisibilityAdminDifferentUserNotAdminForbidden(): void
     {
-        $config = new ModuleConfig(profileVisibility: ProfileController::PROFILE_VISIBILITY_ADMIN);
+        $config = new ModuleConfig(profileVisibility: ProfileVisibility::ADMIN);
         $this->harness = new ControllerHarness($config);
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn('2');
@@ -176,7 +177,7 @@ final class ProfileControllerTest extends TestCase
 
     public function testShowProfileVisibilityOwnerDifferentUserForbidden(): void
     {
-        $config = new ModuleConfig(profileVisibility: ProfileController::PROFILE_VISIBILITY_OWNER);
+        $config = new ModuleConfig(profileVisibility: ProfileVisibility::OWNER);
         $this->harness = new ControllerHarness($config);
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn('2');
@@ -200,7 +201,7 @@ final class ProfileControllerTest extends TestCase
 
     public function testShowProfileVisibilityOwnerSameUserAllowed(): void
     {
-        $config = new ModuleConfig(profileVisibility: ProfileController::PROFILE_VISIBILITY_OWNER);
+        $config = new ModuleConfig(profileVisibility: ProfileVisibility::OWNER);
         $this->harness = new ControllerHarness($config);
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn('1');
@@ -230,7 +231,7 @@ final class ProfileControllerTest extends TestCase
 
     public function testShowProfileVisibilityPublicNoAuth(): void
     {
-        $config = new ModuleConfig(profileVisibility: ProfileController::PROFILE_VISIBILITY_PUBLIC);
+        $config = new ModuleConfig(profileVisibility: ProfileVisibility::PUBLIC);
         $this->harness = new ControllerHarness($config);
         $this->currentUser->method('getIdentity')->willReturn(new GuestIdentity());
 
@@ -259,7 +260,7 @@ final class ProfileControllerTest extends TestCase
 
     public function testShowProfileVisibilityUsersAuthenticatedAllowed(): void
     {
-        $config = new ModuleConfig(profileVisibility: ProfileController::PROFILE_VISIBILITY_USERS);
+        $config = new ModuleConfig(profileVisibility: ProfileVisibility::USERS);
         $this->harness = new ControllerHarness($config);
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn('2');
@@ -290,7 +291,7 @@ final class ProfileControllerTest extends TestCase
 
     public function testShowProfileVisibilityUsersNoAuthForbidden(): void
     {
-        $config = new ModuleConfig(profileVisibility: ProfileController::PROFILE_VISIBILITY_USERS);
+        $config = new ModuleConfig(profileVisibility: ProfileVisibility::USERS);
         $this->harness = new ControllerHarness($config);
         $this->currentUser->method('getIdentity')->willReturn(new GuestIdentity());
 

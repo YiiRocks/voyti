@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use YiiRocks\Voyti\Form\Settings\TwoFactorCodeForm;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -10,7 +11,7 @@ use Yiisoft\View\WebView;
 
 /**
  * @var WebView $this
- * @var string $method
+ * @var TwoFactorCodeForm $form
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
  * @var string $csrf
@@ -21,14 +22,11 @@ echo Html::form()
     ->csrf($csrf)
     ->open();
 
-echo Html::hiddenInput('method', $method);
+//echo Html::hiddenInput('method', $form->method);
 
 $tabindex = 0;
 
-echo Html::div()->class('mb-3')->open();
-echo Html::label($translator->translate('voyti.view.two_factor.enter_code', category: 'voyti'))->class('form-label');
-echo Html::textInput('code')->class('form-control')->required()->attribute('tabindex', ++$tabindex);
-echo Html::div()->close();
+echo Field::text($form, 'code')->addInputAttributes(['inputmode' => 'numeric'])->tabIndex(++$tabindex);
 
 echo Field::buttonGroup()
     ->buttons(

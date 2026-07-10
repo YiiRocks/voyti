@@ -106,7 +106,8 @@ if ($moduleConfig->enableTwoFactorAuthentication) {
     $routes[] = Route::get('settings/two-factor-email')->name('voyti/settings-two-factor-email')->action([Controller\SettingsController::class, 'twoFactorEmail']);
     $routes[] = Route::post('settings/two-factor-google/enable')->name('voyti/settings-two-factor-google-enable')->action([Controller\SettingsController::class, 'twoFactorEnable']);
     $routes[] = Route::post('settings/two-factor/disable')->name('voyti/settings-two-factor-disable')->action([Controller\SettingsController::class, 'twoFactorDisable']);
-    $routes[] = Route::post('settings/two-factor/renew')->name('voyti/settings-two-factor-renew')->action([Controller\SettingsController::class, 'twoFactorRenew']);
+    $routes[] = Route::post('settings/two-factor/disable/send-code')->name('voyti/settings-two-factor-disable-send-code')->action([Controller\SettingsController::class, 'twoFactorDisableSendCode']);
+    $routes[] = Route::post('settings/two-factor-google/renew')->name('voyti/settings-two-factor-google-renew')->action([Controller\SettingsController::class, 'twoFactorRenew']);
     $routes[] = Route::post('settings/two-factor-email/send-code')->name('voyti/settings-two-factor-email-send-code')->action([Controller\SettingsController::class, 'twoFactorSendEmailCode']);
 }
 

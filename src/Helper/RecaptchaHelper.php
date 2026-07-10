@@ -40,7 +40,7 @@ final class RecaptchaHelper
 
         $formName = $form->getFormName();
 
-        if ($config->recaptchaVersion === 'v2') {
+        if ($config->recaptchaVersion === RecaptchaVersion::V2) {
             if (!class_exists(RecaptchaV2Field::class)) {
                 // @codeCoverageIgnoreStart
                 // Same as isAvailable(): unreachable while yiirocks/recaptcha is installed in the test environment.

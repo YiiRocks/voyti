@@ -12,8 +12,7 @@ use YiiRocks\Voyti\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\MailService;
-use YiiRocks\Voyti\Strategy\DefaultEmailChangeStrategy;
-use YiiRocks\Voyti\Strategy\SecureEmailChangeStrategy;
+use YiiRocks\Voyti\Strategy\NewEmailChangeStrategy;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
 use YiiRocks\Voyti\tests\Support\MailCapture;
 use Yiisoft\Db\Cache\SchemaCache;
@@ -25,7 +24,7 @@ use Yiisoft\Db\Sqlite\Dsn;
 use Yiisoft\Translator\TranslatorInterface;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
-final class SecureEmailChangeStrategyTest extends TestCase
+final class NewEmailChangeStrategyTest extends TestCase
 {
     private ?ConnectionInterface $connection = null;
 
@@ -46,23 +45,7 @@ final class SecureEmailChangeStrategyTest extends TestCase
         $this->connection = null;
     }
 
-    public function testRunReturnsFalseWhenDefaultFails(): void
-    {
-        $translator = $this->createTranslator();
-        $form = new SettingsForm(new ModuleConfig(), $translator);
-        // No user set -> DefaultEmailChangeStrategy returns false
-        $tokenFactory = new UserTokenFactory(new UserTokenRepository());
-        $mailCapture = new MailCapture();
-        $urlGenerator = new FakeUrlGenerator();
-        $mailService = new MailService($mailCapture, '/tmp', $translator, $urlGenerator, 'App');
-        $defaultStrategy = new DefaultEmailChangeStrategy($form, $tokenFactory, $mailService);
-
-        $strategy = new SecureEmailChangeStrategy($form, $tokenFactory, $mailService, $defaultStrategy);
-
-        $this->assertFalse($strategy->run());
-    }
-
-    public function testRunReturnsTrueOnSuccess(): void
+    public function testRunPersistsTokenWithRealUserIdWhenUserSaved(): void
     {
         $this->initDb();
 
@@ -74,6 +57,7 @@ final class SecureEmailChangeStrategyTest extends TestCase
         $form->email = 'new@example.com';
 
         $tokenFactory = new UserTokenFactory(new UserTokenRepository());
+
         $mailCapture = new MailCapture();
         $urlGenerator = new FakeUrlGenerator();
         $mailService = new MailService(
@@ -83,18 +67,112 @@ final class SecureEmailChangeStrategyTest extends TestCase
             $urlGenerator,
             'App',
         );
-        $defaultStrategy = new DefaultEmailChangeStrategy($form, $tokenFactory, $mailService);
 
-        $strategy = new SecureEmailChangeStrategy($form, $tokenFactory, $mailService, $defaultStrategy);
+        $strategy = new NewEmailChangeStrategy($form, $tokenFactory, $mailService);
 
         $this->assertTrue($strategy->run());
-        $this->assertCount(2, $mailCapture->getSentMessages());
 
         $this->assertSame(
             (int) $user->getId(),
             (int) $this->connection->createCommand(
                 'SELECT "user_id" FROM "user_token" WHERE "type" = :type',
-                ['type' => 3],
+                ['type' => 2],
+            )->queryScalar(),
+        );
+    }
+
+    public function testRunPersistsTokenWithZeroUserIdWhenUserUnsaved(): void
+    {
+        $this->initDb();
+
+        $translator = $this->createTranslator();
+
+        $user = new User();
+        $user->setUsername('testuser');
+        $user->setEmail('old@example.com');
+        $user->setPasswordHash('hash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $this->assertNull($user->getId());
+
+        $form = new SettingsForm(new ModuleConfig(), $translator);
+        $form->setUser($user);
+        $form->email = 'new@example.com';
+
+        $tokenFactory = new UserTokenFactory(new UserTokenRepository());
+
+        $mailCapture = new MailCapture();
+        $urlGenerator = new FakeUrlGenerator();
+        $mailService = new MailService(
+            $mailCapture,
+            __DIR__ . '/../../resources/mail',
+            $translator,
+            $urlGenerator,
+            'App',
+        );
+
+        $strategy = new NewEmailChangeStrategy($form, $tokenFactory, $mailService);
+
+        $this->assertTrue($strategy->run());
+
+        $this->assertSame(
+            0,
+            (int) $this->connection->createCommand(
+                'SELECT "user_id" FROM "user_token" WHERE "type" = :type',
+                ['type' => 2],
+            )->queryScalar(),
+        );
+    }
+
+    public function testRunReturnsFalseWhenUserIsNull(): void
+    {
+        $translator = $this->createTranslator();
+        $form = new SettingsForm(new ModuleConfig(), $translator);
+        $mailCapture = new MailCapture();
+        $urlGenerator = new FakeUrlGenerator();
+        $mailService = new MailService($mailCapture, '/tmp', $translator, $urlGenerator, 'App');
+        $tokenFactory = new UserTokenFactory(new UserTokenRepository());
+
+        $strategy = new NewEmailChangeStrategy($form, $tokenFactory, $mailService);
+
+        $this->assertFalse($strategy->run());
+    }
+
+    public function testRunReturnsTrueWhenMailSucceeds(): void
+    {
+        $this->initDb();
+
+        $user = $this->createUser();
+        $translator = $this->createTranslator();
+
+        $form = new SettingsForm(new ModuleConfig(), $translator);
+        $form->setUser($user);
+        $form->email = 'new@example.com';
+
+        $tokenFactory = new UserTokenFactory(new UserTokenRepository());
+
+        $mailCapture = new MailCapture();
+        $urlGenerator = new FakeUrlGenerator();
+        $mailService = new MailService(
+            $mailCapture,
+            __DIR__ . '/../../resources/mail',
+            $translator,
+            $urlGenerator,
+            'App',
+        );
+
+        $strategy = new NewEmailChangeStrategy($form, $tokenFactory, $mailService);
+
+        $this->assertTrue($strategy->run());
+        $this->assertSame('new@example.com', $user->getUnconfirmedEmail());
+        $this->assertCount(1, $mailCapture->getSentMessages());
+
+        $this->assertSame(
+            'new@example.com',
+            $this->connection->createCommand(
+                'SELECT "unconfirmed_email" FROM "user" WHERE "id" = :id',
+                ['id' => $user->getId()],
             )->queryScalar(),
         );
     }
@@ -118,11 +196,11 @@ final class SecureEmailChangeStrategyTest extends TestCase
         return $translator;
     }
 
-    private function createUser(string $email = 'old@example.com'): User
+    private function createUser(): User
     {
         $user = new User();
         $user->setUsername('testuser');
-        $user->setEmail($email);
+        $user->setEmail('old@example.com');
         $user->setPasswordHash('hash');
         $user->setAuthKey('key');
         $user->setCreatedAt(time());

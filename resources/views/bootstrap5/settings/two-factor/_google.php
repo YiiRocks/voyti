@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\Form\Settings\TwoFactorCodeForm;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -53,5 +54,5 @@ if ($secret === null) {
     echo Html::p($translator->translate('voyti.view.two_factor.manual_entry', category: 'voyti') . ' ' . Html::code($secret)->id('voyti-2fa-secret')->render() . $renewButton)->encode(false);
 
     /** @psalm-suppress InvalidScope */
-    echo $this->render('./_code-form', ['method' => 'google', 'url' => $url, 'translator' => $translator, 'csrf' => $csrf]);
+    echo $this->render('./_code-form', ['form' => new TwoFactorCodeForm($translator, 'google'), 'url' => $url, 'translator' => $translator, 'csrf' => $csrf]);
 }

@@ -13,6 +13,7 @@ use YiiRocks\Voyti\Form\Auth\RegistrationForm;
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Form\Settings\UserProfileForm;
 use YiiRocks\Voyti\Helper\AuthHelper;
+use YiiRocks\Voyti\Helper\FlashType;
 use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\UserProfileRepository;
@@ -235,7 +236,7 @@ final readonly class AdminController
     {
         $result = $this->switchIdentityService->run($id);
         if ($result->isSuccess()) {
-            $this->flash->set('success', $this->translator->translate('voyti.admin.switch_identity_success', category: 'voyti'));
+            $this->flash->set(FlashType::SUCCESS, $this->translator->translate('voyti.admin.switch_identity_success', category: 'voyti'));
 
             return $this->redirect($this->url->generate('voyti/settings'));
         }
@@ -247,7 +248,7 @@ final readonly class AdminController
     {
         $result = $this->switchIdentityService->restore();
         if ($result->isSuccess()) {
-            $this->flash->set('success', $this->translator->translate('voyti.admin.switch_identity_restored', category: 'voyti'));
+            $this->flash->set(FlashType::SUCCESS, $this->translator->translate('voyti.admin.switch_identity_restored', category: 'voyti'));
 
             return $this->redirect($this->url->generate('voyti/settings'));
         }

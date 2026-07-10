@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\Form\Settings\TwoFactorCodeForm;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
@@ -26,7 +27,7 @@ if ($emailCodeSent) {
     echo Html::div()->close();
 
     /** @psalm-suppress InvalidScope */
-    echo $this->render('./_code-form', ['method' => 'email', 'url' => $url, 'translator' => $translator, 'csrf' => $csrf]);
+    echo $this->render('./_code-form', ['form' => new TwoFactorCodeForm($translator, 'email'), 'url' => $url, 'translator' => $translator, 'csrf' => $csrf]);
 } else {
     echo Html::div()->class('alert alert-info')->open();
     echo Html::p($translator->translate('voyti.view.two_factor_email.confirm_intro', category: 'voyti'));

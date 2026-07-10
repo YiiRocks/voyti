@@ -6,6 +6,7 @@ namespace YiiRocks\Voyti\Form\Auth;
 
 use YiiRocks\Recaptcha\RecaptchaV2Rule;
 use YiiRocks\Recaptcha\RecaptchaV3Rule;
+use YiiRocks\Voyti\Helper\RecaptchaVersion;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Validator\PasswordComplexityRule;
 use Yiisoft\FormModel\FormModel;
@@ -97,12 +98,12 @@ final class RegistrationForm extends FormModel implements RulesProviderInterface
         }
 
         if ($this->config->recaptchaVersion !== null && class_exists(RecaptchaV3Rule::class)) {
-            $ruleClass = $this->config->recaptchaVersion === 'v2'
+            $ruleClass = $this->config->recaptchaVersion === RecaptchaVersion::V2
                 ? RecaptchaV2Rule::class
                 : RecaptchaV3Rule::class;
 
             $params = [];
-            if ($this->config->recaptchaVersion === 'v3') {
+            if ($this->config->recaptchaVersion === RecaptchaVersion::V3) {
                 $params['threshold'] = 0.5;
                 $params['action'] = 'voyti_' . $this->getFormName();
             }

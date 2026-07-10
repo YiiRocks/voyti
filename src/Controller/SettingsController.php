@@ -106,7 +106,7 @@ final readonly class SettingsController
                 if ($form->email !== $user->getEmail()) {
                     $form->setUser($user);
                     $strategy = $this->emailChangeStrategyFactory->makeByStrategyType(
-                        $this->config->emailChangeStrategy,
+                        $this->config->emailChangeConfirmation,
                         $form,
                     );
                     $strategy->run();
@@ -357,6 +357,35 @@ final readonly class SettingsController
             return $user;
         }
 
+        $body = $this->parsedBody($request);
+        $code = $this->stringValue($body, 'code');
+        $method = $user->getAuthTfType() ?? 'google';
+
+        if ($method === 'email') {
+            $emailValidator = new EmailValidator($user, $code);
+            $isValid = $emailValidator->validate();
+            $errorMessage = $emailValidator->getErrorMessage();
+        } else {
+            $codeValidator = new CodeValidator($user, $code);
+            $codeValidator->setTranslator($this->translator);
+            $isValid = $codeValidator->validate();
+            $errorMessage = $codeValidator->getErrorMessage();
+        }
+
+        if (!$isValid) {
+            return $this->renderView('settings/two-factor', [
+                'user' => $user,
+                'method' => $method,
+                'qrCodeUri' => '',
+                'secret' => null,
+                'emailCodeSent' => $method === 'email',
+                'config' => $this->config,
+                'errors' => ['code' => [$this->twoFactorErrorMessage($errorMessage)]],
+                'flash' => $this->flash,
+                'preloadContent' => true,
+            ]);
+        }
+
         $user->setAuthTfEnabled(false);
         $user->setAuthTfKey(null);
         $user->setAuthTfType(null);
@@ -366,6 +395,32 @@ final readonly class SettingsController
             $this->url->generate('voyti/settings-two-factor'),
             'voyti.settings.two_factor_disabled',
         );
+    }
+
+    public function twoFactorDisableSendCode(ServerRequestInterface $request): ResponseInterface
+    {
+        $user = $this->requireUser();
+        if (!$user instanceof User) {
+            return $user;
+        }
+
+        if (!$user->isAuthTfEnabled() || $user->getAuthTfType() !== 'email') {
+            return $this->redirect($this->url->generate('voyti/settings-two-factor'));
+        }
+
+        $this->twoFactorEmailCodeService->run($user);
+
+        return $this->renderView('settings/two-factor', [
+            'user' => $user,
+            'method' => 'email',
+            'qrCodeUri' => '',
+            'secret' => null,
+            'emailCodeSent' => true,
+            'config' => $this->config,
+            'errors' => [],
+            'flash' => $this->flash,
+            'preloadContent' => true,
+        ]);
     }
 
     public function twoFactorEmail(ServerRequestInterface $request): ResponseInterface

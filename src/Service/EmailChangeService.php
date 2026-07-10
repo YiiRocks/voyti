@@ -9,7 +9,7 @@ use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Repository\UserTokenRepository;
-use YiiRocks\Voyti\Strategy\MailChangeStrategyInterface;
+use YiiRocks\Voyti\Strategy\EmailChangeConfirmation;
 
 final readonly class EmailChangeService
 {
@@ -47,7 +47,7 @@ final readonly class EmailChangeService
             return false;
         }
 
-        if ($this->config->emailChangeStrategy === MailChangeStrategyInterface::TYPE_SECURE) {
+        if ($this->config->emailChangeConfirmation === EmailChangeConfirmation::BOTH) {
             if ($userToken->getType() === UserToken::TYPE_CONFIRM_NEW_EMAIL) {
                 $user->setFlags($user->getFlags() | User::NEW_EMAIL_CONFIRMED);
                 $user->save();
@@ -59,7 +59,7 @@ final readonly class EmailChangeService
         }
 
         if (
-            ($this->config->emailChangeStrategy === MailChangeStrategyInterface::TYPE_DEFAULT)
+            ($this->config->emailChangeConfirmation === EmailChangeConfirmation::NEW)
             || ($user->getFlags() & User::NEW_EMAIL_CONFIRMED && $user->getFlags() & User::OLD_EMAIL_CONFIRMED)
         ) {
             $user->setEmail($user->getUnconfirmedEmail());

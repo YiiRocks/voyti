@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti;
 
 use LogicException;
+use YiiRocks\Voyti\Helper\ProfileVisibility;
+use YiiRocks\Voyti\Helper\RecaptchaVersion;
+use YiiRocks\Voyti\Strategy\EmailChangeConfirmation;
 use Yiisoft\Router\RouteNotFoundException;
 use Yiisoft\Router\UrlGeneratorInterface;
 
@@ -13,7 +16,7 @@ final readonly class ModuleConfig
 
     public function __construct(
         public string $appName = 'Voyti',
-        public ?string $recaptchaVersion = null,
+        public ?RecaptchaVersion $recaptchaVersion = null,
         public bool $enableSessionHistory = true,
         public int|false $numberSessionHistory = 50,
         public bool $enableGdprCompliance = false,
@@ -51,12 +54,12 @@ final readonly class ModuleConfig
         public bool $allowPasswordRecovery = true,
         public bool $allowAdminPasswordRecovery = true,
         public bool $allowAccountDelete = false,
-        public int $emailChangeStrategy = 1,
+        public EmailChangeConfirmation $emailChangeConfirmation = EmailChangeConfirmation::NEW,
         public int $rememberLoginLifespan = 2592000,
         public int $tokenConfirmationLifespan = 86400,
         public int $tokenRecoveryLifespan = 21600,
         public ?string $administratorPermissionName = 'admin',
-        public int $profileVisibility = 2,
+        public ProfileVisibility $profileVisibility = ProfileVisibility::USERS,
         public ?int $maxPasswordAge = null,
         public bool $disableIpLogging = false,
         public string $viewPath = __DIR__ . '/../resources/views/bootstrap5',
@@ -68,9 +71,9 @@ final readonly class ModuleConfig
     }
 
     /**
-     * @return (array|bool|int|null|string)[]
+     * @return (array|bool|int|null|string|EmailChangeConfirmation|ProfileVisibility|RecaptchaVersion)[]
      *
-     * @psalm-return array{appName: string, recaptchaVersion: null|string, enableSessionHistory: bool, numberSessionHistory: false|int, enableGdprCompliance: bool, gdprExportProperties: list<string>, gdprAnonymizePrefix: string, enableTwoFactorAuthentication: bool, twoFactorAuthenticationForcedPermissions: array<array-key, string>, enableRegistration: bool, enableSocialNetworkRegistration: bool, socialNetworkClients: array<string, array<string, mixed>>, enableEmailConfirmation: bool, enableSwitchIdentities: bool, switchIdentitySessionKey: null|string, loginRoute: string, accountSettingsRoute: string, homeRoute: string, mailAdminOnRegister: null|string, enablePasswordExpiration: bool, enablePasswordComplexity: bool, generatePasswords: bool, allowPasswordRecovery: bool, allowAdminPasswordRecovery: bool, allowAccountDelete: bool, emailChangeStrategy: int, rememberLoginLifespan: int, tokenConfirmationLifespan: int, tokenRecoveryLifespan: int, administratorPermissionName: null|string, profileVisibility: int, maxPasswordAge: int|null, disableIpLogging: bool, viewPath: string, mailPath: string, enableRestApi: bool, adminRestPrefix: string, apiTokenLifespan: int|null}
+     * @psalm-return array{appName: string, recaptchaVersion: null|RecaptchaVersion, enableSessionHistory: bool, numberSessionHistory: false|int, enableGdprCompliance: bool, gdprExportProperties: list<string>, gdprAnonymizePrefix: string, enableTwoFactorAuthentication: bool, twoFactorAuthenticationForcedPermissions: array<array-key, string>, enableRegistration: bool, enableSocialNetworkRegistration: bool, socialNetworkClients: array<string, array<string, mixed>>, enableEmailConfirmation: bool, enableSwitchIdentities: bool, switchIdentitySessionKey: null|string, loginRoute: string, accountSettingsRoute: string, homeRoute: string, mailAdminOnRegister: null|string, enablePasswordExpiration: bool, enablePasswordComplexity: bool, generatePasswords: bool, allowPasswordRecovery: bool, allowAdminPasswordRecovery: bool, allowAccountDelete: bool, emailChangeConfirmation: EmailChangeConfirmation, rememberLoginLifespan: int, tokenConfirmationLifespan: int, tokenRecoveryLifespan: int, administratorPermissionName: null|string, profileVisibility: ProfileVisibility, maxPasswordAge: int|null, disableIpLogging: bool, viewPath: string, mailPath: string, enableRestApi: bool, adminRestPrefix: string, apiTokenLifespan: int|null}
      */
     public static function defaults(): array
     {

@@ -11,7 +11,7 @@ use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\EmailChangeService;
-use YiiRocks\Voyti\Strategy\MailChangeStrategyInterface;
+use YiiRocks\Voyti\Strategy\EmailChangeConfirmation;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 
 final class EmailChangeServiceTest extends TestCase
@@ -36,7 +36,7 @@ final class EmailChangeServiceTest extends TestCase
     public function testRunDefaultStrategy(): void
     {
         $config = new ModuleConfig(
-            emailChangeStrategy: MailChangeStrategyInterface::TYPE_DEFAULT,
+            emailChangeConfirmation: EmailChangeConfirmation::NEW,
             tokenConfirmationLifespan: 999999,
         );
         $service = new EmailChangeService($config, $this->userTokenRepository, $this->userRepository);
@@ -81,7 +81,7 @@ final class EmailChangeServiceTest extends TestCase
     public function testRunInsecureStrategyOnlyNewFlagDoesNotChangeEmail(): void
     {
         $config = new ModuleConfig(
-            emailChangeStrategy: MailChangeStrategyInterface::TYPE_INSECURE,
+            emailChangeConfirmation: EmailChangeConfirmation::NONE,
             tokenConfirmationLifespan: 999999,
         );
         $service = new EmailChangeService($config, $this->userTokenRepository, $this->userRepository);
@@ -101,7 +101,7 @@ final class EmailChangeServiceTest extends TestCase
     public function testRunSecureOldEmailTokenOnlyOldFlagDoesNotChangeEmail(): void
     {
         $config = new ModuleConfig(
-            emailChangeStrategy: MailChangeStrategyInterface::TYPE_SECURE,
+            emailChangeConfirmation: EmailChangeConfirmation::BOTH,
             tokenConfirmationLifespan: 999999,
         );
         $service = new EmailChangeService($config, $this->userTokenRepository, $this->userRepository);
@@ -121,7 +121,7 @@ final class EmailChangeServiceTest extends TestCase
     public function testRunSecureOldEmailTokenWithoutInitialFlagSetsOldFlag(): void
     {
         $config = new ModuleConfig(
-            emailChangeStrategy: MailChangeStrategyInterface::TYPE_SECURE,
+            emailChangeConfirmation: EmailChangeConfirmation::BOTH,
             tokenConfirmationLifespan: 999999,
         );
         $service = new EmailChangeService($config, $this->userTokenRepository, $this->userRepository);
@@ -139,7 +139,7 @@ final class EmailChangeServiceTest extends TestCase
     public function testRunSecureStrategyBothFlagsAlreadySet(): void
     {
         $config = new ModuleConfig(
-            emailChangeStrategy: MailChangeStrategyInterface::TYPE_SECURE,
+            emailChangeConfirmation: EmailChangeConfirmation::BOTH,
             tokenConfirmationLifespan: 999999,
         );
         $service = new EmailChangeService($config, $this->userTokenRepository, $this->userRepository);
@@ -160,7 +160,7 @@ final class EmailChangeServiceTest extends TestCase
     public function testRunSecureStrategyNewEmailToken(): void
     {
         $config = new ModuleConfig(
-            emailChangeStrategy: MailChangeStrategyInterface::TYPE_SECURE,
+            emailChangeConfirmation: EmailChangeConfirmation::BOTH,
             tokenConfirmationLifespan: 999999,
         );
         $service = new EmailChangeService($config, $this->userTokenRepository, $this->userRepository);
@@ -183,7 +183,7 @@ final class EmailChangeServiceTest extends TestCase
     public function testRunSecureStrategyNewEmailTokenWithBothFlagsDoesNotChangeEmail(): void
     {
         $config = new ModuleConfig(
-            emailChangeStrategy: MailChangeStrategyInterface::TYPE_SECURE,
+            emailChangeConfirmation: EmailChangeConfirmation::BOTH,
             tokenConfirmationLifespan: 999999,
         );
         $service = new EmailChangeService($config, $this->userTokenRepository, $this->userRepository);
@@ -204,7 +204,7 @@ final class EmailChangeServiceTest extends TestCase
     public function testRunSecureStrategyOldEmailToken(): void
     {
         $config = new ModuleConfig(
-            emailChangeStrategy: MailChangeStrategyInterface::TYPE_SECURE,
+            emailChangeConfirmation: EmailChangeConfirmation::BOTH,
             tokenConfirmationLifespan: 999999,
         );
         $service = new EmailChangeService($config, $this->userTokenRepository, $this->userRepository);
@@ -239,7 +239,7 @@ final class EmailChangeServiceTest extends TestCase
     public function testRunTokenExpiredReturnsFalseEvenWhenEmailCouldChange(): void
     {
         $config = new ModuleConfig(
-            emailChangeStrategy: MailChangeStrategyInterface::TYPE_DEFAULT,
+            emailChangeConfirmation: EmailChangeConfirmation::NEW,
             tokenConfirmationLifespan: 100,
         );
         $service = new EmailChangeService($config, $this->userTokenRepository, $this->userRepository);
@@ -291,7 +291,7 @@ final class EmailChangeServiceTest extends TestCase
     public function testRunWithNullUserIdUsesZeroNotMinusOne(): void
     {
         $config = new ModuleConfig(
-            emailChangeStrategy: MailChangeStrategyInterface::TYPE_DEFAULT,
+            emailChangeConfirmation: EmailChangeConfirmation::NEW,
             tokenConfirmationLifespan: 999999,
         );
         $service = new EmailChangeService($config, $this->userTokenRepository, $this->userRepository);
@@ -320,7 +320,7 @@ final class EmailChangeServiceTest extends TestCase
     public function testRunWithNullUserIdUsesZeroNotOne(): void
     {
         $config = new ModuleConfig(
-            emailChangeStrategy: MailChangeStrategyInterface::TYPE_DEFAULT,
+            emailChangeConfirmation: EmailChangeConfirmation::NEW,
             tokenConfirmationLifespan: 999999,
         );
         $service = new EmailChangeService($config, $this->userTokenRepository, $this->userRepository);

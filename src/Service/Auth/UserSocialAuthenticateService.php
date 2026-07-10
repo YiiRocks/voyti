@@ -18,6 +18,8 @@ use Yiisoft\User\CurrentUser;
 
 final readonly class UserSocialAuthenticateService
 {
+    private const string SESSION_KEY = 'oauth_client_data';
+
     public function __construct(
         private ModuleConfig $config,
         private UserSocialAccountRepository $userSocialAccountRepository,
@@ -40,7 +42,7 @@ final readonly class UserSocialAuthenticateService
 
         if ($clientId === '') {
             /** @var mixed $oauthData */
-            $oauthData = $this->session->get('oauth_client_data');
+            $oauthData = $this->session->get(self::SESSION_KEY);
             if ($oauthData !== null && is_array($oauthData)) {
                 $clientId = (string)($oauthData['user_id'] ?? '');
                 $userAttributes = array_merge($oauthData, $userAttributes);
@@ -70,7 +72,7 @@ final readonly class UserSocialAuthenticateService
             $this->updateLastLoginMetadata($user, $serverParams);
             $this->eventDispatcher->dispatch(new AfterLoginEvent($user));
 
-            $this->session->remove('oauth_client_data');
+            $this->session->remove(self::SESSION_KEY);
 
             return ServiceResult::success();
         }
@@ -80,7 +82,7 @@ final readonly class UserSocialAuthenticateService
             return ServiceResult::failure('Unable to prepare the social account connection');
         }
 
-        $this->session->set('social_network_account_code', $code);
+        $this->session->set(PendingSocialAccountService::SESSION_KEY, $code);
 
         return ServiceResult::success();
     }

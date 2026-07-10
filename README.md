@@ -41,7 +41,7 @@ Ported from [2amigos/yii2-usuario](https://github.com/2amigos/yii2-usuario) and 
 - **Session Management** — Session history tracking and termination
 - **GDPR Compliance** — Consent management, data export, anonymized deletion with admin notification
 - **Password Policies** — Minimum complexity requirements, max age enforcement via middleware
-- **Email Change Strategies** — Three modes: insecure (immediate), default (confirm new address), secure (confirm both old and new)
+- **Email Change Confirmation** — Three modes: immediate, confirm new address, confirm both old and new
 - **REST API** — Optional JSON API for user CRUD
 - **CAPTCHA** — Optional reCAPTCHA v2/v3 integration via `yiirocks/recaptcha`
 - **i18n** — Built-in translations for multiple languages
@@ -149,10 +149,12 @@ Override Voyti params in your app's `config/params.php` using the
 `yiirocks/voyti` key:
 
 ```php
+use YiiRocks\Voyti\Helper\RecaptchaVersion;
+
 return [
     'yiirocks/voyti' => [
         'enableTwoFactorAuthentication' => true,
-        'recaptchaVersion' => 'v3',
+        'recaptchaVersion' => RecaptchaVersion::V3,
     ],
 ];
 ```
@@ -180,14 +182,14 @@ Below are all top-level `yiirocks/voyti` options, followed by the nested `social
 | `allowPasswordRecovery` | `bool` | `true` | Allow password recovery |
 | `allowAdminPasswordRecovery` | `bool` | `true` | Allow admin-initiated password recovery |
 | `allowAccountDelete` | `bool` | `false` | Allow users to delete their account |
-| `emailChangeStrategy` | `int` | `1` | 0=insecure, 1=default, 2=secure |
+| `emailChangeConfirmation` | `EmailChangeConfirmation` | `EmailChangeConfirmation::NEW` | `NONE` (change immediately), `NEW` (confirm new address only), or `BOTH` (confirm both old and new addresses) |
 | `rememberLoginLifespan` | `int` | `2592000` | Remember-me cookie lifetime and idle auth timeout in seconds |
 | `tokenConfirmationLifespan` | `int` | `86400` | Confirmation token validity |
 | `tokenRecoveryLifespan` | `int` | `21600` | Recovery token validity |
 | `enableSwitchIdentities` | `bool` | `true` | Allow admin to switch user identities |
 | `switchIdentitySessionKey` | `?string` | `'voyti_original_user'` | Session key for switched identity |
 | `mailAdminOnRegister` | `?string` | `null` | Email notified on new registration |
-| `recaptchaVersion` | `?string` | `null` | `'v2'`, `'v3'`, or `null` to disable |
+| `recaptchaVersion` | `?RecaptchaVersion` | `null` | `RecaptchaVersion::V2`, `RecaptchaVersion::V3`, or `null` to disable |
 
 ### Two-Factor Authentication
 
@@ -229,7 +231,7 @@ Below are all top-level `yiirocks/voyti` options, followed by the nested `social
 | `maxPasswordAge` | `?int` | `null` | Max password age in days |
 | `enablePasswordComplexity` | `bool` | `false` | Require passwords to contain an uppercase letter, a lowercase letter, a digit, and a special character |
 | `administratorPermissionName` | `?string` | `'admin'` | Permission/role name granting admin access |
-| `profileVisibility` | `int` | `2` | Profile visibility: `0` = owner only, `1` = owner + admins, `2` = any authenticated user, `3` = public |
+| `profileVisibility` | `ProfileVisibility` | `ProfileVisibility::USERS` | Profile visibility: `OWNER` = owner only, `ADMIN` = owner + admins, `USERS` = any authenticated user, `PUBLIC` = public |
 
 ### Views & Mail
 
@@ -400,13 +402,13 @@ The library does not provide a menu model or navigation contract. It only expose
 | `voyti/settings-privacy-export` | `GET` | `settings/privacy/export` | Export user data. Only registered when `enableGdprCompliance` is `true` |
 | `voyti/settings-privacy-anonymize` | `GET`, `POST` | `settings/privacy/anonymize` | Anonymize account (blanks email/username, blocks login; row is kept). Only registered when `enableGdprCompliance` is `true` |
 | `voyti/settings-privacy-delete` | `GET`, `POST` | `settings/privacy/delete` | Account deletion (hard delete). Only registered when `allowAccountDelete` is `true` |
-| `voyti/settings-two-factor` | `GET`, `POST` | `settings/two-factor` | Two-factor status/entry point: shows the disable form when enabled, otherwise renders the shell with an empty content area that immediately loads `voyti/settings-two-factor-google`. Only registered when `enableTwoFactorAuthentication` is `true` |
-| `voyti/settings-two-factor-google` | `GET` | `settings/two-factor-google` | Google Authenticator setup page (method-selector buttons + QR/secret). Only registered when `enableTwoFactorAuthentication` is `true` |
+| `voyti/settings-two-factor` | `GET`, `POST` | `settings/two-factor` | Two-factor status/entry point. Only registered when `enableTwoFactorAuthentication` is `true` |
 | `voyti/settings-two-factor-email` | `GET` | `settings/two-factor-email` | Email 2FA setup page (method-selector buttons + confirm/send screen). Only registered when `enableTwoFactorAuthentication` is `true` |
-| `voyti/settings-two-factor-google-enable` | `POST` | `settings/two-factor-google/enable` | Enable 2FA - shared by both the Google Authenticator and email code-entry forms. Only registered when `enableTwoFactorAuthentication` is `true` |
-| `voyti/settings-two-factor-disable` | `POST` | `settings/two-factor/disable` | Disable 2FA. Only registered when `enableTwoFactorAuthentication` is `true` |
-| `voyti/settings-two-factor-renew` | `POST` | `settings/two-factor/renew` | Regenerate the Google Authenticator secret/QR code via AJAX. Only registered when `enableTwoFactorAuthentication` is `true` |
 | `voyti/settings-two-factor-email-send-code` | `POST` | `settings/two-factor-email/send-code` | Send the email 2FA one-time code after explicit confirmation. Only registered when `enableTwoFactorAuthentication` is `true` |
+| `voyti/settings-two-factor-google` | `GET` | `settings/two-factor-google` | Google Authenticator setup page (method-selector buttons + QR/secret). Only registered when `enableTwoFactorAuthentication` is `true` |
+| `voyti/settings-two-factor-google-enable` | `POST` | `settings/two-factor-google/enable` | Enable 2FA - shared by both the Google Authenticator and email code-entry forms. Only registered when `enableTwoFactorAuthentication` is `true` |
+| `voyti/settings-two-factor-google-renew` | `POST` | `settings/two-factor-google/renew` | Regenerate the Google Authenticator secret/QR code via AJAX. Only registered when `enableTwoFactorAuthentication` is `true` |
+| `voyti/settings-two-factor-disable` | `POST` | `settings/two-factor/disable` | Disable 2FA. Only registered when `enableTwoFactorAuthentication` is `true` |
 | `voyti/settings-confirm` | `GET` | `settings/confirm/{code}` | Confirm account changes |
 | `voyti/admin` | `GET` | `admin` | Admin dashboard |
 | `voyti/admin-create` | `GET`, `POST` | `admin/create` | Create user |

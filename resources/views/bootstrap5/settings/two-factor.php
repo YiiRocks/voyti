@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\Form\Settings\TwoFactorCodeForm;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
@@ -51,23 +52,49 @@ if (!empty($errors)) {
 }
 
 if ($user->isAuthTfEnabled()) {
-    $activeMethodTitle = $translator->translate(
-        $method === 'email' ? 'voyti.view.two_factor_email.title' : 'voyti.view.two_factor.title',
+    $methodName = $translator->translate(
+        $method === 'email' ? 'voyti.view.two_factor_email.method_name' : 'voyti.view.two_factor_google.button_label',
         category: 'voyti',
     );
-    echo Html::p($translator->translate('voyti.view.two_factor.enabled', category: 'voyti') . ' (' . $activeMethodTitle . ')');
+    echo Html::p($translator->translate('voyti.view.two_factor.enabled_with_method', ['method' => $methodName], category: 'voyti'));
 
-    echo Html::form()
-        ->post($url->generate('voyti/settings-two-factor-disable'))
-        ->csrf($csrf)
-        ->open();
+    if ($method === 'email' && !$emailCodeSent) {
+        echo Html::div()->class('alert alert-info')->open();
+        echo $translator->translate('voyti.view.two_factor.disable_confirm_intro', category: 'voyti');
+        echo Html::div()->close();
 
-    echo Field::buttonGroup()
-        ->buttons(
-            Html::submitButton($translator->translate('voyti.view.two_factor.disable', category: 'voyti'))->class('btn', 'btn-danger')->attribute('tabindex', 1)
-        );
+        echo Html::form()
+            ->post($url->generate('voyti/settings-two-factor-disable-send-code'))
+            ->csrf($csrf)
+            ->open();
 
-    echo Html::form()->close();
+        echo Field::buttonGroup()
+            ->buttons(
+                Html::submitButton($translator->translate('voyti.view.two_factor.disable_send_code', category: 'voyti'))->class('btn', 'btn-danger')->attribute('tabindex', 1),
+            );
+
+        echo Html::form()->close();
+    } else {
+        if ($method === 'email') {
+            echo Html::div()->class('alert alert-info')->open();
+            echo $translator->translate('voyti.view.two_factor_email.enter_code', category: 'voyti');
+            echo Html::div()->close();
+        }
+
+        echo Html::form()
+            ->post($url->generate('voyti/settings-two-factor-disable'))
+            ->csrf($csrf)
+            ->open();
+
+        echo Field::text(new TwoFactorCodeForm($translator, $method), 'code')->addInputAttributes(['inputmode' => 'numeric'])->tabIndex(1);
+
+        echo Field::buttonGroup()
+            ->buttons(
+                Html::submitButton($translator->translate('voyti.view.two_factor.disable', category: 'voyti'))->class('btn', 'btn-danger')->attribute('tabindex', 2)
+            );
+
+        echo Html::form()->close();
+    }
 } else {
     $googleUrl = $url->generate('voyti/settings-two-factor-google');
     $emailUrl = $url->generate('voyti/settings-two-factor-email');
@@ -116,7 +143,7 @@ if ($user->isAuthTfEnabled()) {
     echo Html::div()->close();
 
     $switchConfig = [
-        'renewUrl' => $url->generate('voyti/settings-two-factor-renew'),
+        'renewUrl' => $url->generate('voyti/settings-two-factor-google-renew'),
         // Json::encode() only reads public properties via get_object_vars(), so passing
         // the Csrf object itself would silently serialize as {} - force the string value.
         'csrfToken' => $csrf . '',

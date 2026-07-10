@@ -7,6 +7,7 @@ namespace YiiRocks\Voyti\tests\Listener;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
+use YiiRocks\Voyti\Helper\FlashType;
 use YiiRocks\Voyti\Listener\PasswordExpirationListener;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\ExpireService;
@@ -68,7 +69,7 @@ final class PasswordExpirationListenerTest extends TestCase
         $translator->method('translate')->willReturnCallback(fn (string $id) => $id);
 
         $flash = $this->createMock(FlashInterface::class);
-        $flash->expects(self::once())->method('set')->with('warning', 'voyti.security.password_expired');
+        $flash->expects(self::once())->method('set')->with(FlashType::WARNING, 'voyti.security.password_expired');
 
         $listener = new PasswordExpirationListener($expireService, $config, $translator, $flash);
         $user = new User();

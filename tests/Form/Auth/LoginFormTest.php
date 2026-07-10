@@ -7,8 +7,12 @@ namespace YiiRocks\Voyti\tests\Form\Auth;
 use PHPUnit\Framework\Attributes\DoesNotPerformAssertions;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Form\Auth\LoginForm;
+use YiiRocks\Voyti\Helper\RecaptchaVersion;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\Validator\Rule\Integer;
+use Yiisoft\Validator\Rule\Length;
+use Yiisoft\Validator\Rule\Required;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class LoginFormTest extends TestCase
@@ -28,7 +32,7 @@ final class LoginFormTest extends TestCase
     #[DoesNotPerformAssertions]
     public function testConstructWithRecaptchaV2NoException(): void
     {
-        $config = new ModuleConfig(recaptchaVersion: 'v2');
+        $config = new ModuleConfig(recaptchaVersion: RecaptchaVersion::V2);
         $form = new LoginForm($config, $this->createTranslator());
         $form->getRules();
     }
@@ -36,7 +40,7 @@ final class LoginFormTest extends TestCase
     #[DoesNotPerformAssertions]
     public function testConstructWithRecaptchaV3NoException(): void
     {
-        $config = new ModuleConfig(recaptchaVersion: 'v3');
+        $config = new ModuleConfig(recaptchaVersion: RecaptchaVersion::V3);
         $form = new LoginForm($config, $this->createTranslator());
         $form->getRules();
     }
@@ -71,11 +75,12 @@ final class LoginFormTest extends TestCase
         $this->assertArrayHasKey('login', $rules);
         $this->assertArrayHasKey('password', $rules);
         $this->assertArrayNotHasKey('gRecaptchaResponse', $rules);
+        $this->assertArrayNotHasKey('twoFactorAuthenticationCode', $rules);
     }
 
     public function testGetRulesWithRecaptchaV2(): void
     {
-        $config = new ModuleConfig(recaptchaVersion: 'v2');
+        $config = new ModuleConfig(recaptchaVersion: RecaptchaVersion::V2);
         $form = new LoginForm($config, $this->createTranslator());
         $rules = $form->getRules();
         $this->assertArrayHasKey('gRecaptchaResponse', $rules);
@@ -84,7 +89,7 @@ final class LoginFormTest extends TestCase
 
     public function testGetRulesWithRecaptchaV3(): void
     {
-        $config = new ModuleConfig(recaptchaVersion: 'v3');
+        $config = new ModuleConfig(recaptchaVersion: RecaptchaVersion::V3);
         $form = new LoginForm($config, $this->createTranslator());
         $rules = $form->getRules();
         $this->assertArrayHasKey('gRecaptchaResponse', $rules);
@@ -93,6 +98,18 @@ final class LoginFormTest extends TestCase
         $this->assertInstanceOf(\YiiRocks\Recaptcha\RecaptchaV3Rule::class, $rule);
         $this->assertSame(0.5, $rule->getThreshold());
         $this->assertSame('voyti_login', $rule->getAction());
+    }
+
+    public function testGetRulesWithRequireTwoFactorAuthenticationCode(): void
+    {
+        $form = new LoginForm(new ModuleConfig(), $this->createTranslator(), requireTwoFactorAuthenticationCode: true);
+        $rules = $form->getRules();
+        $this->assertArrayHasKey('twoFactorAuthenticationCode', $rules);
+        $this->assertCount(3, $rules['twoFactorAuthenticationCode']);
+        $this->assertInstanceOf(Required::class, $rules['twoFactorAuthenticationCode'][0]);
+        $this->assertInstanceOf(Integer::class, $rules['twoFactorAuthenticationCode'][1]);
+        $this->assertInstanceOf(Length::class, $rules['twoFactorAuthenticationCode'][2]);
+        $this->assertSame(6, $rules['twoFactorAuthenticationCode'][2]->getExactly());
     }
 
     public function testRememberMeDefaultsToFalse(): void

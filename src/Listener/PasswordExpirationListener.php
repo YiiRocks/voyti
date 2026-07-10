@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Listener;
 
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
+use YiiRocks\Voyti\Helper\FlashType;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\ExpireService;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -27,7 +28,7 @@ final readonly class PasswordExpirationListener
         }
         $user = $event->getUser();
         if ($this->passwordExpireService->checkPasswordExpiration($user)) {
-            $this->flash?->set('warning', $this->translator->translate('voyti.security.password_expired', category: 'voyti'));
+            $this->flash?->set(FlashType::WARNING, $this->translator->translate('voyti.security.password_expired', category: 'voyti'));
         }
     }
 }

@@ -7,6 +7,7 @@ namespace YiiRocks\Voyti\tests\Helper;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Recaptcha\RecaptchaRegistry;
 use YiiRocks\Voyti\Helper\RecaptchaHelper;
+use YiiRocks\Voyti\Helper\RecaptchaVersion;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\FormModel\FormModelInterface;
@@ -47,7 +48,7 @@ final class RecaptchaHelperTest extends TestCase
         $client = $this->buildClient('v2-site-key', 'v3-site-key');
         RecaptchaRegistry::configure($client);
 
-        $config = new ModuleConfig(recaptchaVersion: 'v2');
+        $config = new ModuleConfig(recaptchaVersion: RecaptchaVersion::V2);
         $form = new RecaptchaTestForm();
 
         $html = RecaptchaHelper::render($form, $config);
@@ -61,7 +62,7 @@ final class RecaptchaHelperTest extends TestCase
         $client = $this->buildClient('v2-site-key', 'v3-site-key');
         RecaptchaRegistry::configure($client);
 
-        $config = new ModuleConfig(recaptchaVersion: 'v3');
+        $config = new ModuleConfig(recaptchaVersion: RecaptchaVersion::V3);
         $form = new RecaptchaTestForm();
 
         $html = RecaptchaHelper::render($form, $config);
@@ -73,7 +74,7 @@ final class RecaptchaHelperTest extends TestCase
 
     public function testRenderWithV2ThrowsMissingSiteKeyException(): void
     {
-        $config = new ModuleConfig(recaptchaVersion: 'v2');
+        $config = new ModuleConfig(recaptchaVersion: RecaptchaVersion::V2);
         $form = $this->createMock(FormModelInterface::class);
         $form->method('getFormName')->willReturn('registerForm');
 
@@ -84,7 +85,7 @@ final class RecaptchaHelperTest extends TestCase
 
     public function testRenderWithV3ThrowsMissingSiteKeyException(): void
     {
-        $config = new ModuleConfig(recaptchaVersion: 'v3');
+        $config = new ModuleConfig(recaptchaVersion: RecaptchaVersion::V3);
         $form = $this->createMock(FormModelInterface::class);
         $form->method('getFormName')->willReturn('registerForm');
 

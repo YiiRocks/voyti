@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests;
 
 use PHPUnit\Framework\TestCase;
+use YiiRocks\Voyti\Helper\ProfileVisibility;
+use YiiRocks\Voyti\Helper\RecaptchaVersion;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Strategy\EmailChangeConfirmation;
 
 final class ModuleConfigTest extends TestCase
 {
@@ -14,7 +17,7 @@ final class ModuleConfigTest extends TestCase
     {
         $config = new ModuleConfig(
             appName: 'Custom',
-            recaptchaVersion: 'v3',
+            recaptchaVersion: RecaptchaVersion::V3,
             enableSessionHistory: false,
             numberSessionHistory: false,
             enableGdprCompliance: true,
@@ -34,12 +37,12 @@ final class ModuleConfigTest extends TestCase
             allowPasswordRecovery: false,
             allowAdminPasswordRecovery: false,
             allowAccountDelete: true,
-            emailChangeStrategy: 2,
+            emailChangeConfirmation: EmailChangeConfirmation::BOTH,
             rememberLoginLifespan: 3600,
             tokenConfirmationLifespan: 7200,
             tokenRecoveryLifespan: 1800,
             administratorPermissionName: 'superadmin',
-            profileVisibility: 1,
+            profileVisibility: ProfileVisibility::ADMIN,
             maxPasswordAge: 90,
             disableIpLogging: true,
             enableRestApi: true,
@@ -47,7 +50,7 @@ final class ModuleConfigTest extends TestCase
             apiTokenLifespan: 3600,
         );
         self::assertSame('Custom', $config->appName);
-        self::assertSame('v3', $config->recaptchaVersion);
+        self::assertSame(RecaptchaVersion::V3, $config->recaptchaVersion);
         self::assertFalse($config->enableSessionHistory);
         self::assertFalse($config->numberSessionHistory);
         self::assertTrue($config->enableGdprCompliance);
@@ -67,12 +70,12 @@ final class ModuleConfigTest extends TestCase
         self::assertFalse($config->allowPasswordRecovery);
         self::assertFalse($config->allowAdminPasswordRecovery);
         self::assertTrue($config->allowAccountDelete);
-        self::assertSame(2, $config->emailChangeStrategy);
+        self::assertSame(EmailChangeConfirmation::BOTH, $config->emailChangeConfirmation);
         self::assertSame(3600, $config->rememberLoginLifespan);
         self::assertSame(7200, $config->tokenConfirmationLifespan);
         self::assertSame(1800, $config->tokenRecoveryLifespan);
         self::assertSame('superadmin', $config->administratorPermissionName);
-        self::assertSame(1, $config->profileVisibility);
+        self::assertSame(ProfileVisibility::ADMIN, $config->profileVisibility);
         self::assertSame(90, $config->maxPasswordAge);
         self::assertTrue($config->disableIpLogging);
         self::assertTrue($config->enableRestApi);
@@ -100,12 +103,12 @@ final class ModuleConfigTest extends TestCase
         self::assertFalse($config->enablePasswordExpiration);
         self::assertFalse($config->enablePasswordComplexity);
         self::assertFalse($config->generatePasswords);
-        self::assertSame(1, $config->emailChangeStrategy);
+        self::assertSame(EmailChangeConfirmation::NEW, $config->emailChangeConfirmation);
         self::assertSame(2592000, $config->rememberLoginLifespan);
         self::assertSame(86400, $config->tokenConfirmationLifespan);
         self::assertSame(21600, $config->tokenRecoveryLifespan);
         self::assertSame('admin', $config->administratorPermissionName);
-        self::assertSame(2, $config->profileVisibility);
+        self::assertSame(ProfileVisibility::USERS, $config->profileVisibility);
         self::assertNull($config->maxPasswordAge);
         self::assertFalse($config->disableIpLogging);
         self::assertFalse($config->enableRestApi);
@@ -141,7 +144,7 @@ final class ModuleConfigTest extends TestCase
             'allowPasswordRecovery',
             'allowAdminPasswordRecovery',
             'allowAccountDelete',
-            'emailChangeStrategy',
+            'emailChangeConfirmation',
             'rememberLoginLifespan',
             'tokenConfirmationLifespan',
             'tokenRecoveryLifespan',
@@ -210,12 +213,12 @@ final class ModuleConfigTest extends TestCase
         self::assertTrue($config->allowPasswordRecovery);
         self::assertTrue($config->allowAdminPasswordRecovery);
         self::assertFalse($config->allowAccountDelete);
-        self::assertSame(1, $config->emailChangeStrategy);
+        self::assertSame(EmailChangeConfirmation::NEW, $config->emailChangeConfirmation);
         self::assertSame(2592000, $config->rememberLoginLifespan);
         self::assertSame(86400, $config->tokenConfirmationLifespan);
         self::assertSame(21600, $config->tokenRecoveryLifespan);
         self::assertSame('admin', $config->administratorPermissionName);
-        self::assertSame(2, $config->profileVisibility);
+        self::assertSame(ProfileVisibility::USERS, $config->profileVisibility);
         self::assertNull($config->maxPasswordAge);
         self::assertFalse($config->disableIpLogging);
         self::assertFalse($config->enableRestApi);

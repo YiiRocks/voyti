@@ -13,6 +13,7 @@ use RuntimeException;
 use YiiRocks\Voyti\Controller\SecurityController;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserSocialAccount;
+use YiiRocks\Voyti\Form\Auth\LoginForm;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
@@ -244,6 +245,37 @@ final class SecurityControllerTest extends TestCase
         $result = $controller->confirm($request);
 
         $this->assertSame($response, $result);
+    }
+
+    public function testConfirmPostConstructsFormRequiringTwoFactorCode(): void
+    {
+        $controller = $this->createController();
+
+        $this->harness->getSession()->set('credentials', [
+            'login' => 'jdoe',
+            'pwd' => 'secret',
+            'rememberMe' => false,
+        ]);
+
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['twoFactorAuthenticationCode' => '']]);
+
+        $capturedForm = null;
+        $this->validator->method('validate')->willReturnCallback(
+            function (object $model) use (&$capturedForm): Result {
+                $capturedForm = $model;
+                return new Result();
+            },
+        );
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->method('render')->willReturn($response);
+
+        $result = $controller->confirm($request);
+
+        $this->assertSame($response, $result);
+        $this->assertInstanceOf(LoginForm::class, $capturedForm);
+        $this->assertArrayHasKey('twoFactorAuthenticationCode', $capturedForm->getRules());
     }
 
     public function testConfirmPostSuccessRedirectsToConfiguredRoute(): void

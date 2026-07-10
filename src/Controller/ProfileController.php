@@ -7,6 +7,7 @@ namespace YiiRocks\Voyti\Controller;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Helper\AuthHelper;
+use YiiRocks\Voyti\Helper\ProfileVisibility;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\UserProfileRepository;
 use YiiRocks\Voyti\Repository\UserRepository;
@@ -20,11 +21,6 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 final readonly class ProfileController
 {
     use RenderTrait;
-    public const int PROFILE_VISIBILITY_ADMIN = 1;
-
-    public const int PROFILE_VISIBILITY_OWNER = 0;
-    public const int PROFILE_VISIBILITY_PUBLIC = 3;
-    public const int PROFILE_VISIBILITY_USERS = 2;
 
     public function __construct(
         private TranslatorInterface $translator,
@@ -44,10 +40,10 @@ final readonly class ProfileController
         $userId = $identity instanceof IdentityInterface ? $identity->getId() : null;
 
         $forbidden = match ($this->config->profileVisibility) {
-            self::PROFILE_VISIBILITY_OWNER => $userId === null || (string) $id !== $userId,
-            self::PROFILE_VISIBILITY_ADMIN => (string) $id !== $userId && !$this->isAdmin($identity),
-            self::PROFILE_VISIBILITY_USERS => $userId === null,
-            default => false,
+            ProfileVisibility::OWNER => $userId === null || (string) $id !== $userId,
+            ProfileVisibility::ADMIN => (string) $id !== $userId && !$this->isAdmin($identity),
+            ProfileVisibility::USERS => $userId === null,
+            ProfileVisibility::PUBLIC => false,
         };
 
         if ($forbidden) {
