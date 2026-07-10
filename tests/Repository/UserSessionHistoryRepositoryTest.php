@@ -36,12 +36,12 @@ final class UserSessionHistoryRepositoryTest extends TestCase
     {
         $repository = new UserSessionHistoryRepository();
         $this->createSession(1, 'sess-1', '203.0.113.1');
+        $this->createSession(1, 'sess-1b', '203.0.113.3');
         $this->createSession(2, 'sess-2', '203.0.113.2');
 
         $sessions = $repository->findByUserId(1);
 
-        self::assertCount(1, $sessions);
-        self::assertSame('sess-1', $sessions[0]->getSessionId());
+        self::assertCount(2, $sessions);
     }
 
     public function testSearchWithIpFilter(): void

@@ -6,8 +6,7 @@ namespace YiiRocks\Voyti\Repository;
 
 use YiiRocks\Voyti\Entity\UserSessionHistory;
 
-/** @extends BaseRepository<UserSessionHistory> */
-final class UserSessionHistoryRepository extends BaseRepository
+final class UserSessionHistoryRepository
 {
     /**
      * @return UserSessionHistory[]
@@ -16,7 +15,9 @@ final class UserSessionHistoryRepository extends BaseRepository
      */
     public function findAllSessionHistory(): array
     {
-        return $this->findAll(UserSessionHistory::class);
+        /** @var list<UserSessionHistory> $sessions */
+        $sessions = UserSessionHistory::query()->all();
+        return $sessions;
     }
 
     /**
@@ -26,7 +27,9 @@ final class UserSessionHistoryRepository extends BaseRepository
      */
     public function findByUserId(int $userId): array
     {
-        return $this->findAll(UserSessionHistory::class, ['user_id' => $userId]);
+        /** @var list<UserSessionHistory> $sessions */
+        $sessions = UserSessionHistory::query()->where(['user_id' => $userId])->all();
+        return $sessions;
     }
 
     /**
@@ -36,7 +39,7 @@ final class UserSessionHistoryRepository extends BaseRepository
      */
     public function search(array $filters = []): array
     {
-        $query = $this->query(UserSessionHistory::class);
+        $query = UserSessionHistory::query();
         if (!empty($filters['user_id'])) {
             $query = $query->where(['user_id' => $filters['user_id']]);
         }

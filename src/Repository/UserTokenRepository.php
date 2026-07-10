@@ -6,22 +6,17 @@ namespace YiiRocks\Voyti\Repository;
 
 use YiiRocks\Voyti\Entity\UserToken;
 
-/** @extends BaseRepository<UserToken> */
-final class UserTokenRepository extends BaseRepository
+final class UserTokenRepository
 {
-    public function __construct()
-    {
-    }
-
     public function deleteAllByUserId(int $userId): void
     {
-        $this->deleteAll(UserToken::class, ['user_id' => $userId]);
+        (new UserToken())->deleteAll(['user_id' => $userId]);
     }
 
     public function findByCodeAndType(string $code, int $type): ?UserToken
     {
         /** @var ?UserToken $token */
-        $token = $this->findOne(UserToken::class, ['code' => $code, 'type' => $type]);
+        $token = UserToken::query()->where(['code' => $code, 'type' => $type])->one();
         return $token;
     }
 
@@ -30,20 +25,22 @@ final class UserTokenRepository extends BaseRepository
      */
     public function findByUserId(int $userId): array
     {
-        return $this->findAll(UserToken::class, ['user_id' => $userId]);
+        /** @var list<UserToken> $tokens */
+        $tokens = UserToken::query()->where(['user_id' => $userId])->all();
+        return $tokens;
     }
 
     public function findByUserIdAndCode(int $userId, string $code): ?UserToken
     {
         /** @var ?UserToken $token */
-        $token = $this->findOne(UserToken::class, ['user_id' => $userId, 'code' => $code]);
+        $token = UserToken::query()->where(['user_id' => $userId, 'code' => $code])->one();
         return $token;
     }
 
     public function findByUserIdAndCodeAndType(int $userId, string $code, int $type): ?UserToken
     {
         /** @var ?UserToken $token */
-        $token = $this->findOne(UserToken::class, ['user_id' => $userId, 'code' => $code, 'type' => $type]);
+        $token = UserToken::query()->where(['user_id' => $userId, 'code' => $code, 'type' => $type])->one();
         return $token;
     }
 

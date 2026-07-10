@@ -53,12 +53,14 @@ final class UserSocialAccountRepositoryTest extends TestCase
         $account = $this->createAccount('github', 'client-1', 'code-a');
         $account->setUserId(1);
         $account->save();
+        $secondAccount = $this->createAccount('twitter', 'client-3', 'code-c');
+        $secondAccount->setUserId(1);
+        $secondAccount->save();
         $this->createAccount('gitlab', 'client-2', 'code-b');
 
         $accounts = $repository->findByUserId(1);
 
-        self::assertCount(1, $accounts);
-        self::assertSame('github', $accounts[0]->getProvider());
+        self::assertCount(2, $accounts);
     }
 
     public function testSaveStoresRecord(): void

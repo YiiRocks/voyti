@@ -9,15 +9,14 @@ use YiiRocks\Voyti\Entity\UserProfile;
 use YiiRocks\Voyti\Entity\UserToken;
 use Yiisoft\ActiveRecord\ActiveRecordInterface;
 
-/** @extends BaseRepository<User> */
-final class UserRepository extends BaseRepository
+final class UserRepository
 {
     /**
      * @psalm-return int<0, max>|string
      */
     public function countByFilters(array $filters = []): int|string
     {
-        $query = $this->query(User::class);
+        $query = User::query();
 
         if (!empty($filters['username'])) {
             $query = $query->andWhere(['like', 'username', $filters['username']]);
@@ -29,7 +28,6 @@ final class UserRepository extends BaseRepository
         return $query->count();
     }
 
-    #[\Override]
     public function delete(ActiveRecordInterface $model): void
     {
         if ($model instanceof User) {
@@ -38,7 +36,7 @@ final class UserRepository extends BaseRepository
                 $userProfile->delete();
             }
         }
-        parent::delete($model);
+        $model->delete();
     }
 
     /**
@@ -46,13 +44,15 @@ final class UserRepository extends BaseRepository
      */
     public function findAllUsers(): array
     {
-        return $this->findAll(User::class);
+        /** @var list<User> $users */
+        $users = User::query()->all();
+        return $users;
     }
 
     public function findByEmail(string $email): ?User
     {
         /** @var ?User $user */
-        $user = $this->findOne(User::class, ['email' => $email]);
+        $user = User::query()->where(['email' => $email])->one();
         return $user;
     }
 
@@ -70,42 +70,43 @@ final class UserRepository extends BaseRepository
      */
     public function findByIds(array $ids): array
     {
-        return $this->findAll(User::class, ['id' => $ids]);
+        /** @var list<User> $users */
+        $users = User::query()->where(['id' => $ids])->all();
+        return $users;
     }
 
     public function findByUsername(string $username): ?User
     {
         /** @var ?User $user */
-        $user = $this->findOne(User::class, ['username' => $username]);
+        $user = User::query()->where(['username' => $username])->one();
         return $user;
     }
 
     public function findByUsernameOrEmail(string $login): ?User
     {
         /** @var ?User $user */
-        $user = $this->findOne(User::class, ['or', ['username' => $login], ['email' => $login]]);
+        $user = User::query()->where(['or', ['username' => $login], ['email' => $login]])->one();
         return $user;
     }
 
-    #[\Override]
     public function save(ActiveRecordInterface $model): void
     {
-        parent::save($model);
+        $model->save();
     }
 
     public function saveWithProfile(User $user, UserProfile $userProfile): void
     {
         $this->save($user);
-        $userProfile->setUserId($user->getId() !== null ? (int) $user->getId() : 0);
+        $userProfile->setUserId($user->getIdOrZero());
         $this->save($userProfile);
     }
 
     public function saveWithProfileAndToken(User $user, UserProfile $userProfile, UserToken $userToken): void
     {
         $this->save($user);
-        $userProfile->setUserId($user->getId() !== null ? (int) $user->getId() : 0);
+        $userProfile->setUserId($user->getIdOrZero());
         $this->save($userProfile);
-        $userToken->setUserId($user->getId() !== null ? (int) $user->getId() : 0);
+        $userToken->setUserId($user->getIdOrZero());
         $this->save($userToken);
     }
 
@@ -116,7 +117,7 @@ final class UserRepository extends BaseRepository
      */
     public function search(array $filters = []): array
     {
-        $query = $this->query(User::class);
+        $query = User::query();
 
         if (!empty($filters['username'])) {
             $query = $query->andWhere(['like', 'username', $filters['username']]);

@@ -7,20 +7,19 @@ namespace YiiRocks\Voyti\Repository;
 use YiiRocks\Voyti\Entity\UserSocialAccount;
 use Yiisoft\ActiveRecord\ActiveRecordInterface;
 
-/** @extends BaseRepository<UserSocialAccount> */
-final class UserSocialAccountRepository extends BaseRepository
+final class UserSocialAccountRepository
 {
     public function findByCode(string $code): ?UserSocialAccount
     {
         /** @var ?UserSocialAccount $account */
-        $account = $this->findOne(UserSocialAccount::class, ['code' => $code]);
+        $account = UserSocialAccount::query()->where(['code' => $code])->one();
         return $account;
     }
 
     public function findByProviderAndClientId(string $provider, string $clientId): ?UserSocialAccount
     {
         /** @var ?UserSocialAccount $account */
-        $account = $this->findOne(UserSocialAccount::class, ['provider' => $provider, 'client_id' => $clientId]);
+        $account = UserSocialAccount::query()->where(['provider' => $provider, 'client_id' => $clientId])->one();
         return $account;
     }
 
@@ -29,12 +28,13 @@ final class UserSocialAccountRepository extends BaseRepository
      */
     public function findByUserId(int $userId): array
     {
-        return $this->findAll(UserSocialAccount::class, ['user_id' => $userId]);
+        /** @var list<UserSocialAccount> $accounts */
+        $accounts = UserSocialAccount::query()->where(['user_id' => $userId])->all();
+        return $accounts;
     }
 
-    #[\Override]
     public function save(ActiveRecordInterface $model): void
     {
-        parent::save($model);
+        $model->save();
     }
 }

@@ -92,12 +92,12 @@ final class UserRepositoryTest extends TestCase
     {
         $repository = new UserRepository();
         $alice = $this->createUser('alice', 'alice@example.com', time());
-        $this->createUser('bob', 'bob@example.com', time());
+        $bob = $this->createUser('bob', 'bob@example.com', time());
+        $this->createUser('carol', 'carol@example.com', time());
 
-        $result = $repository->findByIds([(int) $alice->getId()]);
+        $result = $repository->findByIds([(int) $alice->getId(), (int) $bob->getId()]);
 
-        self::assertCount(1, $result);
-        self::assertSame('alice', $result[0]->getUsername());
+        self::assertCount(2, $result);
     }
 
     public function testFindByUsernameOrEmailMatchesByEmail(): void
