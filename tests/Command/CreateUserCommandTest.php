@@ -11,6 +11,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Command\CreateUserCommand;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Repository\UserRepository;
+use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
+use YiiRocks\Voyti\Service\Password\RandomPasswordGenerator;
 use YiiRocks\Voyti\Service\ServiceResult;
 use YiiRocks\Voyti\Service\User\CreateService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
@@ -238,11 +240,13 @@ final class CreateUserCommandTest extends TestCase
         ?CreateService $userCreateService = null,
         ?UserRepository $userRepository = null,
         ?ManagerInterface $authManager = null,
+        ?PasswordGeneratorInterface $passwordGenerator = null,
     ): CreateUserCommand {
         return new CreateUserCommand(
             $userCreateService ?? $this->createMock(CreateService::class),
             $userRepository ?? $this->createMock(UserRepository::class),
             $authManager ?? $this->createMock(ManagerInterface::class),
+            $passwordGenerator ?? new RandomPasswordGenerator(),
         );
     }
 }

@@ -36,8 +36,11 @@ use YiiRocks\Voyti\Service\UserSessionHistory\TerminateUserSessionsService;
 use YiiRocks\Voyti\Strategy\EmailChangeStrategyFactory;
 use YiiRocks\Voyti\Validator\TwoFactor\CodeValidator;
 use YiiRocks\Voyti\Validator\TwoFactor\EmailValidator;
+use Yiisoft\Http\Header;
 use Yiisoft\Http\Method;
+use Yiisoft\Http\Status;
 use Yiisoft\Hydrator\HydratorInterface;
+use Yiisoft\Json\Json;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Security\Random;
@@ -257,11 +260,11 @@ final readonly class SettingsController
             static fn (mixed $v): bool => $v !== null,
         );
 
-        $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+        $json = Json::encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 
-        $response = $this->responseFactory->createResponse(200)
-            ->withHeader('Content-Type', 'application/json; charset=UTF-8')
-            ->withHeader('Content-Disposition', 'attachment; filename="user-data-export.json"');
+        $response = $this->responseFactory->createResponse(Status::OK)
+            ->withHeader(Header::CONTENT_TYPE, 'application/json; charset=UTF-8')
+            ->withHeader(Header::CONTENT_DISPOSITION, 'attachment; filename="user-data-export.json"');
         $response->getBody()->write($json);
 
         return $response;

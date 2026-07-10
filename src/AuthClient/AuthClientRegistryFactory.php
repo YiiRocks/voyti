@@ -42,6 +42,10 @@ final readonly class AuthClientRegistryFactory
      */
     private function makeClient(string $provider, array $providerConfig): ?AuthClientInterface
     {
+        if ($provider === 'keycloak') {
+            return $this->makeKeycloakClient($providerConfig);
+        }
+
         if (isset(self::GENERIC_PROVIDERS[$provider])) {
             [$title, $authUrl, $tokenUrl, $userInfoUrl, $scope] = self::GENERIC_PROVIDERS[$provider];
 
@@ -51,11 +55,33 @@ final readonly class AuthClientRegistryFactory
         return match ($provider) {
             'facebook' => new Facebook($providerConfig),
             'github' => new GitHub($providerConfig),
-            'keycloak' => new Keycloak($providerConfig),
             'vkontakte' => new VKontakte($providerConfig),
             'x' => new Twitter($providerConfig),
             'yandex' => new Yandex($providerConfig),
             default => null,
         };
+    }
+
+    /**
+     * @param array<string, mixed> $providerConfig
+     */
+    private function makeKeycloakClient(array $providerConfig): GenericAuthClient
+    {
+        $baseUrl = isset($providerConfig['baseUrl']) && is_string($providerConfig['baseUrl'])
+            ? rtrim($providerConfig['baseUrl'], '/')
+            : '';
+        $realm = isset($providerConfig['realm']) && is_string($providerConfig['realm'])
+            ? trim($providerConfig['realm'])
+            : '';
+
+        return new GenericAuthClient(
+            'keycloak',
+            'Keycloak',
+            "{$baseUrl}/realms/{$realm}/protocol/openid-connect/auth",
+            "{$baseUrl}/realms/{$realm}/protocol/openid-connect/token",
+            "{$baseUrl}/realms/{$realm}/protocol/openid-connect/userinfo",
+            'openid email profile',
+            $providerConfig,
+        );
     }
 }

@@ -11,6 +11,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Command\PasswordCommand;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Repository\UserRepository;
+use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
+use YiiRocks\Voyti\Service\Password\RandomPasswordGenerator;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use Yiisoft\Security\PasswordHasher;
 
@@ -160,10 +162,12 @@ final class PasswordCommandTest extends TestCase
     private function createCommand(
         ?UserRepository $userRepository = null,
         ?PasswordHasher $passwordHasher = null,
+        ?PasswordGeneratorInterface $passwordGenerator = null,
     ): PasswordCommand {
         return new PasswordCommand(
             $userRepository ?? $this->createMock(UserRepository::class),
             $passwordHasher ?? new PasswordHasher(),
+            $passwordGenerator ?? new RandomPasswordGenerator(),
         );
     }
 }

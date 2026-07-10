@@ -6,6 +6,8 @@ namespace YiiRocks\Voyti\AuthClient;
 
 use RuntimeException;
 use YiiRocks\Voyti\Http\ClientInterface;
+use Yiisoft\Http\Header;
+use Yiisoft\Http\Method;
 
 abstract readonly class AbstractAuthClient implements AuthClientInterface
 {
@@ -169,7 +171,7 @@ abstract readonly class AbstractAuthClient implements AuthClientInterface
     protected function loadUserAttributes(array $tokenData, ClientInterface $httpClient): array
     {
         return $httpClient->send(
-            'GET',
+            Method::GET,
             $this->userInfoUrl,
             $this->userInfoHeaders($tokenData),
             $this->userInfoQuery($tokenData),
@@ -246,7 +248,7 @@ abstract readonly class AbstractAuthClient implements AuthClientInterface
 
         return [
             'Accept' => 'application/json',
-            'Authorization' => 'Bearer ' . $token,
+            Header::AUTHORIZATION => 'Bearer ' . $token,
             'User-Agent' => 'YiiRocks Voyti',
         ];
     }
@@ -301,7 +303,7 @@ abstract readonly class AbstractAuthClient implements AuthClientInterface
     private function exchangeCodeForToken(string $code, string $redirectUri, ClientInterface $httpClient): array
     {
         return $httpClient->send(
-            'POST',
+            Method::POST,
             $this->tokenUrl,
             [
                 'Accept' => 'application/json',

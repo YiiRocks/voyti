@@ -8,6 +8,7 @@ use DateInterval;
 use JsonException;
 use Psr\Http\Message\ResponseInterface;
 use Yiisoft\Auth\IdentityRepositoryInterface;
+use Yiisoft\Json\Json;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Login\Cookie\CookieLogin;
 use Yiisoft\User\Login\Cookie\CookieLoginIdentityInterface;
@@ -15,8 +16,6 @@ use Yiisoft\User\Login\Cookie\CookieLoginIdentityInterface;
 use function count;
 use function is_array;
 use function is_string;
-use function json_decode;
-use function json_encode;
 use function setcookie;
 use function time;
 
@@ -73,8 +72,7 @@ final class RememberMeCookieService
         }
 
         try {
-            /** @infection-ignore-all DecrementInteger IncrementInteger: cookie data is a flat 3-element array (no nesting depth near 512), so depth 511/512/513 behave identically. */
-            $data = json_decode($cookie, true, 512, JSON_THROW_ON_ERROR);
+            $data = Json::decode($cookie);
         } catch (JsonException) {
             return;
         }
@@ -120,8 +118,7 @@ final class RememberMeCookieService
         }
 
         try {
-            /** @infection-ignore-all DecrementInteger IncrementInteger: cookie data is a flat 3-element array (no nesting depth near 512), so depth 511/512/513 behave identically. */
-            $data = json_decode($rawCookie, true, 512, JSON_THROW_ON_ERROR);
+            $data = Json::decode($rawCookie);
         } catch (JsonException) {
             return;
         }
@@ -143,10 +140,7 @@ final class RememberMeCookieService
         }
 
         $expiresAt = $now + $this->duration;
-        $value = json_encode(
-            [$identity->getId(), $identity->getCookieLoginKey(), $expiresAt],
-            JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
-        );
+        $value = Json::encode([$identity->getId(), $identity->getCookieLoginKey(), $expiresAt]);
 
         ($this->cookieEmitter)($this->cookieName, $value, [
             'expires' => $expiresAt,

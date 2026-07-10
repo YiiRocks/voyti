@@ -11,6 +11,7 @@ use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\UserRepository;
 use Yiisoft\DataResponse\ResponseFactory\DataResponseFactoryInterface;
+use Yiisoft\Http\Status;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Security\Random;
 use Yiisoft\Translator\TranslatorInterface;
@@ -37,12 +38,12 @@ final readonly class AdminController
 
         $existingUser = $this->userRepository->findByEmail($email);
         if ($existingUser !== null) {
-            return $this->responseFactory->createResponse(['error' => 'Email already exists'], 400);
+            return $this->responseFactory->createResponse(['error' => 'Email already exists'], Status::BAD_REQUEST);
         }
 
         $existingUser = $this->userRepository->findByUsername($username);
         if ($existingUser !== null) {
-            return $this->responseFactory->createResponse(['error' => 'Username already exists'], 400);
+            return $this->responseFactory->createResponse(['error' => 'Username already exists'], Status::BAD_REQUEST);
         }
 
         $user = new User();
@@ -60,14 +61,14 @@ final readonly class AdminController
             'username' => $user->getUsername(),
             'email' => $user->getEmail(),
             'message' => $this->translator->translate('voyti.api.user_created', category: 'voyti'),
-        ], 201);
+        ], Status::CREATED);
     }
 
     public function delete(int $id): ResponseInterface
     {
         $user = $this->userRepository->findById($id);
         if ($user === null) {
-            return $this->responseFactory->createResponse(['error' => $this->translator->translate('voyti.api.not_found', category: 'voyti')], 404);
+            return $this->responseFactory->createResponse(['error' => $this->translator->translate('voyti.api.not_found', category: 'voyti')], Status::NOT_FOUND);
         }
 
         $this->userRepository->delete($user);
@@ -93,7 +94,7 @@ final readonly class AdminController
     {
         $user = $this->userRepository->findById($id);
         if ($user === null) {
-            return $this->responseFactory->createResponse(['error' => $this->translator->translate('voyti.api.not_found', category: 'voyti')], 404);
+            return $this->responseFactory->createResponse(['error' => $this->translator->translate('voyti.api.not_found', category: 'voyti')], Status::NOT_FOUND);
         }
 
         $body = $this->parsedBody($request);
@@ -122,7 +123,7 @@ final readonly class AdminController
     {
         $user = $this->userRepository->findById($id);
         if ($user === null) {
-            return $this->responseFactory->createResponse(['error' => $this->translator->translate('voyti.api.not_found', category: 'voyti')], 404);
+            return $this->responseFactory->createResponse(['error' => $this->translator->translate('voyti.api.not_found', category: 'voyti')], Status::NOT_FOUND);
         }
 
         return $this->responseFactory->createResponse([

@@ -11,6 +11,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Repository\UserRepository;
+use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\User\CreateService;
 use Yiisoft\Rbac\ManagerInterface;
 
@@ -20,6 +21,7 @@ final class CreateUserCommand extends Command
         private CreateService $userCreateService,
         private UserRepository $userRepository,
         private ManagerInterface $authManager,
+        private PasswordGeneratorInterface $passwordGenerator,
     ) {
         parent::__construct();
     }
@@ -65,7 +67,7 @@ final class CreateUserCommand extends Command
 
         /** @var mixed $optionPassword */
         $optionPassword = $input->getOption('password');
-        $password = is_string($optionPassword) && $optionPassword !== '' ? $optionPassword : bin2hex(random_bytes(8));
+        $password = is_string($optionPassword) && $optionPassword !== '' ? $optionPassword : $this->passwordGenerator->generate(16);
 
         $result = $this->userCreateService->run($rawEmail, $rawUsername, $password);
 

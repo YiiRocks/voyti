@@ -11,6 +11,7 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Yiisoft\Auth\IdentityWithTokenRepositoryInterface;
 use Yiisoft\Auth\Method\HttpBearer;
+use Yiisoft\Http\Status;
 use Yiisoft\User\CurrentUser;
 
 final readonly class ApiTokenAuthenticationMiddleware implements MiddlewareInterface
@@ -31,7 +32,7 @@ final readonly class ApiTokenAuthenticationMiddleware implements MiddlewareInter
         $identity = $this->httpBearer->authenticate($request);
 
         if ($identity === null) {
-            return $this->httpBearer->challenge($this->responseFactory->createResponse(401));
+            return $this->httpBearer->challenge($this->responseFactory->createResponse(Status::UNAUTHORIZED));
         }
 
         $this->currentUser->overrideIdentity($identity);

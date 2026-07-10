@@ -11,6 +11,8 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\ModuleConfig;
+use Yiisoft\Http\Header;
+use Yiisoft\Http\Status;
 use Yiisoft\Rbac\ManagerInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\User\CurrentUser;
@@ -51,8 +53,8 @@ final readonly class TwoFactorAuthenticationEnforceMiddleware implements Middlew
 
         if (!empty(array_intersect($permissions, $userPermissionNames))) {
             if (!$user->isAuthTfEnabled()) {
-                $response = $this->responseFactory->createResponse(302);
-                return $response->withHeader('Location', $this->url->generate($this->config->accountSettingsRoute));
+                $response = $this->responseFactory->createResponse(Status::FOUND);
+                return $response->withHeader(Header::LOCATION, $this->url->generate($this->config->accountSettingsRoute));
             }
         }
 

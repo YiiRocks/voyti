@@ -8,6 +8,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Repository\UserRepository;
+use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use Yiisoft\Security\PasswordHasher;
 
 final class PasswordCommand extends Command
@@ -17,6 +18,7 @@ final class PasswordCommand extends Command
     public function __construct(
         private UserRepository $userRepository,
         private PasswordHasher $passwordHasher,
+        private PasswordGeneratorInterface $passwordGenerator,
     ) {
         parent::__construct();
     }
@@ -43,7 +45,7 @@ final class PasswordCommand extends Command
             return Command::FAILURE;
         }
 
-        $password = bin2hex(random_bytes(8));
+        $password = $this->passwordGenerator->generate(16);
         $user->setPasswordHash($this->passwordHasher->hash($password));
         $user->setPasswordChangedAt(time());
         $user->setUpdatedAt(time());

@@ -9,6 +9,7 @@ use Psr\Http\Client\ClientInterface as PsrClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use RuntimeException;
+use Yiisoft\Http\Header;
 
 final readonly class Psr18Client implements ClientInterface
 {
@@ -36,7 +37,7 @@ final readonly class Psr18Client implements ClientInterface
 
         if ($body !== []) {
             $request = $request
-                ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
+                ->withHeader(Header::CONTENT_TYPE, 'application/x-www-form-urlencoded')
                 ->withBody($this->streamFactory->createStream(http_build_query($body)));
         }
 

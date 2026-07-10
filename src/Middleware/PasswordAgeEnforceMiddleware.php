@@ -12,6 +12,8 @@ use Psr\Http\Server\RequestHandlerInterface;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\ExpireService;
+use Yiisoft\Http\Header;
+use Yiisoft\Http\Status;
 use Yiisoft\Router\CurrentRoute;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -52,8 +54,8 @@ final readonly class PasswordAgeEnforceMiddleware implements MiddlewareInterface
         }
 
         if ($this->passwordExpireService->checkPasswordExpiration($user)) {
-            $response = $this->responseFactory->createResponse(302);
-            return $response->withHeader('Location', $this->url->generate($this->config->accountSettingsRoute));
+            $response = $this->responseFactory->createResponse(Status::FOUND);
+            return $response->withHeader(Header::LOCATION, $this->url->generate($this->config->accountSettingsRoute));
         }
 
         return $handler->handle($request);

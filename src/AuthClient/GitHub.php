@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\AuthClient;
 
 use YiiRocks\Voyti\Http\ClientInterface;
+use Yiisoft\Http\Method;
 
 final readonly class GitHub extends AbstractAuthClient
 {
@@ -39,7 +40,7 @@ final readonly class GitHub extends AbstractAuthClient
         }
 
         $emails = $httpClient->send(
-            'GET',
+            Method::GET,
             'https://api.github.com/user/emails',
             $this->userInfoHeaders($tokenData),
         );
