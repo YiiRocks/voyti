@@ -620,6 +620,7 @@ final class SettingsControllerTest extends TestCase
 
         $user = $this->createMock(User::class);
         $user->method('getId')->willReturn('1');
+        $user->method('getIdOrZero')->willReturn(1);
         $this->userRepository->method('findById')->willReturn($user);
 
         $sessionEntry = $this->createMock(UserSessionHistory::class);
@@ -1612,6 +1613,36 @@ final class SettingsControllerTest extends TestCase
         $this->viewRenderer->method('render')->willReturn($response);
 
         $result = $controller->twoFactorEmail($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testTwoFactorEnableWhenAlreadyEnabledRedirects(): void
+    {
+        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['method' => 'google', 'code' => '123456']);
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $user = $this->createMock(User::class);
+        $user->method('isAuthTfEnabled')->willReturn(true);
+        $user->expects($this->never())->method('setAuthTfKey');
+        $user->expects($this->never())->method('setAuthTfType');
+        $user->expects($this->never())->method('setAuthTfEnabled');
+        $this->userRepository->method('findById')->willReturn($user);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())->method('withHeader')->willReturnSelf();
+
+        $result = $controller->twoFactorEnable($request);
 
         $this->assertSame($response, $result);
     }

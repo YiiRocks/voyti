@@ -23,7 +23,7 @@ final readonly class EmailChangeService
     public function run(string $code, User $user): bool|null
     {
         $userToken = $this->userTokenRepository->findByUserIdAndCode(
-            $user->getId() !== null ? (int) $user->getId() : 0,
+            $user->getIdOrZero(),
             $code,
         );
 

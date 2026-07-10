@@ -32,14 +32,9 @@ final readonly class BlockService
         $this->eventDispatcher->dispatch(new UserEvent($user));
 
         if ($user->isBlocked()) {
-            $this->terminateUserSessionsService->run($this->getUserId($user));
+            $this->terminateUserSessionsService->run($user->getIdOrZero());
         }
 
         return $result;
-    }
-
-    private function getUserId(User $user): int
-    {
-        return $user->getId() !== null ? (int) $user->getId() : 0;
     }
 }

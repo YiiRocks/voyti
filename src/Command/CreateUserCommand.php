@@ -9,7 +9,6 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\User\CreateService;
@@ -80,7 +79,7 @@ final class CreateUserCommand extends Command
             if (is_string($optionRole) && $optionRole !== '') {
                 $user = $this->userRepository->findByEmail($rawEmail);
                 if ($user !== null) {
-                    $this->authManager->assign($optionRole, $this->getUserId($user));
+                    $this->authManager->assign($optionRole, $user->getIdOrZero());
                     $output->writeln("<info>Role assigned: {$optionRole}</info>");
                 }
             }
@@ -90,10 +89,5 @@ final class CreateUserCommand extends Command
 
         $output->writeln("<error>{$result->getMessage()}</error>");
         return Command::FAILURE;
-    }
-
-    private function getUserId(User $user): int
-    {
-        return $user->getId() !== null ? (int) $user->getId() : 0;
     }
 }

@@ -22,7 +22,7 @@ final readonly class AccountConfirmationService
         }
 
         $userToken = $this->userTokenRepository->findByUserIdAndCodeAndType(
-            $user->getId() !== null ? (int) $user->getId() : 0,
+            $user->getIdOrZero(),
             $code,
             UserToken::TYPE_CONFIRMATION,
         );

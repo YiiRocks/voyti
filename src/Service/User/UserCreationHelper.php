@@ -1,0 +1,86 @@
+<?php
+
+declare(strict_types=1);
+
+namespace YiiRocks\Voyti\Service\User;
+
+use Psr\EventDispatcher\EventDispatcherInterface;
+use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\Entity\UserProfile;
+use YiiRocks\Voyti\Entity\UserToken;
+use YiiRocks\Voyti\Event\Auth\AfterRegisterEvent;
+use YiiRocks\Voyti\Event\User\UserEvent;
+use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Repository\UserRepository;
+use YiiRocks\Voyti\Service\MailService;
+use Yiisoft\Security\PasswordHasher;
+use Yiisoft\Security\Random;
+
+final readonly class UserCreationHelper
+{
+    public function __construct(
+        private UserRepository $userRepository,
+        private MailService $mailService,
+        private EventDispatcherInterface $eventDispatcher,
+        private PasswordHasher $passwordHasher,
+        private ModuleConfig $config,
+    ) {
+    }
+
+    public function buildUser(string $email, string $username, string $password): User
+    {
+        $user = new User();
+        $user->setUsername($username);
+        $user->setEmail($email);
+        $user->setPasswordHash($this->passwordHasher->hash($password));
+        $user->setAuthKey(Random::string());
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        return $user;
+    }
+
+    public function findUniquenessConflict(string $email, string $username): ?string
+    {
+        if ($this->userRepository->findByEmail($email) !== null) {
+            return 'Email already exists';
+        }
+
+        if ($this->userRepository->findByUsername($username) !== null) {
+            return 'Username already exists';
+        }
+
+        return null;
+    }
+
+    /**
+     * Persists the user (with profile and, if required, a confirmation token), dispatches the
+     * creation/registration events, and sends the appropriate mail.
+     *
+     * @return bool Whether email confirmation is required before the account can be used.
+     */
+    public function persistAndNotify(User $user, string $password): bool
+    {
+        $this->eventDispatcher->dispatch(new UserEvent($user));
+
+        $userProfile = new UserProfile();
+
+        if ($this->config->enableEmailConfirmation) {
+            $userToken = new UserToken();
+            $userToken->setCreatedAt(time());
+            $userToken->setCode(Random::string(32));
+
+            $this->userRepository->saveWithProfileAndToken($user, $userProfile, $userToken);
+            $this->mailService->sendConfirmation($user, $userToken);
+
+            $this->eventDispatcher->dispatch(new AfterRegisterEvent($user));
+            return true;
+        }
+
+        $user->setConfirmedAt(time());
+        $this->userRepository->saveWithProfile($user, $userProfile);
+        $this->mailService->sendWelcome($user, $password);
+
+        $this->eventDispatcher->dispatch(new AfterRegisterEvent($user));
+        return false;
+    }
+}

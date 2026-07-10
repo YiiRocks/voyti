@@ -504,6 +504,7 @@ final class SecurityControllerTest extends TestCase
     public function testLoginGetShowsForm(): void
     {
         $controller = $this->createController();
+        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
         $request = new ServerRequest('GET', '/');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -525,6 +526,7 @@ final class SecurityControllerTest extends TestCase
         $config = new ModuleConfig(homeRoute: 'app/dashboard');
         $this->harness = new ControllerHarness($config);
         $controller = $this->createController();
+        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
 
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
@@ -554,6 +556,7 @@ final class SecurityControllerTest extends TestCase
     public function testLoginPostSuccessRedirectsToHomeRouteByDefault(): void
     {
         $controller = $this->createController();
+        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
         $user = $this->createMock(User::class);
@@ -585,6 +588,7 @@ final class SecurityControllerTest extends TestCase
         $this->harness = new ControllerHarness($config);
         $this->harness->getUrlGenerator()->setMissingRoute('nonexistent');
         $controller = $this->createController();
+        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
 
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
@@ -605,6 +609,7 @@ final class SecurityControllerTest extends TestCase
     public function testLoginPostSuccessWithRememberMeAddsCookie(): void
     {
         $controller = $this->createController();
+        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret', 'rememberMe' => true]]);
 
         $user = $this->createMock(User::class);
@@ -629,6 +634,7 @@ final class SecurityControllerTest extends TestCase
     public function testLoginPostWithBlockedUserShowsError(): void
     {
         $controller = $this->createController();
+        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
         $user = $this->createMock(User::class);
@@ -653,6 +659,7 @@ final class SecurityControllerTest extends TestCase
     public function testLoginPostWithInvalidCredentialsShowsError(): void
     {
         $controller = $this->createController();
+        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'wrong']]);
 
         $this->userRepository->method('findByUsernameOrEmail')->willReturn(null);
@@ -675,6 +682,7 @@ final class SecurityControllerTest extends TestCase
         $config = new ModuleConfig(enableTwoFactorAuthentication: true);
         $this->harness = new ControllerHarness($config);
         $controller = $this->createController();
+        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
         $user = $this->createMock(User::class);
@@ -707,6 +715,7 @@ final class SecurityControllerTest extends TestCase
         $config = new ModuleConfig(enableTwoFactorAuthentication: true);
         $this->harness = new ControllerHarness($config);
         $controller = $this->createController();
+        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
         $user = $this->createMock(User::class);
@@ -737,6 +746,7 @@ final class SecurityControllerTest extends TestCase
     public function testLoginPostWithUnconfirmedEmailShowsError(): void
     {
         $controller = $this->createController();
+        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
         $user = $this->createMock(User::class);
@@ -753,6 +763,31 @@ final class SecurityControllerTest extends TestCase
             ->method('render')
             ->with('security/login', $this->anything())
             ->willReturn($response);
+
+        $result = $controller->login($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testLoginWhenAlreadyAuthenticatedRedirectsToHome(): void
+    {
+        $controller = $this->createController();
+        $identity = $this->createMock(User::class);
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $request = new ServerRequest('GET', '/');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->with('Location', '//home')
+            ->willReturnSelf();
+
+        $this->userRepository->expects($this->never())->method('findByUsernameOrEmail');
+        $this->viewRenderer->expects($this->never())->method('render');
 
         $result = $controller->login($request);
 

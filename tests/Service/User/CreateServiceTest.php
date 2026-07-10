@@ -12,6 +12,7 @@ use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\User\CreateService;
+use YiiRocks\Voyti\Service\User\UserCreationHelper;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
 use YiiRocks\Voyti\tests\Support\MailCapture;
@@ -50,7 +51,8 @@ final class CreateServiceTest extends TestCase
         $passwordHasher = new PasswordHasher();
         $config = new ModuleConfig();
 
-        $service = new CreateService($userRepository, $mailService, $eventDispatcher, $passwordHasher, $config);
+        $userCreationHelper = new UserCreationHelper($userRepository, $mailService, $eventDispatcher, $passwordHasher, $config);
+        $service = new CreateService($userCreationHelper);
         $result = $service->run('existing@example.com', 'testuser', 'password123');
 
         self::assertTrue($result->isFailure());
@@ -74,7 +76,8 @@ final class CreateServiceTest extends TestCase
         $passwordHasher = new PasswordHasher();
         $config = new ModuleConfig();
 
-        $service = new CreateService($userRepository, $mailService, $eventDispatcher, $passwordHasher, $config);
+        $userCreationHelper = new UserCreationHelper($userRepository, $mailService, $eventDispatcher, $passwordHasher, $config);
+        $service = new CreateService($userCreationHelper);
         $result = $service->run('new@example.com', 'existinguser', 'password123');
 
         self::assertTrue($result->isFailure());
@@ -91,7 +94,8 @@ final class CreateServiceTest extends TestCase
         $passwordHasher = new PasswordHasher();
         $config = new ModuleConfig(enableEmailConfirmation: false);
 
-        $service = new CreateService($userRepository, $mailService, $eventDispatcher, $passwordHasher, $config);
+        $userCreationHelper = new UserCreationHelper($userRepository, $mailService, $eventDispatcher, $passwordHasher, $config);
+        $service = new CreateService($userCreationHelper);
         $result = $service->run('new@example.com', 'testuser', 'password123');
 
         self::assertTrue($result->isSuccess());
@@ -118,7 +122,8 @@ final class CreateServiceTest extends TestCase
         $passwordHasher = new PasswordHasher();
         $config = new ModuleConfig(enableEmailConfirmation: true);
 
-        $service = new CreateService($userRepository, $mailService, $eventDispatcher, $passwordHasher, $config);
+        $userCreationHelper = new UserCreationHelper($userRepository, $mailService, $eventDispatcher, $passwordHasher, $config);
+        $service = new CreateService($userCreationHelper);
         $result = $service->run('new@example.com', 'testuser', 'password123');
 
         self::assertTrue($result->isSuccess());

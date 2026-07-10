@@ -28,23 +28,9 @@ final readonly class ConfirmationService
         $user->setConfirmedAt(time());
         $user->save();
 
-        $userId = $this->getUserId($user);
-        $this->userTokenRepository->deleteAllByUserId($userId);
+        $this->userTokenRepository->deleteAllByUserId($user->getIdOrZero());
 
         $this->eventDispatcher->dispatch(new UserEvent($user));
         return true;
-    }
-
-    private function getUserId(User $user): int
-    {
-        /**
-         * @infection-ignore-all
-         *
-         * The getId() === null branch is unreachable: save() is always called
-         * before getUserId(), guaranteeing a non-null id.  The fallback 0
-         * can never be exercised, so decrementing/incrementing it looks
-         * identical.
-         */
-        return $user->getId() !== null ? (int) $user->getId() : 0;
     }
 }

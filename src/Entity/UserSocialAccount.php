@@ -27,7 +27,7 @@ final class UserSocialAccount extends ActiveRecord
      */
     public function connect(User $user): bool
     {
-        $this->setUserId($user->getId() !== null ? (int) $user->getId() : 0);
+        $this->setUserId($user->getIdOrZero());
         $this->setUsername(null);
         $this->setEmail(null);
         $this->setCode(null);

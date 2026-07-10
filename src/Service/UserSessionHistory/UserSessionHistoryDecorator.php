@@ -26,7 +26,7 @@ final readonly class UserSessionHistoryDecorator
             return;
         }
 
-        $userId = $user->getId() !== null ? (int) $user->getId() : 0;
+        $userId = $user->getIdOrZero();
         $sessionId = $this->session?->getId() ?? '';
 
         $userSessionHistory = new UserSessionHistory();
@@ -46,15 +46,7 @@ final readonly class UserSessionHistoryDecorator
     private function pruneOldSessions(User $user): void
     {
         if ($this->config->hasNumberSessionHistory()) {
-            /**
-             * @infection-ignore-all
-             *
-             * getId() is never null after save() guards in the caller chain.
-             * SQLite column affinity coerces all values identically, so the
-             * CastInt/DecrementInteger/IncrementInteger mutants on `$userId` are
-             * unobservable.
-             */
-            $userId = $user->getId() !== null ? (int) $user->getId() : 0;
+            $userId = $user->getIdOrZero();
             /** @infection-ignore-all ArrayItemRemoval: ORDER BY direction 'ASC' vs 'DESC' reverses iteration of same in-memory collection; fewer than $limit sessions means no excess is deleted regardless of sort order. */
             $sessions = UserSessionHistory::query()
                 ->where(['user_id' => $userId])

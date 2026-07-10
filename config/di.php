@@ -46,6 +46,7 @@ use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\CreateService;
 use YiiRocks\Voyti\Service\User\RegisterService;
 use YiiRocks\Voyti\Service\User\ResendConfirmationService;
+use YiiRocks\Voyti\Service\User\UserCreationHelper;
 use YiiRocks\Voyti\Service\UserSessionHistory\TerminateUserSessionsService;
 use YiiRocks\Voyti\Service\UserSessionHistory\UserSessionHistoryDecorator;
 use YiiRocks\Voyti\Strategy\EmailChangeStrategyFactory;
@@ -147,6 +148,7 @@ return [
         EventDispatcherInterface $eventDispatcher,
         UserTokenRepository $tokenRepository
     ) => new ResetService($passwordHasher, $config, $eventDispatcher, $tokenRepository),
+    UserCreationHelper::class => UserCreationHelper::class,
     CreateService::class => CreateService::class,
     RegisterService::class => RegisterService::class,
     BlockService::class => fn (

@@ -15,6 +15,7 @@ use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
 use YiiRocks\Voyti\Event\User\FormEvent;
 use YiiRocks\Voyti\Form\Auth\LoginForm;
 use YiiRocks\Voyti\Helper\InputDataTrait;
+use YiiRocks\Voyti\Helper\LoginMetadataHelper;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
@@ -154,7 +155,7 @@ final readonly class SecurityController
                         ? $this->currentUser->withAuthTimeout($this->config->rememberLoginLifespan)
                         : $this->currentUser;
                     $currentUser->login($user);
-                    $this->updateLastLoginMetadata($user, $request->getServerParams());
+                    LoginMetadataHelper::recordLogin($user, $request->getServerParams(), $this->config);
                     $this->pendingSocialAccountService->connect($user);
                     $this->eventDispatcher->dispatch(new AfterLoginEvent($user));
 
@@ -209,6 +210,10 @@ final readonly class SecurityController
 
     public function login(ServerRequestInterface $request): ResponseInterface
     {
+        if (!$this->currentUser->getIdentity() instanceof GuestIdentityInterface) {
+            return $this->homeRedirectResponse();
+        }
+
         $form = new LoginForm($this->config, $this->translator);
 
         if ($request->getMethod() === Method::POST) {
@@ -248,7 +253,7 @@ final readonly class SecurityController
                         $userToLogin = $userToLogin->withAuthTimeout($this->config->rememberLoginLifespan);
                     }
                     $userToLogin->login($user);
-                    $this->updateLastLoginMetadata($user, $request->getServerParams());
+                    LoginMetadataHelper::recordLogin($user, $request->getServerParams(), $this->config);
                     $this->pendingSocialAccountService->connect($user);
 
                     $this->eventDispatcher->dispatch(new FormEvent($form));
@@ -306,26 +311,5 @@ final readonly class SecurityController
     private function homeRedirectResponse(): ResponseInterface
     {
         return $this->redirect($this->config->getHomeUrl($this->url));
-    }
-
-    /**
-     * @param array<array-key, mixed> $serverParams
-     */
-    private function remoteAddr(array $serverParams): string
-    {
-        /** @var mixed $remoteAddr */
-        $remoteAddr = $serverParams['REMOTE_ADDR'] ?? null;
-
-        return is_string($remoteAddr) && $remoteAddr !== '' ? $remoteAddr : '127.0.0.1';
-    }
-
-    /**
-     * @param array<array-key, mixed> $serverParams
-     */
-    private function updateLastLoginMetadata(User $user, array $serverParams): void
-    {
-        $user->setLastLoginAt(time());
-        $user->setLastLoginIp($this->config->disableIpLogging ? '127.0.0.1' : $this->remoteAddr($serverParams));
-        $user->save();
     }
 }

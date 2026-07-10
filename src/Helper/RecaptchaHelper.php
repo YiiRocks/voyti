@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Helper;
 
 use YiiRocks\Recaptcha\RecaptchaV2Field;
+use YiiRocks\Recaptcha\RecaptchaV2Rule;
 use YiiRocks\Recaptcha\RecaptchaV3Badge;
 use YiiRocks\Recaptcha\RecaptchaV3Field;
+use YiiRocks\Recaptcha\RecaptchaV3Rule;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\FormModel\FormModelInterface;
+use Yiisoft\Validator\RuleInterface;
 
 final class RecaptchaHelper
 {
@@ -61,5 +64,27 @@ final class RecaptchaHelper
             ->withBadge(RecaptchaV3Badge::Hidden)
             ->withAction('voyti_' . $formName)
             ->render();
+    }
+
+    /**
+     * @return list<RuleInterface>
+     */
+    public static function rules(ModuleConfig $config, string $formName): array
+    {
+        if ($config->recaptchaVersion === null || !class_exists(RecaptchaV3Rule::class)) {
+            return [];
+        }
+
+        $ruleClass = $config->recaptchaVersion === RecaptchaVersion::V2
+            ? RecaptchaV2Rule::class
+            : RecaptchaV3Rule::class;
+
+        $params = [];
+        if ($config->recaptchaVersion === RecaptchaVersion::V3) {
+            $params['threshold'] = 0.5;
+            $params['action'] = 'voyti_' . $formName;
+        }
+
+        return [new $ruleClass(...$params)];
     }
 }

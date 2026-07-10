@@ -24,7 +24,7 @@ final readonly class ResendConfirmationService
             return false;
         }
 
-        $userId = $this->getUserId($user);
+        $userId = $user->getIdOrZero();
         $this->userTokenRepository->deleteAllByUserId($userId);
 
         $userToken = $this->userTokenFactory->makeConfirmationToken($userId);
@@ -32,10 +32,5 @@ final readonly class ResendConfirmationService
         $this->mailService->sendConfirmation($user, $userToken);
 
         return true;
-    }
-
-    private function getUserId(User $user): int
-    {
-        return $user->getId() !== null ? (int) $user->getId() : 0;
     }
 }

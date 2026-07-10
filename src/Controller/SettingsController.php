@@ -152,7 +152,7 @@ final readonly class SettingsController
                     $user->setAuthKey(Random::string());
                     $user->save();
                     $this->eventDispatcher->dispatch(new GdprEvent($user));
-                    $this->terminateUserSessionsService->run($this->getUserId($user));
+                    $this->terminateUserSessionsService->run($user->getIdOrZero());
                     return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.personal_info_removed', category: 'voyti')]);
                 }
             }
@@ -188,7 +188,7 @@ final readonly class SettingsController
             if ($result->isValid() && !($identity instanceof GuestIdentityInterface)) {
                 $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
                 if ($user !== null && $this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
-                    $userId = $this->getUserId($user);
+                    $userId = $user->getIdOrZero();
                     $this->eventDispatcher->dispatch(new UserEvent($user));
                     $this->userRepository->delete($user);
                     $this->eventDispatcher->dispatch(new UserEvent($user));
@@ -453,6 +453,13 @@ final readonly class SettingsController
             return $user;
         }
 
+        if ($user->isAuthTfEnabled()) {
+            return $this->redirectWithFlash(
+                $this->url->generate('voyti/settings-two-factor'),
+                'voyti.settings.two_factor_enabled',
+            );
+        }
+
         $body = $this->parsedBody($request);
         $method = $this->stringValue($body, 'method', 'google') === 'email' ? 'email' : 'google';
         $code = $this->stringValue($body, 'code');
@@ -678,7 +685,7 @@ final readonly class SettingsController
                     'created_at' => $entry->getCreatedAt(),
                     'updated_at' => $entry->getUpdatedAt(),
                 ],
-                $this->userSessionHistoryRepository->findByUserId($this->getUserId($user)),
+                $this->userSessionHistoryRepository->findByUserId($user->getIdOrZero()),
             ),
             'userSocialAccount' => array_map(
                 static fn (UserSocialAccount $account): array => [
@@ -688,15 +695,10 @@ final readonly class SettingsController
                     'created_at' => $account->getCreatedAt(),
                     'data' => $account->getDecodedData(),
                 ],
-                $this->userSocialAccountRepository->findByUserId($this->getUserId($user)),
+                $this->userSocialAccountRepository->findByUserId($user->getIdOrZero()),
             ),
             default => null,
         };
-    }
-
-    private function getUserId(User $user): int
-    {
-        return $user->getId() !== null ? (int) $user->getId() : 0;
     }
 
     private function jsonErrorResponse(int $status, string $messageKey): ResponseInterface

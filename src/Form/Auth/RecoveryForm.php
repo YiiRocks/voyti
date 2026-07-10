@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Form\Auth;
 
-use YiiRocks\Recaptcha\RecaptchaV2Rule;
-use YiiRocks\Recaptcha\RecaptchaV3Rule;
-use YiiRocks\Voyti\Helper\RecaptchaVersion;
+use YiiRocks\Voyti\Helper\RecaptchaHelper;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Validator\PasswordComplexityRule;
 use Yiisoft\FormModel\FormModel;
@@ -94,21 +92,11 @@ final class RecoveryForm extends FormModel implements RulesProviderInterface
             ];
         }
 
-        if ($this->config->recaptchaVersion !== null
-            && $this->scenario === self::SCENARIO_REQUEST
-            && class_exists(RecaptchaV3Rule::class)
-        ) {
-            $ruleClass = $this->config->recaptchaVersion === RecaptchaVersion::V2
-                ? RecaptchaV2Rule::class
-                : RecaptchaV3Rule::class;
-
-            $params = [];
-            if ($this->config->recaptchaVersion === RecaptchaVersion::V3) {
-                $params['threshold'] = 0.5;
-                $params['action'] = 'voyti_' . $this->getFormName();
+        if ($this->scenario === self::SCENARIO_REQUEST) {
+            $recaptchaRules = RecaptchaHelper::rules($this->config, $this->getFormName());
+            if ($recaptchaRules !== []) {
+                $rules['gRecaptchaResponse'] = $recaptchaRules;
             }
-
-            $rules['gRecaptchaResponse'] = [new $ruleClass(...$params)];
         }
 
         return $rules;

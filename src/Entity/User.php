@@ -101,6 +101,11 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
         return $this->id !== null ? (string) $this->id : null;
     }
 
+    public function getIdOrZero(): int
+    {
+        return $this->getId() !== null ? (int) $this->getId() : 0;
+    }
+
     public function getLastLoginAt(): ?int
     {
         return $this->last_login_at;

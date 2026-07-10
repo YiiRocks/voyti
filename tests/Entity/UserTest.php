@@ -146,6 +146,27 @@ final class UserTest extends TestCase
         self::assertSame('cookie_key', $entity->getCookieLoginKey());
     }
 
+    public function testGetIdOrZeroReturnsIdWhenSet(): void
+    {
+        $entity = new User();
+        $entity->setUsername('test');
+        $entity->setEmail('test@example.com');
+        $entity->setPasswordHash('hash');
+        $entity->setAuthKey('key');
+        $entity->setCreatedAt(1000);
+        $entity->setUpdatedAt(1000);
+        $entity->save();
+
+        self::assertSame((int) $entity->getId(), $entity->getIdOrZero());
+        self::assertGreaterThan(0, $entity->getIdOrZero());
+    }
+
+    public function testGetIdOrZeroReturnsZeroWhenNotSet(): void
+    {
+        $entity = new User();
+        self::assertSame(0, $entity->getIdOrZero());
+    }
+
     public function testGetIdReturnsNullWhenNotSet(): void
     {
         $entity = new User();

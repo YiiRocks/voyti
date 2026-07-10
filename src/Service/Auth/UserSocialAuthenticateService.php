@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Service\Auth;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
-use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserSocialAccount;
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
+use YiiRocks\Voyti\Helper\LoginMetadataHelper;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Repository\UserSocialAccountRepository;
@@ -69,7 +69,7 @@ final readonly class UserSocialAuthenticateService
             }
 
             $this->currentUser->login($user);
-            $this->updateLastLoginMetadata($user, $serverParams);
+            LoginMetadataHelper::recordLogin($user, $serverParams, $this->config);
             $this->eventDispatcher->dispatch(new AfterLoginEvent($user));
 
             $this->session->remove(self::SESSION_KEY);
@@ -124,17 +124,6 @@ final readonly class UserSocialAuthenticateService
     }
 
     /**
-     * @param array<array-key, mixed> $serverParams
-     */
-    private function remoteAddr(array $serverParams): string
-    {
-        /** @var mixed $remoteAddr */
-        $remoteAddr = $serverParams['REMOTE_ADDR'] ?? null;
-
-        return is_string($remoteAddr) && $remoteAddr !== '' ? $remoteAddr : '127.0.0.1';
-    }
-
-    /**
      * @param array<array-key, mixed> $attributes
      *
      * @return null|string
@@ -145,15 +134,5 @@ final readonly class UserSocialAuthenticateService
         $value = $attributes[$key] ?? null;
 
         return is_string($value) && $value !== '' ? $value : null;
-    }
-
-    /**
-     * @param array<array-key, mixed> $serverParams
-     */
-    private function updateLastLoginMetadata(User $user, array $serverParams): void
-    {
-        $user->setLastLoginAt(time());
-        $user->setLastLoginIp($this->config->disableIpLogging ? '127.0.0.1' : $this->remoteAddr($serverParams));
-        $user->save();
     }
 }
