@@ -33,7 +33,10 @@ final readonly class SecureEmailChangeStrategy implements MailChangeStrategyInte
 
         $user = $this->form->getUser();
         if ($user === null) {
+            // @codeCoverageIgnoreStart
+            // Unreachable: defaultStrategy->run() above already returned false for this exact condition.
             return false;
+            // @codeCoverageIgnoreEnd
         }
 
         /**
@@ -48,6 +51,9 @@ final readonly class SecureEmailChangeStrategy implements MailChangeStrategyInte
             return true;
         }
 
+        // @codeCoverageIgnoreStart
+        // MailService::send() has no failure path in the current implementation; this guards the bool contract.
         return false;
+        // @codeCoverageIgnoreEnd
     }
 }

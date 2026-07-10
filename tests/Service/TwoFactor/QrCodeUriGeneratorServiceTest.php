@@ -98,6 +98,25 @@ final class QrCodeUriGeneratorServiceTest extends TestCase
         self::assertStringContainsString('issuer=VoytiApp', $uri);
     }
 
+    public function testRunWithForceNewSecretIgnoresExistingSecret(): void
+    {
+        $config = new ModuleConfig(appName: 'VoytiApp');
+        $service = new QrCodeUriGeneratorService($config);
+
+        $user = $this->createMock(User::class);
+        $user->method('getAuthTfKey')->willReturn('existing-secret-key');
+        $user->method('getEmail')->willReturn('user@example.com');
+        $user->expects($this->once())->method('setAuthTfKey')->with($this->callback(
+            static fn (string $secret): bool => $secret !== 'existing-secret-key' && $secret !== '',
+        ));
+        $user->expects($this->once())->method('save');
+
+        $uri = $service->run($user, forceNewSecret: true);
+
+        self::assertStringContainsString('otpauth://totp/', $uri);
+        self::assertStringNotContainsString('secret=existing-secret-key', $uri);
+    }
+
     public function testRunWithNullSecretGeneratesNewOne(): void
     {
         $config = new ModuleConfig(appName: 'VoytiApp');

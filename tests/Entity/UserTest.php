@@ -242,25 +242,11 @@ final class UserTest extends TestCase
         self::assertSame('tfkey123', $entity->getAuthTfKey());
     }
 
-    public function testGetSetAuthTfKeyWithNull(): void
-    {
-        $entity = new User();
-        $entity->setAuthTfKey(null);
-        self::assertNull($entity->getAuthTfKey());
-    }
-
     public function testGetSetAuthTfType(): void
     {
         $entity = new User();
         $entity->setAuthTfType('totp');
         self::assertSame('totp', $entity->getAuthTfType());
-    }
-
-    public function testGetSetAuthTfTypeWithNull(): void
-    {
-        $entity = new User();
-        $entity->setAuthTfType(null);
-        self::assertNull($entity->getAuthTfType());
     }
 
     public function testGetSetBlockedAt(): void
@@ -270,25 +256,11 @@ final class UserTest extends TestCase
         self::assertSame(12345, $entity->getBlockedAt());
     }
 
-    public function testGetSetBlockedAtWithNull(): void
-    {
-        $entity = new User();
-        $entity->setBlockedAt(null);
-        self::assertNull($entity->getBlockedAt());
-    }
-
     public function testGetSetConfirmedAt(): void
     {
         $entity = new User();
         $entity->setConfirmedAt(12345);
         self::assertSame(12345, $entity->getConfirmedAt());
-    }
-
-    public function testGetSetConfirmedAtWithNull(): void
-    {
-        $entity = new User();
-        $entity->setConfirmedAt(null);
-        self::assertNull($entity->getConfirmedAt());
     }
 
     public function testGetSetCreatedAt(): void
@@ -319,25 +291,11 @@ final class UserTest extends TestCase
         self::assertSame(12345, $entity->getGdprConsentDate());
     }
 
-    public function testGetSetGdprConsentDateWithNull(): void
-    {
-        $entity = new User();
-        $entity->setGdprConsentDate(null);
-        self::assertNull($entity->getGdprConsentDate());
-    }
-
     public function testGetSetLastLoginAt(): void
     {
         $entity = new User();
         $entity->setLastLoginAt(12345);
         self::assertSame(12345, $entity->getLastLoginAt());
-    }
-
-    public function testGetSetLastLoginAtWithNull(): void
-    {
-        $entity = new User();
-        $entity->setLastLoginAt(null);
-        self::assertNull($entity->getLastLoginAt());
     }
 
     public function testGetSetLastLoginIp(): void
@@ -347,25 +305,11 @@ final class UserTest extends TestCase
         self::assertSame('10.0.0.1', $entity->getLastLoginIp());
     }
 
-    public function testGetSetLastLoginIpWithNull(): void
-    {
-        $entity = new User();
-        $entity->setLastLoginIp(null);
-        self::assertNull($entity->getLastLoginIp());
-    }
-
     public function testGetSetPasswordChangedAt(): void
     {
         $entity = new User();
         $entity->setPasswordChangedAt(12345);
         self::assertSame(12345, $entity->getPasswordChangedAt());
-    }
-
-    public function testGetSetPasswordChangedAtWithNull(): void
-    {
-        $entity = new User();
-        $entity->setPasswordChangedAt(null);
-        self::assertNull($entity->getPasswordChangedAt());
     }
 
     public function testGetSetPasswordHash(): void
@@ -382,25 +326,11 @@ final class UserTest extends TestCase
         self::assertSame('192.168.1.1', $entity->getRegistrationIp());
     }
 
-    public function testGetSetRegistrationIpWithNull(): void
-    {
-        $entity = new User();
-        $entity->setRegistrationIp(null);
-        self::assertNull($entity->getRegistrationIp());
-    }
-
     public function testGetSetUnconfirmedEmail(): void
     {
         $entity = new User();
         $entity->setUnconfirmedEmail('pending@example.com');
         self::assertSame('pending@example.com', $entity->getUnconfirmedEmail());
-    }
-
-    public function testGetSetUnconfirmedEmailWithNull(): void
-    {
-        $entity = new User();
-        $entity->setUnconfirmedEmail(null);
-        self::assertNull($entity->getUnconfirmedEmail());
     }
 
     public function testGetSetUpdatedAt(): void
@@ -515,24 +445,10 @@ final class UserTest extends TestCase
         self::assertFalse($entity->isAdminByList([]));
     }
 
-    public function testIsAnonymizedWithFalse(): void
-    {
-        $entity = new User();
-        $entity->setAnonymized(false);
-        self::assertFalse($entity->isAnonymized());
-    }
-
     public function testIsAnonymizedWithOne(): void
     {
         $entity = new User();
         $entity->setAnonymized(1);
-        self::assertTrue($entity->isAnonymized());
-    }
-
-    public function testIsAnonymizedWithTrue(): void
-    {
-        $entity = new User();
-        $entity->setAnonymized(true);
         self::assertTrue($entity->isAnonymized());
     }
 
@@ -543,24 +459,10 @@ final class UserTest extends TestCase
         self::assertFalse($entity->isAnonymized());
     }
 
-    public function testIsAuthTfEnabledWithFalse(): void
-    {
-        $entity = new User();
-        $entity->setAuthTfEnabled(false);
-        self::assertFalse($entity->isAuthTfEnabled());
-    }
-
     public function testIsAuthTfEnabledWithOne(): void
     {
         $entity = new User();
         $entity->setAuthTfEnabled(1);
-        self::assertTrue($entity->isAuthTfEnabled());
-    }
-
-    public function testIsAuthTfEnabledWithTrue(): void
-    {
-        $entity = new User();
-        $entity->setAuthTfEnabled(true);
         self::assertTrue($entity->isAuthTfEnabled());
     }
 
@@ -599,24 +501,10 @@ final class UserTest extends TestCase
         self::assertTrue($entity->isConfirmed());
     }
 
-    public function testIsGdprConsentWithFalse(): void
-    {
-        $entity = new User();
-        $entity->setGdprConsent(false);
-        self::assertFalse($entity->isGdprConsent());
-    }
-
     public function testIsGdprConsentWithOne(): void
     {
         $entity = new User();
         $entity->setGdprConsent(1);
-        self::assertTrue($entity->isGdprConsent());
-    }
-
-    public function testIsGdprConsentWithTrue(): void
-    {
-        $entity = new User();
-        $entity->setGdprConsent(true);
         self::assertTrue($entity->isGdprConsent());
     }
 

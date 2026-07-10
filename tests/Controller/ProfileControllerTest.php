@@ -48,13 +48,38 @@ final class ProfileControllerTest extends TestCase
 
     public function testIsAdminReturnsFalseForGuestIdentity(): void
     {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
         $config = new ModuleConfig(profileVisibility: ProfileController::PROFILE_VISIBILITY_ADMIN);
         $this->harness = new ControllerHarness($config);
 
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
+
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturn($response);
+
+        $result = $controller->show($request, 1);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testIsAdminReturnsFalseForIdentityWithNullId(): void
+    {
+        $config = new ModuleConfig(profileVisibility: ProfileController::PROFILE_VISIBILITY_ADMIN);
+        $this->harness = new ControllerHarness($config);
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn(null);
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -208,6 +233,37 @@ final class ProfileControllerTest extends TestCase
         $config = new ModuleConfig(profileVisibility: ProfileController::PROFILE_VISIBILITY_PUBLIC);
         $this->harness = new ControllerHarness($config);
         $this->currentUser->method('getIdentity')->willReturn(new GuestIdentity());
+
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $userProfile = $this->createMock(UserProfile::class);
+        $this->userProfileRepository->method('findByUserId')->willReturn($userProfile);
+
+        $user = $this->createMock(User::class);
+        $this->userRepository->method('findById')->willReturn($user);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('profile/show', $this->anything())
+            ->willReturn($response);
+
+        $result = $controller->show($request, 1);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testShowProfileVisibilityUsersAuthenticatedAllowed(): void
+    {
+        $config = new ModuleConfig(profileVisibility: ProfileController::PROFILE_VISIBILITY_USERS);
+        $this->harness = new ControllerHarness($config);
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('2');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
 
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');

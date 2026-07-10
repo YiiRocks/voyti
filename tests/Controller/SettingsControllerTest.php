@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Controller;
 
+use chillerlan\Authenticator\Authenticator;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseFactoryInterface;
@@ -25,6 +26,7 @@ use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
 use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
 use YiiRocks\Voyti\Service\UserSessionHistory\TerminateUserSessionsService;
 use YiiRocks\Voyti\Strategy\EmailChangeStrategyFactory;
+use YiiRocks\Voyti\Strategy\InsecureEmailChangeStrategy;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Hydrator\HydratorInterface;
@@ -147,6 +149,47 @@ final class SettingsControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
+    public function testAccountPostWithNewEmailInvokesChangeStrategy(): void
+    {
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['settings' => ['username' => 'testuser', 'email' => 'new@example.com', 'password' => '', 'passwordRepeat' => '']]);
+
+        $this->hydrator->method('hydrate')->willReturnCallback(
+            function (object $object, array $data = []): void {
+                if (property_exists($object, 'username') && isset($data['username'])) {
+                    $object->username = $data['username'];
+                }
+                if (property_exists($object, 'email') && isset($data['email'])) {
+                    $object->email = $data['email'];
+                }
+            },
+        );
+        $this->validator->method('validate')->willReturn(new Result());
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $user = $this->createMock(User::class);
+        $user->method('getUsername')->willReturn('testuser');
+        $user->method('getEmail')->willReturn('old@example.com');
+        $user->method('getId')->willReturn('1');
+        $this->userRepository->method('findById')->willReturn($user);
+
+        $strategy = $this->createMock(InsecureEmailChangeStrategy::class);
+        $strategy->expects($this->once())->method('run');
+        $this->emailChangeStrategyFactory->expects($this->once())
+            ->method('makeByStrategyType')
+            ->willReturn($strategy);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->method('createResponse')->willReturn($response);
+        $response->method('withHeader')->willReturnSelf();
+
+        $result = $controller->account($request);
+
+        $this->assertSame($response, $result);
+    }
+
     public function testAccountPostWithPasswordChange(): void
     {
         $controller = $this->createController();
@@ -242,6 +285,27 @@ final class SettingsControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
+    public function testAnonymizeGetShowsForm(): void
+    {
+        $config = new ModuleConfig(enableGdprCompliance: true);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('settings/privacy/anonymize', $this->anything())
+            ->willReturn($response);
+
+        $result = $controller->anonymize($request);
+
+        $this->assertSame($response, $result);
+    }
+
     public function testAnonymizePostWithValidPasswordAnonymizesUser(): void
     {
         $config = new ModuleConfig(enableGdprCompliance: true);
@@ -288,6 +352,76 @@ final class SettingsControllerTest extends TestCase
             ->willReturn($response);
 
         $result = $controller->anonymize($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testConfirmWhenGuestShowsError(): void
+    {
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->method('render')->willReturn($response);
+
+        $result = $controller->confirm($request, 'good-code');
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testConfirmWithInvalidCodeShowsFailureMessage(): void
+    {
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $user = $this->createMock(User::class);
+        $this->userRepository->method('findById')->willReturn($user);
+        $this->emailChangeService->expects($this->once())->method('run')->with('bad-code', $user)->willReturn(false);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('shared/message', $this->callback(
+                static fn (array $params): bool => $params['title'] === 'Failed to change email',
+            ))
+            ->willReturn($response);
+
+        $result = $controller->confirm($request, 'bad-code');
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testConfirmWithValidCodeShowsSuccessMessage(): void
+    {
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $user = $this->createMock(User::class);
+        $this->userRepository->method('findById')->willReturn($user);
+        $this->emailChangeService->expects($this->once())->method('run')->with('good-code', $user)->willReturn(true);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('shared/message', $this->callback(
+                static fn (array $params): bool => $params['title'] === 'Your email has been changed',
+            ))
+            ->willReturn($response);
+
+        $result = $controller->confirm($request, 'good-code');
 
         $this->assertSame($response, $result);
     }
@@ -535,6 +669,62 @@ final class SettingsControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
+    public function testExportIncludesUserProfileFields(): void
+    {
+        $config = new ModuleConfig(enableGdprCompliance: true, gdprExportProperties: [
+            'userProfile.public_email',
+            'userProfile.name',
+            'userProfile.gravatar_email',
+            'userProfile.location',
+            'userProfile.website',
+            'userProfile.bio',
+        ]);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $profile = $this->createMock(UserProfile::class);
+        $profile->method('getPublicEmail')->willReturn('public@example.com');
+        $profile->method('getName')->willReturn('Jane Doe');
+        $profile->method('getGravatarEmail')->willReturn('gravatar@example.com');
+        $profile->method('getLocation')->willReturn('Berlin');
+        $profile->method('getWebsite')->willReturn('https://example.com');
+        $profile->method('getBio')->willReturn('Hello there');
+
+        $user = $this->createMock(User::class);
+        $user->method('getProfile')->willReturn($profile);
+        $this->userRepository->method('findById')->willReturn($user);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->method('createResponse')->willReturn($response);
+        $response->method('withHeader')->willReturnSelf();
+
+        $expected = [
+            'userProfile.public_email' => 'public@example.com',
+            'userProfile.name' => 'Jane Doe',
+            'userProfile.gravatar_email' => 'gravatar@example.com',
+            'userProfile.location' => 'Berlin',
+            'userProfile.website' => 'https://example.com',
+            'userProfile.bio' => 'Hello there',
+        ];
+
+        $body = $this->createMock(StreamInterface::class);
+        $body->expects($this->once())
+            ->method('write')
+            ->with($this->callback(
+                static fn (string $json): bool => json_decode($json, true) === $expected,
+            ));
+        $response->method('getBody')->willReturn($body);
+
+        $result = $controller->export($request);
+
+        $this->assertSame($response, $result);
+    }
+
     public function testExportReturnsData(): void
     {
         $config = new ModuleConfig(enableGdprCompliance: true, gdprExportProperties: ['email', 'username']);
@@ -585,37 +775,8 @@ final class SettingsControllerTest extends TestCase
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
 
         $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturn($response);
-
-        $result = $controller->export($request);
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testExportWhenUserNotFoundShowsError(): void
-    {
-        $config = new ModuleConfig(enableGdprCompliance: true);
-        $this->harness = new ControllerHarness($config);
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
-        $this->currentUser->method('getIdentity')->willReturn($identity);
-        $this->userRepository->method('findById')->willReturn(null);
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturn($response);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->method('render')->willReturn($response);
 
         $result = $controller->export($request);
 
@@ -886,6 +1047,35 @@ final class SettingsControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
+    public function testProfileGetCreatesNewProfileWhenNoneExists(): void
+    {
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $user = $this->createMock(User::class);
+        $user->method('getId')->willReturn('1');
+        $user->method('getProfile')->willReturn(null);
+        $this->userRepository->method('findById')->willReturn($user);
+
+        $captured = [];
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->method('render')
+            ->willReturnCallback(function (string $view, array $params) use (&$captured, $response): ResponseInterface {
+                $captured = $params;
+                return $response;
+            });
+
+        $controller->userProfile($request);
+
+        $this->assertInstanceOf(UserProfile::class, $captured['userProfile']);
+        $this->assertSame(1, $captured['userProfile']->getUserId());
+    }
+
     public function testProfileGetDoesNotShowSwitchedBannerWhenNotSwitched(): void
     {
         $controller = $this->createController();
@@ -1025,12 +1215,8 @@ final class SettingsControllerTest extends TestCase
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
 
         $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturn($response);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->method('render')->willReturn($response);
 
         $result = $controller->userProfile($request);
 
@@ -1070,12 +1256,30 @@ final class SettingsControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    public function testTwoFactorEmailMethod(): void
+    public function testTwoFactorDisableWhenGuestShowsError(): void
     {
         $config = new ModuleConfig(enableTwoFactorAuthentication: true);
         $this->harness = new ControllerHarness($config);
         $controller = $this->createController();
-        $request = new ServerRequest('GET', '/?method=email');
+        $request = new ServerRequest('POST', '/');
+
+        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->method('render')->willReturn($response);
+
+        $result = $controller->twoFactorDisable($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testTwoFactorEmailRendersFragmentWithFragmentHeader(): void
+    {
+        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = (new ServerRequest('GET', '/'))->withHeader('X-Requested-With', 'XMLHttpRequest');
 
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn('1');
@@ -1083,10 +1287,41 @@ final class SettingsControllerTest extends TestCase
 
         $user = $this->createMock(User::class);
         $user->method('isAuthTfEnabled')->willReturn(false);
-        $user->method('getAuthTfType')->willReturn(null);
-        $user->method('getId')->willReturn('1');
+        $user->expects($this->never())->method('setAuthTfType');
+        $user->expects($this->never())->method('save');
         $this->userRepository->method('findById')->willReturn($user);
-        $this->twoFactorEmailCodeService->expects($this->once())->method('run')->with($user);
+        $this->twoFactorEmailCodeService->expects($this->never())->method('run');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('renderPartial')
+            ->with('settings/two-factor/_email', $this->callback(
+                static fn (array $params): bool => $params['emailCodeSent'] === false,
+            ))
+            ->willReturn($response);
+
+        $result = $controller->twoFactorEmail($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testTwoFactorEmailRendersShellWithoutFragmentHeader(): void
+    {
+        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $user = $this->createMock(User::class);
+        $user->method('isAuthTfEnabled')->willReturn(false);
+        $this->userRepository->method('findById')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -1094,9 +1329,79 @@ final class SettingsControllerTest extends TestCase
             ->willReturnSelf();
         $this->viewRenderer->expects($this->once())
             ->method('render')
+            ->with('settings/two-factor', $this->callback(
+                static fn (array $params): bool => $params['method'] === 'email'
+                    && $params['emailCodeSent'] === false
+                    && $params['preloadContent'] === true,
+            ))
             ->willReturn($response);
 
-        $result = $controller->twoFactor($request);
+        $result = $controller->twoFactorEmail($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testTwoFactorEmailWhenAlreadyEnabledRedirects(): void
+    {
+        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $user = $this->createMock(User::class);
+        $user->method('isAuthTfEnabled')->willReturn(true);
+        $this->userRepository->method('findById')->willReturn($user);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->willReturnSelf();
+
+        $result = $controller->twoFactorEmail($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testTwoFactorEmailWhenGuestShowsError(): void
+    {
+        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->method('render')->willReturn($response);
+
+        $result = $controller->twoFactorEmail($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testTwoFactorEnableWhenGuestShowsError(): void
+    {
+        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['method' => 'google', 'code' => '123456']);
+
+        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->method('render')->willReturn($response);
+
+        $result = $controller->twoFactorEnable($request);
 
         $this->assertSame($response, $result);
     }
@@ -1135,7 +1440,155 @@ final class SettingsControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    public function testTwoFactorGoogleMethod(): void
+    public function testTwoFactorEnableWithInvalidEmailCodeShowsFormWithCodeSent(): void
+    {
+        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['method' => 'email', 'code' => 'wrong']);
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $user = $this->createMock(User::class);
+        $user->method('getId')->willReturn('1');
+        $user->method('getAuthTfKey')->willReturn('123456');
+        $user->expects($this->never())->method('setAuthTfEnabled');
+
+        $this->userRepository->method('findById')->willReturn($user);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('settings/two-factor', $this->callback(
+                static fn (array $params): bool => $params['method'] === 'email'
+                    && $params['emailCodeSent'] === true
+                    && $params['preloadContent'] === true,
+            ))
+            ->willReturn($response);
+
+        $result = $controller->twoFactorEnable($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testTwoFactorEnableWithInvalidGoogleCodeShowsFormWithoutCodeSent(): void
+    {
+        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['method' => 'google', 'code' => 'wrong']);
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $user = $this->createMock(User::class);
+        $user->method('getId')->willReturn('1');
+        $user->method('getAuthTfType')->willReturn('google');
+        $user->method('getAuthTfKey')->willReturn(null);
+        $user->expects($this->never())->method('setAuthTfEnabled');
+
+        $this->userRepository->method('findById')->willReturn($user);
+        $this->twoFactorQrCodeService->method('generateQrCodeSvg')->willReturn('<svg></svg>');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('settings/two-factor', $this->callback(
+                static fn (array $params): bool => $params['method'] === 'google'
+                    && $params['emailCodeSent'] === false
+                    && $params['preloadContent'] === true,
+            ))
+            ->willReturn($response);
+
+        $result = $controller->twoFactorEnable($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testTwoFactorEnableWithValidGoogleCodeEnablesAndRedirects(): void
+    {
+        if (!class_exists(Authenticator::class)) {
+            $this->markTestSkipped('chillerlan/php-authenticator not installed.');
+        }
+
+        $secret = (new Authenticator())->createSecret();
+        $authenticator = new Authenticator();
+        $authenticator->setSecret($secret);
+        $code = $authenticator->code();
+
+        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['method' => 'google', 'code' => $code]);
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $user = $this->createMock(User::class);
+        $user->method('getId')->willReturn('1');
+        $user->method('getAuthTfType')->willReturn('google');
+        $user->method('getAuthTfKey')->willReturn($secret);
+        $user->expects($this->once())->method('setAuthTfType')->with('google');
+        $user->expects($this->once())->method('setAuthTfEnabled')->with(true);
+        $user->expects($this->once())->method('save');
+
+        $this->userRepository->method('findById')->willReturn($user);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->willReturnSelf();
+
+        $result = $controller->twoFactorEnable($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testTwoFactorGoogleRendersFragmentWithFragmentHeader(): void
+    {
+        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = (new ServerRequest('GET', '/'))->withHeader('X-Requested-With', 'XMLHttpRequest');
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $user = $this->createMock(User::class);
+        $user->method('isAuthTfEnabled')->willReturn(false);
+        $user->method('getAuthTfType')->willReturn(null);
+        $user->method('getAuthTfKey')->willReturn('secret');
+        $this->userRepository->method('findById')->willReturn($user);
+        $this->twoFactorQrCodeService->method('generateQrCodeSvg')->willReturn('<svg></svg>');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('renderPartial')
+            ->with('settings/two-factor/_google', $this->callback(
+                static fn (array $params): bool => $params['qrCodeUri'] === '<svg></svg>' && $params['secret'] === 'secret',
+            ))
+            ->willReturn($response);
+
+        $result = $controller->twoFactorGoogle($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testTwoFactorGoogleRendersShellWithoutFragmentHeader(): void
     {
         $config = new ModuleConfig(enableTwoFactorAuthentication: true);
         $this->harness = new ControllerHarness($config);
@@ -1159,9 +1612,352 @@ final class SettingsControllerTest extends TestCase
             ->willReturnSelf();
         $this->viewRenderer->expects($this->once())
             ->method('render')
+            ->with('settings/two-factor', $this->callback(
+                static fn (array $params): bool => $params['method'] === 'google'
+                    && $params['emailCodeSent'] === false
+                    && $params['preloadContent'] === true,
+            ))
             ->willReturn($response);
 
-        $result = $controller->twoFactor($request);
+        $result = $controller->twoFactorGoogle($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testTwoFactorGoogleWhenAlreadyEnabledRedirects(): void
+    {
+        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $user = $this->createMock(User::class);
+        $user->method('isAuthTfEnabled')->willReturn(true);
+        $this->userRepository->method('findById')->willReturn($user);
+        $this->twoFactorQrCodeService->expects($this->never())->method('generateQrCodeSvg');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->willReturnSelf();
+
+        $result = $controller->twoFactorGoogle($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testTwoFactorGoogleWhenGuestShowsError(): void
+    {
+        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->method('render')->willReturn($response);
+
+        $result = $controller->twoFactorGoogle($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testTwoFactorRenewDoesNotResetTypeWhenAlreadyGoogle(): void
+    {
+        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = new ServerRequest('POST', '/');
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $user = $this->createMock(User::class);
+        $user->method('isAuthTfEnabled')->willReturn(false);
+        $user->method('getAuthTfType')->willReturn('google');
+        $user->method('getAuthTfKey')->willReturn('secret');
+        $user->expects($this->never())->method('setAuthTfType');
+        $this->userRepository->method('findById')->willReturn($user);
+
+        $this->twoFactorQrCodeService->method('isAvailable')->willReturn(true);
+        $this->twoFactorQrCodeService->method('generateQrCodeSvg')->willReturn('<svg></svg>');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->method('createResponse')->willReturn($response);
+        $response->method('withHeader')->willReturnSelf();
+        $response->method('getBody')->willReturn($this->createMock(StreamInterface::class));
+
+        $result = $controller->twoFactorRenew($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testTwoFactorRenewGeneratesNewSecret(): void
+    {
+        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = new ServerRequest('POST', '/');
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $user = $this->createMock(User::class);
+        $user->method('isAuthTfEnabled')->willReturn(false);
+        $user->method('getAuthTfType')->willReturn('email');
+        $user->method('getAuthTfKey')->willReturn('new-secret');
+        $user->expects($this->once())->method('setAuthTfType')->with('google');
+        $this->userRepository->method('findById')->willReturn($user);
+
+        $this->twoFactorQrCodeService->method('isAvailable')->willReturn(true);
+        $this->twoFactorQrCodeService->expects($this->once())
+            ->method('generateQrCodeSvg')
+            ->with($user, forceNewSecret: true)
+            ->willReturn('<svg>new</svg>');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(200)
+            ->willReturn($response);
+        $response->expects($this->once())->method('withHeader')->willReturnSelf();
+
+        $body = $this->createMock(StreamInterface::class);
+        $body->expects($this->once())
+            ->method('write')
+            ->with($this->callback(
+                static fn (string $json): bool => json_decode($json, true) === ['qrCodeUri' => '<svg>new</svg>', 'secret' => 'new-secret'],
+            ));
+        $response->method('getBody')->willReturn($body);
+
+        $result = $controller->twoFactorRenew($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testTwoFactorRenewWhenAlreadyEnabledReturnsError(): void
+    {
+        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = new ServerRequest('POST', '/');
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $user = $this->createMock(User::class);
+        $user->method('isAuthTfEnabled')->willReturn(true);
+        $this->userRepository->method('findById')->willReturn($user);
+        $this->twoFactorQrCodeService->expects($this->never())->method('generateQrCodeSvg');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(403)
+            ->willReturn($response);
+        $response->method('withHeader')->willReturnSelf();
+        $response->method('getBody')->willReturn($this->createMock(StreamInterface::class));
+
+        $result = $controller->twoFactorRenew($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testTwoFactorRenewWhenGuestReturnsError(): void
+    {
+        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = new ServerRequest('POST', '/');
+
+        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(401)
+            ->willReturn($response);
+        $response->method('withHeader')->willReturnSelf();
+        $response->method('getBody')->willReturn($this->createMock(StreamInterface::class));
+
+        $result = $controller->twoFactorRenew($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testTwoFactorRenewWhenLibraryMissingReturnsError(): void
+    {
+        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = new ServerRequest('POST', '/');
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $user = $this->createMock(User::class);
+        $user->method('isAuthTfEnabled')->willReturn(false);
+        $this->userRepository->method('findById')->willReturn($user);
+        $this->twoFactorQrCodeService->method('isAvailable')->willReturn(false);
+        $this->twoFactorQrCodeService->expects($this->never())->method('generateQrCodeSvg');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(503)
+            ->willReturn($response);
+        $response->method('withHeader')->willReturnSelf();
+        $response->method('getBody')->willReturn($this->createMock(StreamInterface::class));
+
+        $result = $controller->twoFactorRenew($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testTwoFactorRenewWhenUserNotFoundReturnsError(): void
+    {
+        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = new ServerRequest('POST', '/');
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->userRepository->method('findById')->willReturn(null);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(404)
+            ->willReturn($response);
+        $response->method('withHeader')->willReturnSelf();
+        $response->method('getBody')->willReturn($this->createMock(StreamInterface::class));
+
+        $result = $controller->twoFactorRenew($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testTwoFactorSendEmailCodeDoesNotResetTypeWhenAlreadyEmail(): void
+    {
+        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = new ServerRequest('POST', '/');
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $user = $this->createMock(User::class);
+        $user->method('isAuthTfEnabled')->willReturn(false);
+        $user->method('getAuthTfType')->willReturn('email');
+        $user->expects($this->never())->method('setAuthTfType');
+        $user->expects($this->never())->method('save');
+        $this->userRepository->method('findById')->willReturn($user);
+        $this->twoFactorEmailCodeService->expects($this->once())->method('run')->with($user);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->method('render')->willReturn($response);
+
+        $result = $controller->twoFactorSendEmailCode($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testTwoFactorSendEmailCodeSendsCodeAndRendersView(): void
+    {
+        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = new ServerRequest('POST', '/');
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $user = $this->createMock(User::class);
+        $user->method('isAuthTfEnabled')->willReturn(false);
+        $user->method('getAuthTfType')->willReturn(null);
+        $user->expects($this->once())->method('setAuthTfType')->with('email');
+        $user->expects($this->once())->method('save');
+        $this->userRepository->method('findById')->willReturn($user);
+        $this->twoFactorEmailCodeService->expects($this->once())->method('run')->with($user);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('settings/two-factor', $this->callback(
+                static fn (array $params): bool => $params['method'] === 'email'
+                    && $params['emailCodeSent'] === true
+                    && $params['preloadContent'] === true,
+            ))
+            ->willReturn($response);
+
+        $result = $controller->twoFactorSendEmailCode($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testTwoFactorSendEmailCodeWhenAlreadyEnabledRedirects(): void
+    {
+        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = new ServerRequest('POST', '/');
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $user = $this->createMock(User::class);
+        $user->method('isAuthTfEnabled')->willReturn(true);
+        $this->userRepository->method('findById')->willReturn($user);
+        $this->twoFactorEmailCodeService->expects($this->never())->method('run');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())->method('withHeader')->willReturnSelf();
+
+        $result = $controller->twoFactorSendEmailCode($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testTwoFactorSendEmailCodeWhenGuestShowsError(): void
+    {
+        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = new ServerRequest('POST', '/');
+
+        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->method('render')->willReturn($response);
+
+        $result = $controller->twoFactorSendEmailCode($request);
 
         $this->assertSame($response, $result);
     }
@@ -1188,7 +1984,10 @@ final class SettingsControllerTest extends TestCase
             ->willReturnSelf();
         $this->viewRenderer->expects($this->once())
             ->method('render')
-            ->with('settings/two-factor', $this->anything())
+            ->with('settings/two-factor', $this->callback(
+                static fn (array $params): bool => $params['emailCodeSent'] === false
+                    && $params['preloadContent'] === true,
+            ))
             ->willReturn($response);
 
         $result = $controller->twoFactor($request);
@@ -1206,19 +2005,15 @@ final class SettingsControllerTest extends TestCase
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
 
         $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturn($response);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->method('render')->willReturn($response);
 
         $result = $controller->twoFactor($request);
 
         $this->assertSame($response, $result);
     }
 
-    public function testTwoFactorWhenUserNotFoundShowsError(): void
+    public function testTwoFactorWhenNotEnabledRendersShellWithoutPreloadingContent(): void
     {
         $config = new ModuleConfig(enableTwoFactorAuthentication: true);
         $this->harness = new ControllerHarness($config);
@@ -1228,7 +2023,11 @@ final class SettingsControllerTest extends TestCase
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn('1');
         $this->currentUser->method('getIdentity')->willReturn($identity);
-        $this->userRepository->method('findById')->willReturn(null);
+
+        $user = $this->createMock(User::class);
+        $user->method('isAuthTfEnabled')->willReturn(false);
+        $this->userRepository->method('findById')->willReturn($user);
+        $this->twoFactorQrCodeService->expects($this->never())->method('generateQrCodeSvg');
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -1236,6 +2035,11 @@ final class SettingsControllerTest extends TestCase
             ->willReturnSelf();
         $this->viewRenderer->expects($this->once())
             ->method('render')
+            ->with('settings/two-factor', $this->callback(
+                static fn (array $params): bool => $params['method'] === 'google'
+                    && $params['emailCodeSent'] === false
+                    && $params['preloadContent'] === false,
+            ))
             ->willReturn($response);
 
         $result = $controller->twoFactor($request);

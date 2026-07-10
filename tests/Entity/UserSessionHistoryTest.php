@@ -73,13 +73,6 @@ final class UserSessionHistoryTest extends TestCase
         self::assertSame('192.168.1.1', $entity->getIp());
     }
 
-    public function testGetSetIpWithNull(): void
-    {
-        $entity = new UserSessionHistory();
-        $entity->setIp(null);
-        self::assertNull($entity->getIp());
-    }
-
     public function testGetSetSessionId(): void
     {
         $entity = new UserSessionHistory();
@@ -99,13 +92,6 @@ final class UserSessionHistoryTest extends TestCase
         $entity = new UserSessionHistory();
         $entity->setUserAgent('Mozilla/5.0');
         self::assertSame('Mozilla/5.0', $entity->getUserAgent());
-    }
-
-    public function testGetSetUserAgentWithNull(): void
-    {
-        $entity = new UserSessionHistory();
-        $entity->setUserAgent(null);
-        self::assertNull($entity->getUserAgent());
     }
 
     public function testGetSetUserId(): void

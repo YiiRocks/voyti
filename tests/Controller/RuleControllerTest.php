@@ -112,6 +112,30 @@ final class RuleControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
+    public function testCreatePostWithInvalidDataShowsErrors(): void
+    {
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['rule' => ['name' => '', 'class' => '']]);
+
+        $result = new Result();
+        $result->addError('Name is required.');
+        $this->validator->method('validate')->willReturn($result);
+        $this->ruleEditionService->expects($this->never())->method('create');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('rbac/rule/create', $this->callback(
+                static fn (array $params): bool => $params['errors'] !== [],
+            ))
+            ->willReturn($response);
+
+        $result2 = $controller->create($request);
+
+        $this->assertSame($response, $result2);
+    }
+
     public function testDeleteRemovesRule(): void
     {
         $controller = $this->createController();
@@ -216,6 +240,30 @@ final class RuleControllerTest extends TestCase
         $result = $controller->update($request, 'oldRule');
 
         $this->assertSame($response, $result);
+    }
+
+    public function testUpdatePostWithInvalidDataShowsErrors(): void
+    {
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['rule' => ['name' => '', 'class' => '']]);
+
+        $result = new Result();
+        $result->addError('Name is required.');
+        $this->validator->method('validate')->willReturn($result);
+        $this->ruleEditionService->expects($this->never())->method('update');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('rbac/rule/update', $this->callback(
+                static fn (array $params): bool => $params['errors'] !== [],
+            ))
+            ->willReturn($response);
+
+        $result2 = $controller->update($request, 'oldRule');
+
+        $this->assertSame($response, $result2);
     }
 
     private function createController(): RuleController

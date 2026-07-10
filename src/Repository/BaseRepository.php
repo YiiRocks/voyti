@@ -12,20 +12,6 @@ use Yiisoft\ActiveRecord\ActiveRecordInterface;
  */
 abstract class BaseRepository
 {
-    /**
-     * @param class-string<TEntity> $class
-     *
-     * @psalm-return int<0, max>|string
-     */
-    protected function count(string $class, array $condition = []): int|string
-    {
-        $query = new ActiveQuery(new $class());
-        if (!empty($condition)) {
-            $query = $query->where($condition);
-        }
-        return $query->count();
-    }
-
     protected function delete(ActiveRecordInterface $model): void
     {
         $model->delete();

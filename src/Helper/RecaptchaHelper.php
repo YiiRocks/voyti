@@ -27,7 +27,11 @@ final class RecaptchaHelper
     public static function render(FormModelInterface $form, ModuleConfig $config, string $attribute = 'gRecaptchaResponse'): string
     {
         if (!self::isAvailable()) {
+            // @codeCoverageIgnoreStart
+            // Both classes are always present in the test environment (see isAvailable()); this branch only
+            // matters for host apps that don't install the optional yiirocks/recaptcha package.
             return '';
+            // @codeCoverageIgnoreEnd
         }
 
         if ($config->recaptchaVersion === null) {
@@ -38,13 +42,19 @@ final class RecaptchaHelper
 
         if ($config->recaptchaVersion === 'v2') {
             if (!class_exists(RecaptchaV2Field::class)) {
+                // @codeCoverageIgnoreStart
+                // Same as isAvailable(): unreachable while yiirocks/recaptcha is installed in the test environment.
                 return '';
+                // @codeCoverageIgnoreEnd
             }
             return RecaptchaV2Field::field($form, $attribute)->render();
         }
 
         if (!class_exists(RecaptchaV3Field::class)) {
+            // @codeCoverageIgnoreStart
+            // Same as isAvailable(): unreachable while yiirocks/recaptcha is installed in the test environment.
             return '';
+            // @codeCoverageIgnoreEnd
         }
         /** @infection-ignore-all Concat ConcatOperandRemoval: both branches throw MissingSiteKeyException in tests, so the action string is never observable. */
         return RecaptchaV3Field::field($form, $attribute)

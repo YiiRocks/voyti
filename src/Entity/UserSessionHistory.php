@@ -48,6 +48,15 @@ final class UserSessionHistory extends ActiveRecord
         return $this->user_id;
     }
 
+    /**
+     * @psalm-return list{'user_id', 'session_id'}
+     */
+    #[\Override]
+    public function primaryKey(): array
+    {
+        return ['user_id', 'session_id'];
+    }
+
     public function setCreatedAt(int $createdAt): void
     {
         $this->created_at = $createdAt;

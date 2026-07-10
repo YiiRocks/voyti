@@ -6,6 +6,7 @@ use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
+use Yiisoft\Json\Json;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -17,6 +18,8 @@ use Yiisoft\View\WebView;
  * @var string $method
  * @var string $qrCodeUri
  * @var string|null $secret
+ * @var bool $emailCodeSent
+ * @var bool $preloadContent
  * @var ModuleConfig $config
  * @var array<string, list<string>> $errors
  * @var UrlGeneratorInterface $url
@@ -66,61 +69,112 @@ if ($user->isAuthTfEnabled()) {
 
     echo Html::form()->close();
 } else {
+    $googleUrl = $url->generate('voyti/settings-two-factor-google');
+    $emailUrl = $url->generate('voyti/settings-two-factor-email');
+
     echo Html::div()->class('d-flex justify-content-center mb-3')->open();
     echo Html::div()->class('btn-group')->open();
-    echo Html::a(
-        $translator->translate('voyti.view.two_factor.title', category: 'voyti'),
-        $url->generate('voyti/settings-two-factor', ['method' => 'google']),
-    )->class('btn', $method === 'google' ? 'btn-primary' : 'btn-outline-primary');
-    echo Html::a(
-        $translator->translate('voyti.view.two_factor_email.title', category: 'voyti'),
-        $url->generate('voyti/settings-two-factor', ['method' => 'email']),
-    )->class('btn', $method === 'email' ? 'btn-primary' : 'btn-outline-primary');
+    echo Html::a($translator->translate('voyti.view.two_factor_google.button_label', category: 'voyti'), $googleUrl)
+        ->class('btn', $method === 'google' ? 'btn-primary' : 'btn-outline-primary')
+        ->attribute('data-voyti-2fa-method', 'google');
+    echo Html::a($translator->translate('voyti.view.two_factor_email.button_label', category: 'voyti'), $emailUrl)
+        ->class('btn', $method === 'email' ? 'btn-primary' : 'btn-outline-primary')
+        ->attribute('data-voyti-2fa-method', 'email');
     echo Html::div()->close();
     echo Html::div()->close();
 
-    if ($method === 'email') {
-        echo Html::div()->class('alert alert-info')->open();
-        echo $translator->translate('voyti.view.two_factor_email.enter_code', category: 'voyti');
+    echo Html::div()->id('voyti-2fa-content')->open();
+    if (!$preloadContent) {
+        echo Html::div()->class('d-flex justify-content-center')->open();
+        echo Html::div()
+            ->class('spinner-border')
+            ->attribute('role', 'status')
+            ->content(Html::span($translator->translate('voyti.view.two_factor.loading', category: 'voyti'))->class('visually-hidden'));
         echo Html::div()->close();
+    } elseif ($method === 'email') {
+        /** @psalm-suppress InvalidScope */
+        echo $this->render('./two-factor/_email', [
+            'user' => $user,
+            'emailCodeSent' => $emailCodeSent,
+            'config' => $config,
+            'url' => $url,
+            'translator' => $translator,
+            'csrf' => $csrf,
+        ]);
     } else {
-        echo Html::p($translator->translate('voyti.view.two_factor.scan_qr', category: 'voyti'));
-
-        if (!empty($qrCodeUri)) {
-            echo Html::div()->class('img-fluid mb-3')->addStyle(['max-width' => '260px'])->open();
-            echo $qrCodeUri;
-            echo Html::div()->close();
-
-            if ($secret !== null) {
-                echo Html::p($translator->translate('voyti.view.two_factor.manual_entry', category: 'voyti') . ' ' . Html::code($secret)->render())->encode(false);
-            }
-        } else {
-            echo Html::div()->class('alert alert-warning')->open();
-            echo $translator->translate('voyti.view.two_factor.qr_unavailable', category: 'voyti');
-            echo Html::div()->close();
-        }
+        /** @psalm-suppress InvalidScope */
+        echo $this->render('./two-factor/_google', [
+            'user' => $user,
+            'qrCodeUri' => $qrCodeUri,
+            'secret' => $secret,
+            'config' => $config,
+            'url' => $url,
+            'translator' => $translator,
+            'csrf' => $csrf,
+        ]);
     }
-
-    echo Html::form()
-        ->post($url->generate('voyti/settings-two-factor-enable'))
-        ->csrf($csrf)
-        ->open();
-
-    echo Html::hiddenInput('method', $method);
-
-    $tabindex = 0;
-
-    echo Html::div()->class('mb-3')->open();
-    echo Html::label($translator->translate('voyti.view.two_factor.enter_code', category: 'voyti'))->class('form-label');
-    echo Html::textInput('code')->class('form-control')->required()->attribute('tabindex', ++$tabindex);
     echo Html::div()->close();
 
-    echo Field::buttonGroup()
-        ->buttons(
-            Html::resetButton($translator->translate('voyti.view.reset_button', category: 'voyti'))->attribute('tabindex', $tabindex + 2),
-            Html::submitButton($translator->translate('voyti.view.two_factor.enable', category: 'voyti'))->attribute('tabindex', ++$tabindex),
-        );
-
-    echo Html::form()->close();
+    $switchConfig = [
+        'renewUrl' => $url->generate('voyti/settings-two-factor-renew'),
+        // Json::encode() only reads public properties via get_object_vars(), so passing
+        // the Csrf object itself would silently serialize as {} - force the string value.
+        'csrfToken' => $csrf . '',
+        'renewErrorMessage' => $translator->translate('voyti.view.two_factor.renew_error', category: 'voyti'),
+        'autoloadUrl' => $preloadContent ? null : ($method === 'email' ? $emailUrl : $googleUrl),
+        'autoloadMethod' => $method,
+    ];
+    echo Html::script(
+        '(function(){'
+        . 'var cfg=' . Json::htmlEncode($switchConfig) . ';'
+        . 'var content=document.getElementById("voyti-2fa-content");'
+        . 'var buttons=document.querySelectorAll("[data-voyti-2fa-method]");'
+        . 'function setActive(method){'
+        . 'buttons.forEach(function(b){'
+        . 'var active=b.getAttribute("data-voyti-2fa-method")===method;'
+        . 'b.classList.toggle("btn-primary",active);'
+        . 'b.classList.toggle("btn-outline-primary",!active);'
+        . '});'
+        . '}'
+        . 'function loadMethod(method,fragmentUrl){'
+        . 'if(!content||!fragmentUrl){return;}'
+        . 'fetch(fragmentUrl,{headers:{"Accept":"text/html","X-Requested-With":"XMLHttpRequest"},credentials:"same-origin"})'
+        . '.then(function(response){if(!response.ok){throw new Error("load failed");}return response.text();})'
+        . '.then(function(html){'
+        . 'content.innerHTML=html;'
+        . 'setActive(method);'
+        . 'window.history.replaceState(null,"",fragmentUrl);'
+        . '})'
+        . '.catch(function(){window.location.href=fragmentUrl;});'
+        . '}'
+        . 'buttons.forEach(function(btn){'
+        . 'btn.addEventListener("click",function(e){'
+        . 'if(e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey){return;}'
+        . 'e.preventDefault();'
+        . 'loadMethod(btn.getAttribute("data-voyti-2fa-method"),btn.getAttribute("href"));'
+        . '});'
+        . '});'
+        . 'if(content){'
+        . 'content.addEventListener("click",function(e){'
+        . 'var btn=e.target.closest("#voyti-2fa-renew");'
+        . 'if(!btn){return;}'
+        . 'btn.disabled=true;'
+        . 'var body=new URLSearchParams();'
+        . 'body.set("_csrf",cfg.csrfToken);'
+        . 'fetch(cfg.renewUrl,{method:"POST",headers:{"Accept":"application/json"},credentials:"same-origin",body:body})'
+        . '.then(function(response){if(!response.ok){throw new Error("renew failed");}return response.json();})'
+        . '.then(function(data){'
+        . 'var qrEl=document.getElementById("voyti-2fa-qr");'
+        . 'if(qrEl&&data.qrCodeUri){qrEl.innerHTML=data.qrCodeUri;}'
+        . 'var secretEl=document.getElementById("voyti-2fa-secret");'
+        . 'if(secretEl&&data.secret){secretEl.textContent=data.secret;}'
+        . 'btn.disabled=false;'
+        . '})'
+        . '.catch(function(){window.alert(cfg.renewErrorMessage);btn.disabled=false;});'
+        . '});'
+        . '}'
+        . 'if(cfg.autoloadUrl){loadMethod(cfg.autoloadMethod,cfg.autoloadUrl);}'
+        . '})();',
+    )->render();
 }
 echo Html::div()->close();

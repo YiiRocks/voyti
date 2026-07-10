@@ -96,6 +96,10 @@ final class SimpleAssignmentsStorage implements AssignmentsStorageInterface
 
     public function renameItem(string $oldName, string $newName): void
     {
+        if ($oldName === $newName) {
+            return;
+        }
+
         foreach ($this->assignments as $userId => $userAssignments) {
             if (isset($userAssignments[$oldName])) {
                 $assignment = $userAssignments[$oldName];

@@ -55,8 +55,11 @@ final class CodeValidator
         }
 
         if (!class_exists(Authenticator::class)) {
+            // @codeCoverageIgnoreStart
+            // Only reachable when chillerlan/php-authenticator is missing; always installed in the test environment.
             $this->error = $this->t('voyti.validator.two_factor_library_missing');
             return false;
+            // @codeCoverageIgnoreEnd
         }
 
         try {

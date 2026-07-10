@@ -130,6 +130,7 @@ return [
 
     // Two-factor confirm view
     'voyti.view.two_factor.title' => 'Двухфакторная аутентификация',
+    'voyti.view.two_factor_google.button_label' => 'Google Authenticator',
     'voyti.view.two_factor.code_label' => 'Код аутентификации',
     'voyti.view.two_factor.verify_button' => 'Проверить',
     'voyti.view.two_factor.enabled' => 'Двухфакторная аутентификация включена',
@@ -140,8 +141,15 @@ return [
     'voyti.view.two_factor.enter_code' => 'Введите проверочный код',
     'voyti.view.two_factor.enable' => 'Включить',
     'voyti.view.two_factor.verify' => 'Проверить',
+    'voyti.view.two_factor.renew' => 'Обновить',
+    'voyti.view.two_factor.renew_error' => 'Не удалось создать новый ключ. Пожалуйста, попробуйте снова.',
+    'voyti.view.two_factor.loading' => 'Загрузка…',
+    'voyti.view.two_factor.already_enabled' => 'Двухфакторная аутентификация уже включена.',
     'voyti.view.two_factor_email.title' => 'Двухфакторная аутентификация по email',
+    'voyti.view.two_factor_email.button_label' => 'Email',
     'voyti.view.two_factor_email.enter_code' => 'Введите проверочный код, отправленный на ваш email',
+    'voyti.view.two_factor_email.confirm_intro' => 'Проверочный код будет отправлен на указанный ниже адрес электронной почты.',
+    'voyti.view.two_factor_email.send_button' => 'Отправить код',
     // Registration views
     'voyti.view.registration.register_title' => 'Создать аккаунт',
     'voyti.view.registration.gdpr_consent_label' => 'Я согласен на обработку моих персональных данных',

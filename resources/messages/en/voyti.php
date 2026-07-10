@@ -134,6 +134,7 @@ return [
 
     // Two-factor confirm view
     'voyti.view.two_factor.title' => 'Two-Factor Authentication',
+    'voyti.view.two_factor_google.button_label' => 'Google Authenticator',
     'voyti.view.two_factor.code_label' => 'Authentication Code',
     'voyti.view.two_factor.verify_button' => 'Verify',
     'voyti.view.two_factor.enabled' => 'Two-factor authentication is enabled',
@@ -144,8 +145,15 @@ return [
     'voyti.view.two_factor.enter_code' => 'Enter the verification code',
     'voyti.view.two_factor.enable' => 'Enable',
     'voyti.view.two_factor.verify' => 'Verify',
+    'voyti.view.two_factor.renew' => 'Renew',
+    'voyti.view.two_factor.renew_error' => 'Could not generate a new key. Please try again.',
+    'voyti.view.two_factor.loading' => 'Loading…',
+    'voyti.view.two_factor.already_enabled' => 'Two-factor authentication is already enabled.',
     'voyti.view.two_factor_email.title' => 'Two-factor authentication via email',
+    'voyti.view.two_factor_email.button_label' => 'Email',
     'voyti.view.two_factor_email.enter_code' => 'Enter the verification code sent to your email',
+    'voyti.view.two_factor_email.confirm_intro' => 'A verification code will be sent to the email address below.',
+    'voyti.view.two_factor_email.send_button' => 'Send Code',
     // Registration views
     'voyti.view.registration.register_title' => 'Create account',
     'voyti.view.registration.gdpr_consent_label' => 'I agree processing of my personal data',

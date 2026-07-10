@@ -183,6 +183,37 @@ final class RecoveryControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
+    public function testResetPostWithInvalidDataShowsErrors(): void
+    {
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['recovery' => ['password' => '', 'passwordRepeat' => '']]);
+
+        $result = new Result();
+        $result->addError('Password is required.');
+        $this->validator->method('validate')->willReturn($result);
+
+        $userToken = $this->createMock(UserToken::class);
+        $userToken->method('getIsExpired')->willReturn(false);
+        $user = $this->createMock(User::class);
+        $userToken->method('getUser')->willReturn($user);
+
+        $this->userTokenRepository->method('findByUserIdTypeAndCode')->willReturn($userToken);
+        $this->resetService->expects($this->never())->method('run');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('recovery/reset', $this->callback(
+                static fn (array $params): bool => $params['errors'] !== [],
+            ))
+            ->willReturn($response);
+
+        $result2 = $controller->reset($request, 1, 'valid');
+
+        $this->assertSame($response, $result2);
+    }
+
     public function testResetWithDisabledConfigShowsMessage(): void
     {
         $config = new ModuleConfig(allowPasswordRecovery: false, allowAdminPasswordRecovery: false);

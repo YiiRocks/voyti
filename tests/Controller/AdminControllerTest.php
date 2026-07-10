@@ -11,6 +11,7 @@ use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\AdminController;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserProfile;
+use YiiRocks\Voyti\Entity\UserSessionHistory;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\UserProfileRepository;
@@ -281,6 +282,39 @@ final class AdminControllerTest extends TestCase
         $response->expects($this->once())
             ->method('withHeader')
             ->willReturnSelf();
+
+        $result = $controller->create($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testCreatePostWithAssignedItemsAssignsUser(): void
+    {
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody([
+            'register' => ['username' => 'newuser', 'email' => 'new@example.com', 'password' => 'password123', 'passwordRepeat' => 'password123'],
+            'assignedItems' => ['admin'],
+        ]);
+
+        $this->hydrator->method('hydrate')->willReturnCallback(
+            static function (object $object, array $data = []): void {
+                foreach ($data as $key => $value) {
+                    if (property_exists($object, $key)) {
+                        $object->$key = $value;
+                    }
+                }
+            },
+        );
+        $this->createService->method('run')->willReturn(ServiceResult::success('User created'));
+
+        $createdUser = $this->createMock(User::class);
+        $createdUser->method('getId')->willReturn('42');
+        $this->userRepository->expects($this->once())->method('findByUsername')->with('newuser')->willReturn($createdUser);
+        $this->updateAssignmentsService->expects($this->once())->method('run')->with(42, ['admin']);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->method('createResponse')->willReturn($response);
+        $response->method('withHeader')->willReturnSelf();
 
         $result = $controller->create($request);
 
@@ -591,6 +625,27 @@ final class AdminControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
+    public function testSwitchIdentityRestoreFailureShowsError(): void
+    {
+        $controller = $this->createController();
+
+        $this->switchIdentityService->expects($this->once())
+            ->method('restore')
+            ->willReturn(ServiceResult::failure());
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturn($response);
+
+        $result = $controller->switchIdentityRestore();
+
+        $this->assertSame($response, $result);
+    }
+
     public function testSwitchIdentityRestoreSuccessRedirects(): void
     {
         $controller = $this->createController();
@@ -642,7 +697,10 @@ final class AdminControllerTest extends TestCase
         $user = $this->createMock(User::class);
         $user->method('getId')->willReturn('1');
         $this->userRepository->method('findById')->willReturn($user);
-        $this->userSessionHistoryRepository->method('findByUserId')->willReturn([]);
+
+        $session = $this->createMock(UserSessionHistory::class);
+        $session->expects($this->once())->method('delete');
+        $this->userSessionHistoryRepository->method('findByUserId')->willReturn([$session]);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
@@ -762,6 +820,31 @@ final class AdminControllerTest extends TestCase
         $result = $controller->update($request, 1);
 
         $this->assertSame($response, $result);
+    }
+
+    public function testUpdateProfileGetCreatesNewProfileWhenNoneExists(): void
+    {
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $user = $this->createMock(User::class);
+        $user->method('getId')->willReturn('1');
+        $user->method('getProfile')->willReturn(null);
+        $this->userRepository->method('findById')->willReturn($user);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $captured = [];
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->method('render')
+            ->willReturnCallback(function (string $view, array $params) use (&$captured, $response): ResponseInterface {
+                $captured = $params;
+                return $response;
+            });
+
+        $result = $controller->updateProfile($request, 1);
+
+        $this->assertSame($response, $result);
+        $this->assertSame('', $captured['model']->name);
     }
 
     public function testUpdateProfileGetShowsForm(): void

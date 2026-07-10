@@ -89,7 +89,10 @@ final readonly class RecoveryController
         }
 
         $user = $userToken->getUser();
+        // zend.assertions=-1 strips this statement at compile time, so it can never register as executed.
+        // @codeCoverageIgnoreStart
         assert($user !== null);
+        // @codeCoverageIgnoreEnd
 
         $form = new RecoveryForm($this->config, $this->translator, RecoveryForm::SCENARIO_RESET);
         $errors = [];

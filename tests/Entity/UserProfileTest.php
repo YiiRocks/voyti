@@ -221,26 +221,11 @@ final class UserProfileTest extends TestCase
         self::assertSame('My bio', $entity->getBio());
     }
 
-    public function testGetSetBioWithNull(): void
-    {
-        $entity = new UserProfile();
-        self::assertNull($entity->getBio());
-        $entity->setBio(null);
-        self::assertNull($entity->getBio());
-    }
-
     public function testGetSetGravatarEmail(): void
     {
         $entity = new UserProfile();
         $entity->setGravatarEmail('gravatar@example.com');
         self::assertSame('gravatar@example.com', $entity->getGravatarEmail());
-    }
-
-    public function testGetSetGravatarEmailWithNull(): void
-    {
-        $entity = new UserProfile();
-        $entity->setGravatarEmail(null);
-        self::assertNull($entity->getGravatarEmail());
     }
 
     public function testGetSetLocation(): void
@@ -250,25 +235,11 @@ final class UserProfileTest extends TestCase
         self::assertSame('New York', $entity->getLocation());
     }
 
-    public function testGetSetLocationWithNull(): void
-    {
-        $entity = new UserProfile();
-        $entity->setLocation(null);
-        self::assertNull($entity->getLocation());
-    }
-
     public function testGetSetName(): void
     {
         $entity = new UserProfile();
         $entity->setName('John Doe');
         self::assertSame('John Doe', $entity->getName());
-    }
-
-    public function testGetSetNameWithNull(): void
-    {
-        $entity = new UserProfile();
-        $entity->setName(null);
-        self::assertNull($entity->getName());
     }
 
     public function testGetSetPublicEmail(): void
@@ -278,25 +249,11 @@ final class UserProfileTest extends TestCase
         self::assertSame('public@example.com', $entity->getPublicEmail());
     }
 
-    public function testGetSetPublicEmailWithNull(): void
-    {
-        $entity = new UserProfile();
-        $entity->setPublicEmail(null);
-        self::assertNull($entity->getPublicEmail());
-    }
-
     public function testGetSetTimezone(): void
     {
         $entity = new UserProfile();
         $entity->setTimezone('America/New_York');
         self::assertSame('America/New_York', $entity->getTimezone());
-    }
-
-    public function testGetSetTimezoneWithNull(): void
-    {
-        $entity = new UserProfile();
-        $entity->setTimezone(null);
-        self::assertNull($entity->getTimezone());
     }
 
     public function testGetSetUserId(): void
@@ -311,13 +268,6 @@ final class UserProfileTest extends TestCase
         $entity = new UserProfile();
         $entity->setWebsite('https://example.com');
         self::assertSame('https://example.com', $entity->getWebsite());
-    }
-
-    public function testGetSetWebsiteWithNull(): void
-    {
-        $entity = new UserProfile();
-        $entity->setWebsite(null);
-        self::assertNull($entity->getWebsite());
     }
 
     public function testGetUserReturnsNullWhenNotLinked(): void

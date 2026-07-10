@@ -8,7 +8,6 @@ use chillerlan\Authenticator\Authenticator;
 use chillerlan\QRCode\QRCode;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\ModuleConfig;
-use Yiisoft\Security\Random;
 
 final readonly class QrCodeUriGeneratorService
 {
@@ -17,15 +16,21 @@ final readonly class QrCodeUriGeneratorService
     ) {
     }
 
-    public function generateQrCodeSvg(User $user): string
+    public function generateQrCodeSvg(User $user, bool $forceNewSecret = false): string
     {
-        $uri = $this->run($user);
+        $uri = $this->run($user, $forceNewSecret);
         if ($uri === '') {
+            // @codeCoverageIgnoreStart
+            // Only reachable when chillerlan/php-authenticator is missing; always installed in the test environment.
             return '';
+            // @codeCoverageIgnoreEnd
         }
 
         if (!class_exists(QRCode::class)) {
+            // @codeCoverageIgnoreStart
+            // Only reachable when chillerlan/php-qrcode is missing; always installed in the test environment.
             return '';
+            // @codeCoverageIgnoreEnd
         }
 
         $options = ['outputBase64' => false, 'connectPaths' => true];
@@ -34,13 +39,23 @@ final readonly class QrCodeUriGeneratorService
         return (string) $qrcode->render($uri);
     }
 
-    public function run(User $user): string
+    public function isAvailable(): bool
     {
-        $secret = $user->getAuthTfKey();
+        return class_exists(Authenticator::class);
+    }
+
+    public function run(User $user, bool $forceNewSecret = false): string
+    {
+        $secret = $forceNewSecret ? null : $user->getAuthTfKey();
         if ($secret === null || $secret === '') {
-            $secret = class_exists(Authenticator::class)
-                ? (new Authenticator())->createSecret()
-                : Random::string(32);
+            if (!$this->isAvailable()) {
+                // @codeCoverageIgnoreStart
+                // Only reachable when chillerlan/php-authenticator is missing; always installed in the test environment.
+                return '';
+                // @codeCoverageIgnoreEnd
+            }
+
+            $secret = (new Authenticator())->createSecret();
             $user->setAuthTfKey($secret);
             $user->save();
         }

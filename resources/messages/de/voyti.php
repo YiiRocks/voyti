@@ -130,6 +130,7 @@ return [
 
     // Two-factor confirm view
     'voyti.view.two_factor.title' => 'Zwei-Faktor-Authentifizierung',
+    'voyti.view.two_factor_google.button_label' => 'Google Authenticator',
     'voyti.view.two_factor.code_label' => 'Authentifizierungscode',
     'voyti.view.two_factor.verify_button' => 'Überprüfen',
     'voyti.view.two_factor.enabled' => 'Zwei-Faktor-Authentifizierung ist aktiviert',
@@ -140,8 +141,15 @@ return [
     'voyti.view.two_factor.enter_code' => 'Geben Sie den Verifizierungscode ein',
     'voyti.view.two_factor.enable' => 'Aktivieren',
     'voyti.view.two_factor.verify' => 'Überprüfen',
+    'voyti.view.two_factor.renew' => 'Erneuern',
+    'voyti.view.two_factor.renew_error' => 'Es konnte kein neuer Schlüssel erzeugt werden. Bitte versuchen Sie es erneut.',
+    'voyti.view.two_factor.loading' => 'Wird geladen…',
+    'voyti.view.two_factor.already_enabled' => 'Die Zwei-Faktor-Authentifizierung ist bereits aktiviert.',
     'voyti.view.two_factor_email.title' => 'Zwei-Faktor-Authentifizierung per E-Mail',
+    'voyti.view.two_factor_email.button_label' => 'E-Mail',
     'voyti.view.two_factor_email.enter_code' => 'Geben Sie den per E-Mail gesendeten Verifizierungscode ein',
+    'voyti.view.two_factor_email.confirm_intro' => 'Ein Verifizierungscode wird an die unten stehende E-Mail-Adresse gesendet.',
+    'voyti.view.two_factor_email.send_button' => 'Code senden',
     // Registration views
     'voyti.view.registration.register_title' => 'Konto erstellen',
     'voyti.view.registration.gdpr_consent_label' => 'Ich stimme der Verarbeitung meiner personenbezogenen Daten zu',

@@ -38,6 +38,12 @@ final class AbstractAuthItemFormTest extends TestCase
         $this->assertSame('authItem', $form->getFormName());
     }
 
+    public function testGetPropertyLabelsMatchesAttributeLabels(): void
+    {
+        $form = $this->createForm();
+        $this->assertSame($form->getAttributeLabels(), $form->getPropertyLabels());
+    }
+
     public function testGetRules(): void
     {
         $form = $this->createForm();

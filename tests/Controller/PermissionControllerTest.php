@@ -8,14 +8,17 @@ use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
+use RuntimeException;
 use YiiRocks\Voyti\Controller\PermissionController;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
+use YiiRocks\Voyti\tests\Support\SimpleItemsStorage;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Rbac\AssignmentsStorageInterface;
 use Yiisoft\Rbac\ItemsStorageInterface;
+use Yiisoft\Rbac\Manager;
 use Yiisoft\Rbac\ManagerInterface;
 use Yiisoft\Rbac\Permission;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -92,6 +95,29 @@ final class PermissionControllerTest extends TestCase
 
         $this->assertSame($response, $result);
         $this->assertNotNull($this->itemsStorage->getPermission('edit-posts'));
+    }
+
+    public function testCreatePostWithInvalidDataShowsErrors(): void
+    {
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['permission' => ['name' => '', 'description' => '', 'rule' => '', 'children' => ['']]]);
+
+        $result = new Result();
+        $result->addError('Name is required.');
+        $this->validator->method('validate')->willReturn($result);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('rbac/create', $this->callback(
+                static fn (array $params): bool => $params['errors'] !== [],
+            ))
+            ->willReturn($response);
+
+        $result2 = $controller->create($request);
+
+        $this->assertSame($response, $result2);
     }
 
     public function testCreatePostWithRule(): void
@@ -223,6 +249,56 @@ final class PermissionControllerTest extends TestCase
         $result = $controller->update($request, 'edit-posts');
 
         $this->assertSame($response, $result);
+    }
+
+    public function testUpdatePostThrowsWhenPermissionMissingFromItemsStorage(): void
+    {
+        $managerOnlyStorage = new SimpleItemsStorage();
+        $managerOnlyStorage->add(new Permission('edit-posts'));
+        $manager = new Manager($managerOnlyStorage, $this->assignmentsStorage);
+
+        $controller = new PermissionController(
+            translator: $this->translator,
+            viewRenderer: $this->viewRenderer,
+            url: $this->harness->getUrlGenerator(),
+            validator: $this->validator,
+            responseFactory: $this->responseFactory,
+            userRepository: $this->userRepository,
+            itemsStorage: $this->itemsStorage,
+            managerInterface: $manager,
+            assignmentsStorage: $this->assignmentsStorage,
+            flash: $this->flash,
+            config: $this->config,
+        );
+
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['permission' => ['name' => 'edit-posts', 'description' => '', 'rule' => '', 'children' => ['']]]);
+        $this->validator->method('validate')->willReturn(new Result());
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage("Permission 'edit-posts' not found.");
+
+        $controller->update($request, 'edit-posts');
+    }
+
+    public function testUpdatePostWithRule(): void
+    {
+        $controller = $this->createController();
+        $this->itemsStorage->add(new Permission('edit-posts'));
+        $this->userRepository->method('findByIds')->willReturn([]);
+
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['permission' => ['name' => 'edit-posts', 'description' => '', 'rule' => 'someRule', 'children' => ['']], 'assignedUsers' => []]);
+
+        $this->validator->method('validate')->willReturn(new Result());
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->method('createResponse')->willReturn($response);
+        $response->method('withHeader')->willReturnSelf();
+
+        $result = $controller->update($request, 'edit-posts');
+
+        $this->assertSame($response, $result);
+        $perm = $this->itemsStorage->getPermission('edit-posts');
+        $this->assertNotNull($perm);
+        $this->assertSame('someRule', $perm->getRuleName());
     }
 
     private function createController(): PermissionController

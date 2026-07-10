@@ -130,6 +130,7 @@ return [
 
     // Two-factor confirm view
     'voyti.view.two_factor.title' => 'Tweefactorauthenticatie',
+    'voyti.view.two_factor_google.button_label' => 'Google Authenticator',
     'voyti.view.two_factor.code_label' => 'Authenticatiecode',
     'voyti.view.two_factor.verify_button' => 'Verifiëren',
     'voyti.view.two_factor.enabled' => 'Tweefactorauthenticatie is ingeschakeld',
@@ -140,8 +141,15 @@ return [
     'voyti.view.two_factor.enter_code' => 'Voer de verificatiecode in',
     'voyti.view.two_factor.enable' => 'Inschakelen',
     'voyti.view.two_factor.verify' => 'Verifiëren',
+    'voyti.view.two_factor.renew' => 'Vernieuwen',
+    'voyti.view.two_factor.renew_error' => 'Er kon geen nieuwe sleutel worden gegenereerd. Probeer het opnieuw.',
+    'voyti.view.two_factor.loading' => 'Bezig met laden…',
+    'voyti.view.two_factor.already_enabled' => 'Tweefactorauthenticatie is al ingeschakeld.',
     'voyti.view.two_factor_email.title' => 'Tweefactorauthenticatie via e-mail',
+    'voyti.view.two_factor_email.button_label' => 'E-mail',
     'voyti.view.two_factor_email.enter_code' => 'Voer de per e-mail verzonden verificatiecode in',
+    'voyti.view.two_factor_email.confirm_intro' => 'Er wordt een verificatiecode verzonden naar onderstaand e-mailadres.',
+    'voyti.view.two_factor_email.send_button' => 'Code verzenden',
     // Registration views
     'voyti.view.registration.register_title' => 'Account aanmaken',
     'voyti.view.registration.gdpr_consent_label' => 'Ik ga akkoord met de verwerking van mijn persoonsgegevens',

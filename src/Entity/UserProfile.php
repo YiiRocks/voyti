@@ -84,6 +84,15 @@ final class UserProfile extends ActiveRecord
         return $this->website;
     }
 
+    /**
+     * @psalm-return list{'user_id'}
+     */
+    #[\Override]
+    public function primaryKey(): array
+    {
+        return ['user_id'];
+    }
+
     public function setBio(?string $bio): void
     {
         $this->bio = $bio;

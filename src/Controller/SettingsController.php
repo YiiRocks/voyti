@@ -86,14 +86,9 @@ final readonly class SettingsController
 
     public function account(ServerRequestInterface $request): ResponseInterface
     {
-        $identity = $this->currentUser->getIdentity();
-        if ($identity instanceof GuestIdentityInterface) {
-            return $this->renderError('voyti.settings.not_authenticated');
-        }
-
-        $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
-        if ($user === null) {
-            return $this->renderError('voyti.settings.user_not_found');
+        $user = $this->requireUser();
+        if (!$user instanceof User) {
+            return $user;
         }
 
         $form = new SettingsForm($this->config, $this->translator);
@@ -168,14 +163,9 @@ final readonly class SettingsController
 
     public function confirm(ServerRequestInterface $request, string $code): ResponseInterface
     {
-        $identity = $this->currentUser->getIdentity();
-        if ($identity instanceof GuestIdentityInterface) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated', category: 'voyti'), 'translator' => $this->translator]);
-        }
-
-        $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
-        if ($user === null) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found', category: 'voyti')]);
+        $user = $this->requireUser();
+        if (!$user instanceof User) {
+            return $user;
         }
 
         if ($this->emailChangeService->run($code, $user)) {
@@ -240,14 +230,9 @@ final readonly class SettingsController
 
     public function export(ServerRequestInterface $request): ResponseInterface
     {
-        $identity = $this->currentUser->getIdentity();
-        if ($identity instanceof GuestIdentityInterface) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated', category: 'voyti'), 'translator' => $this->translator]);
-        }
-
-        $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
-        if ($user === null) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found', category: 'voyti'), 'translator' => $this->translator]);
+        $user = $this->requireUser();
+        if (!$user instanceof User) {
+            return $user;
         }
 
         $values = array_map(
@@ -333,73 +318,43 @@ final readonly class SettingsController
 
     public function twoFactor(ServerRequestInterface $request): ResponseInterface
     {
-        $identity = $this->currentUser->getIdentity();
-        if ($identity instanceof GuestIdentityInterface) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated', category: 'voyti')]);
+        $user = $this->requireUser();
+        if (!$user instanceof User) {
+            return $user;
         }
 
-        $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
-        if ($user === null) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found', category: 'voyti')]);
-        }
-
-        if ($user->isAuthTfEnabled()) {
+        if (!$user->isAuthTfEnabled()) {
             return $this->renderView('settings/two-factor', [
                 'user' => $user,
-                'method' => $user->getAuthTfType() ?? 'google',
+                'method' => 'google',
                 'qrCodeUri' => '',
                 'secret' => null,
+                'emailCodeSent' => false,
                 'config' => $this->config,
                 'errors' => [],
                 'flash' => $this->flash,
+                'preloadContent' => false,
             ]);
         }
-
-        $method = $this->stringValue($this->queryParams($request), 'method', 'google') === 'email' ? 'email' : 'google';
-
-        if ($method === 'email') {
-            if ($user->getAuthTfType() !== 'email') {
-                $user->setAuthTfType('email');
-                $user->save();
-            }
-
-            $this->twoFactorEmailCodeService->run($user);
-
-            return $this->renderView('settings/two-factor', [
-                'user' => $user,
-                'method' => 'email',
-                'qrCodeUri' => '',
-                'secret' => null,
-                'config' => $this->config,
-                'errors' => [],
-                'flash' => $this->flash,
-            ]);
-        }
-
-        $this->ensureFreshGoogleAuthenticatorSecret($user);
-        $qrCodeSvg = $this->twoFactorQrCodeService->generateQrCodeSvg($user);
 
         return $this->renderView('settings/two-factor', [
             'user' => $user,
-            'method' => 'google',
-            'qrCodeUri' => $qrCodeSvg,
-            'secret' => $user->getAuthTfKey(),
+            'method' => $user->getAuthTfType() ?? 'google',
+            'qrCodeUri' => '',
+            'secret' => null,
+            'emailCodeSent' => false,
             'config' => $this->config,
             'errors' => [],
             'flash' => $this->flash,
+            'preloadContent' => true,
         ]);
     }
 
     public function twoFactorDisable(ServerRequestInterface $request): ResponseInterface
     {
-        $identity = $this->currentUser->getIdentity();
-        if ($identity instanceof GuestIdentityInterface) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated', category: 'voyti')]);
-        }
-
-        $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
-        if ($user === null) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found', category: 'voyti')]);
+        $user = $this->requireUser();
+        if (!$user instanceof User) {
+            return $user;
         }
 
         $user->setAuthTfEnabled(false);
@@ -413,16 +368,34 @@ final readonly class SettingsController
         );
     }
 
-    public function twoFactorEnable(ServerRequestInterface $request): ResponseInterface
+    public function twoFactorEmail(ServerRequestInterface $request): ResponseInterface
     {
-        $identity = $this->currentUser->getIdentity();
-        if ($identity instanceof GuestIdentityInterface) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated', category: 'voyti')]);
+        $user = $this->requireUser();
+        if (!$user instanceof User) {
+            return $user;
         }
 
-        $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
-        if ($user === null) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found', category: 'voyti')]);
+        if ($user->isAuthTfEnabled()) {
+            return $this->redirect($this->url->generate('voyti/settings-two-factor'));
+        }
+
+        return $this->renderTwoFactorSetup($request, 'settings/two-factor/_email', [
+            'user' => $user,
+            'method' => 'email',
+            'qrCodeUri' => '',
+            'secret' => null,
+            'emailCodeSent' => false,
+            'config' => $this->config,
+            'errors' => [],
+            'flash' => $this->flash,
+        ]);
+    }
+
+    public function twoFactorEnable(ServerRequestInterface $request): ResponseInterface
+    {
+        $user = $this->requireUser();
+        if (!$user instanceof User) {
+            return $user;
         }
 
         $body = $this->parsedBody($request);
@@ -437,9 +410,11 @@ final readonly class SettingsController
                     'method' => 'email',
                     'qrCodeUri' => '',
                     'secret' => null,
+                    'emailCodeSent' => true,
                     'config' => $this->config,
                     'errors' => ['code' => [$this->twoFactorErrorMessage($emailValidator->getErrorMessage())]],
                     'flash' => $this->flash,
+                    'preloadContent' => true,
                 ]);
             }
 
@@ -455,9 +430,11 @@ final readonly class SettingsController
                     'method' => 'google',
                     'qrCodeUri' => $this->twoFactorQrCodeService->generateQrCodeSvg($user),
                     'secret' => $user->getAuthTfKey(),
+                    'emailCodeSent' => false,
                     'config' => $this->config,
                     'errors' => ['code' => [$this->twoFactorErrorMessage($codeValidator->getErrorMessage())]],
                     'flash' => $this->flash,
+                    'preloadContent' => true,
                 ]);
             }
 
@@ -473,16 +450,94 @@ final readonly class SettingsController
         );
     }
 
-    public function userProfile(ServerRequestInterface $request): ResponseInterface
+    public function twoFactorGoogle(ServerRequestInterface $request): ResponseInterface
+    {
+        $user = $this->requireUser();
+        if (!$user instanceof User) {
+            return $user;
+        }
+
+        if ($user->isAuthTfEnabled()) {
+            return $this->redirect($this->url->generate('voyti/settings-two-factor'));
+        }
+
+        return $this->renderGoogleSetup($request, $user);
+    }
+
+    public function twoFactorRenew(ServerRequestInterface $request): ResponseInterface
     {
         $identity = $this->currentUser->getIdentity();
         if ($identity instanceof GuestIdentityInterface) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated', category: 'voyti'), 'translator' => $this->translator]);
+            return $this->jsonErrorResponse(Status::UNAUTHORIZED, 'voyti.settings.not_authenticated');
         }
 
         $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
         if ($user === null) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.user_not_found', category: 'voyti')]);
+            return $this->jsonErrorResponse(Status::NOT_FOUND, 'voyti.settings.user_not_found');
+        }
+
+        if ($user->isAuthTfEnabled()) {
+            return $this->jsonErrorResponse(Status::FORBIDDEN, 'voyti.view.two_factor.already_enabled');
+        }
+
+        if (!$this->twoFactorQrCodeService->isAvailable()) {
+            return $this->jsonErrorResponse(Status::SERVICE_UNAVAILABLE, 'voyti.validator.two_factor_library_missing');
+        }
+
+        if ($user->getAuthTfType() !== 'google') {
+            $user->setAuthTfType('google');
+        }
+        $qrCodeSvg = $this->twoFactorQrCodeService->generateQrCodeSvg($user, forceNewSecret: true);
+
+        $response = $this->responseFactory->createResponse(Status::OK)
+            ->withHeader(Header::CONTENT_TYPE, 'application/json; charset=UTF-8');
+        $response->getBody()->write(Json::encode([
+            'qrCodeUri' => $qrCodeSvg,
+            'secret' => $user->getAuthTfKey(),
+        ]));
+
+        return $response;
+    }
+
+    public function twoFactorSendEmailCode(ServerRequestInterface $request): ResponseInterface
+    {
+        $user = $this->requireUser();
+        if (!$user instanceof User) {
+            return $user;
+        }
+
+        if ($user->isAuthTfEnabled()) {
+            return $this->redirectWithFlash(
+                $this->url->generate('voyti/settings-two-factor'),
+                'voyti.settings.two_factor_enabled',
+            );
+        }
+
+        if ($user->getAuthTfType() !== 'email') {
+            $user->setAuthTfType('email');
+            $user->save();
+        }
+
+        $this->twoFactorEmailCodeService->run($user);
+
+        return $this->renderView('settings/two-factor', [
+            'user' => $user,
+            'method' => 'email',
+            'qrCodeUri' => '',
+            'secret' => null,
+            'emailCodeSent' => true,
+            'config' => $this->config,
+            'errors' => [],
+            'flash' => $this->flash,
+            'preloadContent' => true,
+        ]);
+    }
+
+    public function userProfile(ServerRequestInterface $request): ResponseInterface
+    {
+        $user = $this->requireUser();
+        if (!$user instanceof User) {
+            return $user;
         }
 
         $userProfile = $user->getProfile();
@@ -536,10 +591,10 @@ final readonly class SettingsController
 
     /**
      * The TOTP secret and the email one-time code share the same auth_tf_key column.
-     * If the pending method last shown to the user was email, that column holds a
-     * 6-digit code rather than a TOTP secret, so it must be cleared before a QR
-     * code is generated - otherwise QrCodeUriGeneratorService::run() would treat
-     * the leftover email code as a real TOTP secret and reuse it verbatim.
+     * If an email code was last sent to the user, that column holds a 6-digit code
+     * rather than a TOTP secret, so it must be cleared before a QR code is generated -
+     * otherwise QrCodeUriGeneratorService::run() would treat the leftover email code
+     * as a real TOTP secret and reuse it verbatim.
      */
     private function ensureFreshGoogleAuthenticatorSecret(User $user): void
     {
@@ -587,6 +642,61 @@ final readonly class SettingsController
     private function getUserId(User $user): int
     {
         return $user->getId() !== null ? (int) $user->getId() : 0;
+    }
+
+    private function jsonErrorResponse(int $status, string $messageKey): ResponseInterface
+    {
+        $response = $this->responseFactory->createResponse($status)
+            ->withHeader(Header::CONTENT_TYPE, 'application/json; charset=UTF-8');
+        $response->getBody()->write(Json::encode([
+            'error' => $this->translator->translate($messageKey, category: 'voyti'),
+        ]));
+
+        return $response;
+    }
+
+    private function renderGoogleSetup(ServerRequestInterface $request, User $user): ResponseInterface
+    {
+        $this->ensureFreshGoogleAuthenticatorSecret($user);
+        $qrCodeSvg = $this->twoFactorQrCodeService->generateQrCodeSvg($user);
+
+        return $this->renderTwoFactorSetup($request, 'settings/two-factor/_google', [
+            'user' => $user,
+            'method' => 'google',
+            'qrCodeUri' => $qrCodeSvg,
+            'secret' => $user->getAuthTfKey(),
+            'emailCodeSent' => false,
+            'config' => $this->config,
+            'errors' => [],
+            'flash' => $this->flash,
+        ]);
+    }
+
+    /**
+     * @param array<string, mixed> $params
+     */
+    private function renderTwoFactorSetup(ServerRequestInterface $request, string $fragmentView, array $params): ResponseInterface
+    {
+        if (strtolower($request->getHeaderLine('X-Requested-With')) === 'xmlhttprequest') {
+            return $this->renderFragment($fragmentView, $params);
+        }
+
+        return $this->renderView('settings/two-factor', $params + ['preloadContent' => true]);
+    }
+
+    private function requireUser(): User|ResponseInterface
+    {
+        $identity = $this->currentUser->getIdentity();
+        if ($identity instanceof GuestIdentityInterface) {
+            return $this->renderError('voyti.settings.not_authenticated');
+        }
+
+        $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
+        if ($user === null) {
+            return $this->renderError('voyti.settings.user_not_found');
+        }
+
+        return $user;
     }
 
     private function twoFactorErrorMessage(string $validatorMessage): string

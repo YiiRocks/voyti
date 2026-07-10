@@ -33,6 +33,9 @@ final readonly class DefaultEmailChangeStrategy implements MailChangeStrategyInt
             return true;
         }
 
+        // @codeCoverageIgnoreStart
+        // MailService::send() has no failure path in the current implementation; this guards the bool contract.
         return false;
+        // @codeCoverageIgnoreEnd
     }
 }

@@ -90,6 +90,21 @@ final class RouteParametersResolverTest extends TestCase
         self::assertSame(['id' => 42], $result);
     }
 
+    public function testResolveWithMixedTypeKeepsRawValue(): void
+    {
+        $currentRoute = $this->createMock(CurrentRoute::class);
+        $currentRoute->expects(self::once())->method('getArguments')->willReturn(['value' => 'raw']);
+
+        $resolver = $this->createResolver($currentRoute);
+
+        $param = new \ReflectionParameter(function (mixed $value) {
+        }, 'value');
+
+        $result = $resolver->resolve(['value' => $param], $this->createMock(ServerRequestInterface::class));
+
+        self::assertSame(['value' => 'raw'], $result);
+    }
+
     public function testResolveWithNonBuiltinType(): void
     {
         $currentRoute = $this->createMock(CurrentRoute::class);

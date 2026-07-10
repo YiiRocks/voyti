@@ -262,7 +262,7 @@ final class RememberMeCookieServiceTest extends TestCase
         };
         $service = new RememberMeCookieService(3600, 'autoLogin', $emitter, $nowClosure);
 
-        $expires = $now;
+        $expires = $now - 100000;
         $_COOKIE['autoLogin'] = json_encode(['id', 'key', $expires]);
         $service->refreshCookie($this->createCurrentUser());
         self::assertFalse($emitterCalled);
