@@ -22,4 +22,3 @@ jobs:
     uses: YiiRocks/.github/.github/workflows/ci.yml@main
     with:
       php-extensions: 'fileinfo, intl, pdo_sqlite'
-      default-branch: main
