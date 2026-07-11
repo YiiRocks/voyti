@@ -9,13 +9,12 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
+use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Event\User\FormEvent;
 use YiiRocks\Voyti\Form\Auth\RegistrationForm;
 use YiiRocks\Voyti\Form\Auth\ResendForm;
 use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserRepository;
-use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\User\AccountConfirmationService;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
@@ -39,8 +38,6 @@ final readonly class RegistrationController
         private TranslatorInterface $translator,
         private WebViewRenderer $viewRenderer,
         private RegisterService $userRegisterService,
-        private UserRepository $userRepository,
-        private UserTokenRepository $userTokenRepository,
         private ConfirmationService $userConfirmationService,
         private AccountConfirmationService $accountConfirmationService,
         private ResendConfirmationService $resendConfirmationService,
@@ -58,7 +55,7 @@ final readonly class RegistrationController
 
     public function confirm(ServerRequestInterface $request, int $id, string $code): ResponseInterface
     {
-        $user = $this->userRepository->findById($id);
+        $user = User::findById($id);
 
         if ($user === null || !$this->config->enableEmailConfirmation) {
             return $this->renderError('voyti.registration.invalid_confirmation_link');
@@ -111,7 +108,7 @@ final readonly class RegistrationController
                 ]);
 
                 if ($serviceResult->isSuccess()) {
-                    $user = $this->userRepository->findByEmail($form->email);
+                    $user = User::findByEmail($form->email);
                     if ($user !== null) {
                         $this->pendingSocialAccountService->connect($user);
                     }
@@ -154,7 +151,7 @@ final readonly class RegistrationController
             $result = $this->validator->validate($form);
 
             if ($result->isValid()) {
-                $user = $this->userRepository->findByEmail($form->email);
+                $user = User::findByEmail($form->email);
                 if ($user !== null && $this->resendConfirmationService->run($user)) {
                     return $this->redirectWithFlash(
                         $this->url->generate($this->config->loginRoute),

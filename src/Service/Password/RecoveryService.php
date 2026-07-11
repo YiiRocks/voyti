@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Service\Password;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
+use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\ServiceResult;
 use Yiisoft\Translator\TranslatorInterface;
@@ -15,7 +15,6 @@ use Yiisoft\Translator\TranslatorInterface;
 final readonly class RecoveryService
 {
     public function __construct(
-        private UserRepository $userRepository,
         private UserTokenFactory $userTokenFactory,
         private MailService $mailService,
         private ModuleConfig $config,
@@ -26,7 +25,7 @@ final readonly class RecoveryService
 
     public function run(string $email): ServiceResult
     {
-        $user = $this->userRepository->findByEmail($email);
+        $user = User::findByEmail($email);
         if ($user === null) {
             return ServiceResult::success($this->translator->translate('voyti.recovery.message_sent_if_exists', category: 'voyti'));
         }

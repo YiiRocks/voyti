@@ -35,6 +35,30 @@ final class UserSocialAccount extends ActiveRecord
         return true;
     }
 
+    public static function findByCode(string $code): ?UserSocialAccount
+    {
+        /** @var ?UserSocialAccount $account */
+        $account = self::query()->where(['code' => $code])->one();
+        return $account;
+    }
+
+    public static function findByProviderAndClientId(string $provider, string $clientId): ?UserSocialAccount
+    {
+        /** @var ?UserSocialAccount $account */
+        $account = self::query()->where(['provider' => $provider, 'client_id' => $clientId])->one();
+        return $account;
+    }
+
+    /**
+     * @psalm-return list<UserSocialAccount>
+     */
+    public static function findByUserId(int $userId): array
+    {
+        /** @var list<UserSocialAccount> $accounts */
+        $accounts = self::query()->where(['user_id' => $userId])->all();
+        return $accounts;
+    }
+
     public function getClientId(): string
     {
         return $this->client_id;

@@ -9,8 +9,6 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserRepository;
-use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\Password\ResetService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use Yiisoft\Security\PasswordHasher;
@@ -36,9 +34,8 @@ final class ResetServiceTest extends TestCase
         $config = new ModuleConfig();
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $eventDispatcher->expects($this->exactly(3))->method('dispatch');
-        $userTokenRepository = new UserTokenRepository();
 
-        $service = new ResetService($passwordHasher, $config, $eventDispatcher, $userTokenRepository);
+        $service = new ResetService($passwordHasher, $config, $eventDispatcher);
 
         $user = new User();
         $user->setUsername('tokenuser');
@@ -58,7 +55,7 @@ final class ResetServiceTest extends TestCase
 
         $service->run('newpassword', $user, $userToken);
 
-        self::assertNull($userTokenRepository->findByCodeAndType('tokencode', UserToken::TYPE_RECOVERY));
+        self::assertNull(UserToken::findByCodeAndType('tokencode', UserToken::TYPE_RECOVERY));
     }
 
     public function testRunPersistsUser(): void
@@ -66,10 +63,8 @@ final class ResetServiceTest extends TestCase
         $passwordHasher = new PasswordHasher();
         $config = new ModuleConfig();
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $userTokenRepository = new UserTokenRepository();
-        $userRepository = new UserRepository();
 
-        $service = new ResetService($passwordHasher, $config, $eventDispatcher, $userTokenRepository);
+        $service = new ResetService($passwordHasher, $config, $eventDispatcher);
 
         $user = new User();
         $user->setUsername('persistuser');
@@ -82,7 +77,7 @@ final class ResetServiceTest extends TestCase
 
         $service->run('newpassword', $user, null);
 
-        $reloaded = $userRepository->findById((int) $user->getId());
+        $reloaded = User::findById((int) $user->getId());
         self::assertNotNull($reloaded);
         self::assertNotSame('oldhash', $reloaded->getPasswordHash());
     }
@@ -92,10 +87,8 @@ final class ResetServiceTest extends TestCase
         $passwordHasher = new PasswordHasher();
         $config = new ModuleConfig();
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $userTokenRepository = new UserTokenRepository();
-        $userRepository = new UserRepository();
 
-        $service = new ResetService($passwordHasher, $config, $eventDispatcher, $userTokenRepository);
+        $service = new ResetService($passwordHasher, $config, $eventDispatcher);
 
         $user = new User();
         $user->setUsername('changeduser');
@@ -108,7 +101,7 @@ final class ResetServiceTest extends TestCase
 
         $service->run('newpassword', $user, null);
 
-        $reloaded = $userRepository->findById((int) $user->getId());
+        $reloaded = User::findById((int) $user->getId());
         self::assertNotNull($reloaded);
         self::assertNotNull($reloaded->getPasswordChangedAt());
         self::assertGreaterThan(time() - 100, $reloaded->getPasswordChangedAt());
@@ -119,10 +112,8 @@ final class ResetServiceTest extends TestCase
         $passwordHasher = new PasswordHasher();
         $config = new ModuleConfig();
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $userTokenRepository = new UserTokenRepository();
-        $userRepository = new UserRepository();
 
-        $service = new ResetService($passwordHasher, $config, $eventDispatcher, $userTokenRepository);
+        $service = new ResetService($passwordHasher, $config, $eventDispatcher);
 
         $user = new User();
         $user->setUsername('hashuser');
@@ -135,7 +126,7 @@ final class ResetServiceTest extends TestCase
 
         $service->run('newpassword', $user, null);
 
-        $reloaded = $userRepository->findById((int) $user->getId());
+        $reloaded = User::findById((int) $user->getId());
         self::assertNotNull($reloaded);
         self::assertNotSame('oldhash', $reloaded->getPasswordHash());
         self::assertTrue(password_verify('newpassword', $reloaded->getPasswordHash()));
@@ -146,10 +137,8 @@ final class ResetServiceTest extends TestCase
         $passwordHasher = new PasswordHasher();
         $config = new ModuleConfig();
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $userTokenRepository = new UserTokenRepository();
-        $userRepository = new UserRepository();
 
-        $service = new ResetService($passwordHasher, $config, $eventDispatcher, $userTokenRepository);
+        $service = new ResetService($passwordHasher, $config, $eventDispatcher);
 
         $user = new User();
         $user->setUsername('updateduser');
@@ -162,7 +151,7 @@ final class ResetServiceTest extends TestCase
 
         $service->run('newpassword', $user, null);
 
-        $reloaded = $userRepository->findById((int) $user->getId());
+        $reloaded = User::findById((int) $user->getId());
         self::assertNotNull($reloaded);
         self::assertNotNull($reloaded->getUpdatedAt());
         self::assertGreaterThan(time() - 100, $reloaded->getUpdatedAt());
@@ -174,9 +163,8 @@ final class ResetServiceTest extends TestCase
         $config = new ModuleConfig();
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $eventDispatcher->expects($this->exactly(2))->method('dispatch');
-        $userTokenRepository = new UserTokenRepository();
 
-        $service = new ResetService($passwordHasher, $config, $eventDispatcher, $userTokenRepository);
+        $service = new ResetService($passwordHasher, $config, $eventDispatcher);
 
         $user = new User();
         $user->setUsername('testuser');
@@ -197,9 +185,8 @@ final class ResetServiceTest extends TestCase
         $config = new ModuleConfig();
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $eventDispatcher->expects($this->exactly(3))->method('dispatch');
-        $userTokenRepository = new UserTokenRepository();
 
-        $service = new ResetService($passwordHasher, $config, $eventDispatcher, $userTokenRepository);
+        $service = new ResetService($passwordHasher, $config, $eventDispatcher);
 
         $user = new User();
         $user->setUsername('testuser');

@@ -18,11 +18,6 @@ use YiiRocks\Voyti\Listener;
 use YiiRocks\Voyti\Middleware\RouteParametersResolver;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\IdentityRepository;
-use YiiRocks\Voyti\Repository\UserProfileRepository;
-use YiiRocks\Voyti\Repository\UserRepository;
-use YiiRocks\Voyti\Repository\UserSessionHistoryRepository;
-use YiiRocks\Voyti\Repository\UserSocialAccountRepository;
-use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\Auth\SocialAuthProviderService;
 use YiiRocks\Voyti\Service\Auth\UserSocialAuthenticateService;
@@ -77,11 +72,6 @@ return [
         $config->rememberLoginLifespan,
     ),
 
-    UserRepository::class => UserRepository::class,
-    UserProfileRepository::class => UserProfileRepository::class,
-    UserTokenRepository::class => UserTokenRepository::class,
-    UserSocialAccountRepository::class => UserSocialAccountRepository::class,
-    UserSessionHistoryRepository::class => UserSessionHistoryRepository::class,
     PasswordGeneratorInterface::class => RandomPasswordGenerator::class,
     IdentityWithTokenRepositoryInterface::class => IdentityRepository::class,
     ApiTokenService::class => ApiTokenService::class,
@@ -123,21 +113,17 @@ return [
         TranslatorInterface $translator,
         UrlGeneratorInterface $url
     ) => new MailService($mailer, $config->mailPath, $translator, $url, $config->appName),
-    AccountConfirmationService::class => fn (
-        UserTokenRepository $tokenRepository
-    ) => new AccountConfirmationService($tokenRepository),
+    AccountConfirmationService::class => AccountConfirmationService::class,
     ResendConfirmationService::class => fn (
-        UserTokenRepository $tokenRepository,
         UserTokenFactory $userTokenFactory,
         MailService $mailService,
-    ) => new ResendConfirmationService($tokenRepository, $userTokenFactory, $mailService),
+    ) => new ResendConfirmationService($userTokenFactory, $mailService),
     SwitchIdentityService::class => fn (
         ModuleConfig $config,
-        UserRepository $userRepository,
         CurrentUser $currentUser,
         SessionInterface $session,
         EventDispatcherInterface $eventDispatcher,
-    ) => new SwitchIdentityService($config, $userRepository, $currentUser, $session, $eventDispatcher),
+    ) => new SwitchIdentityService($config, $currentUser, $session, $eventDispatcher),
     ExpireService::class => fn (
         ModuleConfig $config
     ) => new ExpireService($config),
@@ -146,8 +132,7 @@ return [
         PasswordHasher $passwordHasher,
         ModuleConfig $config,
         EventDispatcherInterface $eventDispatcher,
-        UserTokenRepository $tokenRepository
-    ) => new ResetService($passwordHasher, $config, $eventDispatcher, $tokenRepository),
+    ) => new ResetService($passwordHasher, $config, $eventDispatcher),
     UserCreationHelper::class => UserCreationHelper::class,
     CreateService::class => CreateService::class,
     RegisterService::class => RegisterService::class,
@@ -157,13 +142,10 @@ return [
     ) => new BlockService($eventDispatcher, $terminateUserSessionsService),
     ConfirmationService::class => fn (
         EventDispatcherInterface $eventDispatcher,
-        UserTokenRepository $tokenRepository
-    ) => new ConfirmationService($eventDispatcher, $tokenRepository),
+    ) => new ConfirmationService($eventDispatcher),
     EmailChangeService::class => fn (
         ModuleConfig $config,
-        UserTokenRepository $tokenRepository,
-        UserRepository $userRepository
-    ) => new EmailChangeService($config, $tokenRepository, $userRepository),
+    ) => new EmailChangeService($config),
     EmailCodeGeneratorService::class => fn (
         MailService $mailService
     ) => new EmailCodeGeneratorService($mailService),
@@ -181,15 +163,11 @@ return [
 
     UserSocialAuthenticateService::class => fn (
         ModuleConfig $config,
-        UserSocialAccountRepository $socialNetworkAccountRepository,
-        UserRepository $userRepository,
         CurrentUser $currentUser,
         SessionInterface $session,
         EventDispatcherInterface $eventDispatcher,
     ) => new UserSocialAuthenticateService(
         $config,
-        $socialNetworkAccountRepository,
-        $userRepository,
         $currentUser,
         $session,
         $eventDispatcher,

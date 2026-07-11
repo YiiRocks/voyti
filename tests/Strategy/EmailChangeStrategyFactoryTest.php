@@ -8,7 +8,6 @@ use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Strategy\BothEmailChangeStrategy;
 use YiiRocks\Voyti\Strategy\EmailChangeConfirmation;
@@ -54,7 +53,7 @@ final class EmailChangeStrategyFactoryTest extends TestCase
     }
     private function createFactory(): EmailChangeStrategyFactory
     {
-        $tokenFactory = new UserTokenFactory(new UserTokenRepository());
+        $tokenFactory = new UserTokenFactory();
         $translator = $this->createMock(TranslatorInterface::class);
         $translator->method('translate')->willReturnCallback(fn (string $id) => $id);
         $mailCapture = new MailCapture();

@@ -41,6 +41,80 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
     private int $updated_at = 0;
     private string $username = '';
 
+    /**
+     * @psalm-return int<0, max>|string
+     */
+    public static function countByFilters(array $filters = []): int|string
+    {
+        $query = self::query();
+
+        if (!empty($filters['username'])) {
+            $query = $query->andWhere(['like', 'username', $filters['username']]);
+        }
+        if (!empty($filters['email'])) {
+            $query = $query->andWhere(['like', 'email', $filters['email']]);
+        }
+
+        return $query->count();
+    }
+
+    #[\Override]
+    public function delete(): int
+    {
+        $this->getProfile()?->delete();
+        return parent::delete();
+    }
+
+    /**
+     * @psalm-return list<User>
+     */
+    public static function findAllUsers(): array
+    {
+        /** @var list<User> $users */
+        $users = self::query()->all();
+        return $users;
+    }
+
+    public static function findByEmail(string $email): ?User
+    {
+        /** @var ?User $user */
+        $user = self::query()->where(['email' => $email])->one();
+        return $user;
+    }
+
+    public static function findById(int $id): ?User
+    {
+        /** @var ?User $user */
+        $user = self::query()->findByPk($id);
+        return $user;
+    }
+
+    /**
+     * @param list<int> $ids
+     *
+     * @psalm-return list<User>
+     */
+    public static function findByIds(array $ids): array
+    {
+        /** @var list<User> $users */
+        $users = self::query()->where(['id' => $ids])->all();
+        return $users;
+    }
+
+    public static function findByUsername(string $username): ?User
+    {
+        /** @var ?User $user */
+        $user = self::query()->where(['username' => $username])->one();
+        return $user;
+    }
+
+    public static function findByUsernameOrEmail(string $login): ?User
+    {
+        /** @var ?User $user */
+        $user = self::query()->where(['or', ['username' => $login], ['email' => $login]])->one();
+        return $user;
+    }
+
     public function getAuthKey(): string
     {
         return $this->auth_key;
@@ -203,6 +277,55 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
     public function isGdprConsent(): bool
     {
         return (bool) $this->gdpr_consent;
+    }
+
+    public static function saveWithProfile(User $user, UserProfile $userProfile): void
+    {
+        $user->save();
+        $userProfile->setUserId($user->getIdOrZero());
+        $userProfile->save();
+    }
+
+    public static function saveWithProfileAndToken(User $user, UserProfile $userProfile, UserToken $userToken): void
+    {
+        $user->save();
+        $userProfile->setUserId($user->getIdOrZero());
+        $userProfile->save();
+        $userToken->setUserId($user->getIdOrZero());
+        $userToken->save();
+    }
+
+    /**
+     * @return (array|object)[]
+     *
+     * @psalm-return array<array|object>
+     */
+    public static function search(array $filters = []): array
+    {
+        $query = self::query();
+
+        if (!empty($filters['username'])) {
+            $query = $query->andWhere(['like', 'username', $filters['username']]);
+        }
+        if (!empty($filters['email'])) {
+            $query = $query->andWhere(['like', 'email', $filters['email']]);
+        }
+        if (!empty($filters['status'])) {
+            if ($filters['status'] === 'blocked') {
+                $query = $query->andWhere(['not', ['blocked_at' => null]]);
+            } elseif ($filters['status'] === 'confirmed') {
+                $query = $query->andWhere(['not', ['confirmed_at' => null]]);
+            } elseif ($filters['status'] === 'unconfirmed') {
+                $query = $query->andWhere(['confirmed_at' => null]);
+            }
+        }
+
+        $limit = (int)($filters['limit'] ?? 50);
+        /** @infection-ignore-all DecrementInteger: the surrounding max(1, ...) already clamps a missing 'page' key to 1 regardless of whether the coalesce default is 1 or 0, so that specific mutation is unobservable. */
+        $page = max(1, (int)($filters['page'] ?? 1));
+        $offset = ($page - 1) * $limit;
+
+        return $query->limit($limit)->offset($offset)->all();
     }
 
     public function setAnonymized(int|bool $anonymized): void

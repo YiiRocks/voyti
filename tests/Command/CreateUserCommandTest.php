@@ -10,7 +10,6 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Command\CreateUserCommand;
 use YiiRocks\Voyti\Entity\User;
-use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\Password\RandomPasswordGenerator;
 use YiiRocks\Voyti\Service\ServiceResult;
@@ -146,13 +145,6 @@ final class CreateUserCommandTest extends TestCase
         $user->setUpdatedAt(1000);
         $user->save();
 
-        $userRepository = $this->createMock(UserRepository::class);
-        $userRepository
-            ->expects(self::once())
-            ->method('findByEmail')
-            ->with('user@example.com')
-            ->willReturn($user);
-
         $authManager = $this->createMock(ManagerInterface::class);
         $authManager
             ->expects(self::once())
@@ -161,7 +153,6 @@ final class CreateUserCommandTest extends TestCase
 
         $command = $this->createCommand(
             userCreateService: $createService,
-            userRepository: $userRepository,
             authManager: $authManager,
         );
         $result = $command->run($input, $output);
@@ -238,13 +229,11 @@ final class CreateUserCommandTest extends TestCase
     }
     private function createCommand(
         ?CreateService $userCreateService = null,
-        ?UserRepository $userRepository = null,
         ?ManagerInterface $authManager = null,
         ?PasswordGeneratorInterface $passwordGenerator = null,
     ): CreateUserCommand {
         return new CreateUserCommand(
             $userCreateService ?? $this->createMock(CreateService::class),
-            $userRepository ?? $this->createMock(UserRepository::class),
             $authManager ?? $this->createMock(ManagerInterface::class),
             $passwordGenerator ?? new RandomPasswordGenerator(),
         );

@@ -10,7 +10,6 @@ use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Event\Security\ResetPasswordEvent;
 use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserTokenRepository;
 use Yiisoft\Security\PasswordHasher;
 
 final readonly class ResetService
@@ -19,7 +18,6 @@ final readonly class ResetService
         private PasswordHasher $passwordHasher,
         private ModuleConfig $config,
         private EventDispatcherInterface $eventDispatcher,
-        private UserTokenRepository $userTokenRepository,
     ) {
     }
 

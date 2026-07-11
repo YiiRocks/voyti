@@ -8,8 +8,6 @@ use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserToken;
-use YiiRocks\Voyti\Repository\UserRepository;
-use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 
@@ -31,8 +29,7 @@ final class ConfirmationServiceTest extends TestCase
     public function testRunAlreadyConfirmedReturnsFalse(): void
     {
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $userTokenRepository = new UserTokenRepository();
-        $service = new ConfirmationService($eventDispatcher, $userTokenRepository);
+        $service = new ConfirmationService($eventDispatcher);
 
         $user = new User();
         $user->setUsername('confirmed');
@@ -51,8 +48,7 @@ final class ConfirmationServiceTest extends TestCase
     {
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $eventDispatcher->expects($this->exactly(2))->method('dispatch');
-        $userTokenRepository = new UserTokenRepository();
-        $service = new ConfirmationService($eventDispatcher, $userTokenRepository);
+        $service = new ConfirmationService($eventDispatcher);
 
         $user = new User();
         $user->setUsername('delete_tokens');
@@ -72,15 +68,14 @@ final class ConfirmationServiceTest extends TestCase
 
         self::assertTrue($service->run($user));
 
-        self::assertEmpty($userTokenRepository->findByUserId((int) $user->getId()));
+        self::assertEmpty(UserToken::findByUserId((int) $user->getId()));
     }
 
     public function testRunPersistsConfirmation(): void
     {
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $eventDispatcher->expects($this->exactly(2))->method('dispatch');
-        $userTokenRepository = new UserTokenRepository();
-        $service = new ConfirmationService($eventDispatcher, $userTokenRepository);
+        $service = new ConfirmationService($eventDispatcher);
 
         $user = new User();
         $user->setUsername('persist_confirm');
@@ -93,7 +88,7 @@ final class ConfirmationServiceTest extends TestCase
 
         self::assertTrue($service->run($user));
 
-        $reloaded = (new UserRepository())->findById((int) $user->getId());
+        $reloaded = User::findById((int) $user->getId());
         self::assertNotNull($reloaded);
         self::assertNotNull($reloaded->getConfirmedAt());
     }
@@ -102,8 +97,7 @@ final class ConfirmationServiceTest extends TestCase
     {
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $eventDispatcher->expects($this->exactly(2))->method('dispatch');
-        $userTokenRepository = new UserTokenRepository();
-        $service = new ConfirmationService($eventDispatcher, $userTokenRepository);
+        $service = new ConfirmationService($eventDispatcher);
 
         $user = new User();
         $user->setUsername('unconfirmed');

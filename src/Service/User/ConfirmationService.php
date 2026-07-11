@@ -6,14 +6,13 @@ namespace YiiRocks\Voyti\Service\User;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Event\User\UserEvent;
-use YiiRocks\Voyti\Repository\UserTokenRepository;
 
 final readonly class ConfirmationService
 {
     public function __construct(
         private EventDispatcherInterface $eventDispatcher,
-        private UserTokenRepository $userTokenRepository,
     ) {
     }
 
@@ -28,7 +27,7 @@ final readonly class ConfirmationService
         $user->setConfirmedAt(time());
         $user->save();
 
-        $this->userTokenRepository->deleteAllByUserId($user->getIdOrZero());
+        UserToken::deleteAllByUserId($user->getIdOrZero());
 
         $this->eventDispatcher->dispatch(new UserEvent($user));
         return true;

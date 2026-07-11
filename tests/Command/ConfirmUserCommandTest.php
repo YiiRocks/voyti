@@ -10,7 +10,6 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Command\ConfirmUserCommand;
 use YiiRocks\Voyti\Entity\User;
-use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 
@@ -50,13 +49,10 @@ final class ConfirmUserCommandTest extends TestCase
         $output = $this->createMock(OutputInterface::class);
         $output->expects(self::once())->method('writeln');
 
-        $userRepository = $this->createMock(UserRepository::class);
-        $userRepository->expects(self::once())->method('findByEmail')->with('test@example.com')->willReturn($user);
-
         $confirmationService = $this->createMock(ConfirmationService::class);
-        $confirmationService->expects(self::once())->method('run')->with($user)->willReturn(true);
+        $confirmationService->expects(self::once())->method('run')->willReturn(true);
 
-        $command = $this->createCommand($userRepository, $confirmationService);
+        $command = $this->createCommand($confirmationService);
         $result = $command->run($input, $output);
 
         self::assertSame(Command::SUCCESS, $result);
@@ -75,7 +71,7 @@ final class ConfirmUserCommandTest extends TestCase
 
         $input = $this->createMock(InputInterface::class);
         $input->expects(self::exactly(3))->method('getOption')->willReturnMap([
-            ['id', '5'],
+            ['id', (string) $user->getId()],
             ['email', null],
             ['username', null],
         ]);
@@ -83,13 +79,10 @@ final class ConfirmUserCommandTest extends TestCase
         $output = $this->createMock(OutputInterface::class);
         $output->expects(self::once())->method('writeln');
 
-        $userRepository = $this->createMock(UserRepository::class);
-        $userRepository->expects(self::once())->method('findById')->with(5)->willReturn($user);
-
         $confirmationService = $this->createMock(ConfirmationService::class);
-        $confirmationService->expects(self::once())->method('run')->with($user)->willReturn(true);
+        $confirmationService->expects(self::once())->method('run')->willReturn(true);
 
-        $command = $this->createCommand($userRepository, $confirmationService);
+        $command = $this->createCommand($confirmationService);
         $result = $command->run($input, $output);
 
         self::assertSame(Command::SUCCESS, $result);
@@ -116,13 +109,10 @@ final class ConfirmUserCommandTest extends TestCase
         $output = $this->createMock(OutputInterface::class);
         $output->expects(self::once())->method('writeln');
 
-        $userRepository = $this->createMock(UserRepository::class);
-        $userRepository->expects(self::once())->method('findByUsername')->with('testuser')->willReturn($user);
-
         $confirmationService = $this->createMock(ConfirmationService::class);
-        $confirmationService->expects(self::once())->method('run')->with($user)->willReturn(true);
+        $confirmationService->expects(self::once())->method('run')->willReturn(true);
 
-        $command = $this->createCommand($userRepository, $confirmationService);
+        $command = $this->createCommand($confirmationService);
         $result = $command->run($input, $output);
 
         self::assertSame(Command::SUCCESS, $result);
@@ -141,7 +131,7 @@ final class ConfirmUserCommandTest extends TestCase
 
         $input = $this->createMock(InputInterface::class);
         $input->expects(self::exactly(3))->method('getOption')->willReturnMap([
-            ['id', '1'],
+            ['id', (string) $user->getId()],
             ['email', null],
             ['username', null],
         ]);
@@ -149,13 +139,10 @@ final class ConfirmUserCommandTest extends TestCase
         $output = $this->createMock(OutputInterface::class);
         $output->expects(self::once())->method('writeln');
 
-        $userRepository = $this->createMock(UserRepository::class);
-        $userRepository->expects(self::once())->method('findById')->with(1)->willReturn($user);
-
         $confirmationService = $this->createMock(ConfirmationService::class);
-        $confirmationService->expects(self::once())->method('run')->with($user)->willReturn(false);
+        $confirmationService->expects(self::once())->method('run')->willReturn(false);
 
-        $command = $this->createCommand($userRepository, $confirmationService);
+        $command = $this->createCommand($confirmationService);
         $result = $command->run($input, $output);
 
         self::assertSame(Command::FAILURE, $result);
@@ -173,10 +160,7 @@ final class ConfirmUserCommandTest extends TestCase
         $output = $this->createMock(OutputInterface::class);
         $output->expects(self::once())->method('writeln');
 
-        $userRepository = $this->createMock(UserRepository::class);
-        $userRepository->expects(self::once())->method('findByEmail')->with('missing@example.com')->willReturn(null);
-
-        $command = $this->createCommand($userRepository);
+        $command = $this->createCommand();
         $result = $command->run($input, $output);
 
         self::assertSame(Command::FAILURE, $result);
@@ -199,12 +183,10 @@ final class ConfirmUserCommandTest extends TestCase
 
         self::assertSame(Command::FAILURE, $result);
     }
-    private function createCommand(
-        ?UserRepository $userRepository = null,
-        ?ConfirmationService $confirmationService = null,
-    ): ConfirmUserCommand {
+
+    private function createCommand(?ConfirmationService $confirmationService = null): ConfirmUserCommand
+    {
         return new ConfirmUserCommand(
-            $userRepository ?? $this->createMock(UserRepository::class),
             $confirmationService ?? $this->createMock(ConfirmationService::class),
         );
     }

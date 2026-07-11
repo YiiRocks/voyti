@@ -9,8 +9,6 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserRepository;
-use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
@@ -43,9 +41,7 @@ final class RecoveryServiceTest extends TestCase
         $user->setUpdatedAt(time());
         $user->save();
 
-        $userRepository = new UserRepository();
-        $userTokenRepository = new UserTokenRepository();
-        $userTokenFactory = new UserTokenFactory($userTokenRepository);
+        $userTokenFactory = new UserTokenFactory();
         $mailService = $this->createMock(MailService::class);
         $config = new ModuleConfig();
         $translator = $this->createMock(TranslatorInterface::class);
@@ -53,7 +49,6 @@ final class RecoveryServiceTest extends TestCase
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 
         $service = new RecoveryService(
-            $userRepository,
             $userTokenFactory,
             $mailService,
             $config,
@@ -67,9 +62,7 @@ final class RecoveryServiceTest extends TestCase
 
     public function testRunWithUnknownEmailReturnsGenericSuccess(): void
     {
-        $userRepository = new UserRepository();
-        $userTokenRepository = new UserTokenRepository();
-        $userTokenFactory = new UserTokenFactory($userTokenRepository);
+        $userTokenFactory = new UserTokenFactory();
         $mailService = $this->createMock(MailService::class);
         $config = new ModuleConfig();
         $translator = $this->createMock(TranslatorInterface::class);
@@ -77,7 +70,6 @@ final class RecoveryServiceTest extends TestCase
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 
         $service = new RecoveryService(
-            $userRepository,
             $userTokenFactory,
             $mailService,
             $config,
@@ -101,9 +93,7 @@ final class RecoveryServiceTest extends TestCase
         $user->setUpdatedAt(time());
         $user->save();
 
-        $userRepository = new UserRepository();
-        $userTokenRepository = new UserTokenRepository();
-        $userTokenFactory = new UserTokenFactory($userTokenRepository);
+        $userTokenFactory = new UserTokenFactory();
         $mailService = $this->createMock(MailService::class);
         $mailService->method('sendRecovery')->willReturn(true);
         $config = new ModuleConfig();
@@ -112,7 +102,6 @@ final class RecoveryServiceTest extends TestCase
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 
         $service = new RecoveryService(
-            $userRepository,
             $userTokenFactory,
             $mailService,
             $config,

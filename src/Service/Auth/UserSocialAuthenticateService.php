@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Service\Auth;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
+use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserSocialAccount;
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
 use YiiRocks\Voyti\Helper\LoginMetadataHelper;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserRepository;
-use YiiRocks\Voyti\Repository\UserSocialAccountRepository;
 use YiiRocks\Voyti\Service\ServiceResult;
 use Yiisoft\Security\Random;
 use Yiisoft\Session\SessionInterface;
@@ -22,8 +21,6 @@ final readonly class UserSocialAuthenticateService
 
     public function __construct(
         private ModuleConfig $config,
-        private UserSocialAccountRepository $userSocialAccountRepository,
-        private UserRepository $userRepository,
         private CurrentUser $currentUser,
         private SessionInterface $session,
         private EventDispatcherInterface $eventDispatcher,
@@ -53,14 +50,14 @@ final readonly class UserSocialAuthenticateService
             return ServiceResult::failure('Unable to determine social network client ID');
         }
 
-        $account = $this->userSocialAccountRepository->findByProviderAndClientId($provider, $clientId);
+        $account = UserSocialAccount::findByProviderAndClientId($provider, $clientId);
 
         if ($account === null) {
             $account = $this->createAccount($provider, $clientId, $userAttributes);
         }
 
         if ($account->getUserId() !== null) {
-            $user = $this->userRepository->findById($account->getUserId());
+            $user = User::findById($account->getUserId());
             if ($user === null) {
                 return ServiceResult::failure('Associated user not found');
             }
@@ -105,16 +102,16 @@ final readonly class UserSocialAuthenticateService
 
         $email = $account->getEmail();
         if ($email !== null) {
-            $user = $this->userRepository->findByEmail($email);
+            $user = User::findByEmail($email);
             if ($user !== null) {
                 $account->setUserId((int) $user->getId());
             }
         }
 
-        $this->userSocialAccountRepository->save($account);
+        $account->save();
 
         if ($account->getUserId() !== null) {
-            $user = $this->userRepository->findById($account->getUserId());
+            $user = User::findById($account->getUserId());
             if ($user !== null) {
                 $account->connect($user);
             }

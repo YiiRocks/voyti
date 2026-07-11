@@ -10,7 +10,6 @@ use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Strategy\NewEmailChangeStrategy;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
@@ -56,7 +55,7 @@ final class NewEmailChangeStrategyTest extends TestCase
         $form->setUser($user);
         $form->email = 'new@example.com';
 
-        $tokenFactory = new UserTokenFactory(new UserTokenRepository());
+        $tokenFactory = new UserTokenFactory();
 
         $mailCapture = new MailCapture();
         $urlGenerator = new FakeUrlGenerator();
@@ -100,7 +99,7 @@ final class NewEmailChangeStrategyTest extends TestCase
         $form->setUser($user);
         $form->email = 'new@example.com';
 
-        $tokenFactory = new UserTokenFactory(new UserTokenRepository());
+        $tokenFactory = new UserTokenFactory();
 
         $mailCapture = new MailCapture();
         $urlGenerator = new FakeUrlGenerator();
@@ -132,7 +131,7 @@ final class NewEmailChangeStrategyTest extends TestCase
         $mailCapture = new MailCapture();
         $urlGenerator = new FakeUrlGenerator();
         $mailService = new MailService($mailCapture, '/tmp', $translator, $urlGenerator, 'App');
-        $tokenFactory = new UserTokenFactory(new UserTokenRepository());
+        $tokenFactory = new UserTokenFactory();
 
         $strategy = new NewEmailChangeStrategy($form, $tokenFactory, $mailService);
 
@@ -150,7 +149,7 @@ final class NewEmailChangeStrategyTest extends TestCase
         $form->setUser($user);
         $form->email = 'new@example.com';
 
-        $tokenFactory = new UserTokenFactory(new UserTokenRepository());
+        $tokenFactory = new UserTokenFactory();
 
         $mailCapture = new MailCapture();
         $urlGenerator = new FakeUrlGenerator();

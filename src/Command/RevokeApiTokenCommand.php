@@ -7,7 +7,6 @@ namespace YiiRocks\Voyti\Command;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\User\ApiTokenService;
 
 final class RevokeApiTokenCommand extends Command
@@ -15,7 +14,6 @@ final class RevokeApiTokenCommand extends Command
     use UserLookupTrait;
 
     public function __construct(
-        private UserRepository $userRepository,
         private ApiTokenService $apiTokenService,
     ) {
         parent::__construct();

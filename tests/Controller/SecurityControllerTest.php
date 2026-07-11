@@ -15,7 +15,6 @@ use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserSocialAccount;
 use YiiRocks\Voyti\Form\Auth\LoginForm;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\Auth\SocialAuthProviderService;
 use YiiRocks\Voyti\Service\Auth\UserSocialAccountConnectService;
@@ -24,6 +23,7 @@ use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\Service\ServiceResult;
 use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
+use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Security\PasswordHasher;
@@ -37,6 +37,8 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class SecurityControllerTest extends TestCase
 {
+    use DatabaseSetupTrait;
+
     private ModuleConfig $config;
     private CurrentUser&MockObject $currentUser;
     private FlashInterface&MockObject $flash;
@@ -50,15 +52,14 @@ final class SecurityControllerTest extends TestCase
     private UserSocialAccountConnectService&MockObject $socialNetworkAccountConnectService;
     private UserSocialAuthenticateService&MockObject $socialNetworkAuthenticateService;
     private EmailCodeGeneratorService&MockObject $twoFactorEmailCodeService;
-    private UserRepository&MockObject $userRepository;
     private ValidatorInterface&MockObject $validator;
     private WebViewRenderer&MockObject $viewRenderer;
 
     protected function setUp(): void
     {
+        $this->setUpDatabase();
         $this->config = new ModuleConfig();
         $this->harness = new ControllerHarness($this->config);
-        $this->userRepository = $this->createMock(UserRepository::class);
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
         $this->validator = $this->createMock(ValidatorInterface::class);
         $this->currentUser = $this->createMock(CurrentUser::class);
@@ -78,6 +79,11 @@ final class SecurityControllerTest extends TestCase
                 $this->hydrateObject($object, $data);
             },
         );
+    }
+
+    protected function tearDown(): void
+    {
+        $this->tearDownDatabase();
     }
 
     public function testAuthBeginRedirectsToProvider(): void
@@ -292,12 +298,7 @@ final class SecurityControllerTest extends TestCase
 
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['twoFactorAuthenticationCode' => '123456']]);
 
-        $user = $this->createMock(User::class);
-        $user->method('getPasswordHash')->willReturn($this->passwordHasher->hash('secret'));
-        $user->method('getAuthTfType')->willReturn('email');
-        $user->method('getAuthTfKey')->willReturn('123456');
-
-        $this->userRepository->method('findByUsernameOrEmail')->willReturn($user);
+        $this->createUser(authTfEnabled: true, authTfType: 'email', authTfKey: '123456');
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
@@ -326,12 +327,8 @@ final class SecurityControllerTest extends TestCase
 
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['twoFactorAuthenticationCode' => '123456']]);
 
-        $user = $this->createMock(User::class);
-        $user->method('getPasswordHash')->willReturn($this->passwordHasher->hash('secret'));
-        $user->method('getAuthTfType')->willReturn('email');
-        $user->method('getAuthTfKey')->willReturn('123456');
+        $this->createUser(authTfEnabled: true, authTfType: 'email', authTfKey: '123456');
 
-        $this->userRepository->method('findByUsernameOrEmail')->willReturn($user);
         $this->rememberMeCookieService->expects($this->once())->method('addCookie')->willReturnArgument(1);
 
         $response = $this->createMock(ResponseInterface::class);
@@ -355,12 +352,7 @@ final class SecurityControllerTest extends TestCase
 
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['twoFactorAuthenticationCode' => 'wrong']]);
 
-        $user = $this->createMock(User::class);
-        $user->method('getPasswordHash')->willReturn($this->passwordHasher->hash('secret'));
-        $user->method('getAuthTfType')->willReturn('google');
-        $user->method('getAuthTfKey')->willReturn(null);
-
-        $this->userRepository->method('findByUsernameOrEmail')->willReturn($user);
+        $this->createUser(authTfEnabled: true, authTfType: 'google', authTfKey: null);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -530,12 +522,7 @@ final class SecurityControllerTest extends TestCase
 
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
-        $user = $this->createMock(User::class);
-        $user->method('getPasswordHash')->willReturn($this->passwordHasher->hash('secret'));
-        $user->method('isBlocked')->willReturn(false);
-        $user->method('isConfirmed')->willReturn(true);
-
-        $this->userRepository->method('findByUsernameOrEmail')->willReturn($user);
+        $this->createUser();
         $this->validator->method('validate')->willReturn(new Result());
 
         $response = $this->createMock(ResponseInterface::class);
@@ -559,12 +546,7 @@ final class SecurityControllerTest extends TestCase
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
-        $user = $this->createMock(User::class);
-        $user->method('getPasswordHash')->willReturn($this->passwordHasher->hash('secret'));
-        $user->method('isBlocked')->willReturn(false);
-        $user->method('isConfirmed')->willReturn(true);
-
-        $this->userRepository->method('findByUsernameOrEmail')->willReturn($user);
+        $this->createUser();
         $this->validator->method('validate')->willReturn(new Result());
 
         $response = $this->createMock(ResponseInterface::class);
@@ -592,12 +574,7 @@ final class SecurityControllerTest extends TestCase
 
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
-        $user = $this->createMock(User::class);
-        $user->method('getPasswordHash')->willReturn($this->passwordHasher->hash('secret'));
-        $user->method('isBlocked')->willReturn(false);
-        $user->method('isConfirmed')->willReturn(true);
-
-        $this->userRepository->method('findByUsernameOrEmail')->willReturn($user);
+        $this->createUser();
         $this->validator->method('validate')->willReturn(new Result());
 
         $this->expectException(LogicException::class);
@@ -612,12 +589,7 @@ final class SecurityControllerTest extends TestCase
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret', 'rememberMe' => true]]);
 
-        $user = $this->createMock(User::class);
-        $user->method('getPasswordHash')->willReturn($this->passwordHasher->hash('secret'));
-        $user->method('isBlocked')->willReturn(false);
-        $user->method('isConfirmed')->willReturn(true);
-
-        $this->userRepository->method('findByUsernameOrEmail')->willReturn($user);
+        $this->createUser();
         $this->validator->method('validate')->willReturn(new Result());
         $this->currentUser->method('withAuthTimeout')->willReturnSelf();
         $this->rememberMeCookieService->expects($this->once())->method('addCookie')->willReturnArgument(1);
@@ -637,11 +609,7 @@ final class SecurityControllerTest extends TestCase
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
-        $user = $this->createMock(User::class);
-        $user->method('getPasswordHash')->willReturn($this->passwordHasher->hash('secret'));
-        $user->method('isBlocked')->willReturn(true);
-
-        $this->userRepository->method('findByUsernameOrEmail')->willReturn($user);
+        $this->createUser(blocked: true);
         $this->validator->method('validate')->willReturn(new Result());
 
         $response = $this->createMock(ResponseInterface::class);
@@ -662,7 +630,6 @@ final class SecurityControllerTest extends TestCase
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'wrong']]);
 
-        $this->userRepository->method('findByUsernameOrEmail')->willReturn(null);
         $this->validator->method('validate')->willReturn(new Result());
 
         $response = $this->createMock(ResponseInterface::class);
@@ -685,16 +652,12 @@ final class SecurityControllerTest extends TestCase
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
-        $user = $this->createMock(User::class);
-        $user->method('getPasswordHash')->willReturn($this->passwordHasher->hash('secret'));
-        $user->method('isBlocked')->willReturn(false);
-        $user->method('isConfirmed')->willReturn(true);
-        $user->method('isAuthTfEnabled')->willReturn(true);
-        $user->method('getAuthTfType')->willReturn('email');
+        $user = $this->createUser(authTfEnabled: true, authTfType: 'email');
 
-        $this->userRepository->method('findByUsernameOrEmail')->willReturn($user);
         $this->validator->method('validate')->willReturn(new Result());
-        $this->twoFactorEmailCodeService->expects($this->once())->method('run')->with($user);
+        $this->twoFactorEmailCodeService->expects($this->once())->method('run')->with(
+            $this->callback(static fn (User $u): bool => $u->getId() === $user->getId()),
+        );
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -718,14 +681,8 @@ final class SecurityControllerTest extends TestCase
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
-        $user = $this->createMock(User::class);
-        $user->method('getPasswordHash')->willReturn($this->passwordHasher->hash('secret'));
-        $user->method('isBlocked')->willReturn(false);
-        $user->method('isConfirmed')->willReturn(true);
-        $user->method('isAuthTfEnabled')->willReturn(true);
-        $user->method('getAuthTfType')->willReturn('google');
+        $this->createUser(authTfEnabled: true, authTfType: 'google');
 
-        $this->userRepository->method('findByUsernameOrEmail')->willReturn($user);
         $this->validator->method('validate')->willReturn(new Result());
         $this->twoFactorEmailCodeService->expects($this->never())->method('run');
 
@@ -749,12 +706,7 @@ final class SecurityControllerTest extends TestCase
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
-        $user = $this->createMock(User::class);
-        $user->method('getPasswordHash')->willReturn($this->passwordHasher->hash('secret'));
-        $user->method('isBlocked')->willReturn(false);
-        $user->method('isConfirmed')->willReturn(false);
-
-        $this->userRepository->method('findByUsernameOrEmail')->willReturn($user);
+        $this->createUser(confirmed: false);
         $this->validator->method('validate')->willReturn(new Result());
 
         $response = $this->createMock(ResponseInterface::class);
@@ -786,7 +738,6 @@ final class SecurityControllerTest extends TestCase
             ->with('Location', '//home')
             ->willReturnSelf();
 
-        $this->userRepository->expects($this->never())->method('findByUsernameOrEmail');
         $this->viewRenderer->expects($this->never())->method('render');
 
         $result = $controller->login($request);
@@ -842,7 +793,6 @@ final class SecurityControllerTest extends TestCase
     private function createController(): SecurityController
     {
         return $this->harness->createSecurityController(
-            userRepository: $this->userRepository,
             translator: $this->getTranslator(),
             viewRenderer: $this->viewRenderer,
             validator: $this->validator,
@@ -858,6 +808,31 @@ final class SecurityControllerTest extends TestCase
             socialNetworkAccountConnectService: $this->socialNetworkAccountConnectService,
             twoFactorEmailCodeService: $this->twoFactorEmailCodeService,
         );
+    }
+
+    private function createUser(
+        string $password = 'secret',
+        bool $blocked = false,
+        bool $confirmed = true,
+        bool $authTfEnabled = false,
+        ?string $authTfType = null,
+        ?string $authTfKey = null,
+    ): User {
+        $user = new User();
+        $user->setUsername('jdoe');
+        $user->setEmail('jdoe@example.com');
+        $user->setPasswordHash($this->passwordHasher->hash($password));
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $user->setBlockedAt($blocked ? time() : null);
+        $user->setConfirmedAt($confirmed ? time() : null);
+        $user->setAuthTfEnabled($authTfEnabled);
+        $user->setAuthTfType($authTfType);
+        $user->setAuthTfKey($authTfKey);
+        $user->save();
+
+        return $user;
     }
 
     private function hydrateObject(object $object, array $data): void

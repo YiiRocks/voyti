@@ -10,10 +10,9 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use RuntimeException;
 use YiiRocks\Voyti\Controller\PermissionController;
-use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
+use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\SimpleItemsStorage;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Rbac\AssignmentsStorageInterface;
@@ -30,6 +29,8 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class PermissionControllerTest extends TestCase
 {
+    use DatabaseSetupTrait;
+
     private AssignmentsStorageInterface $assignmentsStorage;
     private ModuleConfig $config;
     private FlashInterface&MockObject $flash;
@@ -38,15 +39,14 @@ final class PermissionControllerTest extends TestCase
     private ManagerInterface $manager;
     private ResponseFactoryInterface&MockObject $responseFactory;
     private TranslatorInterface $translator;
-    private UserRepository&MockObject $userRepository;
     private ValidatorInterface&MockObject $validator;
     private WebViewRenderer&MockObject $viewRenderer;
 
     protected function setUp(): void
     {
+        $this->setUpDatabase();
         $this->config = new ModuleConfig();
         $this->harness = new ControllerHarness($this->config);
-        $this->userRepository = $this->createMock(UserRepository::class);
         $this->translator = $this->createTranslator();
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
         $this->validator = $this->createMock(ValidatorInterface::class);
@@ -55,6 +55,11 @@ final class PermissionControllerTest extends TestCase
         $this->itemsStorage = $this->harness->getItemsStorage();
         $this->assignmentsStorage = $this->harness->getAssignmentsStorage();
         $this->manager = $this->harness->getAuthManager();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->tearDownDatabase();
     }
 
     public function testCreateGetShowsForm(): void
@@ -189,9 +194,6 @@ final class PermissionControllerTest extends TestCase
         $controller = $this->createController();
         $this->itemsStorage->add(new Permission('edit-posts'));
 
-        $user = $this->createMock(User::class);
-        $this->userRepository->method('findByIds')->willReturn([]);
-
         $request = new ServerRequest('GET', '/');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -231,9 +233,6 @@ final class PermissionControllerTest extends TestCase
         $controller = $this->createController();
         $this->itemsStorage->add(new Permission('edit-posts'));
 
-        $user = $this->createMock(User::class);
-        $this->userRepository->method('findByIds')->willReturn([]);
-
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['permission' => ['name' => 'edit-posts', 'description' => 'Updated description', 'rule' => '', 'children' => ['']], 'assignedUsers' => []]);
 
         $this->validator->method('validate')->willReturn(new Result());
@@ -263,7 +262,6 @@ final class PermissionControllerTest extends TestCase
             url: $this->harness->getUrlGenerator(),
             validator: $this->validator,
             responseFactory: $this->responseFactory,
-            userRepository: $this->userRepository,
             itemsStorage: $this->itemsStorage,
             managerInterface: $manager,
             assignmentsStorage: $this->assignmentsStorage,
@@ -284,7 +282,6 @@ final class PermissionControllerTest extends TestCase
     {
         $controller = $this->createController();
         $this->itemsStorage->add(new Permission('edit-posts'));
-        $this->userRepository->method('findByIds')->willReturn([]);
 
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['permission' => ['name' => 'edit-posts', 'description' => '', 'rule' => 'someRule', 'children' => ['']], 'assignedUsers' => []]);
 
@@ -304,7 +301,6 @@ final class PermissionControllerTest extends TestCase
     private function createController(): PermissionController
     {
         return $this->harness->createPermissionController(
-            userRepository: $this->userRepository,
             translator: $this->translator,
             viewRenderer: $this->viewRenderer,
             validator: $this->validator,

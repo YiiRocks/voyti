@@ -12,8 +12,6 @@ use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Form\Auth\RecoveryForm;
 use YiiRocks\Voyti\Helper\FlashType;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserRepository;
-use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
 use YiiRocks\Voyti\Service\Password\ResetService;
 use Yiisoft\Http\Method;
@@ -35,8 +33,6 @@ final readonly class RecoveryController
         private UrlGeneratorInterface $url,
         private RecoveryService $passwordRecoveryService,
         private ResetService $resetPasswordService,
-        private UserRepository $userRepository,
-        private UserTokenRepository $userTokenRepository,
         private ValidatorInterface $validator,
         private EventDispatcherInterface $eventDispatcher,
         private ModuleConfig $config,
@@ -83,7 +79,7 @@ final readonly class RecoveryController
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.recovery.reset_disabled', category: 'voyti'), 'translator' => $this->translator]);
         }
 
-        $userToken = $this->userTokenRepository->findByUserIdTypeAndCode($id, UserToken::TYPE_RECOVERY, $code);
+        $userToken = UserToken::findByUserIdTypeAndCode($id, UserToken::TYPE_RECOVERY, $code);
 
         if ($userToken === null || $userToken->getIsExpired($this->config->tokenRecoveryLifespan) || $userToken->getUser() === null) {
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.recovery.link_invalid', category: 'voyti')]);

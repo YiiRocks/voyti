@@ -8,7 +8,9 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserProfile;
+use YiiRocks\Voyti\Entity\UserSessionHistory;
 use YiiRocks\Voyti\Form\Auth\RegistrationForm;
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Form\Settings\UserProfileForm;
@@ -16,9 +18,6 @@ use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Helper\FlashType;
 use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserProfileRepository;
-use YiiRocks\Voyti\Repository\UserRepository;
-use YiiRocks\Voyti\Repository\UserSessionHistoryRepository;
 use YiiRocks\Voyti\Service\Password\ExpireService;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
@@ -49,8 +48,6 @@ final readonly class AdminController
     public function __construct(
         private TranslatorInterface $translator,
         private WebViewRenderer $viewRenderer,
-        private UserRepository $userRepository,
-        private UserProfileRepository $userProfileRepository,
         private CreateService $userCreateService,
         private BlockService $userBlockService,
         private ConfirmationService $userConfirmationService,
@@ -58,7 +55,6 @@ final readonly class AdminController
         private ExpireService $passwordExpireService,
         private SwitchIdentityService $switchIdentityService,
         private UpdateAssignmentsService $updateAuthAssignmentsService,
-        private UserSessionHistoryRepository $userSessionHistoryRepository,
         private AuthHelper $authHelper,
         private PasswordHasher $passwordHasher,
         private PasswordGeneratorInterface $passwordGenerator,
@@ -77,7 +73,7 @@ final readonly class AdminController
 
     public function assignments(ServerRequestInterface $request, int $id): ResponseInterface
     {
-        $user = $this->userRepository->findById($id);
+        $user = User::findById($id);
         if ($user === null) {
             return $this->renderError('voyti.admin.user_not_found');
         }
@@ -103,7 +99,7 @@ final readonly class AdminController
 
     public function block(int $id): ResponseInterface
     {
-        $user = $this->userRepository->findById($id);
+        $user = User::findById($id);
         if ($user !== null) {
             $this->userBlockService->run($user);
         }
@@ -113,7 +109,7 @@ final readonly class AdminController
 
     public function confirm(int $id): ResponseInterface
     {
-        $user = $this->userRepository->findById($id);
+        $user = User::findById($id);
         if ($user !== null && $this->userConfirmationService->run($user)) {
             return $this->redirectWithFlash($this->url->generate('voyti/admin'), 'voyti.admin.user_confirmed');
         }
@@ -138,7 +134,7 @@ final readonly class AdminController
                 $rawAssignedItems = $body['assignedItems'] ?? null;
                 $items = is_array($rawAssignedItems) ? $rawAssignedItems : [];
                 if ($items !== []) {
-                    $user = $this->userRepository->findByUsername($username);
+                    $user = User::findByUsername($username);
                     if ($user !== null) {
                         $this->updateAuthAssignmentsService->run((int) $user->getId(), $items);
                     }
@@ -164,9 +160,9 @@ final readonly class AdminController
         if ($id === (int) $identity->getId()) {
             return $this->renderError('voyti.admin.cannot_delete_self');
         }
-        $user = $this->userRepository->findById($id);
+        $user = User::findById($id);
         if ($user !== null) {
-            $this->userRepository->delete($user);
+            $user->delete();
             return $this->redirectWithFlash($this->url->generate('voyti/admin'), 'voyti.admin.user_deleted');
         }
         return $this->renderError('voyti.admin.user_not_found');
@@ -174,7 +170,7 @@ final readonly class AdminController
 
     public function forcePasswordChange(int $id): ResponseInterface
     {
-        $user = $this->userRepository->findById($id);
+        $user = User::findById($id);
         if ($user !== null && $this->passwordExpireService->run($user)) {
             return $this->redirectWithFlash($this->url->generate('voyti/admin'), 'voyti.admin.password_change_required');
         }
@@ -191,8 +187,8 @@ final readonly class AdminController
             'page' => (int) ($queryParams['page'] ?? 1),
         ];
 
-        $users = $this->userRepository->search($filters);
-        $total = (int) $this->userRepository->countByFilters($filters);
+        $users = User::search($filters);
+        $total = (int) User::countByFilters($filters);
         $limit = 50;
         $totalPages = max(1, (int)ceil($total / $limit));
         $currentPage = max(1, $filters['page']);
@@ -212,7 +208,7 @@ final readonly class AdminController
 
     public function info(int $id): ResponseInterface
     {
-        $user = $this->userRepository->findById($id);
+        $user = User::findById($id);
         if ($user === null) {
             return $this->renderError('voyti.admin.user_not_found');
         }
@@ -224,7 +220,7 @@ final readonly class AdminController
 
     public function passwordReset(int $id): ResponseInterface
     {
-        $user = $this->userRepository->findById($id);
+        $user = User::findById($id);
         if ($user !== null) {
             $result = $this->passwordRecoveryService->run($user->getEmail());
             return $this->renderView('shared/message', ['title' => $result->getMessage()]);
@@ -258,12 +254,12 @@ final readonly class AdminController
 
     public function terminateSessions(int $id): ResponseInterface
     {
-        $user = $this->userRepository->findById($id);
+        $user = User::findById($id);
         if ($user === null) {
             return $this->renderError('voyti.admin.user_not_found');
         }
 
-        $sessions = $this->userSessionHistoryRepository->findByUserId($id);
+        $sessions = UserSessionHistory::findByUserId($id);
         foreach ($sessions as $session) {
             $session->delete();
         }
@@ -276,7 +272,7 @@ final readonly class AdminController
 
     public function update(ServerRequestInterface $request, int $id): ResponseInterface
     {
-        $user = $this->userRepository->findById($id);
+        $user = User::findById($id);
         if ($user === null) {
             return $this->renderError('voyti.admin.user_not_found');
         }
@@ -323,7 +319,7 @@ final readonly class AdminController
 
     public function updateProfile(ServerRequestInterface $request, int $id): ResponseInterface
     {
-        $user = $this->userRepository->findById($id);
+        $user = User::findById($id);
         if ($user === null) {
             return $this->renderError('voyti.admin.user_not_found');
         }
@@ -369,12 +365,12 @@ final readonly class AdminController
 
     public function userSessionHistory(int $id): ResponseInterface
     {
-        $user = $this->userRepository->findById($id);
+        $user = User::findById($id);
         if ($user === null) {
             return $this->renderError('voyti.admin.user_not_found');
         }
 
-        $sessions = $this->userSessionHistoryRepository->findByUserId($id);
+        $sessions = UserSessionHistory::findByUserId($id);
         return $this->renderView('admin/_session-history', [
             'user' => $user,
             'sessions' => $sessions,

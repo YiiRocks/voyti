@@ -8,7 +8,6 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserRepository;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
@@ -17,7 +16,6 @@ final readonly class SwitchIdentityService
 {
     public function __construct(
         private ModuleConfig $config,
-        private UserRepository $userRepository,
         private CurrentUser $currentUser,
         private SessionInterface $session,
         private EventDispatcherInterface $eventDispatcher,
@@ -37,7 +35,7 @@ final readonly class SwitchIdentityService
             return null;
         }
 
-        return $this->userRepository->findById((int) $originalId);
+        return User::findById((int) $originalId);
     }
 
     public function isSwitched(): bool
@@ -63,7 +61,7 @@ final readonly class SwitchIdentityService
             return ServiceResult::failure('No original identity to restore');
         }
 
-        $originalUser = $this->userRepository->findById((int) $originalId);
+        $originalUser = User::findById((int) $originalId);
         if ($originalUser === null) {
             return ServiceResult::failure('Original user not found');
         }
@@ -82,7 +80,7 @@ final readonly class SwitchIdentityService
             return ServiceResult::failure('Switch identities is disabled');
         }
 
-        $targetUser = $this->userRepository->findById($id);
+        $targetUser = User::findById($id);
         if ($targetUser === null) {
             return ServiceResult::failure('User not found');
         }

@@ -10,8 +10,6 @@ use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Helper\ApiTokenHasher;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Repository\IdentityRepository;
-use YiiRocks\Voyti\Repository\UserRepository;
-use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 
 final class IdentityRepositoryTest extends TestCase
@@ -124,7 +122,7 @@ final class IdentityRepositoryTest extends TestCase
 
     private function createRepository(?ModuleConfig $config = null): IdentityRepository
     {
-        return new IdentityRepository(new UserRepository(), new UserTokenRepository(), $config ?? new ModuleConfig());
+        return new IdentityRepository($config ?? new ModuleConfig());
     }
 
     private function createSavedUser(): User

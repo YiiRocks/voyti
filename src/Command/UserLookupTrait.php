@@ -30,11 +30,11 @@ trait UserLookupTrait
 
         $user = null;
         if (is_string($rawId) && $rawId !== '') {
-            $user = $this->userRepository->findById((int) $rawId);
+            $user = User::findById((int) $rawId);
         } elseif (is_string($rawEmail) && $rawEmail !== '') {
-            $user = $this->userRepository->findByEmail($rawEmail);
+            $user = User::findByEmail($rawEmail);
         } elseif (is_string($rawUsername) && $rawUsername !== '') {
-            $user = $this->userRepository->findByUsername($rawUsername);
+            $user = User::findByUsername($rawUsername);
         }
 
         if ($user === null) {

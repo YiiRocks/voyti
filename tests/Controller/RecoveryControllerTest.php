@@ -12,12 +12,11 @@ use YiiRocks\Voyti\Controller\RecoveryController;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserRepository;
-use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
 use YiiRocks\Voyti\Service\Password\ResetService;
 use YiiRocks\Voyti\Service\ServiceResult;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
+use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -29,6 +28,8 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class RecoveryControllerTest extends TestCase
 {
+    use DatabaseSetupTrait;
+
     private ModuleConfig $config;
     private FlashInterface&MockObject $flash;
     private ControllerHarness $harness;
@@ -37,17 +38,14 @@ final class RecoveryControllerTest extends TestCase
     private ResetService&MockObject $resetService;
     private ResponseFactoryInterface&MockObject $responseFactory;
     private TranslatorInterface $translator;
-    private UserRepository&MockObject $userRepository;
-    private UserTokenRepository&MockObject $userTokenRepository;
     private ValidatorInterface&MockObject $validator;
     private WebViewRenderer&MockObject $viewRenderer;
 
     protected function setUp(): void
     {
+        $this->setUpDatabase();
         $this->config = new ModuleConfig();
         $this->harness = new ControllerHarness($this->config);
-        $this->userRepository = $this->createMock(UserRepository::class);
-        $this->userTokenRepository = $this->createMock(UserTokenRepository::class);
         $this->translator = $this->createTranslator();
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
         $this->validator = $this->createMock(ValidatorInterface::class);
@@ -62,6 +60,11 @@ final class RecoveryControllerTest extends TestCase
                 $this->hydrateObject($object, $data);
             },
         );
+    }
+
+    protected function tearDown(): void
+    {
+        $this->tearDownDatabase();
     }
 
     public function testRequestGetShowsForm(): void
@@ -129,15 +132,11 @@ final class RecoveryControllerTest extends TestCase
 
     public function testResetGetWithValidTokenShowsForm(): void
     {
+        $user = $this->createUser();
+        $this->createRecoveryToken((int) $user->getId(), 'valid', time());
+
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
-
-        $userToken = $this->createMock(UserToken::class);
-        $userToken->method('getIsExpired')->willReturn(false);
-        $user = $this->createMock(User::class);
-        $userToken->method('getUser')->willReturn($user);
-
-        $this->userTokenRepository->method('findByUserIdTypeAndCode')->willReturn($userToken);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -148,26 +147,27 @@ final class RecoveryControllerTest extends TestCase
             ->with('recovery/reset', $this->anything())
             ->willReturn($response);
 
-        $result = $controller->reset($request, 1, 'valid');
+        $result = $controller->reset($request, (int) $user->getId(), 'valid');
 
         $this->assertSame($response, $result);
     }
 
     public function testResetPostSuccessful(): void
     {
+        $user = $this->createUser();
+        $this->createRecoveryToken((int) $user->getId(), 'valid', time());
+
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['recovery' => ['password' => 'newpass123', 'passwordRepeat' => 'newpass123']]);
 
         $this->validator->method('validate')->willReturn(new Result());
-        $userToken = $this->createMock(UserToken::class);
-        $userToken->method('getIsExpired')->willReturn(false);
-        $user = $this->createMock(User::class);
-        $userToken->method('getUser')->willReturn($user);
-
-        $this->userTokenRepository->method('findByUserIdTypeAndCode')->willReturn($userToken);
         $this->resetService->expects($this->once())
             ->method('run')
-            ->with('newpass123', $user, $userToken);
+            ->with(
+                'newpass123',
+                $this->callback(static fn (User $u): bool => $u->getId() === $user->getId()),
+                $this->callback(static fn (UserToken $t): bool => $t->getCode() === 'valid'),
+            );
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
@@ -178,26 +178,22 @@ final class RecoveryControllerTest extends TestCase
             ->method('withHeader')
             ->willReturnSelf();
 
-        $result = $controller->reset($request, 1, 'valid');
+        $result = $controller->reset($request, (int) $user->getId(), 'valid');
 
         $this->assertSame($response, $result);
     }
 
     public function testResetPostWithInvalidDataShowsErrors(): void
     {
+        $user = $this->createUser();
+        $this->createRecoveryToken((int) $user->getId(), 'valid', time());
+
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['recovery' => ['password' => '', 'passwordRepeat' => '']]);
 
         $result = new Result();
         $result->addError('Password is required.');
         $this->validator->method('validate')->willReturn($result);
-
-        $userToken = $this->createMock(UserToken::class);
-        $userToken->method('getIsExpired')->willReturn(false);
-        $user = $this->createMock(User::class);
-        $userToken->method('getUser')->willReturn($user);
-
-        $this->userTokenRepository->method('findByUserIdTypeAndCode')->willReturn($userToken);
         $this->resetService->expects($this->never())->method('run');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -209,7 +205,7 @@ final class RecoveryControllerTest extends TestCase
             ))
             ->willReturn($response);
 
-        $result2 = $controller->reset($request, 1, 'valid');
+        $result2 = $controller->reset($request, (int) $user->getId(), 'valid');
 
         $this->assertSame($response, $result2);
     }
@@ -236,14 +232,11 @@ final class RecoveryControllerTest extends TestCase
 
     public function testResetWithExpiredTokenShowsMessage(): void
     {
+        $user = $this->createUser();
+        $this->createRecoveryToken((int) $user->getId(), 'expired', time() - 1_000_000);
+
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
-
-        $userToken = $this->createMock(UserToken::class);
-        $userToken->method('getIsExpired')->willReturn(true);
-        $userToken->method('getUser')->willReturn(null);
-
-        $this->userTokenRepository->method('findByUserIdTypeAndCode')->willReturn($userToken);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -253,7 +246,7 @@ final class RecoveryControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->reset($request, 1, 'expired');
+        $result = $controller->reset($request, (int) $user->getId(), 'expired');
 
         $this->assertSame($response, $result);
     }
@@ -262,8 +255,6 @@ final class RecoveryControllerTest extends TestCase
     {
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
-
-        $this->userTokenRepository->method('findByUserIdTypeAndCode')->willReturn(null);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -281,8 +272,6 @@ final class RecoveryControllerTest extends TestCase
     private function createController(): RecoveryController
     {
         return $this->harness->createRecoveryController(
-            userRepository: $this->userRepository,
-            userTokenRepository: $this->userTokenRepository,
             translator: $this->translator,
             viewRenderer: $this->viewRenderer,
             validator: $this->validator,
@@ -292,6 +281,32 @@ final class RecoveryControllerTest extends TestCase
             recoveryService: $this->recoveryService,
             resetService: $this->resetService,
         );
+    }
+
+    private function createRecoveryToken(int $userId, string $code, int $createdAt): UserToken
+    {
+        $userToken = new UserToken();
+        $userToken->setUserId($userId);
+        $userToken->setType(UserToken::TYPE_RECOVERY);
+        $userToken->setCode($code);
+        $userToken->setCreatedAt($createdAt);
+        $userToken->save();
+
+        return $userToken;
+    }
+
+    private function createUser(): User
+    {
+        $user = new User();
+        $user->setUsername('recoveryuser');
+        $user->setEmail('recoveryuser@example.com');
+        $user->setPasswordHash('hash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $user->save();
+
+        return $user;
     }
 
     private function hydrateObject(object $object, array $data): void

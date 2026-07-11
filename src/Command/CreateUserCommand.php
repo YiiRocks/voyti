@@ -9,7 +9,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use YiiRocks\Voyti\Repository\UserRepository;
+use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\User\CreateService;
 use Yiisoft\Rbac\ManagerInterface;
@@ -18,7 +18,6 @@ final class CreateUserCommand extends Command
 {
     public function __construct(
         private CreateService $userCreateService,
-        private UserRepository $userRepository,
         private ManagerInterface $authManager,
         private PasswordGeneratorInterface $passwordGenerator,
     ) {
@@ -77,7 +76,7 @@ final class CreateUserCommand extends Command
             /** @var mixed $optionRole */
             $optionRole = $input->getOption('role');
             if (is_string($optionRole) && $optionRole !== '') {
-                $user = $this->userRepository->findByEmail($rawEmail);
+                $user = User::findByEmail($rawEmail);
                 if ($user !== null) {
                     $this->authManager->assign($optionRole, $user->getIdOrZero());
                     $output->writeln("<info>Role assigned: {$optionRole}</info>");

@@ -23,11 +23,6 @@ use YiiRocks\Voyti\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Form\Settings\UserProfileForm;
 use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserProfileRepository;
-use YiiRocks\Voyti\Repository\UserRepository;
-use YiiRocks\Voyti\Repository\UserSessionHistoryRepository;
-use YiiRocks\Voyti\Repository\UserSocialAccountRepository;
-use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\EmailChangeService;
 use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
@@ -60,10 +55,6 @@ final readonly class SettingsController
     public function __construct(
         private TranslatorInterface $translator,
         private WebViewRenderer $viewRenderer,
-        private UserRepository $userRepository,
-        private UserProfileRepository $userProfileRepository,
-        private UserSessionHistoryRepository $userSessionHistoryRepository,
-        private UserSocialAccountRepository $userSocialAccountRepository,
         private PasswordHasher $passwordHasher,
         private ValidatorInterface $validator,
         private EventDispatcherInterface $eventDispatcher,
@@ -74,7 +65,6 @@ final readonly class SettingsController
         private QrCodeUriGeneratorService $twoFactorQrCodeService,
         private EmailCodeGeneratorService $twoFactorEmailCodeService,
         private EmailChangeService $emailChangeService,
-        private UserTokenRepository $userTokenRepository,
         private HydratorInterface $hydrator,
         private CurrentUser $currentUser,
         private ResponseFactoryInterface $responseFactory,
@@ -141,7 +131,7 @@ final readonly class SettingsController
 
             $identity = $this->currentUser->getIdentity();
             if ($result->isValid() && !($identity instanceof GuestIdentityInterface)) {
-                $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
+                $user = User::findById((int) ($identity->getId() ?? 0));
                 if ($user !== null &&         $this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
                     $this->eventDispatcher->dispatch(new GdprEvent($user));
                     $prefix = $this->config->gdprAnonymizePrefix . ($user->getId() ?? '');
@@ -186,11 +176,11 @@ final readonly class SettingsController
 
             $identity = $this->currentUser->getIdentity();
             if ($result->isValid() && !($identity instanceof GuestIdentityInterface)) {
-                $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
+                $user = User::findById((int) ($identity->getId() ?? 0));
                 if ($user !== null && $this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
                     $userId = $user->getIdOrZero();
                     $this->eventDispatcher->dispatch(new UserEvent($user));
-                    $this->userRepository->delete($user);
+                    $user->delete();
                     $this->eventDispatcher->dispatch(new UserEvent($user));
                     $this->terminateUserSessionsService->run($userId);
                     return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.account_deleted', category: 'voyti')]);
@@ -209,7 +199,7 @@ final readonly class SettingsController
         }
 
         $account = null;
-        $accounts = $this->userSocialAccountRepository->findByUserId((int) ($identity->getId() ?? 0));
+        $accounts = UserSocialAccount::findByUserId((int) ($identity->getId() ?? 0));
         foreach ($accounts as $candidate) {
             if ($candidate->getId() === $id) {
                 $account = $candidate;
@@ -262,7 +252,7 @@ final readonly class SettingsController
         if (!($identity instanceof GuestIdentityInterface) && $request->getMethod() === Method::POST) {
             $body = $this->parsedBody($request);
             $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
-            $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
+            $user = User::findById((int) ($identity->getId() ?? 0));
             if ($user !== null) {
                 if ($form->consent && !$user->isGdprConsent()) {
                     $user->setGdprConsent(true);
@@ -277,7 +267,7 @@ final readonly class SettingsController
         }
 
         if (!($identity instanceof GuestIdentityInterface)) {
-            $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
+            $user = User::findById((int) ($identity->getId() ?? 0));
             if ($user !== null) {
                 $form->consent = $user->isGdprConsent();
                 $form->consentDate = $user->getGdprConsentDate();
@@ -295,7 +285,7 @@ final readonly class SettingsController
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated', category: 'voyti'), 'translator' => $this->translator]);
         }
 
-        $accounts = $this->userSocialAccountRepository->findByUserId((int) ($identity->getId() ?? 0));
+        $accounts = UserSocialAccount::findByUserId((int) ($identity->getId() ?? 0));
         $connectedProviders = array_filter(array_map(
             static fn (\YiiRocks\Voyti\Entity\UserSocialAccount $account): string => $account->getProvider(),
             $accounts,
@@ -533,7 +523,7 @@ final readonly class SettingsController
             return $this->jsonErrorResponse(Status::UNAUTHORIZED, 'voyti.settings.not_authenticated');
         }
 
-        $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
+        $user = User::findById((int) ($identity->getId() ?? 0));
         if ($user === null) {
             return $this->jsonErrorResponse(Status::NOT_FOUND, 'voyti.settings.user_not_found');
         }
@@ -685,7 +675,7 @@ final readonly class SettingsController
                     'created_at' => $entry->getCreatedAt(),
                     'updated_at' => $entry->getUpdatedAt(),
                 ],
-                $this->userSessionHistoryRepository->findByUserId($user->getIdOrZero()),
+                UserSessionHistory::findByUserId($user->getIdOrZero()),
             ),
             'userSocialAccount' => array_map(
                 static fn (UserSocialAccount $account): array => [
@@ -695,7 +685,7 @@ final readonly class SettingsController
                     'created_at' => $account->getCreatedAt(),
                     'data' => $account->getDecodedData(),
                 ],
-                $this->userSocialAccountRepository->findByUserId($user->getIdOrZero()),
+                UserSocialAccount::findByUserId($user->getIdOrZero()),
             ),
             default => null,
         };
@@ -748,7 +738,7 @@ final readonly class SettingsController
             return $this->renderError('voyti.settings.not_authenticated');
         }
 
-        $user = $this->userRepository->findById((int) ($identity->getId() ?? 0));
+        $user = User::findById((int) ($identity->getId() ?? 0));
         if ($user === null) {
             return $this->renderError('voyti.settings.user_not_found');
         }

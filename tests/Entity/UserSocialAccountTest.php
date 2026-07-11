@@ -144,6 +144,43 @@ final class UserSocialAccountTest extends TestCase
         self::assertSame(0, $entity->getCreatedAt());
     }
 
+    public function testFindByCodeReturnsMatch(): void
+    {
+        $this->createAccount('github', 'client-1', 'code-a');
+        $this->createAccount('github', 'client-2', 'code-b');
+
+        $account = UserSocialAccount::findByCode('code-a');
+
+        self::assertNotNull($account);
+        self::assertSame('client-1', $account->getClientId());
+    }
+
+    public function testFindByProviderAndClientIdReturnsMatch(): void
+    {
+        $this->createAccount('github', 'client-1', 'code-a');
+        $this->createAccount('gitlab', 'client-1', 'code-b');
+
+        $account = UserSocialAccount::findByProviderAndClientId('github', 'client-1');
+
+        self::assertNotNull($account);
+        self::assertSame('code-a', $account->getCode());
+    }
+
+    public function testFindByUserIdReturnsMatches(): void
+    {
+        $account = $this->createAccount('github', 'client-1', 'code-a');
+        $account->setUserId(1);
+        $account->save();
+        $secondAccount = $this->createAccount('twitter', 'client-3', 'code-c');
+        $secondAccount->setUserId(1);
+        $secondAccount->save();
+        $this->createAccount('gitlab', 'client-2', 'code-b');
+
+        $accounts = UserSocialAccount::findByUserId(1);
+
+        self::assertCount(2, $accounts);
+    }
+
     public function testGetDecodedDataCachesResult(): void
     {
         $entity = new UserSocialAccount();
@@ -289,6 +326,18 @@ final class UserSocialAccountTest extends TestCase
     {
         $entity = new UserSocialAccount();
         self::assertSame('{{%user_social_account}}', $entity->tableName());
+    }
+
+    private function createAccount(string $provider, string $clientId, string $code): UserSocialAccount
+    {
+        $account = new UserSocialAccount();
+        $account->setProvider($provider);
+        $account->setClientId($clientId);
+        $account->setCode($code);
+        $account->setCreatedAt(time());
+        $account->save();
+
+        return $account;
     }
 
     private function createSqliteConnection(): ConnectionInterface

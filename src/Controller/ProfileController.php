@@ -6,11 +6,11 @@ namespace YiiRocks\Voyti\Controller;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\Entity\UserProfile;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Helper\ProfileVisibility;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserProfileRepository;
-use YiiRocks\Voyti\Repository\UserRepository;
 use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -26,8 +26,6 @@ final readonly class ProfileController
         private TranslatorInterface $translator,
         private WebViewRenderer $viewRenderer,
         private UrlGeneratorInterface $url,
-        private UserProfileRepository $userProfileRepository,
-        private UserRepository $userRepository,
         private AuthHelper $authHelper,
         private ModuleConfig $config,
         private CurrentUser $currentUser,
@@ -50,13 +48,13 @@ final readonly class ProfileController
             return $this->renderError('voyti.userProfile.forbidden');
         }
 
-        $userProfile = $this->userProfileRepository->findByUserId($id);
+        $userProfile = UserProfile::findByUserId($id);
 
         if ($userProfile === null) {
             return $this->renderError('voyti.userProfile.not_found');
         }
 
-        $user = $this->userRepository->findById($id);
+        $user = User::findById($id);
 
         return $this->renderView('profile/show', ['user' => $user, 'userProfile' => $userProfile]);
     }

@@ -7,22 +7,18 @@ namespace YiiRocks\Voyti\Service;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserRepository;
-use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Strategy\EmailChangeConfirmation;
 
 final readonly class EmailChangeService
 {
     public function __construct(
         private ModuleConfig $config,
-        private UserTokenRepository $userTokenRepository,
-        private UserRepository $userRepository,
     ) {
     }
 
     public function run(string $code, User $user): bool|null
     {
-        $userToken = $this->userTokenRepository->findByUserIdAndCode(
+        $userToken = UserToken::findByUserIdAndCode(
             $user->getIdOrZero(),
             $code,
         );
@@ -42,7 +38,7 @@ final readonly class EmailChangeService
             return false;
         }
 
-        $existingUser = $this->userRepository->findByEmail($user->getUnconfirmedEmail());
+        $existingUser = User::findByEmail($user->getUnconfirmedEmail());
         if ($existingUser !== null) {
             return false;
         }

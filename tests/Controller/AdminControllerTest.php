@@ -14,9 +14,6 @@ use YiiRocks\Voyti\Entity\UserProfile;
 use YiiRocks\Voyti\Entity\UserSessionHistory;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserProfileRepository;
-use YiiRocks\Voyti\Repository\UserRepository;
-use YiiRocks\Voyti\Repository\UserSessionHistoryRepository;
 use YiiRocks\Voyti\Service\Password\ExpireService;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
@@ -27,6 +24,7 @@ use YiiRocks\Voyti\Service\User\BlockService;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\CreateService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
+use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Security\PasswordHasher;
@@ -40,6 +38,8 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class AdminControllerTest extends TestCase
 {
+    use DatabaseSetupTrait;
+
     private AuthHelper&MockObject $authHelper;
     private BlockService&MockObject $blockService;
     private ModuleConfig $config;
@@ -57,18 +57,14 @@ final class AdminControllerTest extends TestCase
     private SwitchIdentityService&MockObject $switchIdentityService;
     private TranslatorInterface $translator;
     private UpdateAssignmentsService&MockObject $updateAssignmentsService;
-    private UserProfileRepository&MockObject $userProfileRepository;
-    private UserRepository&MockObject $userRepository;
-    private UserSessionHistoryRepository&MockObject $userSessionHistoryRepository;
     private ValidatorInterface&MockObject $validator;
     private WebViewRenderer&MockObject $viewRenderer;
 
     protected function setUp(): void
     {
+        $this->setUpDatabase();
         $this->config = new ModuleConfig();
         $this->harness = new ControllerHarness($this->config);
-        $this->userRepository = $this->createMock(UserRepository::class);
-        $this->userProfileRepository = $this->createMock(UserProfileRepository::class);
         $this->translator = $this->createTranslator();
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
         $this->validator = $this->createMock(ValidatorInterface::class);
@@ -85,18 +81,20 @@ final class AdminControllerTest extends TestCase
         $this->expireService = $this->createMock(ExpireService::class);
         $this->switchIdentityService = $this->createMock(SwitchIdentityService::class);
         $this->updateAssignmentsService = $this->createMock(UpdateAssignmentsService::class);
-        $this->userSessionHistoryRepository = $this->createMock(UserSessionHistoryRepository::class);
         $this->authHelper = $this->createMock(AuthHelper::class);
+    }
+
+    protected function tearDown(): void
+    {
+        $this->tearDownDatabase();
     }
 
     public function testAssignmentsGetShowsAssignments(): void
     {
+        $user = $this->createUser();
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $this->userRepository->method('findById')->willReturn($user);
         $this->authHelper->method('getUnassignedItems')->willReturn([]);
 
         $response = $this->createMock(ResponseInterface::class);
@@ -108,20 +106,19 @@ final class AdminControllerTest extends TestCase
             ->with('admin/_assignments', $this->anything())
             ->willReturn($response);
 
-        $result = $controller->assignments($request, 1);
+        $result = $controller->assignments($request, (int) $user->getId());
 
         $this->assertSame($response, $result);
     }
 
     public function testAssignmentsPostUpdates(): void
     {
+        $user = $this->createUser();
+        $userId = (int) $user->getId();
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['items' => ['admin', 'editor']]);
 
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $this->userRepository->method('findById')->willReturn($user);
-        $this->updateAssignmentsService->expects($this->once())->method('run')->with(1, ['admin', 'editor']);
+        $this->updateAssignmentsService->expects($this->once())->method('run')->with($userId, ['admin', 'editor']);
         $this->authHelper->method('getUnassignedItems')->willReturn([]);
 
         $response = $this->createMock(ResponseInterface::class);
@@ -132,7 +129,7 @@ final class AdminControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->assignments($request, 1);
+        $result = $controller->assignments($request, $userId);
 
         $this->assertSame($response, $result);
     }
@@ -142,8 +139,6 @@ final class AdminControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $this->userRepository->method('findById')->willReturn(null);
-
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
             ->method('withViewPath')
@@ -152,7 +147,7 @@ final class AdminControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->assignments($request, 999);
+        $result = $controller->assignments($request, 999999);
 
         $this->assertSame($response, $result);
     }
@@ -161,8 +156,6 @@ final class AdminControllerTest extends TestCase
     {
         $controller = $this->createController();
 
-        $this->userRepository->method('findById')->willReturn(null);
-
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
             ->method('createResponse')
@@ -172,19 +165,20 @@ final class AdminControllerTest extends TestCase
             ->method('withHeader')
             ->willReturnSelf();
 
-        $result = $controller->block(999);
+        $result = $controller->block(999999);
 
         $this->assertSame($response, $result);
     }
 
     public function testBlockTogglesUserBlock(): void
     {
+        $user = $this->createUser();
+        $userId = (int) $user->getId();
         $controller = $this->createController();
 
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $this->userRepository->method('findById')->willReturn($user);
-        $this->blockService->expects($this->once())->method('run')->with($user);
+        $this->blockService->expects($this->once())
+            ->method('run')
+            ->with($this->callback(static fn (User $u): bool => $u->getId() === $user->getId()));
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
@@ -195,18 +189,16 @@ final class AdminControllerTest extends TestCase
             ->method('withHeader')
             ->willReturnSelf();
 
-        $result = $controller->block(1);
+        $result = $controller->block($userId);
 
         $this->assertSame($response, $result);
     }
 
     public function testConfirmFailureShowsError(): void
     {
+        $user = $this->createUser();
         $controller = $this->createController();
 
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $this->userRepository->method('findById')->willReturn($user);
         $this->confirmationService->expects($this->once())->method('run')->willReturn(false);
 
         $response = $this->createMock(ResponseInterface::class);
@@ -217,18 +209,16 @@ final class AdminControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->confirm(1);
+        $result = $controller->confirm((int) $user->getId());
 
         $this->assertSame($response, $result);
     }
 
     public function testConfirmSuccessful(): void
     {
+        $user = $this->createUser();
         $controller = $this->createController();
 
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $this->userRepository->method('findById')->willReturn($user);
         $this->confirmationService->expects($this->once())->method('run')->willReturn(true);
 
         $response = $this->createMock(ResponseInterface::class);
@@ -240,7 +230,7 @@ final class AdminControllerTest extends TestCase
             ->method('withHeader')
             ->willReturnSelf();
 
-        $result = $controller->confirm(1);
+        $result = $controller->confirm((int) $user->getId());
 
         $this->assertSame($response, $result);
     }
@@ -290,6 +280,9 @@ final class AdminControllerTest extends TestCase
 
     public function testCreatePostWithAssignedItemsAssignsUser(): void
     {
+        $createdUser = $this->createUserWithUsername('newuser');
+        $createdUserId = (int) $createdUser->getId();
+
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody([
             'register' => ['username' => 'newuser', 'email' => 'new@example.com', 'password' => 'password123', 'passwordRepeat' => 'password123'],
@@ -307,10 +300,7 @@ final class AdminControllerTest extends TestCase
         );
         $this->createService->method('run')->willReturn(ServiceResult::success('User created'));
 
-        $createdUser = $this->createMock(User::class);
-        $createdUser->method('getId')->willReturn('42');
-        $this->userRepository->expects($this->once())->method('findByUsername')->with('newuser')->willReturn($createdUser);
-        $this->updateAssignmentsService->expects($this->once())->method('run')->with(42, ['admin']);
+        $this->updateAssignmentsService->expects($this->once())->method('run')->with($createdUserId, ['admin']);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->method('createResponse')->willReturn($response);
@@ -345,17 +335,15 @@ final class AdminControllerTest extends TestCase
 
     public function testDeleteDifferentUser(): void
     {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn('999999');
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('2');
-        $this->userRepository->method('findById')->willReturn($user);
-        $this->userRepository->expects($this->once())->method('delete')->with($user);
+        $user = $this->createUser();
+        $userId = (int) $user->getId();
+
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
@@ -366,9 +354,10 @@ final class AdminControllerTest extends TestCase
             ->method('withHeader')
             ->willReturnSelf();
 
-        $result = $controller->delete($request, 2);
+        $result = $controller->delete($request, $userId);
 
         $this->assertSame($response, $result);
+        $this->assertNull(User::findById($userId));
     }
 
     public function testDeleteNonExistentUserShowsError(): void
@@ -379,7 +368,6 @@ final class AdminControllerTest extends TestCase
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn('1');
         $this->currentUser->method('getIdentity')->willReturn($identity);
-        $this->userRepository->method('findById')->willReturn(null);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -389,7 +377,7 @@ final class AdminControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->delete($request, 999);
+        $result = $controller->delete($request, 999999);
 
         $this->assertSame($response, $result);
     }
@@ -420,8 +408,6 @@ final class AdminControllerTest extends TestCase
     {
         $controller = $this->createController();
 
-        $this->userRepository->method('findById')->willReturn(null);
-
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
             ->method('withViewPath')
@@ -430,18 +416,16 @@ final class AdminControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->forcePasswordChange(999);
+        $result = $controller->forcePasswordChange(999999);
 
         $this->assertSame($response, $result);
     }
 
     public function testForcePasswordChangeUserFound(): void
     {
+        $user = $this->createUser();
         $controller = $this->createController();
 
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $this->userRepository->method('findById')->willReturn($user);
         $this->expireService->expects($this->once())->method('run')->willReturn(true);
 
         $response = $this->createMock(ResponseInterface::class);
@@ -453,7 +437,7 @@ final class AdminControllerTest extends TestCase
             ->method('withHeader')
             ->willReturnSelf();
 
-        $result = $controller->forcePasswordChange(1);
+        $result = $controller->forcePasswordChange((int) $user->getId());
 
         $this->assertSame($response, $result);
     }
@@ -466,9 +450,6 @@ final class AdminControllerTest extends TestCase
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn('1');
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $this->userRepository->method('search')->willReturn([]);
-        $this->userRepository->method('countByFilters')->willReturn(0);
 
         $captured = [];
         $response = $this->createMock(ResponseInterface::class);
@@ -498,9 +479,6 @@ final class AdminControllerTest extends TestCase
         $identity->method('getId')->willReturn('1');
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
-        $this->userRepository->method('search')->willReturn([]);
-        $this->userRepository->method('countByFilters')->willReturn(0);
-
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
             ->method('withViewPath')
@@ -517,15 +495,12 @@ final class AdminControllerTest extends TestCase
 
     public function testInfoShowsUserInfo(): void
     {
+        $user = $this->createUserWithProfile();
         $controller = $this->createController();
 
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn('1');
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('getProfile')->willReturn($this->createMock(UserProfile::class));
-        $this->userRepository->method('findById')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -536,7 +511,7 @@ final class AdminControllerTest extends TestCase
             ->with('admin/_info', $this->anything())
             ->willReturn($response);
 
-        $result = $controller->info(1);
+        $result = $controller->info((int) $user->getId());
 
         $this->assertSame($response, $result);
     }
@@ -544,8 +519,6 @@ final class AdminControllerTest extends TestCase
     public function testInfoUserNotFoundShowsError(): void
     {
         $controller = $this->createController();
-
-        $this->userRepository->method('findById')->willReturn(null);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -555,18 +528,16 @@ final class AdminControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->info(999);
+        $result = $controller->info(999999);
 
         $this->assertSame($response, $result);
     }
 
     public function testPasswordResetUserFound(): void
     {
+        $user = $this->createUser('test@example.com');
         $controller = $this->createController();
 
-        $user = $this->createMock(User::class);
-        $user->method('getEmail')->willReturn('test@example.com');
-        $this->userRepository->method('findById')->willReturn($user);
         $this->recoveryService->expects($this->once())
             ->method('run')
             ->with('test@example.com')
@@ -580,7 +551,7 @@ final class AdminControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->passwordReset(1);
+        $result = $controller->passwordReset((int) $user->getId());
 
         $this->assertSame($response, $result);
     }
@@ -588,8 +559,6 @@ final class AdminControllerTest extends TestCase
     public function testPasswordResetUserNotFoundShowsError(): void
     {
         $controller = $this->createController();
-
-        $this->userRepository->method('findById')->willReturn(null);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -599,7 +568,7 @@ final class AdminControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->passwordReset(999);
+        $result = $controller->passwordReset(999999);
 
         $this->assertSame($response, $result);
     }
@@ -692,15 +661,10 @@ final class AdminControllerTest extends TestCase
 
     public function testTerminateSessionsUserFound(): void
     {
+        $user = $this->createUser();
+        $userId = (int) $user->getId();
+        $this->createSession($userId, 'sess-1');
         $controller = $this->createController();
-
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $this->userRepository->method('findById')->willReturn($user);
-
-        $session = $this->createMock(UserSessionHistory::class);
-        $session->expects($this->once())->method('delete');
-        $this->userSessionHistoryRepository->method('findByUserId')->willReturn([$session]);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
@@ -711,16 +675,15 @@ final class AdminControllerTest extends TestCase
             ->method('withHeader')
             ->willReturnSelf();
 
-        $result = $controller->terminateSessions(1);
+        $result = $controller->terminateSessions($userId);
 
         $this->assertSame($response, $result);
+        $this->assertSame([], UserSessionHistory::findByUserId($userId));
     }
 
     public function testTerminateSessionsUserNotFoundShowsError(): void
     {
         $controller = $this->createController();
-
-        $this->userRepository->method('findById')->willReturn(null);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -730,22 +693,16 @@ final class AdminControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->terminateSessions(999);
+        $result = $controller->terminateSessions(999999);
 
         $this->assertSame($response, $result);
     }
 
     public function testUpdateGetShowsForm(): void
     {
+        $user = $this->createUser();
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
-
-        $user = $this->createMock(User::class);
-        $user->method('getUsername')->willReturn('testuser');
-        $user->method('getEmail')->willReturn('test@example.com');
-        $user->method('getId')->willReturn('1');
-
-        $this->userRepository->method('findById')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -756,26 +713,18 @@ final class AdminControllerTest extends TestCase
             ->with('admin/_account', $this->anything())
             ->willReturn($response);
 
-        $result = $controller->update($request, 1);
+        $result = $controller->update($request, (int) $user->getId());
 
         $this->assertSame($response, $result);
     }
 
     public function testUpdatePostSuccessful(): void
     {
+        $user = $this->createUser();
+        $userId = (int) $user->getId();
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['user' => ['username' => 'updated', 'email' => 'updated@example.com', 'password' => ''], 'assignedItems' => []]);
 
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $user->method('getUsername')->willReturn('testuser');
-        $user->method('getEmail')->willReturn('test@example.com');
-        $user->expects($this->once())->method('setUsername');
-        $user->expects($this->once())->method('setEmail');
-        $user->expects($this->once())->method('setUpdatedAt');
-        $user->expects($this->once())->method('save');
-
-        $this->userRepository->method('findById')->willReturn($user);
         $this->updateAssignmentsService->expects($this->once())->method('run');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -787,25 +736,23 @@ final class AdminControllerTest extends TestCase
             ->method('withHeader')
             ->willReturnSelf();
 
-        $result = $controller->update($request, 1);
+        $result = $controller->update($request, $userId);
 
         $this->assertSame($response, $result);
+        $updated = User::findById($userId);
+        $this->assertNotNull($updated);
+        $this->assertSame('updated', $updated->getUsername());
+        $this->assertSame('updated@example.com', $updated->getEmail());
     }
 
     public function testUpdatePostWithPasswordChange(): void
     {
+        $user = $this->createUser();
+        $userId = (int) $user->getId();
+        $originalHash = $user->getPasswordHash();
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['user' => ['username' => 'updated', 'email' => 'updated@example.com', 'password' => 'newpass'], 'assignedItems' => []]);
 
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $user->method('getUsername')->willReturn('testuser');
-        $user->method('getEmail')->willReturn('test@example.com');
-        $user->expects($this->once())->method('setPasswordHash');
-        $user->expects($this->once())->method('setPasswordChangedAt');
-        $user->expects($this->once())->method('save');
-
-        $this->userRepository->method('findById')->willReturn($user);
         $this->updateAssignmentsService->expects($this->once())->method('run');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -817,20 +764,20 @@ final class AdminControllerTest extends TestCase
             ->method('withHeader')
             ->willReturnSelf();
 
-        $result = $controller->update($request, 1);
+        $result = $controller->update($request, $userId);
 
         $this->assertSame($response, $result);
+        $updated = User::findById($userId);
+        $this->assertNotNull($updated);
+        $this->assertNotSame($originalHash, $updated->getPasswordHash());
+        $this->assertNotNull($updated->getPasswordChangedAt());
     }
 
     public function testUpdateProfileGetCreatesNewProfileWhenNoneExists(): void
     {
+        $user = $this->createUser();
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
-
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $user->method('getProfile')->willReturn(null);
-        $this->userRepository->method('findById')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $captured = [];
@@ -841,7 +788,7 @@ final class AdminControllerTest extends TestCase
                 return $response;
             });
 
-        $result = $controller->updateProfile($request, 1);
+        $result = $controller->updateProfile($request, (int) $user->getId());
 
         $this->assertSame($response, $result);
         $this->assertSame('', $captured['model']->name);
@@ -849,15 +796,9 @@ final class AdminControllerTest extends TestCase
 
     public function testUpdateProfileGetShowsForm(): void
     {
+        $user = $this->createUserWithProfile('John');
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
-
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $userProfile = $this->createMock(UserProfile::class);
-        $userProfile->method('getName')->willReturn('John');
-        $user->method('getProfile')->willReturn($userProfile);
-        $this->userRepository->method('findById')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -868,24 +809,28 @@ final class AdminControllerTest extends TestCase
             ->with('admin/_profile', $this->anything())
             ->willReturn($response);
 
-        $result = $controller->updateProfile($request, 1);
+        $result = $controller->updateProfile($request, (int) $user->getId());
 
         $this->assertSame($response, $result);
     }
 
     public function testUpdateProfilePostSuccessful(): void
     {
+        $user = $this->createUserWithProfile('Original');
+        $userId = (int) $user->getId();
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['userProfile' => ['name' => 'Updated', 'publicEmail' => '', 'gravatarEmail' => '', 'location' => '', 'website' => '', 'timezone' => '', 'bio' => '']]);
 
         $this->validator->method('validate')->willReturn(new Result());
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $userProfile = $this->createMock(UserProfile::class);
-        $userProfile->method('getName')->willReturn('Updated');
-        $user->method('getProfile')->willReturn($userProfile);
-        $userProfile->expects($this->once())->method('save');
-        $this->userRepository->method('findById')->willReturn($user);
+        $this->hydrator->method('hydrate')->willReturnCallback(
+            static function (object $object, array $data = []): void {
+                foreach ($data as $key => $value) {
+                    if (property_exists($object, $key)) {
+                        $object->$key = $value;
+                    }
+                }
+            },
+        );
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
@@ -896,17 +841,18 @@ final class AdminControllerTest extends TestCase
             ->method('withHeader')
             ->willReturnSelf();
 
-        $result = $controller->updateProfile($request, 1);
+        $result = $controller->updateProfile($request, $userId);
 
         $this->assertSame($response, $result);
+        $updated = UserProfile::findByUserId($userId);
+        $this->assertNotNull($updated);
+        $this->assertSame('Updated', $updated->getName());
     }
 
     public function testUpdateProfileUserNotFoundShowsError(): void
     {
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
-
-        $this->userRepository->method('findById')->willReturn(null);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -916,7 +862,7 @@ final class AdminControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->updateProfile($request, 999);
+        $result = $controller->updateProfile($request, 999999);
 
         $this->assertSame($response, $result);
     }
@@ -926,8 +872,6 @@ final class AdminControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $this->userRepository->method('findById')->willReturn(null);
-
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
             ->method('withViewPath')
@@ -936,19 +880,15 @@ final class AdminControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->update($request, 999);
+        $result = $controller->update($request, 999999);
 
         $this->assertSame($response, $result);
     }
 
     public function testUserSessionHistoryUserFound(): void
     {
+        $user = $this->createUser();
         $controller = $this->createController();
-
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $this->userRepository->method('findById')->willReturn($user);
-        $this->userSessionHistoryRepository->method('findByUserId')->willReturn([]);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -959,7 +899,7 @@ final class AdminControllerTest extends TestCase
             ->with('admin/_session-history', $this->anything())
             ->willReturn($response);
 
-        $result = $controller->userSessionHistory(1);
+        $result = $controller->userSessionHistory((int) $user->getId());
 
         $this->assertSame($response, $result);
     }
@@ -967,8 +907,6 @@ final class AdminControllerTest extends TestCase
     public function testUserSessionHistoryUserNotFoundShowsError(): void
     {
         $controller = $this->createController();
-
-        $this->userRepository->method('findById')->willReturn(null);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -978,7 +916,7 @@ final class AdminControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->userSessionHistory(999);
+        $result = $controller->userSessionHistory(999999);
 
         $this->assertSame($response, $result);
     }
@@ -986,8 +924,6 @@ final class AdminControllerTest extends TestCase
     private function createController(): AdminController
     {
         return $this->harness->createAdminController(
-            userRepository: $this->userRepository,
-            userProfileRepository: $this->userProfileRepository,
             translator: $this->translator,
             viewRenderer: $this->viewRenderer,
             validator: $this->validator,
@@ -1004,8 +940,60 @@ final class AdminControllerTest extends TestCase
             expireService: $this->expireService,
             switchIdentityService: $this->switchIdentityService,
             updateAssignmentsService: $this->updateAssignmentsService,
-            userSessionHistoryRepository: $this->userSessionHistoryRepository,
             authHelper: $this->authHelper,
         );
+    }
+
+    private function createSession(int $userId, string $sessionId): UserSessionHistory
+    {
+        $session = new UserSessionHistory();
+        $session->setUserId($userId);
+        $session->setSessionId($sessionId);
+        $session->setIp('203.0.113.1');
+        $session->setCreatedAt(time());
+        $session->setUpdatedAt(time());
+        $session->save();
+
+        return $session;
+    }
+
+    private function createUser(string $email = 'testuser@example.com'): User
+    {
+        $user = new User();
+        $user->setUsername('testuser');
+        $user->setEmail($email);
+        $user->setPasswordHash('hash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $user->save();
+
+        return $user;
+    }
+
+    private function createUserWithProfile(string $name = 'John'): User
+    {
+        $user = $this->createUser();
+
+        $profile = new UserProfile();
+        $profile->setUserId((int) $user->getId());
+        $profile->setName($name);
+        $profile->save();
+
+        return $user;
+    }
+
+    private function createUserWithUsername(string $username): User
+    {
+        $user = new User();
+        $user->setUsername($username);
+        $user->setEmail($username . '@example.com');
+        $user->setPasswordHash('hash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $user->save();
+
+        return $user;
     }
 }

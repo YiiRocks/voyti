@@ -7,7 +7,6 @@ namespace YiiRocks\Voyti\tests\Service\Auth;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserSocialAccount;
-use YiiRocks\Voyti\Repository\UserSocialAccountRepository;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\FakeSession;
@@ -15,7 +14,6 @@ use YiiRocks\Voyti\tests\Support\FakeSession;
 final class PendingSocialAccountServiceTest extends TestCase
 {
     use DatabaseSetupTrait;
-    private UserSocialAccountRepository $repository;
     private PendingSocialAccountService $service;
 
     private FakeSession $session;
@@ -25,8 +23,7 @@ final class PendingSocialAccountServiceTest extends TestCase
         $this->setUpDatabase();
         $this->session = new FakeSession();
         $this->session->open();
-        $this->repository = new UserSocialAccountRepository();
-        $this->service = new PendingSocialAccountService($this->repository, $this->session);
+        $this->service = new PendingSocialAccountService($this->session);
     }
 
     protected function tearDown(): void
@@ -82,7 +79,7 @@ final class PendingSocialAccountServiceTest extends TestCase
         $result = $this->service->connect($user);
         self::assertTrue($result->isSuccess());
 
-        $loaded = $this->repository->findByCode('pending_code');
+        $loaded = UserSocialAccount::findByCode('pending_code');
         self::assertNull($loaded);
 
         self::assertFalse($this->session->has('social_network_account_code'));

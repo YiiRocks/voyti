@@ -7,7 +7,6 @@ namespace YiiRocks\Voyti\tests\Service\User;
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\User\RegisterService;
@@ -43,14 +42,13 @@ final class RegisterServiceTest extends TestCase
         $existing->setUpdatedAt(time());
         $existing->save();
 
-        $userRepository = new UserRepository();
         $mailService = $this->createMock(MailService::class);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $passwordHasher = new PasswordHasher();
         $config = new ModuleConfig();
         $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
 
-        $userCreationHelper = new UserCreationHelper($userRepository, $mailService, $eventDispatcher, $passwordHasher, $config);
+        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config);
         $service = new RegisterService($userCreationHelper, $config, $passwordGenerator);
         $result = $service->run(['email' => 'existing@example.com', 'username' => 'testuser']);
 
@@ -69,14 +67,13 @@ final class RegisterServiceTest extends TestCase
         $existing->setUpdatedAt(time());
         $existing->save();
 
-        $userRepository = new UserRepository();
         $mailService = $this->createMock(MailService::class);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $passwordHasher = new PasswordHasher();
         $config = new ModuleConfig();
         $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
 
-        $userCreationHelper = new UserCreationHelper($userRepository, $mailService, $eventDispatcher, $passwordHasher, $config);
+        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config);
         $service = new RegisterService($userCreationHelper, $config, $passwordGenerator);
         $result = $service->run(['email' => 'new@example.com', 'username' => 'existinguser']);
 
@@ -86,7 +83,6 @@ final class RegisterServiceTest extends TestCase
 
     public function testRunWithDisabledIpLogging(): void
     {
-        $userRepository = new UserRepository();
         $mailService = $this->createMock(MailService::class);
         $mailService->method('sendConfirmation')->willReturn(true);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
@@ -95,7 +91,7 @@ final class RegisterServiceTest extends TestCase
         $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
         $passwordGenerator->method('generate')->willReturn('genpwd');
 
-        $userCreationHelper = new UserCreationHelper($userRepository, $mailService, $eventDispatcher, $passwordHasher, $config);
+        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config);
         $service = new RegisterService($userCreationHelper, $config, $passwordGenerator);
 
         $result = $service->run(['email' => 'ipdisabled@example.com', 'username' => 'ipdisableduser', 'password' => 'mypassword']);
@@ -105,7 +101,6 @@ final class RegisterServiceTest extends TestCase
 
     public function testRunWithGdprConsentEnabledAndConsentGiven(): void
     {
-        $userRepository = new UserRepository();
         $mailService = $this->createMock(MailService::class);
         $mailService->method('sendConfirmation')->willReturn(true);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
@@ -114,7 +109,7 @@ final class RegisterServiceTest extends TestCase
         $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
         $passwordGenerator->method('generate')->willReturn('genpwd');
 
-        $userCreationHelper = new UserCreationHelper($userRepository, $mailService, $eventDispatcher, $passwordHasher, $config);
+        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config);
         $service = new RegisterService($userCreationHelper, $config, $passwordGenerator);
 
         $result = $service->run([
@@ -125,7 +120,7 @@ final class RegisterServiceTest extends TestCase
         ]);
 
         self::assertTrue($result->isSuccess());
-        $saved = $userRepository->findByEmail('gdpr@example.com');
+        $saved = \YiiRocks\Voyti\Entity\User::findByEmail('gdpr@example.com');
         self::assertNotNull($saved);
         self::assertTrue($saved->isGdprConsent());
         self::assertNotNull($saved->getGdprConsentDate());
@@ -133,7 +128,6 @@ final class RegisterServiceTest extends TestCase
 
     public function testRunWithGdprConsentEnabledButNotGiven(): void
     {
-        $userRepository = new UserRepository();
         $mailService = $this->createMock(MailService::class);
         $mailService->method('sendConfirmation')->willReturn(true);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
@@ -142,7 +136,7 @@ final class RegisterServiceTest extends TestCase
         $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
         $passwordGenerator->method('generate')->willReturn('genpwd');
 
-        $userCreationHelper = new UserCreationHelper($userRepository, $mailService, $eventDispatcher, $passwordHasher, $config);
+        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config);
         $service = new RegisterService($userCreationHelper, $config, $passwordGenerator);
 
         $result = $service->run([
@@ -153,7 +147,7 @@ final class RegisterServiceTest extends TestCase
         ]);
 
         self::assertTrue($result->isSuccess());
-        $saved = $userRepository->findByEmail('nogdpr@example.com');
+        $saved = \YiiRocks\Voyti\Entity\User::findByEmail('nogdpr@example.com');
         self::assertNotNull($saved);
         self::assertFalse($saved->isGdprConsent());
         self::assertNull($saved->getGdprConsentDate());
@@ -161,7 +155,6 @@ final class RegisterServiceTest extends TestCase
 
     public function testRunWithGeneratedPassword(): void
     {
-        $userRepository = new UserRepository();
         $mailService = $this->createMock(MailService::class);
         $mailService->method('sendConfirmation')->willReturn(true);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
@@ -170,7 +163,7 @@ final class RegisterServiceTest extends TestCase
         $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
         $passwordGenerator->method('generate')->willReturn('auto-generated-pwd');
 
-        $userCreationHelper = new UserCreationHelper($userRepository, $mailService, $eventDispatcher, $passwordHasher, $config);
+        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config);
         $service = new RegisterService($userCreationHelper, $config, $passwordGenerator);
 
         $result = $service->run(['email' => 'genpass@example.com', 'username' => 'genpassuser', 'password' => '']);
@@ -181,7 +174,6 @@ final class RegisterServiceTest extends TestCase
 
     public function testRunWithMissingDataFallsBackToEmptyDefaults(): void
     {
-        $userRepository = new UserRepository();
         $mailService = $this->createMock(MailService::class);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $passwordHasher = new PasswordHasher();
@@ -189,7 +181,7 @@ final class RegisterServiceTest extends TestCase
         $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
         $passwordGenerator->method('generate')->willReturn('genpwd');
 
-        $userCreationHelper = new UserCreationHelper($userRepository, $mailService, $eventDispatcher, $passwordHasher, $config);
+        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config);
         $service = new RegisterService($userCreationHelper, $config, $passwordGenerator);
 
         $result = $service->run([]);
@@ -200,7 +192,6 @@ final class RegisterServiceTest extends TestCase
 
     public function testRunWithoutEmailConfirmation(): void
     {
-        $userRepository = new UserRepository();
         $mailService = $this->createMock(MailService::class);
         $mailService->method('sendWelcome')->willReturn(true);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
@@ -209,7 +200,7 @@ final class RegisterServiceTest extends TestCase
         $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
         $passwordGenerator->method('generate')->willReturn('genpwd');
 
-        $userCreationHelper = new UserCreationHelper($userRepository, $mailService, $eventDispatcher, $passwordHasher, $config);
+        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config);
         $service = new RegisterService($userCreationHelper, $config, $passwordGenerator);
 
         $result = $service->run(['email' => 'noconfirm@example.com', 'username' => 'noconfirmuser', 'password' => 'mypassword']);
@@ -217,14 +208,13 @@ final class RegisterServiceTest extends TestCase
         self::assertTrue($result->isSuccess());
         self::assertSame('voyti.registration.account_created', $result->getMessage());
 
-        $saved = $userRepository->findByEmail('noconfirm@example.com');
+        $saved = \YiiRocks\Voyti\Entity\User::findByEmail('noconfirm@example.com');
         self::assertNotNull($saved);
         self::assertNotNull($saved->getConfirmedAt());
     }
 
     public function testRunWithUserProvidedPassword(): void
     {
-        $userRepository = new UserRepository();
         $mailService = $this->createMock(MailService::class);
         $mailService->method('sendConfirmation')->willReturn(true);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
@@ -233,7 +223,7 @@ final class RegisterServiceTest extends TestCase
         $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
         $passwordGenerator->expects($this->never())->method('generate');
 
-        $userCreationHelper = new UserCreationHelper($userRepository, $mailService, $eventDispatcher, $passwordHasher, $config);
+        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config);
         $service = new RegisterService($userCreationHelper, $config, $passwordGenerator);
 
         $result = $service->run(['email' => 'userpass@example.com', 'username' => 'userpassuser', 'password' => 'userpassword123']);

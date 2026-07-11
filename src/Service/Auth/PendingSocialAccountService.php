@@ -6,7 +6,6 @@ namespace YiiRocks\Voyti\Service\Auth;
 
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserSocialAccount;
-use YiiRocks\Voyti\Repository\UserSocialAccountRepository;
 use YiiRocks\Voyti\Service\ServiceResult;
 use Yiisoft\Session\SessionInterface;
 
@@ -15,7 +14,6 @@ final readonly class PendingSocialAccountService
     public const string SESSION_KEY = 'social_network_account_code';
 
     public function __construct(
-        private UserSocialAccountRepository $userSocialAccountRepository,
         private SessionInterface $session,
     ) {
     }
@@ -45,7 +43,7 @@ final readonly class PendingSocialAccountService
             return null;
         }
 
-        $account = $this->userSocialAccountRepository->findByCode($code);
+        $account = UserSocialAccount::findByCode($code);
         if ($account === null || $account->isConnected()) {
             $this->clear();
             return null;
@@ -64,7 +62,7 @@ final readonly class PendingSocialAccountService
 
     public function useCode(string $code): ?UserSocialAccount
     {
-        $account = $this->userSocialAccountRepository->findByCode($code);
+        $account = UserSocialAccount::findByCode($code);
         if ($account === null || $account->isConnected()) {
             $this->clear();
             return null;

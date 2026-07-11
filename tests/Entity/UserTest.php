@@ -113,6 +113,30 @@ final class UserTest extends TestCase
         $this->connection = null;
     }
 
+    public function testCountByFiltersWithEmailFilter(): void
+    {
+        $this->createUser('alice', 'alice@example.com', time());
+        $this->createUser('bob', 'bob@other.com', time());
+
+        self::assertSame(1, User::countByFilters(['email' => 'example.com']));
+    }
+
+    public function testCountByFiltersWithNoFilters(): void
+    {
+        $this->createUser('alice', 'alice@example.com', time());
+        $this->createUser('bob', 'bob@example.com', time());
+
+        self::assertSame(2, User::countByFilters());
+    }
+
+    public function testCountByFiltersWithUsernameFilter(): void
+    {
+        $this->createUser('alice', 'alice@example.com', time());
+        $this->createUser('bob', 'bob@example.com', time());
+
+        self::assertSame(1, User::countByFilters(['username' => 'ali']));
+    }
+
     public function testDefaultValues(): void
     {
         $entity = new User();
@@ -137,6 +161,69 @@ final class UserTest extends TestCase
         self::assertFalse($entity->isGdprConsent());
         self::assertFalse($entity->isAnonymized());
         self::assertNull($entity->getGdprConsentDate());
+    }
+
+    public function testDeleteRemovesUserAndProfile(): void
+    {
+        $user = $this->createUser('alice', 'alice@example.com', time());
+
+        $profile = new UserProfile();
+        $profile->setUserId((int) $user->getId());
+        $profile->setName('Alice');
+        $profile->save();
+
+        $user->delete();
+
+        self::assertNull(User::findByUsername('alice'));
+        self::assertNull(UserProfile::findByUserId((int) $user->getId()));
+    }
+
+    public function testDeleteWithoutProfileOnlyRemovesUser(): void
+    {
+        $user = $this->createUser('alice', 'alice@example.com', time());
+
+        $user->delete();
+
+        self::assertNull(User::findByUsername('alice'));
+    }
+
+    public function testFindAllUsersReturnsAllUsers(): void
+    {
+        $this->createUser('alice', 'alice@example.com', time());
+        $this->createUser('bob', 'bob@example.com', time());
+
+        self::assertCount(2, User::findAllUsers());
+    }
+
+    public function testFindByIdsReturnsMatchingUsers(): void
+    {
+        $alice = $this->createUser('alice', 'alice@example.com', time());
+        $bob = $this->createUser('bob', 'bob@example.com', time());
+        $this->createUser('carol', 'carol@example.com', time());
+
+        $result = User::findByIds([(int) $alice->getId(), (int) $bob->getId()]);
+
+        self::assertCount(2, $result);
+    }
+
+    public function testFindByUsernameOrEmailMatchesByEmail(): void
+    {
+        $this->createUser('alice', 'alice@example.com', time());
+
+        $user = User::findByUsernameOrEmail('alice@example.com');
+
+        self::assertNotNull($user);
+        self::assertSame('alice', $user->getUsername());
+    }
+
+    public function testFindByUsernameOrEmailMatchesByUsername(): void
+    {
+        $this->createUser('alice', 'alice@example.com', time());
+
+        $user = User::findByUsernameOrEmail('alice');
+
+        self::assertNotNull($user);
+        self::assertSame('alice@example.com', $user->getEmail());
     }
 
     public function testGetCookieLoginKey(): void
@@ -546,6 +633,117 @@ final class UserTest extends TestCase
         self::assertSame(1, User::OLD_EMAIL_CONFIRMED);
     }
 
+    public function testSearchClampsPageZeroToFirstPage(): void
+    {
+        for ($i = 0; $i < 3; $i++) {
+            $this->createUser('user' . $i, 'user' . $i . '@example.com', time() + $i);
+        }
+
+        $pageZero = User::search(['page' => 0, 'limit' => 2]);
+        $pageOne = User::search(['page' => 1, 'limit' => 2]);
+
+        self::assertCount(2, $pageZero);
+
+        $idsZero = array_map(static fn (User $u): int => (int) $u->getId(), $pageZero);
+        $idsOne = array_map(static fn (User $u): int => (int) $u->getId(), $pageOne);
+        self::assertSame($idsOne, $idsZero);
+    }
+
+    public function testSearchDefaultLimitIsFifty(): void
+    {
+        for ($i = 0; $i < 51; $i++) {
+            $this->createUser('user' . $i, 'user' . $i . '@example.com', time() + $i);
+        }
+
+        $result = User::search([]);
+        self::assertCount(50, $result);
+    }
+
+    public function testSearchReturnsSecondPage(): void
+    {
+        for ($i = 0; $i < 3; $i++) {
+            $this->createUser('user' . $i, 'user' . $i . '@example.com', time() + $i);
+        }
+
+        $firstPage = User::search(['page' => 1, 'limit' => 2]);
+        $secondPage = User::search(['page' => 2, 'limit' => 2]);
+
+        self::assertCount(2, $firstPage);
+        self::assertCount(1, $secondPage);
+        self::assertNotSame($firstPage[0]->getEmail(), $secondPage[0]->getEmail());
+    }
+
+    public function testSearchWithBlockedStatusFilter(): void
+    {
+        $blocked = $this->createUser('alice', 'alice@example.com', time());
+        $blocked->setBlockedAt(time());
+        $blocked->save();
+        $this->createUser('bob', 'bob@example.com', time());
+
+        $result = User::search(['status' => 'blocked']);
+
+        self::assertCount(1, $result);
+        self::assertSame('alice', $result[0]->getUsername());
+    }
+
+    public function testSearchWithConfirmedStatusFilter(): void
+    {
+        $confirmed = $this->createUser('alice', 'alice@example.com', time());
+        $confirmed->setConfirmedAt(time());
+        $confirmed->save();
+        $this->createUser('bob', 'bob@example.com', time());
+
+        $result = User::search(['status' => 'confirmed']);
+
+        self::assertCount(1, $result);
+        self::assertSame('alice', $result[0]->getUsername());
+    }
+
+    public function testSearchWithEmailFilter(): void
+    {
+        $this->createUser('alice', 'alice@example.com', time());
+        $this->createUser('bob', 'bob@other.com', time());
+
+        $result = User::search(['email' => 'example.com']);
+
+        self::assertCount(1, $result);
+        self::assertSame('alice', $result[0]->getUsername());
+    }
+
+    public function testSearchWithStringLimitIsCastToInteger(): void
+    {
+        for ($i = 0; $i < 3; $i++) {
+            $this->createUser('user' . $i, 'user' . $i . '@example.com', time() + $i);
+        }
+
+        $result = User::search(['limit' => '2', 'page' => 1]);
+        self::assertCount(2, $result);
+    }
+
+    public function testSearchWithUnconfirmedStatusFilter(): void
+    {
+        $confirmed = $this->createUser('alice', 'alice@example.com', time());
+        $confirmed->setConfirmedAt(time());
+        $confirmed->save();
+        $this->createUser('bob', 'bob@example.com', time());
+
+        $result = User::search(['status' => 'unconfirmed']);
+
+        self::assertCount(1, $result);
+        self::assertSame('bob', $result[0]->getUsername());
+    }
+
+    public function testSearchWithUsernameFilter(): void
+    {
+        $this->createUser('alice', 'alice@example.com', time());
+        $this->createUser('bob', 'bob@example.com', time());
+
+        $result = User::search(['username' => 'ali']);
+
+        self::assertCount(1, $result);
+        self::assertSame('alice', $result[0]->getUsername());
+    }
+
     public function testTableName(): void
     {
         $entity = new User();
@@ -598,5 +796,19 @@ final class UserTest extends TestCase
         $schemaCache = new \Yiisoft\Db\Cache\SchemaCache($cache);
         $schemaCache->setEnabled(false);
         return new \Yiisoft\Db\Sqlite\Connection($driver, $schemaCache);
+    }
+
+    private function createUser(string $username, string $email, int $createdAt): User
+    {
+        $user = new User();
+        $user->setUsername($username);
+        $user->setEmail($email);
+        $user->setPasswordHash('hash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt($createdAt);
+        $user->setUpdatedAt($createdAt);
+        $user->save();
+
+        return $user;
     }
 }

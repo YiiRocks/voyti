@@ -7,7 +7,6 @@ namespace YiiRocks\Voyti\tests\Service\User;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserToken;
-use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\User\AccountConfirmationService;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
@@ -29,7 +28,6 @@ final class AccountConfirmationServiceTest extends TestCase
 
     public function testRunConfirmationServiceFailsReturnsFalse(): void
     {
-        $userTokenRepository = new UserTokenRepository();
 
         $user = $this->createUnconfirmedUser();
         $token = new UserToken();
@@ -39,7 +37,7 @@ final class AccountConfirmationServiceTest extends TestCase
         $token->setCreatedAt(time());
         $token->save();
 
-        $service = new AccountConfirmationService($userTokenRepository);
+        $service = new AccountConfirmationService();
         $confirmationService = $this->createMock(ConfirmationService::class);
         $confirmationService->method('run')->willReturn(false);
 
@@ -48,7 +46,6 @@ final class AccountConfirmationServiceTest extends TestCase
 
     public function testRunSuccess(): void
     {
-        $userTokenRepository = new UserTokenRepository();
 
         $user = $this->createUnconfirmedUser();
         $token = new UserToken();
@@ -58,19 +55,18 @@ final class AccountConfirmationServiceTest extends TestCase
         $token->setCreatedAt(time());
         $token->save();
 
-        $service = new AccountConfirmationService($userTokenRepository);
+        $service = new AccountConfirmationService();
         $confirmationService = $this->createMock(ConfirmationService::class);
         $confirmationService->method('run')->willReturn(true);
 
         self::assertTrue($service->run('successcode', $user, $confirmationService));
 
-        $foundToken = $userTokenRepository->findByUserIdAndCode((int) $user->getId(), 'successcode');
+        $foundToken = UserToken::findByUserIdAndCode((int) $user->getId(), 'successcode');
         self::assertNull($foundToken);
     }
 
     public function testRunTokenExpiredReturnsFalse(): void
     {
-        $userTokenRepository = new UserTokenRepository();
 
         $user = $this->createUnconfirmedUser();
         $token = new UserToken();
@@ -80,7 +76,7 @@ final class AccountConfirmationServiceTest extends TestCase
         $token->setCreatedAt(time() - 200000);
         $token->save();
 
-        $service = new AccountConfirmationService($userTokenRepository);
+        $service = new AccountConfirmationService();
         $confirmationService = $this->createMock(ConfirmationService::class);
 
         self::assertFalse($service->run('expiredcode', $user, $confirmationService));
@@ -88,8 +84,7 @@ final class AccountConfirmationServiceTest extends TestCase
 
     public function testRunTokenNotFoundReturnsFalse(): void
     {
-        $userTokenRepository = new UserTokenRepository();
-        $service = new AccountConfirmationService($userTokenRepository);
+        $service = new AccountConfirmationService();
         $user = $this->createUnconfirmedUser();
         $confirmationService = $this->createMock(ConfirmationService::class);
 
@@ -98,8 +93,7 @@ final class AccountConfirmationServiceTest extends TestCase
 
     public function testRunUserAlreadyConfirmedReturnsFalse(): void
     {
-        $userTokenRepository = new UserTokenRepository();
-        $service = new AccountConfirmationService($userTokenRepository);
+        $service = new AccountConfirmationService();
         $user = $this->createConfirmedUser();
         $confirmationService = $this->createMock(ConfirmationService::class);
 

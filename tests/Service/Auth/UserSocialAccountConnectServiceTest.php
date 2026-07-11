@@ -7,7 +7,6 @@ namespace YiiRocks\Voyti\tests\Service\Auth;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserSocialAccount;
-use YiiRocks\Voyti\Repository\UserSocialAccountRepository;
 use YiiRocks\Voyti\Service\Auth\UserSocialAccountConnectService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 
@@ -44,8 +43,7 @@ final class UserSocialAccountConnectServiceTest extends TestCase
         $account->setCreatedAt(time());
         $account->save();
 
-        $repository = new UserSocialAccountRepository();
-        $service = new UserSocialAccountConnectService($repository);
+        $service = new UserSocialAccountConnectService();
 
         $result = $service->run('github', 'client123', ['email' => 'test@example.com'], 42);
 
@@ -74,14 +72,13 @@ final class UserSocialAccountConnectServiceTest extends TestCase
         $account->setCreatedAt(time());
         $account->save();
 
-        $repository = new UserSocialAccountRepository();
-        $service = new UserSocialAccountConnectService($repository);
+        $service = new UserSocialAccountConnectService();
 
         $result = $service->run('github', 'existing_unconnected', ['email' => 'new@example.com'], (int) $user->getId());
 
         self::assertTrue($result->isSuccess());
 
-        $saved = $repository->findByProviderAndClientId('github', 'existing_unconnected');
+        $saved = UserSocialAccount::findByProviderAndClientId('github', 'existing_unconnected');
         self::assertNotNull($saved);
         self::assertSame((int) $user->getId(), $saved->getUserId());
         self::assertNull($saved->getCode());
@@ -91,15 +88,14 @@ final class UserSocialAccountConnectServiceTest extends TestCase
 
     public function testRunNewAccountCreatesAndConnects(): void
     {
-        $repository = new UserSocialAccountRepository();
-        $service = new UserSocialAccountConnectService($repository);
+        $service = new UserSocialAccountConnectService();
 
         $attributes = ['email' => 'new@example.com'];
         $result = $service->run('github', 'new_client', $attributes, 100);
 
         self::assertTrue($result->isSuccess());
 
-        $saved = $repository->findByProviderAndClientId('github', 'new_client');
+        $saved = UserSocialAccount::findByProviderAndClientId('github', 'new_client');
         self::assertNotNull($saved);
         self::assertSame(100, $saved->getUserId());
         self::assertSame(json_encode($attributes, JSON_THROW_ON_ERROR), $saved->getData());

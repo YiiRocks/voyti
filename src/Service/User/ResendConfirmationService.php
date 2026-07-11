@@ -5,14 +5,13 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Service\User;
 
 use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
-use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\MailService;
 
 final readonly class ResendConfirmationService
 {
     public function __construct(
-        private UserTokenRepository $userTokenRepository,
         private UserTokenFactory $userTokenFactory,
         private MailService $mailService,
     ) {
@@ -25,7 +24,7 @@ final readonly class ResendConfirmationService
         }
 
         $userId = $user->getIdOrZero();
-        $this->userTokenRepository->deleteAllByUserId($userId);
+        UserToken::deleteAllByUserId($userId);
 
         $userToken = $this->userTokenFactory->makeConfirmationToken($userId);
 

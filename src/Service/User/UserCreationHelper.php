@@ -11,7 +11,6 @@ use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Event\Auth\AfterRegisterEvent;
 use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\MailService;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Security\Random;
@@ -19,7 +18,6 @@ use Yiisoft\Security\Random;
 final readonly class UserCreationHelper
 {
     public function __construct(
-        private UserRepository $userRepository,
         private MailService $mailService,
         private EventDispatcherInterface $eventDispatcher,
         private PasswordHasher $passwordHasher,
@@ -41,11 +39,11 @@ final readonly class UserCreationHelper
 
     public function findUniquenessConflict(string $email, string $username): ?string
     {
-        if ($this->userRepository->findByEmail($email) !== null) {
+        if (User::findByEmail($email) !== null) {
             return 'Email already exists';
         }
 
-        if ($this->userRepository->findByUsername($username) !== null) {
+        if (User::findByUsername($username) !== null) {
             return 'Username already exists';
         }
 
@@ -69,7 +67,7 @@ final readonly class UserCreationHelper
             $userToken->setCreatedAt(time());
             $userToken->setCode(Random::string(32));
 
-            $this->userRepository->saveWithProfileAndToken($user, $userProfile, $userToken);
+            User::saveWithProfileAndToken($user, $userProfile, $userToken);
             $this->mailService->sendConfirmation($user, $userToken);
 
             $this->eventDispatcher->dispatch(new AfterRegisterEvent($user));
@@ -77,7 +75,7 @@ final readonly class UserCreationHelper
         }
 
         $user->setConfirmedAt(time());
-        $this->userRepository->saveWithProfile($user, $userProfile);
+        User::saveWithProfile($user, $userProfile);
         $this->mailService->sendWelcome($user, $password);
 
         $this->eventDispatcher->dispatch(new AfterRegisterEvent($user));

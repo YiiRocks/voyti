@@ -17,7 +17,6 @@ use YiiRocks\Voyti\Form\Auth\LoginForm;
 use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Helper\LoginMetadataHelper;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\Auth\SocialAuthProviderService;
 use YiiRocks\Voyti\Service\Auth\UserSocialAccountConnectService;
@@ -50,7 +49,6 @@ final readonly class SecurityController
     public function __construct(
         private TranslatorInterface $translator,
         private WebViewRenderer $viewRenderer,
-        private UserRepository $userRepository,
         private CurrentUser $currentUser,
         private PasswordHasher $passwordHasher,
         private ValidatorInterface $validator,
@@ -126,14 +124,14 @@ final readonly class SecurityController
         $form = new LoginForm($this->config, $this->translator, requireTwoFactorAuthenticationCode: true);
         $form->login = $this->stringValue($credentials, 'login');
         $form->password = $this->stringValue($credentials, 'pwd');
-        $method = $this->userRepository->findByUsernameOrEmail($form->login)?->getAuthTfType() ?? 'google';
+        $method = User::findByUsernameOrEmail($form->login)?->getAuthTfType() ?? 'google';
 
         if ($request->getMethod() === Method::POST) {
             $body = $this->parsedBody($request);
             $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
             $form->processValidationResult($this->validator->validate($form));
 
-            $user = $this->userRepository->findByUsernameOrEmail($form->login);
+            $user = User::findByUsernameOrEmail($form->login);
 
             if ($user !== null && $this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
                 $code = $form->twoFactorAuthenticationCode ?? '';
@@ -223,7 +221,7 @@ final readonly class SecurityController
             $form->processValidationResult($result);
 
             if ($result->isValid()) {
-                $user = $this->userRepository->findByUsernameOrEmail($form->login);
+                $user = User::findByUsernameOrEmail($form->login);
 
                 if ($user === null || !$this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
                     $form->addError($this->translator->translate('voyti.security.invalid_login', category: 'voyti'), ['login']);

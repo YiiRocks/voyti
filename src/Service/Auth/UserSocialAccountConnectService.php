@@ -5,19 +5,13 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Service\Auth;
 
 use YiiRocks\Voyti\Entity\UserSocialAccount;
-use YiiRocks\Voyti\Repository\UserSocialAccountRepository;
 use YiiRocks\Voyti\Service\ServiceResult;
 
 final readonly class UserSocialAccountConnectService
 {
-    public function __construct(
-        private UserSocialAccountRepository $userSocialAccountRepository,
-    ) {
-    }
-
     public function run(string $provider, string $clientId, array $userAttributes, int $userId): ServiceResult
     {
-        $account = $this->userSocialAccountRepository->findByProviderAndClientId($provider, $clientId);
+        $account = UserSocialAccount::findByProviderAndClientId($provider, $clientId);
 
         if ($account !== null && $account->getUserId() !== null) {
             return ServiceResult::failure('This account has already been connected to another user');
@@ -36,7 +30,7 @@ final readonly class UserSocialAccountConnectService
         $account->setEmail(null);
         $account->setCode(null);
 
-        $this->userSocialAccountRepository->save($account);
+        $account->save();
 
         return ServiceResult::success();
     }

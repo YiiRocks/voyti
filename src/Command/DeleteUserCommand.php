@@ -7,17 +7,10 @@ namespace YiiRocks\Voyti\Command;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use YiiRocks\Voyti\Repository\UserRepository;
 
 final class DeleteUserCommand extends Command
 {
     use UserLookupTrait;
-
-    public function __construct(
-        private UserRepository $userRepository,
-    ) {
-        parent::__construct();
-    }
 
     #[\Override]
     protected function configure(): void
@@ -41,7 +34,7 @@ final class DeleteUserCommand extends Command
             return Command::FAILURE;
         }
 
-        $this->userRepository->delete($user);
+        $user->delete();
         $output->writeln('<info>User deleted.</info>');
         return Command::SUCCESS;
     }

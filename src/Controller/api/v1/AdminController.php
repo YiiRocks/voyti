@@ -9,7 +9,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserRepository;
+use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use Yiisoft\DataResponse\ResponseFactory\DataResponseFactoryInterface;
 use Yiisoft\Http\Status;
 use Yiisoft\Security\PasswordHasher;
@@ -22,10 +22,10 @@ final readonly class AdminController
 
     public function __construct(
         private TranslatorInterface $translator,
-        private UserRepository $userRepository,
         private PasswordHasher $passwordHasher,
         private ModuleConfig $config,
         private DataResponseFactoryInterface $responseFactory,
+        private PasswordGeneratorInterface $passwordGenerator,
     ) {
     }
 
@@ -34,14 +34,14 @@ final readonly class AdminController
         $body = $this->parsedBody($request);
         $email = $this->stringValue($body, 'email');
         $username = $this->stringValue($body, 'username');
-        $password = $this->stringValue($body, 'password', Random::string(12));
+        $password = $this->stringValue($body, 'password', $this->passwordGenerator->generate(12));
 
-        $existingUser = $this->userRepository->findByEmail($email);
+        $existingUser = User::findByEmail($email);
         if ($existingUser !== null) {
             return $this->responseFactory->createResponse(['error' => 'Email already exists'], Status::BAD_REQUEST);
         }
 
-        $existingUser = $this->userRepository->findByUsername($username);
+        $existingUser = User::findByUsername($username);
         if ($existingUser !== null) {
             return $this->responseFactory->createResponse(['error' => 'Username already exists'], Status::BAD_REQUEST);
         }
@@ -66,18 +66,18 @@ final readonly class AdminController
 
     public function delete(int $id): ResponseInterface
     {
-        $user = $this->userRepository->findById($id);
+        $user = User::findById($id);
         if ($user === null) {
             return $this->responseFactory->createResponse(['error' => $this->translator->translate('voyti.api.not_found', category: 'voyti')], Status::NOT_FOUND);
         }
 
-        $this->userRepository->delete($user);
+        $user->delete();
         return $this->responseFactory->createResponse(['message' => $this->translator->translate('voyti.api.user_deleted', category: 'voyti')]);
     }
 
     public function index(): ResponseInterface
     {
-        $users = $this->userRepository->findAllUsers();
+        $users = User::findAllUsers();
         $data = array_map(fn ($u) => [
             'id' => $u->getId(),
             'username' => $u->getUsername(),
@@ -92,7 +92,7 @@ final readonly class AdminController
 
     public function update(ServerRequestInterface $request, int $id): ResponseInterface
     {
-        $user = $this->userRepository->findById($id);
+        $user = User::findById($id);
         if ($user === null) {
             return $this->responseFactory->createResponse(['error' => $this->translator->translate('voyti.api.not_found', category: 'voyti')], Status::NOT_FOUND);
         }
@@ -121,7 +121,7 @@ final readonly class AdminController
 
     public function view(int $id): ResponseInterface
     {
-        $user = $this->userRepository->findById($id);
+        $user = User::findById($id);
         if ($user === null) {
             return $this->responseFactory->createResponse(['error' => $this->translator->translate('voyti.api.not_found', category: 'voyti')], Status::NOT_FOUND);
         }

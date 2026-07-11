@@ -10,7 +10,6 @@ use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Strategy\BothEmailChangeStrategy;
 use YiiRocks\Voyti\Strategy\NewEmailChangeStrategy;
@@ -51,7 +50,7 @@ final class BothEmailChangeStrategyTest extends TestCase
         $translator = $this->createTranslator();
         $form = new SettingsForm(new ModuleConfig(), $translator);
         // No user set -> NewEmailChangeStrategy returns false
-        $tokenFactory = new UserTokenFactory(new UserTokenRepository());
+        $tokenFactory = new UserTokenFactory();
         $mailCapture = new MailCapture();
         $urlGenerator = new FakeUrlGenerator();
         $mailService = new MailService($mailCapture, '/tmp', $translator, $urlGenerator, 'App');
@@ -73,7 +72,7 @@ final class BothEmailChangeStrategyTest extends TestCase
         $form->setUser($user);
         $form->email = 'new@example.com';
 
-        $tokenFactory = new UserTokenFactory(new UserTokenRepository());
+        $tokenFactory = new UserTokenFactory();
         $mailCapture = new MailCapture();
         $urlGenerator = new FakeUrlGenerator();
         $mailService = new MailService(

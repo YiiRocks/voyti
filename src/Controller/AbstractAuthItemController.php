@@ -12,7 +12,6 @@ use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Form\Rbac\AbstractAuthItemForm;
 use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserRepository;
 use Yiisoft\Http\Method;
 use Yiisoft\Rbac\AssignmentsStorageInterface;
 use Yiisoft\Rbac\Item;
@@ -38,7 +37,6 @@ abstract readonly class AbstractAuthItemController
         protected UrlGeneratorInterface $url,
         protected ValidatorInterface $validator,
         protected ResponseFactoryInterface $responseFactory,
-        protected UserRepository $userRepository,
         protected ItemsStorageInterface $itemsStorage,
         protected ManagerInterface $managerInterface,
         protected AssignmentsStorageInterface $assignmentsStorage,
@@ -242,7 +240,7 @@ abstract readonly class AbstractAuthItemController
             $userIds[] = (int) $assignment->getUserId();
         }
 
-        return $this->userRepository->findByIds($userIds);
+        return User::findByIds($userIds);
     }
 
     private function loadForm(AbstractAuthItemForm $form, array $body): void

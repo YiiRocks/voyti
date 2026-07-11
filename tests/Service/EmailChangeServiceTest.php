@@ -8,8 +8,6 @@ use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserRepository;
-use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\EmailChangeService;
 use YiiRocks\Voyti\Strategy\EmailChangeConfirmation;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
@@ -18,14 +16,9 @@ final class EmailChangeServiceTest extends TestCase
 {
     use DatabaseSetupTrait;
 
-    private UserRepository $userRepository;
-    private UserTokenRepository $userTokenRepository;
-
     protected function setUp(): void
     {
         $this->setUpDatabase();
-        $this->userRepository = new UserRepository();
-        $this->userTokenRepository = new UserTokenRepository();
     }
 
     protected function tearDown(): void
@@ -39,7 +32,7 @@ final class EmailChangeServiceTest extends TestCase
             emailChangeConfirmation: EmailChangeConfirmation::NEW,
             tokenConfirmationLifespan: 999999,
         );
-        $service = new EmailChangeService($config, $this->userTokenRepository, $this->userRepository);
+        $service = new EmailChangeService($config);
 
         $user = $this->createSavedUser();
         $user->setUnconfirmedEmail('new@example.com');
@@ -54,15 +47,15 @@ final class EmailChangeServiceTest extends TestCase
         self::assertSame(0, $user->getFlags());
         self::assertGreaterThan(1, $user->getUpdatedAt());
 
-        $reloaded = $this->userRepository->findByEmail('new@example.com');
+        $reloaded = User::findByEmail('new@example.com');
         self::assertNotNull($reloaded);
-        self::assertNull($this->userTokenRepository->findByUserIdAndCode((int) $user->getId(), 'testcode_' . UserToken::TYPE_CONFIRM_NEW_EMAIL));
+        self::assertNull(UserToken::findByUserIdAndCode((int) $user->getId(), 'testcode_' . UserToken::TYPE_CONFIRM_NEW_EMAIL));
     }
 
     public function testRunExistingEmailConflictReturnsFalse(): void
     {
         $config = new ModuleConfig(tokenConfirmationLifespan: 999999);
-        $service = new EmailChangeService($config, $this->userTokenRepository, $this->userRepository);
+        $service = new EmailChangeService($config);
 
         $other = $this->createSavedUser();
         $ref = new \ReflectionProperty(User::class, 'email');
@@ -84,7 +77,7 @@ final class EmailChangeServiceTest extends TestCase
             emailChangeConfirmation: EmailChangeConfirmation::NONE,
             tokenConfirmationLifespan: 999999,
         );
-        $service = new EmailChangeService($config, $this->userTokenRepository, $this->userRepository);
+        $service = new EmailChangeService($config);
 
         $user = $this->createSavedUser();
         $user->setUnconfirmedEmail('new@example.com');
@@ -104,7 +97,7 @@ final class EmailChangeServiceTest extends TestCase
             emailChangeConfirmation: EmailChangeConfirmation::BOTH,
             tokenConfirmationLifespan: 999999,
         );
-        $service = new EmailChangeService($config, $this->userTokenRepository, $this->userRepository);
+        $service = new EmailChangeService($config);
 
         $user = $this->createSavedUser();
         $user->setUnconfirmedEmail('new@example.com');
@@ -124,7 +117,7 @@ final class EmailChangeServiceTest extends TestCase
             emailChangeConfirmation: EmailChangeConfirmation::BOTH,
             tokenConfirmationLifespan: 999999,
         );
-        $service = new EmailChangeService($config, $this->userTokenRepository, $this->userRepository);
+        $service = new EmailChangeService($config);
 
         $user = $this->createSavedUser();
         $user->setUnconfirmedEmail('new@example.com');
@@ -142,7 +135,7 @@ final class EmailChangeServiceTest extends TestCase
             emailChangeConfirmation: EmailChangeConfirmation::BOTH,
             tokenConfirmationLifespan: 999999,
         );
-        $service = new EmailChangeService($config, $this->userTokenRepository, $this->userRepository);
+        $service = new EmailChangeService($config);
 
         $user = $this->createSavedUser();
         $user->setUnconfirmedEmail('new@example.com');
@@ -163,7 +156,7 @@ final class EmailChangeServiceTest extends TestCase
             emailChangeConfirmation: EmailChangeConfirmation::BOTH,
             tokenConfirmationLifespan: 999999,
         );
-        $service = new EmailChangeService($config, $this->userTokenRepository, $this->userRepository);
+        $service = new EmailChangeService($config);
 
         $user = $this->createSavedUser();
         $user->setUnconfirmedEmail('new@example.com');
@@ -175,7 +168,7 @@ final class EmailChangeServiceTest extends TestCase
         self::assertSame(User::NEW_EMAIL_CONFIRMED, $user->getFlags());
         self::assertSame('old@example.com', $user->getEmail());
 
-        $reloaded = $this->userRepository->findByEmail('old@example.com');
+        $reloaded = User::findByEmail('old@example.com');
         self::assertNotNull($reloaded);
         self::assertSame(User::NEW_EMAIL_CONFIRMED, $reloaded->getFlags());
     }
@@ -186,7 +179,7 @@ final class EmailChangeServiceTest extends TestCase
             emailChangeConfirmation: EmailChangeConfirmation::BOTH,
             tokenConfirmationLifespan: 999999,
         );
-        $service = new EmailChangeService($config, $this->userTokenRepository, $this->userRepository);
+        $service = new EmailChangeService($config);
 
         $user = $this->createSavedUser();
         $user->setUnconfirmedEmail('new@example.com');
@@ -207,7 +200,7 @@ final class EmailChangeServiceTest extends TestCase
             emailChangeConfirmation: EmailChangeConfirmation::BOTH,
             tokenConfirmationLifespan: 999999,
         );
-        $service = new EmailChangeService($config, $this->userTokenRepository, $this->userRepository);
+        $service = new EmailChangeService($config);
 
         $user = $this->createSavedUser();
         $user->setUnconfirmedEmail('new@example.com');
@@ -224,7 +217,7 @@ final class EmailChangeServiceTest extends TestCase
     public function testRunTokenExpiredReturnsFalse(): void
     {
         $config = new ModuleConfig();
-        $service = new EmailChangeService($config, $this->userTokenRepository, $this->userRepository);
+        $service = new EmailChangeService($config);
 
         $user = $this->createSavedUser();
         $token = $this->createSavedToken((int) $user->getId(), UserToken::TYPE_CONFIRM_NEW_EMAIL, time() - 200000);
@@ -232,7 +225,7 @@ final class EmailChangeServiceTest extends TestCase
         $result = $service->run('testcode_' . UserToken::TYPE_CONFIRM_NEW_EMAIL, $user);
         self::assertFalse($result);
 
-        $reloaded = $this->userTokenRepository->findByUserIdAndCode((int) $user->getId(), 'testcode_' . UserToken::TYPE_CONFIRM_NEW_EMAIL);
+        $reloaded = UserToken::findByUserIdAndCode((int) $user->getId(), 'testcode_' . UserToken::TYPE_CONFIRM_NEW_EMAIL);
         self::assertNull($reloaded);
     }
 
@@ -242,7 +235,7 @@ final class EmailChangeServiceTest extends TestCase
             emailChangeConfirmation: EmailChangeConfirmation::NEW,
             tokenConfirmationLifespan: 100,
         );
-        $service = new EmailChangeService($config, $this->userTokenRepository, $this->userRepository);
+        $service = new EmailChangeService($config);
 
         $user = $this->createSavedUser();
         $user->setUnconfirmedEmail('new@example.com');
@@ -257,7 +250,7 @@ final class EmailChangeServiceTest extends TestCase
     public function testRunTokenNotFoundReturnsFalse(): void
     {
         $config = new ModuleConfig();
-        $service = new EmailChangeService($config, $this->userTokenRepository, $this->userRepository);
+        $service = new EmailChangeService($config);
 
         $user = $this->createSavedUser();
         $result = $service->run('nonexistent', $user);
@@ -267,7 +260,7 @@ final class EmailChangeServiceTest extends TestCase
     public function testRunTokenWrongTypeReturnsFalse(): void
     {
         $config = new ModuleConfig();
-        $service = new EmailChangeService($config, $this->userTokenRepository, $this->userRepository);
+        $service = new EmailChangeService($config);
 
         $user = $this->createSavedUser();
         $this->createSavedToken((int) $user->getId(), 99);
@@ -279,7 +272,7 @@ final class EmailChangeServiceTest extends TestCase
     public function testRunUnconfirmedEmailNullReturnsFalse(): void
     {
         $config = new ModuleConfig(tokenConfirmationLifespan: 999999);
-        $service = new EmailChangeService($config, $this->userTokenRepository, $this->userRepository);
+        $service = new EmailChangeService($config);
 
         $user = $this->createSavedUser();
         $this->createSavedToken((int) $user->getId(), UserToken::TYPE_CONFIRM_NEW_EMAIL);
@@ -294,7 +287,7 @@ final class EmailChangeServiceTest extends TestCase
             emailChangeConfirmation: EmailChangeConfirmation::NEW,
             tokenConfirmationLifespan: 999999,
         );
-        $service = new EmailChangeService($config, $this->userTokenRepository, $this->userRepository);
+        $service = new EmailChangeService($config);
 
         $user = new User();
         $user->setUsername('nulluser');
@@ -323,7 +316,7 @@ final class EmailChangeServiceTest extends TestCase
             emailChangeConfirmation: EmailChangeConfirmation::NEW,
             tokenConfirmationLifespan: 999999,
         );
-        $service = new EmailChangeService($config, $this->userTokenRepository, $this->userRepository);
+        $service = new EmailChangeService($config);
 
         $user = new User();
         $user->setUsername('nulluser2');

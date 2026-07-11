@@ -8,7 +8,6 @@ use PHPUnit\Framework\TestCase;
 use Psr\SimpleCache\CacheInterface;
 use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
-use YiiRocks\Voyti\Repository\UserTokenRepository;
 use Yiisoft\ActiveRecord\ActiveQuery;
 use Yiisoft\Db\Cache\SchemaCache;
 use Yiisoft\Db\Connection\ConnectionInterface;
@@ -79,7 +78,7 @@ final class UserTokenFactoryTest extends TestCase
 
     public function testMakeConfirmationToken(): void
     {
-        $factory = new UserTokenFactory(new UserTokenRepository());
+        $factory = new UserTokenFactory();
         $token = $factory->makeConfirmationToken(42);
 
         self::assertSame(42, $token->getUserId());
@@ -96,7 +95,7 @@ final class UserTokenFactoryTest extends TestCase
 
     public function testMakeConfirmNewMailToken(): void
     {
-        $factory = new UserTokenFactory(new UserTokenRepository());
+        $factory = new UserTokenFactory();
         $token = $factory->makeConfirmNewMailToken(7);
 
         self::assertSame(7, $token->getUserId());
@@ -108,7 +107,7 @@ final class UserTokenFactoryTest extends TestCase
 
     public function testMakeConfirmOldMailToken(): void
     {
-        $factory = new UserTokenFactory(new UserTokenRepository());
+        $factory = new UserTokenFactory();
         $token = $factory->makeConfirmOldMailToken(99);
 
         self::assertSame(99, $token->getUserId());
@@ -120,7 +119,7 @@ final class UserTokenFactoryTest extends TestCase
 
     public function testMakeRecoveryToken(): void
     {
-        $factory = new UserTokenFactory(new UserTokenRepository());
+        $factory = new UserTokenFactory();
         $token = $factory->makeRecoveryToken(1);
 
         self::assertSame(1, $token->getUserId());
@@ -132,7 +131,7 @@ final class UserTokenFactoryTest extends TestCase
 
     public function testMultipleTokensHaveDifferentCodes(): void
     {
-        $factory = new UserTokenFactory(new UserTokenRepository());
+        $factory = new UserTokenFactory();
         $token1 = $factory->makeConfirmationToken(1);
         $token2 = $factory->makeConfirmationToken(1);
 

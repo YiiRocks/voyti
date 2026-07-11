@@ -6,22 +6,16 @@ namespace YiiRocks\Voyti\Service\User;
 
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserToken;
-use YiiRocks\Voyti\Repository\UserTokenRepository;
 
 final readonly class AccountConfirmationService
 {
-    public function __construct(
-        private UserTokenRepository $userTokenRepository,
-    ) {
-    }
-
     public function run(string $code, User $user, ConfirmationService $confirmationService): bool
     {
         if ($user->isConfirmed()) {
             return false;
         }
 
-        $userToken = $this->userTokenRepository->findByUserIdAndCodeAndType(
+        $userToken = UserToken::findByUserIdAndCodeAndType(
             $user->getIdOrZero(),
             $code,
             UserToken::TYPE_CONFIRMATION,

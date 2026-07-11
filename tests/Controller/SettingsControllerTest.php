@@ -16,11 +16,6 @@ use YiiRocks\Voyti\Entity\UserProfile;
 use YiiRocks\Voyti\Entity\UserSessionHistory;
 use YiiRocks\Voyti\Entity\UserSocialAccount;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserProfileRepository;
-use YiiRocks\Voyti\Repository\UserRepository;
-use YiiRocks\Voyti\Repository\UserSessionHistoryRepository;
-use YiiRocks\Voyti\Repository\UserSocialAccountRepository;
-use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\EmailChangeService;
 use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
 use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
@@ -28,6 +23,7 @@ use YiiRocks\Voyti\Service\UserSessionHistory\TerminateUserSessionsService;
 use YiiRocks\Voyti\Strategy\EmailChangeStrategyFactory;
 use YiiRocks\Voyti\Strategy\NoneEmailChangeStrategy;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
+use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Security\PasswordHasher;
@@ -42,6 +38,8 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class SettingsControllerTest extends TestCase
 {
+    use DatabaseSetupTrait;
+
     private ModuleConfig $config;
     private CurrentUser&MockObject $currentUser;
     private EmailChangeService&MockObject $emailChangeService;
@@ -55,23 +53,14 @@ final class SettingsControllerTest extends TestCase
     private TranslatorInterface $translator;
     private EmailCodeGeneratorService&MockObject $twoFactorEmailCodeService;
     private QrCodeUriGeneratorService&MockObject $twoFactorQrCodeService;
-    private UserProfileRepository&MockObject $userProfileRepository;
-    private UserRepository&MockObject $userRepository;
-    private UserSessionHistoryRepository&MockObject $userSessionHistoryRepository;
-    private UserSocialAccountRepository&MockObject $userSocialAccountRepository;
-    private UserTokenRepository&MockObject $userTokenRepository;
     private ValidatorInterface&MockObject $validator;
     private WebViewRenderer&MockObject $viewRenderer;
 
     protected function setUp(): void
     {
+        $this->setUpDatabase();
         $this->config = new ModuleConfig();
         $this->harness = new ControllerHarness($this->config);
-        $this->userRepository = $this->createMock(UserRepository::class);
-        $this->userProfileRepository = $this->createMock(UserProfileRepository::class);
-        $this->userSessionHistoryRepository = $this->createMock(UserSessionHistoryRepository::class);
-        $this->userSocialAccountRepository = $this->createMock(UserSocialAccountRepository::class);
-        $this->userTokenRepository = $this->createMock(UserTokenRepository::class);
         $this->translator = $this->createTranslator();
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
         $this->validator = $this->createMock(ValidatorInterface::class);
@@ -87,19 +76,20 @@ final class SettingsControllerTest extends TestCase
         $this->terminateUserSessionsService = $this->createMock(TerminateUserSessionsService::class);
     }
 
+    protected function tearDown(): void
+    {
+        $this->tearDownDatabase();
+    }
+
     public function testAccountGetShowsForm(): void
     {
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
+        $user = $this->createUser();
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('getUsername')->willReturn('testuser');
-        $user->method('getEmail')->willReturn('test@example.com');
-        $this->userRepository->method('findById')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -121,19 +111,10 @@ final class SettingsControllerTest extends TestCase
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['settings' => ['username' => 'testuser', 'email' => 'test@example.com', 'password' => '', 'passwordRepeat' => '']]);
 
         $this->validator->method('validate')->willReturn(new Result());
+        $user = $this->createUser();
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('getUsername')->willReturn('testuser');
-        $user->method('getEmail')->willReturn('test@example.com');
-        $user->method('getId')->willReturn('1');
-        $user->expects($this->once())->method('setUsername');
-        $user->expects($this->once())->method('setUpdatedAt');
-        $user->expects($this->once())->method('save');
-
-        $this->userRepository->method('findById')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
@@ -147,6 +128,9 @@ final class SettingsControllerTest extends TestCase
         $result = $controller->account($request);
 
         $this->assertSame($response, $result);
+        $updated = User::findById((int) $user->getId());
+        $this->assertNotNull($updated);
+        $this->assertSame('testuser', $updated->getUsername());
     }
 
     public function testAccountPostWithNewEmailInvokesChangeStrategy(): void
@@ -165,15 +149,10 @@ final class SettingsControllerTest extends TestCase
             },
         );
         $this->validator->method('validate')->willReturn(new Result());
+        $user = $this->createUser(email: 'old@example.com');
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('getUsername')->willReturn('testuser');
-        $user->method('getEmail')->willReturn('old@example.com');
-        $user->method('getId')->willReturn('1');
-        $this->userRepository->method('findById')->willReturn($user);
 
         $strategy = $this->createMock(NoneEmailChangeStrategy::class);
         $strategy->expects($this->once())->method('run');
@@ -212,21 +191,11 @@ final class SettingsControllerTest extends TestCase
             },
         );
         $this->validator->method('validate')->willReturn(new Result());
+        $user = $this->createUser();
+        $originalHash = $user->getPasswordHash();
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('getUsername')->willReturn('testuser');
-        $user->method('getEmail')->willReturn('test@example.com');
-        $user->method('getId')->willReturn('1');
-        $user->expects($this->once())->method('setUsername');
-        $user->expects($this->once())->method('setPasswordHash');
-        $user->expects($this->once())->method('setPasswordChangedAt');
-        $user->expects($this->once())->method('setUpdatedAt');
-        $user->expects($this->once())->method('save');
-
-        $this->userRepository->method('findById')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
@@ -240,6 +209,10 @@ final class SettingsControllerTest extends TestCase
         $result = $controller->account($request);
 
         $this->assertSame($response, $result);
+        $updated = User::findById((int) $user->getId());
+        $this->assertNotNull($updated);
+        $this->assertNotSame($originalHash, $updated->getPasswordHash());
+        $this->assertNotNull($updated->getPasswordChangedAt());
     }
 
     public function testAccountWhenGuestShowsError(): void
@@ -268,9 +241,8 @@ final class SettingsControllerTest extends TestCase
         $request = new ServerRequest('GET', '/');
 
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn('999999');
         $this->currentUser->method('getIdentity')->willReturn($identity);
-        $this->userRepository->method('findById')->willReturn(null);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -313,7 +285,6 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
 
         $password = 'mypassword';
-        $hash = $this->passwordHasher->hash($password);
 
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['anonymize' => ['password' => $password, 'consent' => '1']]);
 
@@ -328,20 +299,10 @@ final class SettingsControllerTest extends TestCase
             },
         );
         $this->validator->method('validate')->willReturn(new Result());
+        $user = $this->createUser(password: $password);
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $user->method('getPasswordHash')->willReturn($hash);
-        $user->expects($this->once())->method('setEmail');
-        $user->expects($this->once())->method('setUsername');
-        $user->expects($this->once())->method('setAnonymized');
-        $user->expects($this->once())->method('setBlockedAt');
-        $user->expects($this->once())->method('setAuthKey');
-        $user->expects($this->once())->method('save');
-        $this->userRepository->method('findById')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -354,6 +315,10 @@ final class SettingsControllerTest extends TestCase
         $result = $controller->anonymize($request);
 
         $this->assertSame($response, $result);
+        $updated = User::findById((int) $user->getId());
+        $this->assertNotNull($updated);
+        $this->assertTrue($updated->isAnonymized());
+        $this->assertTrue($updated->isBlocked());
     }
 
     public function testConfirmWhenGuestShowsError(): void
@@ -377,13 +342,15 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
+        $user = $this->createUser();
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
-        $user = $this->createMock(User::class);
-        $this->userRepository->method('findById')->willReturn($user);
-        $this->emailChangeService->expects($this->once())->method('run')->with('bad-code', $user)->willReturn(false);
+        $this->emailChangeService->expects($this->once())->method('run')->with(
+            'bad-code',
+            $this->callback(static fn (User $u): bool => $u->getId() === $user->getId()),
+        )->willReturn(false);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -404,13 +371,15 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
+        $user = $this->createUser();
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
-        $user = $this->createMock(User::class);
-        $this->userRepository->method('findById')->willReturn($user);
-        $this->emailChangeService->expects($this->once())->method('run')->with('good-code', $user)->willReturn(true);
+        $this->emailChangeService->expects($this->once())->method('run')->with(
+            'good-code',
+            $this->callback(static fn (User $u): bool => $u->getId() === $user->getId()),
+        )->willReturn(true);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -466,15 +435,10 @@ final class SettingsControllerTest extends TestCase
             },
         );
         $this->validator->method('validate')->willReturn(new Result());
+        $user = $this->createUser(password: 'correctpassword');
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $user->method('getPasswordHash')->willReturn($this->passwordHasher->hash('correctpassword'));
-        $this->userRepository->method('findById')->willReturn($user);
-        $this->userRepository->expects($this->never())->method('delete');
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -488,6 +452,7 @@ final class SettingsControllerTest extends TestCase
         $result = $controller->delete($request);
 
         $this->assertSame($response, $result);
+        $this->assertNotNull(User::findById((int) $user->getId()));
     }
 
     public function testDeletePostWithValidPasswordDeletesUser(): void
@@ -497,7 +462,6 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
 
         $password = 'mypassword';
-        $hash = $this->passwordHasher->hash($password);
 
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['delete-account' => ['password' => $password, 'consent' => '1']]);
 
@@ -512,15 +476,11 @@ final class SettingsControllerTest extends TestCase
             },
         );
         $this->validator->method('validate')->willReturn(new Result());
+        $user = $this->createUser(password: $password);
+        $userId = (int) $user->getId();
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $userId);
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $user->method('getPasswordHash')->willReturn($hash);
-        $this->userRepository->method('findById')->willReturn($user);
-        $this->userRepository->expects($this->once())->method('delete')->with($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -533,6 +493,7 @@ final class SettingsControllerTest extends TestCase
         $result = $controller->delete($request);
 
         $this->assertSame($response, $result);
+        $this->assertNull(User::findById($userId));
     }
 
     public function testDisconnectWhenGuestShowsError(): void
@@ -560,15 +521,13 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
+        $user = $this->createUser();
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
-        $account = $this->createMock(UserSocialAccount::class);
-        $account->method('getId')->willReturn(1);
-        $account->expects($this->once())->method('delete');
-
-        $this->userSocialAccountRepository->method('findByUserId')->willReturn([$account]);
+        $account = $this->createSocialAccount((int) $user->getId());
+        $accountId = $account->getId();
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
@@ -579,9 +538,10 @@ final class SettingsControllerTest extends TestCase
             ->method('withHeader')
             ->willReturnSelf();
 
-        $result = $controller->disconnect($request, 1);
+        $result = $controller->disconnect($request, $accountId);
 
         $this->assertSame($response, $result);
+        $this->assertSame([], UserSocialAccount::findByUserId((int) $user->getId()));
     }
 
     public function testDisconnectWithNoAccountShowsNotFound(): void
@@ -589,10 +549,10 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
+        $user = $this->createUser();
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-        $this->userSocialAccountRepository->method('findByUserId')->willReturn([]);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -614,29 +574,26 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
+        $user = $this->createUser();
+        $userId = (int) $user->getId();
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $userId);
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $user->method('getIdOrZero')->willReturn(1);
-        $this->userRepository->method('findById')->willReturn($user);
+        $sessionEntry = new UserSessionHistory();
+        $sessionEntry->setUserId($userId);
+        $sessionEntry->setSessionId('session-1');
+        $sessionEntry->setIp('203.0.113.5');
+        $sessionEntry->setUserAgent('TestAgent/1.0');
+        $sessionEntry->setCreatedAt(1000);
+        $sessionEntry->setUpdatedAt(2000);
+        $sessionEntry->save();
 
-        $sessionEntry = $this->createMock(UserSessionHistory::class);
-        $sessionEntry->method('getIp')->willReturn('203.0.113.5');
-        $sessionEntry->method('getUserAgent')->willReturn('TestAgent/1.0');
-        $sessionEntry->method('getCreatedAt')->willReturn(1000);
-        $sessionEntry->method('getUpdatedAt')->willReturn(2000);
-        $this->userSessionHistoryRepository->expects($this->once())->method('findByUserId')->with(1)->willReturn([$sessionEntry]);
-
-        $socialAccount = $this->createMock(UserSocialAccount::class);
-        $socialAccount->method('getProvider')->willReturn('github');
-        $socialAccount->method('getUsername')->willReturn('octocat');
-        $socialAccount->method('getEmail')->willReturn('octocat@example.com');
-        $socialAccount->method('getCreatedAt')->willReturn(3000);
-        $socialAccount->method('getDecodedData')->willReturn(['name' => 'The Octocat', 'avatar_url' => 'https://example.com/avatar.png']);
-        $this->userSocialAccountRepository->expects($this->once())->method('findByUserId')->with(1)->willReturn([$socialAccount]);
+        $socialAccount = $this->createSocialAccount($userId, 'github', 'octocat');
+        $socialAccount->setEmail('octocat@example.com');
+        $socialAccount->setCreatedAt(3000);
+        $socialAccount->setData(json_encode(['name' => 'The Octocat', 'avatar_url' => 'https://example.com/avatar.png'], JSON_THROW_ON_ERROR));
+        $socialAccount->save();
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->method('createResponse')->willReturn($response);
@@ -684,21 +641,20 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
+        $user = $this->createUser();
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
-        $profile = $this->createMock(UserProfile::class);
-        $profile->method('getPublicEmail')->willReturn('public@example.com');
-        $profile->method('getName')->willReturn('Jane Doe');
-        $profile->method('getGravatarEmail')->willReturn('gravatar@example.com');
-        $profile->method('getLocation')->willReturn('Berlin');
-        $profile->method('getWebsite')->willReturn('https://example.com');
-        $profile->method('getBio')->willReturn('Hello there');
-
-        $user = $this->createMock(User::class);
-        $user->method('getProfile')->willReturn($profile);
-        $this->userRepository->method('findById')->willReturn($user);
+        $profile = new UserProfile();
+        $profile->setUserId((int) $user->getId());
+        $profile->setPublicEmail('public@example.com');
+        $profile->setName('Jane Doe');
+        $profile->setGravatarEmail('gravatar@example.com');
+        $profile->setLocation('Berlin');
+        $profile->setWebsite('https://example.com');
+        $profile->setBio('Hello there');
+        $profile->save();
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->method('createResponse')->willReturn($response);
@@ -733,16 +689,10 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
+        $user = $this->createUser();
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('getEmail')->willReturn('test@example.com');
-        $user->method('getUsername')->willReturn('testuser');
-        $user->method('getProfile')->willReturn(null);
-        $user->method('getId')->willReturn('1');
-        $this->userRepository->method('findById')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
@@ -791,18 +741,15 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
+        $user = $this->createUser(gdprConsent: true, gdprConsentDate: 1700000000);
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
-        $profile = $this->createMock(UserProfile::class);
-        $profile->method('getTimezone')->willReturn('America/New_York');
-
-        $user = $this->createMock(User::class);
-        $user->method('isGdprConsent')->willReturn(true);
-        $user->method('getGdprConsentDate')->willReturn(1700000000);
-        $user->method('getProfile')->willReturn($profile);
-        $this->userRepository->method('findById')->willReturn($user);
+        $profile = new UserProfile();
+        $profile->setUserId((int) $user->getId());
+        $profile->setTimezone('America/New_York');
+        $profile->save();
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -832,15 +779,10 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
+        $user = $this->createUser(gdprConsent: false);
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('isGdprConsent')->willReturn(false);
-        $user->method('getGdprConsentDate')->willReturn(null);
-        $user->method('getProfile')->willReturn(null);
-        $this->userRepository->method('findById')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -876,17 +818,11 @@ final class SettingsControllerTest extends TestCase
             },
         );
 
+        $user = $this->createUser(gdprConsent: true);
+        $consentDate = $user->getGdprConsentDate();
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $user->method('isGdprConsent')->willReturn(true);
-        $user->expects($this->never())->method('setGdprConsent');
-        $user->expects($this->never())->method('setGdprConsentDate');
-        $user->expects($this->never())->method('save');
-        $this->userRepository->method('findById')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
@@ -900,6 +836,9 @@ final class SettingsControllerTest extends TestCase
         $result = $controller->gdprConsent($request);
 
         $this->assertSame($response, $result);
+        $updated = User::findById((int) $user->getId());
+        $this->assertNotNull($updated);
+        $this->assertSame($consentDate, $updated->getGdprConsentDate());
     }
 
     public function testGdprConsentPostCannotRevokeConsent(): void
@@ -917,17 +856,10 @@ final class SettingsControllerTest extends TestCase
             },
         );
 
+        $user = $this->createUser(gdprConsent: true);
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $user->method('isGdprConsent')->willReturn(true);
-        $user->expects($this->never())->method('setGdprConsent');
-        $user->expects($this->never())->method('setGdprConsentDate');
-        $user->expects($this->never())->method('save');
-        $this->userRepository->method('findById')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
@@ -941,6 +873,9 @@ final class SettingsControllerTest extends TestCase
         $result = $controller->gdprConsent($request);
 
         $this->assertSame($response, $result);
+        $updated = User::findById((int) $user->getId());
+        $this->assertNotNull($updated);
+        $this->assertTrue($updated->isGdprConsent());
     }
 
     public function testGdprConsentPostSavesAndRedirects(): void
@@ -958,17 +893,10 @@ final class SettingsControllerTest extends TestCase
             },
         );
 
+        $user = $this->createUser(gdprConsent: false);
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $user->method('isGdprConsent')->willReturn(false);
-        $user->expects($this->once())->method('setGdprConsent')->with(true);
-        $user->expects($this->once())->method('setGdprConsentDate');
-        $user->expects($this->once())->method('save');
-        $this->userRepository->method('findById')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
@@ -982,6 +910,10 @@ final class SettingsControllerTest extends TestCase
         $result = $controller->gdprConsent($request);
 
         $this->assertSame($response, $result);
+        $updated = User::findById((int) $user->getId());
+        $this->assertNotNull($updated);
+        $this->assertTrue($updated->isGdprConsent());
+        $this->assertNotNull($updated->getGdprConsentDate());
     }
 
     public function testNetworksShowsConnectedAccounts(): void
@@ -992,8 +924,6 @@ final class SettingsControllerTest extends TestCase
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn('1');
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $this->userSocialAccountRepository->method('findByUserId')->willReturn([]);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -1053,14 +983,10 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
+        $user = $this->createUser();
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $user->method('getProfile')->willReturn(null);
-        $this->userRepository->method('findById')->willReturn($user);
 
         $captured = [];
         $response = $this->createMock(ResponseInterface::class);
@@ -1074,7 +1000,7 @@ final class SettingsControllerTest extends TestCase
         $controller->userProfile($request);
 
         $this->assertInstanceOf(UserProfile::class, $captured['userProfile']);
-        $this->assertSame(1, $captured['userProfile']->getUserId());
+        $this->assertSame((int) $user->getId(), $captured['userProfile']->getUserId());
     }
 
     public function testProfileGetDoesNotShowSwitchedBannerWhenNotSwitched(): void
@@ -1082,16 +1008,11 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
+        $user = $this->createUser();
+        $this->createUserProfile((int) $user->getId());
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $userProfile = $this->createMock(UserProfile::class);
-        $userProfile->method('getName')->willReturn('John');
-        $user->method('getProfile')->willReturn($userProfile);
-        $this->userRepository->method('findById')->willReturn($user);
 
         $captured = [];
         $response = $this->createMock(ResponseInterface::class);
@@ -1116,16 +1037,11 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
+        $user = $this->createUser();
+        $this->createUserProfile((int) $user->getId());
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $userProfile = $this->createMock(UserProfile::class);
-        $userProfile->method('getName')->willReturn('John');
-        $user->method('getProfile')->willReturn($userProfile);
-        $this->userRepository->method('findById')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -1143,21 +1059,18 @@ final class SettingsControllerTest extends TestCase
 
     public function testProfileGetShowsSwitchedBanner(): void
     {
+        $originalUser = $this->createUser(username: 'original', email: 'original@example.com');
+
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
+        $user = $this->createUser(username: 'switcheduser', email: 'switched@example.com');
+        $this->createUserProfile((int) $user->getId());
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $userProfile = $this->createMock(UserProfile::class);
-        $userProfile->method('getName')->willReturn('John');
-        $user->method('getProfile')->willReturn($userProfile);
-        $this->userRepository->method('findById')->willReturn($user);
-
-        $this->harness->getSession()->set('voyti_original_user', '2');
+        $this->harness->getSession()->set('voyti_original_user', (string) $originalUser->getId());
 
         $captured = [];
         $response = $this->createMock(ResponseInterface::class);
@@ -1174,7 +1087,7 @@ final class SettingsControllerTest extends TestCase
         $controller->userProfile($request);
 
         $this->assertTrue($captured['isSwitched']);
-        $this->assertSame($user, $captured['originalUser']);
+        $this->assertSame($originalUser->getId(), $captured['originalUser']->getId());
     }
 
     public function testProfilePostUpdatesAndRedirects(): void
@@ -1182,17 +1095,17 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['userProfile' => ['name' => 'John', 'publicEmail' => '', 'gravatarEmail' => '', 'location' => '', 'website' => '', 'timezone' => '', 'bio' => '']]);
 
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->hydrator->method('hydrate')->willReturnCallback(
+            function (object $object, array $data = []): void {
+                $this->hydrateObject($object, $data);
+            },
+        );
 
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $userProfile = $this->createMock(UserProfile::class);
-        $userProfile->method('getName')->willReturn('John');
-        $user->method('getProfile')->willReturn($userProfile);
-        $userProfile->expects($this->once())->method('save');
-        $this->userRepository->method('findById')->willReturn($user);
+        $user = $this->createUser();
+        $this->createUserProfile((int) $user->getId(), name: 'OldName');
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn((string) $user->getId());
+        $this->currentUser->method('getIdentity')->willReturn($identity);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
@@ -1206,6 +1119,9 @@ final class SettingsControllerTest extends TestCase
         $result = $controller->userProfile($request);
 
         $this->assertSame($response, $result);
+        $updatedProfile = UserProfile::findByUserId((int) $user->getId());
+        $this->assertNotNull($updatedProfile);
+        $this->assertSame('John', $updatedProfile->getName());
     }
 
     public function testProfileWhenGuestShowsError(): void
@@ -1231,15 +1147,14 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('POST', '/');
 
+        $user = $this->createUser(authTfEnabled: true, authTfType: 'email');
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
-        $user = $this->createMock(User::class);
-        $user->method('isAuthTfEnabled')->willReturn(true);
-        $user->method('getAuthTfType')->willReturn('email');
-        $this->userRepository->method('findById')->willReturn($user);
-        $this->twoFactorEmailCodeService->expects($this->once())->method('run')->with($user);
+        $this->twoFactorEmailCodeService->expects($this->once())->method('run')->with(
+            $this->callback(static fn (User $u): bool => $u->getId() === $user->getId()),
+        );
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -1264,14 +1179,10 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('POST', '/');
 
+        $user = $this->createUser(authTfEnabled: true, authTfType: 'google');
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('isAuthTfEnabled')->willReturn(true);
-        $user->method('getAuthTfType')->willReturn('google');
-        $this->userRepository->method('findById')->willReturn($user);
         $this->twoFactorEmailCodeService->expects($this->never())->method('run');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -1311,13 +1222,10 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('POST', '/');
 
+        $user = $this->createUser(authTfEnabled: false);
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('isAuthTfEnabled')->willReturn(false);
-        $this->userRepository->method('findById')->willReturn($user);
         $this->twoFactorEmailCodeService->expects($this->never())->method('run');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -1357,18 +1265,10 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['code' => 'wrong']);
 
+        $user = $this->createUser(authTfType: 'email', authTfKey: '123456');
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $user->method('getAuthTfType')->willReturn('email');
-        $user->method('getAuthTfKey')->willReturn('123456');
-        $user->expects($this->never())->method('setAuthTfEnabled');
-        $user->expects($this->never())->method('save');
-
-        $this->userRepository->method('findById')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -1385,6 +1285,9 @@ final class SettingsControllerTest extends TestCase
         $result = $controller->twoFactorDisable($request);
 
         $this->assertSame($response, $result);
+        $updated = User::findById((int) $user->getId());
+        $this->assertNotNull($updated);
+        $this->assertFalse($updated->isAuthTfEnabled());
     }
 
     public function testTwoFactorDisableWithInvalidGoogleCodeShowsFormWithoutCodeSent(): void
@@ -1394,18 +1297,10 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['code' => 'wrong']);
 
+        $user = $this->createUser(authTfType: 'google', authTfKey: null);
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $user->method('getAuthTfType')->willReturn('google');
-        $user->method('getAuthTfKey')->willReturn(null);
-        $user->expects($this->never())->method('setAuthTfEnabled');
-        $user->expects($this->never())->method('save');
-
-        $this->userRepository->method('findById')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -1422,6 +1317,9 @@ final class SettingsControllerTest extends TestCase
         $result = $controller->twoFactorDisable($request);
 
         $this->assertSame($response, $result);
+        $updated = User::findById((int) $user->getId());
+        $this->assertNotNull($updated);
+        $this->assertFalse($updated->isAuthTfEnabled());
     }
 
     public function testTwoFactorDisableWithValidEmailCodeDisablesAndRedirects(): void
@@ -1431,19 +1329,10 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['code' => '123456']);
 
+        $user = $this->createUser(authTfEnabled: true, authTfType: 'email', authTfKey: '123456');
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $user->method('getAuthTfType')->willReturn('email');
-        $user->method('getAuthTfKey')->willReturn('123456');
-        $user->expects($this->once())->method('setAuthTfEnabled')->with(false);
-        $user->expects($this->once())->method('setAuthTfKey')->with(null);
-        $user->expects($this->once())->method('setAuthTfType')->with(null);
-        $user->expects($this->once())->method('save');
-        $this->userRepository->method('findById')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
@@ -1457,6 +1346,11 @@ final class SettingsControllerTest extends TestCase
         $result = $controller->twoFactorDisable($request);
 
         $this->assertSame($response, $result);
+        $updated = User::findById((int) $user->getId());
+        $this->assertNotNull($updated);
+        $this->assertFalse($updated->isAuthTfEnabled());
+        $this->assertNull($updated->getAuthTfKey());
+        $this->assertNull($updated->getAuthTfType());
     }
 
     public function testTwoFactorDisableWithValidGoogleCodeDisablesAndRedirects(): void
@@ -1476,18 +1370,9 @@ final class SettingsControllerTest extends TestCase
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['code' => $code]);
 
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $user = $this->createUser(authTfEnabled: true, authTfType: 'google', authTfKey: $secret);
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $user->method('getAuthTfType')->willReturn('google');
-        $user->method('getAuthTfKey')->willReturn($secret);
-        $user->expects($this->once())->method('setAuthTfEnabled')->with(false);
-        $user->expects($this->once())->method('setAuthTfKey')->with(null);
-        $user->expects($this->once())->method('setAuthTfType')->with(null);
-        $user->expects($this->once())->method('save');
-        $this->userRepository->method('findById')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
@@ -1501,6 +1386,11 @@ final class SettingsControllerTest extends TestCase
         $result = $controller->twoFactorDisable($request);
 
         $this->assertSame($response, $result);
+        $updated = User::findById((int) $user->getId());
+        $this->assertNotNull($updated);
+        $this->assertFalse($updated->isAuthTfEnabled());
+        $this->assertNull($updated->getAuthTfKey());
+        $this->assertNull($updated->getAuthTfType());
     }
 
     public function testTwoFactorEmailRendersFragmentWithFragmentHeader(): void
@@ -1510,15 +1400,10 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('GET', '/'))->withHeader('X-Requested-With', 'XMLHttpRequest');
 
+        $user = $this->createUser(authTfEnabled: false);
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('isAuthTfEnabled')->willReturn(false);
-        $user->expects($this->never())->method('setAuthTfType');
-        $user->expects($this->never())->method('save');
-        $this->userRepository->method('findById')->willReturn($user);
         $this->twoFactorEmailCodeService->expects($this->never())->method('run');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -1544,13 +1429,10 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
+        $user = $this->createUser(authTfEnabled: false);
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('isAuthTfEnabled')->willReturn(false);
-        $this->userRepository->method('findById')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -1577,13 +1459,10 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
+        $user = $this->createUser(authTfEnabled: true);
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('isAuthTfEnabled')->willReturn(true);
-        $this->userRepository->method('findById')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
@@ -1624,16 +1503,10 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['method' => 'google', 'code' => '123456']);
 
+        $user = $this->createUser(authTfEnabled: true);
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('isAuthTfEnabled')->willReturn(true);
-        $user->expects($this->never())->method('setAuthTfKey');
-        $user->expects($this->never())->method('setAuthTfType');
-        $user->expects($this->never())->method('setAuthTfEnabled');
-        $this->userRepository->method('findById')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
@@ -1645,6 +1518,9 @@ final class SettingsControllerTest extends TestCase
         $result = $controller->twoFactorEnable($request);
 
         $this->assertSame($response, $result);
+        $updated = User::findById((int) $user->getId());
+        $this->assertNotNull($updated);
+        $this->assertTrue($updated->isAuthTfEnabled());
     }
 
     public function testTwoFactorEnableWhenGuestShowsError(): void
@@ -1672,18 +1548,10 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['method' => 'email', 'code' => '123456']);
 
+        $user = $this->createUser(authTfKey: '123456');
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $user->method('getAuthTfKey')->willReturn('123456');
-        $user->expects($this->once())->method('setAuthTfEnabled');
-        $user->expects($this->once())->method('setAuthTfType');
-        $user->expects($this->once())->method('save');
-
-        $this->userRepository->method('findById')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
@@ -1697,6 +1565,10 @@ final class SettingsControllerTest extends TestCase
         $result = $controller->twoFactorEnable($request);
 
         $this->assertSame($response, $result);
+        $updated = User::findById((int) $user->getId());
+        $this->assertNotNull($updated);
+        $this->assertTrue($updated->isAuthTfEnabled());
+        $this->assertSame('email', $updated->getAuthTfType());
     }
 
     public function testTwoFactorEnableWithInvalidEmailCodeShowsFormWithCodeSent(): void
@@ -1706,16 +1578,10 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['method' => 'email', 'code' => 'wrong']);
 
+        $user = $this->createUser(authTfKey: '123456');
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $user->method('getAuthTfKey')->willReturn('123456');
-        $user->expects($this->never())->method('setAuthTfEnabled');
-
-        $this->userRepository->method('findById')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -1731,6 +1597,9 @@ final class SettingsControllerTest extends TestCase
         $result = $controller->twoFactorEnable($request);
 
         $this->assertSame($response, $result);
+        $updated = User::findById((int) $user->getId());
+        $this->assertNotNull($updated);
+        $this->assertFalse($updated->isAuthTfEnabled());
     }
 
     public function testTwoFactorEnableWithInvalidGoogleCodeShowsFormWithoutCodeSent(): void
@@ -1740,17 +1609,10 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['method' => 'google', 'code' => 'wrong']);
 
+        $user = $this->createUser(authTfType: 'google', authTfKey: null);
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $user->method('getAuthTfType')->willReturn('google');
-        $user->method('getAuthTfKey')->willReturn(null);
-        $user->expects($this->never())->method('setAuthTfEnabled');
-
-        $this->userRepository->method('findById')->willReturn($user);
         $this->twoFactorQrCodeService->method('generateQrCodeSvg')->willReturn('<svg></svg>');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -1767,6 +1629,9 @@ final class SettingsControllerTest extends TestCase
         $result = $controller->twoFactorEnable($request);
 
         $this->assertSame($response, $result);
+        $updated = User::findById((int) $user->getId());
+        $this->assertNotNull($updated);
+        $this->assertFalse($updated->isAuthTfEnabled());
     }
 
     public function testTwoFactorEnableWithValidGoogleCodeEnablesAndRedirects(): void
@@ -1785,19 +1650,10 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['method' => 'google', 'code' => $code]);
 
+        $user = $this->createUser(authTfType: 'google', authTfKey: $secret);
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('getId')->willReturn('1');
-        $user->method('getAuthTfType')->willReturn('google');
-        $user->method('getAuthTfKey')->willReturn($secret);
-        $user->expects($this->once())->method('setAuthTfType')->with('google');
-        $user->expects($this->once())->method('setAuthTfEnabled')->with(true);
-        $user->expects($this->once())->method('save');
-
-        $this->userRepository->method('findById')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
@@ -1811,6 +1667,10 @@ final class SettingsControllerTest extends TestCase
         $result = $controller->twoFactorEnable($request);
 
         $this->assertSame($response, $result);
+        $updated = User::findById((int) $user->getId());
+        $this->assertNotNull($updated);
+        $this->assertTrue($updated->isAuthTfEnabled());
+        $this->assertSame('google', $updated->getAuthTfType());
     }
 
     public function testTwoFactorGoogleRendersFragmentWithFragmentHeader(): void
@@ -1820,15 +1680,10 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('GET', '/'))->withHeader('X-Requested-With', 'XMLHttpRequest');
 
+        $user = $this->createUser(authTfEnabled: false, authTfType: null, authTfKey: 'secret');
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('isAuthTfEnabled')->willReturn(false);
-        $user->method('getAuthTfType')->willReturn(null);
-        $user->method('getAuthTfKey')->willReturn('secret');
-        $this->userRepository->method('findById')->willReturn($user);
         $this->twoFactorQrCodeService->method('generateQrCodeSvg')->willReturn('<svg></svg>');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -1838,7 +1693,7 @@ final class SettingsControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('renderPartial')
             ->with('settings/two-factor/_google', $this->callback(
-                static fn (array $params): bool => $params['qrCodeUri'] === '<svg></svg>' && $params['secret'] === 'secret',
+                static fn (array $params): bool => $params['qrCodeUri'] === '<svg></svg>' && $params['secret'] === null,
             ))
             ->willReturn($response);
 
@@ -1854,15 +1709,10 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
+        $user = $this->createUser(authTfEnabled: false, authTfType: null, authTfKey: null);
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('isAuthTfEnabled')->willReturn(false);
-        $user->method('getAuthTfType')->willReturn(null);
-        $user->method('getAuthTfKey')->willReturn(null);
-        $this->userRepository->method('findById')->willReturn($user);
         $this->twoFactorQrCodeService->method('generateQrCodeSvg')->willReturn('<svg></svg>');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -1890,13 +1740,10 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
+        $user = $this->createUser(authTfEnabled: true);
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('isAuthTfEnabled')->willReturn(true);
-        $this->userRepository->method('findById')->willReturn($user);
         $this->twoFactorQrCodeService->expects($this->never())->method('generateQrCodeSvg');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -1938,16 +1785,10 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('POST', '/');
 
+        $user = $this->createUser(authTfEnabled: false, authTfType: 'google', authTfKey: 'secret');
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('isAuthTfEnabled')->willReturn(false);
-        $user->method('getAuthTfType')->willReturn('google');
-        $user->method('getAuthTfKey')->willReturn('secret');
-        $user->expects($this->never())->method('setAuthTfType');
-        $this->userRepository->method('findById')->willReturn($user);
 
         $this->twoFactorQrCodeService->method('isAvailable')->willReturn(true);
         $this->twoFactorQrCodeService->method('generateQrCodeSvg')->willReturn('<svg></svg>');
@@ -1960,6 +1801,9 @@ final class SettingsControllerTest extends TestCase
         $result = $controller->twoFactorRenew($request);
 
         $this->assertSame($response, $result);
+        $updated = User::findById((int) $user->getId());
+        $this->assertNotNull($updated);
+        $this->assertSame('google', $updated->getAuthTfType());
     }
 
     public function testTwoFactorRenewGeneratesNewSecret(): void
@@ -1969,21 +1813,18 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('POST', '/');
 
+        $user = $this->createUser(authTfEnabled: false, authTfType: 'email', authTfKey: 'new-secret');
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('isAuthTfEnabled')->willReturn(false);
-        $user->method('getAuthTfType')->willReturn('email');
-        $user->method('getAuthTfKey')->willReturn('new-secret');
-        $user->expects($this->once())->method('setAuthTfType')->with('google');
-        $this->userRepository->method('findById')->willReturn($user);
 
         $this->twoFactorQrCodeService->method('isAvailable')->willReturn(true);
         $this->twoFactorQrCodeService->expects($this->once())
             ->method('generateQrCodeSvg')
-            ->with($user, forceNewSecret: true)
+            ->with(
+                $this->callback(static fn (User $u): bool => $u->getId() === $user->getId()),
+                forceNewSecret: true,
+            )
             ->willReturn('<svg>new</svg>');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -2013,13 +1854,10 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('POST', '/');
 
+        $user = $this->createUser(authTfEnabled: true);
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('isAuthTfEnabled')->willReturn(true);
-        $this->userRepository->method('findById')->willReturn($user);
         $this->twoFactorQrCodeService->expects($this->never())->method('generateQrCodeSvg');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -2064,13 +1902,10 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('POST', '/');
 
+        $user = $this->createUser(authTfEnabled: false);
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('isAuthTfEnabled')->willReturn(false);
-        $this->userRepository->method('findById')->willReturn($user);
         $this->twoFactorQrCodeService->method('isAvailable')->willReturn(false);
         $this->twoFactorQrCodeService->expects($this->never())->method('generateQrCodeSvg');
 
@@ -2095,9 +1930,8 @@ final class SettingsControllerTest extends TestCase
         $request = new ServerRequest('POST', '/');
 
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn('999999');
         $this->currentUser->method('getIdentity')->willReturn($identity);
-        $this->userRepository->method('findById')->willReturn(null);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
@@ -2119,17 +1953,13 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('POST', '/');
 
+        $user = $this->createUser(authTfEnabled: false, authTfType: 'email');
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('isAuthTfEnabled')->willReturn(false);
-        $user->method('getAuthTfType')->willReturn('email');
-        $user->expects($this->never())->method('setAuthTfType');
-        $user->expects($this->never())->method('save');
-        $this->userRepository->method('findById')->willReturn($user);
-        $this->twoFactorEmailCodeService->expects($this->once())->method('run')->with($user);
+        $this->twoFactorEmailCodeService->expects($this->once())->method('run')->with(
+            $this->callback(static fn (User $u): bool => $u->getId() === $user->getId()),
+        );
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -2138,6 +1968,9 @@ final class SettingsControllerTest extends TestCase
         $result = $controller->twoFactorSendEmailCode($request);
 
         $this->assertSame($response, $result);
+        $updated = User::findById((int) $user->getId());
+        $this->assertNotNull($updated);
+        $this->assertSame('email', $updated->getAuthTfType());
     }
 
     public function testTwoFactorSendEmailCodeSendsCodeAndRendersView(): void
@@ -2147,17 +1980,13 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('POST', '/');
 
+        $user = $this->createUser(authTfEnabled: false, authTfType: null);
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('isAuthTfEnabled')->willReturn(false);
-        $user->method('getAuthTfType')->willReturn(null);
-        $user->expects($this->once())->method('setAuthTfType')->with('email');
-        $user->expects($this->once())->method('save');
-        $this->userRepository->method('findById')->willReturn($user);
-        $this->twoFactorEmailCodeService->expects($this->once())->method('run')->with($user);
+        $this->twoFactorEmailCodeService->expects($this->once())->method('run')->with(
+            $this->callback(static fn (User $u): bool => $u->getId() === $user->getId()),
+        );
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -2173,6 +2002,9 @@ final class SettingsControllerTest extends TestCase
         $result = $controller->twoFactorSendEmailCode($request);
 
         $this->assertSame($response, $result);
+        $updated = User::findById((int) $user->getId());
+        $this->assertNotNull($updated);
+        $this->assertSame('email', $updated->getAuthTfType());
     }
 
     public function testTwoFactorSendEmailCodeWhenAlreadyEnabledRedirects(): void
@@ -2182,13 +2014,10 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('POST', '/');
 
+        $user = $this->createUser(authTfEnabled: true);
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('isAuthTfEnabled')->willReturn(true);
-        $this->userRepository->method('findById')->willReturn($user);
         $this->twoFactorEmailCodeService->expects($this->never())->method('run');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -2228,14 +2057,10 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
+        $user = $this->createUser(authTfEnabled: true, authTfType: 'google');
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('isAuthTfEnabled')->willReturn(true);
-        $user->method('getAuthTfType')->willReturn('google');
-        $this->userRepository->method('findById')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -2279,13 +2104,10 @@ final class SettingsControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
+        $user = $this->createUser(authTfEnabled: false);
         $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $user = $this->createMock(User::class);
-        $user->method('isAuthTfEnabled')->willReturn(false);
-        $this->userRepository->method('findById')->willReturn($user);
         $this->twoFactorQrCodeService->expects($this->never())->method('generateQrCodeSvg');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -2309,11 +2131,6 @@ final class SettingsControllerTest extends TestCase
     private function createController(): SettingsController
     {
         return $this->harness->createSettingsController(
-            userRepository: $this->userRepository,
-            userProfileRepository: $this->userProfileRepository,
-            userSessionHistoryRepository: $this->userSessionHistoryRepository,
-            userSocialAccountRepository: $this->userSocialAccountRepository,
-            userTokenRepository: $this->userTokenRepository,
             translator: $this->translator,
             viewRenderer: $this->viewRenderer,
             validator: $this->validator,
@@ -2328,5 +2145,70 @@ final class SettingsControllerTest extends TestCase
             emailChangeService: $this->emailChangeService,
             terminateUserSessionsService: $this->terminateUserSessionsService,
         );
+    }
+
+    private function createSocialAccount(int $userId, string $provider = 'github', string $username = 'octocat'): UserSocialAccount
+    {
+        $account = new UserSocialAccount();
+        $account->setUserId($userId);
+        $account->setProvider($provider);
+        $account->setClientId('client123');
+        $account->setUsername($username);
+        $account->setCreatedAt(time());
+        $account->save();
+
+        return $account;
+    }
+
+    private function createUser(
+        string $username = 'testuser',
+        string $email = 'test@example.com',
+        string $password = 'secret',
+        bool $blocked = false,
+        bool $confirmed = true,
+        bool $authTfEnabled = false,
+        ?string $authTfType = null,
+        ?string $authTfKey = null,
+        bool $gdprConsent = false,
+        ?int $gdprConsentDate = null,
+        bool $anonymized = false,
+    ): User {
+        $user = new User();
+        $user->setUsername($username);
+        $user->setEmail($email);
+        $user->setPasswordHash($this->passwordHasher->hash($password));
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $user->setBlockedAt($blocked ? time() : null);
+        $user->setConfirmedAt($confirmed ? time() : null);
+        $user->setAuthTfEnabled($authTfEnabled);
+        $user->setAuthTfType($authTfType);
+        $user->setAuthTfKey($authTfKey);
+        $user->setGdprConsent($gdprConsent);
+        $user->setGdprConsentDate($gdprConsentDate);
+        $user->setAnonymized($anonymized);
+        $user->save();
+
+        return $user;
+    }
+
+    private function createUserProfile(int $userId, string $name = 'John'): UserProfile
+    {
+        $profile = new UserProfile();
+        $profile->setUserId($userId);
+        $profile->setName($name);
+        $profile->save();
+
+        return $profile;
+    }
+
+    private function hydrateObject(object $object, array $data): void
+    {
+        foreach ($data as $key => $value) {
+            if (property_exists($object, $key)) {
+                $object->$key = $value;
+            }
+        }
     }
 }

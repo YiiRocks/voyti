@@ -7,7 +7,6 @@ namespace YiiRocks\Voyti\tests\Service\Password;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\Password\ExpireService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 
@@ -130,7 +129,7 @@ final class ExpireServiceTest extends TestCase
         self::assertTrue($service->run($user));
         self::assertSame(0, $user->getPasswordChangedAt());
 
-        $reloaded = (new UserRepository())->findById((int) $user->getId());
+        $reloaded = User::findById((int) $user->getId());
         self::assertNotNull($reloaded);
         self::assertSame(0, $reloaded->getPasswordChangedAt());
     }

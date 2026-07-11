@@ -9,8 +9,6 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserSocialAccount;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserRepository;
-use YiiRocks\Voyti\Repository\UserSocialAccountRepository;
 use YiiRocks\Voyti\Service\Auth\UserSocialAuthenticateService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\FakeSession;
@@ -38,8 +36,6 @@ final class UserSocialAuthenticateServiceTest extends TestCase
     public function testRunAccountWithoutUserIdAndEmptyCodeReturnsFailure(): void
     {
         $config = new ModuleConfig(enableSocialNetworkRegistration: true);
-        $accountRepository = new UserSocialAccountRepository();
-        $userRepository = new UserRepository();
         $currentUser = $this->createMock(CurrentUser::class);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 
@@ -53,8 +49,6 @@ final class UserSocialAuthenticateServiceTest extends TestCase
 
         $service = new UserSocialAuthenticateService(
             $config,
-            $accountRepository,
-            $userRepository,
             $currentUser,
             $this->session,
             $eventDispatcher,
@@ -68,8 +62,6 @@ final class UserSocialAuthenticateServiceTest extends TestCase
     public function testRunAccountWithoutUserIdAndNoCodeReturnsFailure(): void
     {
         $config = new ModuleConfig(enableSocialNetworkRegistration: true);
-        $accountRepository = new UserSocialAccountRepository();
-        $userRepository = new UserRepository();
         $currentUser = $this->createMock(CurrentUser::class);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 
@@ -83,8 +75,6 @@ final class UserSocialAuthenticateServiceTest extends TestCase
 
         $service = new UserSocialAuthenticateService(
             $config,
-            $accountRepository,
-            $userRepository,
             $currentUser,
             $this->session,
             $eventDispatcher,
@@ -98,8 +88,6 @@ final class UserSocialAuthenticateServiceTest extends TestCase
     public function testRunAccountWithoutUserIdSetsSessionCode(): void
     {
         $config = new ModuleConfig(enableSocialNetworkRegistration: true);
-        $accountRepository = new UserSocialAccountRepository();
-        $userRepository = new UserRepository();
         $currentUser = $this->createMock(CurrentUser::class);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 
@@ -113,8 +101,6 @@ final class UserSocialAuthenticateServiceTest extends TestCase
 
         $service = new UserSocialAuthenticateService(
             $config,
-            $accountRepository,
-            $userRepository,
             $currentUser,
             $this->session,
             $eventDispatcher,
@@ -128,8 +114,6 @@ final class UserSocialAuthenticateServiceTest extends TestCase
     public function testRunAccountWithUserIdUserNotFoundReturnsFailure(): void
     {
         $config = new ModuleConfig(enableSocialNetworkRegistration: true);
-        $accountRepository = new UserSocialAccountRepository();
-        $userRepository = new UserRepository();
         $currentUser = $this->createMock(CurrentUser::class);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 
@@ -143,8 +127,6 @@ final class UserSocialAuthenticateServiceTest extends TestCase
 
         $service = new UserSocialAuthenticateService(
             $config,
-            $accountRepository,
-            $userRepository,
             $currentUser,
             $this->session,
             $eventDispatcher,
@@ -158,8 +140,6 @@ final class UserSocialAuthenticateServiceTest extends TestCase
     public function testRunClearsOauthClientDataOnLogin(): void
     {
         $config = new ModuleConfig(enableSocialNetworkRegistration: true);
-        $accountRepository = new UserSocialAccountRepository();
-        $userRepository = new UserRepository();
         $currentUser = $this->createMock(CurrentUser::class);
         $currentUser->method('login');
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
@@ -186,8 +166,6 @@ final class UserSocialAuthenticateServiceTest extends TestCase
 
         $service = new UserSocialAuthenticateService(
             $config,
-            $accountRepository,
-            $userRepository,
             $currentUser,
             $this->session,
             $eventDispatcher,
@@ -200,15 +178,11 @@ final class UserSocialAuthenticateServiceTest extends TestCase
     public function testRunCreatesNewAccountWhenNotFound(): void
     {
         $config = new ModuleConfig(enableSocialNetworkRegistration: true);
-        $accountRepository = new UserSocialAccountRepository();
-        $userRepository = new UserRepository();
         $currentUser = $this->createMock(CurrentUser::class);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 
         $service = new UserSocialAuthenticateService(
             $config,
-            $accountRepository,
-            $userRepository,
             $currentUser,
             $this->session,
             $eventDispatcher,
@@ -217,7 +191,7 @@ final class UserSocialAuthenticateServiceTest extends TestCase
         $result = $service->run('github', 'new_account', ['username' => 'newuser', 'email' => 'new@example.com']);
         self::assertTrue($result->isSuccess());
 
-        $saved = $accountRepository->findByProviderAndClientId('github', 'new_account');
+        $saved = UserSocialAccount::findByProviderAndClientId('github', 'new_account');
         self::assertNotNull($saved);
         self::assertSame('newuser', $saved->getUsername());
         self::assertSame('new@example.com', $saved->getEmail());
@@ -227,15 +201,11 @@ final class UserSocialAuthenticateServiceTest extends TestCase
     public function testRunEmptyClientIdWithoutSessionDataReturnsFailure(): void
     {
         $config = new ModuleConfig(enableSocialNetworkRegistration: true);
-        $accountRepository = new UserSocialAccountRepository();
-        $userRepository = new UserRepository();
         $currentUser = $this->createMock(CurrentUser::class);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 
         $service = new UserSocialAuthenticateService(
             $config,
-            $accountRepository,
-            $userRepository,
             $currentUser,
             $this->session,
             $eventDispatcher,
@@ -249,8 +219,6 @@ final class UserSocialAuthenticateServiceTest extends TestCase
     public function testRunEmptyClientIdWithSessionDataUsesSession(): void
     {
         $config = new ModuleConfig(enableSocialNetworkRegistration: true);
-        $accountRepository = new UserSocialAccountRepository();
-        $userRepository = new UserRepository();
         $currentUser = $this->createMock(CurrentUser::class);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 
@@ -258,8 +226,6 @@ final class UserSocialAuthenticateServiceTest extends TestCase
 
         $service = new UserSocialAuthenticateService(
             $config,
-            $accountRepository,
-            $userRepository,
             $currentUser,
             $this->session,
             $eventDispatcher,
@@ -272,8 +238,6 @@ final class UserSocialAuthenticateServiceTest extends TestCase
     public function testRunNewAccountWithExistingEmailConnectsUser(): void
     {
         $config = new ModuleConfig(enableSocialNetworkRegistration: true);
-        $accountRepository = new UserSocialAccountRepository();
-        $userRepository = new UserRepository();
 
         $existing = new User();
         $existing->setUsername('existing');
@@ -291,8 +255,6 @@ final class UserSocialAuthenticateServiceTest extends TestCase
 
         $service = new UserSocialAuthenticateService(
             $config,
-            $accountRepository,
-            $userRepository,
             $currentUser,
             $this->session,
             $eventDispatcher,
@@ -301,7 +263,7 @@ final class UserSocialAuthenticateServiceTest extends TestCase
         $result = $service->run('github', 'existing_email_client', ['email' => 'existing@example.com', 'username' => 'ext']);
         self::assertTrue($result->isSuccess());
 
-        $saved = $accountRepository->findByProviderAndClientId('github', 'existing_email_client');
+        $saved = UserSocialAccount::findByProviderAndClientId('github', 'existing_email_client');
         self::assertNotNull($saved);
         self::assertSame((int) $existing->getId(), $saved->getUserId());
         self::assertNull($saved->getCode());
@@ -310,15 +272,11 @@ final class UserSocialAuthenticateServiceTest extends TestCase
     public function testRunNewAccountWithNameAttributeAsFallback(): void
     {
         $config = new ModuleConfig(enableSocialNetworkRegistration: true);
-        $accountRepository = new UserSocialAccountRepository();
-        $userRepository = new UserRepository();
         $currentUser = $this->createMock(CurrentUser::class);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 
         $service = new UserSocialAuthenticateService(
             $config,
-            $accountRepository,
-            $userRepository,
             $currentUser,
             $this->session,
             $eventDispatcher,
@@ -327,7 +285,7 @@ final class UserSocialAuthenticateServiceTest extends TestCase
         $result = $service->run('github', 'name_fallback_client', ['name' => 'fallback_user']);
         self::assertTrue($result->isSuccess());
 
-        $saved = $accountRepository->findByProviderAndClientId('github', 'name_fallback_client');
+        $saved = UserSocialAccount::findByProviderAndClientId('github', 'name_fallback_client');
         self::assertNotNull($saved);
         self::assertSame('fallback_user', $saved->getUsername());
     }
@@ -335,15 +293,11 @@ final class UserSocialAuthenticateServiceTest extends TestCase
     public function testRunNewAccountWithNoEmailNoUsername(): void
     {
         $config = new ModuleConfig(enableSocialNetworkRegistration: true);
-        $accountRepository = new UserSocialAccountRepository();
-        $userRepository = new UserRepository();
         $currentUser = $this->createMock(CurrentUser::class);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 
         $service = new UserSocialAuthenticateService(
             $config,
-            $accountRepository,
-            $userRepository,
             $currentUser,
             $this->session,
             $eventDispatcher,
@@ -352,7 +306,7 @@ final class UserSocialAuthenticateServiceTest extends TestCase
         $result = $service->run('github', 'bare_client', ['id' => 'bare_user_123']);
         self::assertTrue($result->isSuccess());
 
-        $saved = $accountRepository->findByProviderAndClientId('github', 'bare_client');
+        $saved = UserSocialAccount::findByProviderAndClientId('github', 'bare_client');
         self::assertNotNull($saved);
         self::assertNull($saved->getUsername());
         self::assertNull($saved->getEmail());
@@ -362,15 +316,11 @@ final class UserSocialAuthenticateServiceTest extends TestCase
     public function testRunSocialRegistrationDisabledReturnsFailure(): void
     {
         $config = new ModuleConfig(enableSocialNetworkRegistration: false);
-        $accountRepository = new UserSocialAccountRepository();
-        $userRepository = new UserRepository();
         $currentUser = $this->createMock(CurrentUser::class);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 
         $service = new UserSocialAuthenticateService(
             $config,
-            $accountRepository,
-            $userRepository,
             $currentUser,
             $this->session,
             $eventDispatcher,
@@ -384,8 +334,6 @@ final class UserSocialAuthenticateServiceTest extends TestCase
     public function testRunWithBlockedUserReturnsFailure(): void
     {
         $config = new ModuleConfig(enableSocialNetworkRegistration: true);
-        $accountRepository = new UserSocialAccountRepository();
-        $userRepository = new UserRepository();
         $currentUser = $this->createMock(CurrentUser::class);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 
@@ -409,8 +357,6 @@ final class UserSocialAuthenticateServiceTest extends TestCase
 
         $service = new UserSocialAuthenticateService(
             $config,
-            $accountRepository,
-            $userRepository,
             $currentUser,
             $this->session,
             $eventDispatcher,
@@ -424,8 +370,6 @@ final class UserSocialAuthenticateServiceTest extends TestCase
     public function testRunWithLoggedInUserNoRemoteAddrDefaultsTo127(): void
     {
         $config = new ModuleConfig(enableSocialNetworkRegistration: true);
-        $accountRepository = new UserSocialAccountRepository();
-        $userRepository = new UserRepository();
         $currentUser = $this->createMock(CurrentUser::class);
         $currentUser->method('login');
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
@@ -450,8 +394,6 @@ final class UserSocialAuthenticateServiceTest extends TestCase
 
         $service = new UserSocialAuthenticateService(
             $config,
-            $accountRepository,
-            $userRepository,
             $currentUser,
             $this->session,
             $eventDispatcher,
@@ -459,15 +401,13 @@ final class UserSocialAuthenticateServiceTest extends TestCase
 
         $service->run('github', 'noremote_client', []);
 
-        $updated = $userRepository->findByEmail('noremote@example.com');
+        $updated = User::findByEmail('noremote@example.com');
         self::assertSame('127.0.0.1', $updated->getLastLoginIp());
     }
 
     public function testRunWithLoggedInUserUpdatesLastLoginIp(): void
     {
         $config = new ModuleConfig(enableSocialNetworkRegistration: true);
-        $accountRepository = new UserSocialAccountRepository();
-        $userRepository = new UserRepository();
         $currentUser = $this->createMock(CurrentUser::class);
         $currentUser->method('login');
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
@@ -492,8 +432,6 @@ final class UserSocialAuthenticateServiceTest extends TestCase
 
         $service = new UserSocialAuthenticateService(
             $config,
-            $accountRepository,
-            $userRepository,
             $currentUser,
             $this->session,
             $eventDispatcher,
@@ -501,15 +439,13 @@ final class UserSocialAuthenticateServiceTest extends TestCase
 
         $service->run('github', 'ip_login_client', [], ['REMOTE_ADDR' => '192.168.1.50']);
 
-        $updated = $userRepository->findByEmail('iplogin@example.com');
+        $updated = User::findByEmail('iplogin@example.com');
         self::assertSame('192.168.1.50', $updated->getLastLoginIp());
     }
 
     public function testRunWithValidConnectedUserAndDisabledIpLogging(): void
     {
         $config = new ModuleConfig(enableSocialNetworkRegistration: true, disableIpLogging: true);
-        $accountRepository = new UserSocialAccountRepository();
-        $userRepository = new UserRepository();
         $currentUser = $this->createMock(CurrentUser::class);
         $currentUser->expects($this->once())->method('login');
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
@@ -535,8 +471,6 @@ final class UserSocialAuthenticateServiceTest extends TestCase
 
         $service = new UserSocialAuthenticateService(
             $config,
-            $accountRepository,
-            $userRepository,
             $currentUser,
             $this->session,
             $eventDispatcher,
@@ -545,15 +479,13 @@ final class UserSocialAuthenticateServiceTest extends TestCase
         $result = $service->run('github', 'active_client2', ['email' => 'test@example.com']);
         self::assertTrue($result->isSuccess());
 
-        $updatedUser = $userRepository->findByEmail('active2@example.com');
+        $updatedUser = User::findByEmail('active2@example.com');
         self::assertSame('127.0.0.1', $updatedUser->getLastLoginIp());
     }
 
     public function testRunWithValidConnectedUserLogsIn(): void
     {
         $config = new ModuleConfig(enableSocialNetworkRegistration: true);
-        $accountRepository = new UserSocialAccountRepository();
-        $userRepository = new UserRepository();
         $currentUser = $this->createMock(CurrentUser::class);
         $currentUser->expects($this->once())->method('login');
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
@@ -578,8 +510,6 @@ final class UserSocialAuthenticateServiceTest extends TestCase
 
         $service = new UserSocialAuthenticateService(
             $config,
-            $accountRepository,
-            $userRepository,
             $currentUser,
             $this->session,
             $eventDispatcher,

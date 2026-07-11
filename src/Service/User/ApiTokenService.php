@@ -7,16 +7,10 @@ namespace YiiRocks\Voyti\Service\User;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Helper\ApiTokenHasher;
-use YiiRocks\Voyti\Repository\UserTokenRepository;
 use Yiisoft\Security\Random;
 
 final readonly class ApiTokenService
 {
-    public function __construct(
-        private UserTokenRepository $userTokenRepository,
-    ) {
-    }
-
     public function generate(User $user): string
     {
         $rawToken = Random::string(64);
@@ -34,7 +28,7 @@ final readonly class ApiTokenService
     public function revokeAll(User $user): int
     {
         $tokens = array_filter(
-            $this->userTokenRepository->findByUserId((int) $user->getId()),
+            UserToken::findByUserId((int) $user->getId()),
             static fn (UserToken $token): bool => $token->getType() === UserToken::TYPE_API_ACCESS,
         );
 

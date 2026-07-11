@@ -20,6 +20,47 @@ final class UserToken extends ActiveRecord
     private int $type = 0;
     private int $user_id = 0;
 
+    public static function deleteAllByUserId(int $userId): void
+    {
+        (new self())->deleteAll(['user_id' => $userId]);
+    }
+
+    public static function findByCodeAndType(string $code, int $type): ?UserToken
+    {
+        /** @var ?UserToken $token */
+        $token = self::query()->where(['code' => $code, 'type' => $type])->one();
+        return $token;
+    }
+
+    /**
+     * @psalm-return list<UserToken>
+     */
+    public static function findByUserId(int $userId): array
+    {
+        /** @var list<UserToken> $tokens */
+        $tokens = self::query()->where(['user_id' => $userId])->all();
+        return $tokens;
+    }
+
+    public static function findByUserIdAndCode(int $userId, string $code): ?UserToken
+    {
+        /** @var ?UserToken $token */
+        $token = self::query()->where(['user_id' => $userId, 'code' => $code])->one();
+        return $token;
+    }
+
+    public static function findByUserIdAndCodeAndType(int $userId, string $code, int $type): ?UserToken
+    {
+        /** @var ?UserToken $token */
+        $token = self::query()->where(['user_id' => $userId, 'code' => $code, 'type' => $type])->one();
+        return $token;
+    }
+
+    public static function findByUserIdTypeAndCode(int $userId, int $type, string $code): ?UserToken
+    {
+        return self::findByUserIdAndCodeAndType($userId, $code, $type);
+    }
+
     public function getCode(): string
     {
         return $this->code;

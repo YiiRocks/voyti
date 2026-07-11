@@ -87,6 +87,136 @@ final class UserTokenTest extends TestCase
         self::assertSame(0, $entity->getCreatedAt());
     }
 
+    public function testDeleteAllByUserIdRemovesOnlyThatUsersTokens(): void
+    {
+        $token1 = new UserToken();
+        $token1->setUserId(1);
+        $token1->setCode('user1token');
+        $token1->setType(UserToken::TYPE_CONFIRM_NEW_EMAIL);
+        $token1->setCreatedAt(time());
+        $token1->save();
+
+        $token2 = new UserToken();
+        $token2->setUserId(2);
+        $token2->setCode('user2token');
+        $token2->setType(UserToken::TYPE_RECOVERY);
+        $token2->setCreatedAt(time());
+        $token2->save();
+
+        UserToken::deleteAllByUserId(1);
+
+        self::assertCount(0, UserToken::findByUserId(1));
+        self::assertCount(1, UserToken::findByUserId(2));
+    }
+
+    public function testFindByCodeAndTypeFiltersByCode(): void
+    {
+        $token1 = new UserToken();
+        $token1->setUserId(1);
+        $token1->setCode('codeB');
+        $token1->setType(UserToken::TYPE_CONFIRM_NEW_EMAIL);
+        $token1->setCreatedAt(time());
+        $token1->save();
+
+        $token2 = new UserToken();
+        $token2->setUserId(1);
+        $token2->setCode('codeA');
+        $token2->setType(UserToken::TYPE_CONFIRM_NEW_EMAIL);
+        $token2->setCreatedAt(time());
+        $token2->save();
+
+        $found = UserToken::findByCodeAndType('codeA', UserToken::TYPE_CONFIRM_NEW_EMAIL);
+        self::assertNotNull($found);
+        self::assertSame('codeA', $found->getCode());
+    }
+
+    public function testFindByUserIdAndCodeAndTypeReturnsMatch(): void
+    {
+        $token = new UserToken();
+        $token->setUserId(1);
+        $token->setCode('codeA');
+        $token->setType(UserToken::TYPE_CONFIRM_NEW_EMAIL);
+        $token->setCreatedAt(time());
+        $token->save();
+
+        $found = UserToken::findByUserIdAndCodeAndType(1, 'codeA', UserToken::TYPE_CONFIRM_NEW_EMAIL);
+        self::assertNotNull($found);
+        self::assertSame('codeA', $found->getCode());
+
+        self::assertNull(UserToken::findByUserIdAndCodeAndType(1, 'codeA', UserToken::TYPE_RECOVERY));
+    }
+
+    public function testFindByUserIdAndCodeReturnsMatch(): void
+    {
+        $token = new UserToken();
+        $token->setUserId(1);
+        $token->setCode('codeA');
+        $token->setType(UserToken::TYPE_CONFIRM_NEW_EMAIL);
+        $token->setCreatedAt(time());
+        $token->save();
+
+        $found = UserToken::findByUserIdAndCode(1, 'codeA');
+        self::assertNotNull($found);
+        self::assertSame('codeA', $found->getCode());
+
+        self::assertNull(UserToken::findByUserIdAndCode(2, 'codeA'));
+    }
+
+    public function testFindByUserIdFiltersByUserId(): void
+    {
+        $token1 = new UserToken();
+        $token1->setUserId(1);
+        $token1->setCode('user1token');
+        $token1->setType(UserToken::TYPE_CONFIRM_NEW_EMAIL);
+        $token1->setCreatedAt(time());
+        $token1->save();
+
+        $token2 = new UserToken();
+        $token2->setUserId(2);
+        $token2->setCode('user2token');
+        $token2->setType(UserToken::TYPE_RECOVERY);
+        $token2->setCreatedAt(time());
+        $token2->save();
+
+        $tokens = UserToken::findByUserId(1);
+        self::assertCount(1, $tokens);
+        self::assertSame('user1token', $tokens[0]->getCode());
+    }
+
+    public function testFindByUserIdRespectsAllResultsWhenMultipleMatch(): void
+    {
+        $token1 = new UserToken();
+        $token1->setUserId(1);
+        $token1->setCode('tokenA');
+        $token1->setType(UserToken::TYPE_CONFIRM_NEW_EMAIL);
+        $token1->setCreatedAt(time());
+        $token1->save();
+
+        $token2 = new UserToken();
+        $token2->setUserId(1);
+        $token2->setCode('tokenB');
+        $token2->setType(UserToken::TYPE_RECOVERY);
+        $token2->setCreatedAt(time());
+        $token2->save();
+
+        $tokens = UserToken::findByUserId(1);
+        self::assertCount(2, $tokens);
+    }
+
+    public function testFindByUserIdTypeAndCodeReturnsMatch(): void
+    {
+        $token = new UserToken();
+        $token->setUserId(1);
+        $token->setCode('codeA');
+        $token->setType(UserToken::TYPE_CONFIRM_NEW_EMAIL);
+        $token->setCreatedAt(time());
+        $token->save();
+
+        $found = UserToken::findByUserIdTypeAndCode(1, UserToken::TYPE_CONFIRM_NEW_EMAIL, 'codeA');
+        self::assertNotNull($found);
+        self::assertSame('codeA', $found->getCode());
+    }
+
     public function testGetIsExpiredDefaultLifespanForConfirmationBoundary(): void
     {
         $entity = new UserToken();

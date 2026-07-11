@@ -18,6 +18,30 @@ final class UserSessionHistory extends ActiveRecord
     private ?string $user_agent = null;
     private int $user_id = 0;
 
+    /**
+     * @return UserSessionHistory[]
+     *
+     * @psalm-return list<UserSessionHistory>
+     */
+    public static function findAllSessionHistory(): array
+    {
+        /** @var list<UserSessionHistory> $sessions */
+        $sessions = self::query()->all();
+        return $sessions;
+    }
+
+    /**
+     * @return UserSessionHistory[]
+     *
+     * @psalm-return list<UserSessionHistory>
+     */
+    public static function findByUserId(int $userId): array
+    {
+        /** @var list<UserSessionHistory> $sessions */
+        $sessions = self::query()->where(['user_id' => $userId])->all();
+        return $sessions;
+    }
+
     public function getCreatedAt(): int
     {
         return $this->created_at;
@@ -55,6 +79,23 @@ final class UserSessionHistory extends ActiveRecord
     public function primaryKey(): array
     {
         return ['user_id', 'session_id'];
+    }
+
+    /**
+     * @return (array|object)[]
+     *
+     * @psalm-return array<array|object>
+     */
+    public static function search(array $filters = []): array
+    {
+        $query = self::query();
+        if (!empty($filters['user_id'])) {
+            $query = $query->where(['user_id' => $filters['user_id']]);
+        }
+        if (!empty($filters['ip'])) {
+            $query = $query->where(['like', 'ip', $filters['ip']]);
+        }
+        return $query->all();
     }
 
     public function setCreatedAt(int $createdAt): void

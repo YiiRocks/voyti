@@ -7,7 +7,6 @@ namespace YiiRocks\Voyti\tests\Service\User;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
-use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\User\ResendConfirmationService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
@@ -29,10 +28,9 @@ final class ResendConfirmationServiceTest extends TestCase
 
     public function testRunAlreadyConfirmedReturnsFalse(): void
     {
-        $userTokenRepository = new UserTokenRepository();
-        $tokenFactory = new UserTokenFactory($userTokenRepository);
+        $tokenFactory = new UserTokenFactory();
         $mailService = $this->createMock(MailService::class);
-        $service = new ResendConfirmationService($userTokenRepository, $tokenFactory, $mailService);
+        $service = new ResendConfirmationService($tokenFactory, $mailService);
 
         $user = new User();
         $user->setUsername('confirmed');
@@ -49,11 +47,10 @@ final class ResendConfirmationServiceTest extends TestCase
 
     public function testRunSuccess(): void
     {
-        $userTokenRepository = new UserTokenRepository();
-        $tokenFactory = new UserTokenFactory($userTokenRepository);
+        $tokenFactory = new UserTokenFactory();
         $mailService = $this->createMock(MailService::class);
         $mailService->method('sendConfirmation')->willReturn(true);
-        $service = new ResendConfirmationService($userTokenRepository, $tokenFactory, $mailService);
+        $service = new ResendConfirmationService($tokenFactory, $mailService);
 
         $user = new User();
         $user->setUsername('unconfirmed');

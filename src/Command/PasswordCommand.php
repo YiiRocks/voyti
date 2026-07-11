@@ -7,7 +7,6 @@ namespace YiiRocks\Voyti\Command;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use Yiisoft\Security\PasswordHasher;
 
@@ -16,7 +15,6 @@ final class PasswordCommand extends Command
     use UserLookupTrait;
 
     public function __construct(
-        private UserRepository $userRepository,
         private PasswordHasher $passwordHasher,
         private PasswordGeneratorInterface $passwordGenerator,
     ) {

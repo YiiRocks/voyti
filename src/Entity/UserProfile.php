@@ -19,6 +19,13 @@ final class UserProfile extends ActiveRecord
     private ?int $user_id = null;
     private ?string $website = null;
 
+    public static function findByUserId(int $userId): ?UserProfile
+    {
+        /** @var ?UserProfile $userProfile */
+        $userProfile = self::query()->where(['user_id' => $userId])->one();
+        return $userProfile;
+    }
+
     public function getBio(): ?string
     {
         return $this->bio;

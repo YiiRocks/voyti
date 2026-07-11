@@ -79,6 +79,29 @@ final class UserProfileTest extends TestCase
         $this->connection = null;
     }
 
+    public function testFindByUserIdReturnsMatchingProfileAmongMultiple(): void
+    {
+        $profile1 = new UserProfile();
+        $profile1->setUserId(1);
+        $profile1->setName('Alice');
+        $profile1->save();
+
+        $profile2 = new UserProfile();
+        $profile2->setUserId(2);
+        $profile2->setName('Bob');
+        $profile2->save();
+
+        $found = UserProfile::findByUserId(2);
+
+        self::assertNotNull($found);
+        self::assertSame('Bob', $found->getName());
+    }
+
+    public function testFindByUserIdReturnsNullWhenNoneExists(): void
+    {
+        self::assertNull(UserProfile::findByUserId(1));
+    }
+
     public function testGetGravatarIdFallsBackToUserEmail(): void
     {
         $this->connection->createCommand()->insert('user', [

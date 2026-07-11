@@ -7,9 +7,8 @@ namespace YiiRocks\Voyti\tests\Service\User;
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserRepository;
-use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\User\CreateService;
 use YiiRocks\Voyti\Service\User\UserCreationHelper;
@@ -45,13 +44,12 @@ final class CreateServiceTest extends TestCase
         $existing->setUpdatedAt(time());
         $existing->save();
 
-        $userRepository = new UserRepository();
         $mailService = $this->createMailService(new MailCapture());
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $passwordHasher = new PasswordHasher();
         $config = new ModuleConfig();
 
-        $userCreationHelper = new UserCreationHelper($userRepository, $mailService, $eventDispatcher, $passwordHasher, $config);
+        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config);
         $service = new CreateService($userCreationHelper);
         $result = $service->run('existing@example.com', 'testuser', 'password123');
 
@@ -70,13 +68,12 @@ final class CreateServiceTest extends TestCase
         $existing->setUpdatedAt(time());
         $existing->save();
 
-        $userRepository = new UserRepository();
         $mailService = $this->createMailService(new MailCapture());
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $passwordHasher = new PasswordHasher();
         $config = new ModuleConfig();
 
-        $userCreationHelper = new UserCreationHelper($userRepository, $mailService, $eventDispatcher, $passwordHasher, $config);
+        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config);
         $service = new CreateService($userCreationHelper);
         $result = $service->run('new@example.com', 'existinguser', 'password123');
 
@@ -86,7 +83,6 @@ final class CreateServiceTest extends TestCase
 
     public function testRunWithEmailConfirmationDisabled(): void
     {
-        $userRepository = new UserRepository();
         $mailCapture = new MailCapture();
         $mailService = $this->createMailService($mailCapture);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
@@ -94,14 +90,14 @@ final class CreateServiceTest extends TestCase
         $passwordHasher = new PasswordHasher();
         $config = new ModuleConfig(enableEmailConfirmation: false);
 
-        $userCreationHelper = new UserCreationHelper($userRepository, $mailService, $eventDispatcher, $passwordHasher, $config);
+        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config);
         $service = new CreateService($userCreationHelper);
         $result = $service->run('new@example.com', 'testuser', 'password123');
 
         self::assertTrue($result->isSuccess());
         self::assertSame('User has been created', $result->getMessage());
 
-        $foundUser = $userRepository->findByEmail('new@example.com');
+        $foundUser = User::findByEmail('new@example.com');
         self::assertNotNull($foundUser);
         self::assertNotNull($foundUser->getConfirmedAt());
         self::assertSame('testuser', $foundUser->getUsername());
@@ -114,7 +110,6 @@ final class CreateServiceTest extends TestCase
 
     public function testRunWithEmailConfirmationEnabled(): void
     {
-        $userRepository = new UserRepository();
         $mailCapture = new MailCapture();
         $mailService = $this->createMailService($mailCapture);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
@@ -122,14 +117,14 @@ final class CreateServiceTest extends TestCase
         $passwordHasher = new PasswordHasher();
         $config = new ModuleConfig(enableEmailConfirmation: true);
 
-        $userCreationHelper = new UserCreationHelper($userRepository, $mailService, $eventDispatcher, $passwordHasher, $config);
+        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config);
         $service = new CreateService($userCreationHelper);
         $result = $service->run('new@example.com', 'testuser', 'password123');
 
         self::assertTrue($result->isSuccess());
         self::assertSame('User has been created', $result->getMessage());
 
-        $foundUser = $userRepository->findByEmail('new@example.com');
+        $foundUser = User::findByEmail('new@example.com');
         self::assertNotNull($foundUser);
         self::assertNull($foundUser->getConfirmedAt());
         self::assertSame('testuser', $foundUser->getUsername());
@@ -138,8 +133,7 @@ final class CreateServiceTest extends TestCase
         self::assertGreaterThan(0, $foundUser->getCreatedAt());
         self::assertGreaterThan(0, $foundUser->getUpdatedAt());
 
-        $userTokenRepository = new UserTokenRepository();
-        $tokens = $userTokenRepository->findByUserId((int) $foundUser->getId());
+        $tokens = UserToken::findByUserId((int) $foundUser->getId());
         self::assertCount(1, $tokens);
         $userToken = $tokens[0];
         self::assertGreaterThan(0, $userToken->getCreatedAt());

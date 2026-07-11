@@ -10,7 +10,6 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Command\PasswordCommand;
 use YiiRocks\Voyti\Entity\User;
-use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\Password\RandomPasswordGenerator;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
@@ -29,6 +28,17 @@ final class PasswordCommandTest extends TestCase
     protected function tearDown(): void
     {
         $this->tearDownDatabase();
+    }
+
+    public function testConfigureSetsCommandMetadata(): void
+    {
+        $command = $this->createCommand();
+
+        self::assertSame('voyti:password', $command->getName());
+        self::assertSame('Reset a user password', $command->getDescription());
+        self::assertTrue($command->getDefinition()->hasOption('email'));
+        self::assertTrue($command->getDefinition()->hasOption('username'));
+        self::assertTrue($command->getDefinition()->hasOption('id'));
     }
 
     public function testExecuteByEmail(): void
@@ -52,13 +62,19 @@ final class PasswordCommandTest extends TestCase
         $output = $this->createMock(OutputInterface::class);
         $output->expects(self::exactly(2))->method('writeln');
 
-        $userRepository = $this->createMock(UserRepository::class);
-        $userRepository->expects(self::once())->method('findByEmail')->with('pw_reset@example.com')->willReturn($user);
+        $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
+        $passwordGenerator->expects(self::once())->method('generate')->with(16)->willReturn('generated-secret');
 
-        $command = $this->createCommand($userRepository);
+        $command = $this->createCommand(passwordGenerator: $passwordGenerator);
         $result = $command->run($input, $output);
 
         self::assertSame(Command::SUCCESS, $result);
+
+        $reloaded = User::findById((int) $user->getId());
+        self::assertNotNull($reloaded);
+        self::assertTrue(password_verify('generated-secret', $reloaded->getPasswordHash()));
+        self::assertNotNull($reloaded->getPasswordChangedAt());
+        self::assertGreaterThan(1000, $reloaded->getUpdatedAt());
     }
 
     public function testExecuteById(): void
@@ -74,7 +90,7 @@ final class PasswordCommandTest extends TestCase
 
         $input = $this->createMock(InputInterface::class);
         $input->expects(self::exactly(3))->method('getOption')->willReturnMap([
-            ['id', '3'],
+            ['id', (string) $user->getId()],
             ['email', null],
             ['username', null],
         ]);
@@ -82,10 +98,7 @@ final class PasswordCommandTest extends TestCase
         $output = $this->createMock(OutputInterface::class);
         $output->expects(self::exactly(2))->method('writeln');
 
-        $userRepository = $this->createMock(UserRepository::class);
-        $userRepository->expects(self::once())->method('findById')->with(3)->willReturn($user);
-
-        $command = $this->createCommand($userRepository);
+        $command = $this->createCommand();
         $result = $command->run($input, $output);
 
         self::assertSame(Command::SUCCESS, $result);
@@ -112,10 +125,7 @@ final class PasswordCommandTest extends TestCase
         $output = $this->createMock(OutputInterface::class);
         $output->expects(self::exactly(2))->method('writeln');
 
-        $userRepository = $this->createMock(UserRepository::class);
-        $userRepository->expects(self::once())->method('findByUsername')->with('pw_user')->willReturn($user);
-
-        $command = $this->createCommand($userRepository);
+        $command = $this->createCommand();
         $result = $command->run($input, $output);
 
         self::assertSame(Command::SUCCESS, $result);
@@ -133,10 +143,7 @@ final class PasswordCommandTest extends TestCase
         $output = $this->createMock(OutputInterface::class);
         $output->expects(self::once())->method('writeln');
 
-        $userRepository = $this->createMock(UserRepository::class);
-        $userRepository->expects(self::once())->method('findByEmail')->with('ghost@example.com')->willReturn(null);
-
-        $command = $this->createCommand($userRepository);
+        $command = $this->createCommand();
         $result = $command->run($input, $output);
 
         self::assertSame(Command::FAILURE, $result);
@@ -159,13 +166,12 @@ final class PasswordCommandTest extends TestCase
 
         self::assertSame(Command::FAILURE, $result);
     }
+
     private function createCommand(
-        ?UserRepository $userRepository = null,
         ?PasswordHasher $passwordHasher = null,
         ?PasswordGeneratorInterface $passwordGenerator = null,
     ): PasswordCommand {
         return new PasswordCommand(
-            $userRepository ?? $this->createMock(UserRepository::class),
             $passwordHasher ?? new PasswordHasher(),
             $passwordGenerator ?? new RandomPasswordGenerator(),
         );

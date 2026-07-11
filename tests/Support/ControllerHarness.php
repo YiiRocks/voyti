@@ -17,11 +17,6 @@ use YiiRocks\Voyti\Controller\SecurityController;
 use YiiRocks\Voyti\Controller\SettingsController;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\UserProfileRepository;
-use YiiRocks\Voyti\Repository\UserRepository;
-use YiiRocks\Voyti\Repository\UserSessionHistoryRepository;
-use YiiRocks\Voyti\Repository\UserSocialAccountRepository;
-use YiiRocks\Voyti\Repository\UserTokenRepository;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\Auth\SocialAuthProviderService;
 use YiiRocks\Voyti\Service\Auth\UserSocialAccountConnectService;
@@ -87,8 +82,6 @@ final class ControllerHarness
     }
 
     public function createAdminController(
-        UserRepository $userRepository,
-        UserProfileRepository $userProfileRepository,
         TranslatorInterface $translator,
         WebViewRenderer $viewRenderer,
         ValidatorInterface $validator,
@@ -105,7 +98,6 @@ final class ControllerHarness
         ?ExpireService $expireService = null,
         ?SwitchIdentityService $switchIdentityService = null,
         ?UpdateAssignmentsService $updateAssignmentsService = null,
-        ?UserSessionHistoryRepository $userSessionHistoryRepository = null,
         ?AuthHelper $authHelper = null,
     ): AdminController {
         $passwordHasher ??= new PasswordHasher();
@@ -115,7 +107,6 @@ final class ControllerHarness
         $authHelper ??= $this->createAuthHelper($currentUser);
         $confirmationService ??= new ConfirmationService(
             $this->eventDispatcher,
-            $this->createUserTokenRepository(),
         );
         $blockService ??= new BlockService(
             $this->eventDispatcher,
@@ -124,19 +115,15 @@ final class ControllerHarness
         $recoveryService ??= new RecoveryService();
         $switchIdentityService ??= new SwitchIdentityService(
             $this->config,
-            $userRepository,
             $currentUser,
             $this->session,
             $this->eventDispatcher,
         );
         $updateAssignmentsService ??= $this->createUpdateAssignmentsService();
-        $userSessionHistoryRepository ??= new UserSessionHistoryRepository();
 
         return new AdminController(
             translator: $translator,
             viewRenderer: $viewRenderer,
-            userRepository: $userRepository,
-            userProfileRepository: $userProfileRepository,
             userCreateService: $createService,
             userBlockService: $blockService,
             userConfirmationService: $confirmationService,
@@ -144,7 +131,6 @@ final class ControllerHarness
             passwordExpireService: $expireService,
             switchIdentityService: $switchIdentityService,
             updateAuthAssignmentsService: $updateAssignmentsService,
-            userSessionHistoryRepository: $userSessionHistoryRepository,
             authHelper: $authHelper,
             passwordHasher: $passwordHasher,
             passwordGenerator: $passwordGenerator,
@@ -162,7 +148,6 @@ final class ControllerHarness
     }
 
     public function createPermissionController(
-        UserRepository $userRepository,
         TranslatorInterface $translator,
         WebViewRenderer $viewRenderer,
         ValidatorInterface $validator,
@@ -175,7 +160,6 @@ final class ControllerHarness
             url: $this->url,
             validator: $validator,
             responseFactory: $responseFactory,
-            userRepository: $userRepository,
             itemsStorage: $this->itemsStorage,
             managerInterface: $this->authManager,
             assignmentsStorage: $this->assignmentsStorage,
@@ -185,8 +169,6 @@ final class ControllerHarness
     }
 
     public function createProfileController(
-        UserRepository $userRepository,
-        UserProfileRepository $userProfileRepository,
         TranslatorInterface $translator,
         WebViewRenderer $viewRenderer,
         CurrentUser $currentUser,
@@ -198,8 +180,6 @@ final class ControllerHarness
             translator: $translator,
             viewRenderer: $viewRenderer,
             url: $this->url,
-            userProfileRepository: $userProfileRepository,
-            userRepository: $userRepository,
             authHelper: $authHelper,
             config: $this->config,
             currentUser: $currentUser,
@@ -207,8 +187,6 @@ final class ControllerHarness
     }
 
     public function createRecoveryController(
-        UserRepository $userRepository,
-        UserTokenRepository $userTokenRepository,
         TranslatorInterface $translator,
         WebViewRenderer $viewRenderer,
         ValidatorInterface $validator,
@@ -223,7 +201,6 @@ final class ControllerHarness
             new PasswordHasher(),
             $this->config,
             $this->eventDispatcher,
-            $userTokenRepository,
         );
 
         return new RecoveryController(
@@ -232,8 +209,6 @@ final class ControllerHarness
             url: $this->url,
             passwordRecoveryService: $recoveryService,
             resetPasswordService: $resetService,
-            userRepository: $userRepository,
-            userTokenRepository: $userTokenRepository,
             validator: $validator,
             eventDispatcher: $this->eventDispatcher,
             config: $this->config,
@@ -244,8 +219,6 @@ final class ControllerHarness
     }
 
     public function createRegistrationController(
-        UserRepository $userRepository,
-        UserTokenRepository $userTokenRepository,
         TranslatorInterface $translator,
         WebViewRenderer $viewRenderer,
         ValidatorInterface $validator,
@@ -261,9 +234,8 @@ final class ControllerHarness
         $registerService ??= new RegisterService();
         $confirmationService ??= new ConfirmationService(
             $this->eventDispatcher,
-            $userTokenRepository,
         );
-        $accountConfirmationService ??= new AccountConfirmationService($userTokenRepository);
+        $accountConfirmationService ??= new AccountConfirmationService();
 
         $mailService = new MailService(
             $this->mailer,
@@ -273,7 +245,6 @@ final class ControllerHarness
             $this->config->appName,
         );
         $resendConfirmationService ??= new ResendConfirmationService(
-            $userTokenRepository,
             new \YiiRocks\Voyti\Factory\UserTokenFactory(),
             $mailService,
         );
@@ -283,8 +254,6 @@ final class ControllerHarness
             translator: $translator,
             viewRenderer: $viewRenderer,
             userRegisterService: $registerService,
-            userRepository: $userRepository,
-            userTokenRepository: $userTokenRepository,
             userConfirmationService: $confirmationService,
             accountConfirmationService: $accountConfirmationService,
             resendConfirmationService: $resendConfirmationService,
@@ -301,7 +270,6 @@ final class ControllerHarness
     }
 
     public function createRoleController(
-        UserRepository $userRepository,
         TranslatorInterface $translator,
         WebViewRenderer $viewRenderer,
         ValidatorInterface $validator,
@@ -314,7 +282,6 @@ final class ControllerHarness
             url: $this->url,
             validator: $validator,
             responseFactory: $responseFactory,
-            userRepository: $userRepository,
             itemsStorage: $this->itemsStorage,
             managerInterface: $this->authManager,
             assignmentsStorage: $this->assignmentsStorage,
@@ -354,7 +321,6 @@ final class ControllerHarness
     }
 
     public function createSecurityController(
-        UserRepository $userRepository,
         TranslatorInterface $translator,
         WebViewRenderer $viewRenderer,
         ValidatorInterface $validator,
@@ -378,8 +344,6 @@ final class ControllerHarness
         $pendingSocialAccountService ??= new PendingSocialAccountService();
         $socialNetworkAuthenticateService ??= new UserSocialAuthenticateService(
             $this->config,
-            $this->createUserSocialAccountRepository(),
-            $userRepository,
             $currentUser,
             $this->session,
             $this->eventDispatcher,
@@ -398,7 +362,6 @@ final class ControllerHarness
         return new SecurityController(
             translator: $translator,
             viewRenderer: $viewRenderer,
-            userRepository: $userRepository,
             currentUser: $currentUser,
             passwordHasher: $passwordHasher,
             validator: $validator,
@@ -420,10 +383,6 @@ final class ControllerHarness
     }
 
     public function createSettingsController(
-        UserRepository $userRepository,
-        UserProfileRepository $userProfileRepository,
-        UserSocialAccountRepository $userSocialAccountRepository,
-        UserTokenRepository $userTokenRepository,
         TranslatorInterface $translator,
         WebViewRenderer $viewRenderer,
         ValidatorInterface $validator,
@@ -437,14 +396,11 @@ final class ControllerHarness
         ?EmailCodeGeneratorService $twoFactorEmailCodeService = null,
         ?EmailChangeService $emailChangeService = null,
         ?TerminateUserSessionsService $terminateUserSessionsService = null,
-        ?UserSessionHistoryRepository $userSessionHistoryRepository = null,
         ?SwitchIdentityService $switchIdentityService = null,
     ): SettingsController {
         $passwordHasher ??= new PasswordHasher();
-        $userSessionHistoryRepository ??= new UserSessionHistoryRepository();
         $switchIdentityService ??= new SwitchIdentityService(
             $this->config,
-            $userRepository,
             $currentUser,
             $this->session,
             $this->eventDispatcher,
@@ -470,18 +426,12 @@ final class ControllerHarness
         );
         $emailChangeService ??= new EmailChangeService(
             $this->config,
-            $userTokenRepository,
-            $userRepository,
         );
         $terminateUserSessionsService ??= $this->createTerminateUserSessionsService();
 
         return new SettingsController(
             translator: $translator,
             viewRenderer: $viewRenderer,
-            userRepository: $userRepository,
-            userProfileRepository: $userProfileRepository,
-            userSessionHistoryRepository: $userSessionHistoryRepository,
-            userSocialAccountRepository: $userSocialAccountRepository,
             passwordHasher: $passwordHasher,
             validator: $validator,
             eventDispatcher: $this->eventDispatcher,
@@ -492,7 +442,6 @@ final class ControllerHarness
             twoFactorQrCodeService: $twoFactorQrCodeService,
             twoFactorEmailCodeService: $twoFactorEmailCodeService,
             emailChangeService: $emailChangeService,
-            userTokenRepository: $userTokenRepository,
             hydrator: $hydrator,
             currentUser: $currentUser,
             responseFactory: $responseFactory,
@@ -577,13 +526,4 @@ final class ControllerHarness
         );
     }
 
-    private function createUserSocialAccountRepository(): UserSocialAccountRepository
-    {
-        return new UserSocialAccountRepository();
-    }
-
-    private function createUserTokenRepository(): UserTokenRepository
-    {
-        return new UserTokenRepository();
-    }
 }

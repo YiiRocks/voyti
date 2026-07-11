@@ -10,7 +10,6 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Command\DeleteUserCommand;
 use YiiRocks\Voyti\Entity\User;
-use YiiRocks\Voyti\Repository\UserRepository;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
@@ -26,6 +25,17 @@ final class DeleteUserCommandTest extends TestCase
     protected function tearDown(): void
     {
         $this->tearDownDatabase();
+    }
+
+    public function testConfigureSetsCommandMetadata(): void
+    {
+        $command = $this->createCommand();
+
+        self::assertSame('voyti:delete', $command->getName());
+        self::assertSame('Delete a user', $command->getDescription());
+        self::assertTrue($command->getDefinition()->hasOption('email'));
+        self::assertTrue($command->getDefinition()->hasOption('username'));
+        self::assertTrue($command->getDefinition()->hasOption('id'));
     }
 
     public function testExecuteByEmail(): void
@@ -49,14 +59,11 @@ final class DeleteUserCommandTest extends TestCase
         $output = $this->createMock(OutputInterface::class);
         $output->expects(self::once())->method('writeln');
 
-        $userRepository = $this->createMock(UserRepository::class);
-        $userRepository->expects(self::once())->method('findByEmail')->with('del@example.com')->willReturn($user);
-        $userRepository->expects(self::once())->method('delete')->with($user);
-
-        $command = $this->createCommand($userRepository);
+        $command = $this->createCommand();
         $result = $command->run($input, $output);
 
         self::assertSame(Command::SUCCESS, $result);
+        self::assertNull(User::findByEmail('del@example.com'));
     }
 
     public function testExecuteById(): void
@@ -72,7 +79,7 @@ final class DeleteUserCommandTest extends TestCase
 
         $input = $this->createMock(InputInterface::class);
         $input->expects(self::exactly(3))->method('getOption')->willReturnMap([
-            ['id', '10'],
+            ['id', (string) $user->getId()],
             ['email', null],
             ['username', null],
         ]);
@@ -80,14 +87,11 @@ final class DeleteUserCommandTest extends TestCase
         $output = $this->createMock(OutputInterface::class);
         $output->expects(self::once())->method('writeln');
 
-        $userRepository = $this->createMock(UserRepository::class);
-        $userRepository->expects(self::once())->method('findById')->with(10)->willReturn($user);
-        $userRepository->expects(self::once())->method('delete')->with($user);
-
-        $command = $this->createCommand($userRepository);
+        $command = $this->createCommand();
         $result = $command->run($input, $output);
 
         self::assertSame(Command::SUCCESS, $result);
+        self::assertNull(User::findByUsername('testuser'));
     }
 
     public function testExecuteByUsername(): void
@@ -111,14 +115,11 @@ final class DeleteUserCommandTest extends TestCase
         $output = $this->createMock(OutputInterface::class);
         $output->expects(self::once())->method('writeln');
 
-        $userRepository = $this->createMock(UserRepository::class);
-        $userRepository->expects(self::once())->method('findByUsername')->with('delete_me')->willReturn($user);
-        $userRepository->expects(self::once())->method('delete')->with($user);
-
-        $command = $this->createCommand($userRepository);
+        $command = $this->createCommand();
         $result = $command->run($input, $output);
 
         self::assertSame(Command::SUCCESS, $result);
+        self::assertNull(User::findByUsername('delete_me'));
     }
 
     public function testExecuteWithNonExistentUser(): void
@@ -133,10 +134,7 @@ final class DeleteUserCommandTest extends TestCase
         $output = $this->createMock(OutputInterface::class);
         $output->expects(self::once())->method('writeln');
 
-        $userRepository = $this->createMock(UserRepository::class);
-        $userRepository->expects(self::once())->method('findByEmail')->with('ghost@example.com')->willReturn(null);
-
-        $command = $this->createCommand($userRepository);
+        $command = $this->createCommand();
         $result = $command->run($input, $output);
 
         self::assertSame(Command::FAILURE, $result);
@@ -159,10 +157,9 @@ final class DeleteUserCommandTest extends TestCase
 
         self::assertSame(Command::FAILURE, $result);
     }
-    private function createCommand(?UserRepository $userRepository = null): DeleteUserCommand
+
+    private function createCommand(): DeleteUserCommand
     {
-        return new DeleteUserCommand(
-            $userRepository ?? $this->createMock(UserRepository::class),
-        );
+        return new DeleteUserCommand();
     }
 }

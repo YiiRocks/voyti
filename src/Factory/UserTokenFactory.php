@@ -5,16 +5,10 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Factory;
 
 use YiiRocks\Voyti\Entity\UserToken;
-use YiiRocks\Voyti\Repository\UserTokenRepository;
 use Yiisoft\Security\Random;
 
 final readonly class UserTokenFactory
 {
-    public function __construct(
-        private UserTokenRepository $userTokenRepository,
-    ) {
-    }
-
     public function makeConfirmationToken(int $userId): UserToken
     {
         return $this->make($userId, UserToken::TYPE_CONFIRMATION);
