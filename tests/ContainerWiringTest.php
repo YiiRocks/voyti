@@ -1,0 +1,78 @@
+<?php
+
+declare(strict_types=1);
+
+namespace YiiRocks\Voyti\tests;
+
+use Nyholm\Psr7\Factory\Psr17Factory;
+use PHPUnit\Framework\TestCase;
+use Psr\EventDispatcher\EventDispatcherInterface;
+use Psr\Http\Client\ClientInterface as PsrClientInterface;
+use Psr\Http\Message\RequestFactoryInterface;
+use Psr\Http\Message\StreamFactoryInterface;
+use Throwable;
+use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
+use YiiRocks\Voyti\tests\Support\FakeSession;
+use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
+use YiiRocks\Voyti\tests\Support\MailCapture;
+use YiiRocks\Voyti\tests\Support\SimpleAssignmentsStorage;
+use YiiRocks\Voyti\tests\Support\SimpleItemsStorage;
+use Yiisoft\Di\Container;
+use Yiisoft\Di\ContainerConfig;
+use Yiisoft\Mailer\MailerInterface;
+use Yiisoft\Rbac\AssignmentsStorageInterface;
+use Yiisoft\Rbac\ItemsStorageInterface;
+use Yiisoft\Rbac\Manager;
+use Yiisoft\Rbac\ManagerInterface;
+use Yiisoft\Router\UrlGeneratorInterface;
+use Yiisoft\Session\SessionInterface;
+use Yiisoft\Translator\TranslatorInterface;
+
+/**
+ * Unlike the rest of the suite (see CLAUDE.md: "Tests do not boot the DI
+ * container"), this test builds a real Yiisoft\Di\Container from config/di.php
+ * to catch wiring bugs (bad bindings, unresolvable constructor args) that
+ * ControllerHarness's manual object graph can't surface.
+ */
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+final class ContainerWiringTest extends TestCase
+{
+    public function testEveryDiDefinitionResolves(): void
+    {
+        $root = dirname(__DIR__);
+        $params = require $root . '/config/params.php';
+        $diPath = $root . '/config/di.php';
+        $definitions = (static function (array $params) use ($diPath): array {
+            return require $diPath;
+        })($params);
+
+        $psr17Factory = new Psr17Factory();
+
+        $definitions = array_merge($definitions, [
+            AssignmentsStorageInterface::class => new SimpleAssignmentsStorage(),
+            EventDispatcherInterface::class => new EventCaptureDispatcher(),
+            ItemsStorageInterface::class => new SimpleItemsStorage(),
+            MailerInterface::class => new MailCapture(),
+            ManagerInterface::class => Manager::class,
+            PsrClientInterface::class => $this->createMock(PsrClientInterface::class),
+            RequestFactoryInterface::class => $psr17Factory,
+            SessionInterface::class => new FakeSession(),
+            StreamFactoryInterface::class => $psr17Factory,
+            TranslatorInterface::class => $this->createMock(TranslatorInterface::class),
+            UrlGeneratorInterface::class => new FakeUrlGenerator(),
+        ]);
+
+        $container = new Container(ContainerConfig::create()->withDefinitions($definitions));
+
+        $failures = [];
+        foreach (array_keys($definitions) as $id) {
+            try {
+                $container->get($id);
+            } catch (Throwable $e) {
+                $failures[] = sprintf('%s: %s', $id, $e->getMessage());
+            }
+        }
+
+        self::assertSame([], $failures, implode("\n", $failures));
+    }
+}

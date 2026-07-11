@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Event\Security;
 
-use YiiRocks\Voyti\Entity\UserToken;
+use YiiRocks\Voyti\Model\UserToken;
 use Yiisoft\FormModel\FormModel;
 
 final class ResetPasswordEvent

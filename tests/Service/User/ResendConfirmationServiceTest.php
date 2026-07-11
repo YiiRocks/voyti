@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Service\User;
 
 use PHPUnit\Framework\TestCase;
-use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
+use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\User\ResendConfirmationService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Strategy;
 
-use YiiRocks\Voyti\Form\Settings\SettingsForm;
+use YiiRocks\Voyti\Model\Form\Settings\SettingsForm;
 
 final readonly class NoneEmailChangeStrategy implements EmailChangeStrategyInterface
 {

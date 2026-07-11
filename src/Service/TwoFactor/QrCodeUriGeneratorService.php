@@ -6,7 +6,7 @@ namespace YiiRocks\Voyti\Service\TwoFactor;
 
 use chillerlan\Authenticator\Authenticator;
 use chillerlan\QRCode\QRCode;
-use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 
 final readonly class QrCodeUriGeneratorService

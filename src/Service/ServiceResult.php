@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service;
 
+use YiiRocks\Voyti\Enum\ServiceResultStatus;
+
 final readonly class ServiceResult
 {
     public function __construct(

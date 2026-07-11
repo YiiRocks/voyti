@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Service\User;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
-use YiiRocks\Voyti\Entity\User;
-use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Event\User\UserEvent;
+use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\Model\UserToken;
 
 final readonly class ConfirmationService
 {

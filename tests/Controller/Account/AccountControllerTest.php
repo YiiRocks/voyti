@@ -1,0 +1,353 @@
+<?php
+
+declare(strict_types=1);
+
+namespace YiiRocks\Voyti\tests\Controller\Account;
+
+use Nyholm\Psr7\ServerRequest;
+use PHPUnit\Framework\MockObject\MockObject;
+use Psr\Http\Message\ResponseFactoryInterface;
+use Psr\Http\Message\ResponseInterface;
+use YiiRocks\Voyti\Controller\Account\AccountController;
+use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Service\EmailChangeService;
+use YiiRocks\Voyti\Strategy\EmailChangeStrategyFactory;
+use YiiRocks\Voyti\Strategy\NoneEmailChangeStrategy;
+use YiiRocks\Voyti\tests\Support\ControllerHarness;
+use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\TestCase;
+use Yiisoft\Hydrator\HydratorInterface;
+use Yiisoft\Security\PasswordHasher;
+use Yiisoft\Session\Flash\FlashInterface;
+use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\User\CurrentUser;
+use Yiisoft\User\Guest\GuestIdentityInterface;
+use Yiisoft\Validator\Result;
+use Yiisoft\Validator\ValidatorInterface;
+use Yiisoft\Yii\View\Renderer\WebViewRenderer;
+
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+final class AccountControllerTest extends TestCase
+{
+    use DatabaseSetupTrait;
+
+    private ModuleConfig $config;
+    private CurrentUser&MockObject $currentUser;
+    private EmailChangeService&MockObject $emailChangeService;
+    private EmailChangeStrategyFactory&MockObject $emailChangeStrategyFactory;
+    private FlashInterface&MockObject $flash;
+    private ControllerHarness $harness;
+    private HydratorInterface&MockObject $hydrator;
+    private PasswordHasher $passwordHasher;
+    private ResponseFactoryInterface&MockObject $responseFactory;
+    private TranslatorInterface $translator;
+    private ValidatorInterface&MockObject $validator;
+    private WebViewRenderer&MockObject $viewRenderer;
+
+    protected function setUp(): void
+    {
+        $this->setUpDatabase();
+        $this->config = new ModuleConfig();
+        $this->harness = new ControllerHarness($this->config);
+        $this->translator = $this->createTranslator();
+        $this->viewRenderer = $this->createMock(WebViewRenderer::class);
+        $this->validator = $this->createMock(ValidatorInterface::class);
+        $this->currentUser = $this->createMock(CurrentUser::class);
+        $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
+        $this->hydrator = $this->createMock(HydratorInterface::class);
+        $this->flash = $this->createMock(FlashInterface::class);
+        $this->passwordHasher = new PasswordHasher();
+        $this->emailChangeStrategyFactory = $this->createMock(EmailChangeStrategyFactory::class);
+        $this->emailChangeService = $this->createMock(EmailChangeService::class);
+    }
+
+    protected function tearDown(): void
+    {
+        $this->tearDownDatabase();
+    }
+
+    public function testAccountGetShowsForm(): void
+    {
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $user = $this->createUser();
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn((string) $user->getId());
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('account/update', $this->anything())
+            ->willReturn($response);
+
+        $result = $controller->update($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testAccountPostUpdatesAndRedirects(): void
+    {
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['settings' => ['username' => 'testuser', 'email' => 'test@example.com', 'password' => '', 'passwordRepeat' => '']]);
+
+        $this->validator->method('validate')->willReturn(new Result());
+        $user = $this->createUser();
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn((string) $user->getId());
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->willReturnSelf();
+
+        $result = $controller->update($request);
+
+        $this->assertSame($response, $result);
+        $updated = User::findById((int) $user->getId());
+        $this->assertNotNull($updated);
+        $this->assertSame('testuser', $updated->getUsername());
+    }
+
+    public function testAccountPostWithNewEmailInvokesChangeStrategy(): void
+    {
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['settings' => ['username' => 'testuser', 'email' => 'new@example.com', 'password' => '', 'passwordRepeat' => '']]);
+
+        $this->hydrator->method('hydrate')->willReturnCallback(
+            function (object $object, array $data = []): void {
+                if (property_exists($object, 'username') && isset($data['username'])) {
+                    $object->username = $data['username'];
+                }
+                if (property_exists($object, 'email') && isset($data['email'])) {
+                    $object->email = $data['email'];
+                }
+            },
+        );
+        $this->validator->method('validate')->willReturn(new Result());
+        $user = $this->createUser(email: 'old@example.com');
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn((string) $user->getId());
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $strategy = $this->createMock(NoneEmailChangeStrategy::class);
+        $strategy->expects($this->once())->method('run');
+        $this->emailChangeStrategyFactory->expects($this->once())
+            ->method('makeByStrategyType')
+            ->willReturn($strategy);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->method('createResponse')->willReturn($response);
+        $response->method('withHeader')->willReturnSelf();
+
+        $result = $controller->update($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testAccountPostWithPasswordChange(): void
+    {
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['settings' => ['username' => 'testuser', 'email' => 'test@example.com', 'password' => 'newpassword', 'passwordRepeat' => 'newpassword']]);
+
+        $this->hydrator->method('hydrate')->willReturnCallback(
+            function (object $object, array $data = []): void {
+                if (property_exists($object, 'password') && isset($data['password'])) {
+                    $object->password = $data['password'];
+                }
+                if (property_exists($object, 'passwordRepeat') && isset($data['passwordRepeat'])) {
+                    $object->passwordRepeat = $data['passwordRepeat'];
+                }
+                if (property_exists($object, 'username') && isset($data['username'])) {
+                    $object->username = $data['username'];
+                }
+                if (property_exists($object, 'email') && isset($data['email'])) {
+                    $object->email = $data['email'];
+                }
+            },
+        );
+        $this->validator->method('validate')->willReturn(new Result());
+        $user = $this->createUser();
+        $originalHash = $user->getPasswordHash();
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn((string) $user->getId());
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->willReturnSelf();
+
+        $result = $controller->update($request);
+
+        $this->assertSame($response, $result);
+        $updated = User::findById((int) $user->getId());
+        $this->assertNotNull($updated);
+        $this->assertNotSame($originalHash, $updated->getPasswordHash());
+        $this->assertNotNull($updated->getPasswordChangedAt());
+    }
+
+    public function testAccountWhenGuestShowsError(): void
+    {
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturn($response);
+
+        $result = $controller->update($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testAccountWhenUserNotFoundShowsError(): void
+    {
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('999999');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturn($response);
+
+        $result = $controller->update($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testConfirmWhenGuestShowsError(): void
+    {
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->method('render')->willReturn($response);
+
+        $result = $controller->confirm($request, 'good-code');
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testConfirmWithInvalidCodeShowsFailureMessage(): void
+    {
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $user = $this->createUser();
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn((string) $user->getId());
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $this->emailChangeService->expects($this->once())->method('run')->with(
+            'bad-code',
+            $this->callback(static fn (User $u): bool => $u->getId() === $user->getId()),
+        )->willReturn(false);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('shared/message', $this->callback(
+                static fn (array $params): bool => $params['title'] === 'Failed to change email',
+            ))
+            ->willReturn($response);
+
+        $result = $controller->confirm($request, 'bad-code');
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testConfirmWithValidCodeShowsSuccessMessage(): void
+    {
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $user = $this->createUser();
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn((string) $user->getId());
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $this->emailChangeService->expects($this->once())->method('run')->with(
+            'good-code',
+            $this->callback(static fn (User $u): bool => $u->getId() === $user->getId()),
+        )->willReturn(true);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('shared/message', $this->callback(
+                static fn (array $params): bool => $params['title'] === 'Your email has been changed',
+            ))
+            ->willReturn($response);
+
+        $result = $controller->confirm($request, 'good-code');
+
+        $this->assertSame($response, $result);
+    }
+
+    private function createController(): AccountController
+    {
+        return $this->harness->createAccountController(
+            translator: $this->translator,
+            viewRenderer: $this->viewRenderer,
+            validator: $this->validator,
+            currentUser: $this->currentUser,
+            responseFactory: $this->responseFactory,
+            hydrator: $this->hydrator,
+            flash: $this->flash,
+            passwordHasher: $this->passwordHasher,
+            emailChangeStrategyFactory: $this->emailChangeStrategyFactory,
+            emailChangeService: $this->emailChangeService,
+        );
+    }
+
+    private function createUser(
+        string $username = 'testuser',
+        string $email = 'test@example.com',
+        string $password = 'secret',
+    ): User {
+        $user = new User();
+        $user->setUsername($username);
+        $user->setEmail($email);
+        $user->setPasswordHash($this->passwordHasher->hash($password));
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $user->setConfirmedAt(time());
+        $user->save();
+
+        return $user;
+    }
+}

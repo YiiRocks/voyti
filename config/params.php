@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use YiiRocks\Voyti\Command;
+use YiiRocks\Voyti\Console;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Yii\View\Renderer\CsrfViewInjection;
 
@@ -17,12 +17,12 @@ return [
 
     'yiisoft/yii-console' => [
         'commands' => [
-            'voyti:create' => Command\CreateUserCommand::class,
-            'voyti:delete' => Command\DeleteUserCommand::class,
-            'voyti:confirm' => Command\ConfirmUserCommand::class,
-            'voyti:password' => Command\PasswordCommand::class,
-            'voyti:api-token:generate' => Command\GenerateApiTokenCommand::class,
-            'voyti:api-token:revoke' => Command\RevokeApiTokenCommand::class,
+            'voyti:create' => Console\CreateUserCommand::class,
+            'voyti:delete' => Console\DeleteUserCommand::class,
+            'voyti:confirm' => Console\ConfirmUserCommand::class,
+            'voyti:password' => Console\PasswordCommand::class,
+            'voyti:api-token:generate' => Console\GenerateApiTokenCommand::class,
+            'voyti:api-token:revoke' => Console\RevokeApiTokenCommand::class,
         ],
     ],
 ];

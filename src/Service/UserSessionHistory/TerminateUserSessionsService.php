@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Service\UserSessionHistory;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
-use YiiRocks\Voyti\Entity\UserSessionHistory;
 use YiiRocks\Voyti\Event\Session\SessionEvent;
+use YiiRocks\Voyti\Model\UserSessionHistory;
 
 final readonly class TerminateUserSessionsService
 {

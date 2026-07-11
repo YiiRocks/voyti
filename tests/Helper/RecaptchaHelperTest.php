@@ -6,8 +6,8 @@ namespace YiiRocks\Voyti\tests\Helper;
 
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Recaptcha\RecaptchaRegistry;
+use YiiRocks\Voyti\Enum\RecaptchaVersion;
 use YiiRocks\Voyti\Helper\RecaptchaHelper;
-use YiiRocks\Voyti\Helper\RecaptchaVersion;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\FormModel\FormModelInterface;

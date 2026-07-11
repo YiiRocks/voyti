@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use YiiRocks\Voyti\Entity\User;
-use YiiRocks\Voyti\Entity\UserProfile;
+use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\Model\UserProfile;
 use Yiisoft\Html\Html;
 use Yiisoft\Translator\TranslatorInterface;
 

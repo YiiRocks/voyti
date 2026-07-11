@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Event\User;
 
-use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\Model\User;
 
 final readonly class UserEvent
 {

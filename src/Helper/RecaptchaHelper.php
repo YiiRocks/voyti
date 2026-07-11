@@ -9,6 +9,7 @@ use YiiRocks\Recaptcha\RecaptchaV2Rule;
 use YiiRocks\Recaptcha\RecaptchaV3Badge;
 use YiiRocks\Recaptcha\RecaptchaV3Field;
 use YiiRocks\Recaptcha\RecaptchaV3Rule;
+use YiiRocks\Voyti\Enum\RecaptchaVersion;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\FormModel\FormModelInterface;
 use Yiisoft\Validator\RuleInterface;

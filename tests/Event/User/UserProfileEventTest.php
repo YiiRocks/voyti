@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Event\User;
 
 use PHPUnit\Framework\TestCase;
-use YiiRocks\Voyti\Entity\UserProfile;
 use YiiRocks\Voyti\Event\User\UserProfileEvent;
+use YiiRocks\Voyti\Model\UserProfile;
 
 final class UserProfileEventTest extends TestCase
 {

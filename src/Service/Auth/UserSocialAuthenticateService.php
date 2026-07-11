@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Service\Auth;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
-use YiiRocks\Voyti\Entity\User;
-use YiiRocks\Voyti\Entity\UserSocialAccount;
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
 use YiiRocks\Voyti\Helper\LoginMetadataHelper;
+use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\ServiceResult;
 use Yiisoft\Security\Random;

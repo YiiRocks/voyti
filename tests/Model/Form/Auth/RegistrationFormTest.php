@@ -1,0 +1,162 @@
+<?php
+
+declare(strict_types=1);
+
+namespace YiiRocks\Voyti\tests\Model\Form\Auth;
+
+use PHPUnit\Framework\TestCase;
+use YiiRocks\Voyti\Enum\RecaptchaVersion;
+use YiiRocks\Voyti\Model\Form\Auth\RegistrationForm;
+use YiiRocks\Voyti\ModuleConfig;
+use Yiisoft\Translator\TranslatorInterface;
+
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+final class RegistrationFormTest extends TestCase
+{
+
+    public function testConstruct(): void
+    {
+        $form = new RegistrationForm(new ModuleConfig(), $this->createTranslator());
+        $this->assertSame('', $form->email);
+        $this->assertSame('', $form->username);
+        $this->assertSame('', $form->password);
+        $this->assertSame('', $form->passwordRepeat);
+        $this->assertFalse($form->gdprConsent);
+    }
+
+    public function testGetAttributeLabels(): void
+    {
+        $form = new RegistrationForm(new ModuleConfig(), $this->createTranslator());
+        $labels = $form->getAttributeLabels();
+        $this->assertArrayHasKey('username', $labels);
+        $this->assertArrayHasKey('email', $labels);
+        $this->assertArrayHasKey('password', $labels);
+        $this->assertArrayHasKey('passwordRepeat', $labels);
+        $this->assertArrayHasKey('gdprConsent', $labels);
+    }
+
+    public function testGetFormName(): void
+    {
+        $form = new RegistrationForm(new ModuleConfig(), $this->createTranslator());
+        $this->assertSame('register', $form->getFormName());
+    }
+
+    public function testGetPropertyLabels(): void
+    {
+        $form = new RegistrationForm(new ModuleConfig(), $this->createTranslator());
+        $this->assertSame($form->getAttributeLabels(), $form->getPropertyLabels());
+    }
+
+    public function testGetRules(): void
+    {
+        $form = new RegistrationForm(new ModuleConfig(), $this->createTranslator());
+        $rules = $form->getRules();
+        $this->assertArrayHasKey('username', $rules);
+        $this->assertArrayHasKey('email', $rules);
+        $this->assertArrayHasKey('password', $rules);
+        $this->assertArrayHasKey('passwordRepeat', $rules);
+    }
+
+    public function testGetRulesWithGdprDisabled(): void
+    {
+        $config = new ModuleConfig(enableGdprCompliance: false);
+        $form = new RegistrationForm($config, $this->createTranslator());
+        $rules = $form->getRules();
+        $this->assertArrayNotHasKey('gdprConsent', $rules);
+    }
+
+    public function testGetRulesWithGdprEnabled(): void
+    {
+        $config = new ModuleConfig(enableGdprCompliance: true);
+        $form = new RegistrationForm($config, $this->createTranslator());
+        $rules = $form->getRules();
+        $this->assertArrayHasKey('gdprConsent', $rules);
+        $rule = $rules['gdprConsent'][0];
+        $this->assertInstanceOf(\Yiisoft\Validator\Rule\TrueValue::class, $rule);
+        $this->assertTrue($rule->getTrueValue());
+    }
+
+    public function testGetRulesWithoutRecaptcha(): void
+    {
+        $config = new ModuleConfig(recaptchaVersion: null);
+        $form = new RegistrationForm($config, $this->createTranslator());
+        $rules = $form->getRules();
+        $this->assertArrayNotHasKey('gRecaptchaResponse', $rules);
+    }
+
+    public function testGetRulesWithPasswordComplexityDisabled(): void
+    {
+        $config = new ModuleConfig(enablePasswordComplexity: false);
+        $form = new RegistrationForm($config, $this->createTranslator());
+        $rules = $form->getRules();
+        $this->assertCount(1, $rules['password']);
+    }
+
+    public function testGetRulesWithPasswordComplexityEnabled(): void
+    {
+        $config = new ModuleConfig(enablePasswordComplexity: true);
+        $form = new RegistrationForm($config, $this->createTranslator());
+        $rules = $form->getRules();
+        $this->assertCount(2, $rules['password']);
+        $this->assertInstanceOf(\Yiisoft\Validator\Rule\Regex::class, $rules['password'][1]);
+    }
+
+    public function testGetRulesWithRecaptchaV2(): void
+    {
+        $config = new ModuleConfig(recaptchaVersion: RecaptchaVersion::V2);
+        $form = new RegistrationForm($config, $this->createTranslator());
+        $rules = $form->getRules();
+        $this->assertArrayHasKey('gRecaptchaResponse', $rules);
+        $this->assertInstanceOf(\YiiRocks\Recaptcha\RecaptchaV2Rule::class, $rules['gRecaptchaResponse'][0]);
+    }
+
+    public function testGetRulesWithRecaptchaV3(): void
+    {
+        $config = new ModuleConfig(recaptchaVersion: RecaptchaVersion::V3);
+        $form = new RegistrationForm($config, $this->createTranslator());
+        $rules = $form->getRules();
+        $this->assertArrayHasKey('gRecaptchaResponse', $rules);
+        $rule = $rules['gRecaptchaResponse'][0];
+        $this->assertInstanceOf(\YiiRocks\Recaptcha\RecaptchaV3Rule::class, $rule);
+        $this->assertSame(0.5, $rule->getThreshold());
+        $this->assertSame('voyti_register', $rule->getAction());
+    }
+
+    public function testIsPasswordAutoGeneratedReturnsFalse(): void
+    {
+        $config = new ModuleConfig(generatePasswords: false);
+        $form = new RegistrationForm($config, $this->createTranslator());
+        $this->assertFalse($form->isPasswordAutoGenerated());
+    }
+
+    public function testIsPasswordAutoGeneratedReturnsTrue(): void
+    {
+        $config = new ModuleConfig(generatePasswords: true);
+        $form = new RegistrationForm($config, $this->createTranslator());
+        $this->assertTrue($form->isPasswordAutoGenerated());
+    }
+
+    public function testSetProperties(): void
+    {
+        $form = new RegistrationForm(new ModuleConfig(), $this->createTranslator());
+        $form->email = 'user@example.com';
+        $form->username = 'johndoe';
+        $form->password = 'secret123';
+        $form->passwordRepeat = 'secret123';
+        $form->gdprConsent = true;
+
+        $this->assertSame('user@example.com', $form->email);
+        $this->assertSame('johndoe', $form->username);
+        $this->assertSame('secret123', $form->password);
+        $this->assertSame('secret123', $form->passwordRepeat);
+        $this->assertTrue($form->gdprConsent);
+    }
+    private function createTranslator(): TranslatorInterface
+    {
+        $translator = $this->createMock(TranslatorInterface::class);
+        $translator->method('translate')->willReturnCallback(
+            fn (string $id) => $id,
+        );
+        return $translator;
+    }
+}

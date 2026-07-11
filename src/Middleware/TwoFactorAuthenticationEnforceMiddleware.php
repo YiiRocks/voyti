@@ -9,7 +9,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Http\Header;
 use Yiisoft\Http\Status;
@@ -54,7 +54,7 @@ final readonly class TwoFactorAuthenticationEnforceMiddleware implements Middlew
         if (!empty(array_intersect($permissions, $userPermissionNames))) {
             if (!$user->isAuthTfEnabled()) {
                 $response = $this->responseFactory->createResponse(Status::FOUND);
-                return $response->withHeader(Header::LOCATION, $this->url->generate($this->config->accountSettingsRoute));
+                return $response->withHeader(Header::LOCATION, $this->url->generate('voyti/account-update'));
             }
         }
 

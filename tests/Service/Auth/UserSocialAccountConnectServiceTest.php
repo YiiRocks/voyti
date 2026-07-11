@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Service\Auth;
 
 use PHPUnit\Framework\TestCase;
-use YiiRocks\Voyti\Entity\User;
-use YiiRocks\Voyti\Entity\UserSocialAccount;
+use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\Service\Auth\UserSocialAccountConnectService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 

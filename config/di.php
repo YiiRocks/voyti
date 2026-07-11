@@ -6,18 +6,17 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Client\ClientInterface as PsrClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
+use YiiRocks\Voyti\Adapter\IdentityAdapter;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistryFactory;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Helper\AuthHelper;
-use YiiRocks\Voyti\Helper\GravatarHelper;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\Http\ClientInterface;
 use YiiRocks\Voyti\Http\Psr18Client;
 use YiiRocks\Voyti\Listener;
 use YiiRocks\Voyti\Middleware\RouteParametersResolver;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Repository\IdentityRepository;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\Auth\SocialAuthProviderService;
 use YiiRocks\Voyti\Service\Auth\UserSocialAuthenticateService;
@@ -47,6 +46,7 @@ use YiiRocks\Voyti\Service\UserSessionHistory\UserSessionHistoryDecorator;
 use YiiRocks\Voyti\Strategy\EmailChangeStrategyFactory;
 use YiiRocks\Voyti\Validator\Rbac\ItemsValidator;
 use YiiRocks\Voyti\Validator\Rbac\RuleValidator;
+use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Auth\IdentityWithTokenRepositoryInterface;
 use Yiisoft\Mailer\MailerInterface;
 use Yiisoft\Middleware\Dispatcher\ParametersResolverInterface;
@@ -73,7 +73,8 @@ return [
     ),
 
     PasswordGeneratorInterface::class => RandomPasswordGenerator::class,
-    IdentityWithTokenRepositoryInterface::class => IdentityRepository::class,
+    IdentityRepositoryInterface::class => IdentityAdapter::class,
+    IdentityWithTokenRepositoryInterface::class => IdentityAdapter::class,
     ApiTokenService::class => ApiTokenService::class,
 
     AuthHelper::class => fn (
@@ -83,7 +84,6 @@ return [
         ModuleConfig $config,
         CurrentUser $currentUser,
     ) => new AuthHelper($authManager, $itemsStorage, $assignmentsStorage, $config, $currentUser),
-    GravatarHelper::class => GravatarHelper::class,
     TimezoneHelper::class => TimezoneHelper::class,
     ClientInterface::class => static fn (
         PsrClientInterface $httpClient,

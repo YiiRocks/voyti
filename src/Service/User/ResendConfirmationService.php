@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service\User;
 
-use YiiRocks\Voyti\Entity\User;
-use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
+use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\Service\MailService;
 
 final readonly class ResendConfirmationService

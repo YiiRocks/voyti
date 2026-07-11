@@ -9,8 +9,8 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Middleware\ApiTokenAuthenticationMiddleware;
+use YiiRocks\Voyti\Model\User;
 use Yiisoft\Auth\IdentityWithTokenRepositoryInterface;
 use Yiisoft\User\CurrentUser;
 

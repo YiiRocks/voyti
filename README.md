@@ -8,7 +8,7 @@
 
 Highly customizable and extensible user management, authentication, and authorization extension for Yii3.
 
-Ported from [2amigos/yii2-usuario](https://github.com/2amigos/yii2-usuario) and rebuilt for Yii3 with PSR-15 middleware, PSR-11 DI, ActiveRecord entities, FormModel forms, and the `yiisoft/rbac` package.
+Ported from [2amigos/yii2-usuario](https://github.com/2amigos/yii2-usuario) and rebuilt for Yii3 with PSR-15 middleware, PSR-11 DI, ActiveRecord models, FormModel forms, and the `yiisoft/rbac` package.
 
 [![Packagist Version](https://img.shields.io/packagist/v/yiirocks/voyti.svg)](https://packagist.org/packages/yiirocks/voyti)
 [![PHP from Packagist](https://img.shields.io/packagist/php-v/yiirocks/voyti.svg)](https://php.net/)
@@ -116,9 +116,10 @@ return [
                             ->middleware(
                                 SessionMiddleware::class,
                                 // Site-wide enforcement (see "Site-wide enforcement" below).
-                                // Safe to scope to this group only: accountSettingsRoute lives
-                                // in the separate voyti-routes group below, so redirecting there
-                                // takes the request out of this group and can't loop.
+                                // Safe to scope to this group only: the account settings route
+                                // (voyti/account-update) lives in the separate voyti-routes group
+                                // below, so redirecting there takes the request out of this group
+                                // and can't loop.
                                 PasswordAgeEnforceMiddleware::class,
                                 TwoFactorAuthenticationEnforceMiddleware::class,
                             )
@@ -136,7 +137,7 @@ return [
 
 When `enableRestApi` is `true`, the API routes are mounted under `adminRestPrefix . '/v1/'` and expose user CRUD endpoints.
 
-The privacy/GDPR routes (`settings/privacy`, `settings/privacy/gdpr-consent`, `settings/privacy/export`, `settings/privacy/anonymize`, `settings/privacy/delete`) and the two-factor routes (`settings/two-factor`, `settings/two-factor-google/enable`, `settings/two-factor/disable`) are likewise only registered when their governing config flag (`enableGdprCompliance`, `allowAccountDelete`, and/or `enableTwoFactorAuthentication`) is `true` — see the route table below. When a flag is off, the corresponding route doesn't exist at all, so a request to it falls through to the host application's own router-level not-found handling.
+The privacy/GDPR routes (`settings/privacy/`, `settings/privacy/gdpr-consent`, `settings/privacy/export`, `settings/privacy/anonymize`, `settings/privacy/delete`) and the two-factor routes (`settings/two-factor/`, `settings/two-factor-google/enable`, `settings/two-factor/disable/`) are likewise only registered when their governing config flag (`enableGdprCompliance`, `allowAccountDelete`, and/or `enableTwoFactorAuthentication`) is `true` — see the route table below. When a flag is off, the corresponding route doesn't exist at all, so a request to it falls through to the host application's own router-level not-found handling.
 
 ### 4. Done
 
@@ -149,11 +150,11 @@ Override Voyti params in your app's `config/params.php` using the
 `yiirocks/voyti` key:
 
 ```php
-use YiiRocks\Voyti\Helper\RecaptchaVersion;
+use YiiRocks\Voyti\Enum\RecaptchaVersion;
 
 return [
     'yiirocks/voyti' => [
-        'enableTwoFactorAuthentication' => true,
+        'appName' => 'My Project',
         'recaptchaVersion' => RecaptchaVersion::V3,
     ],
 ];
@@ -166,14 +167,12 @@ Below are all top-level `yiirocks/voyti` options, followed by the nested `social
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `appName` | `string` | `'Voyti'` | Application name — used as TOTP issuer in 2FA QR codes and `{app}` placeholder in mail subjects |
+| `homeRoute` | `string` | `'home'` | Route to redirect to after a successful login (password, 2FA, or social) or logout. Must be a route registered by the host app — an unregistered route name throws a `LogicException` naming the misconfigured option, rather than a bare router exception |
 
 ### Authentication & Registration
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `loginRoute` | `string` | `'voyti/login'` | Login route name |
-| `accountSettingsRoute` | `string` | `'voyti/settings-account'` | Route for account settings redirects |
-| `homeRoute` | `string` | `'home'` | Route to redirect to after a successful login (password, 2FA, or social) or logout. Must be a route registered by the host app — an unregistered route name throws a `LogicException` naming the misconfigured option, rather than a bare router exception |
 | `enableRegistration` | `bool` | `true` | Allow new user registration |
 | `enableSocialNetworkRegistration` | `bool` | `true` | Allow social network registration |
 | `socialNetworkClients` | `array` | `[]` | OAuth client IDs, secrets, and provider-specific options |
@@ -260,7 +259,7 @@ Every provider accepts these options unless noted otherwise:
 |---|---|---|---:|---|
 | `clientId` | `string` | yes | none | OAuth client/application ID issued by the provider |
 | `clientSecret` | `string` | yes | none | OAuth client secret issued by the provider |
-| `redirectUri` | `string` | no | generated callback URL | Overrides the callback URL; otherwise Voyti uses the absolute route URL for `voyti/auth` or `voyti/connect` |
+| `redirectUri` | `string` | no | generated callback URL | Overrides the callback URL; otherwise Voyti uses the absolute route URL for `voyti/session-auth` or `voyti/session-connect` |
 | `scope` | `string` | no | provider default | Replaces the built-in default scope string |
 | `enabled` | `bool` | no | `true` | If `false`, the provider is not registered and no button is rendered |
 | `authorizationParams` | `array<string, scalar>` | no | `[]` | Extra query parameters appended to the authorization request |
@@ -331,7 +330,7 @@ return [
 With credentials configured:
 
 1. The login page shows social login buttons for configured providers.
-2. `settings/networks` lists connected providers and renders connect buttons for the remaining configured providers.
+2. `settings/networks/` lists connected providers and renders connect buttons for the remaining configured providers.
 3. New social identities redirect to the registration connect screen, where users can log in to an existing account or register a new one before the identity is linked.
 
 ## Console commands
@@ -351,20 +350,20 @@ The extension ships four PSR-15 middleware classes for access control:
 
 | Middleware | Description | Auto-registered on the extension's own routes? |
 |-----------|-------------|-----------|
-| `AccessRuleMiddleware` | Redirects guests to `loginRoute`; checks `administratorPermissionName` for admin access | Yes — on `admin/*`, `permissions/*`, `roles/*`, `rules/*`, and the REST API group |
+| `AccessRuleMiddleware` | Redirects guests to the login page (`voyti/session-login`); checks `administratorPermissionName` for admin access | Yes — on `admin/*` (users and RBAC management) and the REST API group |
 | `ApiTokenAuthenticationMiddleware` | Resolves the `Authorization: Bearer <token>` header to a user for that request only (no session); returns `401` if missing/invalid | Yes — on the REST API group, ahead of `AccessRuleMiddleware`, in place of the session cookie |
-| `PasswordAgeEnforceMiddleware` | Redirects to `accountSettingsRoute` when `maxPasswordAge` is exceeded | Yes, when `enablePasswordExpiration` is `true` — on the extension's whole web route group |
-| `TwoFactorAuthenticationEnforceMiddleware` | Redirects to `accountSettingsRoute` when required permissions are assigned but 2FA isn't enabled | No |
+| `PasswordAgeEnforceMiddleware` | Redirects to the account settings page (`voyti/account-update`) when `maxPasswordAge` is exceeded | Yes, when `enablePasswordExpiration` is `true` — on the extension's whole web route group |
+| `TwoFactorAuthenticationEnforceMiddleware` | Redirects to the account settings page (`voyti/account-update`) when required permissions are assigned but 2FA isn't enabled | No |
 
-The redirect targets (`loginRoute` and `accountSettingsRoute`) are configurable via `ModuleConfig`, so you can map them to your own route structure.
+The redirect targets (`voyti/session-login` and `voyti/account-update`) are the extension's own routes and aren't configurable.
 
 ### Site-wide enforcement
 
-The auto-registration above only covers routes *this extension defines* (`voyti/login`, `voyti/settings`, `voyti/admin`, etc.) — it has no way to reach routes your host application defines itself, since `config/routes.php` can only attach middleware to the route groups it builds. If a user with an expired password or missing 2FA navigates to your app's own dashboard, home page, or any other route outside this extension, nothing stops them.
+The auto-registration above only covers routes *this extension defines* (`voyti/session-login`, `voyti/profile-update`, `voyti/admin-users`, etc.) — it has no way to reach routes your host application defines itself, since `config/routes.php` can only attach middleware to the route groups it builds. If a user with an expired password or missing 2FA navigates to your app's own dashboard, home page, or any other route outside this extension, nothing stops them.
 
-To actually enforce "the user must fix this before doing anything else" across your own pages too, add `PasswordAgeEnforceMiddleware` and/or `TwoFactorAuthenticationEnforceMiddleware` to the `Group` that wraps your app's own routes — see the [Register routes](#3-register-routes) example above, which applies both alongside `SessionMiddleware`. Add any other middleware your own routes need (CSRF protection, etc.) — the example only lists what's required for login/session state to work. Keep the enforcement middlewares scoped to your own route group (as in that example) rather than the `voyti-routes` group: `accountSettingsRoute` lives inside `voyti-routes`, and `TwoFactorAuthenticationEnforceMiddleware` has no built-in exemption for it, so wrapping `voyti-routes` with it would redirect a user straight back into a loop the moment they try to reach the settings page to actually fix the problem.
+To actually enforce "the user must fix this before doing anything else" across your own pages too, add `PasswordAgeEnforceMiddleware` and/or `TwoFactorAuthenticationEnforceMiddleware` to the `Group` that wraps your app's own routes — see the [Register routes](#3-register-routes) example above, which applies both alongside `SessionMiddleware`. Add any other middleware your own routes need (CSRF protection, etc.) — the example only lists what's required for login/session state to work. Keep the enforcement middlewares scoped to your own route group (as in that example) rather than the `voyti-routes` group: the account settings route (`voyti/account-update`) lives inside `voyti-routes`, and `TwoFactorAuthenticationEnforceMiddleware` has no built-in exemption for it, so wrapping `voyti-routes` with it would redirect a user straight back into a loop the moment they try to reach the settings page to actually fix the problem.
 
-If your app instead configures middleware at a level above routing entirely (e.g. a global pipeline in your app skeleton's runner config), the same two classes can go there instead — just place them after session middleware so `CurrentUser` is resolvable, and keep the same caveat in mind for whatever route ends up serving `accountSettingsRoute`.
+If your app instead configures middleware at a level above routing entirely (e.g. a global pipeline in your app skeleton's runner config), the same two classes can go there instead — just place them after session middleware so `CurrentUser` is resolvable, and keep the same caveat in mind for the `voyti/account-update` route.
 
 ## RBAC
 
@@ -381,61 +380,64 @@ The library does not provide a menu model or navigation contract. It only expose
 
 | Route name | Method | Path | Purpose |
 |------------|--------|------|---------|
-| `voyti/login` | `GET`, `POST` | `login` | User login |
-| `voyti/logout` | `GET`, `POST` | `logout` | User logout |
-| `voyti/confirm` | `GET`, `POST` | `confirm` | Two-factor confirmation step |
-| `voyti/auth` | `GET` | `auth/{provider}` | Social auth callback |
-| `voyti/connect` | `GET` | `auth/connect/{provider}` | Social account connect callback |
-| `voyti/register` | `GET`, `POST` | `register` | New user registration |
+| `voyti/session-login` | `GET`, `POST` | `login` | User login |
+| `voyti/session-logout` | `GET`, `POST` | `logout` | User logout |
+| `voyti/session-confirm` | `GET`, `POST` | `confirm` | Two-factor confirmation step |
+| `voyti/session-auth` | `GET` | `auth/{provider}` | Social auth callback |
+| `voyti/session-connect` | `GET` | `auth/connect/{provider}` | Social account connect callback |
+| `voyti/registration-register` | `GET`, `POST` | `register` | New user registration |
 | `voyti/registration-confirm` | `GET`, `POST` | `confirm/{id}/{code}` | Email confirmation link |
-| `voyti/resend` | `GET`, `POST` | `resend` | Resend confirmation email |
+| `voyti/registration-resend` | `GET`, `POST` | `resend` | Resend confirmation email |
 | `voyti/registration-connect` | `GET` | `connect/{code}` | Social registration link |
-| `voyti/forgot` | `GET`, `POST` | `forgot` | Password recovery request |
-| `voyti/recover` | `GET`, `POST` | `recover/{id}/{code}` | Password reset |
+| `voyti/password-reset-request` | `GET`, `POST` | `forgot` | Password recovery request |
+| `voyti/password-reset-confirm` | `GET`, `POST` | `recover/{id}/{code}` | Password reset |
 | `voyti/profile` | `GET` | `profile/{id}` | Public user profile |
-| `voyti/settings` | `GET`, `POST` | `settings` | Profile settings |
-| `voyti/settings-account` | `GET`, `POST` | `settings/account` | Account settings |
-| `voyti/settings-networks` | `GET` | `settings/networks` | Linked social networks |
-| `voyti/settings-networks-disconnect` | `POST` | `settings/networks/disconnect/{id}` | Disconnect social account |
-| `voyti/settings-privacy` | `GET` | `settings/privacy` | Privacy settings. Only registered when `enableGdprCompliance` or `allowAccountDelete` is `true` |
-| `voyti/settings-privacy-gdpr-consent` | `GET`, `POST` | `settings/privacy/gdpr-consent` | GDPR consent. Only registered when `enableGdprCompliance` is `true` |
-| `voyti/settings-privacy-export` | `GET` | `settings/privacy/export` | Export user data. Only registered when `enableGdprCompliance` is `true` |
-| `voyti/settings-privacy-anonymize` | `GET`, `POST` | `settings/privacy/anonymize` | Anonymize account (blanks email/username, blocks login; row is kept). Only registered when `enableGdprCompliance` is `true` |
-| `voyti/settings-privacy-delete` | `GET`, `POST` | `settings/privacy/delete` | Account deletion (hard delete). Only registered when `allowAccountDelete` is `true` |
-| `voyti/settings-two-factor` | `GET`, `POST` | `settings/two-factor` | Two-factor status/entry point. Only registered when `enableTwoFactorAuthentication` is `true` |
-| `voyti/settings-two-factor-email` | `GET` | `settings/two-factor-email` | Email 2FA setup page (method-selector buttons + confirm/send screen). Only registered when `enableTwoFactorAuthentication` is `true` |
-| `voyti/settings-two-factor-email-send-code` | `POST` | `settings/two-factor-email/send-code` | Send the email 2FA one-time code after explicit confirmation. Only registered when `enableTwoFactorAuthentication` is `true` |
-| `voyti/settings-two-factor-google` | `GET` | `settings/two-factor-google` | Google Authenticator setup page (method-selector buttons + QR/secret). Only registered when `enableTwoFactorAuthentication` is `true` |
-| `voyti/settings-two-factor-google-enable` | `POST` | `settings/two-factor-google/enable` | Enable 2FA - shared by both the Google Authenticator and email code-entry forms. Only registered when `enableTwoFactorAuthentication` is `true` |
-| `voyti/settings-two-factor-google-renew` | `POST` | `settings/two-factor-google/renew` | Regenerate the Google Authenticator secret/QR code via AJAX. Only registered when `enableTwoFactorAuthentication` is `true` |
-| `voyti/settings-two-factor-disable` | `POST` | `settings/two-factor/disable` | Disable 2FA. Only registered when `enableTwoFactorAuthentication` is `true` |
-| `voyti/settings-confirm` | `GET` | `settings/confirm/{code}` | Confirm account changes |
-| `voyti/admin` | `GET` | `admin` | Admin dashboard |
-| `voyti/admin-create` | `GET`, `POST` | `admin/create` | Create user |
-| `voyti/admin-update` | `GET`, `POST` | `admin/update/{id}` | Update user |
-| `voyti/admin-update-profile` | `GET`, `POST` | `admin/update-profile/{id}` | Update user profile |
-| `voyti/admin-info` | `GET` | `admin/info/{id}` | User details |
-| `voyti/admin-confirm` | `POST` | `admin/confirm/{id}` | Confirm user |
-| `voyti/admin-delete` | `POST` | `admin/delete/{id}` | Delete user |
-| `voyti/admin-block` | `POST` | `admin/block/{id}` | Block user |
-| `voyti/admin-switch` | `POST` | `admin/switch-identity/{id}` | Switch identity |
-| `voyti/admin-password-reset` | `POST` | `admin/password-reset/{id}` | Send password reset |
-| `voyti/admin-force-password` | `POST` | `admin/force-password-change/{id}` | Force password change |
-| `voyti/admin-assignments` | `GET`, `POST` | `admin/assignments/{id}` | Manage RBAC assignments |
-| `voyti/admin-session-history` | `GET` | `admin/session-history/{id}` | Session history |
-| `voyti/admin-terminate-sessions` | `POST` | `admin/terminate-sessions/{id}` | Terminate sessions |
-| `voyti/permissions` | `GET` | `permissions` | List permissions |
-| `voyti/permissions-create` | `GET`, `POST` | `permissions/create` | Create permission |
-| `voyti/permissions-update` | `GET`, `POST` | `permissions/update/{name}` | Update permission |
-| `voyti/permissions-delete` | `POST` | `permissions/delete/{name}` | Delete permission |
-| `voyti/roles` | `GET` | `roles` | List roles |
-| `voyti/roles-create` | `GET`, `POST` | `roles/create` | Create role |
-| `voyti/roles-update` | `GET`, `POST` | `roles/update/{name}` | Update role |
-| `voyti/roles-delete` | `POST` | `roles/delete/{name}` | Delete role |
-| `voyti/rules` | `GET` | `rules` | List rules |
-| `voyti/rules-create` | `GET`, `POST` | `rules/create` | Create rule |
-| `voyti/rules-update` | `GET`, `POST` | `rules/update/{name}` | Update rule |
-| `voyti/rules-delete` | `POST` | `rules/delete/{name}` | Delete rule |
+| `voyti/profile-update` | `GET`, `POST` | `settings/` | Profile settings |
+| `voyti/account-update` | `GET`, `POST` | `settings/account` | Account settings |
+| `voyti/account-confirm` | `GET` | `settings/confirm/{code}` | Confirm account changes |
+| `voyti/social-network` | `GET` | `settings/networks/` | Linked social networks |
+| `voyti/social-network-delete` | `POST` | `settings/networks/disconnect/{id}` | Disconnect social account |
+| `voyti/privacy` | `GET` | `settings/privacy/` | Privacy settings. Only registered when `enableGdprCompliance` or `allowAccountDelete` is `true` |
+| `voyti/privacy-gdpr-consent` | `GET`, `POST` | `settings/privacy/gdpr-consent` | GDPR consent. Only registered when `enableGdprCompliance` is `true` |
+| `voyti/privacy-export` | `GET` | `settings/privacy/export` | Export user data. Only registered when `enableGdprCompliance` is `true` |
+| `voyti/privacy-anonymize` | `GET`, `POST` | `settings/privacy/anonymize` | Anonymize account (blanks email/username, blocks login; row is kept). Only registered when `enableGdprCompliance` is `true` |
+| `voyti/privacy-delete` | `GET`, `POST` | `settings/privacy/delete` | Account deletion (hard delete). Only registered when `allowAccountDelete` is `true` |
+| `voyti/two-factor` | `GET`, `POST` | `settings/two-factor/` | Two-factor status/entry point. Only registered when `enableTwoFactorAuthentication` is `true` |
+| `voyti/two-factor-google` | `GET` | `settings/two-factor-google/` | Google Authenticator setup page (method-selector buttons + QR/secret). Only registered when `enableTwoFactorAuthentication` is `true` |
+| `voyti/two-factor-email` | `GET` | `settings/two-factor-email/` | Email 2FA setup page (method-selector buttons + confirm/send screen). Only registered when `enableTwoFactorAuthentication` is `true` |
+| `voyti/two-factor-enable` | `POST` | `settings/two-factor-google/enable` | Enable 2FA - shared by both the Google Authenticator and email code-entry forms. Only registered when `enableTwoFactorAuthentication` is `true` |
+| `voyti/two-factor-disable` | `POST` | `settings/two-factor/disable/` | Disable 2FA. Only registered when `enableTwoFactorAuthentication` is `true` |
+| `voyti/two-factor-disable-send-code` | `POST` | `settings/two-factor/disable/send-code` | Send the disable-2FA one-time code. Only registered when `enableTwoFactorAuthentication` is `true` |
+| `voyti/two-factor-renew` | `POST` | `settings/two-factor-google/renew` | Regenerate the Google Authenticator secret/QR code via AJAX. Only registered when `enableTwoFactorAuthentication` is `true` |
+| `voyti/two-factor-send-email-code` | `POST` | `settings/two-factor-email/send-code` | Send the email 2FA one-time code after explicit confirmation. Only registered when `enableTwoFactorAuthentication` is `true` |
+| `voyti/admin` | `GET` | `admin/` | Redirects to the admin user list |
+| `voyti/admin-users` | `GET` | `admin/users/` | Admin dashboard |
+| `voyti/admin-users-create` | `GET`, `POST` | `admin/users/create` | Create user |
+| `voyti/admin-users-update` | `GET`, `POST` | `admin/users/update/{id}` | Update user |
+| `voyti/admin-users-update-profile` | `GET`, `POST` | `admin/users/update-profile/{id}` | Update user profile |
+| `voyti/admin-users-show` | `GET` | `admin/users/info/{id}` | User details |
+| `voyti/admin-users-confirm` | `POST` | `admin/users/confirm/{id}` | Confirm user |
+| `voyti/admin-users-delete` | `POST` | `admin/users/delete/{id}` | Delete user |
+| `voyti/admin-users-block` | `POST` | `admin/users/block/{id}` | Block user |
+| `voyti/admin-users-switch-identity` | `POST` | `admin/users/switch-identity/{id}` | Switch identity |
+| `voyti/admin-users-switch-identity-restore` | `POST` | `admin/users/switch-identity/restore` | Restore identity after impersonating |
+| `voyti/admin-users-password-reset` | `POST` | `admin/users/password-reset/{id}` | Send password reset |
+| `voyti/admin-users-force-password-change` | `POST` | `admin/users/force-password-change/{id}` | Force password change |
+| `voyti/admin-users-assignments` | `GET`, `POST` | `admin/users/assignments/{id}` | Manage RBAC assignments |
+| `voyti/admin-users-session-history` | `GET` | `admin/users/session-history/{id}` | Session history |
+| `voyti/admin-users-terminate-sessions` | `POST` | `admin/users/terminate-sessions/{id}` | Terminate sessions |
+| `voyti/admin-rbac-permissions` | `GET` | `admin/rbac/permissions/` | List permissions |
+| `voyti/admin-rbac-permissions-create` | `GET`, `POST` | `admin/rbac/permissions/create` | Create permission |
+| `voyti/admin-rbac-permissions-update` | `GET`, `POST` | `admin/rbac/permissions/update/{name}` | Update permission |
+| `voyti/admin-rbac-permissions-delete` | `POST` | `admin/rbac/permissions/delete/{name}` | Delete permission |
+| `voyti/admin-rbac-roles` | `GET` | `admin/rbac/roles/` | List roles |
+| `voyti/admin-rbac-roles-create` | `GET`, `POST` | `admin/rbac/roles/create` | Create role |
+| `voyti/admin-rbac-roles-update` | `GET`, `POST` | `admin/rbac/roles/update/{name}` | Update role |
+| `voyti/admin-rbac-roles-delete` | `POST` | `admin/rbac/roles/delete/{name}` | Delete role |
+| `voyti/admin-rbac-rules` | `GET` | `admin/rbac/rules/` | List rules |
+| `voyti/admin-rbac-rules-create` | `GET`, `POST` | `admin/rbac/rules/create` | Create rule |
+| `voyti/admin-rbac-rules-update` | `GET`, `POST` | `admin/rbac/rules/update/{name}` | Update rule |
+| `voyti/admin-rbac-rules-delete` | `POST` | `admin/rbac/rules/delete/{name}` | Delete rule |
 
 ## Events & Listeners
 

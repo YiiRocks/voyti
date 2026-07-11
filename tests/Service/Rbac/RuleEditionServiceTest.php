@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Service\Rbac;
 
 use PHPUnit\Framework\TestCase;
-use YiiRocks\Voyti\Form\Rbac\RuleForm;
+use YiiRocks\Voyti\Model\Form\Rbac\RuleForm;
 use YiiRocks\Voyti\Service\Rbac\RuleEditionService;
 use YiiRocks\Voyti\Validator\Rbac\RuleValidator;
 use Yiisoft\Rbac\CompositeRule;

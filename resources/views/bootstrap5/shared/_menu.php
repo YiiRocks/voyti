@@ -15,35 +15,35 @@ use Yiisoft\Translator\TranslatorInterface;
 
 $items = [
     Html::li(
-        Html::a($translator->translate('voyti.menu.userProfile', category: 'voyti'), $url->generate('voyti/settings'))->class('nav-link'),
+        Html::a($translator->translate('voyti.menu.userProfile', category: 'voyti'), $url->generate('voyti/profile-update'))->class('nav-link'),
         ['class' => 'nav-item'],
     ),
     Html::li(
-        Html::a($translator->translate('voyti.menu.account', category: 'voyti'), $url->generate('voyti/settings-account'))->class('nav-link'),
+        Html::a($translator->translate('voyti.menu.account', category: 'voyti'), $url->generate('voyti/account-update'))->class('nav-link'),
         ['class' => 'nav-item'],
     ),
     Html::li(
-        Html::a($translator->translate('voyti.menu.networks', category: 'voyti'), $url->generate('voyti/settings-networks'))->class('nav-link'),
+        Html::a($translator->translate('voyti.menu.networks', category: 'voyti'), $url->generate('voyti/social-network'))->class('nav-link'),
         ['class' => 'nav-item'],
     ),
 ];
 
 if ($config->enableTwoFactorAuthentication) {
     $items[] = Html::li(
-        Html::a($translator->translate('voyti.menu.two_factor', category: 'voyti'), $url->generate('voyti/settings-two-factor'))->class('nav-link'),
+        Html::a($translator->translate('voyti.menu.two_factor', category: 'voyti'), $url->generate('voyti/two-factor'))->class('nav-link'),
         ['class' => 'nav-item'],
     );
 }
 
 if ($config->enableGdprCompliance || $config->allowAccountDelete) {
     $items[] = Html::li(
-        Html::a($translator->translate('voyti.view.settings.privacy', category: 'voyti'), $url->generate('voyti/settings-privacy'))->class('nav-link'),
+        Html::a($translator->translate('voyti.view.settings.privacy', category: 'voyti'), $url->generate('voyti/privacy'))->class('nav-link'),
         ['class' => 'nav-item'],
     );
 }
 
 $items[] = Html::li(
-    Html::a($translator->translate('voyti.menu.logout', category: 'voyti'), $url->generate('voyti/logout'))->class('nav-link'),
+    Html::a($translator->translate('voyti.menu.logout', category: 'voyti'), $url->generate('voyti/session-logout'))->class('nav-link'),
     ['class' => 'nav-item ms-auto'],
 );
 

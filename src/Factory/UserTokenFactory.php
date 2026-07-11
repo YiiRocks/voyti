@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Factory;
 
-use YiiRocks\Voyti\Entity\UserToken;
+use YiiRocks\Voyti\Model\UserToken;
 use Yiisoft\Security\Random;
 
 final readonly class UserTokenFactory

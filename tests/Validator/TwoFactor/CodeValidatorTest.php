@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Validator\TwoFactor;
 
 use PHPUnit\Framework\TestCase;
-use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Validator\TwoFactor\CodeValidator;
 use Yiisoft\Translator\TranslatorInterface;
 

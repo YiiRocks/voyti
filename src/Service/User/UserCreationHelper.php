@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Service\User;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
-use YiiRocks\Voyti\Entity\User;
-use YiiRocks\Voyti\Entity\UserProfile;
-use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Event\Auth\AfterRegisterEvent;
 use YiiRocks\Voyti\Event\User\UserEvent;
+use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\Model\UserProfile;
+use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\MailService;
 use Yiisoft\Security\PasswordHasher;

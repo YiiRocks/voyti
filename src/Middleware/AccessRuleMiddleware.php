@@ -10,7 +10,6 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use YiiRocks\Voyti\Helper\AuthHelper;
-use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Http\Header;
 use Yiisoft\Http\Status;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -21,7 +20,6 @@ final readonly class AccessRuleMiddleware implements MiddlewareInterface
 {
     public function __construct(
         private CurrentUser $currentUser,
-        private ModuleConfig $config,
         private AuthHelper $authHelper,
         private ResponseFactoryInterface $responseFactory,
         private UrlGeneratorInterface $url,
@@ -35,7 +33,7 @@ final readonly class AccessRuleMiddleware implements MiddlewareInterface
 
         if ($user instanceof GuestIdentityInterface) {
             $response = $this->responseFactory->createResponse(Status::FOUND);
-            return $response->withHeader(Header::LOCATION, $this->url->generate($this->config->loginRoute));
+            return $response->withHeader(Header::LOCATION, $this->url->generate('voyti/session-login'));
         }
 
         $userId = $user->getId() ?? 0;

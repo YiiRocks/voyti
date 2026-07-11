@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use YiiRocks\Voyti\Form\Auth\RegistrationForm;
 use YiiRocks\Voyti\Helper\RecaptchaHelper;
+use YiiRocks\Voyti\Model\Form\Auth\RegistrationForm;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
@@ -27,7 +27,7 @@ echo Html::div()->open();
 echo Html::H1($translator->translate('voyti.view.registration.register_title', category: 'voyti'));
 
 echo Html::form()
-    ->post($url->generate('voyti/register'))
+    ->post($url->generate('voyti/registration-register'))
     ->csrf($csrf)
     ->open();
 
@@ -56,7 +56,7 @@ echo Field::buttonGroup()
     );
 
 echo Html::div()->class('mt-3')->open();
-echo Html::a($translator->translate('voyti.view.registration.already_have_account', category: 'voyti'), $url->generate('voyti/login'));
+echo Html::a($translator->translate('voyti.view.registration.already_have_account', category: 'voyti'), $url->generate('voyti/session-login'));
 echo Html::div()->close();
 
 echo Html::form()->close();

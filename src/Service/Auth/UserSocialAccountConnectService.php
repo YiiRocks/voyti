@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service\Auth;
 
-use YiiRocks\Voyti\Entity\UserSocialAccount;
+use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\Service\ServiceResult;
 
 final readonly class UserSocialAccountConnectService

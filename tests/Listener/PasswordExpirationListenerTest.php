@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Listener;
 
 use PHPUnit\Framework\TestCase;
-use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
 use YiiRocks\Voyti\Helper\FlashType;
 use YiiRocks\Voyti\Listener\PasswordExpirationListener;
+use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\ExpireService;
 use Yiisoft\Session\Flash\FlashInterface;

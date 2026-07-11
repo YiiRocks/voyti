@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests;
 
 use PHPUnit\Framework\TestCase;
-use YiiRocks\Voyti\Helper\ProfileVisibility;
-use YiiRocks\Voyti\Helper\RecaptchaVersion;
+use YiiRocks\Voyti\Enum\EmailChangeConfirmation;
+use YiiRocks\Voyti\Enum\ProfileVisibility;
+use YiiRocks\Voyti\Enum\RecaptchaVersion;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Strategy\EmailChangeConfirmation;
 
 final class ModuleConfigTest extends TestCase
 {
@@ -27,8 +27,6 @@ final class ModuleConfigTest extends TestCase
             enableEmailConfirmation: false,
             enableSwitchIdentities: false,
             switchIdentitySessionKey: null,
-            loginRoute: 'custom/login',
-            accountSettingsRoute: 'custom/settings',
             homeRoute: 'custom/home',
             mailAdminOnRegister: 'admin@example.com',
             enablePasswordExpiration: true,
@@ -60,8 +58,6 @@ final class ModuleConfigTest extends TestCase
         self::assertFalse($config->enableEmailConfirmation);
         self::assertFalse($config->enableSwitchIdentities);
         self::assertNull($config->switchIdentitySessionKey);
-        self::assertSame('custom/login', $config->loginRoute);
-        self::assertSame('custom/settings', $config->accountSettingsRoute);
         self::assertSame('custom/home', $config->homeRoute);
         self::assertSame('admin@example.com', $config->mailAdminOnRegister);
         self::assertTrue($config->enablePasswordExpiration);
@@ -97,8 +93,6 @@ final class ModuleConfigTest extends TestCase
         self::assertSame([], $config->twoFactorAuthenticationForcedPermissions);
         self::assertSame([], $config->socialNetworkClients);
         self::assertSame('voyti_original_user', $config->switchIdentitySessionKey);
-        self::assertSame('voyti/login', $config->loginRoute);
-        self::assertSame('voyti/settings-account', $config->accountSettingsRoute);
         self::assertSame('home', $config->homeRoute);
         self::assertFalse($config->enablePasswordExpiration);
         self::assertFalse($config->enablePasswordComplexity);
@@ -134,8 +128,6 @@ final class ModuleConfigTest extends TestCase
             'enableEmailConfirmation',
             'enableSwitchIdentities',
             'switchIdentitySessionKey',
-            'loginRoute',
-            'accountSettingsRoute',
             'homeRoute',
             'mailAdminOnRegister',
             'enablePasswordExpiration',
@@ -203,8 +195,6 @@ final class ModuleConfigTest extends TestCase
         self::assertTrue($config->enableEmailConfirmation);
         self::assertTrue($config->enableSwitchIdentities);
         self::assertSame('voyti_original_user', $config->switchIdentitySessionKey);
-        self::assertSame('voyti/login', $config->loginRoute);
-        self::assertSame('voyti/settings-account', $config->accountSettingsRoute);
         self::assertSame('home', $config->homeRoute);
         self::assertNull($config->mailAdminOnRegister);
         self::assertFalse($config->enablePasswordExpiration);

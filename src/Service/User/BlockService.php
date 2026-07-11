@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Service\User;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
-use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Event\User\UserEvent;
+use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\UserSessionHistory\TerminateUserSessionsService;
 
 final readonly class BlockService

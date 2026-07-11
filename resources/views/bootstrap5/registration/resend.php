@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use YiiRocks\Voyti\Form\Auth\ResendForm;
 use YiiRocks\Voyti\Helper\RecaptchaHelper;
+use YiiRocks\Voyti\Model\Form\Auth\ResendForm;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
@@ -27,7 +27,7 @@ echo Html::div()->open();
 echo Html::H1($translator->translate('voyti.view.registration.resend_title', category: 'voyti'));
 
 echo Html::form()
-    ->post($url->generate('voyti/resend'))
+    ->post($url->generate('voyti/registration-resend'))
     ->csrf($csrf)
     ->open();
 

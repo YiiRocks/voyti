@@ -6,9 +6,9 @@ namespace YiiRocks\Voyti\tests\Strategy;
 
 use PHPUnit\Framework\TestCase;
 use Psr\SimpleCache\CacheInterface;
-use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
-use YiiRocks\Voyti\Form\Settings\SettingsForm;
+use YiiRocks\Voyti\Model\Form\Settings\SettingsForm;
+use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Strategy\NewEmailChangeStrategy;

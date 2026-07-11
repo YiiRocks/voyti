@@ -6,9 +6,9 @@ namespace YiiRocks\Voyti\tests\Service\UserSessionHistory;
 
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
-use YiiRocks\Voyti\Entity\User;
-use YiiRocks\Voyti\Entity\UserSessionHistory;
 use YiiRocks\Voyti\Event\Session\SessionEvent;
+use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\Model\UserSessionHistory;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\UserSessionHistory\UserSessionHistoryDecorator;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;

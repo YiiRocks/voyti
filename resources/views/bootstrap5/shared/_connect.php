@@ -15,7 +15,7 @@ use Yiisoft\Router\UrlGeneratorInterface;
  */
 
 $excludedProviders ??= [];
-$routeName ??= 'voyti/auth';
+$routeName ??= 'voyti/session-auth';
 
 $clients = array_filter(
     $authClients->all(),

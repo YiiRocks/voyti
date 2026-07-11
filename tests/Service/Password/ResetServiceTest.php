@@ -6,8 +6,8 @@ namespace YiiRocks\Voyti\tests\Service\Password;
 
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
-use YiiRocks\Voyti\Entity\User;
-use YiiRocks\Voyti\Entity\UserToken;
+use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\ResetService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;

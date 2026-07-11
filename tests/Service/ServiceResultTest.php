@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Service;
 
 use PHPUnit\Framework\TestCase;
+use YiiRocks\Voyti\Enum\ServiceResultStatus;
 use YiiRocks\Voyti\Service\ServiceResult;
-use YiiRocks\Voyti\Service\ServiceResultStatus;
 
 final class ServiceResultTest extends TestCase
 {

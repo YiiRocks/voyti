@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service;
 
-use YiiRocks\Voyti\Entity\User;
-use YiiRocks\Voyti\Entity\UserToken;
+use YiiRocks\Voyti\Enum\EmailChangeConfirmation;
+use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Strategy\EmailChangeConfirmation;
 
 final readonly class EmailChangeService
 {

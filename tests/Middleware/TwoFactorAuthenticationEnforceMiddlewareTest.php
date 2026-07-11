@@ -10,8 +10,8 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Middleware\TwoFactorAuthenticationEnforceMiddleware;
+use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\Auth\IdentityRepositoryInterface;
@@ -260,7 +260,6 @@ final class TwoFactorAuthenticationEnforceMiddlewareTest extends TestCase
         $config = new ModuleConfig(
             enableTwoFactorAuthentication: true,
             twoFactorAuthenticationForcedPermissions: ['admin'],
-            accountSettingsRoute: 'voyti/settings-account',
         );
 
         $user = $this->createUserWithId(42);
@@ -276,10 +275,10 @@ final class TwoFactorAuthenticationEnforceMiddlewareTest extends TestCase
         $handler->expects(self::never())->method('handle');
 
         $url = $this->createMock(UrlGeneratorInterface::class);
-        $url->expects(self::once())->method('generate')->with('voyti/settings-account')->willReturn('/voyti/settings-account');
+        $url->expects(self::once())->method('generate')->with('voyti/account-update')->willReturn('/voyti/account-update');
 
         $response = $this->createMock(ResponseInterface::class);
-        $response->expects(self::once())->method('withHeader')->with('Location', '/voyti/settings-account')->willReturnSelf();
+        $response->expects(self::once())->method('withHeader')->with('Location', '/voyti/account-update')->willReturnSelf();
 
         $responseFactory = $this->createMock(ResponseFactoryInterface::class);
         $responseFactory->expects(self::once())->method('createResponse')->with(302)->willReturn($response);

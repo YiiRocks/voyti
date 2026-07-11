@@ -9,8 +9,8 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Middleware\PasswordAgeEnforceMiddleware;
+use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\ExpireService;
 use Yiisoft\Router\CurrentRoute;
@@ -28,7 +28,6 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
         $config = new ModuleConfig(
             enablePasswordExpiration: true,
             maxPasswordAge: 90,
-            accountSettingsRoute: 'voyti/settings-account',
         );
 
         $user = new User();
@@ -38,7 +37,7 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
         $currentUser->expects(self::once())->method('getIdentity')->willReturn($user);
 
         $currentRoute = $this->createMock(CurrentRoute::class);
-        $currentRoute->method('getName')->willReturn('voyti/settings-account');
+        $currentRoute->method('getName')->willReturn('voyti/account-update');
 
         $request = $this->createMock(ServerRequestInterface::class);
         $response = $this->createMock(ResponseInterface::class);
@@ -62,7 +61,7 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
         $currentUser->expects(self::once())->method('getIdentity')->willReturn($user);
 
         $currentRoute = $this->createMock(CurrentRoute::class);
-        $currentRoute->method('getName')->willReturn('voyti/logout');
+        $currentRoute->method('getName')->willReturn('voyti/session-logout');
 
         $request = $this->createMock(ServerRequestInterface::class);
         $response = $this->createMock(ResponseInterface::class);
@@ -189,7 +188,6 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
         $config = new ModuleConfig(
             enablePasswordExpiration: true,
             maxPasswordAge: 90,
-            accountSettingsRoute: 'voyti/settings-account',
         );
 
         $user = new User();
@@ -203,10 +201,10 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
         $handler->expects(self::never())->method('handle');
 
         $url = $this->createMock(UrlGeneratorInterface::class);
-        $url->expects(self::once())->method('generate')->with('voyti/settings-account')->willReturn('/voyti/settings-account');
+        $url->expects(self::once())->method('generate')->with('voyti/account-update')->willReturn('/voyti/account-update');
 
         $response = $this->createMock(ResponseInterface::class);
-        $response->expects(self::once())->method('withHeader')->with('Location', '/voyti/settings-account')->willReturnSelf();
+        $response->expects(self::once())->method('withHeader')->with('Location', '/voyti/account-update')->willReturnSelf();
 
         $responseFactory = $this->createMock(ResponseFactoryInterface::class);
         $responseFactory->expects(self::once())->method('createResponse')->with(302)->willReturn($response);
@@ -226,7 +224,6 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
         $config = new ModuleConfig(
             enablePasswordExpiration: true,
             maxPasswordAge: 90,
-            accountSettingsRoute: 'voyti/settings-account',
         );
 
         $user = new User();
@@ -239,10 +236,10 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
         $handler->expects(self::never())->method('handle');
 
         $url = $this->createMock(UrlGeneratorInterface::class);
-        $url->expects(self::once())->method('generate')->with('voyti/settings-account')->willReturn('/voyti/settings-account');
+        $url->expects(self::once())->method('generate')->with('voyti/account-update')->willReturn('/voyti/account-update');
 
         $response = $this->createMock(ResponseInterface::class);
-        $response->expects(self::once())->method('withHeader')->with('Location', '/voyti/settings-account')->willReturnSelf();
+        $response->expects(self::once())->method('withHeader')->with('Location', '/voyti/account-update')->willReturnSelf();
 
         $responseFactory = $this->createMock(ResponseFactoryInterface::class);
         $responseFactory->expects(self::once())->method('createResponse')->with(302)->willReturn($response);
@@ -268,7 +265,6 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
 
         return new PasswordAgeEnforceMiddleware(
             $currentUser ?? $this->createMock(CurrentUser::class),
-            $config,
             new ExpireService($config),
             $currentRoute ?? $this->createMock(CurrentRoute::class),
             $translator ?? $this->createMock(TranslatorInterface::class),

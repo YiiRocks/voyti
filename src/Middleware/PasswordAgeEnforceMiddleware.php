@@ -9,8 +9,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use YiiRocks\Voyti\Entity\User;
-use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\Password\ExpireService;
 use Yiisoft\Http\Header;
 use Yiisoft\Http\Status;
@@ -22,15 +21,16 @@ use Yiisoft\User\Guest\GuestIdentityInterface;
 
 final readonly class PasswordAgeEnforceMiddleware implements MiddlewareInterface
 {
+    private const ACCOUNT_SETTINGS_ROUTE = 'voyti/account-update';
+
     /**
      * @var string[] Route names that must stay reachable even with an expired password, to avoid a redirect
      * loop on the target route itself and to always allow logging out.
      */
-    private const EXEMPT_ROUTES = ['voyti/logout'];
+    private const EXEMPT_ROUTES = [self::ACCOUNT_SETTINGS_ROUTE, 'voyti/session-logout'];
 
     public function __construct(
         private CurrentUser $currentUser,
-        private ModuleConfig $config,
         private ExpireService $passwordExpireService,
         private CurrentRoute $currentRoute,
         private TranslatorInterface $translator,
@@ -49,13 +49,13 @@ final readonly class PasswordAgeEnforceMiddleware implements MiddlewareInterface
         }
 
         $routeName = $this->currentRoute->getName();
-        if ($routeName === $this->config->accountSettingsRoute || in_array($routeName, self::EXEMPT_ROUTES, true)) {
+        if (in_array($routeName, self::EXEMPT_ROUTES, true)) {
             return $handler->handle($request);
         }
 
         if ($this->passwordExpireService->checkPasswordExpiration($user)) {
             $response = $this->responseFactory->createResponse(Status::FOUND);
-            return $response->withHeader(Header::LOCATION, $this->url->generate($this->config->accountSettingsRoute));
+            return $response->withHeader(Header::LOCATION, $this->url->generate(self::ACCOUNT_SETTINGS_ROUTE));
         }
 
         return $handler->handle($request);

@@ -7,7 +7,7 @@ namespace YiiRocks\Voyti\Validator\TwoFactor;
 use chillerlan\Authenticator\Authenticator;
 use chillerlan\Authenticator\AuthenticatorOptions;
 use Throwable;
-use YiiRocks\Voyti\Entity\User;
+use YiiRocks\Voyti\Model\User;
 use Yiisoft\Translator\TranslatorInterface;
 
 final class CodeValidator

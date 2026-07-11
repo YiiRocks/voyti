@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Strategy;
 
 use PHPUnit\Framework\TestCase;
+use YiiRocks\Voyti\Enum\EmailChangeConfirmation;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
-use YiiRocks\Voyti\Form\Settings\SettingsForm;
+use YiiRocks\Voyti\Model\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Strategy\BothEmailChangeStrategy;
-use YiiRocks\Voyti\Strategy\EmailChangeConfirmation;
 use YiiRocks\Voyti\Strategy\EmailChangeStrategyFactory;
 use YiiRocks\Voyti\Strategy\NewEmailChangeStrategy;
 use YiiRocks\Voyti\Strategy\NoneEmailChangeStrategy;

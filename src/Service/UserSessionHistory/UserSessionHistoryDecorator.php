@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Service\UserSessionHistory;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
-use YiiRocks\Voyti\Entity\User;
-use YiiRocks\Voyti\Entity\UserSessionHistory;
 use YiiRocks\Voyti\Event\Session\SessionEvent;
+use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\Model\UserSessionHistory;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Session\SessionInterface;
 

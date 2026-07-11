@@ -11,7 +11,6 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Middleware\AccessRuleMiddleware;
-use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\User\CurrentUser;
@@ -59,10 +58,8 @@ final class AccessRuleMiddlewareTest extends TestCase
         $currentUser = $this->createMock(CurrentUser::class);
         $currentUser->expects(self::once())->method('getIdentity')->willReturn($guestIdentity);
 
-        $config = new ModuleConfig(loginRoute: 'voyti/login');
-
         $url = $this->createMock(UrlGeneratorInterface::class);
-        $url->expects(self::once())->method('generate')->with('voyti/login')->willReturn('/voyti/login');
+        $url->expects(self::once())->method('generate')->with('voyti/session-login')->willReturn('/voyti/login');
 
         $response = $this->createMock(ResponseInterface::class);
         $response->expects(self::once())->method('withHeader')->with('Location', '/voyti/login')->willReturnSelf();
@@ -72,7 +69,6 @@ final class AccessRuleMiddlewareTest extends TestCase
 
         $middleware = $this->createMiddleware(
             currentUser: $currentUser,
-            config: $config,
             responseFactory: $responseFactory,
             url: $url,
         );
@@ -120,10 +116,8 @@ final class AccessRuleMiddlewareTest extends TestCase
         $currentUser = $this->createMock(CurrentUser::class);
         $currentUser->expects(self::once())->method('getIdentity')->willReturn($guestIdentity);
 
-        $config = new ModuleConfig(loginRoute: 'voyti/login');
-
         $url = $this->createMock(UrlGeneratorInterface::class);
-        $url->expects(self::once())->method('generate')->with('voyti/login')->willReturn('/voyti/login');
+        $url->expects(self::once())->method('generate')->with('voyti/session-login')->willReturn('/voyti/login');
 
         $response = $this->createMock(ResponseInterface::class);
         $response->expects(self::once())->method('withHeader')->with('Location', '/voyti/login')->willReturnSelf();
@@ -133,7 +127,6 @@ final class AccessRuleMiddlewareTest extends TestCase
 
         $middleware = $this->createMiddleware(
             currentUser: $currentUser,
-            config: $config,
             responseFactory: $responseFactory,
             url: $url,
         );
@@ -142,14 +135,12 @@ final class AccessRuleMiddlewareTest extends TestCase
     }
     private function createMiddleware(
         ?CurrentUser $currentUser = null,
-        ?ModuleConfig $config = null,
         ?AuthHelper $authHelper = null,
         ?ResponseFactoryInterface $responseFactory = null,
         ?UrlGeneratorInterface $url = null,
     ): AccessRuleMiddleware {
         return new AccessRuleMiddleware(
             $currentUser ?? $this->createMock(CurrentUser::class),
-            $config ?? new ModuleConfig(),
             $authHelper ?? $this->createMock(AuthHelper::class),
             $responseFactory ?? $this->createMock(ResponseFactoryInterface::class),
             $url ?? $this->createMock(UrlGeneratorInterface::class),

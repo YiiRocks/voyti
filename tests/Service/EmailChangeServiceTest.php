@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Service;
 
 use PHPUnit\Framework\TestCase;
-use YiiRocks\Voyti\Entity\User;
-use YiiRocks\Voyti\Entity\UserToken;
+use YiiRocks\Voyti\Enum\EmailChangeConfirmation;
+use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\EmailChangeService;
-use YiiRocks\Voyti\Strategy\EmailChangeConfirmation;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 
 final class EmailChangeServiceTest extends TestCase

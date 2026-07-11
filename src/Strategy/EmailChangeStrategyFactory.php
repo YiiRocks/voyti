@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Strategy;
 
+use YiiRocks\Voyti\Enum\EmailChangeConfirmation;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
-use YiiRocks\Voyti\Form\Settings\SettingsForm;
+use YiiRocks\Voyti\Model\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Service\MailService;
 
 final readonly class EmailChangeStrategyFactory

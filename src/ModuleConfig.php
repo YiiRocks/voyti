@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti;
 
 use LogicException;
-use YiiRocks\Voyti\Helper\ProfileVisibility;
-use YiiRocks\Voyti\Helper\RecaptchaVersion;
-use YiiRocks\Voyti\Strategy\EmailChangeConfirmation;
+use YiiRocks\Voyti\Enum\EmailChangeConfirmation;
+use YiiRocks\Voyti\Enum\ProfileVisibility;
+use YiiRocks\Voyti\Enum\RecaptchaVersion;
 use Yiisoft\Router\RouteNotFoundException;
 use Yiisoft\Router\UrlGeneratorInterface;
 
@@ -44,8 +44,6 @@ final readonly class ModuleConfig
         public bool $enableEmailConfirmation = true,
         public bool $enableSwitchIdentities = true,
         public ?string $switchIdentitySessionKey = 'voyti_original_user',
-        public string $loginRoute = 'voyti/login',
-        public string $accountSettingsRoute = 'voyti/settings-account',
         public string $homeRoute = 'home',
         public ?string $mailAdminOnRegister = null,
         public bool $enablePasswordExpiration = false,
@@ -73,7 +71,7 @@ final readonly class ModuleConfig
     /**
      * @return (array|bool|int|null|string|EmailChangeConfirmation|ProfileVisibility|RecaptchaVersion)[]
      *
-     * @psalm-return array{appName: string, recaptchaVersion: null|RecaptchaVersion, enableSessionHistory: bool, numberSessionHistory: false|int, enableGdprCompliance: bool, gdprExportProperties: list<string>, gdprAnonymizePrefix: string, enableTwoFactorAuthentication: bool, twoFactorAuthenticationForcedPermissions: array<array-key, string>, enableRegistration: bool, enableSocialNetworkRegistration: bool, socialNetworkClients: array<string, array<string, mixed>>, enableEmailConfirmation: bool, enableSwitchIdentities: bool, switchIdentitySessionKey: null|string, loginRoute: string, accountSettingsRoute: string, homeRoute: string, mailAdminOnRegister: null|string, enablePasswordExpiration: bool, enablePasswordComplexity: bool, generatePasswords: bool, allowPasswordRecovery: bool, allowAdminPasswordRecovery: bool, allowAccountDelete: bool, emailChangeConfirmation: EmailChangeConfirmation, rememberLoginLifespan: int, tokenConfirmationLifespan: int, tokenRecoveryLifespan: int, administratorPermissionName: null|string, profileVisibility: ProfileVisibility, maxPasswordAge: int|null, disableIpLogging: bool, viewPath: string, mailPath: string, enableRestApi: bool, adminRestPrefix: string, apiTokenLifespan: int|null}
+     * @psalm-return array{appName: string, recaptchaVersion: null|RecaptchaVersion, enableSessionHistory: bool, numberSessionHistory: false|int, enableGdprCompliance: bool, gdprExportProperties: list<string>, gdprAnonymizePrefix: string, enableTwoFactorAuthentication: bool, twoFactorAuthenticationForcedPermissions: array<array-key, string>, enableRegistration: bool, enableSocialNetworkRegistration: bool, socialNetworkClients: array<string, array<string, mixed>>, enableEmailConfirmation: bool, enableSwitchIdentities: bool, switchIdentitySessionKey: null|string, homeRoute: string, mailAdminOnRegister: null|string, enablePasswordExpiration: bool, enablePasswordComplexity: bool, generatePasswords: bool, allowPasswordRecovery: bool, allowAdminPasswordRecovery: bool, allowAccountDelete: bool, emailChangeConfirmation: EmailChangeConfirmation, rememberLoginLifespan: int, tokenConfirmationLifespan: int, tokenRecoveryLifespan: int, administratorPermissionName: null|string, profileVisibility: ProfileVisibility, maxPasswordAge: int|null, disableIpLogging: bool, viewPath: string, mailPath: string, enableRestApi: bool, adminRestPrefix: string, apiTokenLifespan: int|null}
      */
     public static function defaults(): array
     {

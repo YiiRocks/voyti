@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service\Rbac;
 
-use YiiRocks\Voyti\Form\Rbac\RuleForm;
+use YiiRocks\Voyti\Model\Form\Rbac\RuleForm;
 use YiiRocks\Voyti\Validator\Rbac\RuleValidator;
 use Yiisoft\Rbac\ItemsStorageInterface;
 

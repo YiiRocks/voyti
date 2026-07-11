@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Event\Security;
 
 use PHPUnit\Framework\TestCase;
-use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Event\Security\ResetPasswordEvent;
+use YiiRocks\Voyti\Model\UserToken;
 use Yiisoft\FormModel\FormModel;
 
 final class ResetPasswordEventTest extends TestCase

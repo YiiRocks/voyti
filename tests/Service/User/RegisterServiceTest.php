@@ -33,7 +33,7 @@ final class RegisterServiceTest extends TestCase
 
     public function testRunEmailAlreadyExistsReturnsFailure(): void
     {
-        $existing = new \YiiRocks\Voyti\Entity\User();
+        $existing = new \YiiRocks\Voyti\Model\User();
         $existing->setUsername('existing');
         $existing->setEmail('existing@example.com');
         $existing->setPasswordHash('hash');
@@ -58,7 +58,7 @@ final class RegisterServiceTest extends TestCase
 
     public function testRunUsernameAlreadyExistsReturnsFailure(): void
     {
-        $existing = new \YiiRocks\Voyti\Entity\User();
+        $existing = new \YiiRocks\Voyti\Model\User();
         $existing->setUsername('existinguser');
         $existing->setEmail('other@example.com');
         $existing->setPasswordHash('hash');
@@ -120,7 +120,7 @@ final class RegisterServiceTest extends TestCase
         ]);
 
         self::assertTrue($result->isSuccess());
-        $saved = \YiiRocks\Voyti\Entity\User::findByEmail('gdpr@example.com');
+        $saved = \YiiRocks\Voyti\Model\User::findByEmail('gdpr@example.com');
         self::assertNotNull($saved);
         self::assertTrue($saved->isGdprConsent());
         self::assertNotNull($saved->getGdprConsentDate());
@@ -147,7 +147,7 @@ final class RegisterServiceTest extends TestCase
         ]);
 
         self::assertTrue($result->isSuccess());
-        $saved = \YiiRocks\Voyti\Entity\User::findByEmail('nogdpr@example.com');
+        $saved = \YiiRocks\Voyti\Model\User::findByEmail('nogdpr@example.com');
         self::assertNotNull($saved);
         self::assertFalse($saved->isGdprConsent());
         self::assertNull($saved->getGdprConsentDate());
@@ -208,7 +208,7 @@ final class RegisterServiceTest extends TestCase
         self::assertTrue($result->isSuccess());
         self::assertSame('voyti.registration.account_created', $result->getMessage());
 
-        $saved = \YiiRocks\Voyti\Entity\User::findByEmail('noconfirm@example.com');
+        $saved = \YiiRocks\Voyti\Model\User::findByEmail('noconfirm@example.com');
         self::assertNotNull($saved);
         self::assertNotNull($saved->getConfirmedAt());
     }

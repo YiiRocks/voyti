@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service;
 
-use YiiRocks\Voyti\Entity\User;
-use YiiRocks\Voyti\Entity\UserToken;
+use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\Model\UserToken;
 use Yiisoft\Mailer\MailerInterface;
 use Yiisoft\Mailer\Message;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -90,7 +90,7 @@ final readonly class MailService
             'reconfirmation',
             [
                 'username' => $user->getUsername(),
-                'confirmationUrl' => $this->url->generateAbsolute('voyti/settings-confirm', ['code' => $userToken->getCode()]),
+                'confirmationUrl' => $this->url->generateAbsolute('voyti/account-confirm', ['code' => $userToken->getCode()]),
                 'translator' => $this->translator,
             ],
         );
@@ -106,7 +106,7 @@ final readonly class MailService
             'recovery',
             [
                 'username' => $username,
-                'recoveryUrl' => $this->url->generateAbsolute('voyti/recover', ['id' => $userToken->getUserId(), 'code' => $userToken->getCode()]),
+                'recoveryUrl' => $this->url->generateAbsolute('voyti/password-reset-confirm', ['id' => $userToken->getUserId(), 'code' => $userToken->getCode()]),
                 'translator' => $this->translator,
             ],
         );

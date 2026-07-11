@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Event\Gdpr;
 
 use PHPUnit\Framework\TestCase;
-use YiiRocks\Voyti\Entity\User;
 use YiiRocks\Voyti\Event\Gdpr\GdprEvent;
+use YiiRocks\Voyti\Model\User;
 
 final class GdprEventTest extends TestCase
 {

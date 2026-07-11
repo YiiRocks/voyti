@@ -6,8 +6,8 @@ namespace YiiRocks\Voyti\tests\Factory;
 
 use PHPUnit\Framework\TestCase;
 use Psr\SimpleCache\CacheInterface;
-use YiiRocks\Voyti\Entity\UserToken;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
+use YiiRocks\Voyti\Model\UserToken;
 use Yiisoft\ActiveRecord\ActiveQuery;
 use Yiisoft\Db\Cache\SchemaCache;
 use Yiisoft\Db\Connection\ConnectionInterface;

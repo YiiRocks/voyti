@@ -1,0 +1,52 @@
+<?php
+
+declare(strict_types=1);
+
+namespace YiiRocks\Voyti\Adapter;
+
+use YiiRocks\Voyti\Helper\ApiTokenHasher;
+use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\Model\UserToken;
+use YiiRocks\Voyti\ModuleConfig;
+use Yiisoft\Auth\IdentityInterface;
+use Yiisoft\Auth\IdentityRepositoryInterface;
+use Yiisoft\Auth\IdentityWithTokenRepositoryInterface;
+
+final readonly class IdentityAdapter implements IdentityRepositoryInterface, IdentityWithTokenRepositoryInterface
+{
+    public function __construct(
+        private ModuleConfig $config,
+    ) {
+    }
+
+    /**
+     * @return User|null
+     */
+    #[\Override]
+    public function findIdentity(string $id): ?IdentityInterface
+    {
+        return User::findById((int) $id);
+    }
+
+    #[\Override]
+    public function findIdentityByToken(string $token, ?string $type = null): ?IdentityInterface
+    {
+        $userToken = UserToken::findByCodeAndType(
+            ApiTokenHasher::hash($token),
+            UserToken::TYPE_API_ACCESS,
+        );
+
+        if ($userToken === null) {
+            return null;
+        }
+
+        if (
+            $this->config->apiTokenLifespan !== null
+            && (time() - $userToken->getCreatedAt()) > $this->config->apiTokenLifespan
+        ) {
+            return null;
+        }
+
+        return $userToken->getUser();
+    }
+}
