@@ -31,6 +31,25 @@ final class PendingSocialAccountServiceTest extends TestCase
         $this->tearDownDatabase();
     }
 
+    /**
+     * @return iterable<string, array{int|string}>
+     */
+    public static function invalidSessionCodeProvider(): iterable
+    {
+        yield 'empty string' => [''];
+        yield 'non-string' => [5];
+    }
+
+    /**
+     * @return iterable<string, array{null|string, null|string}>
+     */
+    public static function rememberCodeProvider(): iterable
+    {
+        yield 'empty string code does not store' => ['', null];
+        yield 'non-null non-empty code stores' => ['remember_code', 'remember_code'];
+        yield 'null code does not store' => [null, null];
+    }
+
     public function testClearRemovesSessionKey(): void
     {
         $this->session->set('social_network_account_code', 'some_code');
@@ -139,9 +158,10 @@ final class PendingSocialAccountServiceTest extends TestCase
         self::assertFalse($this->session->has('social_network_account_code'));
     }
 
-    public function testGetPendingAccountWithEmptyStringSessionCodeReturnsNull(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('invalidSessionCodeProvider')]
+    public function testGetPendingAccountWithInvalidSessionCodeReturnsNull(int|string $sessionCode): void
     {
-        $this->session->set('social_network_account_code', '');
+        $this->session->set('social_network_account_code', $sessionCode);
 
         $result = $this->service->getPendingAccount();
         self::assertNull($result);
@@ -151,14 +171,6 @@ final class PendingSocialAccountServiceTest extends TestCase
     {
         $account = $this->service->getPendingAccount();
         self::assertNull($account);
-    }
-
-    public function testGetPendingAccountWithNonStringSessionCodeReturnsNull(): void
-    {
-        $this->session->set('social_network_account_code', 5);
-
-        $result = $this->service->getPendingAccount();
-        self::assertNull($result);
     }
 
     public function testGetPendingAccountWithValidAccountReturnsIt(): void
@@ -178,43 +190,23 @@ final class PendingSocialAccountServiceTest extends TestCase
         self::assertSame('valid_code', $result->getCode());
     }
 
-    public function testRememberWithEmptyStringCodeDoesNotStore(): void
-    {
-        $account = new UserSocialAccount();
-        $account->setProvider('github');
-        $account->setClientId('103');
-        $account->setCode('');
-        $account->setData('{}');
-        $account->setCreatedAt(time());
-
-        $this->service->remember($account);
-        self::assertFalse($this->session->has('social_network_account_code'));
-    }
-
-    public function testRememberWithNonNullNonEmptyCodeStoresInSession(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('rememberCodeProvider')]
+    public function testRememberStoresCodeInSession(?string $code, ?string $expectedStored): void
     {
         $account = new UserSocialAccount();
         $account->setProvider('github');
         $account->setClientId('101');
-        $account->setCode('remember_code');
+        $account->setCode($code);
         $account->setData('{}');
         $account->setCreatedAt(time());
 
         $this->service->remember($account);
-        self::assertSame('remember_code', $this->session->get('social_network_account_code'));
-    }
 
-    public function testRememberWithNullCodeDoesNotStore(): void
-    {
-        $account = new UserSocialAccount();
-        $account->setProvider('github');
-        $account->setClientId('102');
-        $account->setCode(null);
-        $account->setData('{}');
-        $account->setCreatedAt(time());
-
-        $this->service->remember($account);
-        self::assertFalse($this->session->has('social_network_account_code'));
+        if ($expectedStored === null) {
+            self::assertFalse($this->session->has('social_network_account_code'));
+        } else {
+            self::assertSame($expectedStored, $this->session->get('social_network_account_code'));
+        }
     }
 
     public function testUseCodeWithConnectedAccountClearsSessionOnFailure(): void

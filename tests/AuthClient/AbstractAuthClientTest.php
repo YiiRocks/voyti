@@ -13,6 +13,16 @@ use YiiRocks\Voyti\Http\ClientInterface;
 final class AbstractAuthClientTest extends TestCase
 {
 
+    /**
+     * @return iterable<string, array{bool|float|int, null|string}>
+     */
+    public static function firstStringCoercionProvider(): iterable
+    {
+        yield 'bool value is discarded' => [true, null];
+        yield 'float value is stringified' => [12.5, '12.5'];
+        yield 'integer value is stringified' => [12345, '12345'];
+    }
+
     public function testAppendQueryWithEmptyQueryString(): void
     {
         $client = $this->createClient(['clientId' => 'id', 'clientSecret' => 'secret']);
@@ -178,25 +188,6 @@ final class AbstractAuthClientTest extends TestCase
         $client->fetchUserAttributes('auth_code', 'https://example.com/callback', $httpClient);
     }
 
-    public function testFetchUserAttributesWithEmailAndNoUsername(): void
-    {
-        $httpClient = $this->createMock(ClientInterface::class);
-        $httpClient
-            ->expects(self::exactly(2))
-            ->method('send')
-            ->willReturnCallback(function (string $method, string $url): array {
-                if ($method === 'POST') {
-                    return ['access_token' => 'token'];
-                }
-                return ['id' => 'uid', 'email' => 'user@example.com'];
-            });
-
-        $client = $this->createClient(['clientId' => 'id', 'clientSecret' => 'secret']);
-        $result = $client->fetchUserAttributes('code', 'https://example.com/cb', $httpClient);
-
-        self::assertSame('user', $result['username']);
-    }
-
     public function testFetchUserAttributesWithSubIdentifier(): void
     {
         $httpClient = $this->createMock(ClientInterface::class);
@@ -214,63 +205,6 @@ final class AbstractAuthClientTest extends TestCase
         $result = $client->fetchUserAttributes('code', 'https://example.com/cb', $httpClient);
 
         self::assertSame('sub_id', $result['id']);
-    }
-
-    public function testFetchWithEmailMissingAtSymbol(): void
-    {
-        $httpClient = $this->createMock(ClientInterface::class);
-        $httpClient
-            ->expects(self::exactly(2))
-            ->method('send')
-            ->willReturnCallback(function (string $method, string $url): array {
-                if ($method === 'POST') {
-                    return ['access_token' => 'token'];
-                }
-                return ['id' => 'uid', 'email' => 'noatsign'];
-            });
-
-        $client = $this->createClient(['clientId' => 'id', 'clientSecret' => 'secret']);
-        $result = $client->fetchUserAttributes('code', 'https://cb.com', $httpClient);
-
-        self::assertSame('noatsign', $result['username']);
-    }
-
-    public function testFetchWithEmailOnlyGeneratesUsernameFromEmail(): void
-    {
-        $httpClient = $this->createMock(ClientInterface::class);
-        $httpClient
-            ->expects(self::exactly(2))
-            ->method('send')
-            ->willReturnCallback(function (string $method, string $url): array {
-                if ($method === 'POST') {
-                    return ['access_token' => 'token'];
-                }
-                return ['id' => 'uid', 'email' => 'user.name@example.com'];
-            });
-
-        $client = $this->createClient(['clientId' => 'id', 'clientSecret' => 'secret']);
-        $result = $client->fetchUserAttributes('code', 'https://cb.com', $httpClient);
-
-        self::assertSame('user.name', $result['username']);
-    }
-
-    public function testFetchWithEmailStartingWithAt(): void
-    {
-        $httpClient = $this->createMock(ClientInterface::class);
-        $httpClient
-            ->expects(self::exactly(2))
-            ->method('send')
-            ->willReturnCallback(function (string $method, string $url): array {
-                if ($method === 'POST') {
-                    return ['access_token' => 'token'];
-                }
-                return ['id' => 'uid', 'email' => '@domain.com'];
-            });
-
-        $client = $this->createClient(['clientId' => 'id', 'clientSecret' => 'secret']);
-        $result = $client->fetchUserAttributes('code', 'https://cb.com', $httpClient);
-
-        self::assertSame('@domain.com', $result['username']);
     }
 
     public function testFetchWithNameFromDisplayName(): void
@@ -291,63 +225,6 @@ final class AbstractAuthClientTest extends TestCase
 
         self::assertSame('Display Name', $result['name']);
         self::assertSame('Display Name', $result['username']);
-    }
-
-    public function testFetchWithNicknameUsername(): void
-    {
-        $httpClient = $this->createMock(ClientInterface::class);
-        $httpClient
-            ->expects(self::exactly(2))
-            ->method('send')
-            ->willReturnCallback(function (string $method, string $url): array {
-                if ($method === 'POST') {
-                    return ['access_token' => 'token'];
-                }
-                return ['id' => 'uid', 'email' => 'user@test.com', 'nickname' => 'nickuser'];
-            });
-
-        $client = $this->createClient(['clientId' => 'id', 'clientSecret' => 'secret']);
-        $result = $client->fetchUserAttributes('code', 'https://cb.com', $httpClient);
-
-        self::assertSame('nickuser', $result['username']);
-    }
-
-    public function testFetchWithPreferredUsername(): void
-    {
-        $httpClient = $this->createMock(ClientInterface::class);
-        $httpClient
-            ->expects(self::exactly(2))
-            ->method('send')
-            ->willReturnCallback(function (string $method, string $url): array {
-                if ($method === 'POST') {
-                    return ['access_token' => 'token'];
-                }
-                return ['id' => 'uid', 'email' => 'user@test.com', 'preferred_username' => 'pref_user'];
-            });
-
-        $client = $this->createClient(['clientId' => 'id', 'clientSecret' => 'secret']);
-        $result = $client->fetchUserAttributes('code', 'https://cb.com', $httpClient);
-
-        self::assertSame('pref_user', $result['username']);
-    }
-
-    public function testFetchWithScreenNameUsername(): void
-    {
-        $httpClient = $this->createMock(ClientInterface::class);
-        $httpClient
-            ->expects(self::exactly(2))
-            ->method('send')
-            ->willReturnCallback(function (string $method, string $url): array {
-                if ($method === 'POST') {
-                    return ['access_token' => 'token'];
-                }
-                return ['id' => 'uid', 'email' => 'user@test.com', 'screen_name' => 'screenuser'];
-            });
-
-        $client = $this->createClient(['clientId' => 'id', 'clientSecret' => 'secret']);
-        $result = $client->fetchUserAttributes('code', 'https://cb.com', $httpClient);
-
-        self::assertSame('screenuser', $result['username']);
     }
 
     public function testFetchWithUserInfoQueryConfig(): void
@@ -379,99 +256,24 @@ final class AbstractAuthClientTest extends TestCase
         self::assertSame('user@test.com', $result['email']);
     }
 
-    public function testFirstStringWithEmailAsBool(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('firstStringCoercionProvider')]
+    public function testFirstStringCoercion(bool|float|int $emailValue, ?string $expectedEmail): void
     {
         $httpClient = $this->createMock(ClientInterface::class);
         $httpClient
             ->expects(self::exactly(2))
             ->method('send')
-            ->willReturnCallback(function (string $method, string $url): array {
+            ->willReturnCallback(function (string $method, string $url) use ($emailValue): array {
                 if ($method === 'POST') {
                     return ['access_token' => 'token'];
                 }
-                return ['id' => 'uid', 'email' => true];
+                return ['id' => 'uid', 'email' => $emailValue];
             });
 
         $client = $this->createClient(['clientId' => 'id', 'clientSecret' => 'secret']);
         $result = $client->fetchUserAttributes('code', 'https://cb.com', $httpClient);
 
-        self::assertNull($result['email']);
-    }
-
-    public function testFirstStringWithEmailAsFloat(): void
-    {
-        $httpClient = $this->createMock(ClientInterface::class);
-        $httpClient
-            ->expects(self::exactly(2))
-            ->method('send')
-            ->willReturnCallback(function (string $method, string $url): array {
-                if ($method === 'POST') {
-                    return ['access_token' => 'token'];
-                }
-                return ['id' => 'uid', 'email' => 12.5];
-            });
-
-        $client = $this->createClient(['clientId' => 'id', 'clientSecret' => 'secret']);
-        $result = $client->fetchUserAttributes('code', 'https://cb.com', $httpClient);
-
-        self::assertSame('12.5', $result['email']);
-    }
-
-    public function testFirstStringWithEmailAsInteger(): void
-    {
-        $httpClient = $this->createMock(ClientInterface::class);
-        $httpClient
-            ->expects(self::exactly(2))
-            ->method('send')
-            ->willReturnCallback(function (string $method, string $url): array {
-                if ($method === 'POST') {
-                    return ['access_token' => 'token'];
-                }
-                return ['id' => 'uid', 'email' => 12345];
-            });
-
-        $client = $this->createClient(['clientId' => 'id', 'clientSecret' => 'secret']);
-        $result = $client->fetchUserAttributes('code', 'https://cb.com', $httpClient);
-
-        self::assertSame('12345', $result['email']);
-    }
-
-    public function testFirstStringWithFloatValue(): void
-    {
-        $httpClient = $this->createMock(ClientInterface::class);
-        $httpClient
-            ->expects(self::exactly(2))
-            ->method('send')
-            ->willReturnCallback(function (string $method, string $url): array {
-                if ($method === 'POST') {
-                    return ['access_token' => 'token'];
-                }
-                return ['id' => 'uid', 'rating' => 4.5];
-            });
-
-        $client = $this->createClient(['clientId' => 'id', 'clientSecret' => 'secret']);
-        $client->fetchUserAttributes('code', 'https://cb.com', $httpClient);
-
-        self::assertTrue(true);
-    }
-
-    public function testFirstStringWithIntegerValue(): void
-    {
-        $httpClient = $this->createMock(ClientInterface::class);
-        $httpClient
-            ->expects(self::exactly(2))
-            ->method('send')
-            ->willReturnCallback(function (string $method, string $url): array {
-                if ($method === 'POST') {
-                    return ['access_token' => 'token'];
-                }
-                return ['id' => 'uid', 'email' => 'test@example.com', 'age' => 25];
-            });
-
-        $client = $this->createClient(['clientId' => 'id', 'clientSecret' => 'secret']);
-        $client->fetchUserAttributes('code', 'https://cb.com', $httpClient);
-
-        self::assertTrue(true);
+        self::assertSame($expectedEmail, $result['email']);
     }
 
     public function testGetAuthorizationUrlReturnsUrl(): void
@@ -968,6 +770,49 @@ final class AbstractAuthClientTest extends TestCase
 
         self::assertNotNull($capturedQuery);
         self::assertSame('1.0', $capturedQuery['v']);
+    }
+
+    /**
+     * @param array<string, mixed> $userInfoResponse
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('usernameDerivationProvider')]
+    public function testUsernameDerivation(array $userInfoResponse, string $expectedUsername): void
+    {
+        $httpClient = $this->createMock(ClientInterface::class);
+        $httpClient
+            ->expects(self::exactly(2))
+            ->method('send')
+            ->willReturnCallback(function (string $method, string $url) use ($userInfoResponse): array {
+                if ($method === 'POST') {
+                    return ['access_token' => 'token'];
+                }
+                return $userInfoResponse;
+            });
+
+        $client = $this->createClient(['clientId' => 'id', 'clientSecret' => 'secret']);
+        $result = $client->fetchUserAttributes('code', 'https://cb.com', $httpClient);
+
+        self::assertSame($expectedUsername, $result['username']);
+    }
+
+    /**
+     * @return iterable<string, array{array<string, mixed>, string}>
+     */
+    public static function usernameDerivationProvider(): iterable
+    {
+        yield 'email with no username field' => [['id' => 'uid', 'email' => 'user@example.com'], 'user'];
+        yield 'nickname field' => [['id' => 'uid', 'email' => 'user@test.com', 'nickname' => 'nickuser'], 'nickuser'];
+        yield 'preferred_username field' => [
+            ['id' => 'uid', 'email' => 'user@test.com', 'preferred_username' => 'pref_user'],
+            'pref_user',
+        ];
+        yield 'screen_name field' => [
+            ['id' => 'uid', 'email' => 'user@test.com', 'screen_name' => 'screenuser'],
+            'screenuser',
+        ];
+        yield 'email missing at symbol' => [['id' => 'uid', 'email' => 'noatsign'], 'noatsign'];
+        yield 'email with dot before at' => [['id' => 'uid', 'email' => 'user.name@example.com'], 'user.name'];
+        yield 'email starting with at' => [['id' => 'uid', 'email' => '@domain.com'], '@domain.com'];
     }
     private function createClient(array $config = []): GenericAuthClient
     {

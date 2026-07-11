@@ -19,22 +19,26 @@ use Yiisoft\Validator\Rule\Required;
 final class RecoveryFormTest extends TestCase
 {
 
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function constructScenarioProvider(): iterable
+    {
+        yield 'request' => [RecoveryForm::SCENARIO_REQUEST];
+        yield 'reset' => [RecoveryForm::SCENARIO_RESET];
+    }
+
     public function testConstructDefaultScenario(): void
     {
         $form = new RecoveryForm(new ModuleConfig(), $this->createTranslator());
         $this->assertSame(RecoveryForm::SCENARIO_REQUEST, $form->scenario);
     }
 
-    public function testConstructRequestScenario(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('constructScenarioProvider')]
+    public function testConstructWithExplicitScenario(string $scenario): void
     {
-        $form = new RecoveryForm(new ModuleConfig(), $this->createTranslator(), RecoveryForm::SCENARIO_REQUEST);
-        $this->assertSame(RecoveryForm::SCENARIO_REQUEST, $form->scenario);
-    }
-
-    public function testConstructResetScenario(): void
-    {
-        $form = new RecoveryForm(new ModuleConfig(), $this->createTranslator(), RecoveryForm::SCENARIO_RESET);
-        $this->assertSame(RecoveryForm::SCENARIO_RESET, $form->scenario);
+        $form = new RecoveryForm(new ModuleConfig(), $this->createTranslator(), $scenario);
+        $this->assertSame($scenario, $form->scenario);
     }
 
     public function testEmailProperty(): void

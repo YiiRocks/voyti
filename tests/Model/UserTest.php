@@ -113,6 +113,30 @@ final class UserTest extends TestCase
         $this->connection = null;
     }
 
+    /**
+     * @return iterable<string, array{string, string, int|string}>
+     */
+    public static function getterSetterProvider(): iterable
+    {
+        yield 'authKey' => ['setAuthKey', 'getAuthKey', 'auth_key_value'];
+        yield 'authTfKey' => ['setAuthTfKey', 'getAuthTfKey', 'tfkey123'];
+        yield 'authTfType' => ['setAuthTfType', 'getAuthTfType', 'totp'];
+        yield 'blockedAt' => ['setBlockedAt', 'getBlockedAt', 12345];
+        yield 'confirmedAt' => ['setConfirmedAt', 'getConfirmedAt', 12345];
+        yield 'createdAt' => ['setCreatedAt', 'getCreatedAt', 1234567890];
+        yield 'email' => ['setEmail', 'getEmail', 'user@example.com'];
+        yield 'flags' => ['setFlags', 'getFlags', 5];
+        yield 'gdprConsentDate' => ['setGdprConsentDate', 'getGdprConsentDate', 12345];
+        yield 'lastLoginAt' => ['setLastLoginAt', 'getLastLoginAt', 12345];
+        yield 'lastLoginIp' => ['setLastLoginIp', 'getLastLoginIp', '10.0.0.1'];
+        yield 'passwordChangedAt' => ['setPasswordChangedAt', 'getPasswordChangedAt', 12345];
+        yield 'passwordHash' => ['setPasswordHash', 'getPasswordHash', 'hashed_password'];
+        yield 'registrationIp' => ['setRegistrationIp', 'getRegistrationIp', '192.168.1.1'];
+        yield 'unconfirmedEmail' => ['setUnconfirmedEmail', 'getUnconfirmedEmail', 'pending@example.com'];
+        yield 'updatedAt' => ['setUpdatedAt', 'getUpdatedAt', 1234567890];
+        yield 'username' => ['setUsername', 'getUsername', 'johndoe'];
+    }
+
     public function testDefaultValues(): void
     {
         $entity = new User();
@@ -312,123 +336,12 @@ final class UserTest extends TestCase
         self::assertSame('Test bio', $found->getBio());
     }
 
-    public function testGetSetAuthKey(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('getterSetterProvider')]
+    public function testGetSetProperty(string $setter, string $getter, int|string $value): void
     {
         $entity = new User();
-        $entity->setAuthKey('auth_key_value');
-        self::assertSame('auth_key_value', $entity->getAuthKey());
-    }
-
-    public function testGetSetAuthTfKey(): void
-    {
-        $entity = new User();
-        $entity->setAuthTfKey('tfkey123');
-        self::assertSame('tfkey123', $entity->getAuthTfKey());
-    }
-
-    public function testGetSetAuthTfType(): void
-    {
-        $entity = new User();
-        $entity->setAuthTfType('totp');
-        self::assertSame('totp', $entity->getAuthTfType());
-    }
-
-    public function testGetSetBlockedAt(): void
-    {
-        $entity = new User();
-        $entity->setBlockedAt(12345);
-        self::assertSame(12345, $entity->getBlockedAt());
-    }
-
-    public function testGetSetConfirmedAt(): void
-    {
-        $entity = new User();
-        $entity->setConfirmedAt(12345);
-        self::assertSame(12345, $entity->getConfirmedAt());
-    }
-
-    public function testGetSetCreatedAt(): void
-    {
-        $entity = new User();
-        $entity->setCreatedAt(1234567890);
-        self::assertSame(1234567890, $entity->getCreatedAt());
-    }
-
-    public function testGetSetEmail(): void
-    {
-        $entity = new User();
-        $entity->setEmail('user@example.com');
-        self::assertSame('user@example.com', $entity->getEmail());
-    }
-
-    public function testGetSetFlags(): void
-    {
-        $entity = new User();
-        $entity->setFlags(5);
-        self::assertSame(5, $entity->getFlags());
-    }
-
-    public function testGetSetGdprConsentDate(): void
-    {
-        $entity = new User();
-        $entity->setGdprConsentDate(12345);
-        self::assertSame(12345, $entity->getGdprConsentDate());
-    }
-
-    public function testGetSetLastLoginAt(): void
-    {
-        $entity = new User();
-        $entity->setLastLoginAt(12345);
-        self::assertSame(12345, $entity->getLastLoginAt());
-    }
-
-    public function testGetSetLastLoginIp(): void
-    {
-        $entity = new User();
-        $entity->setLastLoginIp('10.0.0.1');
-        self::assertSame('10.0.0.1', $entity->getLastLoginIp());
-    }
-
-    public function testGetSetPasswordChangedAt(): void
-    {
-        $entity = new User();
-        $entity->setPasswordChangedAt(12345);
-        self::assertSame(12345, $entity->getPasswordChangedAt());
-    }
-
-    public function testGetSetPasswordHash(): void
-    {
-        $entity = new User();
-        $entity->setPasswordHash('hashed_password');
-        self::assertSame('hashed_password', $entity->getPasswordHash());
-    }
-
-    public function testGetSetRegistrationIp(): void
-    {
-        $entity = new User();
-        $entity->setRegistrationIp('192.168.1.1');
-        self::assertSame('192.168.1.1', $entity->getRegistrationIp());
-    }
-
-    public function testGetSetUnconfirmedEmail(): void
-    {
-        $entity = new User();
-        $entity->setUnconfirmedEmail('pending@example.com');
-        self::assertSame('pending@example.com', $entity->getUnconfirmedEmail());
-    }
-
-    public function testGetSetUpdatedAt(): void
-    {
-        $entity = new User();
-        $entity->setUpdatedAt(1234567890);
-        self::assertSame(1234567890, $entity->getUpdatedAt());
-    }
-
-    public function testGetSetUsername(): void
-    {
-        $entity = new User();
-        $entity->setUsername('johndoe');
-        self::assertSame('johndoe', $entity->getUsername());
+        $entity->$setter($value);
+        self::assertSame($value, $entity->$getter());
     }
 
     public function testGetSocialNetworkAccountsReturnsQuery(): void

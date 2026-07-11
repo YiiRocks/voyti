@@ -13,6 +13,17 @@ use YiiRocks\Voyti\ModuleConfig;
 final class ModuleConfigTest extends TestCase
 {
 
+    /**
+     * @return iterable<string, array{bool|int, bool}>
+     */
+    public static function numberSessionHistoryProvider(): iterable
+    {
+        yield 'false' => [false, false];
+        yield 'negative' => [-1, false];
+        yield 'positive' => [5, true];
+        yield 'zero' => [0, false];
+    }
+
     public function testConstructorCustomValues(): void
     {
         $config = new ModuleConfig(
@@ -231,28 +242,11 @@ final class ModuleConfigTest extends TestCase
         self::assertStringContainsString('resources/views/bootstrap5', $config->viewPath);
     }
 
-    public function testHasNumberSessionHistoryWithFalse(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('numberSessionHistoryProvider')]
+    public function testHasNumberSessionHistory(bool|int $value, bool $expected): void
     {
-        $config = new ModuleConfig(numberSessionHistory: false);
-        self::assertFalse($config->hasNumberSessionHistory());
-    }
-
-    public function testHasNumberSessionHistoryWithNegative(): void
-    {
-        $config = new ModuleConfig(numberSessionHistory: -1);
-        self::assertFalse($config->hasNumberSessionHistory());
-    }
-
-    public function testHasNumberSessionHistoryWithPositive(): void
-    {
-        $config = new ModuleConfig(numberSessionHistory: 5);
-        self::assertTrue($config->hasNumberSessionHistory());
-    }
-
-    public function testHasNumberSessionHistoryWithZero(): void
-    {
-        $config = new ModuleConfig(numberSessionHistory: 0);
-        self::assertFalse($config->hasNumberSessionHistory());
+        $config = new ModuleConfig(numberSessionHistory: $value);
+        self::assertSame($expected, $config->hasNumberSessionHistory());
     }
 
     public function testMailPathConcatOrder(): void

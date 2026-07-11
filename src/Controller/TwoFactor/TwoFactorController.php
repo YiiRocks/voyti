@@ -68,17 +68,12 @@ final readonly class TwoFactorController
         }
 
         if (!$isValid) {
-            return $this->renderView('two-factor/index', [
-                'user' => $user,
-                'method' => $method,
-                'qrCodeUri' => '',
-                'secret' => null,
-                'emailCodeSent' => $method === 'email',
-                'config' => $this->config,
-                'errors' => ['code' => [$this->errorMessage($errorMessage)]],
-                'flash' => $this->flash,
-                'preloadContent' => true,
-            ]);
+            return $this->renderTwoFactorIndex(
+                $user,
+                $method,
+                errors: ['code' => [$this->errorMessage($errorMessage)]],
+                emailCodeSent: $method === 'email',
+            );
         }
 
         $user->setAuthTfEnabled(false);
@@ -105,17 +100,7 @@ final readonly class TwoFactorController
 
         $this->twoFactorEmailCodeService->run($user);
 
-        return $this->renderView('two-factor/index', [
-            'user' => $user,
-            'method' => 'email',
-            'qrCodeUri' => '',
-            'secret' => null,
-            'emailCodeSent' => true,
-            'config' => $this->config,
-            'errors' => [],
-            'flash' => $this->flash,
-            'preloadContent' => true,
-        ]);
+        return $this->renderTwoFactorIndex($user, 'email', emailCodeSent: true);
     }
 
     public function email(ServerRequestInterface $request): ResponseInterface
@@ -129,16 +114,7 @@ final readonly class TwoFactorController
             return $this->redirect($this->url->generate('voyti/two-factor'));
         }
 
-        return $this->renderTwoFactorSetup($request, 'two-factor/_email', [
-            'user' => $user,
-            'method' => 'email',
-            'qrCodeUri' => '',
-            'secret' => null,
-            'emailCodeSent' => false,
-            'config' => $this->config,
-            'errors' => [],
-            'flash' => $this->flash,
-        ]);
+        return $this->renderTwoFactorSetup($request, 'two-factor/_email', $this->twoFactorViewParams($user, 'email'));
     }
 
     public function enable(ServerRequestInterface $request): ResponseInterface
@@ -162,17 +138,12 @@ final readonly class TwoFactorController
         if ($method === 'email') {
             $emailValidator = new EmailValidator($user, $code);
             if (!$emailValidator->validate()) {
-                return $this->renderView('two-factor/index', [
-                    'user' => $user,
-                    'method' => 'email',
-                    'qrCodeUri' => '',
-                    'secret' => null,
-                    'emailCodeSent' => true,
-                    'config' => $this->config,
-                    'errors' => ['code' => [$this->errorMessage($emailValidator->getErrorMessage())]],
-                    'flash' => $this->flash,
-                    'preloadContent' => true,
-                ]);
+                return $this->renderTwoFactorIndex(
+                    $user,
+                    'email',
+                    errors: ['code' => [$this->errorMessage($emailValidator->getErrorMessage())]],
+                    emailCodeSent: true,
+                );
             }
 
             $user->setAuthTfType('email');
@@ -182,17 +153,13 @@ final readonly class TwoFactorController
             if (!$codeValidator->validate()) {
                 $this->ensureFreshGoogleAuthenticatorSecret($user);
 
-                return $this->renderView('two-factor/index', [
-                    'user' => $user,
-                    'method' => 'google',
-                    'qrCodeUri' => $this->twoFactorQrCodeService->generateQrCodeSvg($user),
-                    'secret' => $user->getAuthTfKey(),
-                    'emailCodeSent' => false,
-                    'config' => $this->config,
-                    'errors' => ['code' => [$this->errorMessage($codeValidator->getErrorMessage())]],
-                    'flash' => $this->flash,
-                    'preloadContent' => true,
-                ]);
+                return $this->renderTwoFactorIndex(
+                    $user,
+                    'google',
+                    errors: ['code' => [$this->errorMessage($codeValidator->getErrorMessage())]],
+                    qrCodeUri: $this->twoFactorQrCodeService->generateQrCodeSvg($user),
+                    secret: $user->getAuthTfKey(),
+                );
             }
 
             $user->setAuthTfType('google');
@@ -229,30 +196,10 @@ final readonly class TwoFactorController
         }
 
         if (!$user->isAuthTfEnabled()) {
-            return $this->renderView('two-factor/index', [
-                'user' => $user,
-                'method' => 'google',
-                'qrCodeUri' => '',
-                'secret' => null,
-                'emailCodeSent' => false,
-                'config' => $this->config,
-                'errors' => [],
-                'flash' => $this->flash,
-                'preloadContent' => false,
-            ]);
+            return $this->renderTwoFactorIndex($user, 'google', preloadContent: false);
         }
 
-        return $this->renderView('two-factor/index', [
-            'user' => $user,
-            'method' => $user->getAuthTfType() ?? 'google',
-            'qrCodeUri' => '',
-            'secret' => null,
-            'emailCodeSent' => false,
-            'config' => $this->config,
-            'errors' => [],
-            'flash' => $this->flash,
-            'preloadContent' => true,
-        ]);
+        return $this->renderTwoFactorIndex($user, $user->getAuthTfType() ?? 'google');
     }
 
     public function renew(ServerRequestInterface $request): ResponseInterface
@@ -311,17 +258,7 @@ final readonly class TwoFactorController
 
         $this->twoFactorEmailCodeService->run($user);
 
-        return $this->renderView('two-factor/index', [
-            'user' => $user,
-            'method' => 'email',
-            'qrCodeUri' => '',
-            'secret' => null,
-            'emailCodeSent' => true,
-            'config' => $this->config,
-            'errors' => [],
-            'flash' => $this->flash,
-            'preloadContent' => true,
-        ]);
+        return $this->renderTwoFactorIndex($user, 'email', emailCodeSent: true);
     }
 
     protected function viewPath(): string
@@ -368,16 +305,28 @@ final readonly class TwoFactorController
         $this->ensureFreshGoogleAuthenticatorSecret($user);
         $qrCodeSvg = $this->twoFactorQrCodeService->generateQrCodeSvg($user);
 
-        return $this->renderTwoFactorSetup($request, 'two-factor/_google', [
-            'user' => $user,
-            'method' => 'google',
-            'qrCodeUri' => $qrCodeSvg,
-            'secret' => $user->getAuthTfKey(),
-            'emailCodeSent' => false,
-            'config' => $this->config,
-            'errors' => [],
-            'flash' => $this->flash,
-        ]);
+        return $this->renderTwoFactorSetup(
+            $request,
+            'two-factor/_google',
+            $this->twoFactorViewParams($user, 'google', qrCodeUri: $qrCodeSvg, secret: $user->getAuthTfKey()),
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $errors
+     */
+    private function renderTwoFactorIndex(
+        User $user,
+        string $method,
+        array $errors = [],
+        string $qrCodeUri = '',
+        ?string $secret = null,
+        bool $emailCodeSent = false,
+        bool $preloadContent = true,
+    ): ResponseInterface {
+        $params = $this->twoFactorViewParams($user, $method, $errors, $qrCodeUri, $secret, $emailCodeSent);
+
+        return $this->renderView('two-factor/index', $params + ['preloadContent' => $preloadContent]);
     }
 
     /**
@@ -405,5 +354,30 @@ final readonly class TwoFactorController
         }
 
         return $user;
+    }
+
+    /**
+     * @param array<string, mixed> $errors
+     *
+     * @return array<string, mixed>
+     */
+    private function twoFactorViewParams(
+        User $user,
+        string $method,
+        array $errors = [],
+        string $qrCodeUri = '',
+        ?string $secret = null,
+        bool $emailCodeSent = false,
+    ): array {
+        return [
+            'user' => $user,
+            'method' => $method,
+            'qrCodeUri' => $qrCodeUri,
+            'secret' => $secret,
+            'emailCodeSent' => $emailCodeSent,
+            'config' => $this->config,
+            'errors' => $errors,
+            'flash' => $this->flash,
+        ];
     }
 }

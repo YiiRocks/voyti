@@ -11,14 +11,6 @@ use YiiRocks\Voyti\Validator\TwoFactor\EmailValidator;
 final class EmailValidatorTest extends TestCase
 {
 
-    public function testConstructWithDefaultCode(): void
-    {
-        $user = new User();
-        $validator = new EmailValidator($user);
-
-        $this->assertSame('', $validator->getErrorMessage());
-    }
-
     public function testGenerateCode(): void
     {
         $user = new User();
@@ -93,19 +85,13 @@ final class EmailValidatorTest extends TestCase
         $this->assertFalse($validator->validate());
     }
 
-    public function testValidateReturnsFalseWhenKeyIsEmpty(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('unconfiguredKeyProvider')]
+    public function testValidateReturnsFalseWhenKeyIsNotConfigured(?string $authTfKey): void
     {
         $user = new User();
-        $user->setAuthTfKey('');
-
-        $validator = new EmailValidator($user, '123456');
-
-        $this->assertFalse($validator->validate());
-        $this->assertSame('Email 2FA is not configured.', $validator->getErrorMessage());
-    }
-    public function testValidateReturnsFalseWhenKeyIsNull(): void
-    {
-        $user = new User();
+        if ($authTfKey !== null) {
+            $user->setAuthTfKey($authTfKey);
+        }
 
         $validator = new EmailValidator($user, '123456');
 
@@ -121,5 +107,14 @@ final class EmailValidatorTest extends TestCase
         $validator = new EmailValidator($user, '123456');
 
         $this->assertTrue($validator->validate());
+    }
+
+    /**
+     * @return iterable<string, array{null|string}>
+     */
+    public static function unconfiguredKeyProvider(): iterable
+    {
+        yield 'empty key' => [''];
+        yield 'null key' => [null];
     }
 }

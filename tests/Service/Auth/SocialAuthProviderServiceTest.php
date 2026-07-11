@@ -24,6 +24,19 @@ final class SocialAuthProviderServiceTest extends TestCase
         $this->session->open();
     }
 
+    /**
+     * @return iterable<string, array{array<string, string>, bool}>
+     */
+    public static function callbackParametersProvider(): iterable
+    {
+        yield 'empty params' => [[], false];
+        yield 'unrelated params' => [['foo' => 'bar'], false];
+        yield 'code present' => [['code' => 'abc'], true];
+        yield 'error present' => [['error' => 'access_denied'], true];
+        yield 'error_description present' => [['error_description' => 'desc'], true];
+        yield 'state present' => [['state' => 'xyz'], true];
+    }
+
     public function testBeginPassesProviderToRedirectUri(): void
     {
         $client = $this->createMock(AuthClientInterface::class);
@@ -252,7 +265,11 @@ final class SocialAuthProviderServiceTest extends TestCase
         $service->complete('github', 'route', ['code' => 'c', 'state' => null]);
     }
 
-    public function testHasCallbackParametersReturnsFalseForEmptyParams(): void
+    /**
+     * @param array<string, string> $params
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('callbackParametersProvider')]
+    public function testHasCallbackParameters(array $params, bool $expected): void
     {
         $client = $this->createMock(AuthClientInterface::class);
         $registry = new AuthClientRegistry($client);
@@ -260,61 +277,6 @@ final class SocialAuthProviderServiceTest extends TestCase
         $url = $this->createMock(UrlGeneratorInterface::class);
         $service = new SocialAuthProviderService($registry, $httpClient, $this->session, $url);
 
-        self::assertFalse($service->hasCallbackParameters([]));
-    }
-
-    public function testHasCallbackParametersReturnsFalseForUnrelatedParams(): void
-    {
-        $client = $this->createMock(AuthClientInterface::class);
-        $registry = new AuthClientRegistry($client);
-        $httpClient = $this->createMock(ClientInterface::class);
-        $url = $this->createMock(UrlGeneratorInterface::class);
-        $service = new SocialAuthProviderService($registry, $httpClient, $this->session, $url);
-
-        self::assertFalse($service->hasCallbackParameters(['foo' => 'bar']));
-    }
-
-    public function testHasCallbackParametersReturnsTrueForCode(): void
-    {
-        $client = $this->createMock(AuthClientInterface::class);
-        $registry = new AuthClientRegistry($client);
-        $httpClient = $this->createMock(ClientInterface::class);
-        $url = $this->createMock(UrlGeneratorInterface::class);
-        $service = new SocialAuthProviderService($registry, $httpClient, $this->session, $url);
-
-        self::assertTrue($service->hasCallbackParameters(['code' => 'abc']));
-    }
-
-    public function testHasCallbackParametersReturnsTrueForError(): void
-    {
-        $client = $this->createMock(AuthClientInterface::class);
-        $registry = new AuthClientRegistry($client);
-        $httpClient = $this->createMock(ClientInterface::class);
-        $url = $this->createMock(UrlGeneratorInterface::class);
-        $service = new SocialAuthProviderService($registry, $httpClient, $this->session, $url);
-
-        self::assertTrue($service->hasCallbackParameters(['error' => 'access_denied']));
-    }
-
-    public function testHasCallbackParametersReturnsTrueForErrorDescription(): void
-    {
-        $client = $this->createMock(AuthClientInterface::class);
-        $registry = new AuthClientRegistry($client);
-        $httpClient = $this->createMock(ClientInterface::class);
-        $url = $this->createMock(UrlGeneratorInterface::class);
-        $service = new SocialAuthProviderService($registry, $httpClient, $this->session, $url);
-
-        self::assertTrue($service->hasCallbackParameters(['error_description' => 'desc']));
-    }
-
-    public function testHasCallbackParametersReturnsTrueForState(): void
-    {
-        $client = $this->createMock(AuthClientInterface::class);
-        $registry = new AuthClientRegistry($client);
-        $httpClient = $this->createMock(ClientInterface::class);
-        $url = $this->createMock(UrlGeneratorInterface::class);
-        $service = new SocialAuthProviderService($registry, $httpClient, $this->session, $url);
-
-        self::assertTrue($service->hasCallbackParameters(['state' => 'xyz']));
+        self::assertSame($expected, $service->hasCallbackParameters($params));
     }
 }

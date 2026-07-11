@@ -10,10 +10,34 @@ use YiiRocks\Voyti\Helper\TimezoneHelper;
 final class TimezoneHelperTest extends TestCase
 {
 
-    public function testFormatLocalizedWithDutchLocaleUsesDutchDateFormat(): void
+    /**
+     * @return iterable<string, array{string, bool}>
+     */
+    public static function isValidProvider(): iterable
     {
-        $formatted = TimezoneHelper::formatLocalized(1700000000, 'nl');
-        self::assertStringStartsWith('14 nov 2023', $formatted);
+        yield 'empty string' => ['', false];
+        yield 'invalid timezone' => ['Invalid/Timezone', false];
+        yield 'UTC' => ['UTC', true];
+        yield 'America/New_York' => ['America/New_York', true];
+        yield 'Europe/London' => ['Europe/London', true];
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function localizedDateFormatProvider(): iterable
+    {
+        yield 'Dutch' => ['nl', '14 nov 2023'];
+        yield 'German' => ['de', '14.11.2023'];
+        yield 'Russian' => ['ru', '14 нояб'];
+        yield 'Spanish' => ['es', '14 nov 2023'];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('localizedDateFormatProvider')]
+    public function testFormatLocalizedUsesLocaleDateFormat(string $locale, string $expectedStart): void
+    {
+        $formatted = TimezoneHelper::formatLocalized(1700000000, $locale);
+        self::assertStringStartsWith($expectedStart, $formatted);
         self::assertStringEndsWith('22:13:20', $formatted);
     }
 
@@ -31,13 +55,6 @@ final class TimezoneHelperTest extends TestCase
         self::assertNotSame($german, $english);
     }
 
-    public function testFormatLocalizedWithGermanLocaleUsesGermanDateFormat(): void
-    {
-        $formatted = TimezoneHelper::formatLocalized(1700000000, 'de');
-        self::assertStringStartsWith('14.11.2023', $formatted);
-        self::assertStringEndsWith('22:13:20', $formatted);
-    }
-
     public function testFormatLocalizedWithInvalidLocaleFallsBackToRfc1123(): void
     {
         $timestamp = 1700000000;
@@ -52,20 +69,6 @@ final class TimezoneHelperTest extends TestCase
         self::assertSame($withoutTimezone, $withInvalidTimezone);
     }
 
-    public function testFormatLocalizedWithRussianLocaleUsesRussianDateFormat(): void
-    {
-        $formatted = TimezoneHelper::formatLocalized(1700000000, 'ru');
-        self::assertStringStartsWith('14 нояб', $formatted);
-        self::assertStringEndsWith('22:13:20', $formatted);
-    }
-
-    public function testFormatLocalizedWithSpanishLocaleUsesSpanishDateFormat(): void
-    {
-        $formatted = TimezoneHelper::formatLocalized(1700000000, 'es');
-        self::assertStringStartsWith('14 nov 2023', $formatted);
-        self::assertStringEndsWith('22:13:20', $formatted);
-    }
-
     public function testFormatLocalizedWithTimezoneShiftsDisplayedTime(): void
     {
         $formatted = TimezoneHelper::formatLocalized(1700000000, 'en', 'America/New_York');
@@ -73,69 +76,33 @@ final class TimezoneHelperTest extends TestCase
         self::assertMatchesRegularExpression('/PM$/u', $formatted);
     }
 
-    public function testGetAllContainsUtc(): void
+    public function testGetAllReturnsWellFormedTimezoneList(): void
     {
         $timezones = TimezoneHelper::getAll();
+
+        self::assertIsArray($timezones);
+        self::assertNotEmpty($timezones);
+
         self::assertArrayHasKey('UTC', $timezones);
         self::assertStringContainsString('UTC', $timezones['UTC']);
         self::assertStringContainsString('GMT', $timezones['UTC']);
-    }
 
-    public function testGetAllKeysAreTimezoneIdentifiers(): void
-    {
-        $timezones = TimezoneHelper::getAll();
-        foreach ($timezones as $key => $value) {
-            self::assertTrue(in_array($key, \DateTimeZone::listIdentifiers(), true), "{$key} is not a valid timezone");
-        }
-    }
-    public function testGetAllReturnsArray(): void
-    {
-        $timezones = TimezoneHelper::getAll();
-        self::assertIsArray($timezones);
-        self::assertNotEmpty($timezones);
-    }
-
-    public function testGetAllReturnsStringValues(): void
-    {
-        $timezones = TimezoneHelper::getAll();
-        foreach ($timezones as $key => $value) {
-            self::assertIsString($key);
-            self::assertIsString($value);
-        }
-    }
-
-    public function testGetAllSortedAlphabetically(): void
-    {
-        $timezones = TimezoneHelper::getAll();
         $sorted = $timezones;
         asort($sorted);
         self::assertSame($sorted, $timezones);
-    }
 
-    public function testGetAllValuesFormattedCorrectly(): void
-    {
-        $timezones = TimezoneHelper::getAll();
         foreach ($timezones as $key => $value) {
+            self::assertTrue(in_array($key, \DateTimeZone::listIdentifiers(), true), "{$key} is not a valid timezone");
+            self::assertIsString($key);
+            self::assertIsString($value);
             self::assertStringStartsWith('(GMT', $value);
             self::assertStringEndsWith($key, $value);
         }
     }
 
-    public function testIsValidWithEmptyString(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('isValidProvider')]
+    public function testIsValid(string $timezone, bool $expected): void
     {
-        self::assertFalse(TimezoneHelper::isValid(''));
-    }
-
-    public function testIsValidWithInvalidTimezone(): void
-    {
-        self::assertFalse(TimezoneHelper::isValid('Invalid/Timezone'));
-        self::assertFalse(TimezoneHelper::isValid(''));
-    }
-
-    public function testIsValidWithValidTimezone(): void
-    {
-        self::assertTrue(TimezoneHelper::isValid('UTC'));
-        self::assertTrue(TimezoneHelper::isValid('America/New_York'));
-        self::assertTrue(TimezoneHelper::isValid('Europe/London'));
+        self::assertSame($expected, TimezoneHelper::isValid($timezone));
     }
 }

@@ -13,19 +13,13 @@ use Yiisoft\Translator\TranslatorInterface;
 final class CodeValidatorTest extends TestCase
 {
 
-    public function testGetErrorMessageWhenKeyIsEmpty(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('unconfiguredTwoFactorKeyProvider')]
+    public function testGetErrorMessageWhenKeyIsNotConfigured(?string $authTfKey): void
     {
         $user = new User();
-        $user->setAuthTfKey('');
-
-        $validator = new CodeValidator($user, '123456');
-        $validator->validate();
-        $this->assertSame('voyti.validator.two_factor_not_configured', $validator->getErrorMessage());
-    }
-
-    public function testGetErrorMessageWhenKeyIsNull(): void
-    {
-        $user = new User();
+        if ($authTfKey !== null) {
+            $user->setAuthTfKey($authTfKey);
+        }
 
         $validator = new CodeValidator($user, '123456');
         $validator->validate();
@@ -189,17 +183,13 @@ final class CodeValidatorTest extends TestCase
         $this->assertFalse($validator->validate());
     }
 
-    public function testValidateReturnsFalseWhenKeyIsEmpty(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('unconfiguredTwoFactorKeyProvider')]
+    public function testValidateReturnsFalseWhenKeyIsNotConfigured(?string $authTfKey): void
     {
         $user = new User();
-        $user->setAuthTfKey('');
-
-        $validator = new CodeValidator($user, '123456');
-        $this->assertFalse($validator->validate());
-    }
-    public function testValidateReturnsFalseWhenKeyIsNull(): void
-    {
-        $user = new User();
+        if ($authTfKey !== null) {
+            $user->setAuthTfKey($authTfKey);
+        }
 
         $validator = new CodeValidator($user, '123456');
         $this->assertFalse($validator->validate());
@@ -235,5 +225,14 @@ final class CodeValidatorTest extends TestCase
 
         $validator = new CodeValidator($user, '000000');
         $this->assertFalse($validator->validate());
+    }
+
+    /**
+     * @return iterable<string, array{null|string}>
+     */
+    public static function unconfiguredTwoFactorKeyProvider(): iterable
+    {
+        yield 'empty key' => [''];
+        yield 'null key' => [null];
     }
 }

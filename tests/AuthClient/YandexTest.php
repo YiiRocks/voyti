@@ -10,14 +10,19 @@ use YiiRocks\Voyti\AuthClient\Yandex;
 final class YandexTest extends TestCase
 {
 
-    public function testConstructWithoutConfig(): void
+    /**
+     * @return iterable<string, array{array<string, mixed>}>
+     */
+    public static function constructionProvider(): iterable
     {
-        $client = new Yandex();
-        self::assertSame('yandex', $client->getName());
+        yield 'without config' => [[]];
+        yield 'with config' => [['clientId' => 'id', 'clientSecret' => 'secret']];
     }
-    public function testGetName(): void
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('constructionProvider')]
+    public function testGetName(array $config): void
     {
-        $client = new Yandex(['clientId' => 'id', 'clientSecret' => 'secret']);
+        $client = new Yandex($config);
         self::assertSame('yandex', $client->getName());
     }
 

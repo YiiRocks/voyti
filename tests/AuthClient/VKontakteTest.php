@@ -10,14 +10,19 @@ use YiiRocks\Voyti\AuthClient\VKontakte;
 final class VKontakteTest extends TestCase
 {
 
-    public function testConstructWithoutConfig(): void
+    /**
+     * @return iterable<string, array{array<string, mixed>}>
+     */
+    public static function constructionProvider(): iterable
     {
-        $client = new VKontakte();
-        self::assertSame('vkontakte', $client->getName());
+        yield 'without config' => [[]];
+        yield 'with config' => [['clientId' => 'id', 'clientSecret' => 'secret']];
     }
-    public function testGetName(): void
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('constructionProvider')]
+    public function testGetName(array $config): void
     {
-        $client = new VKontakte(['clientId' => 'id', 'clientSecret' => 'secret']);
+        $client = new VKontakte($config);
         self::assertSame('vkontakte', $client->getName());
     }
 
@@ -125,32 +130,33 @@ final class VKontakteTest extends TestCase
         self::assertArrayNotHasKey('Authorization', $result);
     }
 
-    public function testUserInfoQueryOverridden(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('userInfoQueryTokenProvider')]
+    public function testUserInfoQuery(array $tokenData, string $expectedAccessToken): void
+    {
+        $client = new VKontakte(['clientId' => 'id', 'clientSecret' => 'secret']);
+        $ref = new \ReflectionMethod($client, 'userInfoQuery');
+
+        $result = $ref->invoke($client, $tokenData);
+        self::assertSame($expectedAccessToken, $result['access_token']);
+    }
+
+    public function testUserInfoQueryOverriddenIncludesVkFields(): void
     {
         $client = new VKontakte(['clientId' => 'id', 'clientSecret' => 'secret']);
         $ref = new \ReflectionMethod($client, 'userInfoQuery');
 
         $result = $ref->invoke($client, ['access_token' => 'vk_token']);
-        self::assertSame('vk_token', $result['access_token']);
         self::assertSame('screen_name', $result['fields']);
         self::assertSame('5.199', $result['v']);
     }
 
-    public function testUserInfoQueryWithEmptyToken(): void
+    /**
+     * @return iterable<string, array{array<string, mixed>, string}>
+     */
+    public static function userInfoQueryTokenProvider(): iterable
     {
-        $client = new VKontakte(['clientId' => 'id', 'clientSecret' => 'secret']);
-        $ref = new \ReflectionMethod($client, 'userInfoQuery');
-
-        $result = $ref->invoke($client, []);
-        self::assertSame('', $result['access_token']);
-    }
-
-    public function testUserInfoQueryWithNumericToken(): void
-    {
-        $client = new VKontakte(['clientId' => 'id', 'clientSecret' => 'secret']);
-        $ref = new \ReflectionMethod($client, 'userInfoQuery');
-
-        $result = $ref->invoke($client, ['access_token' => 12345]);
-        self::assertSame('12345', $result['access_token']);
+        yield 'string token' => [['access_token' => 'vk_token'], 'vk_token'];
+        yield 'missing token' => [[], ''];
+        yield 'numeric token' => [['access_token' => 12345], '12345'];
     }
 }

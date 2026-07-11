@@ -11,14 +11,19 @@ use YiiRocks\Voyti\AuthClient\Facebook;
 final class FacebookTest extends TestCase
 {
 
-    public function testConstructWithoutConfig(): void
+    /**
+     * @return iterable<string, array{array<string, mixed>}>
+     */
+    public static function constructionProvider(): iterable
     {
-        $client = new Facebook();
-        self::assertSame('facebook', $client->getName());
+        yield 'without config' => [[]];
+        yield 'with config' => [['clientId' => 'id', 'clientSecret' => 'secret']];
     }
-    public function testGetName(): void
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('constructionProvider')]
+    public function testGetName(array $config): void
     {
-        $client = new Facebook(['clientId' => 'id', 'clientSecret' => 'secret']);
+        $client = new Facebook($config);
         self::assertSame('facebook', $client->getName());
     }
 
@@ -56,30 +61,23 @@ final class FacebookTest extends TestCase
         self::assertArrayNotHasKey('Authorization', $result);
     }
 
-    public function testUserInfoQueryOverridden(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('userInfoQueryTokenProvider')]
+    public function testUserInfoQuery(array $tokenData, string $expectedAccessToken): void
     {
         $client = new Facebook(['clientId' => 'id', 'clientSecret' => 'secret']);
         $ref = new \ReflectionMethod($client, 'userInfoQuery');
-        $result = $ref->invoke($client, ['access_token' => 'token123']);
-        self::assertSame('token123', $result['access_token']);
+        $result = $ref->invoke($client, $tokenData);
+        self::assertSame($expectedAccessToken, $result['access_token']);
         self::assertSame('id,name,email', $result['fields']);
     }
 
-    public function testUserInfoQueryWithEmptyToken(): void
+    /**
+     * @return iterable<string, array{array<string, mixed>, string}>
+     */
+    public static function userInfoQueryTokenProvider(): iterable
     {
-        $client = new Facebook(['clientId' => 'id', 'clientSecret' => 'secret']);
-        $ref = new \ReflectionMethod($client, 'userInfoQuery');
-        $result = $ref->invoke($client, []);
-        self::assertSame('', $result['access_token']);
-        self::assertSame('id,name,email', $result['fields']);
-    }
-
-    public function testUserInfoQueryWithNumericToken(): void
-    {
-        $client = new Facebook(['clientId' => 'id', 'clientSecret' => 'secret']);
-        $ref = new \ReflectionMethod($client, 'userInfoQuery');
-        $result = $ref->invoke($client, ['access_token' => 12345]);
-        self::assertSame('12345', $result['access_token']);
-        self::assertSame('id,name,email', $result['fields']);
+        yield 'string token' => [['access_token' => 'token123'], 'token123'];
+        yield 'missing token' => [[], ''];
+        yield 'numeric token' => [['access_token' => 12345], '12345'];
     }
 }

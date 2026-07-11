@@ -21,6 +21,24 @@ use Yiisoft\User\CurrentUser;
 final class AuthHelperTest extends TestCase
 {
 
+    /**
+     * @return iterable<string, array{array<string, Role>, bool}>
+     */
+    public static function hasRoleProvider(): iterable
+    {
+        yield 'role missing' => [[], false];
+        yield 'role exists' => [['admin' => new Role('admin'), 'editor' => new Role('editor')], true];
+    }
+
+    /**
+     * @return iterable<string, array{int, array<string, Permission>, bool}>
+     */
+    public static function isAdminWithGivenUserIdProvider(): iterable
+    {
+        yield 'user is admin' => [3, ['admin' => new Permission('admin')], true];
+        yield 'user not admin' => [2, [], false];
+    }
+
     public function testGetRuleNamesReturnsEmptyWhenNoItems(): void
     {
         $itemsStorage = $this->createMock(ItemsStorageInterface::class);
@@ -123,59 +141,37 @@ final class AuthHelperTest extends TestCase
         self::assertSame($items, $helper->getUnassignedItems(1));
     }
 
-    public function testHasRoleReturnsFalseWhenRoleMissing(): void
+    /**
+     * @param array<string, Role> $userItems
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('hasRoleProvider')]
+    public function testHasRole(array $userItems, bool $expected): void
     {
         $authManager = $this->createMock(ManagerInterface::class);
-        $authManager->expects(self::once())->method('getItemsByUserId')->with(1)->willReturn([]);
+        $authManager->expects(self::once())->method('getItemsByUserId')->with(1)->willReturn($userItems);
 
         $helper = $this->createHelper(authManager: $authManager);
 
-        self::assertFalse($helper->hasRole(1, 'admin'));
+        self::assertSame($expected, $helper->hasRole(1, 'admin'));
     }
 
-    public function testHasRoleReturnsTrueWhenRoleExists(): void
-    {
-        $authManager = $this->createMock(ManagerInterface::class);
-        $authManager->expects(self::once())->method('getItemsByUserId')->with(1)->willReturn([
-            'admin' => new Role('admin'),
-            'editor' => new Role('editor'),
-        ]);
-
-        $helper = $this->createHelper(authManager: $authManager);
-
-        self::assertTrue($helper->hasRole(1, 'admin'));
-    }
-
-    public function testIsAdminWithGivenUserIdAndUserIsAdmin(): void
+    /**
+     * @param array<string, Permission> $userItems
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('isAdminWithGivenUserIdProvider')]
+    public function testIsAdminWithGivenUserId(int $userId, array $userItems, bool $expected): void
     {
         $config = new ModuleConfig(administratorPermissionName: 'admin');
 
         $authManager = $this->createMock(ManagerInterface::class);
-        $authManager->expects(self::once())->method('getItemsByUserId')->with(3)->willReturn([
-            'admin' => new Permission('admin'),
-        ]);
+        $authManager->expects(self::once())->method('getItemsByUserId')->with($userId)->willReturn($userItems);
 
         $helper = $this->createHelper(
             authManager: $authManager,
             config: $config,
         );
 
-        self::assertTrue($helper->isAdmin(3));
-    }
-
-    public function testIsAdminWithGivenUserIdAndUserNotAdmin(): void
-    {
-        $config = new ModuleConfig(administratorPermissionName: 'admin');
-
-        $authManager = $this->createMock(ManagerInterface::class);
-        $authManager->expects(self::once())->method('getItemsByUserId')->with(2)->willReturn([]);
-
-        $helper = $this->createHelper(
-            authManager: $authManager,
-            config: $config,
-        );
-
-        self::assertFalse($helper->isAdmin(2));
+        self::assertSame($expected, $helper->isAdmin($userId));
     }
 
     public function testIsAdminWithNullUserIdAndNoAdminPermission(): void

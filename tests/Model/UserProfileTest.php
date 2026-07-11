@@ -79,6 +79,21 @@ final class UserProfileTest extends TestCase
         $this->connection = null;
     }
 
+    /**
+     * @return iterable<string, array{string, string, int|string}>
+     */
+    public static function getterSetterProvider(): iterable
+    {
+        yield 'bio' => ['setBio', 'getBio', 'My bio'];
+        yield 'gravatarEmail' => ['setGravatarEmail', 'getGravatarEmail', 'gravatar@example.com'];
+        yield 'location' => ['setLocation', 'getLocation', 'New York'];
+        yield 'name' => ['setName', 'getName', 'John Doe'];
+        yield 'publicEmail' => ['setPublicEmail', 'getPublicEmail', 'public@example.com'];
+        yield 'timezone' => ['setTimezone', 'getTimezone', 'America/New_York'];
+        yield 'userId' => ['setUserId', 'getUserId', 42];
+        yield 'website' => ['setWebsite', 'getWebsite', 'https://example.com'];
+    }
+
     public function testFindByUserIdReturnsMatchingProfileAmongMultiple(): void
     {
         $profile1 = new UserProfile();
@@ -259,60 +274,12 @@ final class UserProfileTest extends TestCase
         self::assertSame("https://www.gravatar.com/avatar/{$id}?s=256&d=mp", $entity->getGravatarUrl());
     }
 
-    public function testGetSetBio(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('getterSetterProvider')]
+    public function testGetSetProperty(string $setter, string $getter, int|string $value): void
     {
         $entity = new UserProfile();
-        $entity->setBio('My bio');
-        self::assertSame('My bio', $entity->getBio());
-    }
-
-    public function testGetSetGravatarEmail(): void
-    {
-        $entity = new UserProfile();
-        $entity->setGravatarEmail('gravatar@example.com');
-        self::assertSame('gravatar@example.com', $entity->getGravatarEmail());
-    }
-
-    public function testGetSetLocation(): void
-    {
-        $entity = new UserProfile();
-        $entity->setLocation('New York');
-        self::assertSame('New York', $entity->getLocation());
-    }
-
-    public function testGetSetName(): void
-    {
-        $entity = new UserProfile();
-        $entity->setName('John Doe');
-        self::assertSame('John Doe', $entity->getName());
-    }
-
-    public function testGetSetPublicEmail(): void
-    {
-        $entity = new UserProfile();
-        $entity->setPublicEmail('public@example.com');
-        self::assertSame('public@example.com', $entity->getPublicEmail());
-    }
-
-    public function testGetSetTimezone(): void
-    {
-        $entity = new UserProfile();
-        $entity->setTimezone('America/New_York');
-        self::assertSame('America/New_York', $entity->getTimezone());
-    }
-
-    public function testGetSetUserId(): void
-    {
-        $entity = new UserProfile();
-        $entity->setUserId(42);
-        self::assertSame(42, $entity->getUserId());
-    }
-
-    public function testGetSetWebsite(): void
-    {
-        $entity = new UserProfile();
-        $entity->setWebsite('https://example.com');
-        self::assertSame('https://example.com', $entity->getWebsite());
+        $entity->$setter($value);
+        self::assertSame($value, $entity->$getter());
     }
 
     public function testGetUserReturnsNullWhenNotLinked(): void

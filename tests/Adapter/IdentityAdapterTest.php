@@ -28,9 +28,10 @@ final class IdentityAdapterTest extends TestCase
 
     public function testFindIdentityByTokenAtExactLifespanBoundaryIsStillValid(): void
     {
+        $now = time();
         $user = $this->createSavedUser();
-        $this->createApiToken($user, 'raw-token', createdAt: time() - 500);
-        $adapter = $this->createAdapter(config: new ModuleConfig(apiTokenLifespan: 500));
+        $this->createApiToken($user, 'raw-token', createdAt: $now - 500);
+        $adapter = $this->createAdapter(config: new ModuleConfig(apiTokenLifespan: 500), now: static fn (): int => $now);
 
         self::assertNotNull($adapter->findIdentityByToken('raw-token'));
     }
@@ -73,6 +74,18 @@ final class IdentityAdapterTest extends TestCase
         self::assertSame($user->getId(), $identity->getId());
     }
 
+    public function testFindIdentityByTokenUsesInjectedNowClosureNotRealTime(): void
+    {
+        $user = $this->createSavedUser();
+        $this->createApiToken($user, 'raw-token', createdAt: 1_000_000);
+        $adapter = $this->createAdapter(
+            config: new ModuleConfig(apiTokenLifespan: 500),
+            now: static fn (): int => 1_000_100,
+        );
+
+        self::assertNotNull($adapter->findIdentityByToken('raw-token'));
+    }
+
     public function testFindIdentityByTokenWithinLifespanIsValid(): void
     {
         $user = $this->createSavedUser();
@@ -109,9 +122,9 @@ final class IdentityAdapterTest extends TestCase
         self::assertNull($adapter->findIdentity('999999'));
     }
 
-    private function createAdapter(?ModuleConfig $config = null): IdentityAdapter
+    private function createAdapter(?ModuleConfig $config = null, ?\Closure $now = null): IdentityAdapter
     {
-        return new IdentityAdapter($config ?? new ModuleConfig());
+        return new IdentityAdapter($config ?? new ModuleConfig(), $now);
     }
 
     private function createApiToken(User $user, string $rawToken, ?int $createdAt = null): UserToken

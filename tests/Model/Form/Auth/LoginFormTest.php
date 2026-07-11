@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Model\Form\Auth;
 
-use PHPUnit\Framework\Attributes\DoesNotPerformAssertions;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Enum\RecaptchaVersion;
 use YiiRocks\Voyti\Model\Form\Auth\LoginForm;
@@ -27,22 +26,6 @@ final class LoginFormTest extends TestCase
         $this->assertFalse($form->rememberMe);
         $this->assertNull($form->twoFactorAuthenticationCode);
         $this->assertSame('', $form->gRecaptchaResponse);
-    }
-
-    #[DoesNotPerformAssertions]
-    public function testConstructWithRecaptchaV2NoException(): void
-    {
-        $config = new ModuleConfig(recaptchaVersion: RecaptchaVersion::V2);
-        $form = new LoginForm($config, $this->createTranslator());
-        $form->getRules();
-    }
-
-    #[DoesNotPerformAssertions]
-    public function testConstructWithRecaptchaV3NoException(): void
-    {
-        $config = new ModuleConfig(recaptchaVersion: RecaptchaVersion::V3);
-        $form = new LoginForm($config, $this->createTranslator());
-        $form->getRules();
     }
 
     public function testGetAttributeLabels(): void

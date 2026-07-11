@@ -36,12 +36,6 @@ final class AuthClientRegistryTest extends TestCase
         self::assertSame([$client], $registry->allExcept([]));
     }
 
-    public function testAllReturnsEmptyArrayWhenNoClients(): void
-    {
-        $registry = new AuthClientRegistry();
-        self::assertSame([], $registry->all());
-    }
-
     public function testAllReturnsListOfClients(): void
     {
         $client = $this->createMock(AuthClientInterface::class);

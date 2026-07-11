@@ -70,6 +70,17 @@ final class UserTokenTest extends TestCase
         $this->connection = null;
     }
 
+    /**
+     * @return iterable<string, array{string, string, int|string}>
+     */
+    public static function getterSetterProvider(): iterable
+    {
+        yield 'code' => ['setCode', 'getCode', 'abc123'];
+        yield 'createdAt' => ['setCreatedAt', 'getCreatedAt', 5000];
+        yield 'type' => ['setType', 'getType', UserToken::TYPE_CONFIRMATION];
+        yield 'userId' => ['setUserId', 'getUserId', 42];
+    }
+
     public function testConstants(): void
     {
         self::assertSame(0, UserToken::TYPE_CONFIRMATION);
@@ -334,32 +345,12 @@ final class UserTokenTest extends TestCase
         self::assertFalse($entity->getIsExpired(86400));
     }
 
-    public function testGetSetCode(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('getterSetterProvider')]
+    public function testGetSetProperty(string $setter, string $getter, int|string $value): void
     {
         $entity = new UserToken();
-        $entity->setCode('abc123');
-        self::assertSame('abc123', $entity->getCode());
-    }
-
-    public function testGetSetCreatedAt(): void
-    {
-        $entity = new UserToken();
-        $entity->setCreatedAt(5000);
-        self::assertSame(5000, $entity->getCreatedAt());
-    }
-
-    public function testGetSetType(): void
-    {
-        $entity = new UserToken();
-        $entity->setType(UserToken::TYPE_CONFIRMATION);
-        self::assertSame(UserToken::TYPE_CONFIRMATION, $entity->getType());
-    }
-
-    public function testGetSetUserId(): void
-    {
-        $entity = new UserToken();
-        $entity->setUserId(42);
-        self::assertSame(42, $entity->getUserId());
+        $entity->$setter($value);
+        self::assertSame($value, $entity->$getter());
     }
 
     public function testGetUserReturnsNullWhenNoUser(): void

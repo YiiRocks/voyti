@@ -12,14 +12,88 @@ use YiiRocks\Voyti\Http\ClientInterface;
 final class GitHubTest extends TestCase
 {
 
-    public function testConstructWithoutConfig(): void
+    /**
+     * @return iterable<string, array{array<string, mixed>}>
+     */
+    public static function constructionProvider(): iterable
     {
-        $client = new GitHub();
-        self::assertSame('github', $client->getName());
+        yield 'without config' => [[]];
+        yield 'with config' => [['clientId' => 'id', 'clientSecret' => 'secret']];
     }
-    public function testGetName(): void
+
+    /**
+     * @return iterable<string, array{array<string, mixed>, array<int, mixed>, string}>
+     */
+    public static function loadUserAttributesEmailFallbackProvider(): iterable
     {
-        $client = new GitHub(['clientId' => 'id', 'clientSecret' => 'secret']);
+        yield 'breaks on first primary+verified match' => [
+            ['id' => 123, 'login' => 'octocat'],
+            [
+                ['email' => 'first@example.com', 'primary' => true, 'verified' => true],
+                ['email' => 'second@example.com', 'primary' => true, 'verified' => true],
+            ],
+            'first@example.com',
+        ];
+        yield 'skips non-array email entries' => [
+            ['id' => 123, 'login' => 'octocat', 'email' => ''],
+            [
+                'not_an_array',
+                ['email' => 'valid@example.com', 'primary' => true, 'verified' => true],
+            ],
+            'valid@example.com',
+        ];
+        yield 'skips empty email candidates' => [
+            ['id' => 123, 'login' => 'octocat'],
+            [
+                ['email' => '', 'primary' => true, 'verified' => true],
+                ['email' => 'backup@example.com', 'primary' => false, 'verified' => true],
+            ],
+            'backup@example.com',
+        ];
+        yield 'picks verified over unverified when user email empty' => [
+            ['id' => 123, 'login' => 'octocat', 'email' => ''],
+            [
+                ['email' => 'unverified@example.com', 'primary' => false, 'verified' => false],
+                ['email' => 'verified@example.com', 'primary' => false, 'verified' => true],
+            ],
+            'verified@example.com',
+        ];
+        yield 'fetches emails when user has none' => [
+            ['id' => 123, 'login' => 'octocat'],
+            [
+                ['email' => 'noreply@github.com', 'primary' => false, 'verified' => false],
+                ['email' => 'primary@github.com', 'primary' => true, 'verified' => true],
+            ],
+            'primary@github.com',
+        ];
+        yield 'primary as non-bool string is truthy' => [
+            ['id' => 123, 'login' => 'octocat'],
+            [
+                ['email' => 'string_primary@example.com', 'primary' => 'yes'],
+            ],
+            'string_primary@example.com',
+        ];
+        yield 'primary not set falls back to next candidate' => [
+            ['id' => 123, 'login' => 'octocat'],
+            [
+                ['email' => 'no_primary@example.com'],
+                ['email' => 'fallback@example.com', 'primary' => true, 'verified' => true],
+            ],
+            'fallback@example.com',
+        ];
+        yield 'verified as non-bool string is truthy' => [
+            ['id' => 123, 'login' => 'octocat'],
+            [
+                ['email' => 'string_verified@example.com', 'verified' => 'yes'],
+            ],
+            'string_verified@example.com',
+        ];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('constructionProvider')]
+    public function testGetName(array $config): void
+    {
+        $client = new GitHub($config);
         self::assertSame('github', $client->getName());
     }
 
@@ -29,21 +103,23 @@ final class GitHubTest extends TestCase
         self::assertSame('GitHub', $client->getTitle());
     }
 
-    public function testLoadUserAttributesSkipsNonArrayEmails(): void
+    /**
+     * @param array<string, mixed> $userBody
+     * @param array<int, mixed> $emailsBody
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('loadUserAttributesEmailFallbackProvider')]
+    public function testLoadUserAttributesEmailFallback(array $userBody, array $emailsBody, string $expectedEmail): void
     {
         $httpClient = $this->createMock(ClientInterface::class);
         $httpClient
             ->expects(self::exactly(2))
             ->method('send')
-            ->willReturnCallback(function (string $method, string $url): array {
+            ->willReturnCallback(function (string $method, string $url) use ($userBody, $emailsBody): array {
                 if ($url === 'https://api.github.com/user') {
-                    return ['id' => 123, 'login' => 'octocat', 'email' => ''];
+                    return $userBody;
                 }
                 if ($url === 'https://api.github.com/user/emails') {
-                    return [
-                        'not_an_array',
-                        ['email' => 'valid@example.com', 'primary' => true, 'verified' => true],
-                    ];
+                    return $emailsBody;
                 }
                 return [];
             });
@@ -52,33 +128,7 @@ final class GitHubTest extends TestCase
         $ref = new \ReflectionMethod($client, 'loadUserAttributes');
         $result = $ref->invoke($client, ['access_token' => 'token'], $httpClient);
 
-        self::assertSame('valid@example.com', $result['email']);
-    }
-
-    public function testLoadUserAttributesWithBreak(): void
-    {
-        $httpClient = $this->createMock(ClientInterface::class);
-        $httpClient
-            ->expects(self::exactly(2))
-            ->method('send')
-            ->willReturnCallback(function (string $method, string $url): array {
-                if ($url === 'https://api.github.com/user') {
-                    return ['id' => 123, 'login' => 'octocat'];
-                }
-                if ($url === 'https://api.github.com/user/emails') {
-                    return [
-                        ['email' => 'first@example.com', 'primary' => true, 'verified' => true],
-                        ['email' => 'second@example.com', 'primary' => true, 'verified' => true],
-                    ];
-                }
-                return [];
-            });
-
-        $client = new GitHub(['clientId' => 'id', 'clientSecret' => 'secret']);
-        $ref = new \ReflectionMethod($client, 'loadUserAttributes');
-        $result = $ref->invoke($client, ['access_token' => 'token'], $httpClient);
-
-        self::assertSame('first@example.com', $result['email']);
+        self::assertSame($expectedEmail, $result['email']);
     }
 
     public function testLoadUserAttributesWithEmailAlreadyPresent(): void
@@ -102,159 +152,5 @@ final class GitHubTest extends TestCase
 
         self::assertSame('user@github.com', $result['email']);
         self::assertSame(123, $result['id']);
-    }
-
-    public function testLoadUserAttributesWithEmptyEmailCandidate(): void
-    {
-        $httpClient = $this->createMock(ClientInterface::class);
-        $httpClient
-            ->expects(self::exactly(2))
-            ->method('send')
-            ->willReturnCallback(function (string $method, string $url): array {
-                if ($url === 'https://api.github.com/user') {
-                    return ['id' => 123, 'login' => 'octocat'];
-                }
-                if ($url === 'https://api.github.com/user/emails') {
-                    return [
-                        ['email' => '', 'primary' => true, 'verified' => true],
-                        ['email' => 'backup@example.com', 'primary' => false, 'verified' => true],
-                    ];
-                }
-                return [];
-            });
-
-        $client = new GitHub(['clientId' => 'id', 'clientSecret' => 'secret']);
-        $ref = new \ReflectionMethod($client, 'loadUserAttributes');
-        $result = $ref->invoke($client, ['access_token' => 'token'], $httpClient);
-
-        self::assertSame('backup@example.com', $result['email']);
-    }
-
-    public function testLoadUserAttributesWithEmptyEmailPicksVerified(): void
-    {
-        $httpClient = $this->createMock(ClientInterface::class);
-        $httpClient
-            ->expects(self::exactly(2))
-            ->method('send')
-            ->willReturnCallback(function (string $method, string $url): array {
-                if ($url === 'https://api.github.com/user') {
-                    return ['id' => 123, 'login' => 'octocat', 'email' => ''];
-                }
-                if ($url === 'https://api.github.com/user/emails') {
-                    return [
-                        ['email' => 'unverified@example.com', 'primary' => false, 'verified' => false],
-                        ['email' => 'verified@example.com', 'primary' => false, 'verified' => true],
-                    ];
-                }
-                return [];
-            });
-
-        $client = new GitHub(['clientId' => 'id', 'clientSecret' => 'secret']);
-        $ref = new \ReflectionMethod($client, 'loadUserAttributes');
-        $result = $ref->invoke($client, ['access_token' => 'token'], $httpClient);
-
-        self::assertSame('verified@example.com', $result['email']);
-    }
-
-    public function testLoadUserAttributesWithoutEmailFetchesEmails(): void
-    {
-        $httpClient = $this->createMock(ClientInterface::class);
-        $httpClient
-            ->expects(self::exactly(2))
-            ->method('send')
-            ->willReturnCallback(function (string $method, string $url): array {
-                if ($url === 'https://api.github.com/user') {
-                    return ['id' => 123, 'login' => 'octocat'];
-                }
-                if ($url === 'https://api.github.com/user/emails') {
-                    return [
-                        ['email' => 'noreply@github.com', 'primary' => false, 'verified' => false],
-                        ['email' => 'primary@github.com', 'primary' => true, 'verified' => true],
-                    ];
-                }
-                return [];
-            });
-
-        $client = new GitHub(['clientId' => 'id', 'clientSecret' => 'secret']);
-        $ref = new \ReflectionMethod($client, 'loadUserAttributes');
-        $result = $ref->invoke($client, ['access_token' => 'token'], $httpClient);
-
-        self::assertSame('primary@github.com', $result['email']);
-    }
-
-    public function testLoadUserAttributesWithPrimaryAsString(): void
-    {
-        $httpClient = $this->createMock(ClientInterface::class);
-        $httpClient
-            ->expects(self::exactly(2))
-            ->method('send')
-            ->willReturnCallback(function (string $method, string $url): array {
-                if ($url === 'https://api.github.com/user') {
-                    return ['id' => 123, 'login' => 'octocat'];
-                }
-                if ($url === 'https://api.github.com/user/emails') {
-                    return [
-                        ['email' => 'string_primary@example.com', 'primary' => 'yes'],
-                    ];
-                }
-                return [];
-            });
-
-        $client = new GitHub(['clientId' => 'id', 'clientSecret' => 'secret']);
-        $ref = new \ReflectionMethod($client, 'loadUserAttributes');
-        $result = $ref->invoke($client, ['access_token' => 'token'], $httpClient);
-
-        self::assertSame('string_primary@example.com', $result['email']);
-    }
-
-    public function testLoadUserAttributesWithPrimaryNotSet(): void
-    {
-        $httpClient = $this->createMock(ClientInterface::class);
-        $httpClient
-            ->expects(self::exactly(2))
-            ->method('send')
-            ->willReturnCallback(function (string $method, string $url): array {
-                if ($url === 'https://api.github.com/user') {
-                    return ['id' => 123, 'login' => 'octocat'];
-                }
-                if ($url === 'https://api.github.com/user/emails') {
-                    return [
-                        ['email' => 'no_primary@example.com'],
-                        ['email' => 'fallback@example.com', 'primary' => true, 'verified' => true],
-                    ];
-                }
-                return [];
-            });
-
-        $client = new GitHub(['clientId' => 'id', 'clientSecret' => 'secret']);
-        $ref = new \ReflectionMethod($client, 'loadUserAttributes');
-        $result = $ref->invoke($client, ['access_token' => 'token'], $httpClient);
-
-        self::assertSame('fallback@example.com', $result['email']);
-    }
-
-    public function testLoadUserAttributesWithVerifiedAsString(): void
-    {
-        $httpClient = $this->createMock(ClientInterface::class);
-        $httpClient
-            ->expects(self::exactly(2))
-            ->method('send')
-            ->willReturnCallback(function (string $method, string $url): array {
-                if ($url === 'https://api.github.com/user') {
-                    return ['id' => 123, 'login' => 'octocat'];
-                }
-                if ($url === 'https://api.github.com/user/emails') {
-                    return [
-                        ['email' => 'string_verified@example.com', 'verified' => 'yes'],
-                    ];
-                }
-                return [];
-            });
-
-        $client = new GitHub(['clientId' => 'id', 'clientSecret' => 'secret']);
-        $ref = new \ReflectionMethod($client, 'loadUserAttributes');
-        $result = $ref->invoke($client, ['access_token' => 'token'], $httpClient);
-
-        self::assertSame('string_verified@example.com', $result['email']);
     }
 }

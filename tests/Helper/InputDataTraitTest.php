@@ -56,77 +56,96 @@ final class InputDataTraitTest extends TestCase
         };
     }
 
-    public function testFormDataReturnsEmptyArrayWhenFormNameIsNotArray(): void
+    /**
+     * @return iterable<string, array{array<string, mixed>, string, array<string, mixed>}>
+     */
+    public static function formDataProvider(): iterable
     {
-        $body = ['user' => 'string', 'other' => 'value'];
-        $result = $this->tester->exposedFormData($body, 'user');
-        self::assertSame([], $result);
-    }
-
-    public function testFormDataReturnsNestedArrayWhenFormNameExists(): void
-    {
-        $result = $this->tester->exposedFormData(
+        yield 'form name maps to non-array' => [['user' => 'string', 'other' => 'value'], 'user', []];
+        yield 'form name exists as array' => [
             ['user' => ['name' => 'John', 'email' => 'john@example.com']],
             'user',
-        );
-        self::assertSame(['name' => 'John', 'email' => 'john@example.com'], $result);
+            ['name' => 'John', 'email' => 'john@example.com'],
+        ];
+        yield 'form name missing returns whole body' => [
+            ['name' => 'John', 'email' => 'john@example.com'],
+            'user',
+            ['name' => 'John', 'email' => 'john@example.com'],
+        ];
+        yield 'empty body' => [[], 'user', []];
     }
 
-    public function testFormDataReturnsWholeBodyWhenFormNameMissing(): void
+    /**
+     * @return iterable<string, array{array<string, mixed>, string, null|string}>
+     */
+    public static function nullableStringValueProvider(): iterable
     {
-        $body = ['name' => 'John', 'email' => 'john@example.com'];
-        $result = $this->tester->exposedFormData($body, 'user');
-        self::assertSame($body, $result);
+        yield 'empty string' => [['key' => ''], 'key', null];
+        yield 'missing key' => [[], 'key', null];
+        yield 'non-string' => [['key' => 123], 'key', null];
+        yield 'string value' => [['key' => 'hello'], 'key', 'hello'];
     }
 
-    public function testFormDataWithEmptyBody(): void
+    /**
+     * @return iterable<string, array{mixed, array<string, mixed>}>
+     */
+    public static function parsedBodyProvider(): iterable
     {
-        $result = $this->tester->exposedFormData([], 'user');
-        self::assertSame([], $result);
+        yield 'array body' => [['field' => 'value'], ['field' => 'value']];
+        yield 'null body' => [null, []];
+        yield 'object body' => [new \stdClass(), []];
     }
 
-    public function testNullableStringValueReturnsNullForEmptyString(): void
+    /**
+     * @return iterable<string, array{string, string, mixed, string}>
+     */
+    public static function requestAttributeStringProvider(): iterable
     {
-        self::assertNull($this->tester->exposedNullableStringValue(['key' => ''], 'key'));
+        yield 'non-string coerces to default' => ['id', '', 42, ''];
+        yield 'missing falls back to given default' => ['id', 'fallback', 'fallback', 'fallback'];
+        yield 'string value returned' => ['id', '', '123', '123'];
     }
 
-    public function testNullableStringValueReturnsNullForMissingKey(): void
+    /**
+     * @return iterable<string, array{string, mixed, array<string, mixed>}>
+     */
+    public static function sessionArrayProvider(): iterable
     {
-        self::assertNull($this->tester->exposedNullableStringValue([], 'key'));
+        yield 'array value' => ['cart', ['item1' => 'book'], ['item1' => 'book']];
+        yield 'non-array value' => ['cart', 'string', []];
+        yield 'null value' => ['missing', null, []];
     }
 
-    public function testNullableStringValueReturnsNullForNonString(): void
+    /**
+     * @return iterable<string, array{array<string, mixed>, string, string, string}>
+     */
+    public static function stringValueProvider(): iterable
     {
-        self::assertNull($this->tester->exposedNullableStringValue(['key' => 123], 'key'));
+        yield 'missing key uses default' => [[], 'key', 'default', 'default'];
+        yield 'non-string uses default' => [['key' => 42], 'key', '', ''];
+        yield 'null uses default' => [['key' => null], 'key', 'fallback', 'fallback'];
+        yield 'string value returned' => [['key' => 'hello'], 'key', '', 'hello'];
     }
 
-    public function testNullableStringValueReturnsString(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('formDataProvider')]
+    public function testFormData(array $body, string $formName, array $expected): void
     {
-        self::assertSame('hello', $this->tester->exposedNullableStringValue(['key' => 'hello'], 'key'));
+        self::assertSame($expected, $this->tester->exposedFormData($body, $formName));
     }
 
-    public function testParsedBodyReturnsArray(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('nullableStringValueProvider')]
+    public function testNullableStringValue(array $data, string $key, ?string $expected): void
+    {
+        self::assertSame($expected, $this->tester->exposedNullableStringValue($data, $key));
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('parsedBodyProvider')]
+    public function testParsedBody(mixed $parsedBody, array $expected): void
     {
         $request = $this->createMock(ServerRequestInterface::class);
-        $request->expects(self::once())->method('getParsedBody')->willReturn(['field' => 'value']);
+        $request->expects(self::once())->method('getParsedBody')->willReturn($parsedBody);
 
-        self::assertSame(['field' => 'value'], $this->tester->exposedParsedBody($request));
-    }
-
-    public function testParsedBodyReturnsEmptyArrayWhenNotArray(): void
-    {
-        $request = $this->createMock(ServerRequestInterface::class);
-        $request->expects(self::once())->method('getParsedBody')->willReturn(null);
-
-        self::assertSame([], $this->tester->exposedParsedBody($request));
-    }
-
-    public function testParsedBodyReturnsEmptyArrayWhenObject(): void
-    {
-        $request = $this->createMock(ServerRequestInterface::class);
-        $request->expects(self::once())->method('getParsedBody')->willReturn(new \stdClass());
-
-        self::assertSame([], $this->tester->exposedParsedBody($request));
+        self::assertSame($expected, $this->tester->exposedParsedBody($request));
     }
 
     public function testQueryParamsReturnsParams(): void
@@ -137,76 +156,27 @@ final class InputDataTraitTest extends TestCase
         self::assertSame(['page' => '1'], $this->tester->exposedQueryParams($request));
     }
 
-    public function testRequestAttributeStringReturnsDefaultForNonString(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('requestAttributeStringProvider')]
+    public function testRequestAttributeString(string $name, string $default, mixed $attributeValue, string $expected): void
     {
         $request = $this->createMock(ServerRequestInterface::class);
-        $request->expects(self::once())->method('getAttribute')->with('id', '')->willReturn(42);
+        $request->expects(self::once())->method('getAttribute')->with($name, $default)->willReturn($attributeValue);
 
-        self::assertSame('', $this->tester->exposedRequestAttributeString($request, 'id'));
+        self::assertSame($expected, $this->tester->exposedRequestAttributeString($request, $name, $default));
     }
 
-    public function testRequestAttributeStringReturnsDefaultWhenMissing(): void
-    {
-        $request = $this->createMock(ServerRequestInterface::class);
-        $request->expects(self::once())->method('getAttribute')->with('id', 'fallback')->willReturn('fallback');
-
-        self::assertSame('fallback', $this->tester->exposedRequestAttributeString($request, 'id', 'fallback'));
-    }
-
-    public function testRequestAttributeStringReturnsValue(): void
-    {
-        $request = $this->createMock(ServerRequestInterface::class);
-        $request->expects(self::once())->method('getAttribute')->with('id', '')->willReturn('123');
-
-        self::assertSame('123', $this->tester->exposedRequestAttributeString($request, 'id'));
-    }
-
-    public function testSessionArrayReturnsArray(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('sessionArrayProvider')]
+    public function testSessionArray(string $key, mixed $sessionValue, array $expected): void
     {
         $session = $this->createMock(SessionInterface::class);
-        $session->expects(self::once())->method('get')->with('cart')->willReturn(['item1' => 'book']);
+        $session->expects(self::once())->method('get')->with($key)->willReturn($sessionValue);
 
-        self::assertSame(['item1' => 'book'], $this->tester->exposedSessionArray($session, 'cart'));
+        self::assertSame($expected, $this->tester->exposedSessionArray($session, $key));
     }
 
-    public function testSessionArrayReturnsEmptyArrayForNonArray(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('stringValueProvider')]
+    public function testStringValue(array $data, string $key, string $default, string $expected): void
     {
-        $session = $this->createMock(SessionInterface::class);
-        $session->expects(self::once())->method('get')->with('cart')->willReturn('string');
-
-        self::assertSame([], $this->tester->exposedSessionArray($session, 'cart'));
-    }
-
-    public function testSessionArrayReturnsEmptyArrayForNull(): void
-    {
-        $session = $this->createMock(SessionInterface::class);
-        $session->expects(self::once())->method('get')->with('missing')->willReturn(null);
-
-        self::assertSame([], $this->tester->exposedSessionArray($session, 'missing'));
-    }
-
-    public function testStringValueReturnsDefaultForMissingKey(): void
-    {
-        self::assertSame('default', $this->tester->exposedStringValue([], 'key', 'default'));
-    }
-
-    public function testStringValueReturnsDefaultForNonString(): void
-    {
-        self::assertSame('', $this->tester->exposedStringValue(['key' => 42], 'key'));
-    }
-
-    public function testStringValueReturnsDefaultForNull(): void
-    {
-        self::assertSame('fallback', $this->tester->exposedStringValue(['key' => null], 'key', 'fallback'));
-    }
-
-    public function testStringValueReturnsEmptyStringDefaultByDefault(): void
-    {
-        self::assertSame('', $this->tester->exposedStringValue(['key' => 42], 'key'));
-    }
-
-    public function testStringValueReturnsValue(): void
-    {
-        self::assertSame('hello', $this->tester->exposedStringValue(['key' => 'hello'], 'key'));
+        self::assertSame($expected, $this->tester->exposedStringValue($data, $key, $default));
     }
 }

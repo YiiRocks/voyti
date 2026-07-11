@@ -30,19 +30,18 @@ final class SwitchIdentityServiceTest extends TestCase
         $this->tearDownDatabase();
     }
 
-    public function testGetOriginalUserReturnsNullWhenSessionHasNoKey(): void
+    /**
+     * @return iterable<string, array{ModuleConfig}>
+     */
+    public static function noSwitchSessionKeyConfigProvider(): iterable
     {
-        $config = new ModuleConfig();
-        $session = new FakeSession();
-
-        $service = $this->createService($config, session: $session);
-
-        self::assertNull($service->getOriginalUser());
+        yield 'session has no key' => [new ModuleConfig()];
+        yield 'session key config is null' => [new ModuleConfig(switchIdentitySessionKey: null)];
     }
 
-    public function testGetOriginalUserReturnsNullWhenSessionKeyIsNull(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('noSwitchSessionKeyConfigProvider')]
+    public function testGetOriginalUserReturnsNullWhenNoSwitchSessionKey(ModuleConfig $config): void
     {
-        $config = new ModuleConfig(switchIdentitySessionKey: null);
         $service = $this->createService($config);
 
         self::assertNull($service->getOriginalUser());
@@ -62,19 +61,9 @@ final class SwitchIdentityServiceTest extends TestCase
         self::assertSame($user->getId(), $found->getId());
     }
 
-    public function testIsSwitchedReturnsFalseWhenSessionHasNoKey(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('noSwitchSessionKeyConfigProvider')]
+    public function testIsSwitchedReturnsFalseWhenNoSwitchSessionKey(ModuleConfig $config): void
     {
-        $config = new ModuleConfig();
-        $session = new FakeSession();
-
-        $service = $this->createService($config, session: $session);
-
-        self::assertFalse($service->isSwitched());
-    }
-
-    public function testIsSwitchedReturnsFalseWhenSessionKeyIsNull(): void
-    {
-        $config = new ModuleConfig(switchIdentitySessionKey: null);
         $service = $this->createService($config);
 
         self::assertFalse($service->isSwitched());

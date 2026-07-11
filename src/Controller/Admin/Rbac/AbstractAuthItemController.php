@@ -58,17 +58,14 @@ abstract readonly class AbstractAuthItemController
             $result = $this->validator->validate($form);
 
             if ($result->isValid()) {
-                if ($this->getItemType() === 'role') {
-                    $item = (new Role($form->name))->withDescription($form->description);
-                    if ($form->rule !== '') {
-                        $item = $item->withRuleName($form->rule);
-                    }
+                $item = $this->getItemType() === 'role' ? new Role($form->name) : new Permission($form->name);
+                $item = $item->withDescription($form->description);
+                if ($form->rule !== '') {
+                    $item = $item->withRuleName($form->rule);
+                }
+                if ($item instanceof Role) {
                     $this->managerInterface->addRole($item);
                 } else {
-                    $item = (new Permission($form->name))->withDescription($form->description);
-                    if ($form->rule !== '') {
-                        $item = $item->withRuleName($form->rule);
-                    }
                     $this->managerInterface->addPermission($item);
                 }
 
@@ -97,11 +94,9 @@ abstract readonly class AbstractAuthItemController
 
     public function delete(string $name): ResponseInterface
     {
-        if ($this->getItemType() === 'role') {
-            $this->managerInterface->removeRole($name);
-        } else {
-            $this->managerInterface->removePermission($name);
-        }
+        $this->getItemType() === 'role'
+            ? $this->managerInterface->removeRole($name)
+            : $this->managerInterface->removePermission($name);
 
         return $this->redirectWithFlash(
             $this->url->generate('voyti/' . $this->getIndexRouteName()),
@@ -177,26 +172,21 @@ abstract readonly class AbstractAuthItemController
             if ($result->isValid()) {
                 $oldName = $form->itemName !== '' ? $form->itemName : $form->name;
 
-                if ($this->getItemType() === 'role') {
-                    $role = $this->itemsStorage->getRole($oldName);
-                    if ($role === null) {
-                        throw new RuntimeException("Role '{$oldName}' not found.");
-                    }
-                    $role = $role->withName($form->name)->withDescription($form->description);
-                    if ($form->rule !== '') {
-                        $role = $role->withRuleName($form->rule);
-                    }
-                    $this->managerInterface->updateRole($oldName, $role);
+                $existing = $this->getItemType() === 'role'
+                    ? $this->itemsStorage->getRole($oldName)
+                    : $this->itemsStorage->getPermission($oldName);
+                if ($existing === null) {
+                    $label = $this->getItemType() === 'role' ? 'Role' : 'Permission';
+                    throw new RuntimeException("{$label} '{$oldName}' not found.");
+                }
+                $updated = $existing->withName($form->name)->withDescription($form->description);
+                if ($form->rule !== '') {
+                    $updated = $updated->withRuleName($form->rule);
+                }
+                if ($updated instanceof Role) {
+                    $this->managerInterface->updateRole($oldName, $updated);
                 } else {
-                    $perm = $this->itemsStorage->getPermission($oldName);
-                    if ($perm === null) {
-                        throw new RuntimeException("Permission '{$oldName}' not found.");
-                    }
-                    $perm = $perm->withName($form->name)->withDescription($form->description);
-                    if ($form->rule !== '') {
-                        $perm = $perm->withRuleName($form->rule);
-                    }
-                    $this->managerInterface->updatePermission($oldName, $perm);
+                    $this->managerInterface->updatePermission($oldName, $updated);
                 }
 
                 $this->managerInterface->removeChildren($form->name);

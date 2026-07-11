@@ -10,14 +10,19 @@ use YiiRocks\Voyti\AuthClient\Twitter;
 final class TwitterTest extends TestCase
 {
 
-    public function testConstructWithoutConfig(): void
+    /**
+     * @return iterable<string, array{array<string, mixed>}>
+     */
+    public static function constructionProvider(): iterable
     {
-        $client = new Twitter();
-        self::assertSame('x', $client->getName());
+        yield 'without config' => [[]];
+        yield 'with config' => [['clientId' => 'id', 'clientSecret' => 'secret']];
     }
-    public function testGetName(): void
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('constructionProvider')]
+    public function testGetName(array $config): void
     {
-        $client = new Twitter(['clientId' => 'id', 'clientSecret' => 'secret']);
+        $client = new Twitter($config);
         self::assertSame('x', $client->getName());
     }
 

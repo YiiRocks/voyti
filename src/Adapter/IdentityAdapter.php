@@ -12,11 +12,17 @@ use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Auth\IdentityWithTokenRepositoryInterface;
 
+use function time;
+
 final readonly class IdentityAdapter implements IdentityRepositoryInterface, IdentityWithTokenRepositoryInterface
 {
+    private \Closure $now;
+
     public function __construct(
         private ModuleConfig $config,
+        ?\Closure $now = null,
     ) {
+        $this->now = $now ?? static fn (): int => time();
     }
 
     /**
@@ -40,9 +46,10 @@ final readonly class IdentityAdapter implements IdentityRepositoryInterface, Ide
             return null;
         }
 
+        /** @infection-ignore-all CastInt: the $now closure's declared `int` return type is enforced by PHP at runtime, so the cast never changes the value — it exists only to satisfy Psalm's inference of invoked Closure return types. */
         if (
             $this->config->apiTokenLifespan !== null
-            && (time() - $userToken->getCreatedAt()) > $this->config->apiTokenLifespan
+            && ((int) ($this->now)() - $userToken->getCreatedAt()) > $this->config->apiTokenLifespan
         ) {
             return null;
         }

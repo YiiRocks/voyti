@@ -24,6 +24,25 @@ final class ExpireServiceTest extends TestCase
         $this->tearDownDatabase();
     }
 
+    /**
+     * @return iterable<string, array{int, bool}>
+     */
+    public static function checkPasswordExpirationAgeProvider(): iterable
+    {
+        yield 'expired' => [31, true];
+        yield 'not expired' => [15, false];
+    }
+
+    /**
+     * @return iterable<string, array{int, bool}>
+     */
+    public static function isExpiredAgeProvider(): iterable
+    {
+        yield 'age above max' => [100, true];
+        yield 'age at max' => [90, true];
+        yield 'age below max' => [50, false];
+    }
+
     public function testCheckPasswordExpirationDisabledIgnoresExpiredUser(): void
     {
         $config = new ModuleConfig(enablePasswordExpiration: false, maxPasswordAge: 30);
@@ -43,54 +62,26 @@ final class ExpireServiceTest extends TestCase
         self::assertFalse($service->checkPasswordExpiration($user));
     }
 
-    public function testCheckPasswordExpirationEnabledAndExpired(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('checkPasswordExpirationAgeProvider')]
+    public function testCheckPasswordExpirationEnabled(int $ageDays, bool $expected): void
     {
         $config = new ModuleConfig(enablePasswordExpiration: true, maxPasswordAge: 30);
         $service = new ExpireService($config);
         $user = $this->createUser();
-        $user->setPasswordChangedAt(time() - 31 * 86400);
+        $user->setPasswordChangedAt(time() - $ageDays * 86400);
 
-        self::assertTrue($service->checkPasswordExpiration($user));
+        self::assertSame($expected, $service->checkPasswordExpiration($user));
     }
 
-    public function testCheckPasswordExpirationEnabledNotExpired(): void
-    {
-        $config = new ModuleConfig(enablePasswordExpiration: true, maxPasswordAge: 30);
-        $service = new ExpireService($config);
-        $user = $this->createUser();
-        $user->setPasswordChangedAt(time() - 15 * 86400);
-
-        self::assertFalse($service->checkPasswordExpiration($user));
-    }
-
-    public function testIsExpiredWithAgeAboveMax(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('isExpiredAgeProvider')]
+    public function testIsExpiredWithAge(int $ageDays, bool $expected): void
     {
         $config = new ModuleConfig(maxPasswordAge: 90);
         $service = new ExpireService($config);
         $user = $this->createUser();
-        $user->setPasswordChangedAt(time() - 100 * 86400);
+        $user->setPasswordChangedAt(time() - $ageDays * 86400);
 
-        self::assertTrue($service->isExpired($user));
-    }
-
-    public function testIsExpiredWithAgeAtMax(): void
-    {
-        $config = new ModuleConfig(maxPasswordAge: 90);
-        $service = new ExpireService($config);
-        $user = $this->createUser();
-        $user->setPasswordChangedAt(time() - 90 * 86400);
-
-        self::assertTrue($service->isExpired($user));
-    }
-
-    public function testIsExpiredWithAgeBelowMax(): void
-    {
-        $config = new ModuleConfig(maxPasswordAge: 90);
-        $service = new ExpireService($config);
-        $user = $this->createUser();
-        $user->setPasswordChangedAt(time() - 50 * 86400);
-
-        self::assertFalse($service->isExpired($user));
+        self::assertSame($expected, $service->isExpired($user));
     }
 
     public function testIsExpiredWithNullMaxAgeReturnsFalse(): void

@@ -21,23 +21,15 @@ final readonly class BothEmailChangeStrategy implements EmailChangeStrategyInter
     #[\Override]
     public function run(): bool
     {
-        /**
-         * @infection-ignore-all ReturnRemoval: the early return when
-         *   newStrategy->run() is false is redundant: the next
-         *   $user === null check also returns false because the
-         *   form's user is never set when run() fails.
-         */
         if (!$this->newStrategy->run()) {
             return false;
         }
 
         $user = $this->form->getUser();
-        if ($user === null) {
-            // @codeCoverageIgnoreStart
-            // Unreachable: newStrategy->run() above already returned false for this exact condition.
-            return false;
-            // @codeCoverageIgnoreEnd
-        }
+        // zend.assertions=-1 strips this statement at compile time, so it can never register as executed.
+        // @codeCoverageIgnoreStart
+        assert($user !== null);
+        // @codeCoverageIgnoreEnd
 
         /**
          * @infection-ignore-all
