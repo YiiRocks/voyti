@@ -55,6 +55,12 @@ final class UserProfile extends ActiveRecord
         return hash('sha256', strtolower(trim($email)));
     }
 
+    public function getGravatarUrl(int $size = 256): ?string
+    {
+        $id = $this->getGravatarId();
+        return $id === null ? null : "https://www.gravatar.com/avatar/{$id}?s={$size}&d=mp";
+    }
+
     public function getLocation(): ?string
     {
         return $this->location;

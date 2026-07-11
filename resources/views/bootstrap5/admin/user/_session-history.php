@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessionHistory;
 use Yiisoft\FormModel\Field;
@@ -37,11 +38,13 @@ echo Html::div($translator->translate('voyti.view.session_history.user_agent', c
 echo Html::div($translator->translate('voyti.view.session_history.created', category: 'voyti'))->class('col-3');
 echo Html::div()->close();
 
+$timezone = $user->getProfile()?->getTimezone();
+
 foreach ($sessions as $session) {
     echo Html::div()->class('row py-2 border-bottom align-items-center')->open();
     echo Html::div($session->getIp() ?? '')->class('col-3 text-break');
     echo Html::div($session->getUserAgent() ?? '')->class('col-6 text-break');
-    echo Html::div(date('Y-m-d H:i:s', $session->getCreatedAt()))->class('col-3');
+    echo Html::div(TimezoneHelper::formatLocalized($session->getCreatedAt(), $translator->getLocale(), $timezone))->class('col-3');
     echo Html::div()->close();
 }
 

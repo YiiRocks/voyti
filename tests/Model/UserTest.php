@@ -113,30 +113,6 @@ final class UserTest extends TestCase
         $this->connection = null;
     }
 
-    public function testCountByFiltersWithEmailFilter(): void
-    {
-        $this->createUser('alice', 'alice@example.com', time());
-        $this->createUser('bob', 'bob@other.com', time());
-
-        self::assertSame(1, User::countByFilters(['email' => 'example.com']));
-    }
-
-    public function testCountByFiltersWithNoFilters(): void
-    {
-        $this->createUser('alice', 'alice@example.com', time());
-        $this->createUser('bob', 'bob@example.com', time());
-
-        self::assertSame(2, User::countByFilters());
-    }
-
-    public function testCountByFiltersWithUsernameFilter(): void
-    {
-        $this->createUser('alice', 'alice@example.com', time());
-        $this->createUser('bob', 'bob@example.com', time());
-
-        self::assertSame(1, User::countByFilters(['username' => 'ali']));
-    }
-
     public function testDefaultValues(): void
     {
         $entity = new User();
@@ -623,6 +599,26 @@ final class UserTest extends TestCase
         self::assertFalse($entity->isGdprConsent());
     }
 
+    public function testIsSwitchDisabledForReturnsFalseForOtherActiveUser(): void
+    {
+        $user = $this->createUser('alice', 'alice@example.com', time());
+        self::assertFalse($user->isSwitchDisabledFor((int) $user->getId() + 1));
+    }
+
+    public function testIsSwitchDisabledForReturnsTrueForBlockedUser(): void
+    {
+        $user = $this->createUser('alice', 'alice@example.com', time());
+        $user->setBlockedAt(time());
+        $user->save();
+        self::assertTrue($user->isSwitchDisabledFor((int) $user->getId() + 1));
+    }
+
+    public function testIsSwitchDisabledForReturnsTrueForSameUser(): void
+    {
+        $user = $this->createUser('alice', 'alice@example.com', time());
+        self::assertTrue($user->isSwitchDisabledFor((int) $user->getId()));
+    }
+
     public function testNewEmailConfirmedConstant(): void
     {
         self::assertSame(2, User::NEW_EMAIL_CONFIRMED);
@@ -633,112 +629,73 @@ final class UserTest extends TestCase
         self::assertSame(1, User::OLD_EMAIL_CONFIRMED);
     }
 
-    public function testSearchClampsPageZeroToFirstPage(): void
-    {
-        for ($i = 0; $i < 3; $i++) {
-            $this->createUser('user' . $i, 'user' . $i . '@example.com', time() + $i);
-        }
-
-        $pageZero = User::search(['page' => 0, 'limit' => 2]);
-        $pageOne = User::search(['page' => 1, 'limit' => 2]);
-
-        self::assertCount(2, $pageZero);
-
-        $idsZero = array_map(static fn (User $u): int => (int) $u->getId(), $pageZero);
-        $idsOne = array_map(static fn (User $u): int => (int) $u->getId(), $pageOne);
-        self::assertSame($idsOne, $idsZero);
-    }
-
-    public function testSearchDefaultLimitIsFifty(): void
-    {
-        for ($i = 0; $i < 51; $i++) {
-            $this->createUser('user' . $i, 'user' . $i . '@example.com', time() + $i);
-        }
-
-        $result = User::search([]);
-        self::assertCount(50, $result);
-    }
-
-    public function testSearchReturnsSecondPage(): void
-    {
-        for ($i = 0; $i < 3; $i++) {
-            $this->createUser('user' . $i, 'user' . $i . '@example.com', time() + $i);
-        }
-
-        $firstPage = User::search(['page' => 1, 'limit' => 2]);
-        $secondPage = User::search(['page' => 2, 'limit' => 2]);
-
-        self::assertCount(2, $firstPage);
-        self::assertCount(1, $secondPage);
-        self::assertNotSame($firstPage[0]->getEmail(), $secondPage[0]->getEmail());
-    }
-
-    public function testSearchWithBlockedStatusFilter(): void
+    public function testSearchQueryCountReflectsStatusFilter(): void
     {
         $blocked = $this->createUser('alice', 'alice@example.com', time());
         $blocked->setBlockedAt(time());
         $blocked->save();
         $this->createUser('bob', 'bob@example.com', time());
 
-        $result = User::search(['status' => 'blocked']);
+        self::assertSame(1, User::searchQuery(['status' => 'blocked'])->count());
+        self::assertSame(2, User::searchQuery()->count());
+    }
+
+    public function testSearchQueryWithBlockedStatusFilter(): void
+    {
+        $blocked = $this->createUser('alice', 'alice@example.com', time());
+        $blocked->setBlockedAt(time());
+        $blocked->save();
+        $this->createUser('bob', 'bob@example.com', time());
+
+        $result = User::searchQuery(['status' => 'blocked'])->all();
 
         self::assertCount(1, $result);
         self::assertSame('alice', $result[0]->getUsername());
     }
 
-    public function testSearchWithConfirmedStatusFilter(): void
+    public function testSearchQueryWithConfirmedStatusFilter(): void
     {
         $confirmed = $this->createUser('alice', 'alice@example.com', time());
         $confirmed->setConfirmedAt(time());
         $confirmed->save();
         $this->createUser('bob', 'bob@example.com', time());
 
-        $result = User::search(['status' => 'confirmed']);
+        $result = User::searchQuery(['status' => 'confirmed'])->all();
 
         self::assertCount(1, $result);
         self::assertSame('alice', $result[0]->getUsername());
     }
 
-    public function testSearchWithEmailFilter(): void
+    public function testSearchQueryWithEmailFilter(): void
     {
         $this->createUser('alice', 'alice@example.com', time());
         $this->createUser('bob', 'bob@other.com', time());
 
-        $result = User::search(['email' => 'example.com']);
+        $result = User::searchQuery(['email' => 'example.com'])->all();
 
         self::assertCount(1, $result);
         self::assertSame('alice', $result[0]->getUsername());
     }
 
-    public function testSearchWithStringLimitIsCastToInteger(): void
-    {
-        for ($i = 0; $i < 3; $i++) {
-            $this->createUser('user' . $i, 'user' . $i . '@example.com', time() + $i);
-        }
-
-        $result = User::search(['limit' => '2', 'page' => 1]);
-        self::assertCount(2, $result);
-    }
-
-    public function testSearchWithUnconfirmedStatusFilter(): void
+    public function testSearchQueryWithUnconfirmedStatusFilter(): void
     {
         $confirmed = $this->createUser('alice', 'alice@example.com', time());
         $confirmed->setConfirmedAt(time());
         $confirmed->save();
         $this->createUser('bob', 'bob@example.com', time());
 
-        $result = User::search(['status' => 'unconfirmed']);
+        $result = User::searchQuery(['status' => 'unconfirmed'])->all();
 
         self::assertCount(1, $result);
         self::assertSame('bob', $result[0]->getUsername());
     }
 
-    public function testSearchWithUsernameFilter(): void
+    public function testSearchQueryWithUsernameFilter(): void
     {
         $this->createUser('alice', 'alice@example.com', time());
         $this->createUser('bob', 'bob@example.com', time());
 
-        $result = User::search(['username' => 'ali']);
+        $result = User::searchQuery(['username' => 'ali'])->all();
 
         self::assertCount(1, $result);
         self::assertSame('alice', $result[0]->getUsername());

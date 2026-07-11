@@ -20,7 +20,7 @@ use Yiisoft\View\WebView;
 /** @psalm-suppress InvalidScope */
 $this->setTitle($translator->translate('voyti.view.registration.connect_title', category: 'voyti'));
 
-$providerTitle = $authClients->get($account->getProvider())?->getTitle() ?? $account->getProvider();
+$providerTitle = $authClients->getTitle($account->getProvider());
 
 echo Html::div()->open();
 echo Html::H1($translator->translate('voyti.view.registration.connect_title', category: 'voyti'));

@@ -39,6 +39,8 @@
         "yiisoft/aliases": "^3.1",
         "yiisoft/auth": "^3.2",
         "yiisoft/csrf": "^2.0",
+        "yiisoft/data": "^2.0",
+        "yiisoft/data-db": "^1.0",
         "yiisoft/data-response": "^2.2",
         "yiisoft/db-implementation": "*",
         "yiisoft/db-migration": "^2.0",
@@ -54,6 +56,7 @@
         "yiisoft/translator-message-php": "^1.0",
         "yiisoft/user": "^2.3",
         "yiisoft/validator": "^2.6",
+        "yiisoft/yii-dataview": "^1.1",
         "yiisoft/yii-middleware": "^1.1",
         "yiisoft/yii-view-renderer": "^7.1"
     },

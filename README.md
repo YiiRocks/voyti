@@ -410,8 +410,8 @@ The library does not provide a menu model or navigation contract. It only expose
 | `voyti/two-factor-disable-send-code` | `POST` | `settings/two-factor/disable/send-code` | Send the disable-2FA one-time code. Only registered when `enableTwoFactorAuthentication` is `true` |
 | `voyti/two-factor-renew` | `POST` | `settings/two-factor-google/renew` | Regenerate the Google Authenticator secret/QR code via AJAX. Only registered when `enableTwoFactorAuthentication` is `true` |
 | `voyti/two-factor-send-email-code` | `POST` | `settings/two-factor-email/send-code` | Send the email 2FA one-time code after explicit confirmation. Only registered when `enableTwoFactorAuthentication` is `true` |
-| `voyti/admin` | `GET` | `admin/` | Redirects to the admin user list |
-| `voyti/admin-users` | `GET` | `admin/users/` | Admin dashboard |
+| `voyti/admin` | `GET` | `admin/` | Redirects to the admin user dashboard |
+| `voyti/admin-users` | `GET` | `admin/users/` | User dashboard |
 | `voyti/admin-users-create` | `GET`, `POST` | `admin/users/create` | Create user |
 | `voyti/admin-users-update` | `GET`, `POST` | `admin/users/update/{id}` | Update user |
 | `voyti/admin-users-update-profile` | `GET`, `POST` | `admin/users/update-profile/{id}` | Update user profile |

@@ -12,6 +12,30 @@ use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 final class AuthClientRegistryTest extends TestCase
 {
 
+    public function testAllExceptExcludesNamedClients(): void
+    {
+        $github = $this->createMock(AuthClientInterface::class);
+        $github->method('getName')->willReturn('github');
+
+        $google = $this->createMock(AuthClientInterface::class);
+        $google->method('getName')->willReturn('google');
+
+        $registry = new AuthClientRegistry($github, $google);
+        $result = $registry->allExcept(['github']);
+
+        self::assertCount(1, $result);
+        self::assertSame($google, $result[0]);
+    }
+
+    public function testAllExceptReturnsAllWhenExclusionListIsEmpty(): void
+    {
+        $client = $this->createMock(AuthClientInterface::class);
+        $client->method('getName')->willReturn('github');
+
+        $registry = new AuthClientRegistry($client);
+        self::assertSame([$client], $registry->allExcept([]));
+    }
+
     public function testAllReturnsEmptyArrayWhenNoClients(): void
     {
         $registry = new AuthClientRegistry();
@@ -74,5 +98,21 @@ final class AuthClientRegistryTest extends TestCase
     {
         $registry = new AuthClientRegistry();
         self::assertNull($registry->get('nonexistent'));
+    }
+
+    public function testGetTitleFallsBackToNameForUnknownClient(): void
+    {
+        $registry = new AuthClientRegistry();
+        self::assertSame('nonexistent', $registry->getTitle('nonexistent'));
+    }
+
+    public function testGetTitleReturnsClientTitle(): void
+    {
+        $client = $this->createMock(AuthClientInterface::class);
+        $client->method('getName')->willReturn('github');
+        $client->method('getTitle')->willReturn('GitHub');
+
+        $registry = new AuthClientRegistry($client);
+        self::assertSame('GitHub', $registry->getTitle('github'));
     }
 }

@@ -55,7 +55,7 @@ if (empty($accounts)) {
                 ->render()
             . Html::form()->close();
 
-        $providerTitle = $authClients->get($account->getProvider())?->getTitle() ?? $account->getProvider();
+        $providerTitle = $authClients->getTitle($account->getProvider());
 
         $content = Html::div()->class('d-flex justify-content-between align-items-center gap-3')->open();
         $content .= Html::span($providerTitle)->render();

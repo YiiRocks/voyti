@@ -26,6 +26,7 @@ use YiiRocks\Voyti\Service\User\CreateService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\TestCase;
+use Yiisoft\Data\Paginator\OffsetPaginator;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -442,7 +443,7 @@ final class UserControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    public function testIndexComputesTotalPagesWithMinimumOfOne(): void
+    public function testIndexPassesPaginatorWithNoResults(): void
     {
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
@@ -465,9 +466,11 @@ final class UserControllerTest extends TestCase
 
         $controller->index($request);
 
-        $this->assertArrayHasKey('totalPages', $captured);
-        $this->assertSame(1, $captured['totalPages']);
-        $this->assertSame(1, $captured['currentPage']);
+        $this->assertArrayHasKey('paginator', $captured);
+        $paginator = $captured['paginator'];
+        $this->assertInstanceOf(OffsetPaginator::class, $paginator);
+        $this->assertSame(0, $paginator->getTotalPages());
+        $this->assertSame(1, $paginator->getCurrentPage());
     }
 
     public function testIndexShowsUserList(): void

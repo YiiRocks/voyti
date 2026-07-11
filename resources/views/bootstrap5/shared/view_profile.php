@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserProfile;
 use Yiisoft\Html\Html;
@@ -16,7 +17,7 @@ use Yiisoft\Translator\TranslatorInterface;
  */
 
 $displayName = $userProfile->getName() ?? $user->getUsername();
-$gravatarId = $userProfile->getGravatarId();
+$gravatarUrl = $userProfile->getGravatarUrl();
 $profilePreviewClass ??= 'list-group mb-4';
 $showAdminFields ??= false;
 
@@ -24,9 +25,8 @@ echo Html::ul()->class($profilePreviewClass)->open();
 
 echo Html::li()->class('list-group-item text-center py-3')->open();
 echo Html::h3(Html::encode($displayName))->class('h4 mb-3');
-if ($gravatarId !== null && $gravatarId !== '') {
-    echo Html::img('https://www.gravatar.com/avatar/' . $gravatarId . '?s=256&d=mp')
-        ->class('rounded-circle');
+if ($gravatarUrl !== null) {
+    echo Html::img($gravatarUrl)->class('rounded-circle');
 }
 echo Html::li()->close();
 
@@ -38,7 +38,7 @@ if ($showAdminFields) {
 
     echo Html::li()->class('list-group-item list-group-item-primary')->open();
     echo Html::b($translator->translate('voyti.view.admin.registered_label', category: 'voyti'))->render() . ': ';
-    echo date('Y-m-d H:i:s', $user->getCreatedAt());
+    echo TimezoneHelper::formatLocalized($user->getCreatedAt(), $translator->getLocale(), $userProfile->getTimezone());
     echo Html::li()->close();
 
     echo Html::li()->class('list-group-item list-group-item-primary')->open();

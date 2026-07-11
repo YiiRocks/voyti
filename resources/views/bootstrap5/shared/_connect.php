@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use YiiRocks\Voyti\AuthClient\AuthClientInterface;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -17,10 +16,7 @@ use Yiisoft\Router\UrlGeneratorInterface;
 $excludedProviders ??= [];
 $routeName ??= 'voyti/session-auth';
 
-$clients = array_filter(
-    $authClients->all(),
-    static fn (AuthClientInterface $client): bool => !in_array($client->getName(), $excludedProviders, true),
-);
+$clients = $authClients->allExcept($excludedProviders);
 
 if ($clients !== []) {
     echo Html::div()->class('btn-group')->open();

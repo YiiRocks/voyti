@@ -237,6 +237,28 @@ final class UserProfileTest extends TestCase
         self::assertSame($expected, $entity->getGravatarId());
     }
 
+    public function testGetGravatarUrlReturnsNullWhenNoGravatarId(): void
+    {
+        $entity = new UserProfile();
+        self::assertNull($entity->getGravatarUrl());
+    }
+
+    public function testGetGravatarUrlUsesCustomSize(): void
+    {
+        $entity = new UserProfile();
+        $entity->setGravatarEmail('test@example.com');
+        $id = hash('sha256', 'test@example.com');
+        self::assertSame("https://www.gravatar.com/avatar/{$id}?s=64&d=mp", $entity->getGravatarUrl(64));
+    }
+
+    public function testGetGravatarUrlUsesDefaultSize(): void
+    {
+        $entity = new UserProfile();
+        $entity->setGravatarEmail('test@example.com');
+        $id = hash('sha256', 'test@example.com');
+        self::assertSame("https://www.gravatar.com/avatar/{$id}?s=256&d=mp", $entity->getGravatarUrl());
+    }
+
     public function testGetSetBio(): void
     {
         $entity = new UserProfile();

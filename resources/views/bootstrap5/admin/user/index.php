@@ -4,19 +4,21 @@ declare(strict_types=1);
 
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
+use Yiisoft\Data\Paginator\OffsetPaginator;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\View\WebView;
+use Yiisoft\Yii\DataView\Pagination\OffsetPagination;
+use Yiisoft\Yii\DataView\Pagination\PaginationContext;
 
 /**
  * @var WebView $this
  * @var array $users
  * @var array<string, string> $filters
- * @var int $totalPages
- * @var int $currentPage
+ * @var OffsetPaginator $paginator
  * @var ModuleConfig $config
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
@@ -180,7 +182,7 @@ foreach ($users as $user) {
     echo Html::li()->close();
 
     if ($config->enableSwitchIdentities && !$isSwitched) {
-        $switchDisabled = $user->isBlocked() || (int) $user->getId() === $currentUserId;
+        $switchDisabled = $user->isSwitchDisabledFor($currentUserId);
         echo Html::li()->open();
         echo Html::form()
             ->post($url->generate('voyti/admin-users-switch-identity', ['id' => $user->getId()]))
@@ -222,42 +224,27 @@ foreach ($users as $user) {
     echo Html::div()->close();
 }
 
-if ($totalPages > 1) {
-    $pageQuery = [
-        'username' => $filters['username'] ?? '',
-        'email' => $filters['email'] ?? '',
-        'status' => $filters['status'] ?? '',
-    ];
+$pageQuery = [
+    'username' => $filters['username'] ?? '',
+    'email' => $filters['email'] ?? '',
+    'status' => $filters['status'] ?? '',
+];
 
-    $items = [];
-
-    if ($currentPage > 1) {
-        $items[] = Html::li(
-            Html::a(
-                $translator->translate('voyti.view.previous', category: 'voyti'),
-                $url->generate('voyti/admin-users', [], ['page' => $currentPage - 1, ...$pageQuery]),
-            )->class('page-link'),
-        )->class('page-item');
-    }
-
-    for ($i = 1; $i <= $totalPages; $i++) {
-        $items[] = Html::li(
-            Html::a((string) $i, $url->generate('voyti/admin-users', [], ['page' => $i, ...$pageQuery]))->class('page-link'),
-        )->class('page-item' . ($i === $currentPage ? ' active' : ''));
-    }
-
-    if ($currentPage < $totalPages) {
-        $items[] = Html::li(
-            Html::a(
-                $translator->translate('voyti.view.next', category: 'voyti'),
-                $url->generate('voyti/admin-users', [], ['page' => $currentPage + 1, ...$pageQuery]),
-            )->class('page-link'),
-        )->class('page-item');
-    }
-
-    echo Html::nav()
-        ->attribute('aria-label', $translator->translate('voyti.view.pagination_navigation', category: 'voyti'))
-        ->content(Html::ul()->class('pagination', 'justify-content-center')->items(...$items))
-        ->encode(false);
-}
+echo OffsetPagination::create(
+    $paginator,
+    $url->generate('voyti/admin-users', [], [...$pageQuery, 'page' => PaginationContext::URL_PLACEHOLDER]),
+    $url->generate('voyti/admin-users', [], [...$pageQuery, 'page' => '1']),
+)
+    ->containerAttributes(['aria-label' => $translator->translate('voyti.view.pagination_navigation', category: 'voyti')])
+    ->listTag('ul')
+    ->listAttributes(['class' => 'pagination justify-content-center'])
+    ->itemTag('li')
+    ->itemAttributes(['class' => 'page-item'])
+    ->currentItemClass('active')
+    ->linkAttributes(['class' => 'page-link'])
+    ->labelFirst(null)
+    ->labelLast(null)
+    ->labelPrevious($translator->translate('voyti.view.previous', category: 'voyti'))
+    ->labelNext($translator->translate('voyti.view.next', category: 'voyti'))
+    ->render();
 echo Html::div()->close();

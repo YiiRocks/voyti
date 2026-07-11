@@ -41,23 +41,6 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
     private int $updated_at = 0;
     private string $username = '';
 
-    /**
-     * @psalm-return int<0, max>|string
-     */
-    public static function countByFilters(array $filters = []): int|string
-    {
-        $query = self::query();
-
-        if (!empty($filters['username'])) {
-            $query = $query->andWhere(['like', 'username', $filters['username']]);
-        }
-        if (!empty($filters['email'])) {
-            $query = $query->andWhere(['like', 'email', $filters['email']]);
-        }
-
-        return $query->count();
-    }
-
     #[\Override]
     public function delete(): int
     {
@@ -279,6 +262,11 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
         return (bool) $this->gdpr_consent;
     }
 
+    public function isSwitchDisabledFor(int $currentUserId): bool
+    {
+        return $this->isBlocked() || (int) $this->getId() === $currentUserId;
+    }
+
     public static function saveWithProfile(User $user, UserProfile $userProfile): void
     {
         $user->save();
@@ -295,12 +283,7 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
         $userToken->save();
     }
 
-    /**
-     * @return (array|object)[]
-     *
-     * @psalm-return array<array|object>
-     */
-    public static function search(array $filters = []): array
+    public static function searchQuery(array $filters = []): ActiveQueryInterface
     {
         $query = self::query();
 
@@ -320,12 +303,7 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
             }
         }
 
-        $limit = (int)($filters['limit'] ?? 50);
-        /** @infection-ignore-all DecrementInteger: the surrounding max(1, ...) already clamps a missing 'page' key to 1 regardless of whether the coalesce default is 1 or 0, so that specific mutation is unobservable. */
-        $page = max(1, (int)($filters['page'] ?? 1));
-        $offset = ($page - 1) * $limit;
-
-        return $query->limit($limit)->offset($offset)->all();
+        return $query;
     }
 
     public function setAnonymized(int|bool $anonymized): void

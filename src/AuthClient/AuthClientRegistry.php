@@ -26,8 +26,26 @@ final class AuthClientRegistry
         return array_values($this->clients);
     }
 
+    /**
+     * @param list<string> $excluded
+     *
+     * @return list<AuthClientInterface>
+     */
+    public function allExcept(array $excluded): array
+    {
+        return array_values(array_filter(
+            $this->clients,
+            static fn (AuthClientInterface $client): bool => !in_array($client->getName(), $excluded, true),
+        ));
+    }
+
     public function get(string $name): ?AuthClientInterface
     {
         return $this->clients[$name] ?? null;
+    }
+
+    public function getTitle(string $name): string
+    {
+        return $this->get($name)?->getTitle() ?? $name;
     }
 }

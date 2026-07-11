@@ -28,6 +28,8 @@ use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\Service\User\BlockService;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\CreateService;
+use Yiisoft\Data\Db\QueryDataReader;
+use Yiisoft\Data\Paginator\OffsetPaginator;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Rbac\Assignment;
@@ -186,21 +188,18 @@ final readonly class UserController
             'username' => $this->stringValue($queryParams, 'username'),
             'email' => $this->stringValue($queryParams, 'email'),
             'status' => $this->stringValue($queryParams, 'status'),
-            'page' => (int) ($queryParams['page'] ?? 1),
         ];
 
-        $users = User::search($filters);
-        $total = (int) User::countByFilters($filters);
-        $limit = 50;
-        $totalPages = max(1, (int)ceil($total / $limit));
-        $currentPage = max(1, $filters['page']);
+        $reader = new QueryDataReader(User::searchQuery($filters));
+        $paginator = (new OffsetPaginator($reader))->withPageSize(50);
+        $requestedPage = max(1, (int) ($queryParams['page'] ?? 1));
+        $paginator = $paginator->withCurrentPage(min($requestedPage, max(1, $paginator->getTotalPages())));
 
         return $this->renderView('admin/user/index', [
-            'users' => $users,
+            'users' => iterator_to_array($paginator->read(), false),
+            'paginator' => $paginator,
             'config' => $this->config,
             'filters' => $filters,
-            'totalPages' => $totalPages,
-            'currentPage' => $currentPage,
             'flash' => $this->flash,
             'isSwitched' => $this->switchIdentityService->isSwitched(),
             'originalUser' => $this->switchIdentityService->getOriginalUser(),
