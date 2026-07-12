@@ -46,7 +46,6 @@ final readonly class IdentityAdapter implements IdentityRepositoryInterface, Ide
             return null;
         }
 
-        /** @infection-ignore-all CastInt: the $now closure's declared `int` return type is enforced by PHP at runtime, so the cast never changes the value — it exists only to satisfy Psalm's inference of invoked Closure return types. */
         if (
             $this->config->apiTokenLifespan !== null
             && ((int) ($this->now)() - $userToken->getCreatedAt()) > $this->config->apiTokenLifespan

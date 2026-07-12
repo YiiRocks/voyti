@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Helper;
 
-use DateTime;
+use DateTimeImmutable;
 use DateTimeZone;
 use IntlDateFormatter;
 use Throwable;
@@ -40,20 +40,26 @@ final class TimezoneHelper
      */
     public static function getAll(): array
     {
+        $now = new DateTimeImmutable();
         $timezones = [];
         foreach (DateTimeZone::listIdentifiers() as $timezone) {
             /** @var non-empty-string $timezone */
-            $dateTime = new DateTime('now', new DateTimeZone($timezone));
-            $offset = $dateTime->getOffset();
+            $offset = (new DateTimeZone($timezone))->getOffset($now);
             /**
              * @infection-ignore-all
              *
-             * Real timezone offsets are always multiples of 1800 (30-min
+             * Real timezone offsets are always multiples of 900 (15-min
              * increments), far too coarse for a 3599 vs 3600 intdiv divisor
-             * to ever produce a different hour/minute split.
              */
             $hours = intdiv($offset, 3600);
-            /** @infection-ignore-all */
+            /**
+             * @infection-ignore-all
+             *
+             * Same reasoning as $hours above for the 3600/60 divisor
+             * constants (real offsets are far too coarse to expose a
+             * 3599/59 boundary difference); the abs() call itself is
+             * covered by testGetAllFormatsNegativeHalfHourOffsetCorrectly().
+             */
             $minutes = abs(intdiv($offset % 3600, 60));
             $gmtOffset = sprintf('GMT%+d:%02d', $hours, $minutes);
             $timezones[$timezone] = "({$gmtOffset}) {$timezone}";

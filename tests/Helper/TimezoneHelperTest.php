@@ -76,6 +76,14 @@ final class TimezoneHelperTest extends TestCase
         self::assertMatchesRegularExpression('/PM$/u', $formatted);
     }
 
+    public function testGetAllFormatsNegativeHalfHourOffsetCorrectly(): void
+    {
+        $timezones = TimezoneHelper::getAll();
+
+        self::assertArrayHasKey('Pacific/Marquesas', $timezones);
+        self::assertStringStartsWith('(GMT-9:30)', $timezones['Pacific/Marquesas']);
+    }
+
     public function testGetAllReturnsWellFormedTimezoneList(): void
     {
         $timezones = TimezoneHelper::getAll();

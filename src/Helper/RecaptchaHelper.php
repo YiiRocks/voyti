@@ -60,7 +60,6 @@ final class RecaptchaHelper
             return '';
             // @codeCoverageIgnoreEnd
         }
-        /** @infection-ignore-all Concat ConcatOperandRemoval: both branches throw MissingSiteKeyException in tests, so the action string is never observable. */
         return RecaptchaV3Field::field($form, $attribute)
             ->withBadge(RecaptchaV3Badge::Hidden)
             ->withAction('voyti_' . $formName)

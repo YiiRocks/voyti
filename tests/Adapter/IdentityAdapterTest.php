@@ -36,6 +36,18 @@ final class IdentityAdapterTest extends TestCase
         self::assertNotNull($adapter->findIdentityByToken('raw-token'));
     }
 
+    public function testFindIdentityByTokenAtExactLifespanBoundaryWithFractionalNowIsStillValid(): void
+    {
+        $user = $this->createSavedUser();
+        $this->createApiToken($user, 'raw-token', createdAt: 500);
+        $adapter = $this->createAdapter(
+            config: new ModuleConfig(apiTokenLifespan: 500),
+            now: static fn (): float => 1000.5,
+        );
+
+        self::assertNotNull($adapter->findIdentityByToken('raw-token'));
+    }
+
     public function testFindIdentityByTokenHashesInputBeforeLookup(): void
     {
         $user = $this->createSavedUser();

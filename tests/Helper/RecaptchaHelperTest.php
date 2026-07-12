@@ -68,7 +68,7 @@ final class RecaptchaHelperTest extends TestCase
         $html = RecaptchaHelper::render($form, $config);
 
         self::assertStringContainsString('grecaptcha.execute', $html);
-        self::assertStringContainsString('action', $html);
+        self::assertStringContainsString('"action":"voyti_recaptchaTestForm"', $html);
         self::assertStringNotContainsString('data-sitekey="v2-site-key"', $html);
     }
 
