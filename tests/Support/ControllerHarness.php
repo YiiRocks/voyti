@@ -42,6 +42,7 @@ use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\CreateService;
 use YiiRocks\Voyti\Service\User\RegisterService;
 use YiiRocks\Voyti\Service\User\ResendConfirmationService;
+use YiiRocks\Voyti\Service\User\UserCreationHelper;
 use YiiRocks\Voyti\Service\UserSessionHistory\TerminateUserSessionsService;
 use YiiRocks\Voyti\Strategy\EmailChangeStrategyFactory;
 use YiiRocks\Voyti\Validator\Rbac\ItemsValidator;
@@ -371,6 +372,18 @@ final class ControllerHarness
             $currentUser,
             $this->session,
             $this->eventDispatcher,
+            new UserCreationHelper(
+                new MailService(
+                    $this->mailer,
+                    $this->config->mailPath,
+                    $translator,
+                    $this->url,
+                    $this->config->appName,
+                ),
+                $this->eventDispatcher,
+                $passwordHasher,
+                $this->config,
+            ),
         );
         $socialNetworkAccountConnectService ??= new UserSocialAccountConnectService();
         $twoFactorEmailCodeService ??= new EmailCodeGeneratorService(

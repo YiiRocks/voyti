@@ -35,40 +35,17 @@ final class UserSessionHistoryDecoratorTest extends TestCase
         $eventDispatcher = new EventCaptureDispatcher();
         $config = new ModuleConfig(enableSessionHistory: true, numberSessionHistory: 2);
 
-        $session = new FakeSession();
-        $session->setId('sessb');
-        $session->open();
-
+        $session = $this->createOpenSession('sessb');
         $decorator = new UserSessionHistoryDecorator($eventDispatcher, $config, $session);
 
-        $userA = new User();
-        $userA->setUsername('usera');
-        $userA->setEmail('usera@example.com');
-        $userA->setPasswordHash('hash');
-        $userA->setAuthKey('key');
-        $userA->setCreatedAt(time());
-        $userA->setUpdatedAt(time());
-        $userA->save();
+        $userA = $this->createUser('usera', 'usera@example.com');
         $userIdA = (int) $userA->getId();
 
         for ($i = 0; $i < 3; $i++) {
-            $sh = new UserSessionHistory();
-            $sh->setUserId($userIdA);
-            $sh->setSessionId('a_' . $i);
-            $sh->setIp('127.0.0.1');
-            $sh->setCreatedAt(time() - (10 - $i));
-            $sh->setUpdatedAt(time() - (10 - $i));
-            $sh->save();
+            $this->createSessionHistoryEntry($userIdA, 'a_' . $i, 10 - $i);
         }
 
-        $userB = new User();
-        $userB->setUsername('userb');
-        $userB->setEmail('userb@example.com');
-        $userB->setPasswordHash('hash');
-        $userB->setAuthKey('key');
-        $userB->setCreatedAt(time());
-        $userB->setUpdatedAt(time());
-        $userB->save();
+        $userB = $this->createUser('userb', 'userb@example.com');
 
         $_SERVER['REMOTE_ADDR'] = '192.168.1.1';
         $_SERVER['HTTP_USER_AGENT'] = 'TestAgent';
@@ -86,20 +63,10 @@ final class UserSessionHistoryDecoratorTest extends TestCase
         $eventDispatcher = new EventCaptureDispatcher();
         $config = new ModuleConfig(enableSessionHistory: true, disableIpLogging: false);
 
-        $session = new FakeSession();
-        $session->setId('sessfallback');
-        $session->open();
-
+        $session = $this->createOpenSession('sessfallback');
         $decorator = new UserSessionHistoryDecorator($eventDispatcher, $config, $session);
 
-        $user = new User();
-        $user->setUsername('fallback');
-        $user->setEmail('fallback@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
+        $user = $this->createUser('fallback', 'fallback@example.com');
 
         unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
 
@@ -116,31 +83,14 @@ final class UserSessionHistoryDecoratorTest extends TestCase
         $eventDispatcher = new EventCaptureDispatcher();
         $config = new ModuleConfig(enableSessionHistory: true, numberSessionHistory: 2);
 
-        $session = new FakeSession();
-        $session->setId('sessnew');
-        $session->open();
-
+        $session = $this->createOpenSession('sessnew');
         $decorator = new UserSessionHistoryDecorator($eventDispatcher, $config, $session);
 
-        $user = new User();
-        $user->setUsername('prunetest');
-        $user->setEmail('prunetest@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-
+        $user = $this->createUser('prunetest', 'prunetest@example.com');
         $userId = (int) $user->getId();
 
         for ($i = 0; $i < 3; $i++) {
-            $sh = new UserSessionHistory();
-            $sh->setUserId($userId);
-            $sh->setSessionId('old_' . $i);
-            $sh->setIp('127.0.0.1');
-            $sh->setCreatedAt(time() - (10 - $i));
-            $sh->setUpdatedAt(time() - (10 - $i));
-            $sh->save();
+            $this->createSessionHistoryEntry($userId, 'old_' . $i, 10 - $i);
         }
 
         $_SERVER['REMOTE_ADDR'] = '192.168.1.1';
@@ -152,8 +102,6 @@ final class UserSessionHistoryDecoratorTest extends TestCase
         self::assertCount(2, $sessions);
 
         unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
-
-        unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
     }
 
     public function testRegisterLoginWithDisableIpLogging(): void
@@ -161,20 +109,10 @@ final class UserSessionHistoryDecoratorTest extends TestCase
         $eventDispatcher = new EventCaptureDispatcher();
         $config = new ModuleConfig(enableSessionHistory: true, disableIpLogging: true);
 
-        $session = new FakeSession();
-        $session->setId('sess456');
-        $session->open();
-
+        $session = $this->createOpenSession('sess456');
         $decorator = new UserSessionHistoryDecorator($eventDispatcher, $config, $session);
 
-        $user = new User();
-        $user->setUsername('test2');
-        $user->setEmail('test2@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
+        $user = $this->createUser('test2', 'test2@example.com');
 
         $_SERVER['REMOTE_ADDR'] = '203.0.113.9';
         $_SERVER['HTTP_USER_AGENT'] = 'TestAgent';
@@ -217,20 +155,10 @@ final class UserSessionHistoryDecoratorTest extends TestCase
         $eventDispatcher = new EventCaptureDispatcher();
         $config = new ModuleConfig(enableSessionHistory: true, numberSessionHistory: false);
 
-        $session = new FakeSession();
-        $session->setId('sessnoprune');
-        $session->open();
-
+        $session = $this->createOpenSession('sessnoprune');
         $decorator = new UserSessionHistoryDecorator($eventDispatcher, $config, $session);
 
-        $user = new User();
-        $user->setUsername('noprunetest');
-        $user->setEmail('noprunetest@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
+        $user = $this->createUser('noprunetest', 'noprunetest@example.com');
 
         $_SERVER['REMOTE_ADDR'] = '192.168.1.1';
 
@@ -250,14 +178,7 @@ final class UserSessionHistoryDecoratorTest extends TestCase
 
         $decorator = new UserSessionHistoryDecorator($eventDispatcher, $config);
 
-        $user = new User();
-        $user->setUsername('test');
-        $user->setEmail('test@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
+        $user = $this->createUser('test', 'test@example.com');
 
         $_SERVER['REMOTE_ADDR'] = '192.168.1.1';
         $_SERVER['HTTP_USER_AGENT'] = 'TestAgent';
@@ -275,20 +196,10 @@ final class UserSessionHistoryDecoratorTest extends TestCase
         $eventDispatcher = new EventCaptureDispatcher();
         $config = new ModuleConfig(enableSessionHistory: true);
 
-        $session = new FakeSession();
-        $session->setId('sess123');
-        $session->open();
-
+        $session = $this->createOpenSession('sess123');
         $decorator = new UserSessionHistoryDecorator($eventDispatcher, $config, $session);
 
-        $user = new User();
-        $user->setUsername('test');
-        $user->setEmail('test@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
+        $user = $this->createUser('test', 'test@example.com');
 
         $_SERVER['REMOTE_ADDR'] = '192.168.1.1';
         $_SERVER['HTTP_USER_AGENT'] = 'TestAgent';
@@ -318,14 +229,7 @@ final class UserSessionHistoryDecoratorTest extends TestCase
 
         $decorator = new UserSessionHistoryDecorator($eventDispatcher, $config);
 
-        $user = new User();
-        $user->setUsername('nosess');
-        $user->setEmail('nosess@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
+        $user = $this->createUser('nosess', 'nosess@example.com');
 
         $_SERVER['REMOTE_ADDR'] = '10.0.0.1';
 
@@ -336,5 +240,41 @@ final class UserSessionHistoryDecoratorTest extends TestCase
         self::assertSame('', $sessions[0]->getSessionId());
 
         unset($_SERVER['REMOTE_ADDR']);
+    }
+
+    private function createOpenSession(string $id): FakeSession
+    {
+        $session = new FakeSession();
+        $session->setId($id);
+        $session->open();
+
+        return $session;
+    }
+
+    private function createSessionHistoryEntry(int $userId, string $sessionId, int $ageOffset): UserSessionHistory
+    {
+        $sh = new UserSessionHistory();
+        $sh->setUserId($userId);
+        $sh->setSessionId($sessionId);
+        $sh->setIp('127.0.0.1');
+        $sh->setCreatedAt(time() - $ageOffset);
+        $sh->setUpdatedAt(time() - $ageOffset);
+        $sh->save();
+
+        return $sh;
+    }
+
+    private function createUser(string $username, string $email): User
+    {
+        $user = new User();
+        $user->setUsername($username);
+        $user->setEmail($email);
+        $user->setPasswordHash('hash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $user->save();
+
+        return $user;
     }
 }

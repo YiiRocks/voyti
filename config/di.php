@@ -166,11 +166,13 @@ return [
         CurrentUser $currentUser,
         SessionInterface $session,
         EventDispatcherInterface $eventDispatcher,
+        UserCreationHelper $userCreationHelper,
     ) => new UserSocialAuthenticateService(
         $config,
         $currentUser,
         $session,
         $eventDispatcher,
+        $userCreationHelper,
     ),
 
     UserTokenFactory::class => UserTokenFactory::class,

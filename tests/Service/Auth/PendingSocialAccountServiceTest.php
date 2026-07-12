@@ -61,38 +61,14 @@ final class PendingSocialAccountServiceTest extends TestCase
 
     public function testConnectWithNoPendingAccountReturnsSuccess(): void
     {
-        $user = new User();
-        $user->setUsername('test');
-        $user->setEmail('test@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-
-        $result = $this->service->connect($user);
+        $result = $this->service->connect($this->createUser());
         self::assertTrue($result->isSuccess());
     }
 
     public function testConnectWithPendingAccountConnectsAndClears(): void
     {
-        $user = new User();
-        $user->setUsername('test');
-        $user->setEmail('test@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-
-        $account = new UserSocialAccount();
-        $account->setProvider('github');
-        $account->setClientId('123');
-        $account->setCode('pending_code');
-        $account->setData('{}');
-        $account->setCreatedAt(time());
-        $account->save();
-
+        $user = $this->createUser();
+        $this->createSocialAccount('123', 'pending_code');
         $this->session->set('social_network_account_code', 'pending_code');
 
         $result = $this->service->connect($user);
@@ -106,24 +82,8 @@ final class PendingSocialAccountServiceTest extends TestCase
 
     public function testGetPendingAccountWithConnectedAccountClearsSession(): void
     {
-        $user = new User();
-        $user->setUsername('test');
-        $user->setEmail('test@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-
-        $account = new UserSocialAccount();
-        $account->setProvider('github');
-        $account->setClientId('106');
-        $account->setCode('connected_get_code');
-        $account->setData('{}');
-        $account->setUserId((int) $user->getId());
-        $account->setCreatedAt(time());
-        $account->save();
-
+        $user = $this->createUser();
+        $this->createSocialAccount('106', 'connected_get_code', (int) $user->getId());
         $this->session->set('social_network_account_code', 'connected_get_code');
 
         $result = $this->service->getPendingAccount();
@@ -133,24 +93,8 @@ final class PendingSocialAccountServiceTest extends TestCase
 
     public function testGetPendingAccountWithConnectedAccountReturnsNull(): void
     {
-        $user = new User();
-        $user->setUsername('test');
-        $user->setEmail('test@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-
-        $account = new UserSocialAccount();
-        $account->setProvider('github');
-        $account->setClientId('456');
-        $account->setCode('connected_code');
-        $account->setData('{}');
-        $account->setUserId((int) $user->getId());
-        $account->setCreatedAt(time());
-        $account->save();
-
+        $user = $this->createUser();
+        $this->createSocialAccount('456', 'connected_code', (int) $user->getId());
         $this->session->set('social_network_account_code', 'connected_code');
 
         $result = $this->service->getPendingAccount();
@@ -175,14 +119,7 @@ final class PendingSocialAccountServiceTest extends TestCase
 
     public function testGetPendingAccountWithValidAccountReturnsIt(): void
     {
-        $account = new UserSocialAccount();
-        $account->setProvider('github');
-        $account->setClientId('789');
-        $account->setCode('valid_code');
-        $account->setData('{}');
-        $account->setCreatedAt(time());
-        $account->save();
-
+        $this->createSocialAccount('789', 'valid_code');
         $this->session->set('social_network_account_code', 'valid_code');
 
         $result = $this->service->getPendingAccount();
@@ -211,24 +148,8 @@ final class PendingSocialAccountServiceTest extends TestCase
 
     public function testUseCodeWithConnectedAccountClearsSessionOnFailure(): void
     {
-        $user = new User();
-        $user->setUsername('test');
-        $user->setEmail('test@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-
-        $account = new UserSocialAccount();
-        $account->setProvider('github');
-        $account->setClientId('107');
-        $account->setCode('connected_use_clear');
-        $account->setData('{}');
-        $account->setUserId((int) $user->getId());
-        $account->setCreatedAt(time());
-        $account->save();
-
+        $user = $this->createUser();
+        $this->createSocialAccount('107', 'connected_use_clear', (int) $user->getId());
         $this->session->set('social_network_account_code', 'connected_use_clear');
 
         $result = $this->service->useCode('connected_use_clear');
@@ -238,23 +159,8 @@ final class PendingSocialAccountServiceTest extends TestCase
 
     public function testUseCodeWithConnectedAccountReturnsNull(): void
     {
-        $user = new User();
-        $user->setUsername('test');
-        $user->setEmail('test@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-
-        $account = new UserSocialAccount();
-        $account->setProvider('github');
-        $account->setClientId('105');
-        $account->setCode('connected_use_code');
-        $account->setData('{}');
-        $account->setUserId((int) $user->getId());
-        $account->setCreatedAt(time());
-        $account->save();
+        $user = $this->createUser();
+        $this->createSocialAccount('105', 'connected_use_code', (int) $user->getId());
 
         $result = $this->service->useCode('connected_use_code');
         self::assertNull($result);
@@ -263,13 +169,7 @@ final class PendingSocialAccountServiceTest extends TestCase
 
     public function testUseCodeWithExistingUnconnectedAccountStoresInSession(): void
     {
-        $account = new UserSocialAccount();
-        $account->setProvider('github');
-        $account->setClientId('104');
-        $account->setCode('use_code');
-        $account->setData('{}');
-        $account->setCreatedAt(time());
-        $account->save();
+        $this->createSocialAccount('104', 'use_code');
 
         $result = $this->service->useCode('use_code');
         self::assertNotNull($result);
@@ -282,5 +182,35 @@ final class PendingSocialAccountServiceTest extends TestCase
         $result = $this->service->useCode('nonexistent');
         self::assertNull($result);
         self::assertFalse($this->session->has('social_network_account_code'));
+    }
+
+    private function createSocialAccount(string $clientId, ?string $code, ?int $userId = null): UserSocialAccount
+    {
+        $account = new UserSocialAccount();
+        $account->setProvider('github');
+        $account->setClientId($clientId);
+        $account->setCode($code);
+        $account->setData('{}');
+        if ($userId !== null) {
+            $account->setUserId($userId);
+        }
+        $account->setCreatedAt(time());
+        $account->save();
+
+        return $account;
+    }
+
+    private function createUser(): User
+    {
+        $user = new User();
+        $user->setUsername('test');
+        $user->setEmail('test@example.com');
+        $user->setPasswordHash('hash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $user->save();
+
+        return $user;
     }
 }

@@ -28,36 +28,19 @@ final class ConfirmationServiceTest extends TestCase
 
     public function testRunAlreadyConfirmedReturnsFalse(): void
     {
-        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $service = new ConfirmationService($eventDispatcher);
-
-        $user = new User();
-        $user->setUsername('confirmed');
-        $user->setEmail('confirmed@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
+        $user = $this->createUser('confirmed', 'confirmed@example.com');
         $user->setConfirmedAt(time());
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
         $user->save();
 
-        self::assertFalse($service->run($user));
+        self::assertFalse($this->createService()->run($user));
     }
 
     public function testRunDeletesUserTokens(): void
     {
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $eventDispatcher->expects($this->exactly(2))->method('dispatch');
-        $service = new ConfirmationService($eventDispatcher);
 
-        $user = new User();
-        $user->setUsername('delete_tokens');
-        $user->setEmail('delete_tokens@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
+        $user = $this->createUser('delete_tokens', 'delete_tokens@example.com');
 
         $userToken = new UserToken();
         $userToken->setUserId((int) $user->getId());
@@ -66,7 +49,7 @@ final class ConfirmationServiceTest extends TestCase
         $userToken->setCreatedAt(time());
         $userToken->save();
 
-        self::assertTrue($service->run($user));
+        self::assertTrue($this->createService($eventDispatcher)->run($user));
 
         self::assertEmpty(UserToken::findByUserId((int) $user->getId()));
     }
@@ -75,18 +58,10 @@ final class ConfirmationServiceTest extends TestCase
     {
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $eventDispatcher->expects($this->exactly(2))->method('dispatch');
-        $service = new ConfirmationService($eventDispatcher);
 
-        $user = new User();
-        $user->setUsername('persist_confirm');
-        $user->setEmail('persist_confirm@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
+        $user = $this->createUser('persist_confirm', 'persist_confirm@example.com');
 
-        self::assertTrue($service->run($user));
+        self::assertTrue($this->createService($eventDispatcher)->run($user));
 
         $reloaded = User::findById((int) $user->getId());
         self::assertNotNull($reloaded);
@@ -97,18 +72,29 @@ final class ConfirmationServiceTest extends TestCase
     {
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $eventDispatcher->expects($this->exactly(2))->method('dispatch');
-        $service = new ConfirmationService($eventDispatcher);
 
+        $user = $this->createUser('unconfirmed', 'unconfirmed@example.com');
+
+        self::assertTrue($this->createService($eventDispatcher)->run($user));
+        self::assertNotNull($user->getConfirmedAt());
+    }
+
+    private function createService(?EventDispatcherInterface $eventDispatcher = null): ConfirmationService
+    {
+        return new ConfirmationService($eventDispatcher ?? $this->createMock(EventDispatcherInterface::class));
+    }
+
+    private function createUser(string $username, string $email): User
+    {
         $user = new User();
-        $user->setUsername('unconfirmed');
-        $user->setEmail('unconfirmed@example.com');
+        $user->setUsername($username);
+        $user->setEmail($email);
         $user->setPasswordHash('hash');
         $user->setAuthKey('key');
         $user->setCreatedAt(time());
         $user->setUpdatedAt(time());
         $user->save();
 
-        self::assertTrue($service->run($user));
-        self::assertNotNull($user->getConfirmedAt());
+        return $user;
     }
 }

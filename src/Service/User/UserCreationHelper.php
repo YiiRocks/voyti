@@ -54,15 +54,18 @@ final readonly class UserCreationHelper
      * Persists the user (with profile and, if required, a confirmation token), dispatches the
      * creation/registration events, and sends the appropriate mail.
      *
+     * @param bool $skipConfirmation Treat the account as confirmed even if email confirmation is
+     *     otherwise required, e.g. when the identity was already established by a social provider.
+     *
      * @return bool Whether email confirmation is required before the account can be used.
      */
-    public function persistAndNotify(User $user, string $password): bool
+    public function persistAndNotify(User $user, string $password, bool $skipConfirmation = false): bool
     {
         $this->eventDispatcher->dispatch(new UserEvent($user));
 
         $userProfile = new UserProfile();
 
-        if ($this->config->enableEmailConfirmation) {
+        if ($this->config->enableEmailConfirmation && !$skipConfirmation) {
             $userToken = new UserToken();
             $userToken->setCreatedAt(time());
             $userToken->setCode(Random::string(32));

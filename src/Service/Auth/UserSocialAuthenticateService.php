@@ -11,6 +11,7 @@ use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\ServiceResult;
+use YiiRocks\Voyti\Service\User\UserCreationHelper;
 use Yiisoft\Security\Random;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\User\CurrentUser;
@@ -24,6 +25,7 @@ final readonly class UserSocialAuthenticateService
         private CurrentUser $currentUser,
         private SessionInterface $session,
         private EventDispatcherInterface $eventDispatcher,
+        private UserCreationHelper $userCreationHelper,
     ) {
     }
 
@@ -84,6 +86,20 @@ final readonly class UserSocialAuthenticateService
         return ServiceResult::success();
     }
 
+    private function buildUniqueUsername(?string $usernameHint, string $email): string
+    {
+        $base = $this->sanitizeUsername($usernameHint) ?? $this->sanitizeUsername(explode('@', $email, 2)[0]) ?? 'user';
+
+        $username = $base;
+        $suffix = 2;
+        while (User::findByUsername($username) !== null) {
+            $username = $base . '_' . $suffix;
+            $suffix++;
+        }
+
+        return $username;
+    }
+
     /**
      * @param array $attributes
      */
@@ -101,11 +117,9 @@ final readonly class UserSocialAuthenticateService
         $account->setCreatedAt(time());
 
         $email = $account->getEmail();
-        if ($email !== null) {
-            $user = User::findByEmail($email);
-            if ($user !== null) {
-                $account->setUserId((int) $user->getId());
-            }
+        if ($email !== null && $this->config->enableRegistration && User::findByEmail($email) === null) {
+            $user = $this->registerUser($email, $account->getUsername());
+            $account->setUserId((int) $user->getId());
         }
 
         $account->save();
@@ -118,6 +132,30 @@ final readonly class UserSocialAuthenticateService
         }
 
         return $account;
+    }
+
+    private function registerUser(string $email, ?string $usernameHint): User
+    {
+        $username = $this->buildUniqueUsername($usernameHint, $email);
+        $password = Random::string(24);
+
+        $user = $this->userCreationHelper->buildUser($email, $username, $password);
+        $user->setRegistrationIp($this->config->disableIpLogging ? '127.0.0.1' : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1'));
+
+        $this->userCreationHelper->persistAndNotify($user, $password, skipConfirmation: true);
+
+        return $user;
+    }
+
+    private function sanitizeUsername(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $sanitized = (string) preg_replace('/[^-a-zA-Z0-9_.@]/', '', $value);
+
+        return $sanitized !== '' ? substr($sanitized, 0, 250) : null;
     }
 
     /**
