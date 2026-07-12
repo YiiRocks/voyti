@@ -46,6 +46,7 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
         $b->createTable('{{%user_profile}}', [
             'user_id' => ColumnBuilder::integer()->notNull(),
             'bio' => ColumnBuilder::text(),
+            'birthday' => ColumnBuilder::date(),
             'gravatar_email' => ColumnBuilder::string(255),
             'location' => ColumnBuilder::string(255),
             'name' => ColumnBuilder::string(255),

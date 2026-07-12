@@ -822,7 +822,7 @@ final class UserControllerTest extends TestCase
         $user = $this->createUserWithProfile('Original');
         $userId = (int) $user->getId();
         $controller = $this->createController();
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['userProfile' => ['name' => 'Updated', 'publicEmail' => '', 'gravatarEmail' => '', 'location' => '', 'website' => '', 'timezone' => '', 'bio' => '']]);
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['userProfile' => ['name' => 'Updated', 'publicEmail' => '', 'gravatarEmail' => '', 'location' => '', 'website' => '', 'timezone' => '', 'bio' => '', 'birthday' => '1990-05-15']]);
 
         $this->validator->method('validate')->willReturn(new Result());
         $this->hydrator->method('hydrate')->willReturnCallback(
@@ -850,6 +850,7 @@ final class UserControllerTest extends TestCase
         $updated = UserProfile::findByUserId($userId);
         $this->assertNotNull($updated);
         $this->assertSame('Updated', $updated->getName());
+        $this->assertSame('1990-05-15', $updated->getBirthday()?->format('Y-m-d'));
     }
 
     public function testUpdateProfileUserNotFoundShowsError(): void

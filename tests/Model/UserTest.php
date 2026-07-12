@@ -56,6 +56,7 @@ final class UserTest extends TestCase
             CREATE TABLE "user_profile" (
                 "user_id" INTEGER NOT NULL,
                 "bio" TEXT,
+                "birthday" DATE,
                 "gravatar_email" VARCHAR(255),
                 "location" VARCHAR(255),
                 "name" VARCHAR(255),

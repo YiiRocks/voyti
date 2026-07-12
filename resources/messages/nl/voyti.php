@@ -273,6 +273,7 @@ return [
     'voyti.view.location_label' => 'Locatie',
     'voyti.view.gravatar_email_label' => 'Gravatar-e-mail',
     'voyti.view.timezone_label' => 'Tijdzone',
+    'voyti.view.birthday_label' => 'Geboortedatum',
     'voyti.view.password_keep_label' => 'Wachtwoord (leeg laten om te behouden)',
 
     // Common table headers

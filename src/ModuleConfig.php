@@ -30,6 +30,7 @@ final readonly class ModuleConfig
             'userProfile.location',
             'userProfile.website',
             'userProfile.bio',
+            'userProfile.birthday',
             'userSessionHistory',
             'userSocialAccount',
         ],

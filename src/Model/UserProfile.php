@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Model;
 
+use DateTimeImmutable;
+use YiiRocks\Voyti\Helper\AgeHelper;
 use Yiisoft\ActiveRecord\ActiveRecord;
 use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
 
 final class UserProfile extends ActiveRecord
 {
     use PrivatePropertiesTrait;
+    private const AGE_TOKEN = '{age}';
     private ?string $bio = null;
+    private ?DateTimeImmutable $birthday = null;
     private ?string $gravatar_email = null;
     private ?string $location = null;
     private ?string $name = null;
@@ -29,6 +33,25 @@ final class UserProfile extends ActiveRecord
     public function getBio(): ?string
     {
         return $this->bio;
+    }
+
+    public function getBioParsed(): ?string
+    {
+        if ($this->bio === null) {
+            return null;
+        }
+
+        $age = AgeHelper::calculate($this->birthday);
+        if ($age === null) {
+            return $this->bio;
+        }
+
+        return str_replace(self::AGE_TOKEN, (string) $age, $this->bio);
+    }
+
+    public function getBirthday(): ?DateTimeImmutable
+    {
+        return $this->birthday;
     }
 
     public function getGravatarEmail(): ?string
@@ -109,6 +132,11 @@ final class UserProfile extends ActiveRecord
     public function setBio(?string $bio): void
     {
         $this->bio = $bio;
+    }
+
+    public function setBirthday(?DateTimeImmutable $birthday): void
+    {
+        $this->birthday = $birthday;
     }
 
     public function setGravatarEmail(?string $gravatarEmail): void

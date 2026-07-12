@@ -13,7 +13,7 @@ use Yiisoft\Translator\TranslatorInterface;
  */
 
 echo Html::div()->open();
-Html::H3()->class('mb-3')->open();
+echo Html::H3()->class('mb-3')->open();
 echo $translator->translate('voyti.view.assignments.title', category: 'voyti');
 echo Html::H3()->close();
 

@@ -48,6 +48,8 @@ echo Field::email($model, 'publicEmail')->tabIndex(++$tabindex);
 
 echo Field::email($model, 'gravatarEmail')->tabIndex(++$tabindex);
 
+echo Field::date($model, 'birthday')->tabIndex(++$tabindex);
+
 echo Field::text($model, 'location')->tabIndex(++$tabindex);
 
 echo Field::text($model, 'website')->tabIndex(++$tabindex);

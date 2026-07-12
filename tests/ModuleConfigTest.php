@@ -98,7 +98,7 @@ final class ModuleConfigTest extends TestCase
         self::assertTrue($config->enableSessionHistory);
         self::assertSame(50, $config->numberSessionHistory);
         self::assertIsArray($config->gdprExportProperties);
-        self::assertCount(10, $config->gdprExportProperties);
+        self::assertCount(11, $config->gdprExportProperties);
         self::assertSame('GDPR', $config->gdprAnonymizePrefix);
         self::assertFalse($config->enableTwoFactorAuthentication);
         self::assertSame([], $config->twoFactorAuthenticationForcedPermissions);

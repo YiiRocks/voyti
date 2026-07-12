@@ -28,7 +28,7 @@ echo $this->render('../../shared/_admin-menu', ['url' => $url, 'translator' => $
 /** @psalm-suppress InvalidScope */
 echo $this->render('../../shared/_flash', ['flash' => $flash]);
 
-Html::H3()->class('mb-3')->open();
+echo Html::H3()->class('mb-3')->open();
 echo $translator->translate('voyti.view.admin.session_history', category: 'voyti');
 echo Html::H3()->close();
 

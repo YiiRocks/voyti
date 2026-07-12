@@ -210,7 +210,7 @@ Below are all top-level `yiirocks/voyti` options, followed by the nested `social
 |--------|------|---------|-------------|
 | `enableGdprCompliance` | `bool` | `false` | Enable GDPR features |
 | `gdprAnonymizePrefix` | `string` | `'GDPR'` | Prefix for anonymized usernames |
-| `gdprExportProperties` | `array` | `['email', 'username', 'userProfile.public_email', 'userProfile.name', 'userProfile.gravatar_email', 'userProfile.location', 'userProfile.website', 'userProfile.bio', 'userSessionHistory', 'userSocialAccount']` | Properties included in the data export (JSON). `userSessionHistory` exports each login's `ip`, `user_agent`, `created_at`, `updated_at` (the internal `session_id` is excluded); `userSocialAccount` exports each linked account's `provider`, `username`, `email`, `created_at`, and `data` (the decoded provider profile payload). The OAuth `code` field is excluded — it's a one-time linking secret, not user data |
+| `gdprExportProperties` | `array` | `['email', 'username', 'userProfile.public_email', 'userProfile.name', 'userProfile.gravatar_email', 'userProfile.location', 'userProfile.website', 'userProfile.bio', 'userProfile.birthday', 'userSessionHistory', 'userSocialAccount']` | Properties included in the data export (JSON). `userSessionHistory` exports each login's `ip`, `user_agent`, `created_at`, `updated_at` (the internal `session_id` is excluded); `userSocialAccount` exports each linked account's `provider`, `username`, `email`, `created_at`, and `data` (the decoded provider profile payload). The OAuth `code` field is excluded — it's a one-time linking secret, not user data |
 
 ```php
 'yiirocks/voyti' => [

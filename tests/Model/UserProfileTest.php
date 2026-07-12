@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Model;
 
+use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 use Psr\SimpleCache\CacheInterface;
 use YiiRocks\Voyti\Model\User;
@@ -59,6 +60,7 @@ final class UserProfileTest extends TestCase
             CREATE TABLE "user_profile" (
                 "user_id" INTEGER NOT NULL,
                 "bio" TEXT,
+                "birthday" DATE,
                 "gravatar_email" VARCHAR(255),
                 "location" VARCHAR(255),
                 "name" VARCHAR(255),
@@ -115,6 +117,42 @@ final class UserProfileTest extends TestCase
     public function testFindByUserIdReturnsNullWhenNoneExists(): void
     {
         self::assertNull(UserProfile::findByUserId(1));
+    }
+
+    public function testGetBioParsedReturnsBioUnchangedWhenNoBirthdaySet(): void
+    {
+        $entity = new UserProfile();
+        $entity->setBio('I am {age} years old');
+        self::assertSame('I am {age} years old', $entity->getBioParsed());
+    }
+
+    public function testGetBioParsedReturnsBioUnchangedWhenNoTokenPresent(): void
+    {
+        $entity = new UserProfile();
+        $entity->setBio('No token here');
+        $entity->setBirthday(new DateTimeImmutable('-30 years'));
+        self::assertSame('No token here', $entity->getBioParsed());
+    }
+
+    public function testGetBioParsedReturnsNullWhenBioIsNull(): void
+    {
+        $entity = new UserProfile();
+        self::assertNull($entity->getBioParsed());
+    }
+
+    public function testGetBioParsedReturnsNullWhenBioIsNullEvenWithBirthdaySet(): void
+    {
+        $entity = new UserProfile();
+        $entity->setBirthday(new DateTimeImmutable('-30 years'));
+        self::assertNull($entity->getBioParsed());
+    }
+
+    public function testGetBioParsedSubstitutesAgeToken(): void
+    {
+        $entity = new UserProfile();
+        $entity->setBio('I am {age} years old');
+        $entity->setBirthday(new DateTimeImmutable('-30 years'));
+        self::assertSame('I am 30 years old', $entity->getBioParsed());
     }
 
     public function testGetGravatarIdFallsBackToUserEmail(): void
@@ -272,6 +310,14 @@ final class UserProfileTest extends TestCase
         $entity->setGravatarEmail('test@example.com');
         $id = hash('sha256', 'test@example.com');
         self::assertSame("https://www.gravatar.com/avatar/{$id}?s=256&d=mp", $entity->getGravatarUrl());
+    }
+
+    public function testGetSetBirthday(): void
+    {
+        $entity = new UserProfile();
+        $birthday = new DateTimeImmutable('1990-05-15');
+        $entity->setBirthday($birthday);
+        self::assertSame($birthday, $entity->getBirthday());
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('getterSetterProvider')]

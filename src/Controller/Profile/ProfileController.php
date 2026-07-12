@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Controller\Profile;
 
+use DateTimeImmutable;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -98,6 +99,7 @@ final readonly class ProfileController
         $form->website = $userProfile->getWebsite() ?? '';
         $form->timezone = $userProfile->getTimezone() ?? '';
         $form->bio = $userProfile->getBio() ?? '';
+        $form->birthday = $userProfile->getBirthday()?->format('Y-m-d') ?? '';
 
         if ($request->getMethod() === Method::POST) {
             $body = $this->parsedBody($request);
@@ -110,6 +112,7 @@ final readonly class ProfileController
             $userProfile->setWebsite($form->website);
             $userProfile->setTimezone($form->timezone);
             $userProfile->setBio($form->bio);
+            $userProfile->setBirthday($form->birthday !== '' ? new DateTimeImmutable($form->birthday) : null);
 
             $userProfile->save();
             $this->eventDispatcher->dispatch(new UserProfileEvent($userProfile));

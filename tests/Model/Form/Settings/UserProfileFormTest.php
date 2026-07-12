@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Model\Form\Settings;
 
+use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\Form\Settings\UserProfileForm;
 use Yiisoft\Translator\TranslatorInterface;
@@ -22,6 +23,7 @@ final class UserProfileFormTest extends TestCase
         $this->assertSame('', $form->website);
         $this->assertSame('', $form->timezone);
         $this->assertSame('', $form->bio);
+        $this->assertSame('', $form->birthday);
     }
 
     public function testGetAttributeLabels(): void
@@ -35,6 +37,7 @@ final class UserProfileFormTest extends TestCase
         $this->assertArrayHasKey('website', $labels);
         $this->assertArrayHasKey('timezone', $labels);
         $this->assertArrayHasKey('bio', $labels);
+        $this->assertArrayHasKey('birthday', $labels);
     }
 
     public function testGetFormName(): void
@@ -59,6 +62,7 @@ final class UserProfileFormTest extends TestCase
         $form->website = 'https://example.com';
         $form->timezone = 'America/New_York';
         $form->bio = 'A brief bio';
+        $form->birthday = '1990-05-15';
 
         $this->assertSame('John Doe', $form->name);
         $this->assertSame('public@example.com', $form->publicEmail);
@@ -67,6 +71,67 @@ final class UserProfileFormTest extends TestCase
         $this->assertSame('https://example.com', $form->website);
         $this->assertSame('America/New_York', $form->timezone);
         $this->assertSame('A brief bio', $form->bio);
+        $this->assertSame('1990-05-15', $form->birthday);
+    }
+
+    public function testValidateBirthdayNotInFutureWithFutureDate(): void
+    {
+        $form = new UserProfileForm($this->createTranslator());
+        $futureDate = (new DateTimeImmutable('+1 year'))->format('Y-m-d');
+        $result = $form->validateBirthdayNotInFuture($futureDate);
+        $this->assertFalse($result->isValid());
+        $this->assertNotEmpty($result->getErrors());
+    }
+
+    public function testValidateBirthdayNotInFutureWithPastDate(): void
+    {
+        $form = new UserProfileForm($this->createTranslator());
+        $result = $form->validateBirthdayNotInFuture('1990-05-15');
+        $this->assertTrue($result->isValid());
+    }
+
+    public function testValidateBirthdayNotInFutureWithToday(): void
+    {
+        $form = new UserProfileForm($this->createTranslator());
+        $today = (new DateTimeImmutable())->format('Y-m-d');
+        $result = $form->validateBirthdayNotInFuture($today);
+        $this->assertTrue($result->isValid());
+    }
+
+    public function testValidateBirthdayNotInFutureWithUnparseableString(): void
+    {
+        $form = new UserProfileForm($this->createTranslator());
+        $result = $form->validateBirthdayNotInFuture('not-a-date');
+        $this->assertTrue($result->isValid());
+    }
+
+    public function testValidateNoHtmlTagsWithEmptyString(): void
+    {
+        $form = new UserProfileForm($this->createTranslator());
+        $result = $form->validateNoHtmlTags('');
+        $this->assertTrue($result->isValid());
+    }
+
+    public function testValidateNoHtmlTagsWithHtmlTags(): void
+    {
+        $form = new UserProfileForm($this->createTranslator());
+        $result = $form->validateNoHtmlTags('<script>alert(1)</script>');
+        $this->assertFalse($result->isValid());
+        $this->assertNotEmpty($result->getErrors());
+    }
+
+    public function testValidateNoHtmlTagsWithNonStringValue(): void
+    {
+        $form = new UserProfileForm($this->createTranslator());
+        $result = $form->validateNoHtmlTags(123);
+        $this->assertTrue($result->isValid());
+    }
+
+    public function testValidateNoHtmlTagsWithPlainText(): void
+    {
+        $form = new UserProfileForm($this->createTranslator());
+        $result = $form->validateNoHtmlTags('A brief bio');
+        $this->assertTrue($result->isValid());
     }
 
     public function testValidateTimezoneWithEmptyString(): void

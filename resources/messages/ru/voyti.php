@@ -273,6 +273,7 @@ return [
     'voyti.view.location_label' => 'Местоположение',
     'voyti.view.gravatar_email_label' => 'Gravatar email',
     'voyti.view.timezone_label' => 'Часовой пояс',
+    'voyti.view.birthday_label' => 'Дата рождения',
     'voyti.view.password_keep_label' => 'Пароль (оставьте пустым, чтобы не менять)',
 
     // Common table headers

@@ -280,6 +280,7 @@ return [
     'voyti.view.location_label' => 'Location',
     'voyti.view.gravatar_email_label' => 'Gravatar email',
     'voyti.view.timezone_label' => 'Timezone',
+    'voyti.view.birthday_label' => 'Date of Birth',
     'voyti.view.password_keep_label' => 'Password (leave empty to keep)',
 
     // Common table headers

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Controller\Privacy;
 
+use DateTimeImmutable;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseFactoryInterface;
@@ -301,6 +302,7 @@ final class PrivacyControllerTest extends TestCase
             'userProfile.location',
             'userProfile.website',
             'userProfile.bio',
+            'userProfile.birthday',
         ]);
         $this->harness = new ControllerHarness($config);
         $controller = $this->createController();
@@ -319,6 +321,7 @@ final class PrivacyControllerTest extends TestCase
         $profile->setLocation('Berlin');
         $profile->setWebsite('https://example.com');
         $profile->setBio('Hello there');
+        $profile->setBirthday(new DateTimeImmutable('1990-05-15'));
         $profile->save();
 
         $response = $this->createMock(ResponseInterface::class);
@@ -332,6 +335,7 @@ final class PrivacyControllerTest extends TestCase
             'userProfile.location' => 'Berlin',
             'userProfile.website' => 'https://example.com',
             'userProfile.bio' => 'Hello there',
+            'userProfile.birthday' => '1990-05-15',
         ];
 
         $body = $this->createMock(StreamInterface::class);

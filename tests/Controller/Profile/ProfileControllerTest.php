@@ -423,7 +423,7 @@ final class ProfileControllerTest extends TestCase
     public function testUpdatePostUpdatesAndRedirects(): void
     {
         $controller = $this->createController();
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['userProfile' => ['name' => 'John', 'publicEmail' => '', 'gravatarEmail' => '', 'location' => '', 'website' => '', 'timezone' => '', 'bio' => '']]);
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['userProfile' => ['name' => 'John', 'publicEmail' => '', 'gravatarEmail' => '', 'location' => '', 'website' => '', 'timezone' => '', 'bio' => '', 'birthday' => '1990-05-15']]);
 
         $this->hydrator->method('hydrate')->willReturnCallback(
             function (object $object, array $data = []): void {
@@ -452,6 +452,7 @@ final class ProfileControllerTest extends TestCase
         $updatedProfile = UserProfile::findByUserId((int) $user->getId());
         $this->assertNotNull($updatedProfile);
         $this->assertSame('John', $updatedProfile->getName());
+        $this->assertSame('1990-05-15', $updatedProfile->getBirthday()?->format('Y-m-d'));
     }
 
     public function testUpdateWhenGuestShowsError(): void

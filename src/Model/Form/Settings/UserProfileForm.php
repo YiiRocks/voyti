@@ -4,24 +4,33 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Model\Form\Settings;
 
+use DateTimeImmutable;
+use YiiRocks\Voyti\Helper\AgeHelper;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\Result;
 use Yiisoft\Validator\Rule\Callback;
+use Yiisoft\Validator\Rule\Date\Date;
 use Yiisoft\Validator\Rule\Email;
 use Yiisoft\Validator\Rule\Length;
 use Yiisoft\Validator\Rule\Url;
 
 final class UserProfileForm extends FormModel
 {
+    #[Callback(method: 'validateNoHtmlTags', skipOnEmpty: true)]
     #[Length(max: 65535)]
     public string $bio = '';
+    #[Callback(method: 'validateBirthdayNotInFuture', skipOnEmpty: true)]
+    #[Date(format: 'php:Y-m-d', skipOnEmpty: true)]
+    public string $birthday = '';
     #[Email(checkDns: true, enableIdn: true, skipOnEmpty: true)]
     #[Length(max: 255)]
     public string $gravatarEmail = '';
+    #[Callback(method: 'validateNoHtmlTags', skipOnEmpty: true)]
     #[Length(max: 255)]
     public string $location = '';
+    #[Callback(method: 'validateNoHtmlTags', skipOnEmpty: true)]
     #[Length(max: 255)]
     public string $name = '';
     #[Email(checkDns: true, enableIdn: true, skipOnEmpty: true)]
@@ -41,7 +50,7 @@ final class UserProfileForm extends FormModel
     /**
      * @return string[]
      *
-     * @psalm-return array{name: string, publicEmail: string, gravatarEmail: string, location: string, website: string, timezone: string, bio: string}
+     * @psalm-return array{name: string, publicEmail: string, gravatarEmail: string, location: string, website: string, timezone: string, bio: string, birthday: string}
      */
     public function getAttributeLabels(): array
     {
@@ -53,6 +62,7 @@ final class UserProfileForm extends FormModel
             'website' => $this->translator->translate('voyti.view.website_label', category: 'voyti'),
             'timezone' => $this->translator->translate('voyti.view.timezone_label', category: 'voyti'),
             'bio' => $this->translator->translate('voyti.view.bio_label', category: 'voyti'),
+            'birthday' => $this->translator->translate('voyti.view.birthday_label', category: 'voyti'),
         ];
     }
 
@@ -71,6 +81,26 @@ final class UserProfileForm extends FormModel
     public function getPropertyLabels(): array
     {
         return $this->getAttributeLabels();
+    }
+
+    public function validateBirthdayNotInFuture(mixed $value): Result
+    {
+        $result = new Result();
+        $birthDate = DateTimeImmutable::createFromFormat('!Y-m-d', (string) $value);
+        if ($birthDate !== false && AgeHelper::calculate($birthDate) === null) {
+            $result->addError("'{$value}' must not be in the future.");
+        }
+        return $result;
+    }
+
+    public function validateNoHtmlTags(mixed $value): Result
+    {
+        $result = new Result();
+        $value = (string) $value;
+        if (strip_tags($value) !== $value) {
+            $result->addError("'{$value}' must not contain HTML tags.");
+        }
+        return $result;
     }
 
     public function validateTimezone(mixed $value): Result

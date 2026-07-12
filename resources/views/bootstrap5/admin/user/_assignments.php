@@ -24,7 +24,7 @@ echo Html::div()->open();
 /** @psalm-suppress InvalidScope */
 echo $this->render('../../shared/_admin-menu', ['url' => $url, 'translator' => $translator]);
 
-Html::H3()->class('mb-3')->open();
+echo Html::H3()->class('mb-3')->open();
 echo $translator->translate('voyti.view.assignments.title', category: 'voyti');
 echo Html::H3()->close();
 

@@ -196,6 +196,7 @@ final readonly class PrivacyController
             'userProfile.location' => $user->getProfile()?->getLocation(),
             'userProfile.website' => $user->getProfile()?->getWebsite(),
             'userProfile.bio' => $user->getProfile()?->getBio(),
+            'userProfile.birthday' => $user->getProfile()?->getBirthday()?->format('Y-m-d'),
             'userSessionHistory' => array_map(
                 static fn (UserSessionHistory $entry): array => [
                     'ip' => $entry->getIp(),

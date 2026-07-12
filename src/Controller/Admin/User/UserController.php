@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Controller\Admin\User;
 
+use DateTimeImmutable;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -354,6 +355,7 @@ final readonly class UserController
         $model->website = $userProfile->getWebsite() ?? '';
         $model->timezone = $userProfile->getTimezone() ?? '';
         $model->bio = $userProfile->getBio() ?? '';
+        $model->birthday = $userProfile->getBirthday()?->format('Y-m-d') ?? '';
 
         if ($request->getMethod() === Method::POST) {
             $body = $this->parsedBody($request);
@@ -368,6 +370,7 @@ final readonly class UserController
                 $userProfile->setWebsite($model->website !== '' ? $model->website : null);
                 $userProfile->setTimezone($model->timezone !== '' ? $model->timezone : null);
                 $userProfile->setBio($model->bio !== '' ? $model->bio : null);
+                $userProfile->setBirthday($model->birthday !== '' ? new DateTimeImmutable($model->birthday) : null);
                 $userProfile->save();
                 return $this->redirectWithFlash(
                     $this->url->generate('voyti/admin-users-update-profile', ['id' => $id]),

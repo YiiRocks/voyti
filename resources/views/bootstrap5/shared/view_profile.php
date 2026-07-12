@@ -77,7 +77,7 @@ echo Html::b($translator->translate('voyti.view.timezone_label', category: 'voyt
 echo $timezone !== null ? Html::encode($timezone) : Html::span($translator->translate('voyti.view.not_set', category: 'voyti'))->class('text-muted fst-italic');
 echo Html::li()->close();
 
-$bio = $userProfile->getBio();
+$bio = $userProfile->getBioParsed();
 echo Html::li()->class('list-group-item')->open();
 echo Html::b($translator->translate('voyti.view.bio_label', category: 'voyti'))->render() . ': ';
 echo $bio !== null ? nl2br(Html::encode($bio)) : Html::span($translator->translate('voyti.view.not_set', category: 'voyti'))->class('text-muted fst-italic');
