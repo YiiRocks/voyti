@@ -11,7 +11,6 @@ use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistryFactory;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Helper\AuthHelper;
-use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\Http\ClientInterface;
 use YiiRocks\Voyti\Http\Psr18Client;
 use YiiRocks\Voyti\Listener;
@@ -68,23 +67,18 @@ use Yiisoft\User\CurrentUser;
 /** @var array $params */
 
 return [
-    ParametersResolverInterface::class => RouteParametersResolver::class,
-
+    // Module configuration, built once from the host's `yiirocks/voyti` params array.
     ModuleConfig::class => static fn () => ModuleConfig::fromArray($params['yiirocks/voyti'] ?? []),
-    RememberMeCookieService::class => static fn (
-        ModuleConfig $config,
-        ?EventDispatcherInterface $eventDispatcher = null,
-    ) => new RememberMeCookieService(
-        $config->rememberLoginLifespan,
-        eventDispatcher: $eventDispatcher,
-    ),
 
-    PasswordGeneratorInterface::class => RandomPasswordGenerator::class,
+    // Bridges satisfying vendor package contracts (yiisoft/auth, yiisoft/middleware-dispatcher).
+    ParametersResolverInterface::class => RouteParametersResolver::class,
     IdentityRepositoryInterface::class => IdentityAdapter::class,
     IdentityWithTokenRepositoryInterface::class => IdentityAdapter::class,
-    ApiTokenService::class => ApiTokenService::class,
+
+    // Auditing.
     AuditLogService::class => AuditLogService::class,
 
+    // RBAC: role/permission/rule administration and validation.
     AuthHelper::class => fn (
         ManagerInterface $authManager,
         ItemsStorageInterface $itemsStorage,
@@ -92,20 +86,10 @@ return [
         ModuleConfig $config,
         CurrentUser $currentUser,
     ) => new AuthHelper($authManager, $itemsStorage, $assignmentsStorage, $config, $currentUser),
-    TimezoneHelper::class => TimezoneHelper::class,
-    ClientInterface::class => static fn (
-        PsrClientInterface $httpClient,
-        RequestFactoryInterface $requestFactory,
-        StreamFactoryInterface $streamFactory,
-    ) => new Psr18Client($httpClient, $requestFactory, $streamFactory),
-    AuthClientRegistryFactory::class => AuthClientRegistryFactory::class,
-    AuthClientRegistry::class => fn (AuthClientRegistryFactory $factory) => $factory->create(),
-
     ItemsValidator::class => fn (
         ItemsStorageInterface $itemsStorage
     ) => new ItemsValidator($itemsStorage),
     RuleValidator::class => new RuleValidator,
-
     RuleEditionService::class => fn (
         ItemsStorageInterface $itemsStorage,
         RuleValidator $ruleValidator
@@ -115,47 +99,72 @@ return [
         AssignmentsStorageInterface $assignmentsStorage,
         ItemsValidator $itemsValidator
     ) => new UpdateAssignmentsService($authManager, $assignmentsStorage, $itemsValidator),
-    MailService::class => fn (
-        MailerInterface $mailer,
-        ModuleConfig $config,
-        TranslatorInterface $translator,
-        UrlGeneratorInterface $url
-    ) => new MailService($mailer, $config->mailPath, $translator, $url, $config->appName),
-    AccountConfirmationService::class => AccountConfirmationService::class,
-    ResendConfirmationService::class => fn (
-        UserTokenFactory $userTokenFactory,
-        MailService $mailService,
-    ) => new ResendConfirmationService($userTokenFactory, $mailService),
-    SwitchIdentityService::class => fn (
-        ModuleConfig $config,
-        CurrentUser $currentUser,
-        SessionInterface $session,
-        EventDispatcherInterface $eventDispatcher,
-    ) => new SwitchIdentityService($config, $currentUser, $session, $eventDispatcher),
+
+    // Passwords: generation, expiry, history and reset/recovery flows.
+    PasswordGeneratorInterface::class => RandomPasswordGenerator::class,
+    PasswordHistoryService::class => PasswordHistoryService::class,
     ExpireService::class => fn (
         ModuleConfig $config
     ) => new ExpireService($config),
     RecoveryService::class => RecoveryService::class,
-    PasswordHistoryService::class => PasswordHistoryService::class,
     ResetService::class => fn (
         PasswordHasher $passwordHasher,
         ModuleConfig $config,
         EventDispatcherInterface $eventDispatcher,
         PasswordHistoryService $passwordHistoryService,
     ) => new ResetService($passwordHasher, $config, $eventDispatcher, $passwordHistoryService),
+
+    // Registration, confirmation, and email-change lifecycle.
+    MailService::class => fn (
+        MailerInterface $mailer,
+        ModuleConfig $config,
+        TranslatorInterface $translator,
+        UrlGeneratorInterface $url
+    ) => new MailService($mailer, $config->mailPath, $translator, $url, $config->appName),
+    UserTokenFactory::class => UserTokenFactory::class,
     UserCreationHelper::class => UserCreationHelper::class,
     CreateService::class => CreateService::class,
     RegisterService::class => RegisterService::class,
-    BlockService::class => fn (
-        EventDispatcherInterface $eventDispatcher,
-        TerminateUserSessionsService $terminateUserSessionsService
-    ) => new BlockService($eventDispatcher, $terminateUserSessionsService),
+    AccountConfirmationService::class => AccountConfirmationService::class,
+    ResendConfirmationService::class => fn (
+        UserTokenFactory $userTokenFactory,
+        MailService $mailService,
+    ) => new ResendConfirmationService($userTokenFactory, $mailService),
     ConfirmationService::class => fn (
         EventDispatcherInterface $eventDispatcher,
     ) => new ConfirmationService($eventDispatcher),
     EmailChangeService::class => fn (
         ModuleConfig $config,
     ) => new EmailChangeService($config),
+    EmailChangeStrategyFactory::class => EmailChangeStrategyFactory::class,
+    BlockService::class => fn (
+        EventDispatcherInterface $eventDispatcher,
+        TerminateUserSessionsService $terminateUserSessionsService
+    ) => new BlockService($eventDispatcher, $terminateUserSessionsService),
+
+    // Sessions and identity: login persistence, switching, API tokens, session history.
+    RememberMeCookieService::class => static fn (
+        ModuleConfig $config,
+        ?EventDispatcherInterface $eventDispatcher = null,
+    ) => new RememberMeCookieService(
+        $config->rememberLoginLifespan,
+        eventDispatcher: $eventDispatcher,
+    ),
+    SwitchIdentityService::class => fn (
+        ModuleConfig $config,
+        CurrentUser $currentUser,
+        SessionInterface $session,
+        EventDispatcherInterface $eventDispatcher,
+    ) => new SwitchIdentityService($config, $currentUser, $session, $eventDispatcher),
+    ApiTokenService::class => ApiTokenService::class,
+    UserSessionHistoryDecorator::class => fn (
+        EventDispatcherInterface $eventDispatcher,
+        ModuleConfig $config,
+        ?SessionInterface $session = null
+    ) => new UserSessionHistoryDecorator($eventDispatcher, $config, $session),
+    TerminateUserSessionsService::class => TerminateUserSessionsService::class,
+
+    // Two-factor authentication: email codes, TOTP QR URIs, backup codes.
     EmailCodeGeneratorService::class => fn (
         MailService $mailService
     ) => new EmailCodeGeneratorService($mailService),
@@ -163,15 +172,17 @@ return [
         ModuleConfig $config
     ) => new QrCodeUriGeneratorService($config),
     BackupCodeService::class => BackupCodeService::class,
-    UserSessionHistoryDecorator::class => fn (
-        EventDispatcherInterface $eventDispatcher,
-        ModuleConfig $config,
-        ?SessionInterface $session = null
-    ) => new UserSessionHistoryDecorator($eventDispatcher, $config, $session),
-    TerminateUserSessionsService::class => TerminateUserSessionsService::class,
+
+    // Social auth: OAuth client registry and account linking/authentication.
+    ClientInterface::class => static fn (
+        PsrClientInterface $httpClient,
+        RequestFactoryInterface $requestFactory,
+        StreamFactoryInterface $streamFactory,
+    ) => new Psr18Client($httpClient, $requestFactory, $streamFactory),
+    AuthClientRegistryFactory::class => AuthClientRegistryFactory::class,
+    AuthClientRegistry::class => fn (AuthClientRegistryFactory $factory) => $factory->create(),
     PendingSocialAccountService::class => PendingSocialAccountService::class,
     SocialAuthProviderService::class => SocialAuthProviderService::class,
-
     UserSocialAuthenticateService::class => fn (
         ModuleConfig $config,
         CurrentUser $currentUser,
@@ -186,13 +197,12 @@ return [
         $userCreationHelper,
     ),
 
-    UserTokenFactory::class => UserTokenFactory::class,
-    EmailChangeStrategyFactory::class => EmailChangeStrategyFactory::class,
-
+    // Event listeners bound to their concrete class for autowiring; wiring to events is in events.php.
     Listener\AdminNotificationListener::class => Listener\AdminNotificationListener::class,
     Listener\PasswordExpirationListener::class => Listener\PasswordExpirationListener::class,
     Listener\SessionHistoryListener::class => Listener\SessionHistoryListener::class,
 
+    // Translation category source for this module's message files.
     'yiirocks/voyti.translator' => [
         'definition' => static fn () => new CategorySource(
             'voyti',
