@@ -25,11 +25,6 @@ final readonly class AccountConfirmationService
             return false;
         }
 
-        if (!$confirmationService->run($user)) {
-            return false;
-        }
-
-        $userToken->delete();
-        return true;
+        return $confirmationService->run($user);
     }
 }

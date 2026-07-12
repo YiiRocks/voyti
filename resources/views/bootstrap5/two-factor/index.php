@@ -20,6 +20,7 @@ use Yiisoft\View\WebView;
  * @var string $qrCodeUri
  * @var string|null $secret
  * @var bool $emailCodeSent
+ * @var bool $hasBackupCodes
  * @var bool $preloadContent
  * @var ModuleConfig $config
  * @var array<string, list<string>> $errors
@@ -86,11 +87,35 @@ if ($user->isAuthTfEnabled()) {
             ->csrf($csrf)
             ->open();
 
-        echo Field::text(new TwoFactorCodeForm($translator, $method), 'code')->addInputAttributes(['inputmode' => 'numeric'])->tabIndex(1);
+        echo Html::p($translator->translate('voyti.view.two_factor.backup_code_hint', category: 'voyti'))->class('text-muted small');
+
+        echo Field::text(new TwoFactorCodeForm($translator, $method), 'code')->tabIndex(1);
 
         echo Field::buttonGroup()
             ->buttons(
                 Html::submitButton($translator->translate('voyti.view.two_factor.disable', category: 'voyti'))->class('btn', 'btn-danger')->attribute('tabindex', 2)
+            );
+
+        echo Html::form()->close();
+
+        echo Html::hr();
+        echo Html::H2($translator->translate('voyti.view.two_factor.regenerate_backup_codes', category: 'voyti'))->class('h5');
+        echo Html::p($translator->translate('voyti.view.two_factor.regenerate_backup_codes_intro', category: 'voyti'))->class('text-muted small');
+
+        if (!$hasBackupCodes) {
+            echo Html::div($translator->translate('voyti.view.two_factor.no_backup_codes_remaining', category: 'voyti'))->class('alert alert-warning');
+        }
+
+        echo Html::form()
+            ->post($url->generate('voyti/two-factor-regenerate-backup-codes'))
+            ->csrf($csrf)
+            ->open();
+
+        echo Field::text(new TwoFactorCodeForm($translator, $method), 'code')->tabIndex(3);
+
+        echo Field::buttonGroup()
+            ->buttons(
+                Html::submitButton($translator->translate('voyti.view.two_factor.regenerate_backup_codes', category: 'voyti'))->class('btn', 'btn-secondary')->attribute('tabindex', 4)
             );
 
         echo Html::form()->close();

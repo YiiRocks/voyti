@@ -28,6 +28,7 @@ use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
+use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 final readonly class ProfileController
@@ -39,6 +40,7 @@ final readonly class ProfileController
     public function __construct(
         private TranslatorInterface $translator,
         private WebViewRenderer $viewRenderer,
+        private ValidatorInterface $validator,
         private UrlGeneratorInterface $url,
         private AuthHelper $authHelper,
         private ModuleConfig $config,
@@ -104,26 +106,30 @@ final readonly class ProfileController
         if ($request->getMethod() === Method::POST) {
             $body = $this->parsedBody($request);
             $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
+            $result = $this->validator->validate($form);
 
-            $userProfile->setName($form->name);
-            $userProfile->setPublicEmail($form->publicEmail);
-            $userProfile->setGravatarEmail($form->gravatarEmail);
-            $userProfile->setLocation($form->location);
-            $userProfile->setWebsite($form->website);
-            $userProfile->setTimezone($form->timezone);
-            $userProfile->setBio($form->bio);
-            $userProfile->setBirthday($form->birthday !== '' ? new DateTimeImmutable($form->birthday) : null);
+            if ($result->isValid()) {
+                $userProfile->setName($form->name !== '' ? $form->name : null);
+                $userProfile->setPublicEmail($form->publicEmail !== '' ? $form->publicEmail : null);
+                $userProfile->setGravatarEmail($form->gravatarEmail !== '' ? $form->gravatarEmail : null);
+                $userProfile->setLocation($form->location !== '' ? $form->location : null);
+                $userProfile->setWebsite($form->website !== '' ? $form->website : null);
+                $userProfile->setTimezone($form->timezone !== '' ? $form->timezone : null);
+                $userProfile->setBio($form->bio !== '' ? $form->bio : null);
+                $userProfile->setBirthday($form->birthday !== '' ? new DateTimeImmutable($form->birthday) : null);
 
-            $userProfile->save();
-            $this->eventDispatcher->dispatch(new UserProfileEvent($userProfile));
-            return $this->redirectWithFlash($this->url->generate('voyti/profile-update'), 'voyti.settings.profile_updated');
+                $userProfile->save();
+                $this->eventDispatcher->dispatch(new UserProfileEvent($userProfile));
+                return $this->redirectWithFlash($this->url->generate('voyti/profile-update'), 'voyti.settings.profile_updated');
+            }
+
+            $form->processValidationResult($result);
         }
 
         return $this->renderView('profile/update', [
             'model' => $form,
             'user' => $user,
             'userProfile' => $userProfile,
-            'errors' => [],
             'config' => $this->config,
             'flash' => $this->flash,
             'isSwitched' => $this->switchIdentityService->isSwitched(),

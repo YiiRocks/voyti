@@ -49,6 +49,7 @@ final readonly class ModuleConfig
         public ?string $mailAdminOnRegister = null,
         public bool $enablePasswordExpiration = false,
         public bool $enablePasswordComplexity = false,
+        public int $passwordHistoryLimit = 10,
         public bool $generatePasswords = false,
         public bool $allowPasswordRecovery = true,
         public bool $allowAdminPasswordRecovery = true,
@@ -66,13 +67,14 @@ final readonly class ModuleConfig
         public bool $enableRestApi = false,
         public string $adminRestPrefix = 'api',
         public ?int $apiTokenLifespan = null,
+        public bool $enableAuditLog = true,
     ) {
     }
 
     /**
      * @return (array|bool|int|null|string|EmailChangeConfirmation|ProfileVisibility|RecaptchaVersion)[]
      *
-     * @psalm-return array{appName: string, recaptchaVersion: null|RecaptchaVersion, enableSessionHistory: bool, numberSessionHistory: false|int, enableGdprCompliance: bool, gdprExportProperties: list<string>, gdprAnonymizePrefix: string, enableTwoFactorAuthentication: bool, twoFactorAuthenticationForcedPermissions: array<array-key, string>, enableRegistration: bool, enableSocialNetworkRegistration: bool, socialNetworkClients: array<string, array<string, mixed>>, enableEmailConfirmation: bool, enableSwitchIdentities: bool, switchIdentitySessionKey: null|string, homeRoute: string, mailAdminOnRegister: null|string, enablePasswordExpiration: bool, enablePasswordComplexity: bool, generatePasswords: bool, allowPasswordRecovery: bool, allowAdminPasswordRecovery: bool, allowAccountDelete: bool, emailChangeConfirmation: EmailChangeConfirmation, rememberLoginLifespan: int, tokenConfirmationLifespan: int, tokenRecoveryLifespan: int, administratorPermissionName: null|string, profileVisibility: ProfileVisibility, maxPasswordAge: int|null, disableIpLogging: bool, viewPath: string, mailPath: string, enableRestApi: bool, adminRestPrefix: string, apiTokenLifespan: int|null}
+     * @psalm-return array{appName: string, recaptchaVersion: null|RecaptchaVersion, enableSessionHistory: bool, numberSessionHistory: false|int, enableGdprCompliance: bool, gdprExportProperties: list<string>, gdprAnonymizePrefix: string, enableTwoFactorAuthentication: bool, twoFactorAuthenticationForcedPermissions: array<array-key, string>, enableRegistration: bool, enableSocialNetworkRegistration: bool, socialNetworkClients: array<string, array<string, mixed>>, enableEmailConfirmation: bool, enableSwitchIdentities: bool, switchIdentitySessionKey: null|string, homeRoute: string, mailAdminOnRegister: null|string, enablePasswordExpiration: bool, enablePasswordComplexity: bool, passwordHistoryLimit: int, generatePasswords: bool, allowPasswordRecovery: bool, allowAdminPasswordRecovery: bool, allowAccountDelete: bool, emailChangeConfirmation: EmailChangeConfirmation, rememberLoginLifespan: int, tokenConfirmationLifespan: int, tokenRecoveryLifespan: int, administratorPermissionName: null|string, profileVisibility: ProfileVisibility, maxPasswordAge: int|null, disableIpLogging: bool, viewPath: string, mailPath: string, enableRestApi: bool, adminRestPrefix: string, apiTokenLifespan: int|null, enableAuditLog: bool}
      */
     public static function defaults(): array
     {

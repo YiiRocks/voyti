@@ -21,8 +21,10 @@ use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserProfile;
 use YiiRocks\Voyti\Model\UserSessionHistory;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Service\AuditLogService;
 use YiiRocks\Voyti\Service\Password\ExpireService;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
+use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
 use YiiRocks\Voyti\Service\Rbac\UpdateAssignmentsService;
 use YiiRocks\Voyti\Service\SwitchIdentityService;
@@ -73,6 +75,8 @@ final readonly class UserController
         private ItemsStorageInterface $itemsStorage,
         private AssignmentsStorageInterface $assignmentsStorage,
         private FlashInterface $flash,
+        private PasswordHistoryService $passwordHistoryService,
+        private AuditLogService $auditLogService,
     ) {
     }
 
@@ -89,6 +93,7 @@ final readonly class UserController
             $rawItems = $body['items'] ?? null;
             $items = is_array($rawItems) ? $rawItems : [];
             $this->updateAuthAssignmentsService->run($id, $items);
+            $this->auditLogService->log($this->actorId(), 'user.assignments_update', targetUserId: $id);
         }
 
         $assignments = $this->assignmentsStorage->getByUserId((string) $id);
@@ -107,6 +112,11 @@ final readonly class UserController
         $user = User::findById($id);
         if ($user !== null) {
             $this->userBlockService->run($user);
+            $this->auditLogService->log(
+                $this->actorId(),
+                $user->isBlocked() ? 'user.block' : 'user.unblock',
+                targetUserId: $id,
+            );
         }
 
         return $this->redirectWithFlash($this->url->generate('voyti/admin-users'), 'voyti.admin.user_status_changed');
@@ -116,6 +126,8 @@ final readonly class UserController
     {
         $user = User::findById($id);
         if ($user !== null && $this->userConfirmationService->run($user)) {
+            $this->auditLogService->log($this->actorId(), 'user.confirm', targetUserId: $id);
+
             return $this->redirectWithFlash($this->url->generate('voyti/admin-users'), 'voyti.admin.user_confirmed');
         }
         return $this->renderError('voyti.admin.unable_to_confirm');
@@ -135,15 +147,22 @@ final readonly class UserController
 
             $result = $this->userCreateService->run($email, $username, $password);
             if ($result->isSuccess()) {
+                $createdUser = User::findByUsername($username);
+
                 /** @var mixed $rawAssignedItems */
                 $rawAssignedItems = $body['assignedItems'] ?? null;
                 $items = is_array($rawAssignedItems) ? $rawAssignedItems : [];
-                if ($items !== []) {
-                    $user = User::findByUsername($username);
-                    if ($user !== null) {
-                        $this->updateAuthAssignmentsService->run((int) $user->getId(), $items);
-                    }
+                if ($items !== [] && $createdUser !== null) {
+                    $this->updateAuthAssignmentsService->run((int) $createdUser->getId(), $items);
                 }
+
+                $this->auditLogService->log(
+                    $this->actorId(),
+                    'user.create',
+                    targetUserId: $createdUser?->getIdOrZero(),
+                    targetName: $username,
+                );
+
                 return $this->redirectWithFlash($this->url->generate('voyti/admin-users'), 'voyti.admin.user_created');
             }
             $errors = $result->getErrors();
@@ -168,6 +187,8 @@ final readonly class UserController
         $user = User::findById($id);
         if ($user !== null) {
             $user->delete();
+            $this->auditLogService->log($this->actorId(), 'user.delete', targetUserId: $id, targetName: $user->getUsername());
+
             return $this->redirectWithFlash($this->url->generate('voyti/admin-users'), 'voyti.admin.user_deleted');
         }
         return $this->renderError('voyti.admin.user_not_found');
@@ -177,6 +198,8 @@ final readonly class UserController
     {
         $user = User::findById($id);
         if ($user !== null && $this->passwordExpireService->run($user)) {
+            $this->auditLogService->log($this->actorId(), 'user.force_password_change', targetUserId: $id);
+
             return $this->redirectWithFlash($this->url->generate('voyti/admin-users'), 'voyti.admin.password_change_required');
         }
         return $this->renderError('voyti.admin.error_occurred');
@@ -213,6 +236,8 @@ final readonly class UserController
         $user = User::findById($id);
         if ($user !== null) {
             $result = $this->passwordRecoveryService->run($user->getEmail());
+            $this->auditLogService->log($this->actorId(), 'user.password_reset_triggered', targetUserId: $id);
+
             return $this->renderView('shared/message', ['title' => $result->getMessage()]);
         }
         return $this->renderError('voyti.admin.user_not_found');
@@ -249,6 +274,7 @@ final readonly class UserController
     {
         $result = $this->switchIdentityService->run($id);
         if ($result->isSuccess()) {
+            $this->auditLogService->log($this->actorId(), 'user.switch_identity', targetUserId: $id);
             $this->flash->set(FlashType::SUCCESS, $this->translator->translate('voyti.admin.switch_identity_success', category: 'voyti'));
 
             return $this->redirect($this->url->generate('voyti/profile-update'));
@@ -297,28 +323,45 @@ final readonly class UserController
         $model = new SettingsForm($this->config, $this->translator);
         $model->username = $user->getUsername();
         $model->email = $user->getEmail();
+        $errors = [];
 
         if ($request->getMethod() === Method::POST) {
             $body = $this->parsedBody($request);
             /** @var mixed $rawUserData */
             $rawUserData = $body['user'] ?? null;
             $userData = is_array($rawUserData) ? $rawUserData : [];
-            $user->setUsername($this->stringValue($userData, 'username', $user->getUsername()));
-            $user->setEmail($this->stringValue($userData, 'email', $user->getEmail()));
             $password = $this->stringValue($userData, 'password');
-            if ($password !== '') {
-                $user->setPasswordHash($this->passwordHasher->hash($password));
-                $user->setPasswordChangedAt(time());
+
+            if ($password !== '' && $this->passwordHistoryService->wasUsedRecently($user, $password)) {
+                $errors = ['password' => [$this->translator->translate('voyti.admin.password_previously_used', category: 'voyti')]];
+            } else {
+                $user->setUsername($this->stringValue($userData, 'username', $user->getUsername()));
+                $user->setEmail($this->stringValue($userData, 'email', $user->getEmail()));
+                if ($password !== '') {
+                    $user->setPasswordHash($this->passwordHasher->hash($password));
+                    $user->setPasswordChangedAt(time());
+                }
+                $user->setUpdatedAt(time());
+                $user->save();
+
+                if ($password !== '') {
+                    $this->passwordHistoryService->record($user);
+                }
+
+                /** @var mixed $rawAssignedItems */
+                $rawAssignedItems = $body['assignedItems'] ?? null;
+                $items = is_array($rawAssignedItems) ? $rawAssignedItems : [];
+                $this->updateAuthAssignmentsService->run($id, $items);
+
+                $this->auditLogService->log(
+                    $this->actorId(),
+                    'user.update',
+                    targetUserId: $id,
+                    context: ['passwordChanged' => $password !== ''],
+                );
+
+                return $this->redirectWithFlash($this->url->generate('voyti/admin-users'), 'voyti.admin.account_updated');
             }
-            $user->setUpdatedAt(time());
-            $user->save();
-
-            /** @var mixed $rawAssignedItems */
-            $rawAssignedItems = $body['assignedItems'] ?? null;
-            $items = is_array($rawAssignedItems) ? $rawAssignedItems : [];
-            $this->updateAuthAssignmentsService->run($id, $items);
-
-            return $this->redirectWithFlash($this->url->generate('voyti/admin-users'), 'voyti.admin.account_updated');
         }
 
         $assignments = $this->assignmentsStorage->getByUserId((string) $id);
@@ -328,7 +371,7 @@ final readonly class UserController
         return $this->renderView('admin/user/_account', [
             'user' => $user,
             'model' => $model,
-            'errors' => [],
+            'errors' => $errors,
             'allItems' => $allItems,
             'assignedItems' => $assignedNames,
         ]);
@@ -385,5 +428,11 @@ final readonly class UserController
     protected function viewPath(): string
     {
         return $this->config->viewPath;
+    }
+
+    private function actorId(): ?int
+    {
+        $identity = $this->currentUser->getIdentity();
+        return $identity instanceof User ? $identity->getIdOrZero() : null;
     }
 }

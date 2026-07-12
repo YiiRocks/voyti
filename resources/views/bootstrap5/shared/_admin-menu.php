@@ -29,6 +29,10 @@ $adminMenuItems = [
         ['class' => 'nav-item'],
     ),
     Html::li(
+        Html::a($translator->translate('voyti.view.audit_log.title', category: 'voyti'), $url->generate('voyti/admin-audit-log'))->class('nav-link'),
+        ['class' => 'nav-item'],
+    ),
+    Html::li(
         Html::a($translator->translate('voyti.menu.logout', category: 'voyti'), $url->generate('voyti/session-logout'))->class('nav-link'),
         ['class' => 'nav-item ms-auto'],
     ),

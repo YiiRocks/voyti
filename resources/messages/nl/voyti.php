@@ -24,6 +24,7 @@ return [
     'voyti.recovery.reset_disabled' => 'Wachtwoord opnieuw instellen is uitgeschakeld',
     'voyti.recovery.link_invalid' => 'Herstellink is ongeldig of verlopen',
     'voyti.recovery.password_changed' => 'Wachtwoord is gewijzigd',
+    'voyti.recovery.password_previously_used' => 'Dit wachtwoord is onlangs al gebruikt. Kies een ander wachtwoord.',
 
     // SettingsController
     'voyti.settings.not_authenticated' => 'Niet geverifieerd',
@@ -39,6 +40,10 @@ return [
     'voyti.settings.network_not_found' => 'Netwerk niet gevonden',
     'voyti.settings.two_factor_enabled' => 'Tweefactorauthenticatie is ingeschakeld',
     'voyti.settings.two_factor_disabled' => 'Tweefactorauthenticatie is uitgeschakeld',
+    'voyti.settings.session_history_disabled' => 'Sessiegeschiedenis is uitgeschakeld',
+    'voyti.settings.session_not_found' => 'Sessie niet gevonden',
+    'voyti.settings.session_terminated' => 'Sessie is afgemeld',
+    'voyti.settings.password_previously_used' => 'Dit wachtwoord is onlangs al gebruikt. Kies een ander wachtwoord.',
 
     // ProfileController
     'voyti.userProfile.forbidden' => 'Verboden',
@@ -57,6 +62,7 @@ return [
     'voyti.admin.user_status_changed' => 'Gebruikersstatus is bijgewerkt',
     'voyti.admin.user_created' => 'Gebruiker is aangemaakt',
     'voyti.admin.account_updated' => 'Account is bijgewerkt',
+    'voyti.admin.password_previously_used' => 'Dit wachtwoord is onlangs al gebruikt. Kies een ander wachtwoord.',
 
     // RuleController
     'voyti.rule.added' => 'Autorisatieregel is toegevoegd',
@@ -73,6 +79,7 @@ return [
     'voyti.api.not_found' => 'Niet gevonden',
     'voyti.api.user_created' => 'Gebruiker aangemaakt',
     'voyti.api.user_updated' => 'Gebruiker bijgewerkt',
+    'voyti.api.password_previously_used' => 'Dit wachtwoord is onlangs al gebruikt. Kies een ander wachtwoord.',
     'voyti.api.user_deleted' => 'Gebruiker verwijderd',
 
     // PasswordRecoveryService
@@ -115,6 +122,7 @@ return [
     'voyti.menu.userProfile' => 'Profiel',
     'voyti.menu.account' => 'Account',
     'voyti.menu.networks' => 'Netwerken',
+    'voyti.menu.sessions' => 'Sessies',
     'voyti.menu.two_factor' => 'Tweefactorauthenticatie',
     'voyti.menu.logout' => 'Uitloggen',
 
@@ -147,6 +155,13 @@ return [
     'voyti.view.two_factor.renew_error' => 'Er kon geen nieuwe sleutel worden gegenereerd. Probeer het opnieuw.',
     'voyti.view.two_factor.loading' => 'Bezig met laden…',
     'voyti.view.two_factor.already_enabled' => 'Tweefactorauthenticatie is al ingeschakeld.',
+    'voyti.view.two_factor.backup_codes_title' => 'Back-upcodes',
+    'voyti.view.two_factor.backup_codes_intro' => 'Bewaar deze eenmalige back-upcodes op een veilige plek. Elke code kan één keer worden gebruikt om in te loggen als u geen toegang meer heeft tot uw authenticator of e-mail.',
+    'voyti.view.two_factor.backup_codes_continue' => 'Doorgaan',
+    'voyti.view.two_factor.backup_code_hint' => 'Geen toegang meer tot uw apparaat of e-mail? U kunt in plaats daarvan een van uw back-upcodes invoeren.',
+    'voyti.view.two_factor.regenerate_backup_codes' => 'Back-upcodes opnieuw genereren',
+    'voyti.view.two_factor.regenerate_backup_codes_intro' => 'Het genereren van nieuwe back-upcodes maakt alle bestaande codes ongeldig. Voer uw huidige verificatiecode of een back-upcode in om te bevestigen.',
+    'voyti.view.two_factor.no_backup_codes_remaining' => 'U heeft geen back-upcodes meer over. Genereer een nieuwe set zodat u toegang kunt herstellen als u uw apparaat kwijtraakt.',
     'voyti.view.two_factor_email.title' => 'Tweefactorauthenticatie via e-mail',
     'voyti.view.two_factor_email.button_label' => 'E-mail',
     'voyti.view.two_factor_email.method_name' => 'e-mail',
@@ -237,6 +252,12 @@ return [
     'voyti.view.role.create_title' => 'Rol aanmaken',
     'voyti.view.role.create_link' => 'Rol aanmaken',
     'voyti.view.role.update_title' => 'Rol bijwerken: {name}',
+    'voyti.view.audit_log.title' => 'Auditlogboek',
+    'voyti.view.audit_log.created_header' => 'Wanneer',
+    'voyti.view.audit_log.actor_header' => 'Actor',
+    'voyti.view.audit_log.action_header' => 'Actie',
+    'voyti.view.audit_log.target_header' => 'Doel',
+    'voyti.view.audit_log.context_header' => 'Details',
 
     // Assignments
     'voyti.view.assignments.assigned' => 'Toegewezen',
@@ -249,6 +270,9 @@ return [
     'voyti.view.session_history.ip' => 'IP-adres',
     'voyti.view.session_history.user_agent' => 'User agent',
     'voyti.view.session_history.created' => 'Aangemaakt',
+    'voyti.view.sessions.title' => 'Actieve sessies',
+    'voyti.view.sessions.this_device' => 'Dit apparaat',
+    'voyti.view.sessions.none' => 'Geen actieve sessies.',
 
     // Pagination
     'voyti.view.filter_button' => 'Filteren',

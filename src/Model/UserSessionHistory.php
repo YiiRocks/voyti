@@ -42,6 +42,13 @@ final class UserSessionHistory extends ActiveRecord
         return $sessions;
     }
 
+    public static function findByUserIdAndSessionId(int $userId, string $sessionId): ?UserSessionHistory
+    {
+        /** @var ?UserSessionHistory $session */
+        $session = self::query()->where(['user_id' => $userId, 'session_id' => $sessionId])->one();
+        return $session;
+    }
+
     public function getCreatedAt(): int
     {
         return $this->created_at;

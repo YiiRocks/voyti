@@ -7,6 +7,8 @@ namespace YiiRocks\Voyti\tests\Service;
 use Nyholm\Psr7\Response;
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
+use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
+use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\tests\Support\FakeSession;
 use Yiisoft\Auth\IdentityRepositoryInterface;
@@ -198,6 +200,66 @@ final class RememberMeCookieServiceTest extends TestCase
 
         $service->loginByCookie(['autoLogin' => 123], $currentUser, $identityRepository);
         self::assertFalse($session->has('__identity'));
+    }
+
+    public function testLoginByCookieWithNonUserIdentityDoesNotDispatchEvent(): void
+    {
+        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
+        $eventDispatcher->expects($this->never())->method('dispatch');
+
+        $service = new RememberMeCookieService(3600, eventDispatcher: $eventDispatcher);
+        $currentUser = $this->createCurrentUser();
+        $identity = $this->createMock(CookieLoginIdentityInterface::class);
+        $identity->method('validateCookieLoginKey')->willReturn(true);
+        $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
+        $identityRepository->method('findIdentity')->willReturn($identity);
+
+        $future = time() + 3600;
+        $cookie = json_encode(['id123', 'key123', $future]);
+        $service->loginByCookie(['autoLogin' => $cookie], $currentUser, $identityRepository);
+
+        self::assertSame($identity, $currentUser->getIdentity());
+    }
+
+    public function testLoginByCookieWithoutEventDispatcherDoesNotError(): void
+    {
+        $service = new RememberMeCookieService(3600);
+        $currentUser = $this->createCurrentUser();
+        $identity = $this->createMock(User::class);
+        $identity->method('validateCookieLoginKey')->willReturn(true);
+        $identity->method('getId')->willReturn('id123');
+        $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
+        $identityRepository->method('findIdentity')->willReturn($identity);
+
+        $future = time() + 3600;
+        $cookie = json_encode(['id123', 'key123', $future]);
+        $service->loginByCookie(['autoLogin' => $cookie], $currentUser, $identityRepository);
+
+        self::assertSame($identity, $currentUser->getIdentity());
+    }
+
+    public function testLoginByCookieWithUserIdentityDispatchesAfterLoginEvent(): void
+    {
+        $identity = $this->createMock(User::class);
+        $identity->method('validateCookieLoginKey')->willReturn(true);
+        $identity->method('getId')->willReturn('id123');
+
+        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
+        $eventDispatcher->expects($this->once())
+            ->method('dispatch')
+            ->with($this->callback(static fn (AfterLoginEvent $event): bool => $event->getUser() === $identity))
+            ->willReturnArgument(0);
+
+        $service = new RememberMeCookieService(3600, eventDispatcher: $eventDispatcher);
+        $currentUser = $this->createCurrentUser();
+        $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
+        $identityRepository->method('findIdentity')->willReturn($identity);
+
+        $future = time() + 3600;
+        $cookie = json_encode(['id123', 'key123', $future]);
+        $service->loginByCookie(['autoLogin' => $cookie], $currentUser, $identityRepository);
+
+        self::assertSame($identity, $currentUser->getIdentity());
     }
 
     public function testLoginByCookieWithZeroExpiresAndZeroNowReturns(): void

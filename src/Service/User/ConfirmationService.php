@@ -27,7 +27,7 @@ final readonly class ConfirmationService
         $user->setConfirmedAt(time());
         $user->save();
 
-        UserToken::deleteAllByUserId($user->getIdOrZero());
+        UserToken::deleteAllByUserIdAndType($user->getIdOrZero(), UserToken::TYPE_CONFIRMATION);
 
         $this->eventDispatcher->dispatch(new UserEvent($user));
         return true;

@@ -9,8 +9,6 @@ use YiiRocks\Voyti\Enum\RecaptchaVersion;
 use YiiRocks\Voyti\Model\Form\Auth\LoginForm;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Translator\TranslatorInterface;
-use Yiisoft\Validator\Rule\Integer;
-use Yiisoft\Validator\Rule\Length;
 use Yiisoft\Validator\Rule\Required;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
@@ -88,11 +86,8 @@ final class LoginFormTest extends TestCase
         $form = new LoginForm(new ModuleConfig(), $this->createTranslator(), requireTwoFactorAuthenticationCode: true);
         $rules = $form->getRules();
         $this->assertArrayHasKey('twoFactorAuthenticationCode', $rules);
-        $this->assertCount(3, $rules['twoFactorAuthenticationCode']);
+        $this->assertCount(1, $rules['twoFactorAuthenticationCode']);
         $this->assertInstanceOf(Required::class, $rules['twoFactorAuthenticationCode'][0]);
-        $this->assertInstanceOf(Integer::class, $rules['twoFactorAuthenticationCode'][1]);
-        $this->assertInstanceOf(Length::class, $rules['twoFactorAuthenticationCode'][2]);
-        $this->assertSame(6, $rules['twoFactorAuthenticationCode'][2]->getExactly());
     }
 
     public function testRememberMeDefaultsToFalse(): void

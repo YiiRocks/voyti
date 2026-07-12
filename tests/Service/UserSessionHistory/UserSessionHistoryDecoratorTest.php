@@ -99,7 +99,13 @@ final class UserSessionHistoryDecoratorTest extends TestCase
         $decorator->registerLogin($user);
 
         $sessions = UserSessionHistory::query()->where(['user_id' => $userId])->all();
+        $sessionIds = array_map(static fn (UserSessionHistory $s): string => $s->getSessionId(), $sessions);
+
         self::assertCount(2, $sessions);
+        // Confirms pruning keeps the newest sessions (this login plus the most recently
+        // created "old_" entry), not merely trims to the right count - old_0/old_1 are
+        // older than old_2 and must be the ones removed.
+        self::assertEqualsCanonicalizing(['sessnew', 'old_2'], $sessionIds);
 
         unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
     }

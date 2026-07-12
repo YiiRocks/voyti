@@ -35,23 +35,33 @@ final class ConfirmationServiceTest extends TestCase
         self::assertFalse($this->createService()->run($user));
     }
 
-    public function testRunDeletesUserTokens(): void
+    public function testRunDeletesOnlyConfirmationTokens(): void
     {
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $eventDispatcher->expects($this->exactly(2))->method('dispatch');
 
         $user = $this->createUser('delete_tokens', 'delete_tokens@example.com');
+        $userId = (int) $user->getId();
 
-        $userToken = new UserToken();
-        $userToken->setUserId((int) $user->getId());
-        $userToken->setCode('confirm_token');
-        $userToken->setType(UserToken::TYPE_CONFIRMATION);
-        $userToken->setCreatedAt(time());
-        $userToken->save();
+        $confirmationToken = new UserToken();
+        $confirmationToken->setUserId($userId);
+        $confirmationToken->setCode('confirm_token');
+        $confirmationToken->setType(UserToken::TYPE_CONFIRMATION);
+        $confirmationToken->setCreatedAt(time());
+        $confirmationToken->save();
+
+        $recoveryToken = new UserToken();
+        $recoveryToken->setUserId($userId);
+        $recoveryToken->setCode('recovery_token');
+        $recoveryToken->setType(UserToken::TYPE_RECOVERY);
+        $recoveryToken->setCreatedAt(time());
+        $recoveryToken->save();
 
         self::assertTrue($this->createService($eventDispatcher)->run($user));
 
-        self::assertEmpty(UserToken::findByUserId((int) $user->getId()));
+        $remaining = UserToken::findByUserId($userId);
+        self::assertCount(1, $remaining);
+        self::assertSame(UserToken::TYPE_RECOVERY, $remaining[0]->getType());
     }
 
     public function testRunPersistsConfirmation(): void

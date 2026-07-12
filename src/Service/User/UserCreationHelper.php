@@ -12,6 +12,7 @@ use YiiRocks\Voyti\Model\UserProfile;
 use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\MailService;
+use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Security\Random;
 
@@ -22,6 +23,7 @@ final readonly class UserCreationHelper
         private EventDispatcherInterface $eventDispatcher,
         private PasswordHasher $passwordHasher,
         private ModuleConfig $config,
+        private PasswordHistoryService $passwordHistoryService,
     ) {
     }
 
@@ -71,6 +73,7 @@ final readonly class UserCreationHelper
             $userToken->setCode(Random::string(32));
 
             User::saveWithProfileAndToken($user, $userProfile, $userToken);
+            $this->passwordHistoryService->record($user);
             $this->mailService->sendConfirmation($user, $userToken);
 
             $this->eventDispatcher->dispatch(new AfterRegisterEvent($user));
@@ -79,6 +82,7 @@ final readonly class UserCreationHelper
 
         $user->setConfirmedAt(time());
         User::saveWithProfile($user, $userProfile);
+        $this->passwordHistoryService->record($user);
         $this->mailService->sendWelcome($user, $password);
 
         $this->eventDispatcher->dispatch(new AfterRegisterEvent($user));

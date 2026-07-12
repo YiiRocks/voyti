@@ -17,6 +17,7 @@ use YiiRocks\Voyti\Http\Psr18Client;
 use YiiRocks\Voyti\Listener;
 use YiiRocks\Voyti\Middleware\RouteParametersResolver;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Service\AuditLogService;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\Auth\SocialAuthProviderService;
 use YiiRocks\Voyti\Service\Auth\UserSocialAuthenticateService;
@@ -24,6 +25,7 @@ use YiiRocks\Voyti\Service\EmailChangeService;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\Password\ExpireService;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
+use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\Password\RandomPasswordGenerator;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
 use YiiRocks\Voyti\Service\Password\ResetService;
@@ -31,6 +33,7 @@ use YiiRocks\Voyti\Service\Rbac\RuleEditionService;
 use YiiRocks\Voyti\Service\Rbac\UpdateAssignmentsService;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\Service\SwitchIdentityService;
+use YiiRocks\Voyti\Service\TwoFactor\BackupCodeService;
 use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
 use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
 use YiiRocks\Voyti\Service\User\AccountConfirmationService;
@@ -68,14 +71,19 @@ return [
     ParametersResolverInterface::class => RouteParametersResolver::class,
 
     ModuleConfig::class => static fn () => ModuleConfig::fromArray($params['yiirocks/voyti'] ?? []),
-    RememberMeCookieService::class => static fn (ModuleConfig $config) => new RememberMeCookieService(
+    RememberMeCookieService::class => static fn (
+        ModuleConfig $config,
+        ?EventDispatcherInterface $eventDispatcher = null,
+    ) => new RememberMeCookieService(
         $config->rememberLoginLifespan,
+        eventDispatcher: $eventDispatcher,
     ),
 
     PasswordGeneratorInterface::class => RandomPasswordGenerator::class,
     IdentityRepositoryInterface::class => IdentityAdapter::class,
     IdentityWithTokenRepositoryInterface::class => IdentityAdapter::class,
     ApiTokenService::class => ApiTokenService::class,
+    AuditLogService::class => AuditLogService::class,
 
     AuthHelper::class => fn (
         ManagerInterface $authManager,
@@ -128,11 +136,13 @@ return [
         ModuleConfig $config
     ) => new ExpireService($config),
     RecoveryService::class => RecoveryService::class,
+    PasswordHistoryService::class => PasswordHistoryService::class,
     ResetService::class => fn (
         PasswordHasher $passwordHasher,
         ModuleConfig $config,
         EventDispatcherInterface $eventDispatcher,
-    ) => new ResetService($passwordHasher, $config, $eventDispatcher),
+        PasswordHistoryService $passwordHistoryService,
+    ) => new ResetService($passwordHasher, $config, $eventDispatcher, $passwordHistoryService),
     UserCreationHelper::class => UserCreationHelper::class,
     CreateService::class => CreateService::class,
     RegisterService::class => RegisterService::class,
@@ -152,6 +162,7 @@ return [
     QrCodeUriGeneratorService::class => fn (
         ModuleConfig $config
     ) => new QrCodeUriGeneratorService($config),
+    BackupCodeService::class => BackupCodeService::class,
     UserSessionHistoryDecorator::class => fn (
         EventDispatcherInterface $eventDispatcher,
         ModuleConfig $config,

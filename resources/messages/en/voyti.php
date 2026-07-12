@@ -26,6 +26,7 @@ return [
     'voyti.recovery.reset_disabled' => 'Password reset is disabled',
     'voyti.recovery.link_invalid' => 'Recovery link is invalid or expired',
     'voyti.recovery.password_changed' => 'Password has been changed',
+    'voyti.recovery.password_previously_used' => 'This password has been used recently. Please choose a different one.',
 
     // SettingsController
     'voyti.settings.not_authenticated' => 'Not authenticated',
@@ -41,6 +42,10 @@ return [
     'voyti.settings.network_not_found' => 'Network not found',
     'voyti.settings.two_factor_enabled' => 'Two-factor authentication has been enabled',
     'voyti.settings.two_factor_disabled' => 'Two-factor authentication has been disabled',
+    'voyti.settings.session_history_disabled' => 'Session history is disabled',
+    'voyti.settings.session_not_found' => 'Session not found',
+    'voyti.settings.session_terminated' => 'Session has been logged out',
+    'voyti.settings.password_previously_used' => 'This password has been used recently. Please choose a different one.',
 
     // ProfileController
     'voyti.userProfile.forbidden' => 'Forbidden',
@@ -59,6 +64,7 @@ return [
     'voyti.admin.user_status_changed' => 'User status has been updated',
     'voyti.admin.user_created' => 'User has been created',
     'voyti.admin.account_updated' => 'Account has been updated',
+    'voyti.admin.password_previously_used' => 'This password has been used recently. Please choose a different one.',
     'voyti.admin.switch_identity_success' => 'You are now logged in as this user',
     'voyti.admin.switch_identity_restored' => 'You have been restored to your original identity',
 
@@ -77,6 +83,7 @@ return [
     'voyti.api.not_found' => 'Not found',
     'voyti.api.user_created' => 'User created',
     'voyti.api.user_updated' => 'User updated',
+    'voyti.api.password_previously_used' => 'This password has been used recently. Please choose a different one.',
     'voyti.api.user_deleted' => 'User deleted',
 
     // PasswordRecoveryService
@@ -119,8 +126,9 @@ return [
     'voyti.menu.userProfile' => 'Profile',
     'voyti.menu.account' => 'Account',
     'voyti.menu.networks' => 'Networks',
+    'voyti.menu.sessions' => 'Sessions',
     'voyti.menu.two_factor' => 'Two-Factor Auth',
-    'voyti.menu.logout' => 'Logout',
+    'voyti.menu.logout' => 'Log out',
 
     // Login view
     'voyti.view.login.title' => 'Log In',
@@ -151,6 +159,13 @@ return [
     'voyti.view.two_factor.renew_error' => 'Could not generate a new key. Please try again.',
     'voyti.view.two_factor.loading' => 'Loading…',
     'voyti.view.two_factor.already_enabled' => 'Two-factor authentication is already enabled.',
+    'voyti.view.two_factor.backup_codes_title' => 'Backup Codes',
+    'voyti.view.two_factor.backup_codes_intro' => 'Save these one-time backup codes somewhere safe. Each can be used once to sign in if you lose access to your authenticator or email.',
+    'voyti.view.two_factor.backup_codes_continue' => 'Continue',
+    'voyti.view.two_factor.backup_code_hint' => 'Lost access to your device or email? You can enter one of your backup codes instead.',
+    'voyti.view.two_factor.regenerate_backup_codes' => 'Regenerate Backup Codes',
+    'voyti.view.two_factor.regenerate_backup_codes_intro' => 'Generating a new set of backup codes invalidates all existing ones. Enter your current verification code or a backup code to confirm.',
+    'voyti.view.two_factor.no_backup_codes_remaining' => 'You have no backup codes remaining. Regenerate a new set to make sure you can still recover access if you lose your device.',
     'voyti.view.two_factor_email.title' => 'Two-factor authentication via email',
     'voyti.view.two_factor_email.button_label' => 'Email',
     'voyti.view.two_factor_email.method_name' => 'email',
@@ -245,6 +260,14 @@ return [
     'voyti.view.role.create_link' => 'Create role',
     'voyti.view.role.update_title' => 'Update role: {name}',
 
+    // Audit log view
+    'voyti.view.audit_log.title' => 'Audit Log',
+    'voyti.view.audit_log.created_header' => 'When',
+    'voyti.view.audit_log.actor_header' => 'Actor',
+    'voyti.view.audit_log.action_header' => 'Action',
+    'voyti.view.audit_log.target_header' => 'Target',
+    'voyti.view.audit_log.context_header' => 'Details',
+
     // Assignments
     'voyti.view.assignments.assigned' => 'Assigned',
     'voyti.view.assignments.available' => 'Available',
@@ -256,6 +279,9 @@ return [
     'voyti.view.session_history.ip' => 'IP address',
     'voyti.view.session_history.user_agent' => 'User agent',
     'voyti.view.session_history.created' => 'Created',
+    'voyti.view.sessions.title' => 'Active Sessions',
+    'voyti.view.sessions.this_device' => 'This device',
+    'voyti.view.sessions.none' => 'No active sessions.',
 
     // Pagination
     'voyti.view.filter_button' => 'Filter',

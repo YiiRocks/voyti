@@ -93,10 +93,7 @@ foreach ($items as $item) {
         ->csrf($csrf)
         ->class('d-inline')
         ->open();
-    echo Field::buttonGroup()
-        ->buttons(
-            Html::submitButton($translator->translate('voyti.view.delete_button', category: 'voyti'))->class('btn', 'btn-sm', 'btn-outline-danger')->attribute('tabindex', 1),
-        );
+    echo Html::submitButton($translator->translate('voyti.view.delete_button', category: 'voyti'))->class('btn', 'btn-sm', 'btn-outline-danger')->attribute('tabindex', 1);
     echo Html::form()->close();
     echo Html::div()->close();
     echo Html::div()->close();

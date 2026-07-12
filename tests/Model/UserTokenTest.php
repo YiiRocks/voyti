@@ -98,6 +98,37 @@ final class UserTokenTest extends TestCase
         self::assertSame(0, $entity->getCreatedAt());
     }
 
+    public function testDeleteAllByUserIdAndTypeRemovesOnlyMatchingTypeForThatUser(): void
+    {
+        $confirmationToken = new UserToken();
+        $confirmationToken->setUserId(1);
+        $confirmationToken->setCode('confirm');
+        $confirmationToken->setType(UserToken::TYPE_CONFIRMATION);
+        $confirmationToken->setCreatedAt(time());
+        $confirmationToken->save();
+
+        $recoveryToken = new UserToken();
+        $recoveryToken->setUserId(1);
+        $recoveryToken->setCode('recovery');
+        $recoveryToken->setType(UserToken::TYPE_RECOVERY);
+        $recoveryToken->setCreatedAt(time());
+        $recoveryToken->save();
+
+        $otherUserConfirmationToken = new UserToken();
+        $otherUserConfirmationToken->setUserId(2);
+        $otherUserConfirmationToken->setCode('confirm2');
+        $otherUserConfirmationToken->setType(UserToken::TYPE_CONFIRMATION);
+        $otherUserConfirmationToken->setCreatedAt(time());
+        $otherUserConfirmationToken->save();
+
+        UserToken::deleteAllByUserIdAndType(1, UserToken::TYPE_CONFIRMATION);
+
+        $remaining = UserToken::findByUserId(1);
+        self::assertCount(1, $remaining);
+        self::assertSame(UserToken::TYPE_RECOVERY, $remaining[0]->getType());
+        self::assertCount(1, UserToken::findByUserId(2));
+    }
+
     public function testDeleteAllByUserIdRemovesOnlyThatUsersTokens(): void
     {
         $token1 = new UserToken();

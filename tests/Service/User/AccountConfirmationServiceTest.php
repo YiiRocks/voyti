@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Service\User;
 
 use PHPUnit\Framework\TestCase;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\Service\User\AccountConfirmationService;
@@ -56,8 +57,7 @@ final class AccountConfirmationServiceTest extends TestCase
         $token->save();
 
         $service = new AccountConfirmationService();
-        $confirmationService = $this->createMock(ConfirmationService::class);
-        $confirmationService->method('run')->willReturn(true);
+        $confirmationService = new ConfirmationService($this->createMock(EventDispatcherInterface::class));
 
         self::assertTrue($service->run('successcode', $user, $confirmationService));
 

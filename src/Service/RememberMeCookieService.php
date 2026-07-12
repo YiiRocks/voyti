@@ -6,7 +6,10 @@ namespace YiiRocks\Voyti\Service;
 
 use DateInterval;
 use JsonException;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseInterface;
+use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
+use YiiRocks\Voyti\Model\User;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Json\Json;
 use Yiisoft\User\CurrentUser;
@@ -29,6 +32,7 @@ final class RememberMeCookieService
         private readonly string $cookieName = 'autoLogin',
         ?\Closure $cookieEmitter = null,
         ?\Closure $now = null,
+        private readonly ?EventDispatcherInterface $eventDispatcher = null,
     ) {
         $this->cookieEmitter = $cookieEmitter ?? static fn (string $name, string $value, array $options): bool => setcookie($name, $value, $options);
         $this->now = $now ?? static fn (): int => time();
@@ -94,6 +98,13 @@ final class RememberMeCookieService
             return;
         }
         $currentUser->login($identity);
+
+        // CurrentUser::login() regenerates the session ID (anti-fixation); dispatching
+        // AfterLoginEvent here - as the interactive login flow does - keeps
+        // SessionHistoryListener in sync with that new ID for auto-logins too.
+        if ($identity instanceof User) {
+            $this->eventDispatcher?->dispatch(new AfterLoginEvent($identity));
+        }
     }
 
     /**

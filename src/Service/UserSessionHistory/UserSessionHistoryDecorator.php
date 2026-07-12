@@ -47,10 +47,9 @@ final readonly class UserSessionHistoryDecorator
     {
         if ($this->config->hasNumberSessionHistory()) {
             $userId = $user->getIdOrZero();
-            /** @infection-ignore-all ArrayItemRemoval: ORDER BY direction 'ASC' vs 'DESC' reverses iteration of same in-memory collection; fewer than $limit sessions means no excess is deleted regardless of sort order. */
             $sessions = UserSessionHistory::query()
                 ->where(['user_id' => $userId])
-                ->orderBy(['created_at' => 'DESC'])
+                ->orderBy(['created_at' => SORT_DESC])
                 ->all();
 
             /** @var int $limit */

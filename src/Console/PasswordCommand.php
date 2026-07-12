@@ -8,6 +8,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
+use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use Yiisoft\Security\PasswordHasher;
 
 final class PasswordCommand extends Command
@@ -17,6 +18,7 @@ final class PasswordCommand extends Command
     public function __construct(
         private PasswordHasher $passwordHasher,
         private PasswordGeneratorInterface $passwordGenerator,
+        private PasswordHistoryService $passwordHistoryService,
     ) {
         parent::__construct();
     }
@@ -48,6 +50,7 @@ final class PasswordCommand extends Command
         $user->setPasswordChangedAt(time());
         $user->setUpdatedAt(time());
         $user->save();
+        $this->passwordHistoryService->record($user);
 
         $output->writeln('<info>Password reset.</info>');
         $output->writeln("<comment>New password: {$password}</comment>");

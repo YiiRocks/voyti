@@ -67,6 +67,20 @@ final class UserSessionHistoryTest extends TestCase
         self::assertCount(2, UserSessionHistory::findAllSessionHistory());
     }
 
+    public function testFindByUserIdAndSessionIdFiltersByBoth(): void
+    {
+        $this->createSession(1, 'sess-1', '203.0.113.1');
+        $this->createSession(2, 'sess-2', '203.0.113.2');
+
+        $found = UserSessionHistory::findByUserIdAndSessionId(1, 'sess-1');
+        self::assertNotNull($found);
+        self::assertSame(1, $found->getUserId());
+        self::assertSame('sess-1', $found->getSessionId());
+
+        self::assertNull(UserSessionHistory::findByUserIdAndSessionId(1, 'sess-2'));
+        self::assertNull(UserSessionHistory::findByUserIdAndSessionId(2, 'sess-1'));
+    }
+
     public function testFindByUserIdFiltersByUserId(): void
     {
         $this->createSession(1, 'sess-1', '203.0.113.1');

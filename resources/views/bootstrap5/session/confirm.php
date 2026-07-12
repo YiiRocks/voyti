@@ -37,9 +37,11 @@ echo Html::form()
 
 echo Field::errorSummary($model);
 
+echo Html::p($translator->translate('voyti.view.two_factor.backup_code_hint', category: 'voyti'))->class('text-muted small');
+
 $tabindex = 0;
 
-echo Field::text($model, 'twoFactorAuthenticationCode')->addInputAttributes(['autocomplete' => 'one-time-code', 'inputmode' => 'numeric'])->tabIndex(++$tabindex);
+echo Field::text($model, 'twoFactorAuthenticationCode')->addInputAttributes(['autocomplete' => 'one-time-code'])->tabIndex(++$tabindex);
 
 echo Field::buttonGroup()
     ->buttons(

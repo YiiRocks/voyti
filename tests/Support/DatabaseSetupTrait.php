@@ -92,6 +92,37 @@ trait DatabaseSetupTrait
                 PRIMARY KEY ("user_id", "session_id")
             )
         ')->execute();
+
+        $this->dbConnection->createCommand('
+            CREATE TABLE "user_backup_code" (
+                "user_id" INTEGER NOT NULL,
+                "code_hash" VARCHAR(255) NOT NULL,
+                "used_at" INTEGER,
+                "created_at" INTEGER NOT NULL,
+                PRIMARY KEY ("user_id", "code_hash")
+            )
+        ')->execute();
+
+        $this->dbConnection->createCommand('
+            CREATE TABLE "user_password_history" (
+                "user_id" INTEGER NOT NULL,
+                "password_hash" VARCHAR(255) NOT NULL,
+                "created_at" INTEGER NOT NULL,
+                PRIMARY KEY ("user_id", "password_hash")
+            )
+        ')->execute();
+
+        $this->dbConnection->createCommand('
+            CREATE TABLE "audit_log" (
+                "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+                "actor_user_id" INTEGER,
+                "target_user_id" INTEGER,
+                "target_name" VARCHAR(255),
+                "action" VARCHAR(64) NOT NULL,
+                "context" TEXT,
+                "created_at" INTEGER NOT NULL
+            )
+        ')->execute();
     }
 
     protected function setUpDatabase(): void
@@ -117,6 +148,9 @@ trait DatabaseSetupTrait
     protected function tearDownDatabase(): void
     {
         if ($this->dbConnection !== null) {
+            $this->dbConnection->createCommand('DROP TABLE IF EXISTS "audit_log"')->execute();
+            $this->dbConnection->createCommand('DROP TABLE IF EXISTS "user_password_history"')->execute();
+            $this->dbConnection->createCommand('DROP TABLE IF EXISTS "user_backup_code"')->execute();
             $this->dbConnection->createCommand('DROP TABLE IF EXISTS "user_session_history"')->execute();
             $this->dbConnection->createCommand('DROP TABLE IF EXISTS "user_token"')->execute();
             $this->dbConnection->createCommand('DROP TABLE IF EXISTS "user_social_account"')->execute();

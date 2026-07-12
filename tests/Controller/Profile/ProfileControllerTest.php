@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Controller\Profile;
 
+use DateTimeImmutable;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseFactoryInterface;
@@ -24,6 +25,7 @@ use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentity;
 use Yiisoft\User\Guest\GuestIdentityInterface;
+use Yiisoft\Validator\Validator;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
@@ -40,6 +42,7 @@ final class ProfileControllerTest extends TestCase
     private PasswordHasher $passwordHasher;
     private ResponseFactoryInterface&MockObject $responseFactory;
     private TranslatorInterface $translator;
+    private Validator $validator;
     private WebViewRenderer&MockObject $viewRenderer;
 
     protected function setUp(): void
@@ -55,6 +58,7 @@ final class ProfileControllerTest extends TestCase
         $this->hydrator = $this->createMock(HydratorInterface::class);
         $this->flash = $this->createMock(FlashInterface::class);
         $this->passwordHasher = new PasswordHasher();
+        $this->validator = new Validator();
     }
 
     protected function tearDown(): void
@@ -420,6 +424,123 @@ final class ProfileControllerTest extends TestCase
         $this->assertSame($originalUser->getId(), $captured['originalUser']->getId());
     }
 
+    public function testUpdatePostClearingFieldsSetsThemToNullNotEmptyString(): void
+    {
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['userProfile' => ['name' => '', 'publicEmail' => '', 'gravatarEmail' => '', 'location' => '', 'website' => '', 'timezone' => '', 'bio' => '', 'birthday' => '']]);
+
+        $this->hydrator->method('hydrate')->willReturnCallback(
+            function (object $object, array $data = []): void {
+                $this->hydrateObject($object, $data);
+            },
+        );
+
+        $user = $this->createUser();
+        $profile = $this->createUserProfile((int) $user->getId());
+        $profile->setPublicEmail('public@example.com');
+        $profile->setGravatarEmail('gravatar@example.com');
+        $profile->setLocation('Somewhere');
+        $profile->setWebsite('https://example.com');
+        $profile->setTimezone('UTC');
+        $profile->setBio('Some bio');
+        $profile->setBirthday(new DateTimeImmutable('1990-05-15'));
+        $profile->save();
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn((string) $user->getId());
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->willReturnSelf();
+
+        $result = $controller->update($request);
+
+        $this->assertSame($response, $result);
+        $updatedProfile = UserProfile::findByUserId((int) $user->getId());
+        $this->assertNotNull($updatedProfile);
+        $this->assertNull($updatedProfile->getName());
+        $this->assertNull($updatedProfile->getPublicEmail());
+        $this->assertNull($updatedProfile->getGravatarEmail());
+        $this->assertNull($updatedProfile->getLocation());
+        $this->assertNull($updatedProfile->getWebsite());
+        $this->assertNull($updatedProfile->getTimezone());
+        $this->assertNull($updatedProfile->getBio());
+        $this->assertNull($updatedProfile->getBirthday());
+    }
+
+    public function testUpdatePostRejectsHtmlInBioAndDoesNotSave(): void
+    {
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['userProfile' => ['name' => 'John', 'publicEmail' => '', 'gravatarEmail' => '', 'location' => '', 'website' => '', 'timezone' => '', 'bio' => '<script>alert(1)</script>', 'birthday' => '']]);
+
+        $this->hydrator->method('hydrate')->willReturnCallback(
+            function (object $object, array $data = []): void {
+                $this->hydrateObject($object, $data);
+            },
+        );
+
+        $user = $this->createUser();
+        $this->createUserProfile((int) $user->getId(), name: 'OldName');
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn((string) $user->getId());
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('profile/update', $this->anything())
+            ->willReturn($response);
+        $this->responseFactory->expects($this->never())->method('createResponse');
+
+        $result = $controller->update($request);
+
+        $this->assertSame($response, $result);
+        $updatedProfile = UserProfile::findByUserId((int) $user->getId());
+        $this->assertNotNull($updatedProfile);
+        $this->assertSame('OldName', $updatedProfile->getName());
+        $this->assertNull($updatedProfile->getBio());
+    }
+
+    public function testUpdatePostRejectsMalformedBirthdayAndDoesNotSave(): void
+    {
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['userProfile' => ['name' => 'John', 'publicEmail' => '', 'gravatarEmail' => '', 'location' => '', 'website' => '', 'timezone' => '', 'bio' => '', 'birthday' => 'not-a-date']]);
+
+        $this->hydrator->method('hydrate')->willReturnCallback(
+            function (object $object, array $data = []): void {
+                $this->hydrateObject($object, $data);
+            },
+        );
+
+        $user = $this->createUser();
+        $this->createUserProfile((int) $user->getId(), name: 'OldName');
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn((string) $user->getId());
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('profile/update', $this->anything())
+            ->willReturn($response);
+        $this->responseFactory->expects($this->never())->method('createResponse');
+
+        $result = $controller->update($request);
+
+        $this->assertSame($response, $result);
+        $updatedProfile = UserProfile::findByUserId((int) $user->getId());
+        $this->assertNotNull($updatedProfile);
+        $this->assertNull($updatedProfile->getBirthday());
+    }
+
     public function testUpdatePostUpdatesAndRedirects(): void
     {
         $controller = $this->createController();
@@ -498,6 +619,7 @@ final class ProfileControllerTest extends TestCase
         return $this->harness->createProfileController(
             translator: $this->translator,
             viewRenderer: $this->viewRenderer,
+            validator: $this->validator,
             currentUser: $this->currentUser,
             responseFactory: $this->responseFactory,
             hydrator: $this->hydrator,

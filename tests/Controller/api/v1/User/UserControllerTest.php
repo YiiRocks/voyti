@@ -13,8 +13,10 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use YiiRocks\Voyti\Controller\api\v1\User\UserController;
 use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\Model\UserPasswordHistory;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
+use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\Password\RandomPasswordGenerator;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\TestCase;
@@ -69,6 +71,22 @@ final class UserControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
+    public function testCreateRecordsPasswordHistory(): void
+    {
+        $config = new ModuleConfig(enablePasswordExpiration: true);
+        $controller = $this->createController($config);
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['email' => 'history@example.com', 'username' => 'historyuser', 'password' => 'secret123']);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->method('createResponse')->willReturn($response);
+
+        $controller->create($request);
+
+        $created = User::findByEmail('history@example.com');
+        $this->assertNotNull($created);
+        self::assertCount(1, UserPasswordHistory::findByUserId((int) $created->getId()));
+    }
+
     public function testCreateResponseIsJsonFormattableThroughRealPipeline(): void
     {
         $controller = new UserController(
@@ -77,6 +95,7 @@ final class UserControllerTest extends TestCase
             config: $this->config,
             responseFactory: new DataResponseFactory(new Psr17Factory()),
             passwordGenerator: new RandomPasswordGenerator(),
+            passwordHistoryService: new PasswordHistoryService($this->passwordHasher, $this->config),
         );
 
         $request = (new ServerRequest('POST', '/'))
@@ -301,6 +320,23 @@ final class UserControllerTest extends TestCase
         $this->assertSame('test@example.com', $updated->getEmail());
     }
 
+    public function testUpdateWithoutPasswordDoesNotRecordPasswordHistory(): void
+    {
+        $config = new ModuleConfig(enablePasswordExpiration: true);
+        $user = $this->createUser('testuser', 'test@example.com');
+        $userId = (int) $user->getId();
+
+        $controller = $this->createController($config);
+        $request = (new ServerRequest('PUT', '/'))->withParsedBody(['username' => 'updated']);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->method('createResponse')->willReturn($response);
+
+        $controller->update($request, $userId);
+
+        self::assertCount(0, UserPasswordHistory::findByUserId($userId));
+    }
+
     public function testUpdateWithPassword(): void
     {
         $user = $this->createUser('testuser', 'test@example.com');
@@ -329,6 +365,46 @@ final class UserControllerTest extends TestCase
         $this->assertNotSame($originalHash, $updated->getPasswordHash());
         $this->assertNotNull($updated->getPasswordChangedAt());
         $this->assertGreaterThan(0, $updated->getUpdatedAt());
+    }
+
+    public function testUpdateWithPasswordRecordsPasswordHistory(): void
+    {
+        $config = new ModuleConfig(enablePasswordExpiration: true);
+        $user = $this->createUser('testuser', 'test@example.com');
+        $userId = (int) $user->getId();
+
+        $controller = $this->createController($config);
+        $request = (new ServerRequest('PUT', '/'))->withParsedBody(['password' => 'newpass']);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->method('createResponse')->willReturn($response);
+
+        $controller->update($request, $userId);
+
+        self::assertCount(1, UserPasswordHistory::findByUserId($userId));
+    }
+
+    public function testUpdateWithPreviouslyUsedPasswordReturnsBadRequest(): void
+    {
+        $config = new ModuleConfig(enablePasswordExpiration: true);
+        $user = $this->createUser('testuser', 'test@example.com');
+        $userId = (int) $user->getId();
+        $user->setPasswordHash($this->passwordHasher->hash('originalpass'));
+        $user->save();
+        (new PasswordHistoryService($this->passwordHasher, $config))->record($user);
+
+        $controller = $this->createController($config);
+        $request = (new ServerRequest('PUT', '/'))->withParsedBody(['password' => 'originalpass']);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(['error' => 'This password has been used recently. Please choose a different one.'], 400)
+            ->willReturn($response);
+
+        $result = $controller->update($request, $userId);
+
+        $this->assertSame($response, $result);
     }
 
     public function testViewFound(): void
@@ -369,14 +445,17 @@ final class UserControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    private function createController(): UserController
+    private function createController(?ModuleConfig $config = null): UserController
     {
+        $config ??= $this->config;
+
         return new UserController(
             translator: $this->translator,
             passwordHasher: $this->passwordHasher,
-            config: $this->config,
+            config: $config,
             responseFactory: $this->responseFactory,
             passwordGenerator: $this->passwordGenerator,
+            passwordHistoryService: new PasswordHistoryService($this->passwordHasher, $config),
         );
     }
 

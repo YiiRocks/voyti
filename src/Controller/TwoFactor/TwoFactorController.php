@@ -12,6 +12,7 @@ use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Service\TwoFactor\BackupCodeService;
 use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
 use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
 use YiiRocks\Voyti\Validator\TwoFactor\CodeValidator;
@@ -42,6 +43,7 @@ final readonly class TwoFactorController
         private QrCodeUriGeneratorService $twoFactorQrCodeService,
         private EmailCodeGeneratorService $twoFactorEmailCodeService,
         private FlashInterface $flash,
+        private BackupCodeService $backupCodeService,
     ) {
     }
 
@@ -68,6 +70,10 @@ final readonly class TwoFactorController
         }
 
         if (!$isValid) {
+            $isValid = $this->backupCodeService->consume($user, $code);
+        }
+
+        if (!$isValid) {
             return $this->renderTwoFactorIndex(
                 $user,
                 $method,
@@ -80,6 +86,7 @@ final readonly class TwoFactorController
         $user->setAuthTfKey(null);
         $user->setAuthTfType(null);
         $user->save();
+        $this->backupCodeService->clear($user);
 
         return $this->redirectWithFlash(
             $this->url->generate('voyti/two-factor'),
@@ -168,10 +175,7 @@ final readonly class TwoFactorController
         $user->setAuthTfEnabled(true);
         $user->save();
 
-        return $this->redirectWithFlash(
-            $this->url->generate('voyti/two-factor'),
-            'voyti.settings.two_factor_enabled',
-        );
+        return $this->renderBackupCodes($this->backupCodeService->generate($user));
     }
 
     public function google(ServerRequestInterface $request): ResponseInterface
@@ -200,6 +204,47 @@ final readonly class TwoFactorController
         }
 
         return $this->renderTwoFactorIndex($user, $user->getAuthTfType() ?? 'google');
+    }
+
+    public function regenerateBackupCodes(ServerRequestInterface $request): ResponseInterface
+    {
+        $user = $this->requireUser();
+        if (!$user instanceof User) {
+            return $user;
+        }
+
+        if (!$user->isAuthTfEnabled()) {
+            return $this->redirect($this->url->generate('voyti/two-factor'));
+        }
+
+        $body = $this->parsedBody($request);
+        $code = $this->stringValue($body, 'code');
+        $method = $user->getAuthTfType() ?? 'google';
+
+        if ($method === 'email') {
+            $emailValidator = new EmailValidator($user, $code);
+            $isValid = $emailValidator->validate();
+            $errorMessage = $emailValidator->getErrorMessage();
+        } else {
+            $codeValidator = new CodeValidator($user, $code);
+            $codeValidator->setTranslator($this->translator);
+            $isValid = $codeValidator->validate();
+            $errorMessage = $codeValidator->getErrorMessage();
+        }
+
+        if (!$isValid) {
+            $isValid = $this->backupCodeService->consume($user, $code);
+        }
+
+        if (!$isValid) {
+            return $this->renderTwoFactorIndex(
+                $user,
+                $method,
+                errors: ['code' => [$this->errorMessage($errorMessage)]],
+            );
+        }
+
+        return $this->renderBackupCodes($this->backupCodeService->generate($user));
     }
 
     public function renew(ServerRequestInterface $request): ResponseInterface
@@ -300,6 +345,18 @@ final readonly class TwoFactorController
         return $response;
     }
 
+    /**
+     * @param list<string> $codes
+     */
+    private function renderBackupCodes(array $codes): ResponseInterface
+    {
+        return $this->renderView('two-factor/backup-codes', [
+            'codes' => $codes,
+            'config' => $this->config,
+            'flash' => $this->flash,
+        ]);
+    }
+
     private function renderGoogleSetup(ServerRequestInterface $request, User $user): ResponseInterface
     {
         $this->ensureFreshGoogleAuthenticatorSecret($user);
@@ -375,6 +432,7 @@ final readonly class TwoFactorController
             'qrCodeUri' => $qrCodeUri,
             'secret' => $secret,
             'emailCodeSent' => $emailCodeSent,
+            'hasBackupCodes' => $this->backupCodeService->hasUnused($user),
             'config' => $this->config,
             'errors' => $errors,
             'flash' => $this->flash,

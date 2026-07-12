@@ -143,6 +143,7 @@ final class ModuleConfigTest extends TestCase
             'mailAdminOnRegister',
             'enablePasswordExpiration',
             'enablePasswordComplexity',
+            'passwordHistoryLimit',
             'generatePasswords',
             'allowPasswordRecovery',
             'allowAdminPasswordRecovery',
@@ -160,6 +161,7 @@ final class ModuleConfigTest extends TestCase
             'enableRestApi',
             'adminRestPrefix',
             'apiTokenLifespan',
+            'enableAuditLog',
         ];
         foreach ($expectedKeys as $key) {
             self::assertArrayHasKey($key, $defaults);

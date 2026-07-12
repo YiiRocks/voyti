@@ -22,7 +22,6 @@ use Yiisoft\View\WebView;
  * @var UserProfile $userProfile
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
- * @var array<string, list<string>> $errors
  * @var FlashInterface $flash
  * @var bool $isSwitched
  * @var User|null $originalUser
@@ -73,7 +72,7 @@ echo Html::form()
     ->csrf($csrf)
     ->open();
 
-echo Field::errorSummary(null)->errors($errors);
+echo Field::errorSummary($model);
 
 $tabindex = 0;
 

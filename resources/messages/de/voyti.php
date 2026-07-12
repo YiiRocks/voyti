@@ -24,6 +24,7 @@ return [
     'voyti.recovery.reset_disabled' => 'Das Zurücksetzen des Passworts ist deaktiviert',
     'voyti.recovery.link_invalid' => 'Der Wiederherstellungslink ist ungültig oder abgelaufen',
     'voyti.recovery.password_changed' => 'Das Passwort wurde geändert',
+    'voyti.recovery.password_previously_used' => 'Dieses Passwort wurde kürzlich bereits verwendet. Bitte wählen Sie ein anderes.',
 
     // SettingsController
     'voyti.settings.not_authenticated' => 'Nicht authentifiziert',
@@ -39,6 +40,10 @@ return [
     'voyti.settings.network_not_found' => 'Netzwerk nicht gefunden',
     'voyti.settings.two_factor_enabled' => 'Zwei-Faktor-Authentifizierung wurde aktiviert',
     'voyti.settings.two_factor_disabled' => 'Zwei-Faktor-Authentifizierung wurde deaktiviert',
+    'voyti.settings.session_history_disabled' => 'Sitzungsverlauf ist deaktiviert',
+    'voyti.settings.session_not_found' => 'Sitzung nicht gefunden',
+    'voyti.settings.session_terminated' => 'Sitzung wurde abgemeldet',
+    'voyti.settings.password_previously_used' => 'Dieses Passwort wurde kürzlich bereits verwendet. Bitte wählen Sie ein anderes.',
 
     // ProfileController
     'voyti.userProfile.forbidden' => 'Verboten',
@@ -57,6 +62,7 @@ return [
     'voyti.admin.user_status_changed' => 'Benutzerstatus wurde aktualisiert',
     'voyti.admin.user_created' => 'Benutzer wurde erstellt',
     'voyti.admin.account_updated' => 'Konto wurde aktualisiert',
+    'voyti.admin.password_previously_used' => 'Dieses Passwort wurde kürzlich bereits verwendet. Bitte wählen Sie ein anderes.',
 
     // RuleController
     'voyti.rule.added' => 'Autorisierungsregel wurde hinzugefügt',
@@ -73,6 +79,7 @@ return [
     'voyti.api.not_found' => 'Nicht gefunden',
     'voyti.api.user_created' => 'Benutzer erstellt',
     'voyti.api.user_updated' => 'Benutzer aktualisiert',
+    'voyti.api.password_previously_used' => 'Dieses Passwort wurde kürzlich bereits verwendet. Bitte wählen Sie ein anderes.',
     'voyti.api.user_deleted' => 'Benutzer gelöscht',
 
     // PasswordRecoveryService
@@ -115,6 +122,7 @@ return [
     'voyti.menu.userProfile' => 'Profil',
     'voyti.menu.account' => 'Konto',
     'voyti.menu.networks' => 'Netzwerke',
+    'voyti.menu.sessions' => 'Sitzungen',
     'voyti.menu.two_factor' => 'Zwei-Faktor-Auth',
     'voyti.menu.logout' => 'Abmelden',
 
@@ -147,6 +155,13 @@ return [
     'voyti.view.two_factor.renew_error' => 'Es konnte kein neuer Schlüssel erzeugt werden. Bitte versuchen Sie es erneut.',
     'voyti.view.two_factor.loading' => 'Wird geladen…',
     'voyti.view.two_factor.already_enabled' => 'Die Zwei-Faktor-Authentifizierung ist bereits aktiviert.',
+    'voyti.view.two_factor.backup_codes_title' => 'Backup-Codes',
+    'voyti.view.two_factor.backup_codes_intro' => 'Bewahren Sie diese einmaligen Backup-Codes sicher auf. Jeder kann einmal verwendet werden, um sich anzumelden, falls Sie keinen Zugriff mehr auf Ihren Authenticator oder Ihre E-Mail haben.',
+    'voyti.view.two_factor.backup_codes_continue' => 'Weiter',
+    'voyti.view.two_factor.backup_code_hint' => 'Kein Zugriff mehr auf Ihr Gerät oder Ihre E-Mail? Sie können stattdessen einen Ihrer Backup-Codes eingeben.',
+    'voyti.view.two_factor.regenerate_backup_codes' => 'Backup-Codes neu generieren',
+    'voyti.view.two_factor.regenerate_backup_codes_intro' => 'Beim Generieren neuer Backup-Codes werden alle bestehenden ungültig. Geben Sie Ihren aktuellen Bestätigungscode oder einen Backup-Code ein, um fortzufahren.',
+    'voyti.view.two_factor.no_backup_codes_remaining' => 'Sie haben keine Backup-Codes mehr übrig. Generieren Sie einen neuen Satz, damit Sie den Zugriff auch bei Verlust Ihres Geräts wiederherstellen können.',
     'voyti.view.two_factor_email.title' => 'Zwei-Faktor-Authentifizierung per E-Mail',
     'voyti.view.two_factor_email.button_label' => 'E-Mail',
     'voyti.view.two_factor_email.method_name' => 'E-Mail',
@@ -237,6 +252,12 @@ return [
     'voyti.view.role.create_title' => 'Rolle erstellen',
     'voyti.view.role.create_link' => 'Rolle erstellen',
     'voyti.view.role.update_title' => 'Rolle aktualisieren: {name}',
+    'voyti.view.audit_log.title' => 'Audit-Log',
+    'voyti.view.audit_log.created_header' => 'Wann',
+    'voyti.view.audit_log.actor_header' => 'Akteur',
+    'voyti.view.audit_log.action_header' => 'Aktion',
+    'voyti.view.audit_log.target_header' => 'Ziel',
+    'voyti.view.audit_log.context_header' => 'Details',
 
     // Assignments
     'voyti.view.assignments.assigned' => 'Zugewiesen',
@@ -249,6 +270,9 @@ return [
     'voyti.view.session_history.ip' => 'IP-Adresse',
     'voyti.view.session_history.user_agent' => 'Benutzeragent',
     'voyti.view.session_history.created' => 'Erstellt',
+    'voyti.view.sessions.title' => 'Aktive Sitzungen',
+    'voyti.view.sessions.this_device' => 'Dieses Gerät',
+    'voyti.view.sessions.none' => 'Keine aktiven Sitzungen.',
 
     // Pagination
     'voyti.view.filter_button' => 'Filtern',

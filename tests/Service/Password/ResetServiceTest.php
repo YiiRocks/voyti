@@ -7,8 +7,10 @@ namespace YiiRocks\Voyti\tests\Service\Password;
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\Model\UserPasswordHistory;
 use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\Password\ResetService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use Yiisoft\Security\PasswordHasher;
@@ -50,6 +52,34 @@ final class ResetServiceTest extends TestCase
         $reloaded = User::findById((int) $user->getId());
         self::assertNotNull($reloaded);
         self::assertNotSame('oldhash', $reloaded->getPasswordHash());
+    }
+
+    public function testRunRecordsPasswordHistoryWhenEnabled(): void
+    {
+        $config = new ModuleConfig(enablePasswordExpiration: true);
+        $user = $this->createUser('historyuser', 'history@example.com');
+
+        $this->createService(config: $config)->run('newpassword', $user, null);
+
+        $reloaded = User::findById((int) $user->getId());
+        self::assertNotNull($reloaded);
+        $history = UserPasswordHistory::findByUserId($reloaded->getIdOrZero());
+        self::assertCount(1, $history);
+        self::assertTrue((new PasswordHasher())->validate('newpassword', $history[0]->getPasswordHash()));
+    }
+
+    public function testRunRejectsRecentlyUsedPassword(): void
+    {
+        $config = new ModuleConfig(enablePasswordExpiration: true);
+        $user = $this->createUser('reuseuser', 'reuse@example.com');
+
+        $this->createService(config: $config)->run('newpassword', $user, null);
+        $reloaded = User::findById((int) $user->getId());
+        self::assertNotNull($reloaded);
+
+        $result = $this->createService(config: $config)->run('newpassword', $reloaded, null);
+
+        self::assertFalse($result);
     }
 
     public function testRunSetsPasswordChangedAt(): void
@@ -111,11 +141,13 @@ final class ResetServiceTest extends TestCase
         self::assertTrue($result);
     }
 
-    private function createService(?EventDispatcherInterface $eventDispatcher = null): ResetService
+    private function createService(?EventDispatcherInterface $eventDispatcher = null, ?ModuleConfig $config = null): ResetService
     {
         $eventDispatcher ??= $this->createMock(EventDispatcherInterface::class);
+        $config ??= new ModuleConfig();
+        $passwordHasher = new PasswordHasher();
 
-        return new ResetService(new PasswordHasher(), new ModuleConfig(), $eventDispatcher);
+        return new ResetService($passwordHasher, $config, $eventDispatcher, new PasswordHistoryService($passwordHasher, $config));
     }
 
     private function createUser(string $username, string $email, ?int $createdAt = null): User

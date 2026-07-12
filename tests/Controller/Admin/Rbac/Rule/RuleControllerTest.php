@@ -11,6 +11,7 @@ use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\Admin\Rbac\Rule\RuleController;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Service\AuditLogService;
 use YiiRocks\Voyti\Service\Rbac\RuleEditionService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\TestCase;
@@ -23,6 +24,7 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class RuleControllerTest extends TestCase
 {
+    private AuditLogService&MockObject $auditLogService;
     private AuthHelper&MockObject $authHelper;
     private ModuleConfig $config;
     private FlashInterface&MockObject $flash;
@@ -44,6 +46,7 @@ final class RuleControllerTest extends TestCase
         $this->flash = $this->createMock(FlashInterface::class);
         $this->authHelper = $this->createMock(AuthHelper::class);
         $this->ruleEditionService = $this->createMock(RuleEditionService::class);
+        $this->auditLogService = $this->createMock(AuditLogService::class);
     }
 
     public function testCreateGetShowsForm(): void
@@ -276,6 +279,7 @@ final class RuleControllerTest extends TestCase
             flash: $this->flash,
             authHelper: $this->authHelper,
             ruleEditionService: $this->ruleEditionService,
+            auditLogService: $this->auditLogService,
         );
     }
 }

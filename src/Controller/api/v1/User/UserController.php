@@ -10,6 +10,7 @@ use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
+use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use Yiisoft\DataResponse\ResponseFactory\DataResponseFactoryInterface;
 use Yiisoft\Http\Status;
 use Yiisoft\Security\PasswordHasher;
@@ -26,6 +27,7 @@ final readonly class UserController
         private ModuleConfig $config,
         private DataResponseFactoryInterface $responseFactory,
         private PasswordGeneratorInterface $passwordGenerator,
+        private PasswordHistoryService $passwordHistoryService,
     ) {
     }
 
@@ -55,6 +57,7 @@ final readonly class UserController
         $user->setCreatedAt(time());
         $user->setUpdatedAt(time());
         $user->save();
+        $this->passwordHistoryService->record($user);
 
         return $this->responseFactory->createResponse([
             'id' => $user->getId(),
@@ -98,18 +101,28 @@ final readonly class UserController
         }
 
         $body = $this->parsedBody($request);
+        $password = isset($body['password']) && is_string($body['password']) ? $body['password'] : '';
+
+        if ($password !== '' && $this->passwordHistoryService->wasUsedRecently($user, $password)) {
+            return $this->responseFactory->createResponse(['error' => $this->translator->translate('voyti.api.password_previously_used', category: 'voyti')], Status::BAD_REQUEST);
+        }
+
         if (isset($body['username']) && is_string($body['username'])) {
             $user->setUsername($body['username']);
         }
         if (isset($body['email']) && is_string($body['email'])) {
             $user->setEmail($body['email']);
         }
-        if (isset($body['password']) && is_string($body['password']) && $body['password'] !== '') {
-            $user->setPasswordHash($this->passwordHasher->hash($body['password']));
+        if ($password !== '') {
+            $user->setPasswordHash($this->passwordHasher->hash($password));
             $user->setPasswordChangedAt(time());
         }
         $user->setUpdatedAt(time());
         $user->save();
+
+        if ($password !== '') {
+            $this->passwordHistoryService->record($user);
+        }
 
         return $this->responseFactory->createResponse([
             'id' => $user->getId(),

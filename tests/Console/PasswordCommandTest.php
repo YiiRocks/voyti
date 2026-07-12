@@ -10,7 +10,10 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Console\PasswordCommand;
 use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\Model\UserPasswordHistory;
+use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
+use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\Password\RandomPasswordGenerator;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use Yiisoft\Security\PasswordHasher;
@@ -75,6 +78,35 @@ final class PasswordCommandTest extends TestCase
         self::assertTrue(password_verify('generated-secret', $reloaded->getPasswordHash()));
         self::assertNotNull($reloaded->getPasswordChangedAt());
         self::assertGreaterThan(1000, $reloaded->getUpdatedAt());
+    }
+
+    public function testExecuteByEmailRecordsPasswordHistory(): void
+    {
+        $user = new User();
+        $user->setUsername('historyuser');
+        $user->setEmail('pw_history@example.com');
+        $user->setPasswordHash('old_hash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(1000);
+        $user->setUpdatedAt(1000);
+        $user->save();
+
+        $input = $this->createMock(InputInterface::class);
+        $input->method('getOption')->willReturnMap([
+            ['id', null],
+            ['email', 'pw_history@example.com'],
+            ['username', null],
+        ]);
+
+        $output = $this->createMock(OutputInterface::class);
+
+        $config = new ModuleConfig(enablePasswordExpiration: true);
+        $command = $this->createCommand(config: $config);
+        $result = $command->run($input, $output);
+
+        self::assertSame(Command::SUCCESS, $result);
+        $history = UserPasswordHistory::findByUserId((int) $user->getId());
+        self::assertCount(1, $history);
     }
 
     public function testExecuteById(): void
@@ -170,10 +202,14 @@ final class PasswordCommandTest extends TestCase
     private function createCommand(
         ?PasswordHasher $passwordHasher = null,
         ?PasswordGeneratorInterface $passwordGenerator = null,
+        ?ModuleConfig $config = null,
     ): PasswordCommand {
+        $passwordHasher ??= new PasswordHasher();
+
         return new PasswordCommand(
-            $passwordHasher ?? new PasswordHasher(),
+            $passwordHasher,
             $passwordGenerator ?? new RandomPasswordGenerator(),
+            new PasswordHistoryService($passwordHasher, $config ?? new ModuleConfig()),
         );
     }
 }

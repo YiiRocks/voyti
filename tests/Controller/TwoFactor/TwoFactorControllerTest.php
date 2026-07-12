@@ -12,7 +12,9 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 use YiiRocks\Voyti\Controller\TwoFactor\TwoFactorController;
 use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\Model\UserBackupCode;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Service\TwoFactor\BackupCodeService;
 use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
 use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
@@ -241,6 +243,41 @@ final class TwoFactorControllerTest extends TestCase
         $updated = User::findById((int) $user->getId());
         $this->assertNotNull($updated);
         $this->assertFalse($updated->isAuthTfEnabled());
+    }
+
+    public function testTwoFactorDisableWithValidBackupCodeDisablesAndRedirects(): void
+    {
+        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $this->harness = new ControllerHarness($config);
+        $backupCodeService = new BackupCodeService($this->passwordHasher);
+
+        $user = $this->createUser(authTfEnabled: true, authTfType: 'email', authTfKey: '123456');
+        $codes = $backupCodeService->generate($user);
+
+        $controller = $this->createController(backupCodeService: $backupCodeService);
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['code' => $codes[0]]);
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn((string) $user->getId());
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())
+            ->method('withHeader')
+            ->willReturnSelf();
+
+        $result = $controller->disable($request);
+
+        $this->assertSame($response, $result);
+        $updated = User::findById((int) $user->getId());
+        $this->assertNotNull($updated);
+        $this->assertFalse($updated->isAuthTfEnabled());
+        $this->assertFalse($backupCodeService->hasUnused($updated));
+        $this->assertCount(0, UserBackupCode::query()->where(['user_id' => $updated->getIdOrZero()])->all());
     }
 
     public function testTwoFactorDisableWithValidEmailCodeDisablesAndRedirects(): void
@@ -475,13 +512,13 @@ final class TwoFactorControllerTest extends TestCase
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
         $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('two-factor/backup-codes', $this->callback(
+                static fn (array $params): bool => count($params['codes']) === 10,
+            ))
             ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
 
         $result = $controller->enable($request);
 
@@ -577,13 +614,13 @@ final class TwoFactorControllerTest extends TestCase
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
         $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('two-factor/backup-codes', $this->callback(
+                static fn (array $params): bool => count($params['codes']) === 10,
+            ))
             ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
 
         $result = $controller->enable($request);
 
@@ -699,6 +736,60 @@ final class TwoFactorControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
+    public function testTwoFactorIndexReportsHasBackupCodesWhenCodesExist(): void
+    {
+        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $this->harness = new ControllerHarness($config);
+        $backupCodeService = new BackupCodeService($this->passwordHasher);
+
+        $user = $this->createUser(authTfEnabled: true, authTfType: 'google', authTfKey: '123456');
+        $backupCodeService->generate($user);
+
+        $controller = $this->createController($backupCodeService);
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn((string) $user->getId());
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('two-factor/index', $this->callback(
+                static fn (array $params): bool => $params['hasBackupCodes'] === true,
+            ))
+            ->willReturn($response);
+
+        $result = $controller->index(new ServerRequest('GET', '/'));
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testTwoFactorIndexReportsNoBackupCodesWhenNoneRemain(): void
+    {
+        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $this->harness = new ControllerHarness($config);
+
+        $user = $this->createUser(authTfEnabled: true, authTfType: 'google', authTfKey: '123456');
+
+        $controller = $this->createController();
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn((string) $user->getId());
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('two-factor/index', $this->callback(
+                static fn (array $params): bool => $params['hasBackupCodes'] === false,
+            ))
+            ->willReturn($response);
+
+        $result = $controller->index(new ServerRequest('GET', '/'));
+
+        $this->assertSame($response, $result);
+    }
+
     public function testTwoFactorIndexWhenUserNotFoundShowsError(): void
     {
         $config = new ModuleConfig(enableTwoFactorAuthentication: true);
@@ -719,6 +810,137 @@ final class TwoFactorControllerTest extends TestCase
             ->willReturn($response);
 
         $result = $controller->index($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testTwoFactorRegenerateBackupCodesWhenGuestShowsError(): void
+    {
+        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = new ServerRequest('POST', '/');
+
+        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->method('render')->willReturn($response);
+
+        $result = $controller->regenerateBackupCodes($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testTwoFactorRegenerateBackupCodesWhenNotEnabledRedirects(): void
+    {
+        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = new ServerRequest('POST', '/');
+
+        $user = $this->createUser(authTfEnabled: false);
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn((string) $user->getId());
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(302)
+            ->willReturn($response);
+        $response->expects($this->once())->method('withHeader')->willReturnSelf();
+
+        $result = $controller->regenerateBackupCodes($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testTwoFactorRegenerateBackupCodesWithInvalidCodeShowsForm(): void
+    {
+        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $this->harness = new ControllerHarness($config);
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['code' => 'wrong']);
+
+        $user = $this->createUser(authTfEnabled: true, authTfType: 'email', authTfKey: '123456');
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn((string) $user->getId());
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('two-factor/index', $this->callback(
+                static fn (array $params): bool => $params['method'] === 'email',
+            ))
+            ->willReturn($response);
+
+        $result = $controller->regenerateBackupCodes($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testTwoFactorRegenerateBackupCodesWithValidCodeShowsNewCodes(): void
+    {
+        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $this->harness = new ControllerHarness($config);
+
+        $user = $this->createUser(authTfEnabled: true, authTfType: 'email', authTfKey: '123456');
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['code' => '123456']);
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn((string) $user->getId());
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('two-factor/backup-codes', $this->callback(
+                static fn (array $params): bool => count($params['codes']) === 10,
+            ))
+            ->willReturn($response);
+
+        $result = $controller->regenerateBackupCodes($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testTwoFactorRegenerateBackupCodesWithValidGoogleCodeShowsNewCodes(): void
+    {
+        if (!class_exists(Authenticator::class)) {
+            $this->markTestSkipped('chillerlan/php-authenticator not installed.');
+        }
+
+        $secret = (new Authenticator())->createSecret();
+        $authenticator = new Authenticator();
+        $authenticator->setSecret($secret);
+        $code = $authenticator->code();
+
+        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $this->harness = new ControllerHarness($config);
+
+        $user = $this->createUser(authTfEnabled: true, authTfType: 'google', authTfKey: $secret);
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['code' => $code]);
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn((string) $user->getId());
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('two-factor/backup-codes', $this->callback(
+                static fn (array $params): bool => count($params['codes']) === 10,
+            ))
+            ->willReturn($response);
+
+        $result = $controller->regenerateBackupCodes($request);
 
         $this->assertSame($response, $result);
     }
@@ -1073,7 +1295,7 @@ final class TwoFactorControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    private function createController(): TwoFactorController
+    private function createController(?BackupCodeService $backupCodeService = null): TwoFactorController
     {
         return $this->harness->createTwoFactorController(
             translator: $this->translator,
@@ -1083,6 +1305,7 @@ final class TwoFactorControllerTest extends TestCase
             flash: $this->flash,
             twoFactorQrCodeService: $this->twoFactorQrCodeService,
             twoFactorEmailCodeService: $this->twoFactorEmailCodeService,
+            backupCodeService: $backupCodeService,
         );
     }
 

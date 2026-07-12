@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Support;
 
 use Psr\Http\Message\ResponseFactoryInterface;
+use YiiRocks\Voyti\Adapter\IdentityAdapter;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use YiiRocks\Voyti\Controller\Account\AccountController;
+use YiiRocks\Voyti\Controller\Account\SessionController as AccountSessionController;
+use YiiRocks\Voyti\Controller\Admin\AuditLog\AuditLogController;
 use YiiRocks\Voyti\Controller\Admin\Rbac\Permission\PermissionController;
 use YiiRocks\Voyti\Controller\Admin\Rbac\Role\RoleController;
 use YiiRocks\Voyti\Controller\Admin\Rbac\Rule\RuleController;
@@ -20,6 +23,7 @@ use YiiRocks\Voyti\Controller\SocialNetwork\SocialNetworkController;
 use YiiRocks\Voyti\Controller\TwoFactor\TwoFactorController;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Service\AuditLogService;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\Auth\SocialAuthProviderService;
 use YiiRocks\Voyti\Service\Auth\UserSocialAccountConnectService;
@@ -28,12 +32,14 @@ use YiiRocks\Voyti\Service\EmailChangeService;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\Password\ExpireService;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
+use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
 use YiiRocks\Voyti\Service\Password\ResetService;
 use YiiRocks\Voyti\Service\Rbac\RuleEditionService;
 use YiiRocks\Voyti\Service\Rbac\UpdateAssignmentsService;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\Service\SwitchIdentityService;
+use YiiRocks\Voyti\Service\TwoFactor\BackupCodeService;
 use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
 use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
 use YiiRocks\Voyti\Service\User\AccountConfirmationService;
@@ -96,6 +102,7 @@ final class ControllerHarness
         ?PasswordHasher $passwordHasher = null,
         ?EmailChangeStrategyFactory $emailChangeStrategyFactory = null,
         ?EmailChangeService $emailChangeService = null,
+        ?PasswordHistoryService $passwordHistoryService = null,
     ): AccountController {
         $passwordHasher ??= new PasswordHasher();
         $emailChangeStrategyFactory ??= new EmailChangeStrategyFactory(
@@ -110,6 +117,7 @@ final class ControllerHarness
         $emailChangeService ??= new EmailChangeService(
             $this->config,
         );
+        $passwordHistoryService ??= new PasswordHistoryService($passwordHasher, $this->config);
 
         return new AccountController(
             translator: $translator,
@@ -123,6 +131,43 @@ final class ControllerHarness
             hydrator: $hydrator,
             currentUser: $currentUser,
             responseFactory: $responseFactory,
+            flash: $flash,
+            passwordHistoryService: $passwordHistoryService,
+        );
+    }
+
+    public function createAccountSessionController(
+        TranslatorInterface $translator,
+        WebViewRenderer $viewRenderer,
+        CurrentUser $currentUser,
+        ResponseFactoryInterface $responseFactory,
+        FlashInterface $flash,
+    ): AccountSessionController {
+        return new AccountSessionController(
+            translator: $translator,
+            viewRenderer: $viewRenderer,
+            currentUser: $currentUser,
+            responseFactory: $responseFactory,
+            url: $this->url,
+            session: $this->session,
+            config: $this->config,
+            eventDispatcher: $this->eventDispatcher,
+            flash: $flash,
+        );
+    }
+
+    public function createAuditLogController(
+        TranslatorInterface $translator,
+        WebViewRenderer $viewRenderer,
+        ResponseFactoryInterface $responseFactory,
+        FlashInterface $flash,
+    ): AuditLogController {
+        return new AuditLogController(
+            translator: $translator,
+            viewRenderer: $viewRenderer,
+            url: $this->url,
+            responseFactory: $responseFactory,
+            config: $this->config,
             flash: $flash,
         );
     }
@@ -138,10 +183,12 @@ final class ControllerHarness
         ?ResetService $resetService = null,
     ): PasswordResetController {
         $recoveryService ??= new RecoveryService();
+        $passwordHasher = new PasswordHasher();
         $resetService ??= new ResetService(
-            new PasswordHasher(),
+            $passwordHasher,
             $this->config,
             $this->eventDispatcher,
+            new PasswordHistoryService($passwordHasher, $this->config),
         );
 
         return new PasswordResetController(
@@ -165,7 +212,12 @@ final class ControllerHarness
         ValidatorInterface $validator,
         ResponseFactoryInterface $responseFactory,
         FlashInterface $flash,
+        ?CurrentUser $currentUser = null,
+        ?AuditLogService $auditLogService = null,
     ): PermissionController {
+        $currentUser ??= new CurrentUser(new IdentityAdapter($this->config), $this->eventDispatcher);
+        $auditLogService ??= new AuditLogService($this->config);
+
         return new PermissionController(
             translator: $translator,
             viewRenderer: $viewRenderer,
@@ -177,6 +229,8 @@ final class ControllerHarness
             assignmentsStorage: $this->assignmentsStorage,
             flash: $flash,
             config: $this->config,
+            auditLogService: $auditLogService,
+            currentUser: $currentUser,
         );
     }
 
@@ -213,6 +267,7 @@ final class ControllerHarness
     public function createProfileController(
         TranslatorInterface $translator,
         WebViewRenderer $viewRenderer,
+        ValidatorInterface $validator,
         CurrentUser $currentUser,
         ResponseFactoryInterface $responseFactory,
         HydratorInterface $hydrator,
@@ -231,6 +286,7 @@ final class ControllerHarness
         return new ProfileController(
             translator: $translator,
             viewRenderer: $viewRenderer,
+            validator: $validator,
             url: $this->url,
             authHelper: $authHelper,
             config: $this->config,
@@ -300,7 +356,12 @@ final class ControllerHarness
         ValidatorInterface $validator,
         ResponseFactoryInterface $responseFactory,
         FlashInterface $flash,
+        ?CurrentUser $currentUser = null,
+        ?AuditLogService $auditLogService = null,
     ): RoleController {
+        $currentUser ??= new CurrentUser(new IdentityAdapter($this->config), $this->eventDispatcher);
+        $auditLogService ??= new AuditLogService($this->config);
+
         return new RoleController(
             translator: $translator,
             viewRenderer: $viewRenderer,
@@ -312,6 +373,8 @@ final class ControllerHarness
             assignmentsStorage: $this->assignmentsStorage,
             flash: $flash,
             config: $this->config,
+            auditLogService: $auditLogService,
+            currentUser: $currentUser,
         );
     }
 
@@ -323,14 +386,16 @@ final class ControllerHarness
         FlashInterface $flash,
         ?AuthHelper $authHelper = null,
         ?RuleEditionService $ruleEditionService = null,
+        ?CurrentUser $currentUser = null,
+        ?AuditLogService $auditLogService = null,
     ): RuleController {
-        $authHelper ??= $this->createAuthHelper(
-            new CurrentUser($this->session),
-        );
+        $currentUser ??= new CurrentUser(new IdentityAdapter($this->config), $this->eventDispatcher);
+        $authHelper ??= $this->createAuthHelper($currentUser);
         $ruleEditionService ??= new RuleEditionService(
             $this->itemsStorage,
             new RuleValidator(),
         );
+        $auditLogService ??= new AuditLogService($this->config);
 
         return new RuleController(
             translator: $translator,
@@ -342,6 +407,8 @@ final class ControllerHarness
             responseFactory: $responseFactory,
             flash: $flash,
             config: $this->config,
+            auditLogService: $auditLogService,
+            currentUser: $currentUser,
         );
     }
 
@@ -360,10 +427,12 @@ final class ControllerHarness
         ?UserSocialAuthenticateService $socialNetworkAuthenticateService = null,
         ?UserSocialAccountConnectService $socialNetworkAccountConnectService = null,
         ?EmailCodeGeneratorService $twoFactorEmailCodeService = null,
+        ?BackupCodeService $backupCodeService = null,
     ): SessionController {
         $passwordHasher ??= new PasswordHasher();
         $rememberMeCookieService ??= new RememberMeCookieService(
             $this->config->rememberLoginLifespan,
+            eventDispatcher: $this->eventDispatcher,
         );
         $socialAuthProviderService ??= new SocialAuthProviderService();
         $pendingSocialAccountService ??= new PendingSocialAccountService();
@@ -383,6 +452,7 @@ final class ControllerHarness
                 $this->eventDispatcher,
                 $passwordHasher,
                 $this->config,
+                new PasswordHistoryService($passwordHasher, $this->config),
             ),
         );
         $socialNetworkAccountConnectService ??= new UserSocialAccountConnectService();
@@ -395,6 +465,7 @@ final class ControllerHarness
                 $this->config->appName,
             ),
         );
+        $backupCodeService ??= new BackupCodeService($passwordHasher);
 
         return new SessionController(
             translator: $translator,
@@ -416,6 +487,7 @@ final class ControllerHarness
             hydrator: $hydrator,
             twoFactorEmailCodeService: $twoFactorEmailCodeService,
             flash: $flash,
+            backupCodeService: $backupCodeService,
         );
     }
 
@@ -446,6 +518,7 @@ final class ControllerHarness
         FlashInterface $flash,
         ?QrCodeUriGeneratorService $twoFactorQrCodeService = null,
         ?EmailCodeGeneratorService $twoFactorEmailCodeService = null,
+        ?BackupCodeService $backupCodeService = null,
     ): TwoFactorController {
         $twoFactorQrCodeService ??= new QrCodeUriGeneratorService($this->config);
         $twoFactorEmailCodeService ??= new EmailCodeGeneratorService(
@@ -457,6 +530,7 @@ final class ControllerHarness
                 $this->config->appName,
             ),
         );
+        $backupCodeService ??= new BackupCodeService(new PasswordHasher());
 
         return new TwoFactorController(
             translator: $translator,
@@ -468,6 +542,7 @@ final class ControllerHarness
             twoFactorQrCodeService: $twoFactorQrCodeService,
             twoFactorEmailCodeService: $twoFactorEmailCodeService,
             flash: $flash,
+            backupCodeService: $backupCodeService,
         );
     }
 
@@ -489,9 +564,13 @@ final class ControllerHarness
         ?SwitchIdentityService $switchIdentityService = null,
         ?UpdateAssignmentsService $updateAssignmentsService = null,
         ?AuthHelper $authHelper = null,
+        ?PasswordHistoryService $passwordHistoryService = null,
+        ?AuditLogService $auditLogService = null,
     ): UserController {
         $passwordHasher ??= new PasswordHasher();
         $passwordGenerator ??= $this->createPasswordGenerator();
+        $passwordHistoryService ??= new PasswordHistoryService($passwordHasher, $this->config);
+        $auditLogService ??= new AuditLogService($this->config);
         $createService ??= new CreateService();
         $expireService ??= new ExpireService($this->config);
         $authHelper ??= $this->createAuthHelper($currentUser);
@@ -534,6 +613,8 @@ final class ControllerHarness
             itemsStorage: $this->itemsStorage,
             assignmentsStorage: $this->assignmentsStorage,
             flash: $flash,
+            passwordHistoryService: $passwordHistoryService,
+            auditLogService: $auditLogService,
         );
     }
 

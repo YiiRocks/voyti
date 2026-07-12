@@ -167,7 +167,8 @@ final class PasswordResetControllerTest extends TestCase
                 'newpass123',
                 $this->callback(static fn (User $u): bool => $u->getId() === $user->getId()),
                 $this->callback(static fn (UserToken $t): bool => $t->getCode() === 'valid'),
-            );
+            )
+            ->willReturn(true);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
@@ -208,6 +209,31 @@ final class PasswordResetControllerTest extends TestCase
         $result2 = $controller->confirm($request, (int) $user->getId(), 'valid');
 
         $this->assertSame($response, $result2);
+    }
+
+    public function testResetPostWithPreviouslyUsedPasswordShowsError(): void
+    {
+        $user = $this->createUser();
+        $this->createRecoveryToken((int) $user->getId(), 'valid', time());
+
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['recovery' => ['password' => 'newpass123', 'passwordRepeat' => 'newpass123']]);
+
+        $this->validator->method('validate')->willReturn(new Result());
+        $this->resetService->expects($this->once())->method('run')->willReturn(false);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('password-reset/confirm', $this->callback(
+                static fn (array $params): bool => $params['errors'] !== [],
+            ))
+            ->willReturn($response);
+
+        $result = $controller->confirm($request, (int) $user->getId(), 'valid');
+
+        $this->assertSame($response, $result);
     }
 
     public function testResetWithDisabledConfigShowsMessage(): void

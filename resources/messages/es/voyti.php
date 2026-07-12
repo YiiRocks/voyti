@@ -26,6 +26,7 @@ return [
     'voyti.recovery.reset_disabled' => 'El restablecimiento de contraseña está deshabilitado',
     'voyti.recovery.link_invalid' => 'El enlace de recuperación no es válido o ha caducado',
     'voyti.recovery.password_changed' => 'La contraseña ha sido cambiada',
+    'voyti.recovery.password_previously_used' => 'Esta contraseña se ha usado recientemente. Por favor, elija una diferente.',
 
     // SettingsController
     'voyti.settings.not_authenticated' => 'No autenticado',
@@ -41,6 +42,10 @@ return [
     'voyti.settings.network_not_found' => 'Red no encontrada',
     'voyti.settings.two_factor_enabled' => 'La autenticación de dos factores ha sido habilitada',
     'voyti.settings.two_factor_disabled' => 'La autenticación de dos factores ha sido deshabilitada',
+    'voyti.settings.session_history_disabled' => 'El historial de sesiones está deshabilitado',
+    'voyti.settings.session_not_found' => 'Sesión no encontrada',
+    'voyti.settings.session_terminated' => 'La sesión ha sido cerrada',
+    'voyti.settings.password_previously_used' => 'Esta contraseña se ha usado recientemente. Por favor, elija una diferente.',
 
     // ProfileController
     'voyti.userProfile.forbidden' => 'Prohibido',
@@ -59,6 +64,7 @@ return [
     'voyti.admin.user_status_changed' => 'El estado del usuario ha sido actualizado',
     'voyti.admin.user_created' => 'El usuario ha sido creado',
     'voyti.admin.account_updated' => 'La cuenta ha sido actualizada',
+    'voyti.admin.password_previously_used' => 'Esta contraseña se ha usado recientemente. Por favor, elija una diferente.',
     'voyti.admin.switch_identity_success' => 'Ahora ha iniciado sesión como este usuario',
     'voyti.admin.switch_identity_restored' => 'Se ha restaurado su identidad original',
 
@@ -77,6 +83,7 @@ return [
     'voyti.api.not_found' => 'No encontrado',
     'voyti.api.user_created' => 'Usuario creado',
     'voyti.api.user_updated' => 'Usuario actualizado',
+    'voyti.api.password_previously_used' => 'Esta contraseña se ha usado recientemente. Por favor, elija una diferente.',
     'voyti.api.user_deleted' => 'Usuario eliminado',
 
     // PasswordRecoveryService
@@ -119,6 +126,7 @@ return [
     'voyti.menu.userProfile' => 'Perfil',
     'voyti.menu.account' => 'Cuenta',
     'voyti.menu.networks' => 'Redes',
+    'voyti.menu.sessions' => 'Sesiones',
     'voyti.menu.two_factor' => 'Autenticación de dos factores',
     'voyti.menu.logout' => 'Cerrar sesión',
 
@@ -151,6 +159,13 @@ return [
     'voyti.view.two_factor.renew_error' => 'No se pudo generar una nueva clave. Inténtelo de nuevo.',
     'voyti.view.two_factor.loading' => 'Cargando…',
     'voyti.view.two_factor.already_enabled' => 'La autenticación de dos factores ya está habilitada.',
+    'voyti.view.two_factor.backup_codes_title' => 'Códigos de respaldo',
+    'voyti.view.two_factor.backup_codes_intro' => 'Guarde estos códigos de respaldo de un solo uso en un lugar seguro. Cada uno se puede usar una vez para iniciar sesión si pierde el acceso a su autenticador o correo electrónico.',
+    'voyti.view.two_factor.backup_codes_continue' => 'Continuar',
+    'voyti.view.two_factor.backup_code_hint' => '¿Perdió el acceso a su dispositivo o correo electrónico? Puede introducir uno de sus códigos de respaldo en su lugar.',
+    'voyti.view.two_factor.regenerate_backup_codes' => 'Regenerar códigos de respaldo',
+    'voyti.view.two_factor.regenerate_backup_codes_intro' => 'Generar un nuevo conjunto de códigos de respaldo invalida todos los existentes. Introduzca su código de verificación actual o un código de respaldo para confirmar.',
+    'voyti.view.two_factor.no_backup_codes_remaining' => 'No le quedan códigos de respaldo. Genere un nuevo conjunto para asegurarse de poder recuperar el acceso si pierde su dispositivo.',
     'voyti.view.two_factor_email.title' => 'Autenticación de dos factores por correo electrónico',
     'voyti.view.two_factor_email.button_label' => 'Correo electrónico',
     'voyti.view.two_factor_email.method_name' => 'correo electrónico',
@@ -244,6 +259,12 @@ return [
     'voyti.view.role.create_title' => 'Crear rol',
     'voyti.view.role.create_link' => 'Crear rol',
     'voyti.view.role.update_title' => 'Actualizar rol: {name}',
+    'voyti.view.audit_log.title' => 'Registro de auditoría',
+    'voyti.view.audit_log.created_header' => 'Cuándo',
+    'voyti.view.audit_log.actor_header' => 'Actor',
+    'voyti.view.audit_log.action_header' => 'Acción',
+    'voyti.view.audit_log.target_header' => 'Objetivo',
+    'voyti.view.audit_log.context_header' => 'Detalles',
 
     // Assignments
     'voyti.view.assignments.assigned' => 'Asignado',
@@ -256,6 +277,9 @@ return [
     'voyti.view.session_history.ip' => 'Dirección IP',
     'voyti.view.session_history.user_agent' => 'Agente de usuario',
     'voyti.view.session_history.created' => 'Creado',
+    'voyti.view.sessions.title' => 'Sesiones activas',
+    'voyti.view.sessions.this_device' => 'Este dispositivo',
+    'voyti.view.sessions.none' => 'No hay sesiones activas.',
 
     // Pagination
     'voyti.view.filter_button' => 'Filtrar',

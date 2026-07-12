@@ -18,20 +18,23 @@ final readonly class ResetService
         private PasswordHasher $passwordHasher,
         private ModuleConfig $config,
         private EventDispatcherInterface $eventDispatcher,
+        private PasswordHistoryService $passwordHistoryService,
     ) {
     }
 
-    /**
-     * @return true
-     */
     public function run(string $password, User $user, ?UserToken $userToken = null): bool
     {
+        if ($this->passwordHistoryService->wasUsedRecently($user, $password)) {
+            return false;
+        }
+
         $this->eventDispatcher->dispatch(new UserEvent($user));
 
         $user->setPasswordHash($this->passwordHasher->hash($password));
         $user->setPasswordChangedAt(time());
         $user->setUpdatedAt(time());
         $user->save();
+        $this->passwordHistoryService->record($user);
         $result = true;
 
         $this->handleToken($userToken);

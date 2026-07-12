@@ -14,6 +14,7 @@ use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Model\Form\Rbac\AbstractAuthItemForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Service\AuditLogService;
 use Yiisoft\Http\Method;
 use Yiisoft\Rbac\AssignmentsStorageInterface;
 use Yiisoft\Rbac\Item;
@@ -24,6 +25,7 @@ use Yiisoft\Rbac\Role;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\User\CurrentUser;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
@@ -44,6 +46,8 @@ abstract readonly class AbstractAuthItemController
         protected AssignmentsStorageInterface $assignmentsStorage,
         protected FlashInterface $flash,
         protected ModuleConfig $config,
+        protected AuditLogService $auditLogService,
+        protected CurrentUser $currentUser,
     ) {
     }
 
@@ -77,6 +81,12 @@ abstract readonly class AbstractAuthItemController
                     }
                 }
 
+                $this->auditLogService->log(
+                    $this->actorId(),
+                    'rbac.' . $this->getItemType() . '.create',
+                    targetName: $form->name,
+                );
+
                 return $this->redirectWithFlash(
                     $this->url->generate('voyti/' . $this->getIndexRouteName()),
                     'voyti.auth_item.created',
@@ -97,6 +107,12 @@ abstract readonly class AbstractAuthItemController
         $this->getItemType() === 'role'
             ? $this->managerInterface->removeRole($name)
             : $this->managerInterface->removePermission($name);
+
+        $this->auditLogService->log(
+            $this->actorId(),
+            'rbac.' . $this->getItemType() . '.delete',
+            targetName: $name,
+        );
 
         return $this->redirectWithFlash(
             $this->url->generate('voyti/' . $this->getIndexRouteName()),
@@ -200,6 +216,13 @@ abstract readonly class AbstractAuthItemController
 
                 $this->processUserAssignments($body, $form->name);
 
+                $this->auditLogService->log(
+                    $this->actorId(),
+                    'rbac.' . $this->getItemType() . '.update',
+                    targetName: $form->name,
+                    context: ['previousName' => $oldName],
+                );
+
                 return $this->redirectWithFlash(
                     $this->url->generate('voyti/' . $this->getIndexRouteName()),
                     'voyti.auth_item.updated',
@@ -221,6 +244,12 @@ abstract readonly class AbstractAuthItemController
     abstract protected function getIndexRouteName(): string;
 
     abstract protected function getItemType(): string;
+
+    private function actorId(): ?int
+    {
+        $identity = $this->currentUser->getIdentity();
+        return $identity instanceof User ? $identity->getIdOrZero() : null;
+    }
 
     /**
      * @return list<User>

@@ -35,7 +35,7 @@ Ported from [2amigos/yii2-usuario](https://github.com/2amigos/yii2-usuario) and 
 - **User Management** — Registration, email confirmation, login/logout with remember-me, password recovery, password expiration
 - **Profile Management** — User profiles with gravatar, timezone, bio, and a personal website link
 - **Social Authentication** — Various built-in auth clients as [listed below](#social-authentication)
-- **Two-Factor Authentication** — TOTP (authenticator app) and email 2FA with enforced-per-permission support
+- **Two-Factor Authentication** — TOTP (authenticator app) and email 2FA with enforced-per-permission support, plus one-time backup codes for account recovery
 - **RBAC Management** — Full admin UI for roles, permissions, and rules with parent-child hierarchy, assignment management, and filtering
 - **Identity Switching** — Admins can temporarily switch into another user's identity for support or debugging, then restore their own session with one click
 - **Session Management** — Session history tracking and termination
@@ -83,8 +83,9 @@ enabled in your console app, run:
 ```
 
 One migration creates the `user`, `user_profile`, `user_social_account`,
-`user_token`, and `user_session_history` tables with all columns (2FA, GDPR,
-password expiration, last login IP, etc.) included.
+`user_token`, `user_session_history`, `user_backup_code`, `user_password_history`,
+and `audit_log` tables with all columns (2FA, GDPR, password expiration, last
+login IP, etc.) included.
 
 ### 3. Register routes
 
@@ -229,8 +230,10 @@ Below are all top-level `yiirocks/voyti` options, followed by the nested `social
 | `enablePasswordExpiration` | `bool` | `false` | Enable password expiration |
 | `maxPasswordAge` | `?int` | `null` | Max password age in days |
 | `enablePasswordComplexity` | `bool` | `false` | Require passwords to contain an uppercase letter, a lowercase letter, a digit, and a special character |
+| `passwordHistoryLimit` | `int` | `10` | Number of previous passwords remembered per user to prevent reuse. Only enforced when `enablePasswordExpiration` is `true` — there is no separate toggle |
 | `administratorPermissionName` | `?string` | `'admin'` | Permission/role name granting admin access |
 | `profileVisibility` | `ProfileVisibility` | `ProfileVisibility::USERS` | Profile visibility: `OWNER` = owner only, `ADMIN` = owner + admins, `USERS` = any authenticated user, `PUBLIC` = public |
+| `enableAuditLog` | `bool` | `true` | Record admin actions (RBAC and user management changes) to the `audit_log` table, viewable at `admin/audit-log/` |
 
 ### Views & Mail
 
@@ -397,6 +400,8 @@ The library does not provide a menu model or navigation contract. It only expose
 | `voyti/account-confirm` | `GET` | `settings/confirm/{code}` | Confirm account changes |
 | `voyti/social-network` | `GET` | `settings/networks/` | Linked social networks |
 | `voyti/social-network-delete` | `POST` | `settings/networks/disconnect/{id}` | Disconnect social account |
+| `voyti/account-sessions` | `GET` | `settings/sessions/` | Self-service session/device list, current device highlighted |
+| `voyti/account-sessions-terminate` | `POST` | `settings/sessions/terminate/{sessionId}` | Terminate one of the current user's own sessions |
 | `voyti/privacy` | `GET` | `settings/privacy/` | Privacy settings. Only registered when `enableGdprCompliance` or `allowAccountDelete` is `true` |
 | `voyti/privacy-gdpr-consent` | `GET`, `POST` | `settings/privacy/gdpr-consent` | GDPR consent. Only registered when `enableGdprCompliance` is `true` |
 | `voyti/privacy-export` | `GET` | `settings/privacy/export` | Export user data. Only registered when `enableGdprCompliance` is `true` |
@@ -410,6 +415,7 @@ The library does not provide a menu model or navigation contract. It only expose
 | `voyti/two-factor-disable-send-code` | `POST` | `settings/two-factor/disable/send-code` | Send the disable-2FA one-time code. Only registered when `enableTwoFactorAuthentication` is `true` |
 | `voyti/two-factor-renew` | `POST` | `settings/two-factor-google/renew` | Regenerate the Google Authenticator secret/QR code via AJAX. Only registered when `enableTwoFactorAuthentication` is `true` |
 | `voyti/two-factor-send-email-code` | `POST` | `settings/two-factor-email/send-code` | Send the email 2FA one-time code after explicit confirmation. Only registered when `enableTwoFactorAuthentication` is `true` |
+| `voyti/two-factor-regenerate-backup-codes` | `POST` | `settings/two-factor/backup-codes/regenerate` | Invalidate existing backup codes and generate a fresh set (requires re-verifying the current 2FA method). Only registered when `enableTwoFactorAuthentication` is `true` |
 | `voyti/admin` | `GET` | `admin/` | Redirects to the admin user dashboard |
 | `voyti/admin-users` | `GET` | `admin/users/` | User dashboard |
 | `voyti/admin-users-create` | `GET`, `POST` | `admin/users/create` | Create user |
@@ -438,6 +444,7 @@ The library does not provide a menu model or navigation contract. It only expose
 | `voyti/admin-rbac-rules-create` | `GET`, `POST` | `admin/rbac/rules/create` | Create rule |
 | `voyti/admin-rbac-rules-update` | `GET`, `POST` | `admin/rbac/rules/update/{name}` | Update rule |
 | `voyti/admin-rbac-rules-delete` | `POST` | `admin/rbac/rules/delete/{name}` | Delete rule |
+| `voyti/admin-audit-log` | `GET` | `admin/audit-log/` | Audit log of admin actions (RBAC and user management changes). Populated when `enableAuditLog` is `true` |
 
 ## Events & Listeners
 

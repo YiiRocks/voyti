@@ -24,6 +24,7 @@ return [
     'voyti.recovery.reset_disabled' => 'Сброс пароля отключён',
     'voyti.recovery.link_invalid' => 'Ссылка восстановления недействительна или истекла',
     'voyti.recovery.password_changed' => 'Пароль изменён',
+    'voyti.recovery.password_previously_used' => 'Этот пароль недавно уже использовался. Пожалуйста, выберите другой.',
 
     // SettingsController
     'voyti.settings.not_authenticated' => 'Не аутентифицирован',
@@ -39,6 +40,10 @@ return [
     'voyti.settings.network_not_found' => 'Сеть не найдена',
     'voyti.settings.two_factor_enabled' => 'Двухфакторная аутентификация включена',
     'voyti.settings.two_factor_disabled' => 'Двухфакторная аутентификация отключена',
+    'voyti.settings.session_history_disabled' => 'История сеансов отключена',
+    'voyti.settings.session_not_found' => 'Сеанс не найден',
+    'voyti.settings.session_terminated' => 'Сеанс завершён',
+    'voyti.settings.password_previously_used' => 'Этот пароль недавно уже использовался. Пожалуйста, выберите другой.',
 
     // ProfileController
     'voyti.userProfile.forbidden' => 'Доступ запрещён',
@@ -57,6 +62,7 @@ return [
     'voyti.admin.user_status_changed' => 'Статус пользователя обновлён',
     'voyti.admin.user_created' => 'Пользователь создан',
     'voyti.admin.account_updated' => 'Аккаунт обновлён',
+    'voyti.admin.password_previously_used' => 'Этот пароль недавно уже использовался. Пожалуйста, выберите другой.',
 
     // RuleController
     'voyti.rule.added' => 'Правило авторизации добавлено',
@@ -73,6 +79,7 @@ return [
     'voyti.api.not_found' => 'Не найдено',
     'voyti.api.user_created' => 'Пользователь создан',
     'voyti.api.user_updated' => 'Пользователь обновлён',
+    'voyti.api.password_previously_used' => 'Этот пароль недавно уже использовался. Пожалуйста, выберите другой.',
     'voyti.api.user_deleted' => 'Пользователь удалён',
 
     // PasswordRecoveryService
@@ -115,6 +122,7 @@ return [
     'voyti.menu.userProfile' => 'Профиль',
     'voyti.menu.account' => 'Аккаунт',
     'voyti.menu.networks' => 'Сети',
+    'voyti.menu.sessions' => 'Сеансы',
     'voyti.menu.two_factor' => '2FA',
     'voyti.menu.logout' => 'Выйти',
 
@@ -147,6 +155,13 @@ return [
     'voyti.view.two_factor.renew_error' => 'Не удалось создать новый ключ. Пожалуйста, попробуйте снова.',
     'voyti.view.two_factor.loading' => 'Загрузка…',
     'voyti.view.two_factor.already_enabled' => 'Двухфакторная аутентификация уже включена.',
+    'voyti.view.two_factor.backup_codes_title' => 'Резервные коды',
+    'voyti.view.two_factor.backup_codes_intro' => 'Сохраните эти одноразовые резервные коды в надёжном месте. Каждый код можно использовать один раз для входа, если вы потеряете доступ к своему аутентификатору или почте.',
+    'voyti.view.two_factor.backup_codes_continue' => 'Продолжить',
+    'voyti.view.two_factor.backup_code_hint' => 'Потеряли доступ к устройству или почте? Вы можете ввести один из резервных кодов вместо обычного.',
+    'voyti.view.two_factor.regenerate_backup_codes' => 'Обновить резервные коды',
+    'voyti.view.two_factor.regenerate_backup_codes_intro' => 'При создании нового набора резервных кодов все существующие коды становятся недействительными. Введите текущий код подтверждения или резервный код, чтобы продолжить.',
+    'voyti.view.two_factor.no_backup_codes_remaining' => 'У вас не осталось резервных кодов. Создайте новый набор, чтобы сохранить возможность восстановить доступ при потере устройства.',
     'voyti.view.two_factor_email.title' => 'Двухфакторная аутентификация по email',
     'voyti.view.two_factor_email.button_label' => 'Email',
     'voyti.view.two_factor_email.method_name' => 'email',
@@ -237,6 +252,12 @@ return [
     'voyti.view.role.create_title' => 'Создание роли',
     'voyti.view.role.create_link' => 'Создать роль',
     'voyti.view.role.update_title' => 'Редактирование роли: {name}',
+    'voyti.view.audit_log.title' => 'Журнал аудита',
+    'voyti.view.audit_log.created_header' => 'Когда',
+    'voyti.view.audit_log.actor_header' => 'Инициатор',
+    'voyti.view.audit_log.action_header' => 'Действие',
+    'voyti.view.audit_log.target_header' => 'Цель',
+    'voyti.view.audit_log.context_header' => 'Детали',
 
     // Assignments
     'voyti.view.assignments.assigned' => 'Назначено',
@@ -249,6 +270,9 @@ return [
     'voyti.view.session_history.ip' => 'IP-адрес',
     'voyti.view.session_history.user_agent' => 'User agent',
     'voyti.view.session_history.created' => 'Создано',
+    'voyti.view.sessions.title' => 'Активные сеансы',
+    'voyti.view.sessions.this_device' => 'Это устройство',
+    'voyti.view.sessions.none' => 'Нет активных сеансов.',
 
     // Pagination
     'voyti.view.filter_button' => 'Фильтр',

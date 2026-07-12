@@ -1,0 +1,91 @@
+<?php
+
+declare(strict_types=1);
+
+namespace YiiRocks\Voyti\Model;
+
+use Yiisoft\ActiveRecord\ActiveRecord;
+use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
+
+final class UserBackupCode extends ActiveRecord
+{
+    use PrivatePropertiesTrait;
+
+    private string $code_hash = '';
+    private int $created_at = 0;
+    private ?int $used_at = null;
+    private int $user_id = 0;
+
+    public static function deleteAllByUserId(int $userId): void
+    {
+        (new self())->deleteAll(['user_id' => $userId]);
+    }
+
+    /**
+     * @psalm-return list<UserBackupCode>
+     */
+    public static function findUnusedByUserId(int $userId): array
+    {
+        /** @var list<UserBackupCode> $codes */
+        $codes = self::query()->where(['user_id' => $userId, 'used_at' => null])->all();
+        return $codes;
+    }
+
+    public function getCodeHash(): string
+    {
+        return $this->code_hash;
+    }
+
+    public function getCreatedAt(): int
+    {
+        return $this->created_at;
+    }
+
+    public function getUsedAt(): ?int
+    {
+        return $this->used_at;
+    }
+
+    public function getUserId(): int
+    {
+        return $this->user_id;
+    }
+
+    /**
+     * @psalm-return list{'user_id', 'code_hash'}
+     */
+    #[\Override]
+    public function primaryKey(): array
+    {
+        return ['user_id', 'code_hash'];
+    }
+
+    public function setCodeHash(string $codeHash): void
+    {
+        $this->code_hash = $codeHash;
+    }
+
+    public function setCreatedAt(int $createdAt): void
+    {
+        $this->created_at = $createdAt;
+    }
+
+    public function setUsedAt(?int $usedAt): void
+    {
+        $this->used_at = $usedAt;
+    }
+
+    public function setUserId(int $userId): void
+    {
+        $this->user_id = $userId;
+    }
+
+    /**
+     * @psalm-return '{{%user_backup_code}}'
+     */
+    #[\Override]
+    public function tableName(): string
+    {
+        return '{{%user_backup_code}}';
+    }
+}

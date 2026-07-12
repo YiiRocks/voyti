@@ -24,6 +24,7 @@ use YiiRocks\Voyti\Service\Auth\SocialAuthProviderService;
 use YiiRocks\Voyti\Service\Auth\UserSocialAccountConnectService;
 use YiiRocks\Voyti\Service\Auth\UserSocialAuthenticateService;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
+use YiiRocks\Voyti\Service\TwoFactor\BackupCodeService;
 use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
 use YiiRocks\Voyti\Validator\TwoFactor\CodeValidator;
 use YiiRocks\Voyti\Validator\TwoFactor\EmailValidator;
@@ -68,6 +69,7 @@ final readonly class SessionController
         private HydratorInterface $hydrator,
         private EmailCodeGeneratorService $twoFactorEmailCodeService,
         private FlashInterface $flash,
+        private BackupCodeService $backupCodeService,
     ) {
     }
 
@@ -147,6 +149,10 @@ final readonly class SessionController
                     $codeValidator->setTranslator($this->translator);
                     $isValid = $codeValidator->validate();
                     $errorMessage = $codeValidator->getErrorMessage();
+                }
+
+                if (!$isValid) {
+                    $isValid = $this->backupCodeService->consume($user, $code);
                 }
 
                 if ($isValid) {

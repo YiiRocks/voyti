@@ -776,6 +776,41 @@ final class UserControllerTest extends TestCase
         $this->assertNotNull($updated->getPasswordChangedAt());
     }
 
+    public function testUpdatePostWithPreviouslyUsedPasswordShowsError(): void
+    {
+        $this->config = new ModuleConfig(enablePasswordExpiration: true);
+        $this->harness = new ControllerHarness($this->config);
+
+        $user = new User();
+        $user->setUsername('testuser');
+        $user->setEmail('testuser@example.com');
+        $user->setPasswordHash($this->passwordHasher->hash('originalpass'));
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $user->save();
+        $userId = (int) $user->getId();
+
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['user' => ['username' => 'updated', 'email' => 'updated@example.com', 'password' => 'originalpass'], 'assignedItems' => []]);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('admin/user/_account', $this->callback(
+                static fn (array $params): bool => $params['errors'] !== [],
+            ))
+            ->willReturn($response);
+
+        $result = $controller->update($request, $userId);
+
+        $this->assertSame($response, $result);
+        $updated = User::findById($userId);
+        $this->assertNotNull($updated);
+        $this->assertSame('testuser', $updated->getUsername());
+    }
+
     public function testUpdateProfileGetCreatesNewProfileWhenNoneExists(): void
     {
         $user = $this->createUser();

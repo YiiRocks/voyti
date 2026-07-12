@@ -88,6 +88,8 @@ $settingsRoutes = [
     Route::get('confirm/{code}')->name('voyti/account-confirm')->action([Controller\Account\AccountController::class, 'confirm']),
     Route::get('networks/')->name('voyti/social-network')->action([Controller\SocialNetwork\SocialNetworkController::class, 'index']),
     Route::post('networks/disconnect/{id:\d+}')->name('voyti/social-network-delete')->action([Controller\SocialNetwork\SocialNetworkController::class, 'delete']),
+    Route::get('sessions/')->name('voyti/account-sessions')->action([Controller\Account\SessionController::class, 'index']),
+    Route::post('sessions/terminate/{sessionId}')->name('voyti/account-sessions-terminate')->action([Controller\Account\SessionController::class, 'terminate']),
 ];
 
 if ($moduleConfig->enableGdprCompliance || $moduleConfig->allowAccountDelete) {
@@ -113,6 +115,7 @@ if ($moduleConfig->enableTwoFactorAuthentication) {
     $settingsRoutes[] = Route::post('two-factor/disable/send-code')->name('voyti/two-factor-disable-send-code')->action([Controller\TwoFactor\TwoFactorController::class, 'disableSendCode']);
     $settingsRoutes[] = Route::post('two-factor-google/renew')->name('voyti/two-factor-renew')->action([Controller\TwoFactor\TwoFactorController::class, 'renew']);
     $settingsRoutes[] = Route::post('two-factor-email/send-code')->name('voyti/two-factor-send-email-code')->action([Controller\TwoFactor\TwoFactorController::class, 'sendEmailCode']);
+    $settingsRoutes[] = Route::post('two-factor/backup-codes/regenerate')->name('voyti/two-factor-regenerate-backup-codes')->action([Controller\TwoFactor\TwoFactorController::class, 'regenerateBackupCodes']);
 }
 
 $routes = [
@@ -135,6 +138,9 @@ $routes = [
                 ->action(fn (Redirect $redirect) => $redirect->toRoute('voyti/admin-users')->temporary()),
             Group::create('users/')->routes(...$userRoutes),
             Group::create('rbac/')->routes(...$rbacRoutes),
+            Group::create('audit-log/')->routes(
+                Route::get('')->name('voyti/admin-audit-log')->action([Controller\Admin\AuditLog\AuditLogController::class, 'index']),
+            ),
         ),
 ];
 

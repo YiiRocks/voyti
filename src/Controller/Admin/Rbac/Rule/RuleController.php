@@ -12,12 +12,15 @@ use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Model\Form\Rbac\RuleForm;
+use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Service\AuditLogService;
 use YiiRocks\Voyti\Service\Rbac\RuleEditionService;
 use Yiisoft\Http\Method;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\User\CurrentUser;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
@@ -37,6 +40,8 @@ final readonly class RuleController
         private ResponseFactoryInterface $responseFactory,
         private FlashInterface $flash,
         private ModuleConfig $config,
+        private AuditLogService $auditLogService,
+        private CurrentUser $currentUser,
     ) {
     }
 
@@ -55,6 +60,8 @@ final readonly class RuleController
 
             if ($result->isValid()) {
                 if ($this->authRuleEditionService->create($form)) {
+                    $this->auditLogService->log($this->actorId(), 'rbac.rule.create', targetName: $form->name);
+
                     return $this->redirectWithFlash($this->url->generate('voyti/admin-rbac-rules'), 'voyti.rule.added');
                 }
                 $errors['class'] = [$this->translator->translate('voyti.rule.invalid_class', category: 'voyti')];
@@ -72,6 +79,7 @@ final readonly class RuleController
     public function delete(string $name): ResponseInterface
     {
         $this->authRuleEditionService->remove($name);
+        $this->auditLogService->log($this->actorId(), 'rbac.rule.delete', targetName: $name);
 
         return $this->redirectWithFlash($this->url->generate('voyti/admin-rbac-rules'), 'voyti.rule.deleted');
     }
@@ -105,6 +113,13 @@ final readonly class RuleController
 
             if ($result->isValid()) {
                 if ($this->authRuleEditionService->update($form)) {
+                    $this->auditLogService->log(
+                        $this->actorId(),
+                        'rbac.rule.update',
+                        targetName: $form->name,
+                        context: ['previousName' => $name],
+                    );
+
                     return $this->redirectWithFlash($this->url->generate('voyti/admin-rbac-rules'), 'voyti.rule.updated');
                 }
                 $errors['class'] = [$this->translator->translate('voyti.rule.invalid_class', category: 'voyti')];
@@ -119,4 +134,9 @@ final readonly class RuleController
         ]);
     }
 
+    private function actorId(): ?int
+    {
+        $identity = $this->currentUser->getIdentity();
+        return $identity instanceof User ? $identity->getIdOrZero() : null;
+    }
 }

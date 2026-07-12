@@ -201,6 +201,50 @@ final class AccountControllerTest extends TestCase
         $this->assertNotNull($updated->getPasswordChangedAt());
     }
 
+    public function testAccountPostWithPreviouslyUsedPasswordShowsError(): void
+    {
+        $this->config = new ModuleConfig(enablePasswordExpiration: true);
+        $this->harness = new ControllerHarness($this->config);
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['settings' => ['username' => 'testuser', 'email' => 'test@example.com', 'password' => 'secret', 'passwordRepeat' => 'secret']]);
+
+        $this->hydrator->method('hydrate')->willReturnCallback(
+            function (object $object, array $data = []): void {
+                if (property_exists($object, 'password') && isset($data['password'])) {
+                    $object->password = $data['password'];
+                }
+                if (property_exists($object, 'passwordRepeat') && isset($data['passwordRepeat'])) {
+                    $object->passwordRepeat = $data['passwordRepeat'];
+                }
+                if (property_exists($object, 'username') && isset($data['username'])) {
+                    $object->username = $data['username'];
+                }
+                if (property_exists($object, 'email') && isset($data['email'])) {
+                    $object->email = $data['email'];
+                }
+            },
+        );
+        $this->validator->method('validate')->willReturn(new Result());
+        $user = $this->createUser(password: 'secret');
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn((string) $user->getId());
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('account/update', $this->anything())
+            ->willReturn($response);
+
+        $result = $controller->update($request);
+
+        $this->assertSame($response, $result);
+        $updated = User::findById((int) $user->getId());
+        $this->assertNotNull($updated);
+        $this->assertSame('testuser', $updated->getUsername());
+    }
+
     public function testAccountWhenGuestShowsError(): void
     {
         $controller = $this->createController();

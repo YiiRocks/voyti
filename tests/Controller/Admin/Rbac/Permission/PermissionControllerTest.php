@@ -6,15 +6,18 @@ namespace YiiRocks\Voyti\tests\Controller\Admin\Rbac\Permission;
 
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\MockObject\MockObject;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use RuntimeException;
 use YiiRocks\Voyti\Controller\Admin\Rbac\Permission\PermissionController;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Service\AuditLogService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\SimpleItemsStorage;
 use YiiRocks\Voyti\tests\TestCase;
+use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Rbac\AssignmentsStorageInterface;
 use Yiisoft\Rbac\ItemsStorageInterface;
 use Yiisoft\Rbac\Manager;
@@ -22,6 +25,7 @@ use Yiisoft\Rbac\ManagerInterface;
 use Yiisoft\Rbac\Permission;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\User\CurrentUser;
 use Yiisoft\Validator\Result;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
@@ -267,6 +271,11 @@ final class PermissionControllerTest extends TestCase
             assignmentsStorage: $this->assignmentsStorage,
             flash: $this->flash,
             config: $this->config,
+            auditLogService: $this->createMock(AuditLogService::class),
+            currentUser: new CurrentUser(
+                $this->createMock(IdentityRepositoryInterface::class),
+                $this->createMock(EventDispatcherInterface::class),
+            ),
         );
 
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['permission' => ['name' => 'edit-posts', 'description' => '', 'rule' => '', 'children' => ['']]]);

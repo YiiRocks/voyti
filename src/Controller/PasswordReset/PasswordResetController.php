@@ -74,14 +74,17 @@ final readonly class PasswordResetController
             $result = $this->validator->validate($form);
 
             if ($result->isValid()) {
-                $this->resetPasswordService->run($form->password, $user, $userToken);
+                if ($this->resetPasswordService->run($form->password, $user, $userToken)) {
+                    return $this->redirectWithFlash(
+                        $this->url->generate('voyti/session-login'),
+                        'voyti.recovery.password_changed',
+                    );
+                }
 
-                return $this->redirectWithFlash(
-                    $this->url->generate('voyti/session-login'),
-                    'voyti.recovery.password_changed',
-                );
+                $errors = ['password' => [$this->translator->translate('voyti.recovery.password_previously_used', category: 'voyti')]];
+            } else {
+                $errors = $result->getErrorMessages();
             }
-            $errors = $result->getErrorMessages();
         }
 
         return $this->renderView('password-reset/confirm', ['model' => $form, 'errors' => $errors]);

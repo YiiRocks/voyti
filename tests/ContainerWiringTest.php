@@ -11,6 +11,8 @@ use Psr\Http\Client\ClientInterface as PsrClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use Throwable;
+use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 use YiiRocks\Voyti\tests\Support\FakeSession;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
@@ -74,5 +76,28 @@ final class ContainerWiringTest extends TestCase
         }
 
         self::assertSame([], $failures, implode("\n", $failures));
+    }
+
+    /**
+     * Regression test: host applications that haven't wired up a PSR-14
+     * EventDispatcherInterface must still be able to resolve
+     * RememberMeCookieService (it dispatches AfterLoginEvent only when one
+     * is available - see RememberMeCookieService::loginByCookie()).
+     */
+    public function testRememberMeCookieServiceResolvesWithoutEventDispatcherBound(): void
+    {
+        $root = dirname(__DIR__);
+        $params = require $root . '/config/params.php';
+        $diPath = $root . '/config/di.php';
+        $definitions = (static function (array $params) use ($diPath): array {
+            return require $diPath;
+        })($params);
+
+        $container = new Container(ContainerConfig::create()->withDefinitions([
+            ModuleConfig::class => $definitions[ModuleConfig::class],
+            RememberMeCookieService::class => $definitions[RememberMeCookieService::class],
+        ]));
+
+        self::assertInstanceOf(RememberMeCookieService::class, $container->get(RememberMeCookieService::class));
     }
 }

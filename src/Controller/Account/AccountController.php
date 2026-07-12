@@ -14,6 +14,7 @@ use YiiRocks\Voyti\Model\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\EmailChangeService;
+use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Strategy\EmailChangeStrategyFactory;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
@@ -45,6 +46,7 @@ final readonly class AccountController
         private CurrentUser $currentUser,
         private ResponseFactoryInterface $responseFactory,
         private FlashInterface $flash,
+        private PasswordHistoryService $passwordHistoryService,
     ) {
     }
 
@@ -78,7 +80,10 @@ final readonly class AccountController
             $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
             $result = $this->validator->validate($form);
 
-            if ($result->isValid()) {
+            if ($result->isValid() && $form->password !== '' && $this->passwordHistoryService->wasUsedRecently($user, $form->password)) {
+                $form->processValidationResult($result);
+                $form->addError($this->translator->translate('voyti.settings.password_previously_used', category: 'voyti'), ['password']);
+            } elseif ($result->isValid()) {
                 $user->setUsername($form->username);
 
                 if ($form->email !== $user->getEmail()) {
@@ -97,6 +102,10 @@ final readonly class AccountController
 
                 $user->setUpdatedAt(time());
                 $user->save();
+
+                if ($form->password !== '') {
+                    $this->passwordHistoryService->record($user);
+                }
 
                 return $this->redirectWithFlash(
                     $this->url->generate('voyti/account-update'),

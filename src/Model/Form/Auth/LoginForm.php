@@ -9,7 +9,6 @@ use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\Helper\ObjectParser;
-use Yiisoft\Validator\Rule\Integer;
 use Yiisoft\Validator\Rule\Length;
 use Yiisoft\Validator\Rule\Required;
 use Yiisoft\Validator\RulesProviderInterface;
@@ -74,7 +73,10 @@ final class LoginForm extends FormModel implements RulesProviderInterface
         $rules = $parser->getRules();
 
         if ($this->requireTwoFactorAuthenticationCode) {
-            $rules['twoFactorAuthenticationCode'] = [new Required(), new Integer(), new Length(exactly: 6)];
+            // Accepts either a 6-digit TOTP/email code or an alphanumeric backup code
+            // (SessionController::confirm() falls back to BackupCodeService::consume()),
+            // so no format-specific rule can be enforced here beyond presence.
+            $rules['twoFactorAuthenticationCode'] = [new Required()];
         }
 
         $recaptchaRules = RecaptchaHelper::rules($this->config, $this->getFormName());
