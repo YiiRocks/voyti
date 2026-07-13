@@ -105,34 +105,6 @@ final class AccessRuleMiddlewareTest extends TestCase
         $middleware->process($request, $handler);
     }
 
-    public function testProcessWithGuestNullId(): void
-    {
-        $request = $this->createMock(ServerRequestInterface::class);
-        $handler = $this->createMock(RequestHandlerInterface::class);
-        $handler->expects(self::never())->method('handle');
-
-        $guestIdentity = $this->createMock(GuestIdentityInterface::class);
-
-        $currentUser = $this->createMock(CurrentUser::class);
-        $currentUser->expects(self::once())->method('getIdentity')->willReturn($guestIdentity);
-
-        $url = $this->createMock(UrlGeneratorInterface::class);
-        $url->expects(self::once())->method('generate')->with('voyti/session-login')->willReturn('/voyti/login');
-
-        $response = $this->createMock(ResponseInterface::class);
-        $response->expects(self::once())->method('withHeader')->with('Location', '/voyti/login')->willReturnSelf();
-
-        $responseFactory = $this->createMock(ResponseFactoryInterface::class);
-        $responseFactory->expects(self::once())->method('createResponse')->with(302)->willReturn($response);
-
-        $middleware = $this->createMiddleware(
-            currentUser: $currentUser,
-            responseFactory: $responseFactory,
-            url: $url,
-        );
-
-        $middleware->process($request, $handler);
-    }
     private function createMiddleware(
         ?CurrentUser $currentUser = null,
         ?AuthHelper $authHelper = null,

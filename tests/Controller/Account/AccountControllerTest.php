@@ -16,6 +16,7 @@ use YiiRocks\Voyti\Strategy\EmailChangeStrategyFactory;
 use YiiRocks\Voyti\Strategy\NoneEmailChangeStrategy;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Security\PasswordHasher;
@@ -31,6 +32,7 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 final class AccountControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
+    use RedirectResponseMockTrait;
 
     private ModuleConfig $config;
     private CurrentUser&MockObject $currentUser;
@@ -65,6 +67,15 @@ final class AccountControllerTest extends TestCase
     protected function tearDown(): void
     {
         $this->tearDownDatabase();
+    }
+
+    /**
+     * @return iterable<string, array{string, bool, string}>
+     */
+    public static function confirmProvider(): iterable
+    {
+        yield 'invalid code shows failure message' => ['bad-code', false, 'Failed to change email'];
+        yield 'valid code shows success message' => ['good-code', true, 'Your email has been changed'];
     }
 
     public function testAccountGetShowsForm(): void
@@ -102,14 +113,7 @@ final class AccountControllerTest extends TestCase
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->update($request);
 
@@ -183,14 +187,7 @@ final class AccountControllerTest extends TestCase
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->update($request);
 
@@ -303,7 +300,8 @@ final class AccountControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    public function testConfirmWithInvalidCodeShowsFailureMessage(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('confirmProvider')]
+    public function testConfirmWithCodeShowsMessage(string $code, bool $serviceResult, string $expectedTitle): void
     {
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
@@ -314,49 +312,20 @@ final class AccountControllerTest extends TestCase
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
         $this->emailChangeService->expects($this->once())->method('run')->with(
-            'bad-code',
+            $code,
             $this->callback(static fn (User $u): bool => $u->getId() === $user->getId()),
-        )->willReturn(false);
+        )->willReturn($serviceResult);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('shared/message', $this->callback(
-                static fn (array $params): bool => $params['title'] === 'Failed to change email',
+                static fn (array $params): bool => $params['title'] === $expectedTitle,
             ))
             ->willReturn($response);
 
-        $result = $controller->confirm($request, 'bad-code');
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testConfirmWithValidCodeShowsSuccessMessage(): void
-    {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
-        $user = $this->createUser();
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $this->emailChangeService->expects($this->once())->method('run')->with(
-            'good-code',
-            $this->callback(static fn (User $u): bool => $u->getId() === $user->getId()),
-        )->willReturn(true);
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('shared/message', $this->callback(
-                static fn (array $params): bool => $params['title'] === 'Your email has been changed',
-            ))
-            ->willReturn($response);
-
-        $result = $controller->confirm($request, 'good-code');
+        $result = $controller->confirm($request, $code);
 
         $this->assertSame($response, $result);
     }

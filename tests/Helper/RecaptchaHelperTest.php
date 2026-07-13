@@ -30,6 +30,15 @@ final class RecaptchaHelperTest extends TestCase
         RecaptchaRegistry::reset();
     }
 
+    /**
+     * @return iterable<string, array{RecaptchaVersion}>
+     */
+    public static function renderWithMissingSiteKeyProvider(): iterable
+    {
+        yield 'v2' => [RecaptchaVersion::V2];
+        yield 'v3' => [RecaptchaVersion::V3];
+    }
+
     public function testIsAvailableReturnsTrue(): void
     {
         self::assertTrue(RecaptchaHelper::isAvailable());
@@ -72,20 +81,10 @@ final class RecaptchaHelperTest extends TestCase
         self::assertStringNotContainsString('data-sitekey="v2-site-key"', $html);
     }
 
-    public function testRenderWithV2ThrowsMissingSiteKeyException(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('renderWithMissingSiteKeyProvider')]
+    public function testRenderWithMissingSiteKeyThrowsMissingSiteKeyException(RecaptchaVersion $version): void
     {
-        $config = new ModuleConfig(recaptchaVersion: RecaptchaVersion::V2);
-        $form = $this->createMock(FormModelInterface::class);
-        $form->method('getFormName')->willReturn('registerForm');
-
-        $this->expectException(\YiiRocks\Recaptcha\Exception\MissingSiteKeyException::class);
-
-        RecaptchaHelper::render($form, $config);
-    }
-
-    public function testRenderWithV3ThrowsMissingSiteKeyException(): void
-    {
-        $config = new ModuleConfig(recaptchaVersion: RecaptchaVersion::V3);
+        $config = new ModuleConfig(recaptchaVersion: $version);
         $form = $this->createMock(FormModelInterface::class);
         $form->method('getFormName')->willReturn('registerForm');
 

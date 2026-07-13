@@ -31,13 +31,7 @@ final readonly class BothEmailChangeStrategy implements EmailChangeStrategyInter
         assert($user !== null);
         // @codeCoverageIgnoreEnd
 
-        /**
-         * @infection-ignore-all
-         *
-         * getUserId() ?? 0 fallback is unreachable — save() already
-         * ran in the new-email strategy call, guaranteeing a non-null id.
-         */
-        $userToken = $this->tokenFactory->makeConfirmOldMailToken((int) ($user->getId() ?? 0));
+        $userToken = $this->tokenFactory->makeConfirmOldMailToken((int) $user->getId());
 
         if ($this->mailService->sendReconfirmation($user, $userToken)) {
             return true;

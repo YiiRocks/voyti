@@ -71,6 +71,26 @@ final class UserTokenTest extends TestCase
     }
 
     /**
+     * @return iterable<string, array{int, int, int|null, bool}>
+     */
+    public static function getIsExpiredProvider(): iterable
+    {
+        yield 'default lifespan for confirmation boundary' => [86401, UserToken::TYPE_CONFIRMATION, null, true];
+        yield 'default lifespan for confirmation edge case' => [86400, UserToken::TYPE_CONFIRMATION, null, false];
+        yield 'default lifespan for confirmation expired' => [100000, UserToken::TYPE_CONFIRMATION, null, true];
+        yield 'default lifespan for confirmation not expired' => [0, UserToken::TYPE_CONFIRMATION, null, false];
+        yield 'default lifespan for confirm new email' => [100000, UserToken::TYPE_CONFIRM_NEW_EMAIL, null, true];
+        yield 'default lifespan for confirm old email' => [100000, UserToken::TYPE_CONFIRM_OLD_EMAIL, null, true];
+        yield 'default lifespan for recovery boundary' => [21601, UserToken::TYPE_RECOVERY, null, true];
+        yield 'default lifespan for recovery edge case' => [21600, UserToken::TYPE_RECOVERY, null, false];
+        yield 'default lifespan for recovery expired' => [50000, UserToken::TYPE_RECOVERY, null, true];
+        yield 'default lifespan for recovery not expired' => [0, UserToken::TYPE_RECOVERY, null, false];
+        yield 'custom lifespan edge case' => [86400, UserToken::TYPE_CONFIRMATION, 86400, false];
+        yield 'custom lifespan expired' => [100, UserToken::TYPE_CONFIRMATION, 50, true];
+        yield 'custom lifespan not expired' => [0, UserToken::TYPE_CONFIRMATION, 86400, false];
+    }
+
+    /**
      * @return iterable<string, array{string, string, int|string}>
      */
     public static function getterSetterProvider(): iterable
@@ -259,121 +279,14 @@ final class UserTokenTest extends TestCase
         self::assertSame('codeA', $found->getCode());
     }
 
-    public function testGetIsExpiredDefaultLifespanForConfirmationBoundary(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('getIsExpiredProvider')]
+    public function testGetIsExpired(int $offset, int $type, ?int $lifespan, bool $expected): void
     {
         $entity = new UserToken();
-        $entity->setCreatedAt(time() - 86401);
-        $entity->setType(UserToken::TYPE_CONFIRMATION);
+        $entity->setCreatedAt(time() - $offset);
+        $entity->setType($type);
 
-        self::assertTrue($entity->getIsExpired());
-    }
-
-    public function testGetIsExpiredDefaultLifespanForConfirmationEdgeCase(): void
-    {
-        $entity = new UserToken();
-        $entity->setCreatedAt(time() - 86400);
-        $entity->setType(UserToken::TYPE_CONFIRMATION);
-
-        self::assertFalse($entity->getIsExpired());
-    }
-
-    public function testGetIsExpiredDefaultLifespanForConfirmationExpired(): void
-    {
-        $entity = new UserToken();
-        $entity->setCreatedAt(time() - 100000);
-        $entity->setType(UserToken::TYPE_CONFIRMATION);
-
-        self::assertTrue($entity->getIsExpired());
-    }
-
-    public function testGetIsExpiredDefaultLifespanForConfirmationNotExpired(): void
-    {
-        $entity = new UserToken();
-        $entity->setCreatedAt(time());
-        $entity->setType(UserToken::TYPE_CONFIRMATION);
-
-        self::assertFalse($entity->getIsExpired());
-    }
-
-    public function testGetIsExpiredDefaultLifespanForConfirmNewEmail(): void
-    {
-        $entity = new UserToken();
-        $entity->setCreatedAt(time() - 100000);
-        $entity->setType(UserToken::TYPE_CONFIRM_NEW_EMAIL);
-
-        self::assertTrue($entity->getIsExpired());
-    }
-
-    public function testGetIsExpiredDefaultLifespanForConfirmOldEmail(): void
-    {
-        $entity = new UserToken();
-        $entity->setCreatedAt(time() - 100000);
-        $entity->setType(UserToken::TYPE_CONFIRM_OLD_EMAIL);
-
-        self::assertTrue($entity->getIsExpired());
-    }
-
-    public function testGetIsExpiredDefaultLifespanForRecoveryBoundary(): void
-    {
-        $entity = new UserToken();
-        $entity->setCreatedAt(time() - 21601);
-        $entity->setType(UserToken::TYPE_RECOVERY);
-
-        self::assertTrue($entity->getIsExpired());
-    }
-
-    public function testGetIsExpiredDefaultLifespanForRecoveryEdgeCase(): void
-    {
-        $entity = new UserToken();
-        $entity->setCreatedAt(time() - 21600);
-        $entity->setType(UserToken::TYPE_RECOVERY);
-
-        self::assertFalse($entity->getIsExpired());
-    }
-
-    public function testGetIsExpiredDefaultLifespanForRecoveryExpired(): void
-    {
-        $entity = new UserToken();
-        $entity->setCreatedAt(time() - 50000);
-        $entity->setType(UserToken::TYPE_RECOVERY);
-
-        self::assertTrue($entity->getIsExpired());
-    }
-
-    public function testGetIsExpiredDefaultLifespanForRecoveryNotExpired(): void
-    {
-        $entity = new UserToken();
-        $entity->setCreatedAt(time());
-        $entity->setType(UserToken::TYPE_RECOVERY);
-
-        self::assertFalse($entity->getIsExpired());
-    }
-
-    public function testGetIsExpiredWithCustomLifespanEdgeCase(): void
-    {
-        $entity = new UserToken();
-        $entity->setCreatedAt(time() - 86400);
-        $entity->setType(UserToken::TYPE_CONFIRMATION);
-
-        self::assertFalse($entity->getIsExpired(86400));
-    }
-
-    public function testGetIsExpiredWithCustomLifespanExpired(): void
-    {
-        $entity = new UserToken();
-        $entity->setCreatedAt(time() - 100);
-        $entity->setType(UserToken::TYPE_CONFIRMATION);
-
-        self::assertTrue($entity->getIsExpired(50));
-    }
-
-    public function testGetIsExpiredWithCustomLifespanNotExpired(): void
-    {
-        $entity = new UserToken();
-        $entity->setCreatedAt(time());
-        $entity->setType(UserToken::TYPE_CONFIRMATION);
-
-        self::assertFalse($entity->getIsExpired(86400));
+        self::assertSame($expected, $lifespan === null ? $entity->getIsExpired() : $entity->getIsExpired($lifespan));
     }
 
     #[\PHPUnit\Framework\Attributes\DataProvider('getterSetterProvider')]

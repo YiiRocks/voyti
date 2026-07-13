@@ -30,14 +30,7 @@ final class ConfirmUserCommandTest extends TestCase
 
     public function testExecuteByEmail(): void
     {
-        $user = new User();
-        $user->setUsername('testuser');
-        $user->setEmail('test@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(1000);
-        $user->setUpdatedAt(1000);
-        $user->save();
+        $this->createUser();
 
         $input = $this->createMock(InputInterface::class);
         $input->expects(self::exactly(3))->method('getOption')->willReturnMap([
@@ -60,14 +53,7 @@ final class ConfirmUserCommandTest extends TestCase
 
     public function testExecuteById(): void
     {
-        $user = new User();
-        $user->setUsername('testuser');
-        $user->setEmail('test@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(1000);
-        $user->setUpdatedAt(1000);
-        $user->save();
+        $user = $this->createUser();
 
         $input = $this->createMock(InputInterface::class);
         $input->expects(self::exactly(3))->method('getOption')->willReturnMap([
@@ -90,14 +76,7 @@ final class ConfirmUserCommandTest extends TestCase
 
     public function testExecuteByUsername(): void
     {
-        $user = new User();
-        $user->setUsername('testuser');
-        $user->setEmail('test@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(1000);
-        $user->setUpdatedAt(1000);
-        $user->save();
+        $this->createUser();
 
         $input = $this->createMock(InputInterface::class);
         $input->expects(self::exactly(3))->method('getOption')->willReturnMap([
@@ -120,14 +99,7 @@ final class ConfirmUserCommandTest extends TestCase
 
     public function testExecuteConfirmationFails(): void
     {
-        $user = new User();
-        $user->setUsername('testuser');
-        $user->setEmail('test@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(1000);
-        $user->setUpdatedAt(1000);
-        $user->save();
+        $user = $this->createUser();
 
         $input = $this->createMock(InputInterface::class);
         $input->expects(self::exactly(3))->method('getOption')->willReturnMap([
@@ -189,5 +161,19 @@ final class ConfirmUserCommandTest extends TestCase
         return new ConfirmUserCommand(
             $confirmationService ?? $this->createMock(ConfirmationService::class),
         );
+    }
+
+    private function createUser(): User
+    {
+        $user = new User();
+        $user->setUsername('testuser');
+        $user->setEmail('test@example.com');
+        $user->setPasswordHash('hash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(1000);
+        $user->setUpdatedAt(1000);
+        $user->save();
+
+        return $user;
     }
 }

@@ -20,9 +20,9 @@ final class RecaptchaHelper
     {
         /**
          * @infection-ignore-all
-         *
-         * Both classes are always present via composer's autoload (hard
-         * require), so no test can ever make either class_exists() false.
+         * Both classes are always present via composer autoload; no test
+         * can make either class_exists() return false, so negating or &&-merging the
+         * sub-expressions never changes the result.
          */
         return class_exists(RecaptchaV3Field::class)
             || class_exists(RecaptchaV2Field::class);

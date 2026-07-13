@@ -17,6 +17,7 @@ use YiiRocks\Voyti\Service\Password\ResetService;
 use YiiRocks\Voyti\Service\ServiceResult;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -29,6 +30,7 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 final class PasswordResetControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
+    use RedirectResponseMockTrait;
 
     private ModuleConfig $config;
     private FlashInterface&MockObject $flash;
@@ -96,14 +98,7 @@ final class PasswordResetControllerTest extends TestCase
             ->method('run')
             ->willReturn(ServiceResult::success('voyti.recovery.message_sent'));
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->request($request);
 
@@ -170,14 +165,7 @@ final class PasswordResetControllerTest extends TestCase
             )
             ->willReturn(true);
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->confirm($request, (int) $user->getId(), 'valid');
 

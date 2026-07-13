@@ -45,21 +45,9 @@ final class TimezoneHelper
         foreach (DateTimeZone::listIdentifiers() as $timezone) {
             /** @var non-empty-string $timezone */
             $offset = (new DateTimeZone($timezone))->getOffset($now);
-            /**
-             * @infection-ignore-all
-             *
-             * Real timezone offsets are always multiples of 900 (15-min
-             * increments), far too coarse for a 3599 vs 3600 intdiv divisor
-             */
+            /** @infection-ignore-all Real timezone offsets are multiples of 900, so 3599 divisor is behaviourally equivalent to 3600 for every entry in the list. */
             $hours = intdiv($offset, 3600);
-            /**
-             * @infection-ignore-all
-             *
-             * Same reasoning as $hours above for the 3600/60 divisor
-             * constants (real offsets are far too coarse to expose a
-             * 3599/59 boundary difference); the abs() call itself is
-             * covered by testGetAllFormatsNegativeHalfHourOffsetCorrectly().
-             */
+            /** @infection-ignore-all Same domain-level equivalence as above for the modulo and minute divisors. */
             $minutes = abs(intdiv($offset % 3600, 60));
             $gmtOffset = sprintf('GMT%+d:%02d', $hours, $minutes);
             $timezones[$timezone] = "({$gmtOffset}) {$timezone}";

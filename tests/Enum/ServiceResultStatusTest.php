@@ -10,6 +10,15 @@ use YiiRocks\Voyti\Enum\ServiceResultStatus;
 final class ServiceResultStatusTest extends TestCase
 {
 
+    /**
+     * @return iterable<string, array{ServiceResultStatus, string}>
+     */
+    public static function statusCaseProvider(): iterable
+    {
+        yield 'failure' => [ServiceResultStatus::FAILURE, 'FAILURE'];
+        yield 'success' => [ServiceResultStatus::SUCCESS, 'SUCCESS'];
+    }
+
     public function testCaseCount(): void
     {
         $cases = ServiceResultStatus::cases();
@@ -21,15 +30,10 @@ final class ServiceResultStatusTest extends TestCase
         self::assertTrue(ServiceResultStatus::FAILURE === ServiceResultStatus::FAILURE);
         self::assertTrue(ServiceResultStatus::SUCCESS === ServiceResultStatus::SUCCESS);
     }
-    public function testFailureCase(): void
-    {
-        $status = ServiceResultStatus::FAILURE;
-        self::assertSame('FAILURE', $status->name);
-    }
 
-    public function testSuccessCase(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('statusCaseProvider')]
+    public function testStatusCase(ServiceResultStatus $status, string $expectedName): void
     {
-        $status = ServiceResultStatus::SUCCESS;
-        self::assertSame('SUCCESS', $status->name);
+        self::assertSame($expectedName, $status->name);
     }
 }

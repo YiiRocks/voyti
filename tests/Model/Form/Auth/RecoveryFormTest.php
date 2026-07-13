@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Enum\RecaptchaVersion;
 use YiiRocks\Voyti\Model\Form\Auth\RecoveryForm;
 use YiiRocks\Voyti\ModuleConfig;
-use Yiisoft\Translator\TranslatorInterface;
+use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
 use Yiisoft\Validator\Rule\CompareType;
 use Yiisoft\Validator\Rule\Email;
 use Yiisoft\Validator\Rule\Equal;
@@ -18,6 +18,7 @@ use Yiisoft\Validator\Rule\Required;
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class RecoveryFormTest extends TestCase
 {
+    use TranslatorMockTrait;
 
     /**
      * @return iterable<string, array{string}>
@@ -149,13 +150,5 @@ final class RecoveryFormTest extends TestCase
         $form->passwordRepeat = 'newpass';
         $this->assertSame('newpass', $form->password);
         $this->assertSame('newpass', $form->passwordRepeat);
-    }
-    private function createTranslator(): TranslatorInterface
-    {
-        $translator = $this->createMock(TranslatorInterface::class);
-        $translator->method('translate')->willReturnCallback(
-            fn (string $id) => $id,
-        );
-        return $translator;
     }
 }

@@ -8,11 +8,12 @@ use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
-use Yiisoft\Translator\TranslatorInterface;
+use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class SettingsFormTest extends TestCase
 {
+    use TranslatorMockTrait;
 
     public function testConstruct(): void
     {
@@ -93,13 +94,5 @@ final class SettingsFormTest extends TestCase
         $this->assertSame('newuser', $form->username);
         $this->assertSame('newpass123', $form->password);
         $this->assertSame('newpass123', $form->passwordRepeat);
-    }
-    private function createTranslator(): TranslatorInterface
-    {
-        $translator = $this->createMock(TranslatorInterface::class);
-        $translator->method('translate')->willReturnCallback(
-            fn (string $id) => $id,
-        );
-        return $translator;
     }
 }

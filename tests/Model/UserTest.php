@@ -138,6 +138,16 @@ final class UserTest extends TestCase
         yield 'username' => ['setUsername', 'getUsername', 'johndoe'];
     }
 
+    /**
+     * @return iterable<string, array{string, list<string>, bool}>
+     */
+    public static function isAdminByListProvider(): iterable
+    {
+        yield 'returns false' => ['normal_user', ['admin_user', 'other'], false];
+        yield 'returns true' => ['admin_user', ['admin_user', 'other'], true];
+        yield 'with empty list' => ['normal_user', [], false];
+    }
+
     public function testDefaultValues(): void
     {
         $entity = new User();
@@ -422,25 +432,15 @@ final class UserTest extends TestCase
         self::assertSame('code123', $tokens[0]->getCode());
     }
 
-    public function testIsAdminByListReturnsFalse(): void
+    /**
+     * @param list<string> $adminList
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('isAdminByListProvider')]
+    public function testIsAdminByList(string $username, array $adminList, bool $expected): void
     {
         $entity = new User();
-        $entity->setUsername('normal_user');
-        self::assertFalse($entity->isAdminByList(['admin_user', 'other']));
-    }
-
-    public function testIsAdminByListReturnsTrue(): void
-    {
-        $entity = new User();
-        $entity->setUsername('admin_user');
-        self::assertTrue($entity->isAdminByList(['admin_user', 'other']));
-    }
-
-    public function testIsAdminByListWithEmptyList(): void
-    {
-        $entity = new User();
-        $entity->setUsername('normal_user');
-        self::assertFalse($entity->isAdminByList([]));
+        $entity->setUsername($username);
+        self::assertSame($expected, $entity->isAdminByList($adminList));
     }
 
     public function testIsAnonymizedWithOne(): void

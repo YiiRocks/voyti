@@ -17,24 +17,24 @@ use Yiisoft\Translator\TranslatorInterface;
 final class RuleEditionServiceTest extends TestCase
 {
 
-    public function testCreateReturnsFalseWhenInvalid(): void
+    /**
+     * @return iterable<string, array{string, bool}>
+     */
+    public static function createProvider(): iterable
     {
-        $itemsStorage = $this->createMock(ItemsStorageInterface::class);
-        $ruleValidator = new RuleValidator();
-        $service = new RuleEditionService($itemsStorage, $ruleValidator);
-
-        $form = $this->createRuleForm(class: 'NonExistentClassName');
-        self::assertFalse($service->create($form));
+        yield 'returns false when invalid' => ['NonExistentClassName', false];
+        yield 'returns true when valid' => [CompositeRule::class, true];
     }
 
-    public function testCreateReturnsTrueWhenValid(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('createProvider')]
+    public function testCreate(string $class, bool $expected): void
     {
         $itemsStorage = $this->createMock(ItemsStorageInterface::class);
         $ruleValidator = new RuleValidator();
         $service = new RuleEditionService($itemsStorage, $ruleValidator);
 
-        $form = $this->createRuleForm(class: CompositeRule::class);
-        self::assertTrue($service->create($form));
+        $form = $this->createRuleForm(class: $class);
+        self::assertSame($expected, $service->create($form));
     }
 
     public function testRemoveCallsItemsStorageForItemsWithRule(): void
@@ -102,6 +102,7 @@ final class RuleEditionServiceTest extends TestCase
         $form = $this->createRuleForm(class: CompositeRule::class);
         self::assertTrue($service->update($form));
     }
+
     private function createRuleForm(
         string $class = '',
         string $name = '',

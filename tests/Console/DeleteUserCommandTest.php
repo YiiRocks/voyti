@@ -40,14 +40,7 @@ final class DeleteUserCommandTest extends TestCase
 
     public function testExecuteByEmail(): void
     {
-        $user = new User();
-        $user->setUsername('testuser');
-        $user->setEmail('del@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(1000);
-        $user->setUpdatedAt(1000);
-        $user->save();
+        $this->createUser('testuser', 'del@example.com');
 
         $input = $this->createMock(InputInterface::class);
         $input->expects(self::exactly(3))->method('getOption')->willReturnMap([
@@ -68,14 +61,7 @@ final class DeleteUserCommandTest extends TestCase
 
     public function testExecuteById(): void
     {
-        $user = new User();
-        $user->setUsername('testuser');
-        $user->setEmail('test@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(1000);
-        $user->setUpdatedAt(1000);
-        $user->save();
+        $user = $this->createUser('testuser', 'test@example.com');
 
         $input = $this->createMock(InputInterface::class);
         $input->expects(self::exactly(3))->method('getOption')->willReturnMap([
@@ -96,14 +82,7 @@ final class DeleteUserCommandTest extends TestCase
 
     public function testExecuteByUsername(): void
     {
-        $user = new User();
-        $user->setUsername('delete_me');
-        $user->setEmail('delete@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(1000);
-        $user->setUpdatedAt(1000);
-        $user->save();
+        $this->createUser('delete_me', 'delete@example.com');
 
         $input = $this->createMock(InputInterface::class);
         $input->expects(self::exactly(3))->method('getOption')->willReturnMap([
@@ -161,5 +140,19 @@ final class DeleteUserCommandTest extends TestCase
     private function createCommand(): DeleteUserCommand
     {
         return new DeleteUserCommand();
+    }
+
+    private function createUser(string $username, string $email): User
+    {
+        $user = new User();
+        $user->setUsername($username);
+        $user->setEmail($email);
+        $user->setPasswordHash('hash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(1000);
+        $user->setUpdatedAt(1000);
+        $user->save();
+
+        return $user;
     }
 }

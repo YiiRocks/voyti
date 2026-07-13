@@ -20,6 +20,15 @@ final class FacebookTest extends TestCase
         yield 'with config' => [['clientId' => 'id', 'clientSecret' => 'secret']];
     }
 
+    /**
+     * @return iterable<string, array{array<string, mixed>, bool}>
+     */
+    public static function isEnabledProvider(): iterable
+    {
+        yield 'by default' => [['clientId' => 'id', 'clientSecret' => 'secret'], true];
+        yield 'when disabled' => [['clientId' => 'id', 'clientSecret' => 'secret', 'enabled' => false], false];
+    }
+
     #[\PHPUnit\Framework\Attributes\DataProvider('constructionProvider')]
     public function testGetName(array $config): void
     {
@@ -33,16 +42,14 @@ final class FacebookTest extends TestCase
         self::assertSame('Facebook', $client->getTitle());
     }
 
-    public function testIsEnabledByDefault(): void
+    /**
+     * @param array<string, mixed> $config
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('isEnabledProvider')]
+    public function testIsEnabled(array $config, bool $expected): void
     {
-        $client = new Facebook(['clientId' => 'id', 'clientSecret' => 'secret']);
-        self::assertTrue($client->isEnabled());
-    }
-
-    public function testIsEnabledWhenDisabled(): void
-    {
-        $client = new Facebook(['clientId' => 'id', 'clientSecret' => 'secret', 'enabled' => false]);
-        self::assertFalse($client->isEnabled());
+        $client = new Facebook($config);
+        self::assertSame($expected, $client->isEnabled());
     }
 
     public function testIsInstanceOfAbstractAuthClient(): void

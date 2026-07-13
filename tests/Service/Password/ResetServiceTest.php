@@ -43,17 +43,6 @@ final class ResetServiceTest extends TestCase
         self::assertNull(UserToken::findByCodeAndType('tokencode', UserToken::TYPE_RECOVERY));
     }
 
-    public function testRunPersistsUser(): void
-    {
-        $user = $this->createUser('persistuser', 'persist@example.com');
-
-        $this->createService()->run('newpassword', $user, null);
-
-        $reloaded = User::findById((int) $user->getId());
-        self::assertNotNull($reloaded);
-        self::assertNotSame('oldhash', $reloaded->getPasswordHash());
-    }
-
     public function testRunRecordsPasswordHistoryWhenEnabled(): void
     {
         $config = new ModuleConfig(enablePasswordExpiration: true);

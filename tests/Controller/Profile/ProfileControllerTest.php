@@ -17,6 +17,7 @@ use YiiRocks\Voyti\Model\UserProfile;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Security\PasswordHasher;
@@ -32,6 +33,7 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 final class ProfileControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
+    use RedirectResponseMockTrait;
 
     private AuthHelper&MockObject $authHelper;
     private ModuleConfig $config;
@@ -64,6 +66,28 @@ final class ProfileControllerTest extends TestCase
     protected function tearDown(): void
     {
         $this->tearDownDatabase();
+    }
+
+    /**
+     * @return iterable<string, array{ProfileVisibility, string|null, bool|null}>
+     */
+    public static function showProfileAllowedProvider(): iterable
+    {
+        yield 'admin different user admin allowed' => [ProfileVisibility::ADMIN, '2', true];
+        yield 'owner same user allowed' => [ProfileVisibility::OWNER, '1', null];
+        yield 'public no auth' => [ProfileVisibility::PUBLIC, null, null];
+        yield 'users authenticated allowed' => [ProfileVisibility::USERS, '2', null];
+    }
+
+    /**
+     * @return iterable<string, array{ProfileVisibility, string|null, bool|null}>
+     */
+    public static function showProfileForbiddenOrNotFoundProvider(): iterable
+    {
+        yield 'profile not found' => [ProfileVisibility::PUBLIC, null, null];
+        yield 'admin different user not admin forbidden' => [ProfileVisibility::ADMIN, '2', false];
+        yield 'owner different user forbidden' => [ProfileVisibility::OWNER, '2', null];
+        yield 'users no auth forbidden' => [ProfileVisibility::USERS, null, null];
     }
 
     public function testIsAdminReturnsFalseForGuestIdentity(): void
@@ -114,135 +138,16 @@ final class ProfileControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    public function testShowProfileNotFound(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('showProfileAllowedProvider')]
+    public function testShowProfileAllowed(ProfileVisibility $visibility, ?string $identityId, ?bool $isAdminReturn): void
     {
-        $config = new ModuleConfig(profileVisibility: ProfileVisibility::PUBLIC);
+        $config = new ModuleConfig(profileVisibility: $visibility);
         $this->harness = new ControllerHarness($config);
-        $this->currentUser->method('getIdentity')->willReturn(new GuestIdentity());
+        $this->setUpIdentity($identityId);
 
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturn($response);
-
-        $result = $controller->show($request, 1);
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testShowProfileVisibilityAdminDifferentUserAdminAllowed(): void
-    {
-        $config = new ModuleConfig(profileVisibility: ProfileVisibility::ADMIN);
-        $this->harness = new ControllerHarness($config);
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('2');
-        $this->currentUser->method('getIdentity')->willReturn($identity);
-        $this->authHelper->method('isAdmin')->willReturn(true);
-
-        $this->createUserWithProfile();
-
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturn($response);
-
-        $result = $controller->show($request, 1);
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testShowProfileVisibilityAdminDifferentUserNotAdminForbidden(): void
-    {
-        $config = new ModuleConfig(profileVisibility: ProfileVisibility::ADMIN);
-        $this->harness = new ControllerHarness($config);
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('2');
-        $this->currentUser->method('getIdentity')->willReturn($identity);
-        $this->authHelper->method('isAdmin')->willReturn(false);
-
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturn($response);
-
-        $result = $controller->show($request, 1);
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testShowProfileVisibilityOwnerDifferentUserForbidden(): void
-    {
-        $config = new ModuleConfig(profileVisibility: ProfileVisibility::OWNER);
-        $this->harness = new ControllerHarness($config);
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('2');
-        $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturn($response);
-
-        $result = $controller->show($request, 1);
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testShowProfileVisibilityOwnerSameUserAllowed(): void
-    {
-        $config = new ModuleConfig(profileVisibility: ProfileVisibility::OWNER);
-        $this->harness = new ControllerHarness($config);
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
-        $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $this->createUserWithProfile();
-
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturn($response);
-
-        $result = $controller->show($request, 1);
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testShowProfileVisibilityPublicNoAuth(): void
-    {
-        $config = new ModuleConfig(profileVisibility: ProfileVisibility::PUBLIC);
-        $this->harness = new ControllerHarness($config);
-        $this->currentUser->method('getIdentity')->willReturn(new GuestIdentity());
+        if ($isAdminReturn !== null) {
+            $this->authHelper->method('isAdmin')->willReturn($isAdminReturn);
+        }
 
         $this->createUserWithProfile();
 
@@ -263,38 +168,16 @@ final class ProfileControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    public function testShowProfileVisibilityUsersAuthenticatedAllowed(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('showProfileForbiddenOrNotFoundProvider')]
+    public function testShowProfileForbiddenOrNotFound(ProfileVisibility $visibility, ?string $identityId, ?bool $isAdminReturn): void
     {
-        $config = new ModuleConfig(profileVisibility: ProfileVisibility::USERS);
+        $config = new ModuleConfig(profileVisibility: $visibility);
         $this->harness = new ControllerHarness($config);
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('2');
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->setUpIdentity($identityId);
 
-        $this->createUserWithProfile();
-
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('profile/show', $this->anything())
-            ->willReturn($response);
-
-        $result = $controller->show($request, 1);
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testShowProfileVisibilityUsersNoAuthForbidden(): void
-    {
-        $config = new ModuleConfig(profileVisibility: ProfileVisibility::USERS);
-        $this->harness = new ControllerHarness($config);
-        $this->currentUser->method('getIdentity')->willReturn(new GuestIdentity());
+        if ($isAdminReturn !== null) {
+            $this->authHelper->method('isAdmin')->willReturn($isAdminReturn);
+        }
 
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
@@ -450,14 +333,7 @@ final class ProfileControllerTest extends TestCase
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->update($request);
 
@@ -558,14 +434,7 @@ final class ProfileControllerTest extends TestCase
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->update($request);
 
@@ -681,5 +550,17 @@ final class ProfileControllerTest extends TestCase
                 $object->$key = $value;
             }
         }
+    }
+
+    private function setUpIdentity(?string $identityId): void
+    {
+        if ($identityId === null) {
+            $this->currentUser->method('getIdentity')->willReturn(new GuestIdentity());
+            return;
+        }
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn($identityId);
+        $this->currentUser->method('getIdentity')->willReturn($identity);
     }
 }

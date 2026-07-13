@@ -15,6 +15,7 @@ use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\AuditLogService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\Support\SimpleItemsStorage;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Auth\IdentityRepositoryInterface;
@@ -34,6 +35,7 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 final class PermissionControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
+    use RedirectResponseMockTrait;
 
     private AssignmentsStorageInterface $assignmentsStorage;
     private ModuleConfig $config;
@@ -91,14 +93,7 @@ final class PermissionControllerTest extends TestCase
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['permission' => ['name' => 'edit-posts', 'description' => 'Can edit posts', 'rule' => '', 'children' => ['']]]);
 
         $this->validator->method('validate')->willReturn(new Result());
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->create($request);
 
@@ -135,14 +130,7 @@ final class PermissionControllerTest extends TestCase
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['permission' => ['name' => 'restricted-action', 'description' => '', 'rule' => 'ownerRule', 'children' => ['']]]);
 
         $this->validator->method('validate')->willReturn(new Result());
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->create($request);
 
@@ -157,14 +145,7 @@ final class PermissionControllerTest extends TestCase
         $controller = $this->createController();
         $this->itemsStorage->add(new Permission('edit-posts'));
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->delete('edit-posts');
 
@@ -240,14 +221,7 @@ final class PermissionControllerTest extends TestCase
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['permission' => ['name' => 'edit-posts', 'description' => 'Updated description', 'rule' => '', 'children' => ['']], 'assignedUsers' => []]);
 
         $this->validator->method('validate')->willReturn(new Result());
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->update($request, 'edit-posts');
 

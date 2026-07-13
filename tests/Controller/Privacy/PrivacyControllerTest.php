@@ -19,6 +19,7 @@ use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\UserSessionHistory\TerminateUserSessionsService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Security\PasswordHasher;
@@ -34,6 +35,7 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 final class PrivacyControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
+    use RedirectResponseMockTrait;
 
     private ModuleConfig $config;
     private CurrentUser&MockObject $currentUser;
@@ -517,14 +519,7 @@ final class PrivacyControllerTest extends TestCase
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->gdprConsent($request);
 
@@ -554,14 +549,7 @@ final class PrivacyControllerTest extends TestCase
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->gdprConsent($request);
 
@@ -591,14 +579,7 @@ final class PrivacyControllerTest extends TestCase
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->gdprConsent($request);
 

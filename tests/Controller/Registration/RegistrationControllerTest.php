@@ -19,6 +19,7 @@ use YiiRocks\Voyti\Service\User\RegisterService;
 use YiiRocks\Voyti\Service\User\ResendConfirmationService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -31,6 +32,7 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 final class RegistrationControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
+    use RedirectResponseMockTrait;
 
     private AccountConfirmationService&MockObject $accountConfirmationService;
     private ModuleConfig $config;
@@ -84,14 +86,7 @@ final class RegistrationControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->confirm($request, (int) $user->getId(), 'code123');
 
@@ -109,14 +104,7 @@ final class RegistrationControllerTest extends TestCase
             ->method('run')
             ->willReturn(true);
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->confirm($request, (int) $user->getId(), 'code123');
 
@@ -247,14 +235,7 @@ final class RegistrationControllerTest extends TestCase
             ->method('connect')
             ->with($this->callback(static fn (User $u): bool => $u->getId() === $user->getId()));
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->register($request);
 
@@ -353,14 +334,7 @@ final class RegistrationControllerTest extends TestCase
             ->method('run')
             ->willReturn(true);
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->resend($request);
 

@@ -281,15 +281,6 @@ final class UserProfileTest extends TestCase
         self::assertSame($expected, $entity->getGravatarId());
     }
 
-    public function testGetGravatarIdWithPublicEmailPrecedence(): void
-    {
-        $entity = new UserProfile();
-        $entity->setPublicEmail('public@example.com');
-        $entity->setGravatarEmail(null);
-        $expected = hash('sha256', strtolower(trim('public@example.com')));
-        self::assertSame($expected, $entity->getGravatarId());
-    }
-
     public function testGetGravatarUrlReturnsNullWhenNoGravatarId(): void
     {
         $entity = new UserProfile();

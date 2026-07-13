@@ -31,20 +31,6 @@ final class ResetPasswordEventTest extends TestCase
         self::assertNull($event->getForm());
     }
 
-    public function testConstructorWithNullForm(): void
-    {
-        $token = new UserToken();
-        $token->setCode('abc');
-        $token->setUserId(1);
-        $token->setType(0);
-        $token->setCreatedAt(1000);
-
-        $event = new ResetPasswordEvent($token);
-
-        self::assertSame($token, $event->getToken());
-        self::assertNull($event->getForm());
-    }
-
     public function testUpdateForm(): void
     {
         $token = new UserToken();

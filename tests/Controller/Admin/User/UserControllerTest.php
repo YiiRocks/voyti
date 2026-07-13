@@ -25,6 +25,7 @@ use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\CreateService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Data\Paginator\OffsetPaginator;
 use Yiisoft\Hydrator\HydratorInterface;
@@ -40,6 +41,7 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 final class UserControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
+    use RedirectResponseMockTrait;
 
     private AuthHelper&MockObject $authHelper;
     private BlockService&MockObject $blockService;
@@ -137,34 +139,16 @@ final class UserControllerTest extends TestCase
 
     public function testAssignmentsUserNotFoundShowsError(): void
     {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturn($response);
-
-        $result = $controller->assignments($request, 999999);
-
-        $this->assertSame($response, $result);
+        $this->assertNotFoundRendersError(
+            static fn (UserController $controller): ResponseInterface => $controller->assignments(new ServerRequest('GET', '/'), 999999),
+        );
     }
 
     public function testBlockNonExistentUserStillRedirects(): void
     {
         $controller = $this->createController();
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->block(999999);
 
@@ -181,14 +165,7 @@ final class UserControllerTest extends TestCase
             ->method('run')
             ->with($this->callback(static fn (User $u): bool => $u->getId() === $user->getId()));
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->block($userId);
 
@@ -222,14 +199,7 @@ final class UserControllerTest extends TestCase
 
         $this->confirmationService->expects($this->once())->method('run')->willReturn(true);
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->confirm((int) $user->getId());
 
@@ -265,14 +235,7 @@ final class UserControllerTest extends TestCase
             ->method('run')
             ->willReturn(ServiceResult::success('User created'));
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->create($request);
 
@@ -346,14 +309,7 @@ final class UserControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->delete($request, $userId);
 
@@ -407,19 +363,9 @@ final class UserControllerTest extends TestCase
 
     public function testForcePasswordChangeFailsShowsError(): void
     {
-        $controller = $this->createController();
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturn($response);
-
-        $result = $controller->forcePasswordChange(999999);
-
-        $this->assertSame($response, $result);
+        $this->assertNotFoundRendersError(
+            static fn (UserController $controller): ResponseInterface => $controller->forcePasswordChange(999999),
+        );
     }
 
     public function testForcePasswordChangeUserFound(): void
@@ -429,14 +375,7 @@ final class UserControllerTest extends TestCase
 
         $this->expireService->expects($this->once())->method('run')->willReturn(true);
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->forcePasswordChange((int) $user->getId());
 
@@ -521,19 +460,9 @@ final class UserControllerTest extends TestCase
 
     public function testInfoUserNotFoundShowsError(): void
     {
-        $controller = $this->createController();
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturn($response);
-
-        $result = $controller->show(999999);
-
-        $this->assertSame($response, $result);
+        $this->assertNotFoundRendersError(
+            static fn (UserController $controller): ResponseInterface => $controller->show(999999),
+        );
     }
 
     public function testPasswordResetUserFound(): void
@@ -561,19 +490,9 @@ final class UserControllerTest extends TestCase
 
     public function testPasswordResetUserNotFoundShowsError(): void
     {
-        $controller = $this->createController();
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturn($response);
-
-        $result = $controller->passwordReset(999999);
-
-        $this->assertSame($response, $result);
+        $this->assertNotFoundRendersError(
+            static fn (UserController $controller): ResponseInterface => $controller->passwordReset(999999),
+        );
     }
 
     public function testSwitchIdentityFailureShowsError(): void
@@ -626,14 +545,7 @@ final class UserControllerTest extends TestCase
             ->method('restore')
             ->willReturn(ServiceResult::success());
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->switchIdentityRestore();
 
@@ -648,14 +560,7 @@ final class UserControllerTest extends TestCase
             ->method('run')
             ->willReturn(ServiceResult::success());
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->switchIdentity(1);
 
@@ -669,14 +574,7 @@ final class UserControllerTest extends TestCase
         $this->createSession($userId, 'sess-1');
         $controller = $this->createController();
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->terminateSessions($userId);
 
@@ -686,19 +584,9 @@ final class UserControllerTest extends TestCase
 
     public function testTerminateSessionsUserNotFoundShowsError(): void
     {
-        $controller = $this->createController();
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturn($response);
-
-        $result = $controller->terminateSessions(999999);
-
-        $this->assertSame($response, $result);
+        $this->assertNotFoundRendersError(
+            static fn (UserController $controller): ResponseInterface => $controller->terminateSessions(999999),
+        );
     }
 
     public function testUpdateGetShowsForm(): void
@@ -730,14 +618,7 @@ final class UserControllerTest extends TestCase
 
         $this->updateAssignmentsService->expects($this->once())->method('run');
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->update($request, $userId);
 
@@ -758,14 +639,7 @@ final class UserControllerTest extends TestCase
 
         $this->updateAssignmentsService->expects($this->once())->method('run');
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->update($request, $userId);
 
@@ -870,14 +744,7 @@ final class UserControllerTest extends TestCase
             },
         );
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->updateProfile($request, $userId);
 
@@ -890,38 +757,16 @@ final class UserControllerTest extends TestCase
 
     public function testUpdateProfileUserNotFoundShowsError(): void
     {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturn($response);
-
-        $result = $controller->updateProfile($request, 999999);
-
-        $this->assertSame($response, $result);
+        $this->assertNotFoundRendersError(
+            static fn (UserController $controller): ResponseInterface => $controller->updateProfile(new ServerRequest('GET', '/'), 999999),
+        );
     }
 
     public function testUpdateUserNotFoundShowsError(): void
     {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturn($response);
-
-        $result = $controller->update($request, 999999);
-
-        $this->assertSame($response, $result);
+        $this->assertNotFoundRendersError(
+            static fn (UserController $controller): ResponseInterface => $controller->update(new ServerRequest('GET', '/'), 999999),
+        );
     }
 
     public function testUserSessionHistoryUserFound(): void
@@ -945,6 +790,13 @@ final class UserControllerTest extends TestCase
 
     public function testUserSessionHistoryUserNotFoundShowsError(): void
     {
+        $this->assertNotFoundRendersError(
+            static fn (UserController $controller): ResponseInterface => $controller->sessionHistory(999999),
+        );
+    }
+
+    private function assertNotFoundRendersError(callable $invoke): void
+    {
         $controller = $this->createController();
 
         $response = $this->createMock(ResponseInterface::class);
@@ -955,7 +807,7 @@ final class UserControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->sessionHistory(999999);
+        $result = $invoke($controller);
 
         $this->assertSame($response, $result);
     }

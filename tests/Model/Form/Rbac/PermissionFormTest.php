@@ -6,11 +6,12 @@ namespace YiiRocks\Voyti\tests\Model\Form\Rbac;
 
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\Form\Rbac\PermissionForm;
-use Yiisoft\Translator\TranslatorInterface;
+use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class PermissionFormTest extends TestCase
 {
+    use TranslatorMockTrait;
 
     public function testConstruct(): void
     {
@@ -47,13 +48,5 @@ final class PermissionFormTest extends TestCase
         $form->description = 'Edit post permission';
         $this->assertSame('edit-post', $form->name);
         $this->assertSame('Edit post permission', $form->description);
-    }
-    private function createTranslator(): TranslatorInterface
-    {
-        $translator = $this->createMock(TranslatorInterface::class);
-        $translator->method('translate')->willReturnCallback(
-            fn (string $id) => $id,
-        );
-        return $translator;
     }
 }

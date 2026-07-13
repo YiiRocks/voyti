@@ -53,10 +53,11 @@ final readonly class SocialAuthProviderService
         /**
          * @infection-ignore-all
          *
-         * A mismatched state is never itself a valid non-empty string equal
-         * to the stored one, so the final `$state !== $storedState` term
-         * always dominates whenever the earlier is_string()/empty checks
-         * would fire; no input can isolate their operators.
+         * The `$state === $storedState` term dominates: whenever a LogicalOr
+         * mutation changes an earlier `||` to `&&`, the comparison term is
+         * already false (invalid state ≠ valid stored state), so both
+         * versions produce the same result.  This is behaviourally
+         * equivalent, not a testing gap.
          */
         $isStateInvalid = !is_string($state) || $state === '' || !is_string($storedState) || $storedState === '' || $state !== $storedState;
         if ($isStateInvalid) {

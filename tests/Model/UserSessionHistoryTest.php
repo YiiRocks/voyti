@@ -48,6 +48,19 @@ final class UserSessionHistoryTest extends TestCase
         }
     }
 
+    /**
+     * @return iterable<string, array{string, string, int|string}>
+     */
+    public static function getterSetterProvider(): iterable
+    {
+        yield 'createdAt' => ['setCreatedAt', 'getCreatedAt', 1000];
+        yield 'ip' => ['setIp', 'getIp', '192.168.1.1'];
+        yield 'sessionId' => ['setSessionId', 'getSessionId', 'sess-abc-123'];
+        yield 'updatedAt' => ['setUpdatedAt', 'getUpdatedAt', 2000];
+        yield 'userAgent' => ['setUserAgent', 'getUserAgent', 'Mozilla/5.0'];
+        yield 'userId' => ['setUserId', 'getUserId', 42];
+    }
+
     public function testDefaultValues(): void
     {
         $entity = new UserSessionHistory();
@@ -92,46 +105,12 @@ final class UserSessionHistoryTest extends TestCase
         self::assertCount(2, $sessions);
     }
 
-    public function testGetSetCreatedAt(): void
+    #[\PHPUnit\Framework\Attributes\DataProvider('getterSetterProvider')]
+    public function testGetSetProperty(string $setter, string $getter, int|string $value): void
     {
         $entity = new UserSessionHistory();
-        $entity->setCreatedAt(1000);
-        self::assertSame(1000, $entity->getCreatedAt());
-    }
-
-    public function testGetSetIp(): void
-    {
-        $entity = new UserSessionHistory();
-        $entity->setIp('192.168.1.1');
-        self::assertSame('192.168.1.1', $entity->getIp());
-    }
-
-    public function testGetSetSessionId(): void
-    {
-        $entity = new UserSessionHistory();
-        $entity->setSessionId('sess-abc-123');
-        self::assertSame('sess-abc-123', $entity->getSessionId());
-    }
-
-    public function testGetSetUpdatedAt(): void
-    {
-        $entity = new UserSessionHistory();
-        $entity->setUpdatedAt(2000);
-        self::assertSame(2000, $entity->getUpdatedAt());
-    }
-
-    public function testGetSetUserAgent(): void
-    {
-        $entity = new UserSessionHistory();
-        $entity->setUserAgent('Mozilla/5.0');
-        self::assertSame('Mozilla/5.0', $entity->getUserAgent());
-    }
-
-    public function testGetSetUserId(): void
-    {
-        $entity = new UserSessionHistory();
-        $entity->setUserId(42);
-        self::assertSame(42, $entity->getUserId());
+        $entity->$setter($value);
+        self::assertSame($value, $entity->$getter());
     }
 
     public function testPrimaryKey(): void

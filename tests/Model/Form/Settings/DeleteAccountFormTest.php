@@ -6,11 +6,12 @@ namespace YiiRocks\Voyti\tests\Model\Form\Settings;
 
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\Form\Settings\DeleteAccountForm;
-use Yiisoft\Translator\TranslatorInterface;
+use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class DeleteAccountFormTest extends TestCase
 {
+    use TranslatorMockTrait;
 
     public function testConstruct(): void
     {
@@ -46,13 +47,5 @@ final class DeleteAccountFormTest extends TestCase
         $form->password = 'mypassword';
         $this->assertTrue($form->consent);
         $this->assertSame('mypassword', $form->password);
-    }
-    private function createTranslator(): TranslatorInterface
-    {
-        $translator = $this->createMock(TranslatorInterface::class);
-        $translator->method('translate')->willReturnCallback(
-            fn (string $id) => $id,
-        );
-        return $translator;
     }
 }

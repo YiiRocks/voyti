@@ -67,12 +67,10 @@ final readonly class PasswordHistoryService
         $history = UserPasswordHistory::findByUserId($userId);
         $limit = $this->config->passwordHistoryLimit;
 
-        /** @infection-ignore-all GreaterThan: when count($history) === $limit exactly, array_slice($history, $limit) is already empty, so `>` vs `>=` deletes nothing either way - the two are behaviourally equivalent. */
-        if (count($history) > $limit) {
-            $toDelete = array_slice($history, $limit);
-            foreach ($toDelete as $entry) {
-                $entry->delete();
-            }
+        /** @var list<UserPasswordHistory> $toDelete */
+        $toDelete = array_slice($history, $limit);
+        foreach ($toDelete as $entry) {
+            $entry->delete();
         }
     }
 }

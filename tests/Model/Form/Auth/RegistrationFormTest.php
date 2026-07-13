@@ -8,11 +8,12 @@ use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Enum\RecaptchaVersion;
 use YiiRocks\Voyti\Model\Form\Auth\RegistrationForm;
 use YiiRocks\Voyti\ModuleConfig;
-use Yiisoft\Translator\TranslatorInterface;
+use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class RegistrationFormTest extends TestCase
 {
+    use TranslatorMockTrait;
 
     public function testConstruct(): void
     {
@@ -150,13 +151,5 @@ final class RegistrationFormTest extends TestCase
         $this->assertSame('secret123', $form->password);
         $this->assertSame('secret123', $form->passwordRepeat);
         $this->assertTrue($form->gdprConsent);
-    }
-    private function createTranslator(): TranslatorInterface
-    {
-        $translator = $this->createMock(TranslatorInterface::class);
-        $translator->method('translate')->willReturnCallback(
-            fn (string $id) => $id,
-        );
-        return $translator;
     }
 }

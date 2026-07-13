@@ -24,6 +24,7 @@ use YiiRocks\Voyti\Service\ServiceResult;
 use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Security\PasswordHasher;
@@ -38,6 +39,7 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 final class SessionControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
+    use RedirectResponseMockTrait;
 
     private ModuleConfig $config;
     private CurrentUser&MockObject $currentUser;
@@ -94,15 +96,7 @@ final class SessionControllerTest extends TestCase
         $this->socialAuthProviderService->method('hasCallbackParameters')->willReturn(false);
         $this->socialAuthProviderService->expects($this->once())->method('begin')->with('github', 'voyti/session-auth')->willReturn('https://github.com/authorize');
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->with('Location', 'https://github.com/authorize')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory, 'https://github.com/authorize');
 
         $result = $controller->auth($request, 'github');
 
@@ -168,15 +162,7 @@ final class SessionControllerTest extends TestCase
         $this->currentUser->method('getIdentity')->willReturn($user);
         $this->rememberMeCookieService->method('addCookie')->willReturnArgument(1);
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->with('Location', '//home')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory, '//home');
 
         $result = $controller->auth($request, 'github');
 
@@ -221,15 +207,7 @@ final class SessionControllerTest extends TestCase
         $account->method('getCode')->willReturn('pending-code');
         $this->pendingSocialAccountService->method('getPendingAccount')->willReturn($account);
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->with('Location', '//voyti/registration-connect?code=pending-code')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory, '//voyti/registration-connect?code=pending-code');
 
         $result = $controller->auth($request, 'github');
 
@@ -300,15 +278,7 @@ final class SessionControllerTest extends TestCase
 
         $this->createUser(authTfEnabled: true, authTfType: 'email', authTfKey: '123456');
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->with('Location', '//app/dashboard')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory, '//app/dashboard');
 
         $result = $controller->confirm($request);
 
@@ -380,15 +350,7 @@ final class SessionControllerTest extends TestCase
         $this->socialAuthProviderService->method('hasCallbackParameters')->willReturn(false);
         $this->socialAuthProviderService->expects($this->once())->method('begin')->with('github', 'voyti/session-connect')->willReturn('https://github.com/authorize');
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->with('Location', 'https://github.com/authorize')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory, 'https://github.com/authorize');
 
         $result = $controller->connect($request, 'github');
 
@@ -525,15 +487,7 @@ final class SessionControllerTest extends TestCase
         $this->createUser();
         $this->validator->method('validate')->willReturn(new Result());
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->with('Location', '//app/dashboard')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory, '//app/dashboard');
 
         $result = $controller->login($request);
 
@@ -549,15 +503,7 @@ final class SessionControllerTest extends TestCase
         $this->createUser();
         $this->validator->method('validate')->willReturn(new Result());
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->with('Location', '//home')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory, '//home');
 
         $result = $controller->login($request);
 
@@ -728,15 +674,7 @@ final class SessionControllerTest extends TestCase
         $this->currentUser->method('getIdentity')->willReturn($identity);
         $request = new ServerRequest('GET', '/');
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->with('Location', '//home')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory, '//home');
 
         $this->viewRenderer->expects($this->never())->method('render');
 
@@ -753,15 +691,7 @@ final class SessionControllerTest extends TestCase
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
         $this->rememberMeCookieService->method('expireCookie')->willReturnArgument(0);
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->with('Location', '//home')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory, '//home');
 
         $result = $controller->logout();
 

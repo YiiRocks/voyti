@@ -23,6 +23,16 @@ final class AbstractAuthClientTest extends TestCase
         yield 'integer value is stringified' => [12345, '12345'];
     }
 
+    /**
+     * @return iterable<string, array{array<string, mixed>, bool}>
+     */
+    public static function isEnabledProvider(): iterable
+    {
+        yield 'by default' => [['clientId' => 'id', 'clientSecret' => 'secret'], true];
+        yield 'casts to bool' => [['enabled' => 1, 'clientId' => 'id', 'clientSecret' => 'secret'], true];
+        yield 'returns false when disabled' => [['enabled' => false, 'clientId' => 'id', 'clientSecret' => 'secret'], false];
+    }
+
     public function testAppendQueryWithEmptyQueryString(): void
     {
         $client = $this->createClient(['clientId' => 'id', 'clientSecret' => 'secret']);
@@ -389,30 +399,14 @@ final class AbstractAuthClientTest extends TestCase
         self::assertSame('user_from_token', $result['id']);
     }
 
-    public function testIsEnabledByDefault(): void
+    /**
+     * @param array<string, mixed> $config
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('isEnabledProvider')]
+    public function testIsEnabled(array $config, bool $expected): void
     {
-        $client = $this->createClient(['clientId' => 'id', 'clientSecret' => 'secret']);
-        self::assertTrue($client->isEnabled());
-    }
-
-    public function testIsEnabledCastsToBool(): void
-    {
-        $client = $this->createClient([
-            'enabled' => 1,
-            'clientId' => 'id',
-            'clientSecret' => 'secret',
-        ]);
-        self::assertTrue($client->isEnabled());
-    }
-
-    public function testIsEnabledReturnsFalseWhenDisabled(): void
-    {
-        $client = $this->createClient([
-            'enabled' => false,
-            'clientId' => 'id',
-            'clientSecret' => 'secret',
-        ]);
-        self::assertFalse($client->isEnabled());
+        $client = $this->createClient($config);
+        self::assertSame($expected, $client->isEnabled());
     }
 
     public function testNormalizeNameWithSpaces(): void

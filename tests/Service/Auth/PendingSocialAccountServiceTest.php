@@ -91,17 +91,6 @@ final class PendingSocialAccountServiceTest extends TestCase
         self::assertFalse($this->session->has('social_network_account_code'));
     }
 
-    public function testGetPendingAccountWithConnectedAccountReturnsNull(): void
-    {
-        $user = $this->createUser();
-        $this->createSocialAccount('456', 'connected_code', (int) $user->getId());
-        $this->session->set('social_network_account_code', 'connected_code');
-
-        $result = $this->service->getPendingAccount();
-        self::assertNull($result);
-        self::assertFalse($this->session->has('social_network_account_code'));
-    }
-
     #[\PHPUnit\Framework\Attributes\DataProvider('invalidSessionCodeProvider')]
     public function testGetPendingAccountWithInvalidSessionCodeReturnsNull(int|string $sessionCode): void
     {

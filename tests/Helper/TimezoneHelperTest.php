@@ -84,6 +84,14 @@ final class TimezoneHelperTest extends TestCase
         self::assertStringStartsWith('(GMT-9:30)', $timezones['Pacific/Marquesas']);
     }
 
+    public function testGetAllFormatsPositiveHourOffsetCorrectly(): void
+    {
+        $timezones = TimezoneHelper::getAll();
+
+        self::assertArrayHasKey('Africa/Lagos', $timezones);
+        self::assertStringStartsWith('(GMT+1:00)', $timezones['Africa/Lagos']);
+    }
+
     public function testGetAllReturnsWellFormedTimezoneList(): void
     {
         $timezones = TimezoneHelper::getAll();

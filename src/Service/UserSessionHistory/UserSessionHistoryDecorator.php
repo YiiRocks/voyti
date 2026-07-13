@@ -55,14 +55,10 @@ final readonly class UserSessionHistoryDecorator
             /** @var int $limit */
             $limit = $this->config->numberSessionHistory;
 
-            /** @infection-ignore-all GreaterThan: `>` vs `>=` produces identical behaviour when the caller never inserts exactly $limit sessions (less than limit → no deletion either way). */
-            $hasExcessSessions = count($sessions) > $limit;
-            if ($hasExcessSessions) {
-                /** @var list<UserSessionHistory> $toDelete */
-                $toDelete = array_slice($sessions, $limit);
-                foreach ($toDelete as $session) {
-                    $session->delete();
-                }
+            /** @var list<UserSessionHistory> $toDelete */
+            $toDelete = array_slice($sessions, $limit);
+            foreach ($toDelete as $session) {
+                $session->delete();
             }
         }
     }

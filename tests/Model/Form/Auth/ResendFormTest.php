@@ -8,11 +8,12 @@ use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Enum\RecaptchaVersion;
 use YiiRocks\Voyti\Model\Form\Auth\ResendForm;
 use YiiRocks\Voyti\ModuleConfig;
-use Yiisoft\Translator\TranslatorInterface;
+use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class ResendFormTest extends TestCase
 {
+    use TranslatorMockTrait;
 
     public function testConstruct(): void
     {
@@ -68,13 +69,5 @@ final class ResendFormTest extends TestCase
         $form = new ResendForm(new ModuleConfig(), $this->createTranslator());
         $form->email = 'user@example.com';
         $this->assertSame('user@example.com', $form->email);
-    }
-    private function createTranslator(): TranslatorInterface
-    {
-        $translator = $this->createMock(TranslatorInterface::class);
-        $translator->method('translate')->willReturnCallback(
-            fn (string $id) => $id,
-        );
-        return $translator;
     }
 }

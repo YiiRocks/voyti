@@ -6,11 +6,12 @@ namespace YiiRocks\Voyti\tests\Model\Form\Rbac;
 
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\Form\Rbac\RoleForm;
-use Yiisoft\Translator\TranslatorInterface;
+use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class RoleFormTest extends TestCase
 {
+    use TranslatorMockTrait;
 
     public function testConstruct(): void
     {
@@ -47,13 +48,5 @@ final class RoleFormTest extends TestCase
         $form->description = 'Administrator role';
         $this->assertSame('admin', $form->name);
         $this->assertSame('Administrator role', $form->description);
-    }
-    private function createTranslator(): TranslatorInterface
-    {
-        $translator = $this->createMock(TranslatorInterface::class);
-        $translator->method('translate')->willReturnCallback(
-            fn (string $id) => $id,
-        );
-        return $translator;
     }
 }

@@ -7,11 +7,12 @@ namespace YiiRocks\Voyti\tests\Model\Form\Settings;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\Form\Settings\UserProfileForm;
-use Yiisoft\Translator\TranslatorInterface;
+use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class UserProfileFormTest extends TestCase
 {
+    use TranslatorMockTrait;
 
     public function testConstruct(): void
     {
@@ -154,13 +155,5 @@ final class UserProfileFormTest extends TestCase
         $form = new UserProfileForm($this->createTranslator());
         $result = $form->validateTimezone('UTC');
         $this->assertTrue($result->isValid());
-    }
-    private function createTranslator(): TranslatorInterface
-    {
-        $translator = $this->createMock(TranslatorInterface::class);
-        $translator->method('translate')->willReturnCallback(
-            fn (string $id) => $id,
-        );
-        return $translator;
     }
 }

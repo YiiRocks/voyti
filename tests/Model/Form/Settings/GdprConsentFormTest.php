@@ -6,11 +6,12 @@ namespace YiiRocks\Voyti\tests\Model\Form\Settings;
 
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\Form\Settings\GdprConsentForm;
-use Yiisoft\Translator\TranslatorInterface;
+use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class GdprConsentFormTest extends TestCase
 {
+    use TranslatorMockTrait;
 
     public function testConstruct(): void
     {
@@ -58,14 +59,5 @@ final class GdprConsentFormTest extends TestCase
         $form = new GdprConsentForm($this->createTranslator());
         $form->timezone = 'America/New_York';
         $this->assertSame('America/New_York', $form->timezone);
-    }
-
-    private function createTranslator(): TranslatorInterface
-    {
-        $translator = $this->createMock(TranslatorInterface::class);
-        $translator->method('translate')->willReturnCallback(
-            fn (string $id) => $id,
-        );
-        return $translator;
     }
 }

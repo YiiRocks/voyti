@@ -5,38 +5,27 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Strategy;
 
 use PHPUnit\Framework\TestCase;
-use Psr\SimpleCache\CacheInterface;
 use YiiRocks\Voyti\Model\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Strategy\NoneEmailChangeStrategy;
-use Yiisoft\Db\Cache\SchemaCache;
-use Yiisoft\Db\Connection\ConnectionInterface;
+use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use Yiisoft\Db\Connection\ConnectionProvider;
-use Yiisoft\Db\Sqlite\Connection as SqliteConnection;
-use Yiisoft\Db\Sqlite\Driver;
-use Yiisoft\Db\Sqlite\Dsn;
 use Yiisoft\Translator\TranslatorInterface;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class NoneEmailChangeStrategyTest extends TestCase
 {
-    private ?ConnectionInterface $connection = null;
+    use DatabaseSetupTrait;
 
     protected function setUp(): void
     {
-        if (!extension_loaded('pdo_sqlite')) {
-            $this->markTestSkipped('pdo_sqlite extension required.');
-        }
+        $this->setUpDatabase();
     }
 
     protected function tearDown(): void
     {
-        if ($this->connection !== null) {
-            $this->connection->createCommand('DROP TABLE IF EXISTS "user"')->execute();
-        }
-        ConnectionProvider::clear();
-        $this->connection = null;
+        $this->tearDownDatabase();
     }
 
     public function testRunReturnsFalseWhenUserIsNull(): void
@@ -49,8 +38,6 @@ final class NoneEmailChangeStrategyTest extends TestCase
 
     public function testRunSetsEmailAndSaves(): void
     {
-        $this->initDb();
-
         $user = $this->createUser();
         $form = new SettingsForm(new ModuleConfig(), $this->createTranslator());
         $form->setUser($user);
@@ -63,23 +50,11 @@ final class NoneEmailChangeStrategyTest extends TestCase
 
         $this->assertSame(
             'new@example.com',
-            $this->connection->createCommand(
+            ConnectionProvider::get()->createCommand(
                 'SELECT "email" FROM "user" WHERE "id" = :id',
                 ['id' => $user->getId()],
             )->queryScalar(),
         );
-    }
-
-    private function createSqliteConnection(): ConnectionInterface
-    {
-        $dsn = new Dsn('sqlite', ':memory:');
-        $driver = new Driver($dsn);
-        $cache = $this->createMock(CacheInterface::class);
-        $cache->method('set')->willReturn(true);
-        $cache->method('get')->willReturn(null);
-        $schemaCache = new SchemaCache($cache);
-        $schemaCache->setEnabled(false);
-        return new SqliteConnection($driver, $schemaCache);
     }
 
     private function createTranslator(): TranslatorInterface
@@ -100,38 +75,5 @@ final class NoneEmailChangeStrategyTest extends TestCase
         $user->setUpdatedAt(time());
         $user->save();
         return $user;
-    }
-
-    private function initDb(): void
-    {
-        $connection = $this->createSqliteConnection();
-        ConnectionProvider::set($connection);
-        $this->connection = $connection;
-
-        $this->connection->createCommand('
-            CREATE TABLE "user" (
-                "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-                "username" VARCHAR(255) NOT NULL,
-                "email" VARCHAR(255) NOT NULL,
-                "password_hash" VARCHAR(255) NOT NULL,
-                "auth_key" VARCHAR(32) NOT NULL,
-                "auth_tf_enabled" INTEGER NOT NULL DEFAULT 0,
-                "auth_tf_key" VARCHAR(64),
-                "auth_tf_type" VARCHAR(20),
-                "blocked_at" INTEGER,
-                "confirmed_at" INTEGER,
-                "created_at" INTEGER NOT NULL,
-                "flags" INTEGER NOT NULL DEFAULT 0,
-                "gdpr_consent" INTEGER NOT NULL DEFAULT 0,
-                "gdpr_consent_date" INTEGER,
-                "anonymized" INTEGER NOT NULL DEFAULT 0,
-                "last_login_at" INTEGER,
-                "last_login_ip" VARCHAR(45),
-                "password_changed_at" INTEGER,
-                "registration_ip" VARCHAR(45),
-                "unconfirmed_email" VARCHAR(255),
-                "updated_at" INTEGER NOT NULL
-            )
-        ')->execute();
     }
 }

@@ -14,6 +14,7 @@ use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\AuditLogService;
 use YiiRocks\Voyti\Service\Rbac\RuleEditionService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
+use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -24,6 +25,8 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class RuleControllerTest extends TestCase
 {
+    use RedirectResponseMockTrait;
+
     private AuditLogService&MockObject $auditLogService;
     private AuthHelper&MockObject $authHelper;
     private ModuleConfig $config;
@@ -101,14 +104,7 @@ final class RuleControllerTest extends TestCase
             ->method('create')
             ->willReturn(true);
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->create($request);
 
@@ -145,14 +141,7 @@ final class RuleControllerTest extends TestCase
 
         $this->ruleEditionService->expects($this->once())->method('remove')->with('myRule');
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->delete('myRule');
 
@@ -231,14 +220,7 @@ final class RuleControllerTest extends TestCase
             ->method('update')
             ->willReturn(true);
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->update($request, 'oldRule');
 

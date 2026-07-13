@@ -6,11 +6,12 @@ namespace YiiRocks\Voyti\tests\Model\Form\Rbac;
 
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\Form\Rbac\AbstractAuthItemForm;
-use Yiisoft\Translator\TranslatorInterface;
+use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class AbstractAuthItemFormTest extends TestCase
 {
+    use TranslatorMockTrait;
 
     public function testDefaultPropertyValues(): void
     {
@@ -85,14 +86,6 @@ final class AbstractAuthItemFormTest extends TestCase
             ->setConstructorArgs([$this->createTranslator()])
             ->onlyMethods(['getType'])
             ->getMock();
-    }
-    private function createTranslator(): TranslatorInterface
-    {
-        $translator = $this->createMock(TranslatorInterface::class);
-        $translator->method('translate')->willReturnCallback(
-            fn (string $id) => $id,
-        );
-        return $translator;
     }
 
     private function readPrivate(object $object, string $property): mixed

@@ -6,11 +6,12 @@ namespace YiiRocks\Voyti\tests\Model\Form\Rbac;
 
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\Form\Rbac\RuleForm;
-use Yiisoft\Translator\TranslatorInterface;
+use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class RuleFormTest extends TestCase
 {
+    use TranslatorMockTrait;
 
     public function testConstruct(): void
     {
@@ -61,13 +62,5 @@ final class RuleFormTest extends TestCase
         $this->assertSame('myRule', $form->name);
         $this->assertSame('App\\Rules\\MyRule', $form->class);
         $this->assertSame('oldRule', $form->previousName);
-    }
-    private function createTranslator(): TranslatorInterface
-    {
-        $translator = $this->createMock(TranslatorInterface::class);
-        $translator->method('translate')->willReturnCallback(
-            fn (string $id) => $id,
-        );
-        return $translator;
     }
 }

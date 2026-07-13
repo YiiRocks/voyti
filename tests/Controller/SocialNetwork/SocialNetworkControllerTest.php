@@ -14,6 +14,7 @@ use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -26,6 +27,7 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 final class SocialNetworkControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
+    use RedirectResponseMockTrait;
 
     private ModuleConfig $config;
     private CurrentUser&MockObject $currentUser;
@@ -87,14 +89,7 @@ final class SocialNetworkControllerTest extends TestCase
         $account = $this->createSocialAccount((int) $user->getId());
         $accountId = $account->getId();
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(302)
-            ->willReturn($response);
-        $response->expects($this->once())
-            ->method('withHeader')
-            ->willReturnSelf();
+        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->delete($request, $accountId);
 
