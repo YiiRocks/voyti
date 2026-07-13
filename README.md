@@ -16,6 +16,13 @@ Ported from [2amigos/yii2-usuario](https://github.com/2amigos/yii2-usuario) and 
 [![GitHub](https://img.shields.io/github/license/yiirocks/voyti.svg)](https://github.com/yiirocks/voyti/blob/main/LICENSE.md)
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/yiirocks/voyti/build.yml?branch=main)](https://github.com/yiirocks/voyti/actions)
 
+Stats for Nerds
+
+[![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fyiirocks%2Fvoyti%2Fbadges%2Fcoverage.json)](https://github.com/yiirocks/voyti/tree/badges)
+[![MSI](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fyiirocks%2Fvoyti%2Fbadges%2Fmsi.json)](https://github.com/yiirocks/voyti/tree/badges)
+[![Tests](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fyiirocks%2Fvoyti%2Fbadges%2Ftests.json)](https://github.com/yiirocks/voyti/tree/badges)
+[![Assertions](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fyiirocks%2Fvoyti%2Fbadges%2Fassertions.json)](https://github.com/yiirocks/voyti/tree/badges)
+
 ---
 
 ## Table of Contents
