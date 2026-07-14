@@ -12,7 +12,7 @@
         "extension"
     ],
     "homepage": "https://www.yii.rocks/voyti/",
-    "license": "MIT",
+    "license": "BSD-3-Clause",
     "minimum-stability": "dev",
     "prefer-stable": true,
     "authors": [
@@ -135,5 +135,11 @@
             "yiisoft/factory": true,
             "infection/extension-installer": true
         }
-    }
+    },
+    "funding": [
+        {
+            "type": "github",
+            "url": "https://github.com/sponsors/YiiRocks"
+        }
+    ]
 }
