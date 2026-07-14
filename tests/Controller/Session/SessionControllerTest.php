@@ -13,6 +13,7 @@ use RuntimeException;
 use YiiRocks\Voyti\Controller\Session\SessionController;
 use YiiRocks\Voyti\Model\Form\Auth\LoginForm;
 use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\Model\UserSessionHistory;
 use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
@@ -720,6 +721,45 @@ final class SessionControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
+    public function testLogoutDeletesSessionHistoryRecord(): void
+    {
+        $user = $this->createRealUser();
+        $sessionId = 'test-session-to-delete';
+
+        $sessionHistory = new UserSessionHistory();
+        $sessionHistory->setUserId($user->getIdOrZero());
+        $sessionHistory->setSessionId($sessionId);
+        $sessionHistory->setIp('192.168.1.1');
+        $sessionHistory->setCreatedAt(time());
+        $sessionHistory->setUpdatedAt(time());
+        $sessionHistory->save();
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn((string) $user->getId());
+        $identity->method('getIdOrZero')->willReturn($user->getIdOrZero());
+        $identity->expects($this->once())->method('setAuthKey');
+        $identity->expects($this->once())->method('setUpdatedAt');
+        $identity->expects($this->once())->method('save');
+
+        $this->currentUser->method('logout')->willReturn(true);
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $this->harness->getSession()->open();
+        $this->harness->getSession()->setId($sessionId);
+
+        $this->rememberMeCookieService->method('expireCookie')->willReturnArgument(0);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->method('createResponse')->willReturn($response);
+        $response->method('withHeader')->willReturnSelf();
+
+        $controller = $this->createController();
+        $controller->logout();
+
+        $deleted = UserSessionHistory::findByUserIdAndSessionId($user->getIdOrZero(), $sessionId);
+        $this->assertNull($deleted);
+    }
+
     private function createController(): SessionController
     {
         return $this->harness->createSessionController(
@@ -760,6 +800,20 @@ final class SessionControllerTest extends TestCase
         $user->setAuthTfEnabled($authTfEnabled);
         $user->setAuthTfType($authTfType);
         $user->setAuthTfKey($authTfKey);
+        $user->save();
+
+        return $user;
+    }
+
+    private function createRealUser(): User
+    {
+        $user = new User();
+        $user->setUsername('realuser');
+        $user->setEmail('realuser@example.com');
+        $user->setPasswordHash('hash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
         $user->save();
 
         return $user;

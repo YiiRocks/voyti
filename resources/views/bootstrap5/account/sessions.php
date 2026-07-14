@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\Model\UserSessionHistory;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\FormModel\Field;
@@ -19,6 +20,7 @@ use Yiisoft\View\WebView;
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
  * @var FlashInterface $flash
+ * @var ?string $timezone
  * @var string $csrf
  */
 
@@ -44,7 +46,7 @@ foreach ($sessions as $session) {
     echo Html::div()->class('row py-2 border-bottom align-items-center')->open();
     echo Html::div($session->getIp() ?? '')->class('col-3 text-break');
     echo Html::div($session->getUserAgent() ?? '')->class('col-5 text-break');
-    echo Html::div(date('Y-m-d H:i', $session->getCreatedAt()))->class('col-2');
+    echo Html::div(TimezoneHelper::formatLocalized($session->getCreatedAt(), $translator->getLocale(), $timezone))->class('col-2');
 
     echo Html::div()->class('col-2')->open();
     if ($session->getSessionId() === $currentSessionId) {

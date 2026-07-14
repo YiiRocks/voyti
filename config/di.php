@@ -171,7 +171,9 @@ return [
     QrCodeUriGeneratorService::class => fn (
         ModuleConfig $config
     ) => new QrCodeUriGeneratorService($config),
-    BackupCodeService::class => BackupCodeService::class,
+    BackupCodeService::class => fn () => new BackupCodeService(
+        new PasswordHasher(PASSWORD_BCRYPT, ['cost' => 5]),
+    ),
 
     // Social auth: OAuth client registry and account linking/authentication.
     ClientInterface::class => static fn (

@@ -58,6 +58,33 @@ final class UserSessionHistoryDecoratorTest extends TestCase
         unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
     }
 
+    public function testAgePruneDoesNotDeleteExpiredSessionsOfOtherUsers(): void
+    {
+        $eventDispatcher = new EventCaptureDispatcher();
+        $config = new ModuleConfig(enableSessionHistory: true, numberSessionHistory: false);
+
+        $session = $this->createOpenSession('sessageb');
+        $decorator = new UserSessionHistoryDecorator($eventDispatcher, $config, $session);
+
+        $userA = $this->createUser('usera', 'usera@example.com');
+        $userIdA = (int) $userA->getId();
+
+        $this->createSessionHistoryEntry($userIdA, 'a_expired', $config->rememberLoginLifespan + 1);
+
+        $userB = $this->createUser('userb', 'userb@example.com');
+
+        $_SERVER['REMOTE_ADDR'] = '192.168.1.1';
+        $_SERVER['HTTP_USER_AGENT'] = 'TestAgent';
+
+        $decorator->registerLogin($userB);
+
+        $remainingA = UserSessionHistory::query()->where(['user_id' => $userIdA])->all();
+        self::assertCount(1, $remainingA);
+        self::assertSame('a_expired', $remainingA[0]->getSessionId());
+
+        unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
+    }
+
     public function testRegisterLoginFallsBackToLocalhostWhenNoRemoteAddr(): void
     {
         $eventDispatcher = new EventCaptureDispatcher();
@@ -246,6 +273,37 @@ final class UserSessionHistoryDecoratorTest extends TestCase
         self::assertSame('', $sessions[0]->getSessionId());
 
         unset($_SERVER['REMOTE_ADDR']);
+    }
+
+    public function testRegisterLoginPrunesSessionsOlderThanRememberLoginLifespan(): void
+    {
+        $eventDispatcher = new EventCaptureDispatcher();
+        $config = new ModuleConfig(enableSessionHistory: true, numberSessionHistory: false);
+
+        $session = $this->createOpenSession('sessage');
+        $decorator = new UserSessionHistoryDecorator($eventDispatcher, $config, $session);
+
+        $user = $this->createUser('agetest', 'agetest@example.com');
+        $userId = (int) $user->getId();
+
+        $lifespan = $config->rememberLoginLifespan;
+
+        $this->createSessionHistoryEntry($userId, 'old_expired', $lifespan + 1);
+        $this->createSessionHistoryEntry($userId, 'old_fresh', $lifespan - 1);
+
+        $_SERVER['REMOTE_ADDR'] = '192.168.1.1';
+        $_SERVER['HTTP_USER_AGENT'] = 'TestAgent';
+
+        $decorator->registerLogin($user);
+
+        $sessions = UserSessionHistory::query()->where(['user_id' => $userId])->all();
+        $sessionIds = array_map(static fn (UserSessionHistory $s): string => $s->getSessionId(), $sessions);
+
+        self::assertContains('sessage', $sessionIds);
+        self::assertContains('old_fresh', $sessionIds);
+        self::assertNotContains('old_expired', $sessionIds);
+
+        unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
     }
 
     private function createOpenSession(string $id): FakeSession

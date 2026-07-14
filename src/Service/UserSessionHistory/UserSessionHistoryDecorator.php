@@ -45,8 +45,16 @@ final readonly class UserSessionHistoryDecorator
 
     private function pruneOldSessions(User $user): void
     {
+        $userId = $user->getIdOrZero();
+
+        $cutoff = time() - $this->config->rememberLoginLifespan;
+        (new UserSessionHistory())->deleteAll([
+            'and',
+            ['user_id' => $userId],
+            ['<', 'created_at', $cutoff],
+        ]);
+
         if ($this->config->hasNumberSessionHistory()) {
-            $userId = $user->getIdOrZero();
             $sessions = UserSessionHistory::query()
                 ->where(['user_id' => $userId])
                 ->orderBy(['created_at' => SORT_DESC])

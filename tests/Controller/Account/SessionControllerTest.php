@@ -87,7 +87,8 @@ final class SessionControllerTest extends TestCase
             ->method('render')
             ->with('account/sessions', $this->callback(
                 static fn (array $params): bool => count($params['sessions']) === 2
-                    && $params['currentSessionId'] === 'current-session',
+                    && $params['currentSessionId'] === 'current-session'
+                    && array_key_exists('timezone', $params),
             ))
             ->willReturn($response);
 
@@ -124,7 +125,8 @@ final class SessionControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('account/sessions', $this->callback(
-                static fn (array $params): bool => $params['sessions'] === [],
+                static fn (array $params): bool => $params['sessions'] === []
+                    && array_key_exists('timezone', $params),
             ))
             ->willReturn($response);
 

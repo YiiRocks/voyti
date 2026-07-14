@@ -13,11 +13,13 @@ use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
+use YiiRocks\Voyti\Event\Session\SessionEvent;
 use YiiRocks\Voyti\Event\User\FormEvent;
 use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Helper\LoginMetadataHelper;
 use YiiRocks\Voyti\Model\Form\Auth\LoginForm;
 use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\Model\UserSessionHistory;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\Auth\SocialAuthProviderService;
@@ -286,7 +288,19 @@ final readonly class SessionController
     public function logout(): ResponseInterface
     {
         $identity = $this->currentUser->getIdentity();
+        $sessionId = $this->session->getId() ?? '';
         if ($this->currentUser->logout() && $identity instanceof User) {
+            if ($sessionId !== '') {
+                $userId = $identity->getIdOrZero();
+                $sessionHistory = UserSessionHistory::findByUserIdAndSessionId($userId, $sessionId);
+                if ($sessionHistory !== null) {
+                    $sessionHistory->delete();
+                    $this->eventDispatcher->dispatch(
+                        new SessionEvent($userId, $sessionId, ['type' => SessionEvent::SESSION_TERMINATED]),
+                    );
+                }
+            }
+
             $identity->setAuthKey(Random::string());
             $identity->setUpdatedAt(time());
             $identity->save();

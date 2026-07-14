@@ -51,6 +51,7 @@ final readonly class SessionController
             'currentSessionId' => $this->session->getId(),
             'config' => $this->config,
             'flash' => $this->flash,
+            'timezone' => $user->getProfile()?->getTimezone(),
         ]);
     }
 
