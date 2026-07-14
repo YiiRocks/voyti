@@ -48,8 +48,9 @@ foreach ($sessions as $session) {
     echo Html::div($session->getUserAgent() ?? '')->class('col-5 text-break');
     echo Html::div(TimezoneHelper::formatLocalized($session->getCreatedAt(), $translator->getLocale(), $timezone))->class('col-2');
 
-    echo Html::div()->class('col-2')->open();
-    if ($session->getSessionId() === $currentSessionId) {
+    $isCurrentSession = $session->getSessionId() === $currentSessionId;
+    echo Html::div()->class($isCurrentSession ? 'col-2 text-end' : 'col-2')->open();
+    if ($isCurrentSession) {
         echo Html::span($translator->translate('voyti.view.sessions.this_device', category: 'voyti'))->class('badge bg-primary');
     } else {
         echo Html::form()
