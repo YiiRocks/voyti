@@ -12,11 +12,6 @@ use Yiisoft\FormModel\FormModel;
 final class ResetPasswordEventTest extends TestCase
 {
 
-    public function testConstants(): void
-    {
-        self::assertSame('afterReset', ResetPasswordEvent::AFTER_RESET);
-        self::assertSame('beforeTokenValidate', ResetPasswordEvent::BEFORE_TOKEN_VALIDATE);
-    }
     public function testConstructorAndGetters(): void
     {
         $token = new UserToken();

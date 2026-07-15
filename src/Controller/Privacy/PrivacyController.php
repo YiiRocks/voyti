@@ -10,11 +10,11 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
+use YiiRocks\Voyti\Controller\RequireUserTrait;
 use YiiRocks\Voyti\Event\Gdpr\GdprEvent;
 use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Helper\InputDataTrait;
-use YiiRocks\Voyti\Model\Form\Settings\AnonymizeForm;
-use YiiRocks\Voyti\Model\Form\Settings\DeleteAccountForm;
+use YiiRocks\Voyti\Model\Form\Settings\ConsentForm;
 use YiiRocks\Voyti\Model\Form\Settings\GdprConsentForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessionHistory;
@@ -41,6 +41,7 @@ final readonly class PrivacyController
     use InputDataTrait;
     use RedirectTrait;
     use RenderTrait;
+    use RequireUserTrait;
 
     public function __construct(
         private TranslatorInterface $translator,
@@ -60,7 +61,7 @@ final readonly class PrivacyController
 
     public function anonymize(ServerRequestInterface $request): ResponseInterface
     {
-        $form = new AnonymizeForm($this->translator);
+        $form = new ConsentForm($this->translator, 'anonymize', 'voyti.view.anonymize.confirm_label');
 
         if ($request->getMethod() === Method::POST) {
             $body = $this->parsedBody($request);
@@ -91,7 +92,7 @@ final readonly class PrivacyController
 
     public function delete(ServerRequestInterface $request): ResponseInterface
     {
-        $form = new DeleteAccountForm($this->translator);
+        $form = new ConsentForm($this->translator, 'delete-account', 'voyti.view.delete_account.confirm_label');
 
         if ($request->getMethod() === Method::POST) {
             $body = $this->parsedBody($request);
@@ -218,20 +219,5 @@ final readonly class PrivacyController
             ),
             default => null,
         };
-    }
-
-    private function requireUser(): User|ResponseInterface
-    {
-        $identity = $this->currentUser->getIdentity();
-        if ($identity instanceof GuestIdentityInterface) {
-            return $this->renderError('voyti.settings.not_authenticated');
-        }
-
-        $user = User::findById((int) ($identity->getId() ?? 0));
-        if ($user === null) {
-            return $this->renderError('voyti.settings.user_not_found');
-        }
-
-        return $user;
     }
 }

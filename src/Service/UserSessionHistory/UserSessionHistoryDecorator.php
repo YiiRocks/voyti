@@ -20,7 +20,7 @@ final readonly class UserSessionHistoryDecorator
     ) {
     }
 
-    public function registerLogin(User $user): void
+    public function registerLogin(User $user, ?string $previousSessionId = null): void
     {
         if (!$this->config->enableSessionHistory) {
             return;
@@ -28,6 +28,10 @@ final readonly class UserSessionHistoryDecorator
 
         $userId = $user->getIdOrZero();
         $sessionId = $this->session?->getId() ?? '';
+
+        if ($previousSessionId !== null && $previousSessionId !== '' && $previousSessionId !== $sessionId) {
+            $this->replaceSession($userId, $previousSessionId);
+        }
 
         $userSessionHistory = new UserSessionHistory();
         $userSessionHistory->setUserId($userId);
@@ -69,5 +73,18 @@ final readonly class UserSessionHistoryDecorator
                 $session->delete();
             }
         }
+    }
+
+    private function replaceSession(int $userId, string $previousSessionId): void
+    {
+        $previous = UserSessionHistory::findByUserIdAndSessionId($userId, $previousSessionId);
+        if ($previous === null) {
+            return;
+        }
+
+        $previous->delete();
+        $this->eventDispatcher->dispatch(
+            new SessionEvent($userId, $previousSessionId, ['type' => SessionEvent::SESSION_TERMINATED]),
+        );
     }
 }

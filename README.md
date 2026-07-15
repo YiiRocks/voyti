@@ -108,8 +108,7 @@ use Yiisoft\Router\RouteCollection;
 use Yiisoft\Router\RouteCollectionInterface;
 use Yiisoft\Router\RouteCollector;
 use Yiisoft\Session\SessionMiddleware;
-use YiiRocks\Voyti\Middleware\PasswordAgeEnforceMiddleware;
-use YiiRocks\Voyti\Middleware\TwoFactorAuthenticationEnforceMiddleware;
+use YiiRocks\Voyti\Middleware\VoytiMiddleware;
 
 /** @var Config $config */
 
@@ -123,13 +122,9 @@ return [
                         Group::create('/')
                             ->middleware(
                                 SessionMiddleware::class,
-                                // Site-wide enforcement (see "Site-wide enforcement" below).
-                                // Safe to scope to this group only: the account settings route
-                                // (voyti/account-update) lives in the separate voyti-routes group
-                                // below, so redirecting there takes the request out of this group
-                                // and can't loop.
-                                PasswordAgeEnforceMiddleware::class,
-                                TwoFactorAuthenticationEnforceMiddleware::class,
+                                // Site-wide enforcement (see "Site-wide enforcement" below). Safe here
+                                // since voyti/account-update lives in the voyti-routes group below, not this one.
+                                VoytiMiddleware::class,
                             )
                             ->routes(...$config->get('routes')), // your own app routes
                         Group::create('/user/')
@@ -141,7 +136,7 @@ return [
 ];
 ```
 
-`voyti-routes` already wraps itself with `SessionMiddleware` and `CsrfMiddleware` internally (see `config/routes.php`), so the second group doesn't need to repeat them. `PasswordAgeEnforceMiddleware` is also already applied inside `voyti-routes` automatically when `enablePasswordExpiration` is `true`, so adding it to your own group above only extends that protection to your app's own pages — it isn't duplicating work. `TwoFactorAuthenticationEnforceMiddleware`, however, is never auto-applied by the extension itself, so add it wherever you want that enforcement.
+`voyti-routes` already wraps itself with `SessionMiddleware` and `CsrfMiddleware` internally (see `config/routes.php`), so the second group doesn't need to repeat them. `SessionRevocationEnforceMiddleware` and `PasswordAgeEnforceMiddleware` are also already applied inside `voyti-routes` automatically — the former when `enableSessionHistory` is `true`, the latter when `enablePasswordExpiration` is `true` — so adding `VoytiMiddleware` to your own group above only extends that protection to your app's own pages, it isn't duplicating work. `TwoFactorAuthenticationEnforceMiddleware`, however, is never auto-applied by the extension itself, so `VoytiMiddleware` picks it up for you in a single entry.
 
 When `enableRestApi` is `true`, the API routes are mounted under `adminRestPrefix . '/v1/'` and expose user CRUD endpoints.
 
@@ -356,24 +351,22 @@ With credentials configured:
 
 ## Middleware
 
-The extension ships four PSR-15 middleware classes for access control:
+The extension ships six PSR-15 middleware classes for access control:
 
 | Middleware | Description | Auto-registered on the extension's own routes? |
 |-----------|-------------|-----------|
 | `AccessRuleMiddleware` | Redirects guests to the login page (`voyti/session-login`); checks `administratorPermissionName` for admin access | Yes — on `admin/*` (users and RBAC management) and the REST API group |
 | `ApiTokenAuthenticationMiddleware` | Resolves the `Authorization: Bearer <token>` header to a user for that request only (no session); returns `401` if missing/invalid | Yes — on the REST API group, ahead of `AccessRuleMiddleware`, in place of the session cookie |
+| `SessionRevocationEnforceMiddleware` | Logs out and redirects to the login page (`voyti/session-login`) when the current session's `user_session_history` row is gone — i.e. it was terminated from the sessions list (self-service or admin) on another request. Without this, terminating a session only removed the audit row; the browser that owned it stayed logged in until its PHP session expired on its own. Otherwise touches the row's `updated_at` on every request, so the sessions list can show "last seen" activity per device. | Yes, when `enableSessionHistory` is `true` — on the extension's whole web route group |
 | `PasswordAgeEnforceMiddleware` | Redirects to the account settings page (`voyti/account-update`) when `maxPasswordAge` is exceeded | Yes, when `enablePasswordExpiration` is `true` — on the extension's whole web route group |
 | `TwoFactorAuthenticationEnforceMiddleware` | Redirects to the account settings page (`voyti/account-update`) when required permissions are assigned but 2FA isn't enabled | No |
-
-The redirect targets (`voyti/session-login` and `voyti/account-update`) are the extension's own routes and aren't configurable.
+| `VoytiMiddleware` | Convenience wrapper that chains `SessionRevocationEnforceMiddleware`, `PasswordAgeEnforceMiddleware`, and `TwoFactorAuthenticationEnforceMiddleware` in a single middleware entry — add this to your app's route group instead of the three individual ones (see [Site-wide enforcement](#site-wide-enforcement)) | No |
 
 ### Site-wide enforcement
 
-The auto-registration above only covers routes *this extension defines* (`voyti/session-login`, `voyti/profile-update`, `voyti/admin-users`, etc.) — it has no way to reach routes your host application defines itself, since `config/routes.php` can only attach middleware to the route groups it builds. If a user with an expired password or missing 2FA navigates to your app's own dashboard, home page, or any other route outside this extension, nothing stops them.
+The auto-registration above only covers routes *this extension defines* — `config/routes.php` can't attach middleware to routes your host app defines itself. Without it, a user with an expired password, missing 2FA, or a revoked session can still browse your app's own dashboard, home page, or any other route outside this extension.
 
-To actually enforce "the user must fix this before doing anything else" across your own pages too, add `PasswordAgeEnforceMiddleware` and/or `TwoFactorAuthenticationEnforceMiddleware` to the `Group` that wraps your app's own routes — see the [Register routes](#3-register-routes) example above, which applies both alongside `SessionMiddleware`. Add any other middleware your own routes need (CSRF protection, etc.) — the example only lists what's required for login/session state to work. Keep the enforcement middlewares scoped to your own route group (as in that example) rather than the `voyti-routes` group: the account settings route (`voyti/account-update`) lives inside `voyti-routes`, and `TwoFactorAuthenticationEnforceMiddleware` has no built-in exemption for it, so wrapping `voyti-routes` with it would redirect a user straight back into a loop the moment they try to reach the settings page to actually fix the problem.
-
-If your app instead configures middleware at a level above routing entirely (e.g. a global pipeline in your app skeleton's runner config), the same two classes can go there instead — just place them after session middleware so `CurrentUser` is resolvable, and keep the same caveat in mind for the `voyti/account-update` route.
+Add `VoytiMiddleware` (or the individual middlewares, if you only need a subset) to the `Group` wrapping your app's own routes — see the [Register routes](#3-register-routes) example above — or to a global middleware pipeline above routing if your app has one; just place it after session middleware so `CurrentUser` is resolvable. Each sub-middleware checks its own feature flag, so disabled features are no-ops. Keep it scoped to your own routes, not the `voyti-routes` group: `voyti/account-update` lives inside `voyti-routes`, and `TwoFactorAuthenticationEnforceMiddleware` has no exemption for it, so wrapping `voyti-routes` too would redirect a user into a loop the moment they try to reach settings to fix the problem.
 
 ## RBAC
 

@@ -28,13 +28,12 @@ final readonly class BlockService
         }
 
         $user->save();
-        $result = true;
         $this->eventDispatcher->dispatch(new UserEvent($user));
 
         if ($user->isBlocked()) {
             $this->terminateUserSessionsService->run($user->getIdOrZero());
         }
 
-        return $result;
+        return true;
     }
 }

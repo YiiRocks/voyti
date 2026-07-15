@@ -13,10 +13,8 @@ use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\ServiceResult;
-use YiiRocks\Voyti\Service\User\AccountConfirmationService;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\RegisterService;
-use YiiRocks\Voyti\Service\User\ResendConfirmationService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
@@ -34,7 +32,6 @@ final class RegistrationControllerTest extends TestCase
     use DatabaseSetupTrait;
     use RedirectResponseMockTrait;
 
-    private AccountConfirmationService&MockObject $accountConfirmationService;
     private ModuleConfig $config;
     private ConfirmationService&MockObject $confirmationService;
     private FlashInterface&MockObject $flash;
@@ -42,7 +39,6 @@ final class RegistrationControllerTest extends TestCase
     private HydratorInterface&MockObject $hydrator;
     private PendingSocialAccountService&MockObject $pendingSocialAccountService;
     private RegisterService&MockObject $registerService;
-    private ResendConfirmationService&MockObject $resendConfirmationService;
     private ResponseFactoryInterface&MockObject $responseFactory;
     private TranslatorInterface $translator;
     private ValidatorInterface&MockObject $validator;
@@ -61,8 +57,6 @@ final class RegistrationControllerTest extends TestCase
         $this->flash = $this->createMock(FlashInterface::class);
         $this->registerService = $this->createMock(RegisterService::class);
         $this->confirmationService = $this->createMock(ConfirmationService::class);
-        $this->accountConfirmationService = $this->createMock(AccountConfirmationService::class);
-        $this->resendConfirmationService = $this->createMock(ResendConfirmationService::class);
         $this->pendingSocialAccountService = $this->createMock(PendingSocialAccountService::class);
 
         $this->hydrator->method('hydrate')->willReturnCallback(
@@ -100,8 +94,8 @@ final class RegistrationControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $this->accountConfirmationService->expects($this->once())
-            ->method('run')
+        $this->confirmationService->expects($this->once())
+            ->method('confirmWithCode')
             ->willReturn(true);
 
         $response = $this->mockRedirectResponse($this->responseFactory);
@@ -118,8 +112,8 @@ final class RegistrationControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $this->accountConfirmationService->expects($this->once())
-            ->method('run')
+        $this->confirmationService->expects($this->once())
+            ->method('confirmWithCode')
             ->willReturn(false);
 
         $response = $this->createMock(ResponseInterface::class);
@@ -330,8 +324,8 @@ final class RegistrationControllerTest extends TestCase
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['resend' => ['email' => 'test@example.com']]);
 
         $this->validator->method('validate')->willReturn(new Result());
-        $this->resendConfirmationService->expects($this->once())
-            ->method('run')
+        $this->confirmationService->expects($this->once())
+            ->method('resend')
             ->willReturn(true);
 
         $response = $this->mockRedirectResponse($this->responseFactory);
@@ -390,8 +384,6 @@ final class RegistrationControllerTest extends TestCase
             flash: $this->flash,
             registerService: $this->registerService,
             confirmationService: $this->confirmationService,
-            accountConfirmationService: $this->accountConfirmationService,
-            resendConfirmationService: $this->resendConfirmationService,
             pendingSocialAccountService: $this->pendingSocialAccountService,
         );
     }

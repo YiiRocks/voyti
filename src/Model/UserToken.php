@@ -61,11 +61,6 @@ final class UserToken extends ActiveRecord
         return $token;
     }
 
-    public static function findByUserIdTypeAndCode(int $userId, int $type, string $code): ?UserToken
-    {
-        return self::findByUserIdAndCodeAndType($userId, $code, $type);
-    }
-
     public function getCode(): string
     {
         return $this->code;

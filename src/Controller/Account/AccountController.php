@@ -9,21 +9,19 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
+use YiiRocks\Voyti\Controller\RequireUserTrait;
 use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Model\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\EmailChangeService;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
-use YiiRocks\Voyti\Strategy\EmailChangeStrategyFactory;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
-use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
-use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
@@ -32,15 +30,14 @@ final readonly class AccountController
     use InputDataTrait;
     use RedirectTrait;
     use RenderTrait;
+    use RequireUserTrait;
 
     public function __construct(
         private TranslatorInterface $translator,
         private WebViewRenderer $viewRenderer,
-        private PasswordHasher $passwordHasher,
         private ValidatorInterface $validator,
         private UrlGeneratorInterface $url,
         private ModuleConfig $config,
-        private EmailChangeStrategyFactory $emailChangeStrategyFactory,
         private EmailChangeService $emailChangeService,
         private HydratorInterface $hydrator,
         private CurrentUser $currentUser,
@@ -88,23 +85,17 @@ final readonly class AccountController
 
                 if ($form->email !== $user->getEmail()) {
                     $form->setUser($user);
-                    $strategy = $this->emailChangeStrategyFactory->makeByStrategyType(
+                    $this->emailChangeService->initiate(
                         $this->config->emailChangeConfirmation,
                         $form,
                     );
-                    $strategy->run();
                 }
 
                 if ($form->password !== '') {
-                    $user->setPasswordHash($this->passwordHasher->hash($form->password));
-                    $user->setPasswordChangedAt(time());
-                }
-
-                $user->setUpdatedAt(time());
-                $user->save();
-
-                if ($form->password !== '') {
-                    $this->passwordHistoryService->record($user);
+                    $this->passwordHistoryService->applyPasswordChange($user, $form->password);
+                } else {
+                    $user->setUpdatedAt(time());
+                    $user->save();
                 }
 
                 return $this->redirectWithFlash(
@@ -120,20 +111,5 @@ final readonly class AccountController
     protected function viewPath(): string
     {
         return $this->config->viewPath;
-    }
-
-    private function requireUser(): User|ResponseInterface
-    {
-        $identity = $this->currentUser->getIdentity();
-        if ($identity instanceof GuestIdentityInterface) {
-            return $this->renderError('voyti.settings.not_authenticated');
-        }
-
-        $user = User::findById((int) ($identity->getId() ?? 0));
-        if ($user === null) {
-            return $this->renderError('voyti.settings.user_not_found');
-        }
-
-        return $user;
     }
 }

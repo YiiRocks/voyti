@@ -10,7 +10,7 @@ trait TranslatorMockTrait
 {
     private function createTranslator(): TranslatorInterface
     {
-        $translator = $this->createMock(TranslatorInterface::class);
+        $translator = $this->createStub(TranslatorInterface::class);
         $translator->method('translate')->willReturnCallback(fn (string $id) => $id);
         return $translator;
     }

@@ -9,6 +9,7 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
+use YiiRocks\Voyti\Controller\RequireUserTrait;
 use YiiRocks\Voyti\Event\Session\SessionEvent;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessionHistory;
@@ -18,13 +19,13 @@ use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
-use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 final readonly class SessionController
 {
     use RedirectTrait;
     use RenderTrait;
+    use RequireUserTrait;
 
     public function __construct(
         private TranslatorInterface $translator,
@@ -87,20 +88,5 @@ final readonly class SessionController
     protected function viewPath(): string
     {
         return $this->config->viewPath;
-    }
-
-    private function requireUser(): User|ResponseInterface
-    {
-        $identity = $this->currentUser->getIdentity();
-        if ($identity instanceof GuestIdentityInterface) {
-            return $this->renderError('voyti.settings.not_authenticated');
-        }
-
-        $user = User::findById((int) ($identity->getId() ?? 0));
-        if ($user === null) {
-            return $this->renderError('voyti.settings.user_not_found');
-        }
-
-        return $user;
     }
 }

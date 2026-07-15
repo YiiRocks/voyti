@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Service;
 
 use DateInterval;
+use DateTimeImmutable;
 use JsonException;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
 use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\Model\UserSessionHistory;
 use Yiisoft\Auth\IdentityRepositoryInterface;
+use Yiisoft\Cookies\Cookie;
 use Yiisoft\Json\Json;
+use Yiisoft\Session\SessionInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Login\Cookie\CookieLogin;
 use Yiisoft\User\Login\Cookie\CookieLoginIdentityInterface;
@@ -22,6 +26,15 @@ use function is_string;
 use function setcookie;
 use function time;
 
+/**
+ * The auto-login cookie payload is `[identityId, cookieLoginKey, expiresAt, sessionId]` - the trailing
+ * sessionId ties the cookie to the specific {@see UserSessionHistory} row it was issued for. `cookieLoginKey`
+ * is a single secret shared by every device a user has ever used (see {@see User::getCookieLoginKey()}), so
+ * without the sessionId check a cookie stolen or kept by one device could never be selectively revoked:
+ * deleting that device's session row (self-service "terminate session", or an admin bulk-terminate) is what
+ * makes {@see loginByCookie()} refuse to honor that device's cookie again, even though every other device's
+ * cookie carries the exact same secret and stays valid.
+ */
 final class RememberMeCookieService
 {
     private \Closure $cookieEmitter;
@@ -38,25 +51,29 @@ final class RememberMeCookieService
         $this->now = $now ?? static fn (): int => time();
     }
 
-    public function addCookie(CookieLoginIdentityInterface $identity, ResponseInterface $response): ResponseInterface
+    public function addCookie(CookieLoginIdentityInterface $identity, ResponseInterface $response, string $sessionId): ResponseInterface
     {
-        return $this
-            ->cookieLogin()
-            ->addCookie(
-                $identity,
-                $response,
-                $this->duration > 0 ? new DateInterval('PT' . $this->duration . 'S') : null,
-            );
+        $duration = $this->duration > 0 ? new DateInterval('PT' . $this->duration . 'S') : null;
+        $expires = $duration !== null ? (new DateTimeImmutable())->add($duration) : null;
+
+        $value = Json::encode([
+            $identity->getId(),
+            $identity->getCookieLoginKey(),
+            $expires?->getTimestamp() ?? 0,
+            $sessionId,
+        ]);
+
+        return (new Cookie($this->cookieName, $value, $expires))->addToResponse($response);
     }
 
     public function expireCookie(ResponseInterface $response): ResponseInterface
     {
-        return $this->cookieLogin()->expireCookie($response);
+        return (new CookieLogin())->withCookieName($this->cookieName)->expireCookie($response);
     }
 
     public function getCookieName(): string
     {
-        return $this->cookieLogin()->getCookieName();
+        return $this->cookieName;
     }
 
     /**
@@ -66,6 +83,7 @@ final class RememberMeCookieService
         array $cookies,
         CurrentUser $currentUser,
         IdentityRepositoryInterface $identityRepository,
+        SessionInterface $session,
     ): void {
         $now = (int) ($this->now)();
         $cookieName = $this->getCookieName();
@@ -81,11 +99,11 @@ final class RememberMeCookieService
             return;
         }
 
-        if (!is_array($data) || count($data) !== 3) {
+        if (!is_array($data) || count($data) !== 4) {
             return;
         }
 
-        [$id, $key, $expires] = $data;
+        [$id, $key, $expires, $cookieSessionId] = $data;
         $identity = $identityRepository->findIdentity((string) $id);
 
         $expiresInt = (int) $expires;
@@ -96,13 +114,33 @@ final class RememberMeCookieService
         ) {
             return;
         }
+
+        if (
+            $identity instanceof User
+            && UserSessionHistory::findByUserIdAndSessionId($identity->getIdOrZero(), (string) $cookieSessionId) === null
+        ) {
+            // The session this cookie was issued for was terminated (self-service or admin) - the cookie
+            // must not resurrect it, even though the shared cookieLoginKey is still otherwise valid.
+            return;
+        }
+
+        $previousSessionId = $session->getId();
         $currentUser->login($identity);
 
-        // CurrentUser::login() regenerates the session ID (anti-fixation); dispatching
-        // AfterLoginEvent here - as the interactive login flow does - keeps
-        // SessionHistoryListener in sync with that new ID for auto-logins too.
         if ($identity instanceof User) {
-            $this->eventDispatcher?->dispatch(new AfterLoginEvent($identity));
+            // CurrentUser::login() regenerates the session ID (anti-fixation); dispatching
+            // AfterLoginEvent here - as the interactive login flow does - keeps
+            // SessionHistoryListener in sync with that new ID for auto-logins too.
+            $this->eventDispatcher?->dispatch(new AfterLoginEvent($identity, previousSessionId: $previousSessionId));
+
+            $newSessionId = $session->getId();
+            if ($newSessionId !== null && $newSessionId !== '') {
+                // The just-replaced history row (see UserSessionHistoryDecorator::registerLogin) now lives
+                // under $newSessionId, not the sessionId this cookie still references - without re-issuing
+                // the cookie here, the next time this device needs to auto-login it would fail the row-existence
+                // check above, since the row it points to no longer exists.
+                $this->emitCookie((string) $id, (string) $key, $expiresInt, $newSessionId);
+            }
         }
     }
 
@@ -132,7 +170,7 @@ final class RememberMeCookieService
             return;
         }
 
-        if (!is_array($data) || count($data) !== 3) {
+        if (!is_array($data) || count($data) !== 4) {
             return;
         }
 
@@ -148,7 +186,12 @@ final class RememberMeCookieService
         }
 
         $expiresAt = $now + $this->duration;
-        $value = Json::encode([$identity->getId(), $identity->getCookieLoginKey(), $expiresAt]);
+        $this->emitCookie((string) $identity->getId(), $identity->getCookieLoginKey(), $expiresAt, (string) $data[3]);
+    }
+
+    private function emitCookie(string $id, string $key, int $expiresAt, string $sessionId): void
+    {
+        $value = Json::encode([$id, $key, $expiresAt, $sessionId]);
 
         ($this->cookieEmitter)($this->cookieName, $value, [
             'expires' => $expiresAt,
@@ -157,10 +200,5 @@ final class RememberMeCookieService
             'httponly' => true,
             'samesite' => 'Lax',
         ]);
-    }
-
-    private function cookieLogin(): CookieLogin
-    {
-        return (new CookieLogin())->withCookieName($this->cookieName);
     }
 }

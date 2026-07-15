@@ -276,7 +276,7 @@ return [
     'voyti.view.session_history.title' => 'Historial de sesiones',
     'voyti.view.session_history.ip' => 'Dirección IP',
     'voyti.view.session_history.user_agent' => 'Agente de usuario',
-    'voyti.view.session_history.created' => 'Creado',
+    'voyti.view.session_history.last_seen' => 'Última vez visto',
     'voyti.view.sessions.title' => 'Sesiones activas',
     'voyti.view.sessions.this_device' => 'Este dispositivo',
     'voyti.view.sessions.none' => 'No hay sesiones activas.',

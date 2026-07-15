@@ -42,15 +42,12 @@ use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\Service\TwoFactor\BackupCodeService;
 use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
 use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
-use YiiRocks\Voyti\Service\User\AccountConfirmationService;
 use YiiRocks\Voyti\Service\User\BlockService;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\CreateService;
 use YiiRocks\Voyti\Service\User\RegisterService;
-use YiiRocks\Voyti\Service\User\ResendConfirmationService;
 use YiiRocks\Voyti\Service\User\UserCreationHelper;
 use YiiRocks\Voyti\Service\UserSessionHistory\TerminateUserSessionsService;
-use YiiRocks\Voyti\Strategy\EmailChangeStrategyFactory;
 use YiiRocks\Voyti\Validator\Rbac\ItemsValidator;
 use YiiRocks\Voyti\Validator\Rbac\RuleValidator;
 use Yiisoft\Hydrator\HydratorInterface;
@@ -100,12 +97,13 @@ final class ControllerHarness
         HydratorInterface $hydrator,
         FlashInterface $flash,
         ?PasswordHasher $passwordHasher = null,
-        ?EmailChangeStrategyFactory $emailChangeStrategyFactory = null,
         ?EmailChangeService $emailChangeService = null,
         ?PasswordHistoryService $passwordHistoryService = null,
     ): AccountController {
         $passwordHasher ??= new PasswordHasher();
-        $emailChangeStrategyFactory ??= new EmailChangeStrategyFactory(
+        $emailChangeService ??= new EmailChangeService(
+            $this->config,
+            new \YiiRocks\Voyti\Factory\UserTokenFactory(),
             new MailService(
                 $this->mailer,
                 $this->config->mailPath,
@@ -114,19 +112,14 @@ final class ControllerHarness
                 $this->config->appName,
             ),
         );
-        $emailChangeService ??= new EmailChangeService(
-            $this->config,
-        );
         $passwordHistoryService ??= new PasswordHistoryService($passwordHasher, $this->config);
 
         return new AccountController(
             translator: $translator,
             viewRenderer: $viewRenderer,
-            passwordHasher: $passwordHasher,
             validator: $validator,
             url: $this->url,
             config: $this->config,
-            emailChangeStrategyFactory: $emailChangeStrategyFactory,
             emailChangeService: $emailChangeService,
             hydrator: $hydrator,
             currentUser: $currentUser,
@@ -308,16 +301,9 @@ final class ControllerHarness
         FlashInterface $flash,
         ?RegisterService $registerService = null,
         ?ConfirmationService $confirmationService = null,
-        ?AccountConfirmationService $accountConfirmationService = null,
-        ?ResendConfirmationService $resendConfirmationService = null,
         ?PendingSocialAccountService $pendingSocialAccountService = null,
     ): RegistrationController {
         $registerService ??= new RegisterService();
-        $confirmationService ??= new ConfirmationService(
-            $this->eventDispatcher,
-        );
-        $accountConfirmationService ??= new AccountConfirmationService();
-
         $mailService = new MailService(
             $this->mailer,
             $this->config->mailPath,
@@ -325,7 +311,8 @@ final class ControllerHarness
             $this->url,
             $this->config->appName,
         );
-        $resendConfirmationService ??= new ResendConfirmationService(
+        $confirmationService ??= new ConfirmationService(
+            $this->eventDispatcher,
             new \YiiRocks\Voyti\Factory\UserTokenFactory(),
             $mailService,
         );
@@ -335,9 +322,7 @@ final class ControllerHarness
             translator: $translator,
             viewRenderer: $viewRenderer,
             userRegisterService: $registerService,
-            userConfirmationService: $confirmationService,
-            accountConfirmationService: $accountConfirmationService,
-            resendConfirmationService: $resendConfirmationService,
+            confirmationService: $confirmationService,
             validator: $validator,
             eventDispatcher: $this->eventDispatcher,
             url: $this->url,
@@ -554,7 +539,6 @@ final class ControllerHarness
         ResponseFactoryInterface $responseFactory,
         HydratorInterface $hydrator,
         FlashInterface $flash,
-        ?PasswordHasher $passwordHasher = null,
         ?PasswordGeneratorInterface $passwordGenerator = null,
         ?CreateService $createService = null,
         ?BlockService $blockService = null,
@@ -567,7 +551,7 @@ final class ControllerHarness
         ?PasswordHistoryService $passwordHistoryService = null,
         ?AuditLogService $auditLogService = null,
     ): UserController {
-        $passwordHasher ??= new PasswordHasher();
+        $passwordHasher = new PasswordHasher();
         $passwordGenerator ??= $this->createPasswordGenerator();
         $passwordHistoryService ??= new PasswordHistoryService($passwordHasher, $this->config);
         $auditLogService ??= new AuditLogService($this->config);
@@ -576,6 +560,14 @@ final class ControllerHarness
         $authHelper ??= $this->createAuthHelper($currentUser);
         $confirmationService ??= new ConfirmationService(
             $this->eventDispatcher,
+            new \YiiRocks\Voyti\Factory\UserTokenFactory(),
+            new MailService(
+                $this->mailer,
+                $this->config->mailPath,
+                $translator,
+                $this->url,
+                $this->config->appName,
+            ),
         );
         $blockService ??= new BlockService(
             $this->eventDispatcher,
@@ -601,7 +593,6 @@ final class ControllerHarness
             switchIdentityService: $switchIdentityService,
             updateAuthAssignmentsService: $updateAssignmentsService,
             authHelper: $authHelper,
-            passwordHasher: $passwordHasher,
             passwordGenerator: $passwordGenerator,
             validator: $validator,
             eventDispatcher: $this->eventDispatcher,

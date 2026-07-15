@@ -11,11 +11,6 @@ use YiiRocks\Voyti\Model\User;
 final class GdprEventTest extends TestCase
 {
 
-    public function testConstants(): void
-    {
-        self::assertSame('afterDelete', GdprEvent::AFTER_DELETE);
-        self::assertSame('beforeDelete', GdprEvent::BEFORE_DELETE);
-    }
     public function testConstructorAndGetters(): void
     {
         $user = new User();

@@ -54,7 +54,7 @@ return [
                     $rememberMeCookieService instanceof RememberMeCookieService
                     && $identityRepository instanceof IdentityRepositoryInterface
                 ) {
-                    $rememberMeCookieService->loginByCookie($_COOKIE, $currentUser, $identityRepository);
+                    $rememberMeCookieService->loginByCookie($_COOKIE, $currentUser, $identityRepository, $session);
                 }
             }
 

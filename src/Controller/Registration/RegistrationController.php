@@ -18,10 +18,8 @@ use YiiRocks\Voyti\Model\Form\Auth\ResendForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
-use YiiRocks\Voyti\Service\User\AccountConfirmationService;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\RegisterService;
-use YiiRocks\Voyti\Service\User\ResendConfirmationService;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -40,9 +38,7 @@ final readonly class RegistrationController
         private TranslatorInterface $translator,
         private WebViewRenderer $viewRenderer,
         private RegisterService $userRegisterService,
-        private ConfirmationService $userConfirmationService,
-        private AccountConfirmationService $accountConfirmationService,
-        private ResendConfirmationService $resendConfirmationService,
+        private ConfirmationService $confirmationService,
         private ValidatorInterface $validator,
         private EventDispatcherInterface $eventDispatcher,
         private UrlGeneratorInterface $url,
@@ -67,7 +63,7 @@ final readonly class RegistrationController
             return $this->redirectWithFlash($this->url->generate('voyti/session-login'), 'voyti.registration.complete');
         }
 
-        if ($this->accountConfirmationService->run($code, $user, $this->userConfirmationService)) {
+        if ($this->confirmationService->confirmWithCode($code, $user)) {
             return $this->redirectWithFlash($this->url->generate('voyti/session-login'), 'voyti.registration.complete');
         }
 
@@ -154,7 +150,7 @@ final readonly class RegistrationController
 
             if ($result->isValid()) {
                 $user = User::findByEmail($form->email);
-                if ($user !== null && $this->resendConfirmationService->run($user)) {
+                if ($user !== null && $this->confirmationService->resend($user)) {
                     return $this->redirectWithFlash(
                         $this->url->generate('voyti/session-login'),
                         'voyti.registration.new_confirmation_sent',

@@ -269,7 +269,7 @@ return [
     'voyti.view.session_history.title' => 'Sitzungsverlauf',
     'voyti.view.session_history.ip' => 'IP-Adresse',
     'voyti.view.session_history.user_agent' => 'Benutzeragent',
-    'voyti.view.session_history.created' => 'Erstellt',
+    'voyti.view.session_history.last_seen' => 'Zuletzt gesehen',
     'voyti.view.sessions.title' => 'Aktive Sitzungen',
     'voyti.view.sessions.this_device' => 'Dieses Gerät',
     'voyti.view.sessions.none' => 'Keine aktiven Sitzungen.',

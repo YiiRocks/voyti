@@ -684,43 +684,6 @@ final class SessionControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    public function testLogoutRedirectsToHomeRouteByDefault(): void
-    {
-        $controller = $this->createController();
-
-        $this->currentUser->method('logout')->willReturn(false);
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-        $this->rememberMeCookieService->method('expireCookie')->willReturnArgument(0);
-
-        $response = $this->mockRedirectResponse($this->responseFactory, '//home');
-
-        $result = $controller->logout();
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testLogoutWhenLoggedInRotatesAuthKeyAndSaves(): void
-    {
-        $controller = $this->createController();
-
-        $identity = $this->createMock(User::class);
-        $identity->expects($this->once())->method('setAuthKey');
-        $identity->expects($this->once())->method('setUpdatedAt');
-        $identity->expects($this->once())->method('save');
-
-        $this->currentUser->method('logout')->willReturn(true);
-        $this->currentUser->method('getIdentity')->willReturn($identity);
-        $this->rememberMeCookieService->method('expireCookie')->willReturnArgument(0);
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->method('createResponse')->willReturn($response);
-        $response->method('withHeader')->willReturnSelf();
-
-        $result = $controller->logout();
-
-        $this->assertSame($response, $result);
-    }
-
     public function testLogoutDeletesSessionHistoryRecord(): void
     {
         $user = $this->createRealUser();
@@ -760,6 +723,43 @@ final class SessionControllerTest extends TestCase
         $this->assertNull($deleted);
     }
 
+    public function testLogoutRedirectsToHomeRouteByDefault(): void
+    {
+        $controller = $this->createController();
+
+        $this->currentUser->method('logout')->willReturn(false);
+        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
+        $this->rememberMeCookieService->method('expireCookie')->willReturnArgument(0);
+
+        $response = $this->mockRedirectResponse($this->responseFactory, '//home');
+
+        $result = $controller->logout();
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testLogoutWhenLoggedInRotatesAuthKeyAndSaves(): void
+    {
+        $controller = $this->createController();
+
+        $identity = $this->createMock(User::class);
+        $identity->expects($this->once())->method('setAuthKey');
+        $identity->expects($this->once())->method('setUpdatedAt');
+        $identity->expects($this->once())->method('save');
+
+        $this->currentUser->method('logout')->willReturn(true);
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->rememberMeCookieService->method('expireCookie')->willReturnArgument(0);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->method('createResponse')->willReturn($response);
+        $response->method('withHeader')->willReturnSelf();
+
+        $result = $controller->logout();
+
+        $this->assertSame($response, $result);
+    }
+
     private function createController(): SessionController
     {
         return $this->harness->createSessionController(
@@ -778,6 +778,20 @@ final class SessionControllerTest extends TestCase
             socialNetworkAccountConnectService: $this->socialNetworkAccountConnectService,
             twoFactorEmailCodeService: $this->twoFactorEmailCodeService,
         );
+    }
+
+    private function createRealUser(): User
+    {
+        $user = new User();
+        $user->setUsername('realuser');
+        $user->setEmail('realuser@example.com');
+        $user->setPasswordHash('hash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $user->save();
+
+        return $user;
     }
 
     private function createUser(
@@ -800,20 +814,6 @@ final class SessionControllerTest extends TestCase
         $user->setAuthTfEnabled($authTfEnabled);
         $user->setAuthTfType($authTfType);
         $user->setAuthTfKey($authTfKey);
-        $user->save();
-
-        return $user;
-    }
-
-    private function createRealUser(): User
-    {
-        $user = new User();
-        $user->setUsername('realuser');
-        $user->setEmail('realuser@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
         $user->save();
 
         return $user;

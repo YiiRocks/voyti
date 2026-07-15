@@ -12,18 +12,6 @@ use Yiisoft\FormModel\FormModel;
 final class FormEventTest extends TestCase
 {
 
-    public function testConstants(): void
-    {
-        self::assertSame('afterLogin', FormEvent::AFTER_LOGIN);
-        self::assertSame('afterRegister', FormEvent::AFTER_REGISTER);
-        self::assertSame('afterRequest', FormEvent::AFTER_REQUEST);
-        self::assertSame('afterResend', FormEvent::AFTER_RESEND);
-        self::assertSame('beforeLogin', FormEvent::BEFORE_LOGIN);
-        self::assertSame('beforeRegister', FormEvent::BEFORE_REGISTER);
-        self::assertSame('beforeRequest', FormEvent::BEFORE_REQUEST);
-        self::assertSame('beforeResend', FormEvent::BEFORE_RESEND);
-        self::assertSame('failedLogin', FormEvent::FAILED_LOGIN);
-    }
     public function testConstructorAndGetters(): void
     {
         $form = $this->createMock(FormModel::class);

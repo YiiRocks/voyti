@@ -6,7 +6,6 @@ namespace YiiRocks\Voyti\tests\Adapter;
 
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Adapter\IdentityAdapter;
-use YiiRocks\Voyti\Helper\ApiTokenHasher;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\ModuleConfig;
@@ -55,7 +54,7 @@ final class IdentityAdapterTest extends TestCase
         $adapter = $this->createAdapter();
 
         self::assertNotNull($adapter->findIdentityByToken('raw-token'));
-        self::assertNull($adapter->findIdentityByToken(ApiTokenHasher::hash('raw-token')));
+        self::assertNull($adapter->findIdentityByToken(hash('sha256', 'raw-token')));
     }
 
     public function testFindIdentityByTokenReturnsNullForExpiredToken(): void
@@ -144,7 +143,7 @@ final class IdentityAdapterTest extends TestCase
         $userToken = new UserToken();
         $userToken->setUserId((int) $user->getId());
         $userToken->setType(UserToken::TYPE_API_ACCESS);
-        $userToken->setCode(ApiTokenHasher::hash($rawToken));
+        $userToken->setCode(hash('sha256', $rawToken));
         $userToken->setCreatedAt($createdAt ?? time());
         $userToken->save();
         return $userToken;

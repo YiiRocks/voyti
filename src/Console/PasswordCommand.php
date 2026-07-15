@@ -9,14 +9,12 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
-use Yiisoft\Security\PasswordHasher;
 
 final class PasswordCommand extends Command
 {
     use UserLookupTrait;
 
     public function __construct(
-        private PasswordHasher $passwordHasher,
         private PasswordGeneratorInterface $passwordGenerator,
         private PasswordHistoryService $passwordHistoryService,
     ) {
@@ -46,11 +44,7 @@ final class PasswordCommand extends Command
         }
 
         $password = $this->passwordGenerator->generate(16);
-        $user->setPasswordHash($this->passwordHasher->hash($password));
-        $user->setPasswordChangedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-        $this->passwordHistoryService->record($user);
+        $this->passwordHistoryService->applyPasswordChange($user, $password);
 
         $output->writeln('<info>Password reset.</info>');
         $output->writeln("<comment>New password: {$password}</comment>");

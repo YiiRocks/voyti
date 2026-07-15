@@ -7,12 +7,12 @@ namespace YiiRocks\Voyti\Controller\Admin\Rbac\Rule;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use YiiRocks\Voyti\Controller\ActorIdTrait;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Model\Form\Rbac\RuleForm;
-use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\AuditLogService;
 use YiiRocks\Voyti\Service\Rbac\RuleEditionService;
@@ -26,6 +26,7 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 final readonly class RuleController
 {
+    use ActorIdTrait;
     use InputDataTrait;
     use RedirectTrait;
     use RenderTrait;
@@ -134,9 +135,4 @@ final readonly class RuleController
         ]);
     }
 
-    private function actorId(): ?int
-    {
-        $identity = $this->currentUser->getIdentity();
-        return $identity instanceof User ? $identity->getIdOrZero() : null;
-    }
 }

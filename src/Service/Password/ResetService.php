@@ -35,12 +35,11 @@ final readonly class ResetService
         $user->setUpdatedAt(time());
         $user->save();
         $this->passwordHistoryService->record($user);
-        $result = true;
 
         $this->handleToken($userToken);
 
         $this->eventDispatcher->dispatch(new UserEvent($user));
-        return $result;
+        return true;
     }
 
     private function handleToken(?UserToken $userToken): void

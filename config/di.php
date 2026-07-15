@@ -14,7 +14,11 @@ use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Http\ClientInterface;
 use YiiRocks\Voyti\Http\Psr18Client;
 use YiiRocks\Voyti\Listener;
+use YiiRocks\Voyti\Middleware\PasswordAgeEnforceMiddleware;
 use YiiRocks\Voyti\Middleware\RouteParametersResolver;
+use YiiRocks\Voyti\Middleware\SessionRevocationEnforceMiddleware;
+use YiiRocks\Voyti\Middleware\TwoFactorAuthenticationEnforceMiddleware;
+use YiiRocks\Voyti\Middleware\VoytiMiddleware;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\AuditLogService;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
@@ -35,17 +39,14 @@ use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\Service\TwoFactor\BackupCodeService;
 use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
 use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
-use YiiRocks\Voyti\Service\User\AccountConfirmationService;
 use YiiRocks\Voyti\Service\User\ApiTokenService;
 use YiiRocks\Voyti\Service\User\BlockService;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\CreateService;
 use YiiRocks\Voyti\Service\User\RegisterService;
-use YiiRocks\Voyti\Service\User\ResendConfirmationService;
 use YiiRocks\Voyti\Service\User\UserCreationHelper;
 use YiiRocks\Voyti\Service\UserSessionHistory\TerminateUserSessionsService;
 use YiiRocks\Voyti\Service\UserSessionHistory\UserSessionHistoryDecorator;
-use YiiRocks\Voyti\Strategy\EmailChangeStrategyFactory;
 use YiiRocks\Voyti\Validator\Rbac\ItemsValidator;
 use YiiRocks\Voyti\Validator\Rbac\RuleValidator;
 use Yiisoft\Auth\IdentityRepositoryInterface;
@@ -74,6 +75,13 @@ return [
     ParametersResolverInterface::class => RouteParametersResolver::class,
     IdentityRepositoryInterface::class => IdentityAdapter::class,
     IdentityWithTokenRepositoryInterface::class => IdentityAdapter::class,
+
+    // PSR-15 middleware: VoytiMiddleware chains the three enforcement middleware.
+    VoytiMiddleware::class => fn (
+        PasswordAgeEnforceMiddleware $passwordAge,
+        SessionRevocationEnforceMiddleware $sessionRevocation,
+        TwoFactorAuthenticationEnforceMiddleware $twoFactorAuth,
+    ) => new VoytiMiddleware($passwordAge, $sessionRevocation, $twoFactorAuth),
 
     // Auditing.
     AuditLogService::class => AuditLogService::class,
@@ -125,18 +133,16 @@ return [
     UserCreationHelper::class => UserCreationHelper::class,
     CreateService::class => CreateService::class,
     RegisterService::class => RegisterService::class,
-    AccountConfirmationService::class => AccountConfirmationService::class,
-    ResendConfirmationService::class => fn (
-        UserTokenFactory $userTokenFactory,
-        MailService $mailService,
-    ) => new ResendConfirmationService($userTokenFactory, $mailService),
     ConfirmationService::class => fn (
         EventDispatcherInterface $eventDispatcher,
-    ) => new ConfirmationService($eventDispatcher),
+        UserTokenFactory $userTokenFactory,
+        MailService $mailService,
+    ) => new ConfirmationService($eventDispatcher, $userTokenFactory, $mailService),
     EmailChangeService::class => fn (
         ModuleConfig $config,
-    ) => new EmailChangeService($config),
-    EmailChangeStrategyFactory::class => EmailChangeStrategyFactory::class,
+        UserTokenFactory $tokenFactory,
+        MailService $mailService,
+    ) => new EmailChangeService($config, $tokenFactory, $mailService),
     BlockService::class => fn (
         EventDispatcherInterface $eventDispatcher,
         TerminateUserSessionsService $terminateUserSessionsService

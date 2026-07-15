@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use YiiRocks\Voyti\Model\Form\Settings\AnonymizeForm;
+use YiiRocks\Voyti\Model\Form\Settings\ConsentForm;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -11,7 +11,7 @@ use Yiisoft\View\WebView;
 
 /**
  * @var WebView $this
- * @var AnonymizeForm $model
+ * @var ConsentForm $model
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
  * @var string $csrf

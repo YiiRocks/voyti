@@ -822,7 +822,6 @@ final class UserControllerTest extends TestCase
             responseFactory: $this->responseFactory,
             hydrator: $this->hydrator,
             flash: $this->flash,
-            passwordHasher: $this->passwordHasher,
             passwordGenerator: $this->passwordGenerator,
             createService: $this->createService,
             blockService: $this->blockService,

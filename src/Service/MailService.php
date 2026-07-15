@@ -25,7 +25,7 @@ final readonly class MailService
     /**
      * @return true
      */
-    public function send(string $type, string $to, string $subject, string $view, array $params = []): bool
+    public function send(string $to, string $subject, string $view, array $params = []): bool
     {
         $message = new Message(
             to: $to,
@@ -49,7 +49,6 @@ final readonly class MailService
     public function sendAdminNotification(string $adminEmail, User $user): bool
     {
         return $this->send(
-            'admin_notification',
             $adminEmail,
             $this->getMailSubject('admin_notification_subject'),
             'welcome',
@@ -68,7 +67,6 @@ final readonly class MailService
             return false;
         }
         return $this->send(
-            'confirmation',
             $user->getEmail(),
             $subject,
             'confirmation',
@@ -84,7 +82,6 @@ final readonly class MailService
     {
         $subject = $this->getMailSubject('reconfirmation_subject');
         return $this->send(
-            'reconfirmation',
             $user->getEmail(),
             $subject,
             'reconfirmation',
@@ -100,7 +97,6 @@ final readonly class MailService
     {
         $subject = $this->getMailSubject('recovery_subject');
         return $this->send(
-            'recovery',
             $email,
             $subject,
             'recovery',
@@ -116,7 +112,6 @@ final readonly class MailService
     {
         $subject = $this->getMailSubject('two_factor_subject');
         return $this->send(
-            'twofactor',
             $email,
             $subject,
             'twofactorcode',
@@ -131,7 +126,6 @@ final readonly class MailService
     {
         $subject = $this->getMailSubject('welcome_subject');
         return $this->send(
-            'welcome',
             $user->getEmail(),
             $subject,
             'welcome',

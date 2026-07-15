@@ -274,7 +274,7 @@ final class UserTokenTest extends TestCase
         $token->setCreatedAt(time());
         $token->save();
 
-        $found = UserToken::findByUserIdTypeAndCode(1, UserToken::TYPE_CONFIRM_NEW_EMAIL, 'codeA');
+        $found = UserToken::findByUserIdAndCodeAndType(1, 'codeA', UserToken::TYPE_CONFIRM_NEW_EMAIL);
         self::assertNotNull($found);
         self::assertSame('codeA', $found->getCode());
     }

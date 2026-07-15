@@ -6,6 +6,7 @@ use YiiRocks\Voyti\Controller;
 use YiiRocks\Voyti\Middleware\AccessRuleMiddleware;
 use YiiRocks\Voyti\Middleware\ApiTokenAuthenticationMiddleware;
 use YiiRocks\Voyti\Middleware\PasswordAgeEnforceMiddleware;
+use YiiRocks\Voyti\Middleware\SessionRevocationEnforceMiddleware;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Csrf\CsrfMiddleware;
 use Yiisoft\DataResponse\Middleware\JsonDataResponseMiddleware;
@@ -150,6 +151,9 @@ if ($moduleConfig->enableSwitchIdentities) {
 }
 
 $webMiddlewares = [SessionMiddleware::class, CsrfMiddleware::class];
+if ($moduleConfig->enableSessionHistory) {
+    $webMiddlewares[] = SessionRevocationEnforceMiddleware::class;
+}
 if ($moduleConfig->enablePasswordExpiration) {
     $webMiddlewares[] = PasswordAgeEnforceMiddleware::class;
 }

@@ -15,14 +15,19 @@ use YiiRocks\Voyti\Controller\api\v1\User\UserController;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserPasswordHistory;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\Password\RandomPasswordGenerator;
+use YiiRocks\Voyti\Service\User\UserCreationHelper;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
+use YiiRocks\Voyti\tests\Support\MailCapture;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\DataResponse\Middleware\JsonDataResponseMiddleware;
 use Yiisoft\DataResponse\ResponseFactory\DataResponseFactory;
 use Yiisoft\DataResponse\ResponseFactory\DataResponseFactoryInterface;
+use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Translator\TranslatorInterface;
 
@@ -33,16 +38,27 @@ final class UserControllerTest extends TestCase
 
     private ModuleConfig $config;
     private PasswordGeneratorInterface&MockObject $passwordGenerator;
-    private PasswordHasher $passwordHasher;
     private DataResponseFactoryInterface&MockObject $responseFactory;
     private TranslatorInterface $translator;
+    private UserCreationHelper $userCreationHelper;
 
     protected function setUp(): void
     {
         $this->setUpDatabase();
         $this->config = new ModuleConfig();
         $this->translator = $this->createTranslator();
-        $this->passwordHasher = new PasswordHasher();
+        $passwordHasher = new PasswordHasher();
+        $passwordHistoryService = new PasswordHistoryService($passwordHasher, $this->config);
+        $mailer = new MailCapture();
+        $url = $this->createMock(UrlGeneratorInterface::class);
+        $mailService = new MailService($mailer, '/tmp', $this->translator, $url, 'Test');
+        $this->userCreationHelper = new UserCreationHelper(
+            $mailService,
+            new EventCaptureDispatcher(),
+            $passwordHasher,
+            $this->config,
+            $passwordHistoryService,
+        );
         $this->responseFactory = $this->createMock(DataResponseFactoryInterface::class);
         $this->passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
         $this->passwordGenerator->method('generate')->willReturn('fallback-generated-password');
@@ -91,11 +107,11 @@ final class UserControllerTest extends TestCase
     {
         $controller = new UserController(
             translator: $this->translator,
-            passwordHasher: $this->passwordHasher,
             config: $this->config,
             responseFactory: new DataResponseFactory(new Psr17Factory()),
             passwordGenerator: new RandomPasswordGenerator(),
-            passwordHistoryService: new PasswordHistoryService($this->passwordHasher, $this->config),
+            passwordHistoryService: new PasswordHistoryService(new PasswordHasher(), $this->config),
+            userCreationHelper: $this->userCreationHelper,
         );
 
         $request = (new ServerRequest('POST', '/'))
@@ -389,9 +405,10 @@ final class UserControllerTest extends TestCase
         $config = new ModuleConfig(enablePasswordExpiration: true);
         $user = $this->createUser('testuser', 'test@example.com');
         $userId = (int) $user->getId();
-        $user->setPasswordHash($this->passwordHasher->hash('originalpass'));
+        $passwordHasher = new PasswordHasher();
+        $user->setPasswordHash($passwordHasher->hash('originalpass'));
         $user->save();
-        (new PasswordHistoryService($this->passwordHasher, $config))->record($user);
+        (new PasswordHistoryService($passwordHasher, $config))->record($user);
 
         $controller = $this->createController($config);
         $request = (new ServerRequest('PUT', '/'))->withParsedBody(['password' => 'originalpass']);
@@ -451,11 +468,11 @@ final class UserControllerTest extends TestCase
 
         return new UserController(
             translator: $this->translator,
-            passwordHasher: $this->passwordHasher,
             config: $config,
             responseFactory: $this->responseFactory,
             passwordGenerator: $this->passwordGenerator,
-            passwordHistoryService: new PasswordHistoryService($this->passwordHasher, $config),
+            passwordHistoryService: new PasswordHistoryService(new PasswordHasher(), $config),
+            userCreationHelper: $this->userCreationHelper,
         );
     }
 

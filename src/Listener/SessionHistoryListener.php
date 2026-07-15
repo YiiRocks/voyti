@@ -22,6 +22,6 @@ final readonly class SessionHistoryListener
             return;
         }
         $user = $event->getUser();
-        $this->sessionHistoryDecorator->registerLogin($user);
+        $this->sessionHistoryDecorator->registerLogin($user, $event->getPreviousSessionId());
     }
 }

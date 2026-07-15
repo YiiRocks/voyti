@@ -11,6 +11,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
+use YiiRocks\Voyti\Controller\RequireUserTrait;
 use YiiRocks\Voyti\Enum\ProfileVisibility;
 use YiiRocks\Voyti\Event\User\UserProfileEvent;
 use YiiRocks\Voyti\Helper\AuthHelper;
@@ -36,6 +37,7 @@ final readonly class ProfileController
     use InputDataTrait;
     use RedirectTrait;
     use RenderTrait;
+    use RequireUserTrait;
 
     public function __construct(
         private TranslatorInterface $translator,
@@ -152,20 +154,5 @@ final readonly class ProfileController
             return false;
         }
         return $this->authHelper->isAdmin((int) $id);
-    }
-
-    private function requireUser(): User|ResponseInterface
-    {
-        $identity = $this->currentUser->getIdentity();
-        if ($identity instanceof GuestIdentityInterface) {
-            return $this->renderError('voyti.settings.not_authenticated');
-        }
-
-        $user = User::findById((int) ($identity->getId() ?? 0));
-        if ($user === null) {
-            return $this->renderError('voyti.settings.user_not_found');
-        }
-
-        return $user;
     }
 }

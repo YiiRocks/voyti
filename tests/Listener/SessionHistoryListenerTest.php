@@ -28,6 +28,23 @@ final class SessionHistoryListenerTest extends TestCase
 
         $listener->onAfterLogin($event);
     }
+
+    public function testOnAfterLoginPassesPreviousSessionIdThrough(): void
+    {
+        $config = new ModuleConfig(enableSessionHistory: true);
+
+        $decorator = $this->createMock(UserSessionHistoryDecorator::class);
+        $decorator->expects(self::once())->method('registerLogin')->with(
+            self::isInstanceOf(User::class),
+            'old-session-id',
+        );
+
+        $listener = new SessionHistoryListener($decorator, $config);
+        $user = new User();
+        $event = new AfterLoginEvent($user, previousSessionId: 'old-session-id');
+
+        $listener->onAfterLogin($event);
+    }
     public function testOnAfterLoginRecordsSessionWhenEnabled(): void
     {
         $config = new ModuleConfig(enableSessionHistory: true);
@@ -35,6 +52,7 @@ final class SessionHistoryListenerTest extends TestCase
         $decorator = $this->createMock(UserSessionHistoryDecorator::class);
         $decorator->expects(self::once())->method('registerLogin')->with(
             self::isInstanceOf(User::class),
+            null,
         );
 
         $listener = new SessionHistoryListener($decorator, $config);

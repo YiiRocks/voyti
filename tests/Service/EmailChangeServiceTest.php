@@ -6,11 +6,17 @@ namespace YiiRocks\Voyti\tests\Service;
 
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Enum\EmailChangeConfirmation;
+use YiiRocks\Voyti\Factory\UserTokenFactory;
+use YiiRocks\Voyti\Model\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\EmailChangeService;
+use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
+use YiiRocks\Voyti\tests\Support\MailCapture;
+use Yiisoft\Translator\TranslatorInterface;
 
 final class EmailChangeServiceTest extends TestCase
 {
@@ -26,13 +32,124 @@ final class EmailChangeServiceTest extends TestCase
         $this->tearDownDatabase();
     }
 
+    public function testInitiateBothReturnsFalseWhenNewFails(): void
+    {
+        $config = new ModuleConfig();
+        $mailService = $this->createStub(MailService::class);
+        $mailService->method('sendReconfirmation')->willReturn(false);
+        $service = new EmailChangeService($config, new UserTokenFactory(), $mailService);
+
+        $user = $this->createSavedUser();
+        $form = new SettingsForm($config, $this->createStub(\Yiisoft\Translator\TranslatorInterface::class));
+        $form->setUser($user);
+        $form->email = 'new@example.com';
+
+        self::assertFalse($service->initiate(EmailChangeConfirmation::BOTH, $form));
+    }
+
+    public function testInitiateBothSendsTwoConfirmationEmails(): void
+    {
+        $config = new ModuleConfig();
+        $mailCapture = new MailCapture();
+        $service = new EmailChangeService($config, new UserTokenFactory(), $this->createMailService($mailCapture));
+
+        $user = $this->createSavedUser();
+        $form = new SettingsForm($config, $this->createTranslator());
+        $form->setUser($user);
+        $form->email = 'new@example.com';
+
+        self::assertTrue($service->initiate(EmailChangeConfirmation::BOTH, $form));
+        self::assertCount(2, $mailCapture->getSentMessages());
+        $tokens = UserToken::findByUserId((int) $user->getId());
+        $types = array_map(static fn (UserToken $t): int => $t->getType(), $tokens);
+        self::assertContains(UserToken::TYPE_CONFIRM_NEW_EMAIL, $types);
+        self::assertContains(UserToken::TYPE_CONFIRM_OLD_EMAIL, $types);
+    }
+
+    public function testInitiateNewPersistsTokenWithZeroUserIdWhenUserUnsaved(): void
+    {
+        $config = new ModuleConfig();
+        $mailCapture = new MailCapture();
+        $service = new EmailChangeService($config, new UserTokenFactory(), $this->createMailService($mailCapture));
+
+        $user = new User();
+        $user->setUsername('unsaved');
+        $user->setEmail('old@example.com');
+        $user->setPasswordHash('hash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        self::assertNull($user->getId());
+
+        $form = new SettingsForm($config, $this->createTranslator());
+        $form->setUser($user);
+        $form->email = 'new@example.com';
+
+        self::assertTrue($service->initiate(EmailChangeConfirmation::NEW, $form));
+
+        $tokens = UserToken::findByUserId(0);
+        $newEmailTokens = array_filter($tokens, static fn (UserToken $t): bool => $t->getType() === UserToken::TYPE_CONFIRM_NEW_EMAIL);
+        self::assertNotEmpty($newEmailTokens);
+    }
+
+    public function testInitiateNewReturnsFalseWhenUserIsNull(): void
+    {
+        $config = new ModuleConfig();
+        $service = new EmailChangeService($config, new UserTokenFactory(), $this->createStub(MailService::class));
+        $form = new SettingsForm($config, $this->createStub(\Yiisoft\Translator\TranslatorInterface::class));
+
+        self::assertFalse($service->initiate(EmailChangeConfirmation::NEW, $form));
+    }
+
+    public function testInitiateNewSetsUnconfirmedEmailAndSavesToken(): void
+    {
+        $config = new ModuleConfig();
+        $mailCapture = new MailCapture();
+        $service = new EmailChangeService($config, new UserTokenFactory(), $this->createMailService($mailCapture));
+
+        $user = $this->createSavedUser();
+        $form = new SettingsForm($config, $this->createTranslator());
+        $form->setUser($user);
+        $form->email = 'new@example.com';
+
+        self::assertTrue($service->initiate(EmailChangeConfirmation::NEW, $form));
+        self::assertSame('new@example.com', $user->getUnconfirmedEmail());
+        self::assertCount(1, $mailCapture->getSentMessages());
+        $tokens = UserToken::findByUserId((int) $user->getId());
+        $newEmailTokens = array_filter($tokens, static fn (UserToken $t): bool => $t->getType() === UserToken::TYPE_CONFIRM_NEW_EMAIL);
+        self::assertNotEmpty($newEmailTokens);
+    }
+
+    public function testInitiateNoneReturnsFalseWhenUserIsNull(): void
+    {
+        $config = new ModuleConfig();
+        $service = new EmailChangeService($config, new UserTokenFactory(), $this->createStub(MailService::class));
+        $form = new SettingsForm($config, $this->createStub(\Yiisoft\Translator\TranslatorInterface::class));
+
+        self::assertFalse($service->initiate(EmailChangeConfirmation::NONE, $form));
+    }
+
+    public function testInitiateNoneSetsEmailDirectly(): void
+    {
+        $config = new ModuleConfig();
+        $service = new EmailChangeService($config, new UserTokenFactory(), $this->createStub(MailService::class));
+
+        $user = $this->createSavedUser();
+        $form = new SettingsForm($config, $this->createStub(\Yiisoft\Translator\TranslatorInterface::class));
+        $form->setUser($user);
+        $form->email = 'new@example.com';
+
+        self::assertTrue($service->initiate(EmailChangeConfirmation::NONE, $form));
+        self::assertSame('new@example.com', $user->getEmail());
+    }
+
     public function testRunDefaultStrategy(): void
     {
         $config = new ModuleConfig(
             emailChangeConfirmation: EmailChangeConfirmation::NEW,
             tokenConfirmationLifespan: 999999,
         );
-        $service = new EmailChangeService($config);
+        $service = new EmailChangeService($config, new UserTokenFactory(), $this->createStub(MailService::class));
 
         $user = $this->createSavedUser();
         $user->setUnconfirmedEmail('new@example.com');
@@ -55,7 +172,7 @@ final class EmailChangeServiceTest extends TestCase
     public function testRunExistingEmailConflictReturnsFalse(): void
     {
         $config = new ModuleConfig(tokenConfirmationLifespan: 999999);
-        $service = new EmailChangeService($config);
+        $service = new EmailChangeService($config, new UserTokenFactory(), $this->createStub(MailService::class));
 
         $other = $this->createSavedUser();
         $ref = new \ReflectionProperty(User::class, 'email');
@@ -77,7 +194,7 @@ final class EmailChangeServiceTest extends TestCase
             emailChangeConfirmation: EmailChangeConfirmation::NONE,
             tokenConfirmationLifespan: 999999,
         );
-        $service = new EmailChangeService($config);
+        $service = new EmailChangeService($config, new UserTokenFactory(), $this->createStub(MailService::class));
 
         $user = $this->createSavedUser();
         $user->setUnconfirmedEmail('new@example.com');
@@ -97,7 +214,7 @@ final class EmailChangeServiceTest extends TestCase
             emailChangeConfirmation: EmailChangeConfirmation::BOTH,
             tokenConfirmationLifespan: 999999,
         );
-        $service = new EmailChangeService($config);
+        $service = new EmailChangeService($config, new UserTokenFactory(), $this->createStub(MailService::class));
 
         $user = $this->createSavedUser();
         $user->setUnconfirmedEmail('new@example.com');
@@ -117,7 +234,7 @@ final class EmailChangeServiceTest extends TestCase
             emailChangeConfirmation: EmailChangeConfirmation::BOTH,
             tokenConfirmationLifespan: 999999,
         );
-        $service = new EmailChangeService($config);
+        $service = new EmailChangeService($config, new UserTokenFactory(), $this->createStub(MailService::class));
 
         $user = $this->createSavedUser();
         $user->setUnconfirmedEmail('new@example.com');
@@ -135,7 +252,7 @@ final class EmailChangeServiceTest extends TestCase
             emailChangeConfirmation: EmailChangeConfirmation::BOTH,
             tokenConfirmationLifespan: 999999,
         );
-        $service = new EmailChangeService($config);
+        $service = new EmailChangeService($config, new UserTokenFactory(), $this->createStub(MailService::class));
 
         $user = $this->createSavedUser();
         $user->setUnconfirmedEmail('new@example.com');
@@ -156,7 +273,7 @@ final class EmailChangeServiceTest extends TestCase
             emailChangeConfirmation: EmailChangeConfirmation::BOTH,
             tokenConfirmationLifespan: 999999,
         );
-        $service = new EmailChangeService($config);
+        $service = new EmailChangeService($config, new UserTokenFactory(), $this->createStub(MailService::class));
 
         $user = $this->createSavedUser();
         $user->setUnconfirmedEmail('new@example.com');
@@ -179,7 +296,7 @@ final class EmailChangeServiceTest extends TestCase
             emailChangeConfirmation: EmailChangeConfirmation::BOTH,
             tokenConfirmationLifespan: 999999,
         );
-        $service = new EmailChangeService($config);
+        $service = new EmailChangeService($config, new UserTokenFactory(), $this->createStub(MailService::class));
 
         $user = $this->createSavedUser();
         $user->setUnconfirmedEmail('new@example.com');
@@ -200,7 +317,7 @@ final class EmailChangeServiceTest extends TestCase
             emailChangeConfirmation: EmailChangeConfirmation::BOTH,
             tokenConfirmationLifespan: 999999,
         );
-        $service = new EmailChangeService($config);
+        $service = new EmailChangeService($config, new UserTokenFactory(), $this->createStub(MailService::class));
 
         $user = $this->createSavedUser();
         $user->setUnconfirmedEmail('new@example.com');
@@ -217,7 +334,7 @@ final class EmailChangeServiceTest extends TestCase
     public function testRunTokenExpiredReturnsFalse(): void
     {
         $config = new ModuleConfig();
-        $service = new EmailChangeService($config);
+        $service = new EmailChangeService($config, new UserTokenFactory(), $this->createStub(MailService::class));
 
         $user = $this->createSavedUser();
         $token = $this->createSavedToken((int) $user->getId(), UserToken::TYPE_CONFIRM_NEW_EMAIL, time() - 200000);
@@ -235,7 +352,7 @@ final class EmailChangeServiceTest extends TestCase
             emailChangeConfirmation: EmailChangeConfirmation::NEW,
             tokenConfirmationLifespan: 100,
         );
-        $service = new EmailChangeService($config);
+        $service = new EmailChangeService($config, new UserTokenFactory(), $this->createStub(MailService::class));
 
         $user = $this->createSavedUser();
         $user->setUnconfirmedEmail('new@example.com');
@@ -250,7 +367,7 @@ final class EmailChangeServiceTest extends TestCase
     public function testRunTokenNotFoundReturnsFalse(): void
     {
         $config = new ModuleConfig();
-        $service = new EmailChangeService($config);
+        $service = new EmailChangeService($config, new UserTokenFactory(), $this->createStub(MailService::class));
 
         $user = $this->createSavedUser();
         $result = $service->run('nonexistent', $user);
@@ -260,7 +377,7 @@ final class EmailChangeServiceTest extends TestCase
     public function testRunTokenWrongTypeReturnsFalse(): void
     {
         $config = new ModuleConfig();
-        $service = new EmailChangeService($config);
+        $service = new EmailChangeService($config, new UserTokenFactory(), $this->createStub(MailService::class));
 
         $user = $this->createSavedUser();
         $this->createSavedToken((int) $user->getId(), 99);
@@ -272,7 +389,7 @@ final class EmailChangeServiceTest extends TestCase
     public function testRunUnconfirmedEmailNullReturnsFalse(): void
     {
         $config = new ModuleConfig(tokenConfirmationLifespan: 999999);
-        $service = new EmailChangeService($config);
+        $service = new EmailChangeService($config, new UserTokenFactory(), $this->createStub(MailService::class));
 
         $user = $this->createSavedUser();
         $this->createSavedToken((int) $user->getId(), UserToken::TYPE_CONFIRM_NEW_EMAIL);
@@ -287,7 +404,7 @@ final class EmailChangeServiceTest extends TestCase
             emailChangeConfirmation: EmailChangeConfirmation::NEW,
             tokenConfirmationLifespan: 999999,
         );
-        $service = new EmailChangeService($config);
+        $service = new EmailChangeService($config, new UserTokenFactory(), $this->createStub(MailService::class));
 
         $user = new User();
         $user->setUsername('nulluser');
@@ -316,7 +433,7 @@ final class EmailChangeServiceTest extends TestCase
             emailChangeConfirmation: EmailChangeConfirmation::NEW,
             tokenConfirmationLifespan: 999999,
         );
-        $service = new EmailChangeService($config);
+        $service = new EmailChangeService($config, new UserTokenFactory(), $this->createStub(MailService::class));
 
         $user = new User();
         $user->setUsername('nulluser2');
@@ -336,6 +453,17 @@ final class EmailChangeServiceTest extends TestCase
 
         $result = $service->run('onecode', $user);
         self::assertFalse($result);
+    }
+
+    private function createMailService(MailCapture $mailCapture): MailService
+    {
+        return new MailService(
+            $mailCapture,
+            __DIR__ . '/../../resources/mail',
+            $this->createTranslator(),
+            new FakeUrlGenerator(),
+            'App',
+        );
     }
 
     private function createSavedToken(int $userId, int $type, int $createdAt = 0): UserToken
@@ -360,5 +488,12 @@ final class EmailChangeServiceTest extends TestCase
         $user->setUpdatedAt(time());
         $user->save();
         return $user;
+    }
+
+    private function createTranslator(): TranslatorInterface
+    {
+        $translator = $this->createStub(TranslatorInterface::class);
+        $translator->method('translate')->willReturnCallback(static fn (string $id): string => $id);
+        return $translator;
     }
 }

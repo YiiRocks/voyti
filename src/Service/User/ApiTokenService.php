@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service\User;
 
-use YiiRocks\Voyti\Helper\ApiTokenHasher;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
 use Yiisoft\Security\Random;
@@ -18,7 +17,7 @@ final readonly class ApiTokenService
         $userToken = new UserToken();
         $userToken->setUserId((int) $user->getId());
         $userToken->setType(UserToken::TYPE_API_ACCESS);
-        $userToken->setCode(ApiTokenHasher::hash($rawToken));
+        $userToken->setCode(hash('sha256', $rawToken));
         $userToken->setCreatedAt(time());
         $userToken->save();
 

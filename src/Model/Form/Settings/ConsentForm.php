@@ -9,7 +9,7 @@ use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\Rule\Required;
 use Yiisoft\Validator\Rule\TrueValue;
 
-final class DeleteAccountForm extends FormModel
+final class ConsentForm extends FormModel
 {
 
     #[TrueValue(trueValue: true)]
@@ -19,6 +19,8 @@ final class DeleteAccountForm extends FormModel
 
     public function __construct(
         private readonly TranslatorInterface $translator,
+        private readonly string $formName,
+        private readonly string $consentLabel,
     ) {
     }
 
@@ -31,19 +33,14 @@ final class DeleteAccountForm extends FormModel
     {
         return [
             'password' => $this->translator->translate('voyti.view.current_password_label', category: 'voyti'),
-            'consent' => $this->translator->translate('voyti.view.delete_account.confirm_label', category: 'voyti'),
+            'consent' => $this->translator->translate($this->consentLabel, category: 'voyti'),
         ];
     }
 
-    /**
-     * @return string
-     *
-     * @psalm-return 'delete-account'
-     */
     #[\Override]
     public function getFormName(): string
     {
-        return 'delete-account';
+        return $this->formName;
     }
 
     #[\Override]

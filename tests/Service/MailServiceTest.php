@@ -164,7 +164,7 @@ final class MailServiceTest extends TestCase
 
     public function testSendWithBothHtmlAndText(): void
     {
-        $result = $this->service->send('test', 'test@example.com', 'Test', 'welcome', ['username' => 'testuser', 'translator' => $this->createMock(TranslatorInterface::class)]);
+        $result = $this->service->send('test@example.com', 'Test', 'welcome', ['username' => 'testuser', 'translator' => $this->createMock(TranslatorInterface::class)]);
         self::assertTrue($result);
         $message = $this->mailer->getLastMessage();
         self::assertNotNull($message);

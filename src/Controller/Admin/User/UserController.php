@@ -9,6 +9,7 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use YiiRocks\Voyti\Controller\ActorIdTrait;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Helper\AuthHelper;
@@ -39,7 +40,6 @@ use Yiisoft\Rbac\Assignment;
 use Yiisoft\Rbac\AssignmentsStorageInterface;
 use Yiisoft\Rbac\ItemsStorageInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
-use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
@@ -48,6 +48,7 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 final readonly class UserController
 {
+    use ActorIdTrait;
     use InputDataTrait;
     use RedirectTrait;
     use RenderTrait;
@@ -63,7 +64,6 @@ final readonly class UserController
         private SwitchIdentityService $switchIdentityService,
         private UpdateAssignmentsService $updateAuthAssignmentsService,
         private AuthHelper $authHelper,
-        private PasswordHasher $passwordHasher,
         private PasswordGeneratorInterface $passwordGenerator,
         private ValidatorInterface $validator,
         private EventDispatcherInterface $eventDispatcher,
@@ -338,14 +338,10 @@ final readonly class UserController
                 $user->setUsername($this->stringValue($userData, 'username', $user->getUsername()));
                 $user->setEmail($this->stringValue($userData, 'email', $user->getEmail()));
                 if ($password !== '') {
-                    $user->setPasswordHash($this->passwordHasher->hash($password));
-                    $user->setPasswordChangedAt(time());
-                }
-                $user->setUpdatedAt(time());
-                $user->save();
-
-                if ($password !== '') {
-                    $this->passwordHistoryService->record($user);
+                    $this->passwordHistoryService->applyPasswordChange($user, $password);
+                } else {
+                    $user->setUpdatedAt(time());
+                    $user->save();
                 }
 
                 /** @var mixed $rawAssignedItems */
@@ -430,9 +426,4 @@ final readonly class UserController
         return $this->config->viewPath;
     }
 
-    private function actorId(): ?int
-    {
-        $identity = $this->currentUser->getIdentity();
-        return $identity instanceof User ? $identity->getIdOrZero() : null;
-    }
 }

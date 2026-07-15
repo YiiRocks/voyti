@@ -11,7 +11,7 @@ use Yiisoft\Validator\Rule\Regex;
 use Yiisoft\Validator\Rule\Required;
 use Yiisoft\Validator\RulesProviderInterface;
 
-abstract class AbstractAuthItemForm extends FormModel implements RulesProviderInterface
+final class AbstractAuthItemForm extends FormModel implements RulesProviderInterface
 {
     public array $children = [];
     #[Length(max: 191)]
@@ -24,7 +24,8 @@ abstract class AbstractAuthItemForm extends FormModel implements RulesProviderIn
     public ?string $rule = null;
 
     public function __construct(
-        private readonly TranslatorInterface $translator,
+        private TranslatorInterface $translator,
+        private string $type,
     ) {
     }
 
@@ -46,7 +47,7 @@ abstract class AbstractAuthItemForm extends FormModel implements RulesProviderIn
     #[\Override]
     public function getFormName(): string
     {
-        return 'authItem';
+        return $this->type;
     }
 
     #[\Override]
@@ -64,5 +65,8 @@ abstract class AbstractAuthItemForm extends FormModel implements RulesProviderIn
         ];
     }
 
-    abstract public function getType(): string;
+    public function getType(): string
+    {
+        return $this->type;
+    }
 }

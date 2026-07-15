@@ -1,0 +1,270 @@
+<?php
+
+declare(strict_types=1);
+
+namespace YiiRocks\Voyti\tests\Middleware;
+
+use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\ResponseFactoryInterface;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\MiddlewareInterface;
+use Psr\Http\Server\RequestHandlerInterface;
+use YiiRocks\Voyti\Middleware\PasswordAgeEnforceMiddleware;
+use YiiRocks\Voyti\Middleware\SessionRevocationEnforceMiddleware;
+use YiiRocks\Voyti\Middleware\TwoFactorAuthenticationEnforceMiddleware;
+use YiiRocks\Voyti\Middleware\VoytiMiddleware;
+use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Service\Password\ExpireService;
+use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\FakeSession;
+use Yiisoft\Http\Status;
+use Yiisoft\Rbac\ManagerInterface;
+use Yiisoft\Router\CurrentRoute;
+use Yiisoft\Router\UrlGeneratorInterface;
+use Yiisoft\Session\SessionInterface;
+use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\User\CurrentUser;
+
+#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+final class VoytiMiddlewareTest extends TestCase
+{
+    use DatabaseSetupTrait;
+
+    protected function setUp(): void
+    {
+        $this->setUpDatabase();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->tearDownDatabase();
+    }
+
+    public function testProcessCallsAllThreeMiddlewaresInOrder(): void
+    {
+        $request = $this->createMock(ServerRequestInterface::class);
+        $response = $this->createMock(ResponseInterface::class);
+
+        $handler = $this->createMock(RequestHandlerInterface::class);
+        $handler->expects(self::once())->method('handle')->with($request)->willReturn($response);
+
+        $first = $this->createPassThroughMiddleware();
+        $second = $this->createPassThroughMiddleware();
+        $third = $this->createPassThroughMiddleware();
+
+        $middleware = new VoytiMiddleware($first, $second, $third);
+        $result = $middleware->process($request, $handler);
+
+        self::assertSame($response, $result);
+    }
+
+    public function testProcessShortCircuitsWhenFirstMiddlewareRedirects(): void
+    {
+        $request = $this->createMock(ServerRequestInterface::class);
+
+        $redirectResponse = $this->createMock(ResponseInterface::class);
+
+        $first = $this->createRedirectMiddleware($redirectResponse);
+        $second = $this->createPassThroughMiddleware();
+        $third = $this->createPassThroughMiddleware();
+
+        $handler = $this->createMock(RequestHandlerInterface::class);
+        $handler->expects(self::never())->method('handle');
+
+        $middleware = new VoytiMiddleware($first, $second, $third);
+        $result = $middleware->process($request, $handler);
+
+        self::assertSame($redirectResponse, $result);
+    }
+
+    public function testProcessShortCircuitsWhenSecondMiddlewareRedirects(): void
+    {
+        $request = $this->createMock(ServerRequestInterface::class);
+
+        $redirectResponse = $this->createMock(ResponseInterface::class);
+
+        $first = $this->createPassThroughMiddleware();
+        $second = $this->createRedirectMiddleware($redirectResponse);
+        $third = $this->createPassThroughMiddleware();
+
+        $handler = $this->createMock(RequestHandlerInterface::class);
+        $handler->expects(self::never())->method('handle');
+
+        $middleware = new VoytiMiddleware($first, $second, $third);
+        $result = $middleware->process($request, $handler);
+
+        self::assertSame($redirectResponse, $result);
+    }
+
+    public function testProcessShortCircuitsWhenThirdMiddlewareRedirects(): void
+    {
+        $request = $this->createMock(ServerRequestInterface::class);
+
+        $redirectResponse = $this->createMock(ResponseInterface::class);
+
+        $first = $this->createPassThroughMiddleware();
+        $second = $this->createPassThroughMiddleware();
+        $third = $this->createRedirectMiddleware($redirectResponse);
+
+        $handler = $this->createMock(RequestHandlerInterface::class);
+        $handler->expects(self::never())->method('handle');
+
+        $middleware = new VoytiMiddleware($first, $second, $third);
+        $result = $middleware->process($request, $handler);
+
+        self::assertSame($redirectResponse, $result);
+    }
+
+    public function testProcessWithRealMiddlewaresAllFeaturesDisabled(): void
+    {
+        $config = new ModuleConfig(
+            enablePasswordExpiration: false,
+            enableSessionHistory: false,
+            enableTwoFactorAuthentication: false,
+        );
+
+        $request = $this->createMock(ServerRequestInterface::class);
+        $response = $this->createMock(ResponseInterface::class);
+
+        $handler = $this->createMock(RequestHandlerInterface::class);
+        $handler->expects(self::once())->method('handle')->with($request)->willReturn($response);
+
+        $middleware = $this->createRealMiddleware(config: $config);
+        $result = $middleware->process($request, $handler);
+
+        self::assertSame($response, $result);
+    }
+
+    public function testProcessWithRealMiddlewaresSessionRevocationShortCircuits(): void
+    {
+        $config = new ModuleConfig(enableSessionHistory: true);
+
+        $user = $this->createUser();
+
+        $currentUser = $this->createMock(CurrentUser::class);
+        $currentUser->expects(self::once())->method('getIdentity')->willReturn($user);
+        $currentUser->expects(self::once())->method('logout');
+
+        $currentRoute = $this->createMock(CurrentRoute::class);
+        $currentRoute->method('getName')->willReturn('voyti/profile-update');
+
+        $request = $this->createMock(ServerRequestInterface::class);
+        $handler = $this->createMock(RequestHandlerInterface::class);
+        $handler->expects(self::never())->method('handle');
+
+        $url = $this->createMock(UrlGeneratorInterface::class);
+        $url->expects(self::once())->method('generate')->with('voyti/session-login')->willReturn('/voyti/session-login');
+
+        $redirectResponse = $this->createMock(ResponseInterface::class);
+        $redirectResponse->expects(self::once())->method('withHeader')->with('Location', '/voyti/session-login')->willReturnSelf();
+
+        $responseFactory = $this->createMock(ResponseFactoryInterface::class);
+        $responseFactory->expects(self::once())->method('createResponse')->with(Status::FOUND)->willReturn($redirectResponse);
+
+        $session = $this->createOpenSession('revoked-session-id');
+
+        $middleware = $this->createRealMiddleware(
+            config: $config,
+            currentUser: $currentUser,
+            currentRoute: $currentRoute,
+            responseFactory: $responseFactory,
+            session: $session,
+            url: $url,
+        );
+
+        $middleware->process($request, $handler);
+    }
+
+    private function createOpenSession(string $id): FakeSession
+    {
+        $session = new FakeSession();
+        $session->setId($id);
+        $session->open();
+
+        return $session;
+    }
+
+    private function createPassThroughMiddleware(): MiddlewareInterface
+    {
+        $middleware = $this->createMock(MiddlewareInterface::class);
+        $middleware->method('process')->willReturnCallback(
+            static fn (ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface => $handler->handle($request),
+        );
+        return $middleware;
+    }
+
+    private function createRealMiddleware(
+        ?PasswordAgeEnforceMiddleware $passwordAge = null,
+        ?SessionRevocationEnforceMiddleware $sessionRevocation = null,
+        ?TwoFactorAuthenticationEnforceMiddleware $twoFactorAuth = null,
+        ?ModuleConfig $config = null,
+        ?CurrentUser $currentUser = null,
+        ?CurrentRoute $currentRoute = null,
+        ?ResponseFactoryInterface $responseFactory = null,
+        ?UrlGeneratorInterface $url = null,
+        ?SessionInterface $session = null,
+        ?TranslatorInterface $translator = null,
+        ?ManagerInterface $authManager = null,
+    ): VoytiMiddleware {
+        $config ??= new ModuleConfig();
+
+        $currentUser ??= $this->createMock(CurrentUser::class);
+        $currentRoute ??= $this->createMock(CurrentRoute::class);
+        $responseFactory ??= $this->createMock(ResponseFactoryInterface::class);
+        $url ??= $this->createMock(UrlGeneratorInterface::class);
+        $session ??= new FakeSession();
+        $translator ??= $this->createMock(TranslatorInterface::class);
+        $authManager ??= $this->createMock(ManagerInterface::class);
+
+        $passwordAge ??= new PasswordAgeEnforceMiddleware(
+            $currentUser,
+            new ExpireService($config),
+            $currentRoute,
+            $translator,
+            $responseFactory,
+            $url,
+        );
+
+        $sessionRevocation ??= new SessionRevocationEnforceMiddleware(
+            $currentUser,
+            $currentRoute,
+            $config,
+            $responseFactory,
+            $session,
+            $url,
+        );
+
+        $twoFactorAuth ??= new TwoFactorAuthenticationEnforceMiddleware(
+            $currentUser,
+            $config,
+            $authManager,
+            $responseFactory,
+            $url,
+        );
+
+        return new VoytiMiddleware($passwordAge, $sessionRevocation, $twoFactorAuth);
+    }
+
+    private function createRedirectMiddleware(ResponseInterface $response): MiddlewareInterface
+    {
+        $middleware = $this->createMock(MiddlewareInterface::class);
+        $middleware->method('process')->willReturn($response);
+        return $middleware;
+    }
+
+    private function createUser(): User
+    {
+        $user = new User();
+        $user->setUsername('voytiuser');
+        $user->setEmail('voytiuser@example.com');
+        $user->setPasswordHash('hash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $user->save();
+
+        return $user;
+    }
+}

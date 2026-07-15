@@ -8,7 +8,6 @@ use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\Form\Rbac\AbstractAuthItemForm;
 use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class AbstractAuthItemFormTest extends TestCase
 {
     use TranslatorMockTrait;
@@ -33,10 +32,10 @@ final class AbstractAuthItemFormTest extends TestCase
         $this->assertArrayHasKey('rule', $labels);
     }
 
-    public function testGetFormName(): void
+    public function testGetFormNameReturnsType(): void
     {
-        $form = $this->createForm();
-        $this->assertSame('authItem', $form->getFormName());
+        $form = $this->createForm('permission');
+        $this->assertSame('permission', $form->getFormName());
     }
 
     public function testGetPropertyLabelsMatchesAttributeLabels(): void
@@ -64,6 +63,12 @@ final class AbstractAuthItemFormTest extends TestCase
         self::assertSame(191, $this->readPrivate($descLength, 'max'));
     }
 
+    public function testGetTypeReturnsType(): void
+    {
+        $form = $this->createForm('role');
+        $this->assertSame('role', $form->getType());
+    }
+
     public function testSetProperties(): void
     {
         $form = $this->createForm();
@@ -80,12 +85,9 @@ final class AbstractAuthItemFormTest extends TestCase
         $this->assertSame('old_name', $form->itemName);
     }
 
-    private function createForm(): AbstractAuthItemForm
+    private function createForm(string $type = 'authItem'): AbstractAuthItemForm
     {
-        return $this->getMockBuilder(AbstractAuthItemForm::class)
-            ->setConstructorArgs([$this->createTranslator()])
-            ->onlyMethods(['getType'])
-            ->getMock();
+        return new AbstractAuthItemForm($this->createTranslator(), $type);
     }
 
     private function readPrivate(object $object, string $property): mixed

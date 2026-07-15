@@ -172,14 +172,12 @@ final class PasswordCommandTest extends TestCase
     }
 
     private function createCommand(
-        ?PasswordHasher $passwordHasher = null,
         ?PasswordGeneratorInterface $passwordGenerator = null,
         ?ModuleConfig $config = null,
     ): PasswordCommand {
-        $passwordHasher ??= new PasswordHasher();
+        $passwordHasher = new PasswordHasher();
 
         return new PasswordCommand(
-            $passwordHasher,
             $passwordGenerator ?? new RandomPasswordGenerator(),
             new PasswordHistoryService($passwordHasher, $config ?? new ModuleConfig()),
         );

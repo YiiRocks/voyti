@@ -11,6 +11,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Helper\FlashType;
+use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Model\Form\Auth\RecoveryForm;
 use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\ModuleConfig;
@@ -26,6 +27,7 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 final readonly class PasswordResetController
 {
+    use InputDataTrait;
     use RedirectTrait;
     use RenderTrait;
 
@@ -50,7 +52,7 @@ final readonly class PasswordResetController
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.recovery.reset_disabled', category: 'voyti'), 'translator' => $this->translator]);
         }
 
-        $userToken = UserToken::findByUserIdTypeAndCode($id, UserToken::TYPE_RECOVERY, $code);
+        $userToken = UserToken::findByUserIdAndCodeAndType($id, $code, UserToken::TYPE_RECOVERY);
 
         if ($userToken === null || $userToken->getIsExpired($this->config->tokenRecoveryLifespan) || $userToken->getUser() === null) {
             return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.recovery.link_invalid', category: 'voyti')]);
@@ -66,11 +68,8 @@ final readonly class PasswordResetController
         $errors = [];
 
         if ($request->getMethod() === Method::POST) {
-            $body = (array) $request->getParsedBody();
-            /** @var mixed $rawFormData */
-            $rawFormData = $body[$form->getFormName()] ?? null;
-            $formData = is_array($rawFormData) ? $rawFormData : $body;
-            $this->hydrator->hydrate($form, $formData);
+            $body = $this->parsedBody($request);
+            $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
             $result = $this->validator->validate($form);
 
             if ($result->isValid()) {
@@ -99,11 +98,8 @@ final readonly class PasswordResetController
         $form = new RecoveryForm($this->config, $this->translator, RecoveryForm::SCENARIO_REQUEST);
 
         if ($request->getMethod() === Method::POST) {
-            $body = (array) $request->getParsedBody();
-            /** @var mixed $rawFormData */
-            $rawFormData = $body[$form->getFormName()] ?? null;
-            $formData = is_array($rawFormData) ? $rawFormData : $body;
-            $this->hydrator->hydrate($form, $formData);
+            $body = $this->parsedBody($request);
+            $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
             $result = $this->validator->validate($form);
             $form->processValidationResult($result);
 

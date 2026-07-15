@@ -22,6 +22,15 @@ final readonly class PasswordHistoryService
     ) {
     }
 
+    public function applyPasswordChange(User $user, string $plainPassword): void
+    {
+        $user->setPasswordHash($this->passwordHasher->hash($plainPassword));
+        $user->setPasswordChangedAt(time());
+        $user->setUpdatedAt(time());
+        $user->save();
+        $this->record($user);
+    }
+
     /**
      * Records the user's current password hash into their history. Call this after the new hash
      * has already been set and saved on $user.

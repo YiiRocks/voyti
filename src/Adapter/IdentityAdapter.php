@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Adapter;
 
-use YiiRocks\Voyti\Helper\ApiTokenHasher;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\ModuleConfig;
@@ -38,7 +37,7 @@ final readonly class IdentityAdapter implements IdentityRepositoryInterface, Ide
     public function findIdentityByToken(string $token, ?string $type = null): ?IdentityInterface
     {
         $userToken = UserToken::findByCodeAndType(
-            ApiTokenHasher::hash($token),
+            hash('sha256', $token),
             UserToken::TYPE_API_ACCESS,
         );
 

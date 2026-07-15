@@ -11,10 +11,9 @@ use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
+use YiiRocks\Voyti\Service\User\UserCreationHelper;
 use Yiisoft\DataResponse\ResponseFactory\DataResponseFactoryInterface;
 use Yiisoft\Http\Status;
-use Yiisoft\Security\PasswordHasher;
-use Yiisoft\Security\Random;
 use Yiisoft\Translator\TranslatorInterface;
 
 final readonly class UserController
@@ -23,11 +22,11 @@ final readonly class UserController
 
     public function __construct(
         private TranslatorInterface $translator,
-        private PasswordHasher $passwordHasher,
         private ModuleConfig $config,
         private DataResponseFactoryInterface $responseFactory,
         private PasswordGeneratorInterface $passwordGenerator,
         private PasswordHistoryService $passwordHistoryService,
+        private UserCreationHelper $userCreationHelper,
     ) {
     }
 
@@ -38,24 +37,13 @@ final readonly class UserController
         $username = $this->stringValue($body, 'username');
         $password = $this->stringValue($body, 'password', $this->passwordGenerator->generate(12));
 
-        $existingUser = User::findByEmail($email);
-        if ($existingUser !== null) {
-            return $this->responseFactory->createResponse(['error' => 'Email already exists'], Status::BAD_REQUEST);
+        $conflict = $this->userCreationHelper->findUniquenessConflict($email, $username);
+        if ($conflict !== null) {
+            return $this->responseFactory->createResponse(['error' => $conflict], Status::BAD_REQUEST);
         }
 
-        $existingUser = User::findByUsername($username);
-        if ($existingUser !== null) {
-            return $this->responseFactory->createResponse(['error' => 'Username already exists'], Status::BAD_REQUEST);
-        }
-
-        $user = new User();
-        $user->setUsername($username);
-        $user->setEmail($email);
-        $user->setPasswordHash($this->passwordHasher->hash($password));
-        $user->setAuthKey(Random::string());
+        $user = $this->userCreationHelper->buildUser($email, $username, $password);
         $user->setConfirmedAt(time());
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
         $user->save();
         $this->passwordHistoryService->record($user);
 
@@ -114,14 +102,10 @@ final readonly class UserController
             $user->setEmail($body['email']);
         }
         if ($password !== '') {
-            $user->setPasswordHash($this->passwordHasher->hash($password));
-            $user->setPasswordChangedAt(time());
-        }
-        $user->setUpdatedAt(time());
-        $user->save();
-
-        if ($password !== '') {
-            $this->passwordHistoryService->record($user);
+            $this->passwordHistoryService->applyPasswordChange($user, $password);
+        } else {
+            $user->setUpdatedAt(time());
+            $user->save();
         }
 
         return $this->responseFactory->createResponse([

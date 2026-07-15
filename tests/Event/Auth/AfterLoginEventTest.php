@@ -17,7 +17,6 @@ final class AfterLoginEventTest extends TestCase
         $event = new AfterLoginEvent($user);
 
         self::assertSame($user, $event->getUser());
-        self::assertNull($event->getRoute());
     }
 
 }

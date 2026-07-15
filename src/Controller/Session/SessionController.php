@@ -109,7 +109,7 @@ final readonly class SessionController
 
         $user = $this->currentUser->getIdentity();
         if ($user instanceof User) {
-            return $this->rememberMeCookieService->addCookie($user, $this->homeRedirectResponse());
+            return $this->rememberMeCookieService->addCookie($user, $this->homeRedirectResponse(), $this->session->getId() ?? '');
         }
 
         return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.security.authenticated', category: 'voyti'), 'translator' => $this->translator]);
@@ -169,7 +169,7 @@ final readonly class SessionController
 
                     $response = $this->homeRedirectResponse();
                     if ($this->boolValue($credentials, 'rememberMe')) {
-                        $response = $this->rememberMeCookieService->addCookie($user, $response);
+                        $response = $this->rememberMeCookieService->addCookie($user, $response, $this->session->getId() ?? '');
                     }
 
                     return $response;
@@ -269,7 +269,7 @@ final readonly class SessionController
 
                     $response = $this->homeRedirectResponse();
                     if ($form->rememberMe) {
-                        $response = $this->rememberMeCookieService->addCookie($user, $response);
+                        $response = $this->rememberMeCookieService->addCookie($user, $response, $this->session->getId() ?? '');
                     }
 
                     return $response;

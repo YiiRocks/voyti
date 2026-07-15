@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Service\User;
 
 use PHPUnit\Framework\TestCase;
-use YiiRocks\Voyti\Helper\ApiTokenHasher;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\Service\User\ApiTokenService;
@@ -45,7 +44,7 @@ final class ApiTokenServiceTest extends TestCase
         $rawToken = $service->generate($user);
 
         $stored = UserToken::findByCodeAndType(
-            ApiTokenHasher::hash($rawToken),
+            hash('sha256', $rawToken),
             UserToken::TYPE_API_ACCESS,
         );
 

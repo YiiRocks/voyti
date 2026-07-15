@@ -5,19 +5,18 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Event\Auth;
 
 use YiiRocks\Voyti\Model\User;
-use Yiisoft\Router\CurrentRoute;
 
 final readonly class AfterLoginEvent
 {
     public function __construct(
         private User $user,
-        private ?CurrentRoute $route = null,
+        private ?string $previousSessionId = null,
     ) {
     }
 
-    public function getRoute(): ?CurrentRoute
+    public function getPreviousSessionId(): ?string
     {
-        return $this->route;
+        return $this->previousSessionId;
     }
 
     public function getUser(): User

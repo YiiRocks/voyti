@@ -12,8 +12,6 @@ use YiiRocks\Voyti\Controller\Account\AccountController;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\EmailChangeService;
-use YiiRocks\Voyti\Strategy\EmailChangeStrategyFactory;
-use YiiRocks\Voyti\Strategy\NoneEmailChangeStrategy;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
@@ -37,7 +35,6 @@ final class AccountControllerTest extends TestCase
     private ModuleConfig $config;
     private CurrentUser&MockObject $currentUser;
     private EmailChangeService&MockObject $emailChangeService;
-    private EmailChangeStrategyFactory&MockObject $emailChangeStrategyFactory;
     private FlashInterface&MockObject $flash;
     private ControllerHarness $harness;
     private HydratorInterface&MockObject $hydrator;
@@ -60,7 +57,6 @@ final class AccountControllerTest extends TestCase
         $this->hydrator = $this->createMock(HydratorInterface::class);
         $this->flash = $this->createMock(FlashInterface::class);
         $this->passwordHasher = new PasswordHasher();
-        $this->emailChangeStrategyFactory = $this->createMock(EmailChangeStrategyFactory::class);
         $this->emailChangeService = $this->createMock(EmailChangeService::class);
     }
 
@@ -144,11 +140,9 @@ final class AccountControllerTest extends TestCase
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
-        $strategy = $this->createMock(NoneEmailChangeStrategy::class);
-        $strategy->expects($this->once())->method('run');
-        $this->emailChangeStrategyFactory->expects($this->once())
-            ->method('makeByStrategyType')
-            ->willReturn($strategy);
+        $this->emailChangeService->expects($this->once())
+            ->method('initiate')
+            ->willReturn(true);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->method('createResponse')->willReturn($response);
@@ -341,7 +335,6 @@ final class AccountControllerTest extends TestCase
             hydrator: $this->hydrator,
             flash: $this->flash,
             passwordHasher: $this->passwordHasher,
-            emailChangeStrategyFactory: $this->emailChangeStrategyFactory,
             emailChangeService: $this->emailChangeService,
         );
     }

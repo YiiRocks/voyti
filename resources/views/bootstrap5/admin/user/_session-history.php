@@ -35,7 +35,7 @@ echo Html::H3()->close();
 echo Html::div()->class('d-none d-md-flex row fw-bold border-bottom pb-2 mb-2')->open();
 echo Html::div($translator->translate('voyti.view.session_history.ip', category: 'voyti'))->class('col-3');
 echo Html::div($translator->translate('voyti.view.session_history.user_agent', category: 'voyti'))->class('col-6');
-echo Html::div($translator->translate('voyti.view.session_history.created', category: 'voyti'))->class('col-3');
+echo Html::div($translator->translate('voyti.view.session_history.last_seen', category: 'voyti'))->class('col-3');
 echo Html::div()->close();
 
 $timezone = $user->getProfile()?->getTimezone();
@@ -44,7 +44,7 @@ foreach ($sessions as $session) {
     echo Html::div()->class('row py-2 border-bottom align-items-center')->open();
     echo Html::div($session->getIp() ?? '')->class('col-3 text-break');
     echo Html::div($session->getUserAgent() ?? '')->class('col-6 text-break');
-    echo Html::div(TimezoneHelper::formatLocalized($session->getCreatedAt(), $translator->getLocale(), $timezone))->class('col-3');
+    echo Html::div(TimezoneHelper::formatLocalized($session->getUpdatedAt(), $translator->getLocale(), $timezone))->class('col-3');
     echo Html::div()->close();
 }
 

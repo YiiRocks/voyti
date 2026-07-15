@@ -8,9 +8,6 @@ use YiiRocks\Voyti\Model\User;
 
 final class GdprEvent
 {
-    public const string AFTER_DELETE = 'afterDelete';
-    public const string BEFORE_DELETE = 'beforeDelete';
-
     public bool $isValid = true;
 
     public function __construct(
