@@ -121,10 +121,8 @@ return [
                     ->addRoute(
                         Group::create('/')
                             ->middleware(
-                                SessionMiddleware::class,
-                                // Site-wide enforcement (see "Site-wide enforcement" below). Safe here
-                                // since voyti/account-update lives in the voyti-routes group below, not this one.
-                                VoytiMiddleware::class,
+                                SessionMiddleware::class,    // required for site-wide session support
+                                VoytiMiddleware::class,      // see "Site-wide enforcement" below
                             )
                             ->routes(...$config->get('routes')), // your own app routes
                         Group::create('/user/')
@@ -136,7 +134,7 @@ return [
 ];
 ```
 
-`voyti-routes` already wraps itself with `SessionMiddleware` and `CsrfMiddleware` internally (see `config/routes.php`), so the second group doesn't need to repeat them. `SessionRevocationEnforceMiddleware` and `PasswordAgeEnforceMiddleware` are also already applied inside `voyti-routes` automatically — the former when `enableSessionHistory` is `true`, the latter when `enablePasswordExpiration` is `true` — so adding `VoytiMiddleware` to your own group above only extends that protection to your app's own pages, it isn't duplicating work. `TwoFactorAuthenticationEnforceMiddleware`, however, is never auto-applied by the extension itself, so `VoytiMiddleware` picks it up for you in a single entry.
+`voyti-routes` already wraps itself with its own required middleware (see `config/routes.php`), so the second group above doesn't repeat any of it, and adding `VoytiMiddleware` to your own group only extends that same coverage to your app's pages.
 
 When `enableRestApi` is `true`, the API routes are mounted under `adminRestPrefix . '/v1/'` and expose user CRUD endpoints.
 

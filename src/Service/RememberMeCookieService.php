@@ -27,13 +27,10 @@ use function setcookie;
 use function time;
 
 /**
- * The auto-login cookie payload is `[identityId, cookieLoginKey, expiresAt, sessionId]` - the trailing
- * sessionId ties the cookie to the specific {@see UserSessionHistory} row it was issued for. `cookieLoginKey`
- * is a single secret shared by every device a user has ever used (see {@see User::getCookieLoginKey()}), so
- * without the sessionId check a cookie stolen or kept by one device could never be selectively revoked:
- * deleting that device's session row (self-service "terminate session", or an admin bulk-terminate) is what
- * makes {@see loginByCookie()} refuse to honor that device's cookie again, even though every other device's
- * cookie carries the exact same secret and stays valid.
+ * Cookie payload is `[identityId, cookieLoginKey, expiresAt, sessionId]`. `cookieLoginKey`
+ * ({@see User::getCookieLoginKey()}) is shared across all of a user's devices, so the trailing
+ * sessionId is what lets {@see loginByCookie()} revoke one device's cookie (via its
+ * {@see UserSessionHistory} row) without invalidating the others.
  */
 final class RememberMeCookieService
 {

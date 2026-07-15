@@ -18,6 +18,8 @@ return [
     'voyti.registration.confirmation_link_invalid' => 'De bevestigingslink is ongeldig of verlopen.',
     'voyti.registration.email_confirmation_disabled' => 'E-mailbevestiging is uitgeschakeld',
     'voyti.registration.new_confirmation_sent' => 'Er is een nieuwe bevestigingslink verzonden',
+    'voyti.registration.account_created' => 'Account aangemaakt.',
+    'voyti.registration.account_created_check_email' => 'Account aangemaakt. Controleer uw e-mail voor de bevestigingslink.',
 
     // RecoveryController
     'voyti.recovery.disabled' => 'Wachtwoordherstel is uitgeschakeld',
@@ -63,6 +65,8 @@ return [
     'voyti.admin.user_created' => 'Gebruiker is aangemaakt',
     'voyti.admin.account_updated' => 'Account is bijgewerkt',
     'voyti.admin.password_previously_used' => 'Dit wachtwoord is onlangs al gebruikt. Kies een ander wachtwoord.',
+    'voyti.admin.switch_identity_success' => 'U bent nu ingelogd als deze gebruiker',
+    'voyti.admin.switch_identity_restored' => 'U bent hersteld naar uw oorspronkelijke identiteit',
 
     // RuleController
     'voyti.rule.added' => 'Autorisatieregel is toegevoegd',
@@ -107,8 +111,6 @@ return [
     'voyti.mail.welcome_heading' => 'Welkom!',
     'voyti.mail.hello_username' => 'Hallo {username},',
     'voyti.mail.account_created_successfully' => 'Uw account is succesvol aangemaakt.',
-    'voyti.mail.account_deleted_heading' => 'Account verwijderd',
-    'voyti.mail.account_deleted_gdpr' => 'Uw account is verwijderd in overeenstemming met de AVG.',
     'voyti.mail.email_change_heading' => 'Bevestiging e-mailwijziging',
     'voyti.mail.click_to_confirm_email' => 'Klik op onderstaande link om uw nieuwe e-mailadres te bevestigen:',
     'voyti.mail.password_recovery_heading' => 'Wachtwoordherstel',
@@ -129,7 +131,6 @@ return [
     // Login view
     'voyti.view.login.title' => 'Inloggen',
     'voyti.view.login.login_label' => 'Gebruikersnaam of e-mailadres',
-    'voyti.view.login.remember_me' => 'Herinner mij de volgende keer',
     'voyti.view.login.sign_in_button' => 'Inloggen',
     'voyti.view.login.forgot_password' => 'Wachtwoord vergeten?',
     'voyti.view.login.register_link' => 'Registreren',
@@ -150,7 +151,6 @@ return [
     'voyti.view.two_factor.qr_unavailable' => 'QR-code is niet beschikbaar',
     'voyti.view.two_factor.enter_code' => 'Voer de verificatiecode in',
     'voyti.view.two_factor.enable' => 'Inschakelen',
-    'voyti.view.two_factor.verify' => 'Verifiëren',
     'voyti.view.two_factor.renew' => 'Vernieuwen',
     'voyti.view.two_factor.renew_error' => 'Er kon geen nieuwe sleutel worden gegenereerd. Probeer het opnieuw.',
     'voyti.view.two_factor.loading' => 'Bezig met laden…',
@@ -162,7 +162,6 @@ return [
     'voyti.view.two_factor.regenerate_backup_codes' => 'Back-upcodes opnieuw genereren',
     'voyti.view.two_factor.regenerate_backup_codes_intro' => 'Het genereren van nieuwe back-upcodes maakt alle bestaande codes ongeldig. Voer uw huidige verificatiecode of een back-upcode in om te bevestigen.',
     'voyti.view.two_factor.no_backup_codes_remaining' => 'U heeft geen back-upcodes meer over. Genereer een nieuwe set zodat u toegang kunt herstellen als u uw apparaat kwijtraakt.',
-    'voyti.view.two_factor_email.title' => 'Tweefactorauthenticatie via e-mail',
     'voyti.view.two_factor_email.button_label' => 'E-mail',
     'voyti.view.two_factor_email.method_name' => 'e-mail',
     'voyti.view.two_factor_email.enter_code' => 'Voer de per e-mail verzonden verificatiecode in',
@@ -187,10 +186,6 @@ return [
     'voyti.view.recovery.reset_title' => 'Wachtwoord resetten',
     'voyti.view.recovery.reset_button' => 'Wachtwoord resetten',
 
-    // UserProfile view
-    'voyti.view.userProfile.email_label' => 'E-mail',
-    'voyti.view.userProfile.location_label' => 'Locatie',
-    'voyti.view.userProfile.bio_label' => 'Bio',
 
     // Settings views
     'voyti.view.edit_profile.title' => 'Profiel bewerken',
@@ -215,9 +210,6 @@ return [
 
     // Account settings (2FA)
     'voyti.view.account.two_factor_title' => 'Tweefactorauthenticatie',
-    'voyti.view.account.two_factor_enabled' => '2FA is ingeschakeld',
-    'voyti.view.account.disable_two_factor' => '2FA uitschakelen',
-    'voyti.view.account.enable_two_factor' => '2FA inschakelen',
 
     // Delete account view
     'voyti.view.delete_account.title' => 'Mijn account verwijderen',
@@ -231,11 +223,13 @@ return [
     'voyti.view.admin.create_user_link' => 'Gebruiker aanmaken',
     'voyti.view.admin.update_user_title' => 'Gebruiker bijwerken: {username}',
     'voyti.view.admin.update_profile_title' => 'Profiel bijwerken',
-    'voyti.view.admin.info_link' => 'Info',
     'voyti.view.admin.registered_label' => 'Geregistreerd',
     'voyti.view.admin.session_history' => 'Sessiegeschiedenis',
     'voyti.view.admin.sessions_link' => 'Sessies',
     'voyti.view.admin.terminate_sessions' => 'Sessies beëindigen',
+    'voyti.view.admin.switch_button' => 'Wisselen',
+    'voyti.view.admin.restore_button' => 'Herstellen',
+    'voyti.view.admin.switched_banner' => 'U bent momenteel ingelogd als deze gebruiker. Klik op Herstellen om terug te keren naar {username}.',
 
     // RBAC views
     'voyti.view.assignments.title' => 'Toewijzingen',
@@ -266,13 +260,13 @@ return [
     'voyti.view.info_link' => 'Info',
 
     // Session history
-    'voyti.view.session_history.title' => 'Sessiegeschiedenis',
     'voyti.view.session_history.ip' => 'IP-adres',
     'voyti.view.session_history.user_agent' => 'User agent',
     'voyti.view.session_history.last_seen' => 'Laatst gezien',
     'voyti.view.sessions.title' => 'Actieve sessies',
     'voyti.view.sessions.this_device' => 'Dit apparaat',
     'voyti.view.sessions.none' => 'Geen actieve sessies.',
+    'voyti.view.sessions.revoke_button' => 'Intrekken',
 
     // Pagination
     'voyti.view.filter_button' => 'Filteren',
@@ -298,7 +292,6 @@ return [
     'voyti.view.gravatar_email_label' => 'Gravatar-e-mail',
     'voyti.view.timezone_label' => 'Tijdzone',
     'voyti.view.birthday_label' => 'Geboortedatum',
-    'voyti.view.password_keep_label' => 'Wachtwoord (leeg laten om te behouden)',
 
     // Common table headers
     'voyti.view.id_header' => 'ID',
@@ -329,20 +322,11 @@ return [
     'voyti.view.reset_password_button' => 'Wachtwoordherstellink verzenden',
     'voyti.view.update_profile_link' => 'Profiel bijwerken',
     'voyti.view.send_button' => 'Verzenden',
-    'voyti.view.connect_button' => 'Koppelen',
     'voyti.view.disconnect_button' => 'Ontkoppelen',
 
-    // Confirmation prompts
-    'voyti.view.delete_user_confirm' => 'Deze gebruiker verwijderen?',
 
     // Widgets
-    'voyti.view.sessions.active_sessions' => 'Actieve sessies',
-    'voyti.view.sessions.ip_label' => 'IP:',
-    'voyti.view.sessions.last_activity_label' => 'Laatste activiteit:',
-    'voyti.view.connect.no_accounts' => 'Geen gekoppelde accounts',
     'voyti.view.networks.no_networks' => 'Geen gekoppelde netwerken',
-    'voyti.view.login.link' => 'Inloggen',
-    'voyti.view.logout.link' => 'Uitloggen',
 
     // Shared message view
     'voyti.view.go_home' => 'Naar startpagina',

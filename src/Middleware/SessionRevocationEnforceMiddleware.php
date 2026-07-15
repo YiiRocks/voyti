@@ -21,11 +21,9 @@ use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
 
 /**
- * Terminating a session from the "active sessions" list (self-service or admin) only deletes its
- * {@see UserSessionHistory} row - the PHP session data for that browser is untouched and keeps
- * authenticating requests until it naturally expires. This middleware closes that gap: on every
- * request from an authenticated user, it checks that a history row still exists for the current
- * session ID and force-logs-out the moment it doesn't (i.e. someone terminated it from elsewhere).
+ * Terminating a session only deletes its {@see UserSessionHistory} row — the browser's PHP session
+ * stays valid until it expires naturally. This middleware closes that gap by force-logging-out once
+ * the row is gone.
  */
 final readonly class SessionRevocationEnforceMiddleware implements MiddlewareInterface
 {

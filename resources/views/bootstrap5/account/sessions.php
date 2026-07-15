@@ -59,7 +59,7 @@ foreach ($sessions as $session) {
             ->open();
         echo Field::buttonGroup()
             ->buttons(
-                Html::submitButton($translator->translate('voyti.menu.logout', category: 'voyti'))->class('btn', 'btn-sm', 'btn-outline-danger'),
+                Html::submitButton($translator->translate('voyti.view.sessions.revoke_button', category: 'voyti'))->class('btn', 'btn-sm', 'btn-outline-danger'),
             );
         echo Html::form()->close();
     }

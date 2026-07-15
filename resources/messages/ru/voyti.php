@@ -18,6 +18,8 @@ return [
     'voyti.registration.confirmation_link_invalid' => 'Ссылка подтверждения недействительна или истекла.',
     'voyti.registration.email_confirmation_disabled' => 'Подтверждение email отключено',
     'voyti.registration.new_confirmation_sent' => 'Новая ссылка подтверждения отправлена',
+    'voyti.registration.account_created' => 'Аккаунт создан.',
+    'voyti.registration.account_created_check_email' => 'Аккаунт создан. Проверьте почту для получения ссылки подтверждения.',
 
     // RecoveryController
     'voyti.recovery.disabled' => 'Восстановление пароля отключено',
@@ -63,6 +65,8 @@ return [
     'voyti.admin.user_created' => 'Пользователь создан',
     'voyti.admin.account_updated' => 'Аккаунт обновлён',
     'voyti.admin.password_previously_used' => 'Этот пароль недавно уже использовался. Пожалуйста, выберите другой.',
+    'voyti.admin.switch_identity_success' => 'Вы вошли как этот пользователь',
+    'voyti.admin.switch_identity_restored' => 'Вы возвращены в свой исходный аккаунт',
 
     // RuleController
     'voyti.rule.added' => 'Правило авторизации добавлено',
@@ -107,8 +111,6 @@ return [
     'voyti.mail.welcome_heading' => 'Добро пожаловать!',
     'voyti.mail.hello_username' => 'Здравствуйте, {username},',
     'voyti.mail.account_created_successfully' => 'Ваш аккаунт успешно создан.',
-    'voyti.mail.account_deleted_heading' => 'Аккаунт удалён',
-    'voyti.mail.account_deleted_gdpr' => 'Ваш аккаунт удалён в соответствии с GDPR.',
     'voyti.mail.email_change_heading' => 'Подтверждение смены email',
     'voyti.mail.click_to_confirm_email' => 'Нажмите на ссылку ниже, чтобы подтвердить ваш новый email-адрес:',
     'voyti.mail.password_recovery_heading' => 'Восстановление пароля',
@@ -129,7 +131,6 @@ return [
     // Login view
     'voyti.view.login.title' => 'Войти',
     'voyti.view.login.login_label' => 'Имя пользователя или электронной почте',
-    'voyti.view.login.remember_me' => 'Запомнить меня',
     'voyti.view.login.sign_in_button' => 'Войти',
     'voyti.view.login.forgot_password' => 'Забыли пароль?',
     'voyti.view.login.register_link' => 'Регистрация',
@@ -150,7 +151,6 @@ return [
     'voyti.view.two_factor.qr_unavailable' => 'QR-код недоступен',
     'voyti.view.two_factor.enter_code' => 'Введите проверочный код',
     'voyti.view.two_factor.enable' => 'Включить',
-    'voyti.view.two_factor.verify' => 'Проверить',
     'voyti.view.two_factor.renew' => 'Обновить',
     'voyti.view.two_factor.renew_error' => 'Не удалось создать новый ключ. Пожалуйста, попробуйте снова.',
     'voyti.view.two_factor.loading' => 'Загрузка…',
@@ -162,7 +162,6 @@ return [
     'voyti.view.two_factor.regenerate_backup_codes' => 'Обновить резервные коды',
     'voyti.view.two_factor.regenerate_backup_codes_intro' => 'При создании нового набора резервных кодов все существующие коды становятся недействительными. Введите текущий код подтверждения или резервный код, чтобы продолжить.',
     'voyti.view.two_factor.no_backup_codes_remaining' => 'У вас не осталось резервных кодов. Создайте новый набор, чтобы сохранить возможность восстановить доступ при потере устройства.',
-    'voyti.view.two_factor_email.title' => 'Двухфакторная аутентификация по email',
     'voyti.view.two_factor_email.button_label' => 'Email',
     'voyti.view.two_factor_email.method_name' => 'email',
     'voyti.view.two_factor_email.enter_code' => 'Введите проверочный код, отправленный на ваш email',
@@ -187,10 +186,6 @@ return [
     'voyti.view.recovery.reset_title' => 'Сброс пароля',
     'voyti.view.recovery.reset_button' => 'Сбросить пароль',
 
-    // UserProfile view
-    'voyti.view.userProfile.email_label' => 'Email',
-    'voyti.view.userProfile.location_label' => 'Местоположение',
-    'voyti.view.userProfile.bio_label' => 'О себе',
 
     // Settings views
     'voyti.view.edit_profile.title' => 'Редактировать профиль',
@@ -215,9 +210,6 @@ return [
 
     // Account settings (2FA)
     'voyti.view.account.two_factor_title' => 'Двухфакторная аутентификация',
-    'voyti.view.account.two_factor_enabled' => '2FA включена',
-    'voyti.view.account.disable_two_factor' => 'Отключить 2FA',
-    'voyti.view.account.enable_two_factor' => 'Включить 2FA',
 
     // Delete account view
     'voyti.view.delete_account.title' => 'Удалить мой аккаунт',
@@ -231,11 +223,13 @@ return [
     'voyti.view.admin.create_user_link' => 'Создать пользователя',
     'voyti.view.admin.update_user_title' => 'Редактирование пользователя: {username}',
     'voyti.view.admin.update_profile_title' => 'Редактирование профиля',
-    'voyti.view.admin.info_link' => 'Информация',
     'voyti.view.admin.registered_label' => 'Зарегистрирован',
     'voyti.view.admin.session_history' => 'История сессий',
     'voyti.view.admin.sessions_link' => 'Сессии',
     'voyti.view.admin.terminate_sessions' => 'Завершить сессии',
+    'voyti.view.admin.switch_button' => 'Переключиться',
+    'voyti.view.admin.restore_button' => 'Восстановить',
+    'voyti.view.admin.switched_banner' => 'Сейчас вы вошли как этот пользователь. Нажмите «Восстановить», чтобы вернуться к {username}.',
 
     // RBAC views
     'voyti.view.assignments.title' => 'Назначения',
@@ -266,13 +260,13 @@ return [
     'voyti.view.info_link' => 'Info',
 
     // Session history
-    'voyti.view.session_history.title' => 'История сессий',
     'voyti.view.session_history.ip' => 'IP-адрес',
     'voyti.view.session_history.user_agent' => 'User agent',
     'voyti.view.session_history.last_seen' => 'Последний визит',
     'voyti.view.sessions.title' => 'Активные сеансы',
     'voyti.view.sessions.this_device' => 'Это устройство',
     'voyti.view.sessions.none' => 'Нет активных сеансов.',
+    'voyti.view.sessions.revoke_button' => 'Отозвать',
 
     // Pagination
     'voyti.view.filter_button' => 'Фильтр',
@@ -298,7 +292,6 @@ return [
     'voyti.view.gravatar_email_label' => 'Gravatar email',
     'voyti.view.timezone_label' => 'Часовой пояс',
     'voyti.view.birthday_label' => 'Дата рождения',
-    'voyti.view.password_keep_label' => 'Пароль (оставьте пустым, чтобы не менять)',
 
     // Common table headers
     'voyti.view.id_header' => 'ID',
@@ -329,20 +322,11 @@ return [
     'voyti.view.reset_password_button' => 'Отправить ссылку для сброса пароля',
     'voyti.view.update_profile_link' => 'Редактировать профиль',
     'voyti.view.send_button' => 'Отправить',
-    'voyti.view.connect_button' => 'Привязать',
     'voyti.view.disconnect_button' => 'Отключить',
 
-    // Confirmation prompts
-    'voyti.view.delete_user_confirm' => 'Удалить этого пользователя?',
 
     // Widgets
-    'voyti.view.sessions.active_sessions' => 'Активные сессии',
-    'voyti.view.sessions.ip_label' => 'IP:',
-    'voyti.view.sessions.last_activity_label' => 'Последняя активность:',
-    'voyti.view.connect.no_accounts' => 'Нет привязанных аккаунтов',
     'voyti.view.networks.no_networks' => 'Нет подключённых сетей',
-    'voyti.view.login.link' => 'Войти',
-    'voyti.view.logout.link' => 'Выйти',
 
     // Shared message view
     'voyti.view.go_home' => 'На главную',

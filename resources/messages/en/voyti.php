@@ -111,8 +111,6 @@ return [
     'voyti.mail.welcome_heading' => 'Welcome!',
     'voyti.mail.hello_username' => 'Hello {username},',
     'voyti.mail.account_created_successfully' => 'Your account has been created successfully.',
-    'voyti.mail.account_deleted_heading' => 'Account deleted',
-    'voyti.mail.account_deleted_gdpr' => 'Your account has been deleted in accordance with GDPR.',
     'voyti.mail.email_change_heading' => 'Email change confirmation',
     'voyti.mail.click_to_confirm_email' => 'Click the link below to confirm your new email address:',
     'voyti.mail.password_recovery_heading' => 'Password recovery',
@@ -133,7 +131,6 @@ return [
     // Login view
     'voyti.view.login.title' => 'Log In',
     'voyti.view.login.login_label' => 'Username or Email',
-    'voyti.view.login.remember_me' => 'Remember me next time',
     'voyti.view.login.sign_in_button' => 'Log In',
     'voyti.view.login.forgot_password' => 'Forgot password?',
     'voyti.view.login.register_link' => 'Register',
@@ -154,7 +151,6 @@ return [
     'voyti.view.two_factor.qr_unavailable' => 'QR code is not available',
     'voyti.view.two_factor.enter_code' => 'Enter the verification code',
     'voyti.view.two_factor.enable' => 'Enable',
-    'voyti.view.two_factor.verify' => 'Verify',
     'voyti.view.two_factor.renew' => 'Renew',
     'voyti.view.two_factor.renew_error' => 'Could not generate a new key. Please try again.',
     'voyti.view.two_factor.loading' => 'Loading…',
@@ -166,7 +162,6 @@ return [
     'voyti.view.two_factor.regenerate_backup_codes' => 'Regenerate Backup Codes',
     'voyti.view.two_factor.regenerate_backup_codes_intro' => 'Generating a new set of backup codes invalidates all existing ones. Enter your current verification code or a backup code to confirm.',
     'voyti.view.two_factor.no_backup_codes_remaining' => 'You have no backup codes remaining. Regenerate a new set to make sure you can still recover access if you lose your device.',
-    'voyti.view.two_factor_email.title' => 'Two-factor authentication via email',
     'voyti.view.two_factor_email.button_label' => 'Email',
     'voyti.view.two_factor_email.method_name' => 'email',
     'voyti.view.two_factor_email.enter_code' => 'Enter the verification code sent to your email',
@@ -191,10 +186,6 @@ return [
     'voyti.view.recovery.reset_title' => 'Reset password',
     'voyti.view.recovery.reset_button' => 'Reset password',
 
-    // UserProfile view
-    'voyti.view.userProfile.email_label' => 'Email',
-    'voyti.view.userProfile.location_label' => 'Location',
-    'voyti.view.userProfile.bio_label' => 'Bio',
 
     // Settings views
     'voyti.view.edit_profile.title' => 'Edit Profile',
@@ -219,9 +210,6 @@ return [
 
     // Account settings (2FA)
     'voyti.view.account.two_factor_title' => 'Two-Factor Authentication',
-    'voyti.view.account.two_factor_enabled' => '2FA is enabled',
-    'voyti.view.account.disable_two_factor' => 'Disable 2FA',
-    'voyti.view.account.enable_two_factor' => 'Enable 2FA',
 
     // Delete account view
     'voyti.view.delete_account.title' => 'Delete my account',
@@ -235,7 +223,6 @@ return [
     'voyti.view.admin.create_user_link' => 'Create user',
     'voyti.view.admin.update_user_title' => 'Update user: {username}',
     'voyti.view.admin.update_profile_title' => 'Update profile',
-    'voyti.view.admin.info_link' => 'Info',
     'voyti.view.admin.registered_label' => 'Registered',
     'voyti.view.admin.session_history' => 'Session history',
     'voyti.view.admin.sessions_link' => 'Sessions',
@@ -275,13 +262,13 @@ return [
     'voyti.view.info_link' => 'Info',
 
     // Session history
-    'voyti.view.session_history.title' => 'Session history',
     'voyti.view.session_history.ip' => 'IP address',
     'voyti.view.session_history.user_agent' => 'User agent',
     'voyti.view.session_history.last_seen' => 'Last seen',
     'voyti.view.sessions.title' => 'Active Sessions',
     'voyti.view.sessions.this_device' => 'This device',
     'voyti.view.sessions.none' => 'No active sessions.',
+    'voyti.view.sessions.revoke_button' => 'Revoke',
 
     // Pagination
     'voyti.view.filter_button' => 'Filter',
@@ -307,7 +294,6 @@ return [
     'voyti.view.gravatar_email_label' => 'Gravatar email',
     'voyti.view.timezone_label' => 'Timezone',
     'voyti.view.birthday_label' => 'Date of Birth',
-    'voyti.view.password_keep_label' => 'Password (leave empty to keep)',
 
     // Common table headers
     'voyti.view.id_header' => 'ID',
@@ -338,20 +324,11 @@ return [
     'voyti.view.reset_password_button' => 'Send password reset link',
     'voyti.view.update_profile_link' => 'Update profile',
     'voyti.view.send_button' => 'Send',
-    'voyti.view.connect_button' => 'Connect',
     'voyti.view.disconnect_button' => 'Disconnect',
 
-    // Confirmation prompts
-    'voyti.view.delete_user_confirm' => 'Delete this user?',
 
     // Widgets
-    'voyti.view.sessions.active_sessions' => 'Active sessions',
-    'voyti.view.sessions.ip_label' => 'IP:',
-    'voyti.view.sessions.last_activity_label' => 'Last activity:',
-    'voyti.view.connect.no_accounts' => 'No connected accounts',
     'voyti.view.networks.no_networks' => 'No connected networks',
-    'voyti.view.login.link' => 'Login',
-    'voyti.view.logout.link' => 'Logout',
 
     // Shared message view
     'voyti.view.go_home' => 'Go home',
