@@ -13,7 +13,7 @@ trait RequireUserTrait
     {
         $identity = $this->currentUser->getIdentity();
         if ($identity instanceof \Yiisoft\User\Guest\GuestIdentityInterface) {
-            return $this->renderError('voyti.settings.not_authenticated');
+            return $this->redirect($this->url->generate('voyti/session-login'));
         }
 
         $user = User::findById((int) ($identity->getId() ?? 0));

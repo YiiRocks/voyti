@@ -11,8 +11,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use YiiRocks\Voyti\Middleware\SessionRevocationEnforceMiddleware;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Model\UserSessionHistory;
-use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Model\UserSession;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\FakeSession;
 use Yiisoft\Router\CurrentRoute;
@@ -156,24 +155,6 @@ final class SessionRevocationEnforceMiddlewareTest extends TestCase
         self::assertSame($response, $result);
     }
 
-    public function testProcessPassesThroughWhenSessionHistoryDisabled(): void
-    {
-        $config = new ModuleConfig(enableSessionHistory: false);
-
-        $request = $this->createMock(ServerRequestInterface::class);
-        $response = $this->createMock(ResponseInterface::class);
-        $handler = $this->createMock(RequestHandlerInterface::class);
-        $handler->expects(self::once())->method('handle')->with($request)->willReturn($response);
-
-        $currentUser = $this->createMock(CurrentUser::class);
-        $currentUser->expects(self::never())->method('getIdentity');
-
-        $middleware = $this->createMiddleware(currentUser: $currentUser, config: $config);
-        $result = $middleware->process($request, $handler);
-
-        self::assertSame($response, $result);
-    }
-
     public function testProcessPassesThroughWhenSessionIdIsNull(): void
     {
         $user = $this->createUser();
@@ -200,13 +181,13 @@ final class SessionRevocationEnforceMiddlewareTest extends TestCase
     {
         $user = $this->createUser();
 
-        $history = new UserSessionHistory();
-        $history->setUserId((int) $user->getId());
-        $history->setSessionId('active-session-id');
-        $history->setIp('127.0.0.1');
-        $history->setCreatedAt(time() - 3600);
-        $history->setUpdatedAt(time() - 3600);
-        $history->save();
+        $userSession = new UserSession();
+        $userSession->setUserId((int) $user->getId());
+        $userSession->setSessionId('active-session-id');
+        $userSession->setIp('127.0.0.1');
+        $userSession->setCreatedAt(time() - 3600);
+        $userSession->setUpdatedAt(time() - 3600);
+        $userSession->save();
 
         $currentUser = $this->createMock(CurrentUser::class);
         $currentUser->expects(self::once())->method('getIdentity')->willReturn($user);
@@ -228,7 +209,7 @@ final class SessionRevocationEnforceMiddlewareTest extends TestCase
 
         self::assertSame($response, $result);
 
-        $refreshed = UserSessionHistory::findByUserIdAndSessionId((int) $user->getId(), 'active-session-id');
+        $refreshed = UserSession::findByUserIdAndSessionId((int) $user->getId(), 'active-session-id');
         self::assertNotNull($refreshed);
         self::assertGreaterThanOrEqual($before, $refreshed->getUpdatedAt());
     }
@@ -236,7 +217,6 @@ final class SessionRevocationEnforceMiddlewareTest extends TestCase
     private function createMiddleware(
         ?CurrentUser $currentUser = null,
         ?CurrentRoute $currentRoute = null,
-        ?ModuleConfig $config = null,
         ?ResponseFactoryInterface $responseFactory = null,
         ?FakeSession $session = null,
         ?UrlGeneratorInterface $url = null,
@@ -244,7 +224,6 @@ final class SessionRevocationEnforceMiddlewareTest extends TestCase
         return new SessionRevocationEnforceMiddleware(
             $currentUser ?? $this->createMock(CurrentUser::class),
             $currentRoute ?? $this->createMock(CurrentRoute::class),
-            $config ?? new ModuleConfig(enableSessionHistory: true),
             $responseFactory ?? $this->createMock(ResponseFactoryInterface::class),
             $session ?? new FakeSession(),
             $url ?? $this->createMock(UrlGeneratorInterface::class),

@@ -42,7 +42,6 @@ return [
     'voyti.settings.network_not_found' => 'Red no encontrada',
     'voyti.settings.two_factor_enabled' => 'La autenticación de dos factores ha sido habilitada',
     'voyti.settings.two_factor_disabled' => 'La autenticación de dos factores ha sido deshabilitada',
-    'voyti.settings.session_history_disabled' => 'El historial de sesiones está deshabilitado',
     'voyti.settings.session_not_found' => 'Sesión no encontrada',
     'voyti.settings.session_terminated' => 'La sesión ha sido cerrada',
     'voyti.settings.password_previously_used' => 'Esta contraseña se ha usado recientemente. Por favor, elija una diferente.',
@@ -224,7 +223,7 @@ return [
     'voyti.view.admin.update_user_title' => 'Actualizar usuario: {username}',
     'voyti.view.admin.update_profile_title' => 'Actualizar perfil',
     'voyti.view.admin.registered_label' => 'Registrado',
-    'voyti.view.admin.session_history' => 'Historial de sesiones',
+    'voyti.view.admin.sessions' => 'Gestión de sesiones',
     'voyti.view.admin.sessions_link' => 'Sesiones',
     'voyti.view.admin.terminate_sessions' => 'Finalizar sesiones',
     'voyti.view.admin.switch_button' => 'Cambiar',
@@ -259,10 +258,10 @@ return [
     'voyti.view.assignments.update' => 'Actualizar asignaciones',
     'voyti.view.info_link' => 'Información',
 
-    // Session history
-    'voyti.view.session_history.ip' => 'Dirección IP',
-    'voyti.view.session_history.user_agent' => 'Agente de usuario',
-    'voyti.view.session_history.last_seen' => 'Última vez visto',
+    // Sessions
+    'voyti.view.sessions.ip' => 'Dirección IP',
+    'voyti.view.sessions.user_agent' => 'Agente de usuario',
+    'voyti.view.sessions.last_seen' => 'Última vez visto',
     'voyti.view.sessions.title' => 'Sesiones activas',
     'voyti.view.sessions.this_device' => 'Este dispositivo',
     'voyti.view.sessions.none' => 'No hay sesiones activas.',

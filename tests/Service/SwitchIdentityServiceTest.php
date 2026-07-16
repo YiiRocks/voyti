@@ -6,6 +6,7 @@ namespace YiiRocks\Voyti\tests\Service;
 
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
+use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
 use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
@@ -97,7 +98,8 @@ final class SwitchIdentityServiceTest extends TestCase
         $service->restore();
 
         self::assertTrue($eventDispatcher->hasEvent(UserEvent::class));
-        self::assertCount(2, $eventDispatcher->getEvents());
+        self::assertTrue($eventDispatcher->hasEvent(AfterLoginEvent::class));
+        self::assertCount(3, $eventDispatcher->getEvents());
         $identity = $currentUser->getIdentity();
         self::assertInstanceOf(User::class, $identity);
         self::assertSame($user->getId(), $identity->getId());
@@ -180,7 +182,8 @@ final class SwitchIdentityServiceTest extends TestCase
         $service->run((int) $targetUser->getId());
 
         self::assertTrue($eventDispatcher->hasEvent(UserEvent::class));
-        self::assertCount(2, $eventDispatcher->getEvents());
+        self::assertTrue($eventDispatcher->hasEvent(AfterLoginEvent::class));
+        self::assertCount(3, $eventDispatcher->getEvents());
         $event = $eventDispatcher->getEvent(UserEvent::class);
         self::assertNotNull($event);
         self::assertSame($targetUser->getId(), $event->getUser()->getId());

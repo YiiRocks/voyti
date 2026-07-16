@@ -42,7 +42,6 @@ return [
     'voyti.settings.network_not_found' => 'Réseau introuvable',
     'voyti.settings.two_factor_enabled' => "L'authentification à deux facteurs a été activée",
     'voyti.settings.two_factor_disabled' => "L'authentification à deux facteurs a été désactivée",
-    'voyti.settings.session_history_disabled' => "L'historique des sessions est désactivé",
     'voyti.settings.session_not_found' => 'Session introuvable',
     'voyti.settings.session_terminated' => 'La session a été déconnectée',
     'voyti.settings.password_previously_used' => 'Ce mot de passe a été utilisé récemment. Veuillez en choisir un autre.',
@@ -224,7 +223,7 @@ return [
     'voyti.view.admin.update_user_title' => "Modifier l'utilisateur : {username}",
     'voyti.view.admin.update_profile_title' => 'Modifier le profil',
     'voyti.view.admin.registered_label' => 'Inscrit',
-    'voyti.view.admin.session_history' => 'Historique des sessions',
+    'voyti.view.admin.sessions' => 'Gestion des sessions',
     'voyti.view.admin.sessions_link' => 'Sessions',
     'voyti.view.admin.terminate_sessions' => 'Terminer les sessions',
     'voyti.view.admin.switch_button' => 'Basculer',
@@ -261,10 +260,10 @@ return [
     'voyti.view.assignments.update' => 'Mettre à jour les attributions',
     'voyti.view.info_link' => 'Infos',
 
-    // Session history
-    'voyti.view.session_history.ip' => 'Adresse IP',
-    'voyti.view.session_history.user_agent' => 'Agent utilisateur',
-    'voyti.view.session_history.last_seen' => 'Dernière activité',
+    // Sessions
+    'voyti.view.sessions.ip' => 'Adresse IP',
+    'voyti.view.sessions.user_agent' => 'Agent utilisateur',
+    'voyti.view.sessions.last_seen' => 'Dernière activité',
     'voyti.view.sessions.title' => 'Sessions actives',
     'voyti.view.sessions.this_device' => 'Cet appareil',
     'voyti.view.sessions.none' => 'Aucune session active.',

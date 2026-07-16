@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use YiiRocks\Voyti\Helper\TimezoneHelper;
-use YiiRocks\Voyti\Model\UserSessionHistory;
+use YiiRocks\Voyti\Model\UserSession;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
@@ -14,7 +14,7 @@ use Yiisoft\View\WebView;
 
 /**
  * @var WebView $this
- * @var list<UserSessionHistory> $sessions
+ * @var list<UserSession> $sessions
  * @var string $currentSessionId
  * @var ModuleConfig $config
  * @var UrlGeneratorInterface $url
@@ -36,9 +36,9 @@ echo $this->render('../shared/_flash', ['flash' => $flash]);
 echo Html::H1($translator->translate('voyti.view.sessions.title', category: 'voyti'));
 
 echo Html::div()->class('d-none d-md-flex row fw-bold border-bottom pb-2 mb-2')->open();
-echo Html::div($translator->translate('voyti.view.session_history.ip', category: 'voyti'))->class('col-3');
-echo Html::div($translator->translate('voyti.view.session_history.user_agent', category: 'voyti'))->class('col-5');
-echo Html::div($translator->translate('voyti.view.session_history.last_seen', category: 'voyti'))->class('col-2');
+echo Html::div($translator->translate('voyti.view.sessions.ip', category: 'voyti'))->class('col-3');
+echo Html::div($translator->translate('voyti.view.sessions.user_agent', category: 'voyti'))->class('col-5');
+echo Html::div($translator->translate('voyti.view.sessions.last_seen', category: 'voyti'))->class('col-2');
 echo Html::div()->class('col-2');
 echo Html::div()->close();
 

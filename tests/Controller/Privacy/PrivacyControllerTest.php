@@ -13,10 +13,10 @@ use Psr\Http\Message\StreamInterface;
 use YiiRocks\Voyti\Controller\Privacy\PrivacyController;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserProfile;
-use YiiRocks\Voyti\Model\UserSessionHistory;
+use YiiRocks\Voyti\Model\UserSession;
 use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Service\UserSessionHistory\TerminateUserSessionsService;
+use YiiRocks\Voyti\Service\UserSession\TerminateUserSessionsService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
@@ -235,9 +235,9 @@ final class PrivacyControllerTest extends TestCase
         $this->assertNull(User::findById($userId));
     }
 
-    public function testExportIncludesSessionHistoryAndSocialAccounts(): void
+    public function testExportIncludesSessionsAndSocialAccounts(): void
     {
-        $config = new ModuleConfig(enableGdprCompliance: true, gdprExportProperties: ['userSessionHistory', 'userSocialAccount']);
+        $config = new ModuleConfig(enableGdprCompliance: true, gdprExportProperties: ['userSessions', 'userSocialAccount']);
         $this->harness = new ControllerHarness($config);
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
@@ -248,7 +248,7 @@ final class PrivacyControllerTest extends TestCase
         $identity->method('getId')->willReturn((string) $userId);
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
-        $sessionEntry = new UserSessionHistory();
+        $sessionEntry = new UserSession();
         $sessionEntry->setUserId($userId);
         $sessionEntry->setSessionId('session-1');
         $sessionEntry->setIp('203.0.113.5');
@@ -268,7 +268,7 @@ final class PrivacyControllerTest extends TestCase
         $response->method('withHeader')->willReturnSelf();
 
         $expected = [
-            'userSessionHistory' => [
+            'userSessions' => [
                 ['ip' => '203.0.113.5', 'user_agent' => 'TestAgent/1.0', 'created_at' => 1000, 'updated_at' => 2000],
             ],
             'userSocialAccount' => [
@@ -387,7 +387,7 @@ final class PrivacyControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    public function testExportWhenGuestShowsError(): void
+    public function testExportWhenGuestRedirectsToLogin(): void
     {
         $config = new ModuleConfig(enableGdprCompliance: true);
         $this->harness = new ControllerHarness($config);
@@ -396,9 +396,7 @@ final class PrivacyControllerTest extends TestCase
 
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->method('render')->willReturn($response);
+        $response = $this->mockRedirectResponse($this->responseFactory, '//voyti/session-login');
 
         $result = $controller->export($request);
 

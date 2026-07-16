@@ -17,8 +17,6 @@ final readonly class ModuleConfig
     public function __construct(
         public string $appName = 'Voyti',
         public ?RecaptchaVersion $recaptchaVersion = null,
-        public bool $enableSessionHistory = true,
-        public int|false $numberSessionHistory = 50,
         public bool $enableGdprCompliance = false,
         /** @psalm-var list<string> */
         public array $gdprExportProperties = [
@@ -31,7 +29,7 @@ final readonly class ModuleConfig
             'userProfile.website',
             'userProfile.bio',
             'userProfile.birthday',
-            'userSessionHistory',
+            'userSessions',
             'userSocialAccount',
         ],
         public string $gdprAnonymizePrefix = 'GDPR',
@@ -74,7 +72,7 @@ final readonly class ModuleConfig
     /**
      * @return (array|bool|int|null|string|EmailChangeConfirmation|ProfileVisibility|RecaptchaVersion)[]
      *
-     * @psalm-return array{appName: string, recaptchaVersion: null|RecaptchaVersion, enableSessionHistory: bool, numberSessionHistory: false|int, enableGdprCompliance: bool, gdprExportProperties: list<string>, gdprAnonymizePrefix: string, enableTwoFactorAuthentication: bool, twoFactorAuthenticationForcedPermissions: array<array-key, string>, enableRegistration: bool, enableSocialNetworkRegistration: bool, socialNetworkClients: array<string, array<string, mixed>>, enableEmailConfirmation: bool, enableSwitchIdentities: bool, switchIdentitySessionKey: null|string, homeRoute: string, mailAdminOnRegister: null|string, enablePasswordExpiration: bool, enablePasswordComplexity: bool, passwordHistoryLimit: int, generatePasswords: bool, allowPasswordRecovery: bool, allowAdminPasswordRecovery: bool, allowAccountDelete: bool, emailChangeConfirmation: EmailChangeConfirmation, rememberLoginLifespan: int, tokenConfirmationLifespan: int, tokenRecoveryLifespan: int, administratorPermissionName: null|string, profileVisibility: ProfileVisibility, maxPasswordAge: int|null, disableIpLogging: bool, viewPath: string, mailPath: string, enableRestApi: bool, adminRestPrefix: string, apiTokenLifespan: int|null, enableAuditLog: bool}
+     * @psalm-return array{appName: string, recaptchaVersion: null|RecaptchaVersion, enableGdprCompliance: bool, gdprExportProperties: list<string>, gdprAnonymizePrefix: string, enableTwoFactorAuthentication: bool, twoFactorAuthenticationForcedPermissions: array<array-key, string>, enableRegistration: bool, enableSocialNetworkRegistration: bool, socialNetworkClients: array<string, array<string, mixed>>, enableEmailConfirmation: bool, enableSwitchIdentities: bool, switchIdentitySessionKey: null|string, homeRoute: string, mailAdminOnRegister: null|string, enablePasswordExpiration: bool, enablePasswordComplexity: bool, passwordHistoryLimit: int, generatePasswords: bool, allowPasswordRecovery: bool, allowAdminPasswordRecovery: bool, allowAccountDelete: bool, emailChangeConfirmation: EmailChangeConfirmation, rememberLoginLifespan: int, tokenConfirmationLifespan: int, tokenRecoveryLifespan: int, administratorPermissionName: null|string, profileVisibility: ProfileVisibility, maxPasswordAge: int|null, disableIpLogging: bool, viewPath: string, mailPath: string, enableRestApi: bool, adminRestPrefix: string, apiTokenLifespan: int|null, enableAuditLog: bool}
      */
     public static function defaults(): array
     {
@@ -111,10 +109,5 @@ final readonly class ModuleConfig
                 $exception,
             );
         }
-    }
-
-    public function hasNumberSessionHistory(): bool
-    {
-        return $this->numberSessionHistory !== false && $this->numberSessionHistory > 0;
     }
 }

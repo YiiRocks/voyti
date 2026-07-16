@@ -42,7 +42,6 @@ return [
     'voyti.settings.network_not_found' => 'Network not found',
     'voyti.settings.two_factor_enabled' => 'Two-factor authentication has been enabled',
     'voyti.settings.two_factor_disabled' => 'Two-factor authentication has been disabled',
-    'voyti.settings.session_history_disabled' => 'Session history is disabled',
     'voyti.settings.session_not_found' => 'Session not found',
     'voyti.settings.session_terminated' => 'Session has been logged out',
     'voyti.settings.password_previously_used' => 'This password has been used recently. Please choose a different one.',
@@ -224,7 +223,7 @@ return [
     'voyti.view.admin.update_user_title' => 'Update user: {username}',
     'voyti.view.admin.update_profile_title' => 'Update profile',
     'voyti.view.admin.registered_label' => 'Registered',
-    'voyti.view.admin.session_history' => 'Session history',
+    'voyti.view.admin.sessions' => 'Session management',
     'voyti.view.admin.sessions_link' => 'Sessions',
     'voyti.view.admin.terminate_sessions' => 'Terminate sessions',
     'voyti.view.admin.switch_button' => 'Switch',
@@ -261,10 +260,10 @@ return [
     'voyti.view.assignments.update' => 'Update assignments',
     'voyti.view.info_link' => 'Info',
 
-    // Session history
-    'voyti.view.session_history.ip' => 'IP address',
-    'voyti.view.session_history.user_agent' => 'User agent',
-    'voyti.view.session_history.last_seen' => 'Last seen',
+    // Sessions
+    'voyti.view.sessions.ip' => 'IP address',
+    'voyti.view.sessions.user_agent' => 'User agent',
+    'voyti.view.sessions.last_seen' => 'Last seen',
     'voyti.view.sessions.title' => 'Active Sessions',
     'voyti.view.sessions.this_device' => 'This device',
     'voyti.view.sessions.none' => 'No active sessions.',

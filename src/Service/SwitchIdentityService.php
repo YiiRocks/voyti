@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Service;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
+use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
 use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
@@ -67,8 +68,10 @@ final readonly class SwitchIdentityService
         }
 
         $this->eventDispatcher->dispatch(new UserEvent($originalUser));
+        $previousSessionId = $this->session->getId();
         $this->currentUser->login($originalUser);
         $this->session->remove($sessionKey);
+        $this->eventDispatcher->dispatch(new AfterLoginEvent($originalUser, previousSessionId: $previousSessionId));
         $this->eventDispatcher->dispatch(new UserEvent($originalUser));
 
         return ServiceResult::success();
@@ -105,7 +108,9 @@ final readonly class SwitchIdentityService
         }
 
         $this->eventDispatcher->dispatch(new UserEvent($targetUser));
+        $previousSessionId = $this->session->getId();
         $this->currentUser->login($targetUser);
+        $this->eventDispatcher->dispatch(new AfterLoginEvent($targetUser, previousSessionId: $previousSessionId));
         $this->eventDispatcher->dispatch(new UserEvent($targetUser));
 
         return ServiceResult::success();

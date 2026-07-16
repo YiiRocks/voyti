@@ -90,7 +90,7 @@ final class UserTest extends TestCase
         ')->execute();
 
         $this->connection->createCommand('
-            CREATE TABLE "user_session_history" (
+            CREATE TABLE "user_sessions" (
                 "user_id" INTEGER NOT NULL,
                 "session_id" VARCHAR(255) NOT NULL,
                 "user_agent" TEXT,
@@ -104,7 +104,7 @@ final class UserTest extends TestCase
     protected function tearDown(): void
     {
         if ($this->connection !== null) {
-            $this->connection->createCommand('DROP TABLE IF EXISTS "user_session_history"')->execute();
+            $this->connection->createCommand('DROP TABLE IF EXISTS "user_sessions"')->execute();
             $this->connection->createCommand('DROP TABLE IF EXISTS "user_token"')->execute();
             $this->connection->createCommand('DROP TABLE IF EXISTS "user_social_account"')->execute();
             $this->connection->createCommand('DROP TABLE IF EXISTS "user_profile"')->execute();

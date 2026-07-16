@@ -13,7 +13,7 @@ use RuntimeException;
 use YiiRocks\Voyti\Controller\Session\SessionController;
 use YiiRocks\Voyti\Model\Form\Auth\LoginForm;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Model\UserSessionHistory;
+use YiiRocks\Voyti\Model\UserSession;
 use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
@@ -662,18 +662,18 @@ final class SessionControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    public function testLogoutDeletesSessionHistoryRecord(): void
+    public function testLogoutDeletesUserSessionRecord(): void
     {
         $user = $this->createRealUser();
         $sessionId = 'test-session-to-delete';
 
-        $sessionHistory = new UserSessionHistory();
-        $sessionHistory->setUserId($user->getIdOrZero());
-        $sessionHistory->setSessionId($sessionId);
-        $sessionHistory->setIp('192.168.1.1');
-        $sessionHistory->setCreatedAt(time());
-        $sessionHistory->setUpdatedAt(time());
-        $sessionHistory->save();
+        $userSession = new UserSession();
+        $userSession->setUserId($user->getIdOrZero());
+        $userSession->setSessionId($sessionId);
+        $userSession->setIp('192.168.1.1');
+        $userSession->setCreatedAt(time());
+        $userSession->setUpdatedAt(time());
+        $userSession->save();
 
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
@@ -697,7 +697,7 @@ final class SessionControllerTest extends TestCase
         $controller = $this->createController();
         $controller->logout();
 
-        $deleted = UserSessionHistory::findByUserIdAndSessionId($user->getIdOrZero(), $sessionId);
+        $deleted = UserSession::findByUserIdAndSessionId($user->getIdOrZero(), $sessionId);
         $this->assertNull($deleted);
     }
 

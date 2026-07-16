@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace YiiRocks\Voyti\tests\Service\UserSessionHistory;
+namespace YiiRocks\Voyti\tests\Service\UserSession;
 
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Event\Session\SessionEvent;
-use YiiRocks\Voyti\Model\UserSessionHistory;
-use YiiRocks\Voyti\Service\UserSessionHistory\TerminateUserSessionsService;
+use YiiRocks\Voyti\Model\UserSession;
+use YiiRocks\Voyti\Service\UserSession\TerminateUserSessionsService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 
@@ -39,7 +39,7 @@ final class TerminateUserSessionsServiceTest extends TestCase
 
     public function testRunDeletesNothingForUnrelatedUserId(): void
     {
-        $session = new UserSessionHistory();
+        $session = new UserSession();
         $session->setUserId(99);
         $session->setSessionId('keep');
         $session->setIp('127.0.0.1');
@@ -49,18 +49,18 @@ final class TerminateUserSessionsServiceTest extends TestCase
         $service = new TerminateUserSessionsService($eventDispatcher);
         $service->run(123);
 
-        self::assertCount(1, UserSessionHistory::query()->where(['user_id' => 99, 'session_id' => 'keep'])->all());
+        self::assertCount(1, UserSession::query()->where(['user_id' => 99, 'session_id' => 'keep'])->all());
     }
 
     public function testRunDeletesOnlyMatchingUserSessions(): void
     {
-        $other = new UserSessionHistory();
+        $other = new UserSession();
         $other->setUserId(7);
         $other->setSessionId('keep');
         $other->setIp('127.0.0.1');
         $other->save();
 
-        $mine = new UserSessionHistory();
+        $mine = new UserSession();
         $mine->setUserId(42);
         $mine->setSessionId('remove');
         $mine->setIp('127.0.0.1');
@@ -70,8 +70,8 @@ final class TerminateUserSessionsServiceTest extends TestCase
         $service = new TerminateUserSessionsService($eventDispatcher);
         $service->run(42);
 
-        self::assertCount(0, UserSessionHistory::query()->where(['user_id' => 42, 'session_id' => 'remove'])->all());
-        self::assertCount(1, UserSessionHistory::query()->where(['user_id' => 7, 'session_id' => 'keep'])->all());
+        self::assertCount(0, UserSession::query()->where(['user_id' => 42, 'session_id' => 'remove'])->all());
+        self::assertCount(1, UserSession::query()->where(['user_id' => 7, 'session_id' => 'keep'])->all());
     }
 
     public function testRunDispatchesEvent(): void

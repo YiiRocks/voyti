@@ -236,20 +236,14 @@ final class AccountControllerTest extends TestCase
         $this->assertSame('testuser', $updated->getUsername());
     }
 
-    public function testAccountWhenGuestShowsError(): void
+    public function testAccountWhenGuestRedirectsToLogin(): void
     {
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturn($response);
+        $response = $this->mockRedirectResponse($this->responseFactory, '//voyti/session-login');
 
         $result = $controller->update($request);
 
@@ -278,16 +272,14 @@ final class AccountControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    public function testConfirmWhenGuestShowsError(): void
+    public function testConfirmWhenGuestRedirectsToLogin(): void
     {
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->method('render')->willReturn($response);
+        $response = $this->mockRedirectResponse($this->responseFactory, '//voyti/session-login');
 
         $result = $controller->confirm($request, 'good-code');
 

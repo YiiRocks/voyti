@@ -56,20 +56,14 @@ final class SocialNetworkControllerTest extends TestCase
         $this->tearDownDatabase();
     }
 
-    public function testDeleteWhenGuestShowsError(): void
+    public function testDeleteWhenGuestRedirectsToLogin(): void
     {
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturn($response);
+        $response = $this->mockRedirectResponse($this->responseFactory, '//voyti/session-login');
 
         $result = $controller->delete($request, 1);
 
@@ -143,20 +137,14 @@ final class SocialNetworkControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    public function testIndexWhenGuestShowsError(): void
+    public function testIndexWhenGuestRedirectsToLogin(): void
     {
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturn($response);
+        $response = $this->mockRedirectResponse($this->responseFactory, '//voyti/session-login');
 
         $result = $controller->index($request);
 

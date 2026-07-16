@@ -82,7 +82,7 @@ trait DatabaseSetupTrait
         ')->execute();
 
         $this->dbConnection->createCommand('
-            CREATE TABLE "user_session_history" (
+            CREATE TABLE "user_sessions" (
                 "user_id" INTEGER NOT NULL,
                 "session_id" VARCHAR(64) NOT NULL,
                 "user_agent" TEXT,
@@ -151,7 +151,7 @@ trait DatabaseSetupTrait
             $this->dbConnection->createCommand('DROP TABLE IF EXISTS "audit_log"')->execute();
             $this->dbConnection->createCommand('DROP TABLE IF EXISTS "user_password_history"')->execute();
             $this->dbConnection->createCommand('DROP TABLE IF EXISTS "user_backup_code"')->execute();
-            $this->dbConnection->createCommand('DROP TABLE IF EXISTS "user_session_history"')->execute();
+            $this->dbConnection->createCommand('DROP TABLE IF EXISTS "user_sessions"')->execute();
             $this->dbConnection->createCommand('DROP TABLE IF EXISTS "user_token"')->execute();
             $this->dbConnection->createCommand('DROP TABLE IF EXISTS "user_social_account"')->execute();
             $this->dbConnection->createCommand('DROP TABLE IF EXISTS "user_profile"')->execute();

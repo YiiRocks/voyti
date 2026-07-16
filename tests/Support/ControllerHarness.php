@@ -46,7 +46,7 @@ use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\CreateService;
 use YiiRocks\Voyti\Service\User\RegisterService;
 use YiiRocks\Voyti\Service\User\UserCreationHelper;
-use YiiRocks\Voyti\Service\UserSessionHistory\TerminateUserSessionsService;
+use YiiRocks\Voyti\Service\UserSession\TerminateUserSessionsService;
 use YiiRocks\Voyti\Validator\Rbac\ItemsValidator;
 use YiiRocks\Voyti\Validator\Rbac\RuleValidator;
 use Yiisoft\Hydrator\HydratorInterface;

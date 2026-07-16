@@ -45,8 +45,8 @@ use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\CreateService;
 use YiiRocks\Voyti\Service\User\RegisterService;
 use YiiRocks\Voyti\Service\User\UserCreationHelper;
-use YiiRocks\Voyti\Service\UserSessionHistory\TerminateUserSessionsService;
-use YiiRocks\Voyti\Service\UserSessionHistory\UserSessionHistoryDecorator;
+use YiiRocks\Voyti\Service\UserSession\TerminateUserSessionsService;
+use YiiRocks\Voyti\Service\UserSession\UserSessionDecorator;
 use YiiRocks\Voyti\Validator\Rbac\ItemsValidator;
 use YiiRocks\Voyti\Validator\Rbac\RuleValidator;
 use Yiisoft\Auth\IdentityRepositoryInterface;
@@ -147,7 +147,7 @@ return [
         TerminateUserSessionsService $terminateUserSessionsService
     ) => new BlockService($eventDispatcher, $terminateUserSessionsService),
 
-    // Sessions and identity: login persistence, switching, API tokens, session history.
+    // Sessions and identity: login persistence, switching, API tokens, session tracking.
     RememberMeCookieService::class => static fn (
         ModuleConfig $config,
         ?EventDispatcherInterface $eventDispatcher = null,
@@ -162,11 +162,11 @@ return [
         EventDispatcherInterface $eventDispatcher,
     ) => new SwitchIdentityService($config, $currentUser, $session, $eventDispatcher),
     ApiTokenService::class => ApiTokenService::class,
-    UserSessionHistoryDecorator::class => fn (
+    UserSessionDecorator::class => fn (
         EventDispatcherInterface $eventDispatcher,
         ModuleConfig $config,
         ?SessionInterface $session = null
-    ) => new UserSessionHistoryDecorator($eventDispatcher, $config, $session),
+    ) => new UserSessionDecorator($eventDispatcher, $config, $session),
     TerminateUserSessionsService::class => TerminateUserSessionsService::class,
 
     // Two-factor authentication: email codes, TOTP QR URIs, backup codes.
@@ -207,7 +207,7 @@ return [
     // Event listeners bound to their concrete class for autowiring; wiring to events is in events.php.
     Listener\AdminNotificationListener::class => Listener\AdminNotificationListener::class,
     Listener\PasswordExpirationListener::class => Listener\PasswordExpirationListener::class,
-    Listener\SessionHistoryListener::class => Listener\SessionHistoryListener::class,
+    Listener\SessionListener::class => Listener\SessionListener::class,
 
     // Translation category source for this module's message files.
     'yiirocks/voyti.translator' => [

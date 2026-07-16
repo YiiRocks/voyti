@@ -42,7 +42,6 @@ return [
     'voyti.settings.network_not_found' => 'Netwerk niet gevonden',
     'voyti.settings.two_factor_enabled' => 'Tweefactorauthenticatie is ingeschakeld',
     'voyti.settings.two_factor_disabled' => 'Tweefactorauthenticatie is uitgeschakeld',
-    'voyti.settings.session_history_disabled' => 'Sessiegeschiedenis is uitgeschakeld',
     'voyti.settings.session_not_found' => 'Sessie niet gevonden',
     'voyti.settings.session_terminated' => 'Sessie is afgemeld',
     'voyti.settings.password_previously_used' => 'Dit wachtwoord is onlangs al gebruikt. Kies een ander wachtwoord.',
@@ -224,7 +223,7 @@ return [
     'voyti.view.admin.update_user_title' => 'Gebruiker bijwerken: {username}',
     'voyti.view.admin.update_profile_title' => 'Profiel bijwerken',
     'voyti.view.admin.registered_label' => 'Geregistreerd',
-    'voyti.view.admin.session_history' => 'Sessiegeschiedenis',
+    'voyti.view.admin.sessions' => 'Sessiebeheer',
     'voyti.view.admin.sessions_link' => 'Sessies',
     'voyti.view.admin.terminate_sessions' => 'Sessies beëindigen',
     'voyti.view.admin.switch_button' => 'Wisselen',
@@ -259,10 +258,10 @@ return [
     'voyti.view.assignments.update' => 'Toewijzingen bijwerken',
     'voyti.view.info_link' => 'Info',
 
-    // Session history
-    'voyti.view.session_history.ip' => 'IP-adres',
-    'voyti.view.session_history.user_agent' => 'User agent',
-    'voyti.view.session_history.last_seen' => 'Laatst gezien',
+    // Sessions
+    'voyti.view.sessions.ip' => 'IP-adres',
+    'voyti.view.sessions.user_agent' => 'User agent',
+    'voyti.view.sessions.last_seen' => 'Laatst gezien',
     'voyti.view.sessions.title' => 'Actieve sessies',
     'voyti.view.sessions.this_device' => 'Dit apparaat',
     'voyti.view.sessions.none' => 'Geen actieve sessies.',

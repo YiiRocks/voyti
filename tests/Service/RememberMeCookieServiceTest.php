@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Model\UserSessionHistory;
+use YiiRocks\Voyti\Model\UserSession;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
@@ -108,7 +108,7 @@ final class RememberMeCookieServiceTest extends TestCase
 
         $user = $this->createUser();
         $userId = (int) $user->getId();
-        $this->createSessionHistoryEntry($userId, 'cookie-session-id');
+        $this->createUserSession($userId, 'cookie-session-id');
 
         $identity = $this->createMock(User::class);
         $identity->method('validateCookieLoginKey')->willReturn(true);
@@ -139,7 +139,7 @@ final class RememberMeCookieServiceTest extends TestCase
 
         $user = $this->createUser();
         $userId = (int) $user->getId();
-        $this->createSessionHistoryEntry($userId, 'cookie-session-id');
+        $this->createUserSession($userId, 'cookie-session-id');
 
         $identity = $this->createMock(User::class);
         $identity->method('validateCookieLoginKey')->willReturn(true);
@@ -169,7 +169,7 @@ final class RememberMeCookieServiceTest extends TestCase
 
         $user = $this->createUser();
         $userId = (int) $user->getId();
-        $this->createSessionHistoryEntry($userId, 'cookie-session-id');
+        $this->createUserSession($userId, 'cookie-session-id');
 
         $identity = $this->createMock(User::class);
         $identity->method('validateCookieLoginKey')->willReturn(true);
@@ -365,7 +365,7 @@ final class RememberMeCookieServiceTest extends TestCase
 
         $user = $this->createUser();
         $userId = (int) $user->getId();
-        $this->createSessionHistoryEntry($userId, 'cookie-session-id');
+        $this->createUserSession($userId, 'cookie-session-id');
 
         $session = new FakeSession();
         $currentUser = $this->createCurrentUser();
@@ -392,7 +392,7 @@ final class RememberMeCookieServiceTest extends TestCase
 
         $user = $this->createUser();
         $userId = (int) $user->getId();
-        // Deliberately no matching UserSessionHistory row for 'terminated-session-id' -
+        // Deliberately no matching UserSession row for 'terminated-session-id' -
         // simulates the device's session having been terminated from elsewhere.
 
         $session = new FakeSession();
@@ -411,11 +411,11 @@ final class RememberMeCookieServiceTest extends TestCase
         self::assertNotSame($identity, $currentUser->getIdentity());
     }
 
-    public function testLoginByCookieWithUserIdentityDispatchesAfterLoginEventWithPreviousSessionId(): void
+    public function testLoginByCookieWithUserIdentityDispatchesAfterLoginEventWithCookieSessionId(): void
     {
         $user = $this->createUser();
         $userId = (int) $user->getId();
-        $this->createSessionHistoryEntry($userId, 'cookie-session-id');
+        $this->createUserSession($userId, 'cookie-session-id');
 
         $identity = $this->createMock(User::class);
         $identity->method('validateCookieLoginKey')->willReturn(true);
@@ -434,7 +434,7 @@ final class RememberMeCookieServiceTest extends TestCase
         [, $emitter] = $this->createEmitterSpy();
         $service = new RememberMeCookieService(3600, 'autoLogin', $emitter, eventDispatcher: $eventDispatcher);
         $session = new FakeSession();
-        $session->setId('cookie-session-id');
+        $session->setId('php-session-id');
         $session->open();
         $currentUser = $this->createCurrentUser();
         $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
@@ -708,19 +708,6 @@ final class RememberMeCookieServiceTest extends TestCase
         return [$state, $emitter];
     }
 
-    private function createSessionHistoryEntry(int $userId, string $sessionId): UserSessionHistory
-    {
-        $sh = new UserSessionHistory();
-        $sh->setUserId($userId);
-        $sh->setSessionId($sessionId);
-        $sh->setIp('127.0.0.1');
-        $sh->setCreatedAt(time());
-        $sh->setUpdatedAt(time());
-        $sh->save();
-
-        return $sh;
-    }
-
     private function createUser(): User
     {
         $user = new User();
@@ -733,6 +720,19 @@ final class RememberMeCookieServiceTest extends TestCase
         $user->save();
 
         return $user;
+    }
+
+    private function createUserSession(int $userId, string $sessionId): UserSession
+    {
+        $sh = new UserSession();
+        $sh->setUserId($userId);
+        $sh->setSessionId($sessionId);
+        $sh->setIp('127.0.0.1');
+        $sh->setCreatedAt(time());
+        $sh->setUpdatedAt(time());
+        $sh->save();
+
+        return $sh;
     }
 
     private function fixedNowClosure(int $now): \Closure

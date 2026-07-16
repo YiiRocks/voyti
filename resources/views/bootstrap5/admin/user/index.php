@@ -147,7 +147,7 @@ foreach ($users as $user) {
     );
 
     echo Html::li(
-        Html::a($translator->translate('voyti.view.admin.sessions_link', category: 'voyti'), $url->generate('voyti/admin-users-session-history', ['id' => $user->getId()]))->class('dropdown-item'),
+        Html::a($translator->translate('voyti.view.admin.sessions_link', category: 'voyti'), $url->generate('voyti/admin-users-sessions', ['id' => $user->getId()]))->class('dropdown-item'),
     );
 
     if (!$user->isConfirmed()) {

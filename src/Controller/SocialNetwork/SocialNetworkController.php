@@ -40,7 +40,7 @@ final readonly class SocialNetworkController
     {
         $identity = $this->currentUser->getIdentity();
         if ($identity instanceof GuestIdentityInterface) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated', category: 'voyti')]);
+            return $this->redirect($this->url->generate('voyti/session-login'));
         }
 
         $account = null;
@@ -67,7 +67,7 @@ final readonly class SocialNetworkController
     {
         $identity = $this->currentUser->getIdentity();
         if ($identity instanceof GuestIdentityInterface) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.not_authenticated', category: 'voyti'), 'translator' => $this->translator]);
+            return $this->redirect($this->url->generate('voyti/session-login'));
         }
 
         $accounts = UserSocialAccount::findByUserId((int) ($identity->getId() ?? 0));

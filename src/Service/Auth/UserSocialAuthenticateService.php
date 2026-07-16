@@ -67,9 +67,10 @@ final readonly class UserSocialAuthenticateService
                 return ServiceResult::failure('Your account has been blocked');
             }
 
+            $previousSessionId = $this->session->getId();
             $this->currentUser->login($user);
             LoginMetadataHelper::recordLogin($user, $serverParams, $this->config);
-            $this->eventDispatcher->dispatch(new AfterLoginEvent($user));
+            $this->eventDispatcher->dispatch(new AfterLoginEvent($user, previousSessionId: $previousSessionId));
 
             $this->session->remove(self::SESSION_KEY);
 

@@ -7,7 +7,7 @@ namespace YiiRocks\Voyti\Model;
 use Yiisoft\ActiveRecord\ActiveRecord;
 use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
 
-final class UserSessionHistory extends ActiveRecord
+final class UserSession extends ActiveRecord
 {
     use PrivatePropertiesTrait;
 
@@ -19,32 +19,32 @@ final class UserSessionHistory extends ActiveRecord
     private int $user_id = 0;
 
     /**
-     * @return UserSessionHistory[]
+     * @return UserSession[]
      *
-     * @psalm-return list<UserSessionHistory>
+     * @psalm-return list<UserSession>
      */
-    public static function findAllSessionHistory(): array
+    public static function findAllSessions(): array
     {
-        /** @var list<UserSessionHistory> $sessions */
+        /** @var list<UserSession> $sessions */
         $sessions = self::query()->all();
         return $sessions;
     }
 
     /**
-     * @return UserSessionHistory[]
+     * @return UserSession[]
      *
-     * @psalm-return list<UserSessionHistory>
+     * @psalm-return list<UserSession>
      */
     public static function findByUserId(int $userId): array
     {
-        /** @var list<UserSessionHistory> $sessions */
+        /** @var list<UserSession> $sessions */
         $sessions = self::query()->where(['user_id' => $userId])->all();
         return $sessions;
     }
 
-    public static function findByUserIdAndSessionId(int $userId, string $sessionId): ?UserSessionHistory
+    public static function findByUserIdAndSessionId(int $userId, string $sessionId): ?UserSession
     {
-        /** @var ?UserSessionHistory $session */
+        /** @var ?UserSession $session */
         $session = self::query()->where(['user_id' => $userId, 'session_id' => $sessionId])->one();
         return $session;
     }
@@ -138,11 +138,11 @@ final class UserSessionHistory extends ActiveRecord
     /**
      * @return string
      *
-     * @psalm-return '{{%user_session_history}}'
+     * @psalm-return '{{%user_sessions}}'
      */
     #[\Override]
     public function tableName(): string
     {
-        return '{{%user_session_history}}';
+        return '{{%user_sessions}}';
     }
 }

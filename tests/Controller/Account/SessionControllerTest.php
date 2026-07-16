@@ -10,7 +10,7 @@ use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\Account\SessionController;
 use YiiRocks\Voyti\Event\Session\SessionEvent;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Model\UserSessionHistory;
+use YiiRocks\Voyti\Model\UserSession;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
@@ -97,38 +97,12 @@ final class SessionControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    public function testIndexNotAuthenticatedShowsError(): void
+    public function testIndexNotAuthenticatedRedirectsToLogin(): void
     {
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
 
         $controller = $this->createController();
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->method('render')->willReturn($response);
-
-        $result = $controller->index();
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testIndexWithSessionHistoryDisabledReturnsEmptyList(): void
-    {
-        $this->config = new ModuleConfig(enableSessionHistory: false);
-        $this->harness = new ControllerHarness($this->config);
-        $user = $this->createUser();
-        $this->authenticateAs($user);
-        $this->createSession($user, 'sess-1', '203.0.113.1');
-
-        $controller = $this->createController();
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('account/sessions', $this->callback(
-                static fn (array $params): bool => $params['sessions'] === []
-                    && array_key_exists('timezone', $params),
-            ))
-            ->willReturn($response);
+        $response = $this->mockRedirectResponse($this->responseFactory, '//voyti/session-login');
 
         $result = $controller->index();
 
@@ -156,14 +130,12 @@ final class SessionControllerTest extends TestCase
         $this->assertInstanceOf(SessionEvent::class, $event);
     }
 
-    public function testTerminateNotAuthenticatedShowsError(): void
+    public function testTerminateNotAuthenticatedRedirectsToLogin(): void
     {
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
 
         $controller = $this->createController();
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->method('render')->willReturn($response);
+        $response = $this->mockRedirectResponse($this->responseFactory, '//voyti/session-login');
 
         $result = $controller->terminate('anything');
 
@@ -183,24 +155,7 @@ final class SessionControllerTest extends TestCase
         $result = $controller->terminate('other-session');
 
         $this->assertSame($response, $result);
-        $this->assertNull(UserSessionHistory::findByUserIdAndSessionId($user->getIdOrZero(), 'other-session'));
-    }
-
-    public function testTerminateSessionHistoryDisabledShowsError(): void
-    {
-        $this->config = new ModuleConfig(enableSessionHistory: false);
-        $this->harness = new ControllerHarness($this->config);
-        $user = $this->createUser();
-        $this->authenticateAs($user);
-
-        $controller = $this->createController();
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->method('render')->willReturn($response);
-
-        $result = $controller->terminate('anything');
-
-        $this->assertSame($response, $result);
+        $this->assertNull(UserSession::findByUserIdAndSessionId($user->getIdOrZero(), 'other-session'));
     }
 
     public function testTerminateUnknownSessionShowsError(): void
@@ -236,9 +191,9 @@ final class SessionControllerTest extends TestCase
         );
     }
 
-    private function createSession(User $user, string $sessionId, string $ip): UserSessionHistory
+    private function createSession(User $user, string $sessionId, string $ip): UserSession
     {
-        $session = new UserSessionHistory();
+        $session = new UserSession();
         $session->setUserId($user->getIdOrZero());
         $session->setSessionId($sessionId);
         $session->setIp($ip);

@@ -1083,9 +1083,7 @@ final class TwoFactorControllerTest extends TestCase
 
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->method('render')->willReturn($response);
+        $response = $this->mockRedirectResponse($this->responseFactory, '//voyti/session-login');
 
         $result = $invoke($controller);
 

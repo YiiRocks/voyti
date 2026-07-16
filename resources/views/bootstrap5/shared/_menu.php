@@ -26,14 +26,11 @@ $items = [
         Html::a($translator->translate('voyti.menu.networks', category: 'voyti'), $url->generate('voyti/social-network'))->class('nav-link'),
         ['class' => 'nav-item'],
     ),
-];
-
-if ($config->enableSessionHistory) {
-    $items[] = Html::li(
+    Html::li(
         Html::a($translator->translate('voyti.menu.sessions', category: 'voyti'), $url->generate('voyti/account-sessions'))->class('nav-link'),
         ['class' => 'nav-item'],
-    );
-}
+    ),
+];
 
 if ($config->enableTwoFactorAuthentication) {
     $items[] = Html::li(

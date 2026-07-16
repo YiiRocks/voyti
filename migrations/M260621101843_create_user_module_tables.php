@@ -14,7 +14,7 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
         $b->dropTable('{{%audit_log}}');
         $b->dropTable('{{%user_password_history}}');
         $b->dropTable('{{%user_backup_code}}');
-        $b->dropTable('{{%user_session_history}}');
+        $b->dropTable('{{%user_sessions}}');
         $b->dropTable('{{%user_token}}');
         $b->dropTable('{{%user_social_account}}');
         $b->dropTable('{{%user_profile}}');
@@ -77,7 +77,7 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
             'created_at' => ColumnBuilder::integer()->notNull(),
         ]);
 
-        $b->createTable('{{%user_session_history}}', [
+        $b->createTable('{{%user_sessions}}', [
             'user_id' => ColumnBuilder::integer()->notNull(),
             'session_id' => ColumnBuilder::string(255)->notNull(),
             'user_agent' => ColumnBuilder::text(),
@@ -110,7 +110,7 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
         ]);
 
         $b->addPrimaryKey('{{%user_token}}', 'pk-user-token-user-id-code-type', ['user_id', 'code', 'type']);
-        $b->addPrimaryKey('{{%user_session_history}}', 'pk-user-session-history-user-id-session-id', ['user_id', 'session_id']);
+        $b->addPrimaryKey('{{%user_sessions}}', 'pk-user-sessions-user-id-session-id', ['user_id', 'session_id']);
         $b->addPrimaryKey('{{%user_backup_code}}', 'pk-user-backup-code-user-id-code-hash', ['user_id', 'code_hash']);
         $b->addPrimaryKey('{{%user_password_history}}', 'pk-user-password-history-user-id-password-hash', ['user_id', 'password_hash']);
 
@@ -121,9 +121,9 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
         $b->createIndex('{{%user_social_account}}', 'idx-user-social-account-provider-client-id', ['provider', 'client_id'], 'UNIQUE');
         $b->createIndex('{{%user_social_account}}', 'idx-user-social-account-code', ['code'], 'UNIQUE');
         $b->createIndex('{{%user_token}}', 'idx-user-token-user-id', ['user_id']);
-        $b->createIndex('{{%user_session_history}}', 'idx-user-session-history-user-id', ['user_id']);
-        $b->createIndex('{{%user_session_history}}', 'idx-user-session-history-session-id', ['session_id']);
-        $b->createIndex('{{%user_session_history}}', 'idx-user-session-history-updated-at', ['updated_at']);
+        $b->createIndex('{{%user_sessions}}', 'idx-user-sessions-user-id', ['user_id']);
+        $b->createIndex('{{%user_sessions}}', 'idx-user-sessions-session-id', ['session_id']);
+        $b->createIndex('{{%user_sessions}}', 'idx-user-sessions-updated-at', ['updated_at']);
         $b->createIndex('{{%user_backup_code}}', 'idx-user-backup-code-user-id', ['user_id']);
         $b->createIndex('{{%user_password_history}}', 'idx-user-password-history-user-id', ['user_id']);
         $b->createIndex('{{%audit_log}}', 'idx-audit-log-actor-user-id', ['actor_user_id']);
@@ -133,7 +133,7 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
         $b->addForeignKey('{{%user_profile}}', 'fk-user-profile-user-id', ['user_id'], '{{%user}}', ['id'], 'CASCADE', 'RESTRICT');
         $b->addForeignKey('{{%user_social_account}}', 'fk-user-social-account-user-id', ['user_id'], '{{%user}}', ['id'], 'CASCADE', 'RESTRICT');
         $b->addForeignKey('{{%user_token}}', 'fk-user-token-user-id', ['user_id'], '{{%user}}', ['id'], 'CASCADE', 'RESTRICT');
-        $b->addForeignKey('{{%user_session_history}}', 'fk-user-session-history-user-id', ['user_id'], '{{%user}}', ['id'], 'CASCADE', 'RESTRICT');
+        $b->addForeignKey('{{%user_sessions}}', 'fk-user-sessions-user-id', ['user_id'], '{{%user}}', ['id'], 'CASCADE', 'RESTRICT');
         $b->addForeignKey('{{%user_backup_code}}', 'fk-user-backup-code-user-id', ['user_id'], '{{%user}}', ['id'], 'CASCADE', 'RESTRICT');
         $b->addForeignKey('{{%user_password_history}}', 'fk-user-password-history-user-id', ['user_id'], '{{%user}}', ['id'], 'CASCADE', 'RESTRICT');
     }

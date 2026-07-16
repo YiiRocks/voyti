@@ -45,7 +45,7 @@ Stats for Nerds
 - **Two-Factor Authentication** — TOTP (authenticator app) and email 2FA with enforced-per-permission support, plus one-time backup codes for account recovery
 - **RBAC Management** — Full admin UI for roles, permissions, and rules with parent-child hierarchy, assignment management, and filtering
 - **Identity Switching** — Admins can temporarily switch into another user's identity for support or debugging, then restore their own session with one click
-- **Session Management** — Session history tracking and termination
+- **Session Management** — Session tracking and termination
 - **GDPR Compliance** — Consent management, data export, anonymized deletion with admin notification
 - **Password Policies** — Minimum complexity requirements, max age enforcement via middleware
 - **Email Change Confirmation** — Three modes: immediate, confirm new address, confirm both old and new
@@ -90,7 +90,7 @@ enabled in your console app, run:
 ```
 
 One migration creates the `user`, `user_profile`, `user_social_account`,
-`user_token`, `user_session_history`, `user_backup_code`, `user_password_history`,
+`user_token`, `user_sessions`, `user_backup_code`, `user_password_history`,
 and `audit_log` tables with all columns (2FA, GDPR, password expiration, last
 login IP, etc.) included.
 
@@ -211,7 +211,7 @@ Below are all top-level `yiirocks/voyti` options, followed by the nested `social
 |--------|------|---------|-------------|
 | `enableGdprCompliance` | `bool` | `false` | Enable GDPR features |
 | `gdprAnonymizePrefix` | `string` | `'GDPR'` | Prefix for anonymized usernames |
-| `gdprExportProperties` | `array` | `['email', 'username', 'userProfile.public_email', 'userProfile.name', 'userProfile.gravatar_email', 'userProfile.location', 'userProfile.website', 'userProfile.bio', 'userProfile.birthday', 'userSessionHistory', 'userSocialAccount']` | Properties included in the data export (JSON). `userSessionHistory` exports each login's `ip`, `user_agent`, `created_at`, `updated_at` (the internal `session_id` is excluded); `userSocialAccount` exports each linked account's `provider`, `username`, `email`, `created_at`, and `data` (the decoded provider profile payload). The OAuth `code` field is excluded — it's a one-time linking secret, not user data |
+| `gdprExportProperties` | `array` | `['email', 'username', 'userProfile.public_email', 'userProfile.name', 'userProfile.gravatar_email', 'userProfile.location', 'userProfile.website', 'userProfile.bio', 'userProfile.birthday', 'userSessions', 'userSocialAccount']` | Properties included in the data export (JSON). `userSessions` exports each login's `ip`, `user_agent`, `created_at`, `updated_at` (the internal `session_id` is excluded); `userSocialAccount` exports each linked account's `provider`, `username`, `email`, `created_at`, and `data` (the decoded provider profile payload). The OAuth `code` field is excluded — it's a one-time linking secret, not user data |
 
 ```php
 'yiirocks/voyti' => [
@@ -224,8 +224,6 @@ Below are all top-level `yiirocks/voyti` options, followed by the nested `social
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `enableSessionHistory` | `bool` | `true` | Track session history |
-| `numberSessionHistory` | `int\|false` | `50` | Max sessions to keep per user |
 | `disableIpLogging` | `bool` | `false` | Disable IP address logging |
 | `enablePasswordExpiration` | `bool` | `false` | Enable password expiration |
 | `maxPasswordAge` | `?int` | `null` | Max password age in days |
@@ -355,7 +353,7 @@ The extension ships six PSR-15 middleware classes for access control:
 |-----------|-------------|-----------|
 | `AccessRuleMiddleware` | Redirects guests to the login page (`voyti/session-login`); checks `administratorPermissionName` for admin access | Yes — on `admin/*` (users and RBAC management) and the REST API group |
 | `ApiTokenAuthenticationMiddleware` | Resolves the `Authorization: Bearer <token>` header to a user for that request only (no session); returns `401` if missing/invalid | Yes — on the REST API group, ahead of `AccessRuleMiddleware`, in place of the session cookie |
-| `SessionRevocationEnforceMiddleware` | Logs out and redirects to the login page (`voyti/session-login`) when the current session's `user_session_history` row is gone — i.e. it was terminated from the sessions list (self-service or admin) on another request. Without this, terminating a session only removed the audit row; the browser that owned it stayed logged in until its PHP session expired on its own. Otherwise touches the row's `updated_at` on every request, so the sessions list can show "last seen" activity per device. | Yes, when `enableSessionHistory` is `true` — on the extension's whole web route group |
+| `SessionRevocationEnforceMiddleware` | Logs out and redirects to the login page (`voyti/session-login`) when the current session's `user_sessions` row is gone — i.e. it was terminated from the sessions list (self-service or admin) on another request. Without this, terminating a session only removed the row; the browser that owned it stayed logged in until its PHP session expired on its own. Otherwise touches the row's `updated_at` on every request, so the sessions list can show "last seen" activity per device. | Yes |
 | `PasswordAgeEnforceMiddleware` | Redirects to the account settings page (`voyti/account-update`) when `maxPasswordAge` is exceeded | Yes, when `enablePasswordExpiration` is `true` — on the extension's whole web route group |
 | `TwoFactorAuthenticationEnforceMiddleware` | Redirects to the account settings page (`voyti/account-update`) when required permissions are assigned but 2FA isn't enabled | No |
 | `VoytiMiddleware` | Convenience wrapper that chains `SessionRevocationEnforceMiddleware`, `PasswordAgeEnforceMiddleware`, and `TwoFactorAuthenticationEnforceMiddleware` in a single middleware entry — add this to your app's route group instead of the three individual ones (see [Site-wide enforcement](#site-wide-enforcement)) | No |
@@ -427,7 +425,7 @@ The library does not provide a menu model or navigation contract. It only expose
 | `voyti/admin-users-password-reset` | `POST` | `admin/users/password-reset/{id}` | Send password reset |
 | `voyti/admin-users-force-password-change` | `POST` | `admin/users/force-password-change/{id}` | Force password change |
 | `voyti/admin-users-assignments` | `GET`, `POST` | `admin/users/assignments/{id}` | Manage RBAC assignments |
-| `voyti/admin-users-session-history` | `GET` | `admin/users/session-history/{id}` | Session history |
+| `voyti/admin-users-sessions` | `GET` | `admin/users/sessions/{id}` | Session management |
 | `voyti/admin-users-terminate-sessions` | `POST` | `admin/users/terminate-sessions/{id}` | Terminate sessions |
 | `voyti/admin-rbac-permissions` | `GET` | `admin/rbac/permissions/` | List permissions |
 | `voyti/admin-rbac-permissions-create` | `GET`, `POST` | `admin/rbac/permissions/create` | Create permission |
@@ -451,7 +449,7 @@ Voyti dispatches events at key points in the user lifecycle, allowing your appli
 
 | Event | Trigger | Default behavior |
 |-------|---------|-------------------|
-| `AfterLoginEvent` | User logs in | Triggers password expiration check and session history tracking |
+| `AfterLoginEvent` | User logs in | Triggers password expiration check and session tracking |
 | `AfterRegisterEvent` | New user registration | Sends admin notification email |
 
 ### Additional events (no default listeners)

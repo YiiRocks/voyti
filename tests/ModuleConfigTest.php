@@ -13,24 +13,11 @@ use YiiRocks\Voyti\ModuleConfig;
 final class ModuleConfigTest extends TestCase
 {
 
-    /**
-     * @return iterable<string, array{bool|int, bool}>
-     */
-    public static function numberSessionHistoryProvider(): iterable
-    {
-        yield 'false' => [false, false];
-        yield 'negative' => [-1, false];
-        yield 'positive' => [5, true];
-        yield 'zero' => [0, false];
-    }
-
     public function testConstructorCustomValues(): void
     {
         $config = new ModuleConfig(
             appName: 'Custom',
             recaptchaVersion: RecaptchaVersion::V3,
-            enableSessionHistory: false,
-            numberSessionHistory: false,
             enableGdprCompliance: true,
             enableTwoFactorAuthentication: true,
             enableRegistration: false,
@@ -60,8 +47,6 @@ final class ModuleConfigTest extends TestCase
         );
         self::assertSame('Custom', $config->appName);
         self::assertSame(RecaptchaVersion::V3, $config->recaptchaVersion);
-        self::assertFalse($config->enableSessionHistory);
-        self::assertFalse($config->numberSessionHistory);
         self::assertTrue($config->enableGdprCompliance);
         self::assertTrue($config->enableTwoFactorAuthentication);
         self::assertFalse($config->enableRegistration);
@@ -95,8 +80,6 @@ final class ModuleConfigTest extends TestCase
         $config = new ModuleConfig();
         self::assertSame('Voyti', $config->appName);
         self::assertNull($config->recaptchaVersion);
-        self::assertTrue($config->enableSessionHistory);
-        self::assertSame(50, $config->numberSessionHistory);
         self::assertIsArray($config->gdprExportProperties);
         self::assertCount(11, $config->gdprExportProperties);
         self::assertSame('GDPR', $config->gdprAnonymizePrefix);
@@ -126,8 +109,6 @@ final class ModuleConfigTest extends TestCase
         $expectedKeys = [
             'appName',
             'recaptchaVersion',
-            'enableSessionHistory',
-            'numberSessionHistory',
             'enableGdprCompliance',
             'gdprExportProperties',
             'gdprAnonymizePrefix',
@@ -185,12 +166,10 @@ final class ModuleConfigTest extends TestCase
             'appName' => 'MyApp',
             'enableRegistration' => false,
             'enableGdprCompliance' => true,
-            'numberSessionHistory' => 10,
         ]);
         self::assertSame('MyApp', $config->appName);
         self::assertFalse($config->enableRegistration);
         self::assertTrue($config->enableGdprCompliance);
-        self::assertSame(10, $config->numberSessionHistory);
         self::assertNull($config->recaptchaVersion);
     }
 
@@ -199,8 +178,6 @@ final class ModuleConfigTest extends TestCase
         $config = ModuleConfig::fromArray([]);
         self::assertSame('Voyti', $config->appName);
         self::assertNull($config->recaptchaVersion);
-        self::assertTrue($config->enableSessionHistory);
-        self::assertSame(50, $config->numberSessionHistory);
         self::assertFalse($config->enableGdprCompliance);
         self::assertFalse($config->enableTwoFactorAuthentication);
         self::assertTrue($config->enableRegistration);
@@ -242,13 +219,6 @@ final class ModuleConfigTest extends TestCase
         self::assertSame(['github' => ['enabled' => true]], $config->socialNetworkClients);
         self::assertSame('/custom/mail', $config->mailPath);
         self::assertStringContainsString('resources/views/bootstrap5', $config->viewPath);
-    }
-
-    #[\PHPUnit\Framework\Attributes\DataProvider('numberSessionHistoryProvider')]
-    public function testHasNumberSessionHistory(bool|int $value, bool $expected): void
-    {
-        $config = new ModuleConfig(numberSessionHistory: $value);
-        self::assertSame($expected, $config->hasNumberSessionHistory());
     }
 
     public function testMailPathConcatOrder(): void

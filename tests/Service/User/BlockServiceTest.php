@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\User\BlockService;
-use YiiRocks\Voyti\Service\UserSessionHistory\TerminateUserSessionsService;
+use YiiRocks\Voyti\Service\UserSession\TerminateUserSessionsService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]

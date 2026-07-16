@@ -19,7 +19,7 @@ use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Helper\LoginMetadataHelper;
 use YiiRocks\Voyti\Model\Form\Auth\LoginForm;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Model\UserSessionHistory;
+use YiiRocks\Voyti\Model\UserSession;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\Auth\SocialAuthProviderService;
@@ -177,13 +177,14 @@ final readonly class SessionController
 
                 if ($isValid) {
                     $this->session->remove(self::SESSION_KEY_CREDENTIALS);
+                    $previousSessionId = $this->session->getId();
                     $currentUser = $this->boolValue($credentials, 'rememberMe')
                         ? $this->currentUser->withAuthTimeout($this->config->rememberLoginLifespan)
                         : $this->currentUser;
                     $currentUser->login($user);
                     LoginMetadataHelper::recordLogin($user, $request->getServerParams(), $this->config);
                     $this->pendingSocialAccountService->connect($user);
-                    $this->eventDispatcher->dispatch(new AfterLoginEvent($user));
+                    $this->eventDispatcher->dispatch(new AfterLoginEvent($user, previousSessionId: $previousSessionId));
 
                     $response = $this->homeRedirectResponse();
                     if ($this->boolValue($credentials, 'rememberMe')) {
@@ -243,6 +244,7 @@ final readonly class SessionController
                         ]);
                     }
 
+                    $previousSessionId = $this->session->getId();
                     $userToLogin = $this->currentUser;
                     if ($form->rememberMe) {
                         $userToLogin = $userToLogin->withAuthTimeout($this->config->rememberLoginLifespan);
@@ -252,7 +254,7 @@ final readonly class SessionController
                     $this->pendingSocialAccountService->connect($user);
 
                     $this->eventDispatcher->dispatch(new FormEvent($form));
-                    $this->eventDispatcher->dispatch(new AfterLoginEvent($user));
+                    $this->eventDispatcher->dispatch(new AfterLoginEvent($user, previousSessionId: $previousSessionId));
 
                     $response = $this->homeRedirectResponse();
                     if ($form->rememberMe) {
@@ -279,9 +281,9 @@ final readonly class SessionController
         if ($this->currentUser->logout() && $identity instanceof User) {
             if ($sessionId !== '') {
                 $userId = $identity->getIdOrZero();
-                $sessionHistory = UserSessionHistory::findByUserIdAndSessionId($userId, $sessionId);
-                if ($sessionHistory !== null) {
-                    $sessionHistory->delete();
+                $userSession = UserSession::findByUserIdAndSessionId($userId, $sessionId);
+                if ($userSession !== null) {
+                    $userSession->delete();
                     $this->eventDispatcher->dispatch(
                         new SessionEvent($userId, $sessionId, ['type' => SessionEvent::SESSION_TERMINATED]),
                     );

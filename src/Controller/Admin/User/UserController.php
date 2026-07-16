@@ -19,7 +19,7 @@ use YiiRocks\Voyti\Model\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Model\Form\Settings\UserProfileForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserProfile;
-use YiiRocks\Voyti\Model\UserSessionHistory;
+use YiiRocks\Voyti\Model\UserSession;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\AuditLogService;
 use YiiRocks\Voyti\Service\Password\ExpireService;
@@ -242,15 +242,15 @@ final readonly class UserController
         return $this->renderError('voyti.admin.user_not_found');
     }
 
-    public function sessionHistory(int $id): ResponseInterface
+    public function sessions(int $id): ResponseInterface
     {
         $user = User::findById($id);
         if ($user === null) {
             return $this->renderError('voyti.admin.user_not_found');
         }
 
-        $sessions = UserSessionHistory::findByUserId($id);
-        return $this->renderView('admin/user/_session-history', [
+        $sessions = UserSession::findByUserId($id);
+        return $this->renderView('admin/user/_sessions', [
             'user' => $user,
             'sessions' => $sessions,
             'flash' => $this->flash,
@@ -301,13 +301,13 @@ final readonly class UserController
             return $this->renderError('voyti.admin.user_not_found');
         }
 
-        $sessions = UserSessionHistory::findByUserId($id);
+        $sessions = UserSession::findByUserId($id);
         foreach ($sessions as $session) {
             $session->delete();
         }
 
         return $this->redirectWithFlash(
-            $this->url->generate('voyti/admin-users-session-history', ['id' => $id]),
+            $this->url->generate('voyti/admin-users-sessions', ['id' => $id]),
             'voyti.admin.sessions_terminated',
         );
     }

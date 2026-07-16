@@ -121,7 +121,6 @@ final class VoytiMiddlewareTest extends TestCase
     {
         $config = new ModuleConfig(
             enablePasswordExpiration: false,
-            enableSessionHistory: false,
             enableTwoFactorAuthentication: false,
         );
 
@@ -139,7 +138,7 @@ final class VoytiMiddlewareTest extends TestCase
 
     public function testProcessWithRealMiddlewaresSessionRevocationShortCircuits(): void
     {
-        $config = new ModuleConfig(enableSessionHistory: true);
+        $config = new ModuleConfig();
 
         $user = $this->createUser();
 
@@ -230,7 +229,6 @@ final class VoytiMiddlewareTest extends TestCase
         $sessionRevocation ??= new SessionRevocationEnforceMiddleware(
             $currentUser,
             $currentRoute,
-            $config,
             $responseFactory,
             $session,
             $url,

@@ -29,7 +29,7 @@ $userRoutes = [
     Route::post('password-reset/{id:\d+}')->name('voyti/admin-users-password-reset')->action([Controller\Admin\User\UserController::class, 'passwordReset']),
     Route::post('force-password-change/{id:\d+}')->name('voyti/admin-users-force-password-change')->action([Controller\Admin\User\UserController::class, 'forcePasswordChange']),
     Route::methods(['GET', 'POST'], 'assignments/{id:\d+}')->name('voyti/admin-users-assignments')->action([Controller\Admin\User\UserController::class, 'assignments']),
-    Route::get('session-history/{id:\d+}')->name('voyti/admin-users-session-history')->action([Controller\Admin\User\UserController::class, 'sessionHistory']),
+    Route::get('sessions/{id:\d+}')->name('voyti/admin-users-sessions')->action([Controller\Admin\User\UserController::class, 'sessions']),
     Route::post('terminate-sessions/{id:\d+}')->name('voyti/admin-users-terminate-sessions')->action([Controller\Admin\User\UserController::class, 'terminateSessions']),
 ];
 
@@ -165,10 +165,7 @@ if ($moduleConfig->enableSwitchIdentities) {
     $routes[] = Route::post('admin/users/switch-identity/restore')->name('voyti/admin-users-switch-identity-restore')->action([Controller\Admin\User\UserController::class, 'switchIdentityRestore']);
 }
 
-$webMiddlewares = [SessionMiddleware::class, CsrfMiddleware::class];
-if ($moduleConfig->enableSessionHistory) {
-    $webMiddlewares[] = SessionRevocationEnforceMiddleware::class;
-}
+$webMiddlewares = [SessionMiddleware::class, CsrfMiddleware::class, SessionRevocationEnforceMiddleware::class];
 if ($moduleConfig->enablePasswordExpiration) {
     $webMiddlewares[] = PasswordAgeEnforceMiddleware::class;
 }

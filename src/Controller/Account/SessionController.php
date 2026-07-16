@@ -12,7 +12,7 @@ use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Controller\RequireUserTrait;
 use YiiRocks\Voyti\Event\Session\SessionEvent;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Model\UserSessionHistory;
+use YiiRocks\Voyti\Model\UserSession;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -48,7 +48,7 @@ final readonly class SessionController
         }
 
         return $this->renderView('account/sessions', [
-            'sessions' => $this->config->enableSessionHistory ? UserSessionHistory::findByUserId($user->getIdOrZero()) : [],
+            'sessions' => UserSession::findByUserId($user->getIdOrZero()),
             'currentSessionId' => $this->session->getId(),
             'config' => $this->config,
             'flash' => $this->flash,
@@ -63,16 +63,12 @@ final readonly class SessionController
             return $user;
         }
 
-        if (!$this->config->enableSessionHistory) {
-            return $this->renderError('voyti.settings.session_history_disabled');
-        }
-
-        $sessionHistory = UserSessionHistory::findByUserIdAndSessionId($user->getIdOrZero(), $sessionId);
-        if ($sessionHistory === null) {
+        $userSession = UserSession::findByUserIdAndSessionId($user->getIdOrZero(), $sessionId);
+        if ($userSession === null) {
             return $this->renderError('voyti.settings.session_not_found');
         }
 
-        $sessionHistory->delete();
+        $userSession->delete();
         $this->eventDispatcher->dispatch(
             new SessionEvent($user->getIdOrZero(), $sessionId, ['type' => SessionEvent::SESSION_TERMINATED]),
         );

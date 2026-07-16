@@ -12,7 +12,7 @@ use YiiRocks\Voyti\Controller\Admin\User\UserController;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserProfile;
-use YiiRocks\Voyti\Model\UserSessionHistory;
+use YiiRocks\Voyti\Model\UserSession;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\ExpireService;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
@@ -495,6 +495,32 @@ final class UserControllerTest extends TestCase
         );
     }
 
+    public function testSessionsUserFound(): void
+    {
+        $user = $this->createUser();
+        $controller = $this->createController();
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('admin/user/_sessions', $this->anything())
+            ->willReturn($response);
+
+        $result = $controller->sessions((int) $user->getId());
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testSessionsUserNotFoundShowsError(): void
+    {
+        $this->assertNotFoundRendersError(
+            static fn (UserController $controller): ResponseInterface => $controller->sessions(999999),
+        );
+    }
+
     public function testSwitchIdentityFailureShowsError(): void
     {
         $controller = $this->createController();
@@ -579,7 +605,7 @@ final class UserControllerTest extends TestCase
         $result = $controller->terminateSessions($userId);
 
         $this->assertSame($response, $result);
-        $this->assertSame([], UserSessionHistory::findByUserId($userId));
+        $this->assertSame([], UserSession::findByUserId($userId));
     }
 
     public function testTerminateSessionsUserNotFoundShowsError(): void
@@ -769,32 +795,6 @@ final class UserControllerTest extends TestCase
         );
     }
 
-    public function testUserSessionHistoryUserFound(): void
-    {
-        $user = $this->createUser();
-        $controller = $this->createController();
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('admin/user/_session-history', $this->anything())
-            ->willReturn($response);
-
-        $result = $controller->sessionHistory((int) $user->getId());
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testUserSessionHistoryUserNotFoundShowsError(): void
-    {
-        $this->assertNotFoundRendersError(
-            static fn (UserController $controller): ResponseInterface => $controller->sessionHistory(999999),
-        );
-    }
-
     private function assertNotFoundRendersError(callable $invoke): void
     {
         $controller = $this->createController();
@@ -834,9 +834,9 @@ final class UserControllerTest extends TestCase
         );
     }
 
-    private function createSession(int $userId, string $sessionId): UserSessionHistory
+    private function createSession(int $userId, string $sessionId): UserSession
     {
-        $session = new UserSessionHistory();
+        $session = new UserSession();
         $session->setUserId($userId);
         $session->setSessionId($sessionId);
         $session->setIp('203.0.113.1');

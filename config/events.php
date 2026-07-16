@@ -9,7 +9,7 @@ use YiiRocks\Voyti\Listener;
 return [
     AfterLoginEvent::class => [
         [Listener\PasswordExpirationListener::class, 'onAfterLogin'],
-        [Listener\SessionHistoryListener::class, 'onAfterLogin'],
+        [Listener\SessionListener::class, 'onAfterLogin'],
     ],
     AfterRegisterEvent::class => [
         [Listener\AdminNotificationListener::class, 'onAfterRegister'],

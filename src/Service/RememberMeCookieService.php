@@ -11,7 +11,7 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Model\UserSessionHistory;
+use YiiRocks\Voyti\Model\UserSession;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Cookies\Cookie;
 use Yiisoft\Json\Json;
@@ -30,7 +30,7 @@ use function time;
  * Cookie payload is `[identityId, cookieLoginKey, expiresAt, sessionId]`. `cookieLoginKey`
  * ({@see User::getCookieLoginKey()}) is shared across all of a user's devices, so the trailing
  * sessionId is what lets {@see loginByCookie()} revoke one device's cookie (via its
- * {@see UserSessionHistory} row) without invalidating the others.
+ * {@see UserSession} row) without invalidating the others.
  */
 final class RememberMeCookieService
 {
@@ -109,25 +109,28 @@ final class RememberMeCookieService
 
         if (
             $identity instanceof User
-            && UserSessionHistory::findByUserIdAndSessionId($identity->getIdOrZero(), (string) $cookieSessionId) === null
+            && UserSession::findByUserIdAndSessionId($identity->getIdOrZero(), (string) $cookieSessionId) === null
         ) {
             // The session this cookie was issued for was terminated (self-service or admin) - the cookie
             // must not resurrect it, even though the shared cookieLoginKey is still otherwise valid.
             return;
         }
 
-        $previousSessionId = $session->getId();
         $currentUser->login($identity);
 
         if ($identity instanceof User) {
             // CurrentUser::login() regenerates the session ID (anti-fixation); dispatching
             // AfterLoginEvent here - as the interactive login flow does - keeps
-            // SessionHistoryListener in sync with that new ID for auto-logins too.
-            $this->eventDispatcher?->dispatch(new AfterLoginEvent($identity, previousSessionId: $previousSessionId));
+            // SessionListener in sync with that new ID for auto-logins too.
+            //
+            // Pass $cookieSessionId (the session ID the cookie was issued for) as
+            // previousSessionId instead of the current PHP session ID - this is the value
+            // stored in UserSession and lets replaceSession() find/delete the old row.
+            $this->eventDispatcher?->dispatch(new AfterLoginEvent($identity, previousSessionId: (string) $cookieSessionId));
 
             $newSessionId = $session->getId();
             if ($newSessionId !== null && $newSessionId !== '') {
-                // The just-replaced history row (see UserSessionHistoryDecorator::registerLogin) now lives
+                // The just-replaced session row (see UserSessionDecorator::registerLogin) now lives
                 // under $newSessionId, not the sessionId this cookie still references - without re-issuing
                 // the cookie here, the next time this device needs to auto-login it would fail the row-existence
                 // check above, since the row it points to no longer exists.

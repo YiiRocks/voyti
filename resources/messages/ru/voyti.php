@@ -42,7 +42,6 @@ return [
     'voyti.settings.network_not_found' => 'Сеть не найдена',
     'voyti.settings.two_factor_enabled' => 'Двухфакторная аутентификация включена',
     'voyti.settings.two_factor_disabled' => 'Двухфакторная аутентификация отключена',
-    'voyti.settings.session_history_disabled' => 'История сеансов отключена',
     'voyti.settings.session_not_found' => 'Сеанс не найден',
     'voyti.settings.session_terminated' => 'Сеанс завершён',
     'voyti.settings.password_previously_used' => 'Этот пароль недавно уже использовался. Пожалуйста, выберите другой.',
@@ -224,7 +223,7 @@ return [
     'voyti.view.admin.update_user_title' => 'Редактирование пользователя: {username}',
     'voyti.view.admin.update_profile_title' => 'Редактирование профиля',
     'voyti.view.admin.registered_label' => 'Зарегистрирован',
-    'voyti.view.admin.session_history' => 'История сессий',
+    'voyti.view.admin.sessions' => 'Управление сессиями',
     'voyti.view.admin.sessions_link' => 'Сессии',
     'voyti.view.admin.terminate_sessions' => 'Завершить сессии',
     'voyti.view.admin.switch_button' => 'Переключиться',
@@ -259,10 +258,10 @@ return [
     'voyti.view.assignments.update' => 'Обновить назначения',
     'voyti.view.info_link' => 'Info',
 
-    // Session history
-    'voyti.view.session_history.ip' => 'IP-адрес',
-    'voyti.view.session_history.user_agent' => 'User agent',
-    'voyti.view.session_history.last_seen' => 'Последний визит',
+    // Sessions
+    'voyti.view.sessions.ip' => 'IP-адрес',
+    'voyti.view.sessions.user_agent' => 'User agent',
+    'voyti.view.sessions.last_seen' => 'Последний визит',
     'voyti.view.sessions.title' => 'Активные сеансы',
     'voyti.view.sessions.this_device' => 'Это устройство',
     'voyti.view.sessions.none' => 'Нет активных сеансов.',

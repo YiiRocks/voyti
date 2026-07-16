@@ -17,10 +17,10 @@ use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Model\Form\Settings\ConsentForm;
 use YiiRocks\Voyti\Model\Form\Settings\GdprConsentForm;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Model\UserSessionHistory;
+use YiiRocks\Voyti\Model\UserSession;
 use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Service\UserSessionHistory\TerminateUserSessionsService;
+use YiiRocks\Voyti\Service\UserSession\TerminateUserSessionsService;
 use Yiisoft\Http\Header;
 use Yiisoft\Http\Method;
 use Yiisoft\Http\Status;
@@ -193,14 +193,14 @@ final readonly class PrivacyController
             'userProfile.website' => $user->getProfile()?->getWebsite(),
             'userProfile.bio' => $user->getProfile()?->getBio(),
             'userProfile.birthday' => $user->getProfile()?->getBirthday()?->format('Y-m-d'),
-            'userSessionHistory' => array_map(
-                static fn (UserSessionHistory $entry): array => [
+            'userSessions' => array_map(
+                static fn (UserSession $entry): array => [
                     'ip' => $entry->getIp(),
                     'user_agent' => $entry->getUserAgent(),
                     'created_at' => $entry->getCreatedAt(),
                     'updated_at' => $entry->getUpdatedAt(),
                 ],
-                UserSessionHistory::findByUserId($user->getIdOrZero()),
+                UserSession::findByUserId($user->getIdOrZero()),
             ),
             'userSocialAccount' => array_map(
                 static fn (UserSocialAccount $account): array => [

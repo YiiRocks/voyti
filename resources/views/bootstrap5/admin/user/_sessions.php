@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Model\UserSessionHistory;
+use YiiRocks\Voyti\Model\UserSession;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -15,7 +15,7 @@ use Yiisoft\View\WebView;
 /**
  * @var WebView $this
  * @var User $user
- * @var UserSessionHistory[] $sessions
+ * @var UserSession[] $sessions
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
  * @var FlashInterface $flash
@@ -29,13 +29,13 @@ echo $this->render('../../shared/_admin-menu', ['url' => $url, 'translator' => $
 echo $this->render('../../shared/_flash', ['flash' => $flash]);
 
 echo Html::H3()->class('mb-3')->open();
-echo $translator->translate('voyti.view.admin.session_history', category: 'voyti');
+echo $translator->translate('voyti.view.admin.sessions', category: 'voyti');
 echo Html::H3()->close();
 
 echo Html::div()->class('d-none d-md-flex row fw-bold border-bottom pb-2 mb-2')->open();
-echo Html::div($translator->translate('voyti.view.session_history.ip', category: 'voyti'))->class('col-3');
-echo Html::div($translator->translate('voyti.view.session_history.user_agent', category: 'voyti'))->class('col-6');
-echo Html::div($translator->translate('voyti.view.session_history.last_seen', category: 'voyti'))->class('col-3');
+echo Html::div($translator->translate('voyti.view.sessions.ip', category: 'voyti'))->class('col-3');
+echo Html::div($translator->translate('voyti.view.sessions.user_agent', category: 'voyti'))->class('col-6');
+echo Html::div($translator->translate('voyti.view.sessions.last_seen', category: 'voyti'))->class('col-3');
 echo Html::div()->close();
 
 $timezone = $user->getProfile()?->getTimezone();
