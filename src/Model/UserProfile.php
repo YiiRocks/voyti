@@ -13,6 +13,7 @@ final class UserProfile extends ActiveRecord
 {
     use PrivatePropertiesTrait;
     private const AGE_TOKEN = '{age}';
+    private const LOCATION_TOKEN = '{location}';
     private ?string $bio = null;
     private ?DateTimeImmutable $birthday = null;
     private ?string $gravatar_email = null;
@@ -41,12 +42,20 @@ final class UserProfile extends ActiveRecord
             return null;
         }
 
-        $age = AgeHelper::calculate($this->birthday);
-        if ($age === null) {
-            return $this->bio;
+        $result = $this->bio;
+
+        if ($this->birthday !== null) {
+            $age = AgeHelper::calculate($this->birthday);
+            if ($age !== null) {
+                $result = str_replace(self::AGE_TOKEN, (string) $age, $result);
+            }
         }
 
-        return str_replace(self::AGE_TOKEN, (string) $age, $this->bio);
+        if ($this->location !== null) {
+            $result = str_replace(self::LOCATION_TOKEN, $this->location, $result);
+        }
+
+        return $result;
     }
 
     public function getBirthday(): ?DateTimeImmutable

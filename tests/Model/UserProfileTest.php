@@ -126,6 +126,21 @@ final class UserProfileTest extends TestCase
         self::assertSame('I am {age} years old', $entity->getBioParsed());
     }
 
+    public function testGetBioParsedReturnsBioUnchangedWhenNoLocationSet(): void
+    {
+        $entity = new UserProfile();
+        $entity->setBio('I live in {location}');
+        self::assertSame('I live in {location}', $entity->getBioParsed());
+    }
+
+    public function testGetBioParsedReturnsBioUnchangedWhenBirthdayIsFuture(): void
+    {
+        $entity = new UserProfile();
+        $entity->setBio('I am {age} years old');
+        $entity->setBirthday(new DateTimeImmutable('+1 year'));
+        self::assertSame('I am {age} years old', $entity->getBioParsed());
+    }
+
     public function testGetBioParsedReturnsBioUnchangedWhenNoTokenPresent(): void
     {
         $entity = new UserProfile();
@@ -153,6 +168,23 @@ final class UserProfileTest extends TestCase
         $entity->setBio('I am {age} years old');
         $entity->setBirthday(new DateTimeImmutable('-30 years'));
         self::assertSame('I am 30 years old', $entity->getBioParsed());
+    }
+
+    public function testGetBioParsedSubstitutesBothTokens(): void
+    {
+        $entity = new UserProfile();
+        $entity->setBio('I am {age} and live in {location}');
+        $entity->setBirthday(new DateTimeImmutable('-30 years'));
+        $entity->setLocation('Paris');
+        self::assertSame('I am 30 and live in Paris', $entity->getBioParsed());
+    }
+
+    public function testGetBioParsedSubstitutesLocationToken(): void
+    {
+        $entity = new UserProfile();
+        $entity->setBio('I live in {location}');
+        $entity->setLocation('New York');
+        self::assertSame('I live in New York', $entity->getBioParsed());
     }
 
     public function testGetGravatarIdFallsBackToUserEmail(): void
