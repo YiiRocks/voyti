@@ -272,7 +272,7 @@ final class UserControllerTest extends TestCase
     public function testUpdateNotFound(): void
     {
         $controller = $this->createController();
-        $request = new ServerRequest('PUT', '/');
+        $request = new ServerRequest('PATCH', '/');
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
@@ -293,7 +293,7 @@ final class UserControllerTest extends TestCase
         $user->save();
 
         $controller = $this->createController();
-        $request = (new ServerRequest('PUT', '/'))->withParsedBody(['username' => 'updated', 'email' => 'updated@example.com']);
+        $request = (new ServerRequest('PATCH', '/'))->withParsedBody(['username' => 'updated', 'email' => 'updated@example.com']);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
@@ -322,7 +322,7 @@ final class UserControllerTest extends TestCase
         $userId = (int) $user->getId();
 
         $controller = $this->createController();
-        $request = (new ServerRequest('PUT', '/'))->withParsedBody(['username' => ['nested'], 'email' => 12345]);
+        $request = (new ServerRequest('PATCH', '/'))->withParsedBody(['username' => ['nested'], 'email' => 12345]);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->method('createResponse')->willReturn($response);
@@ -343,7 +343,7 @@ final class UserControllerTest extends TestCase
         $userId = (int) $user->getId();
 
         $controller = $this->createController($config);
-        $request = (new ServerRequest('PUT', '/'))->withParsedBody(['username' => 'updated']);
+        $request = (new ServerRequest('PATCH', '/'))->withParsedBody(['username' => 'updated']);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->method('createResponse')->willReturn($response);
@@ -360,7 +360,7 @@ final class UserControllerTest extends TestCase
         $originalHash = $user->getPasswordHash();
 
         $controller = $this->createController();
-        $request = (new ServerRequest('PUT', '/'))->withParsedBody(['username' => 'updated', 'email' => 'updated@example.com', 'password' => 'newpass']);
+        $request = (new ServerRequest('PATCH', '/'))->withParsedBody(['username' => 'updated', 'email' => 'updated@example.com', 'password' => 'newpass']);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
@@ -390,7 +390,7 @@ final class UserControllerTest extends TestCase
         $userId = (int) $user->getId();
 
         $controller = $this->createController($config);
-        $request = (new ServerRequest('PUT', '/'))->withParsedBody(['password' => 'newpass']);
+        $request = (new ServerRequest('PATCH', '/'))->withParsedBody(['password' => 'newpass']);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->method('createResponse')->willReturn($response);
@@ -411,7 +411,7 @@ final class UserControllerTest extends TestCase
         (new PasswordHistoryService($passwordHasher, $config))->record($user);
 
         $controller = $this->createController($config);
-        $request = (new ServerRequest('PUT', '/'))->withParsedBody(['password' => 'originalpass']);
+        $request = (new ServerRequest('PATCH', '/'))->withParsedBody(['password' => 'originalpass']);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())

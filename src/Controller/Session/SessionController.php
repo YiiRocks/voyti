@@ -85,21 +85,39 @@ final readonly class SessionController
                 return $this->redirect($this->socialAuthProviderService->begin($provider, 'voyti/session-auth'));
             }
 
-            $identity = $this->socialAuthProviderService->complete($provider, 'voyti/session-auth', $queryParams);
+            $attributes = $this->socialAuthProviderService->complete($provider, 'voyti/session-auth', $queryParams);
             /** @var mixed $clientId */
-            $clientId = $identity['id'] ?? '';
-            $result = $this->socialNetworkAuthenticateService->run(
-                $provider,
-                is_string($clientId) ? $clientId : '',
-                $identity,
-                $request->getServerParams(),
-            );
+            $clientId = $attributes['id'] ?? '';
+            $clientIdStr = is_string($clientId) ? $clientId : '';
+
+            $identity = $this->currentUser->getIdentity();
+            $isGuest = $identity instanceof GuestIdentityInterface;
+
+            if ($isGuest) {
+                $result = $this->socialNetworkAuthenticateService->run(
+                    $provider,
+                    $clientIdStr,
+                    $attributes,
+                    $request->getServerParams(),
+                );
+            } else {
+                $result = $this->socialNetworkAccountConnectService->run(
+                    $provider,
+                    $clientIdStr,
+                    $attributes,
+                    (int) ($identity->getId() ?? 0),
+                );
+            }
         } catch (RuntimeException $exception) {
             return $this->renderView('shared/message', ['title' => $exception->getMessage(), 'translator' => $this->translator]);
         }
 
         if ($result->isFailure()) {
             return $this->renderView('shared/message', ['title' => $result->getMessage(), 'translator' => $this->translator]);
+        }
+
+        if (!$isGuest) {
+            return $this->redirect($this->url->generate('voyti/social-network'));
         }
 
         $account = $this->pendingSocialAccountService->getPendingAccount();
@@ -183,37 +201,6 @@ final readonly class SessionController
         }
 
         return $this->renderView('session/confirm', ['model' => $form, 'method' => $method]);
-    }
-
-    public function connect(ServerRequestInterface $request, string $provider): ResponseInterface
-    {
-        $identity = $this->currentUser->getIdentity();
-        if ($identity instanceof GuestIdentityInterface) {
-            return $this->renderError('voyti.settings.not_authenticated');
-        }
-
-        /** @var array<string, mixed> $queryParams */
-        $queryParams = $this->queryParams($request);
-
-        try {
-            if (!$this->socialAuthProviderService->hasCallbackParameters($queryParams)) {
-                return $this->redirect($this->socialAuthProviderService->begin($provider, 'voyti/session-connect'));
-            }
-
-            $attributes = $this->socialAuthProviderService->complete($provider, 'voyti/session-connect', $queryParams);
-            /** @var mixed $clientId */
-            $clientId = $attributes['id'] ?? '';
-            $result = $this->socialNetworkAccountConnectService->run(
-                $provider,
-                is_string($clientId) ? $clientId : '',
-                $attributes,
-                (int) ($identity->getId() ?? 0),
-            );
-        } catch (RuntimeException $exception) {
-            return $this->renderView('shared/message', ['title' => $exception->getMessage(), 'translator' => $this->translator]);
-        }
-
-        return $this->renderView('shared/message', ['title' => $result->isSuccess() ? $this->translator->translate('voyti.security.authenticated', category: 'voyti') : $result->getMessage()]);
     }
 
     public function login(ServerRequestInterface $request): ResponseInterface

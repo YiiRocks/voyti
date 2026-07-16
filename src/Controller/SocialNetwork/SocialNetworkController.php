@@ -80,7 +80,7 @@ final readonly class SocialNetworkController
             'accounts' => $accounts,
             'config' => $this->config,
             'authClients' => $this->authClientRegistry,
-            'connectRouteName' => 'voyti/session-connect',
+            'connectRouteName' => 'voyti/session-auth',
             'excludedProviders' => $connectedProviders,
             'flash' => $this->flash,
         ]);

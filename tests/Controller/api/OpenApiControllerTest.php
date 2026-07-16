@@ -7,6 +7,7 @@ namespace YiiRocks\Voyti\tests\Controller\api;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\api\OpenApiController;
+use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\DataResponse\ResponseFactory\DataResponseFactoryInterface;
 
@@ -188,23 +189,23 @@ final class OpenApiControllerTest extends TestCase
     public function testIndexDocumentsUpdateUserEndpoint(): void
     {
         $spec = $this->captureSpec();
-        $put = $spec['paths']['/users/{id}']['put'];
+        $patch = $spec['paths']['/users/{id}']['patch'];
 
-        self::assertSame('updateUser', $put['operationId']);
-        self::assertSame('Update a user', $put['summary']);
-        self::assertSame(['Users'], $put['tags']);
-        self::assertSame('id', $put['parameters'][0]['name']);
-        self::assertSame('path', $put['parameters'][0]['in']);
-        self::assertTrue($put['parameters'][0]['required']);
-        self::assertSame('integer', $put['parameters'][0]['schema']['type']);
-        self::assertTrue($put['requestBody']['required']);
-        self::assertSame('#/components/schemas/UserUpdateRequest', $put['requestBody']['content']['application/json']['schema']['$ref']);
-        self::assertSame('User updated', $put['responses']['200']['description']);
-        self::assertSame('#/components/schemas/UserUpdatedResponse', $put['responses']['200']['content']['application/json']['schema']['$ref']);
-        self::assertSame('Validation error', $put['responses']['400']['description']);
-        self::assertSame('#/components/schemas/ErrorResponse', $put['responses']['400']['content']['application/json']['schema']['$ref']);
-        self::assertSame('User not found', $put['responses']['404']['description']);
-        self::assertSame('#/components/schemas/ErrorResponse', $put['responses']['404']['content']['application/json']['schema']['$ref']);
+        self::assertSame('updateUser', $patch['operationId']);
+        self::assertSame('Update a user', $patch['summary']);
+        self::assertSame(['Users'], $patch['tags']);
+        self::assertSame('id', $patch['parameters'][0]['name']);
+        self::assertSame('path', $patch['parameters'][0]['in']);
+        self::assertTrue($patch['parameters'][0]['required']);
+        self::assertSame('integer', $patch['parameters'][0]['schema']['type']);
+        self::assertTrue($patch['requestBody']['required']);
+        self::assertSame('#/components/schemas/UserUpdateRequest', $patch['requestBody']['content']['application/json']['schema']['$ref']);
+        self::assertSame('User updated', $patch['responses']['200']['description']);
+        self::assertSame('#/components/schemas/UserUpdatedResponse', $patch['responses']['200']['content']['application/json']['schema']['$ref']);
+        self::assertSame('Validation error', $patch['responses']['400']['description']);
+        self::assertSame('#/components/schemas/ErrorResponse', $patch['responses']['400']['content']['application/json']['schema']['$ref']);
+        self::assertSame('User not found', $patch['responses']['404']['description']);
+        self::assertSame('#/components/schemas/ErrorResponse', $patch['responses']['404']['content']['application/json']['schema']['$ref']);
     }
 
     public function testIndexDocumentsUserListEndpoint(): void
@@ -245,7 +246,7 @@ final class OpenApiControllerTest extends TestCase
         $spec = $this->captureSpec();
 
         self::assertSame('3.1.0', $spec['openapi']);
-        self::assertSame('YiiRocks Voyti API', $spec['info']['title']);
+        self::assertSame('Voyti API', $spec['info']['title']);
         self::assertSame('1.0.0', $spec['info']['version']);
         self::assertSame('User management, authentication, and authorization REST API.', $spec['info']['description']);
     }
@@ -268,10 +269,11 @@ final class OpenApiControllerTest extends TestCase
         return $captured;
     }
 
-    private function createController(): OpenApiController
+    private function createController(?ModuleConfig $config = null): OpenApiController
     {
         return new OpenApiController(
             responseFactory: $this->responseFactory,
+            config: $config ?? new ModuleConfig(),
         );
     }
 }

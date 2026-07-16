@@ -69,7 +69,6 @@ $sessionRoutes = [
     Route::methods(['GET', 'POST'], 'logout')->name('voyti/session-logout')->action([Controller\Session\SessionController::class, 'logout']),
     Route::methods(['GET', 'POST'], 'confirm')->name('voyti/session-confirm')->action([Controller\Session\SessionController::class, 'confirm']),
     Route::get('auth/{provider}')->name('voyti/session-auth')->action([Controller\Session\SessionController::class, 'auth']),
-    Route::get('auth/connect/{provider}')->name('voyti/session-connect')->action([Controller\Session\SessionController::class, 'connect']),
 ];
 
 $registrationRoutes = [
@@ -171,7 +170,7 @@ if ($moduleConfig->enableRestApi) {
             Route::get('users')->name('voyti/api-v1-users-index')->action([Controller\api\v1\User\UserController::class, 'index']),
             Route::get('users/{id:\d+}')->name('voyti/api-v1-users-view')->action([Controller\api\v1\User\UserController::class, 'view']),
             Route::post('users')->name('voyti/api-v1-users-create')->action([Controller\api\v1\User\UserController::class, 'create']),
-            Route::put('users/{id:\d+}')->name('voyti/api-v1-users-update')->action([Controller\api\v1\User\UserController::class, 'update']),
+            Route::patch('users/{id:\d+}')->name('voyti/api-v1-users-update')->action([Controller\api\v1\User\UserController::class, 'update']),
             Route::delete('users/{id:\d+}')->name('voyti/api-v1-users-delete')->action([Controller\api\v1\User\UserController::class, 'delete']),
         );
 }

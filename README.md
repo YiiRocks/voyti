@@ -8,7 +8,7 @@
 
 Highly customizable and extensible user management, authentication, and authorization extension for Yii3.
 
-Ported from [2amigos/yii2-usuario](https://github.com/2amigos/yii2-usuario) and rebuilt for Yii3 with PSR-15 middleware, PSR-11 DI, ActiveRecord models, FormModel forms, and the `yiisoft/rbac` package.
+Ported from [2amigos/yii2-usuario](https://github.com/2amigos/yii2-usuario) and rebuilt for Yii3 with PSR-15 middleware, PSR-11 DI, ActiveRecord models, FormModel forms, and RBAC.
 
 [![Packagist Version](https://img.shields.io/packagist/v/yiirocks/voyti.svg)](https://packagist.org/packages/yiirocks/voyti)
 [![PHP from Packagist](https://img.shields.io/packagist/php-v/yiirocks/voyti.svg)](https://php.net/)
@@ -41,7 +41,7 @@ Stats for Nerds
 
 - **User Management** — Registration, email confirmation, login/logout with remember-me, password recovery, password expiration
 - **Profile Management** — User profiles with gravatar, timezone, bio, and a personal website link
-- **Social Authentication** — Various built-in auth clients as [listed below](#social-authentication)
+- **Social Authentication** — Various built-in auth clients
 - **Two-Factor Authentication** — TOTP (authenticator app) and email 2FA with enforced-per-permission support, plus one-time backup codes for account recovery
 - **RBAC Management** — Full admin UI for roles, permissions, and rules with parent-child hierarchy, assignment management, and filtering
 - **Identity Switching** — Admins can temporarily switch into another user's identity for support or debugging, then restore their own session with one click
@@ -121,10 +121,10 @@ return [
                     ->addRoute(
                         Group::create('/')
                             ->middleware(
-                                SessionMiddleware::class,    // required for site-wide session support
-                                VoytiMiddleware::class,      // see "Site-wide enforcement" below
+                                SessionMiddleware::class,                 // required for site-wide session support
+                                VoytiMiddleware::class,                   // see "Site-wide enforcement" below
                             )
-                            ->routes(...$config->get('routes')), // your own app routes
+                            ->routes(...$config->get('routes')),          // your own app routes
                         Group::create('/user/')
                             ->routes(...$config->get('voyti-routes')),
                     )
@@ -230,7 +230,7 @@ Below are all top-level `yiirocks/voyti` options, followed by the nested `social
 | `enablePasswordExpiration` | `bool` | `false` | Enable password expiration |
 | `maxPasswordAge` | `?int` | `null` | Max password age in days |
 | `enablePasswordComplexity` | `bool` | `false` | Require passwords to contain an uppercase letter, a lowercase letter, a digit, and a special character |
-| `passwordHistoryLimit` | `int` | `10` | Number of previous passwords remembered per user to prevent reuse. Only enforced when `enablePasswordExpiration` is `true` — there is no separate toggle |
+| `passwordHistoryLimit` | `int` | `10` | Number of previous passwords remembered per user to prevent reuse. Only enforced when `enablePasswordExpiration` is `true` |
 | `administratorPermissionName` | `?string` | `'admin'` | Permission/role name granting admin access |
 | `profileVisibility` | `ProfileVisibility` | `ProfileVisibility::USERS` | Profile visibility: `OWNER` = owner only, `ADMIN` = owner + admins, `USERS` = any authenticated user, `PUBLIC` = public |
 | `enableAuditLog` | `bool` | `true` | Record admin actions (RBAC and user management changes) to the `audit_log` table, viewable at `admin/audit-log/` |
@@ -262,7 +262,7 @@ Every provider accepts these options unless noted otherwise:
 |---|---|---|---:|---|
 | `clientId` | `string` | yes | none | OAuth client/application ID issued by the provider |
 | `clientSecret` | `string` | yes | none | OAuth client secret issued by the provider |
-| `redirectUri` | `string` | no | generated callback URL | Overrides the callback URL; otherwise Voyti uses the absolute route URL for `voyti/session-auth` or `voyti/session-connect` |
+| `redirectUri` | `string` | no | generated callback URL | Overrides the callback URL; otherwise Voyti uses the absolute route URL for `voyti/session-auth` |
 | `scope` | `string` | no | provider default | Replaces the built-in default scope string |
 | `enabled` | `bool` | no | `true` | If `false`, the provider is not registered and no button is rendered |
 | `authorizationParams` | `array<string, scalar>` | no | `[]` | Extra query parameters appended to the authorization request |
@@ -385,7 +385,6 @@ The library does not provide a menu model or navigation contract. It only expose
 | `voyti/session-logout` | `GET`, `POST` | `logout` | User logout |
 | `voyti/session-confirm` | `GET`, `POST` | `confirm` | Two-factor confirmation step |
 | `voyti/session-auth` | `GET` | `auth/{provider}` | Social auth callback |
-| `voyti/session-connect` | `GET` | `auth/connect/{provider}` | Social account connect callback |
 | `voyti/registration-register` | `GET`, `POST` | `register` | New user registration |
 | `voyti/registration-confirm` | `GET`, `POST` | `confirm/{id}/{code}` | Email confirmation link |
 | `voyti/registration-resend` | `GET`, `POST` | `resend` | Resend confirmation email |

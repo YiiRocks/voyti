@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Controller\api;
 
 use Psr\Http\Message\ResponseInterface;
+use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\DataResponse\ResponseFactory\DataResponseFactoryInterface;
 
 final readonly class OpenApiController
 {
     public function __construct(
         private DataResponseFactoryInterface $responseFactory,
+        private ModuleConfig $config,
     ) {
     }
 
@@ -19,12 +21,12 @@ final readonly class OpenApiController
         return $this->responseFactory->createResponse([
             'openapi' => '3.1.0',
             'info' => [
-                'title' => 'YiiRocks Voyti API',
+                'title' => $this->config->appName . ' API',
                 'version' => '1.0.0',
                 'description' => 'User management, authentication, and authorization REST API.',
             ],
             'servers' => [
-                ['url' => '/api/v1', 'description' => 'REST API'],
+                ['url' => '/' . $this->config->adminRestPrefix . '/v1', 'description' => 'REST API'],
             ],
             'paths' => [
                 '/users' => [
@@ -84,7 +86,7 @@ final readonly class OpenApiController
                             ],
                         ],
                     ],
-                    'put' => [
+                    'patch' => [
                         'operationId' => 'updateUser',
                         'summary' => 'Update a user',
                         'tags' => ['Users'],
