@@ -38,15 +38,27 @@ if ($moduleConfig->enableSwitchIdentities) {
 }
 
 $permissionRoutes = [
-    Route::methods(['GET', 'POST'], 'create')->name('voyti/admin-rbac-permissions-create')->action([Controller\Admin\Rbac\Permission\PermissionController::class, 'create']),
-    Route::methods(['GET', 'POST'], 'update/{name}')->name('voyti/admin-rbac-permissions-update')->action([Controller\Admin\Rbac\Permission\PermissionController::class, 'update']),
-    Route::post('delete/{name}')->name('voyti/admin-rbac-permissions-delete')->action([Controller\Admin\Rbac\Permission\PermissionController::class, 'delete']),
+    Route::methods(['GET', 'POST'], 'create')->name('voyti/admin-rbac-permissions-create')
+        ->action([Controller\Admin\Rbac\RbacController::class, 'create'])
+        ->defaults(['itemType' => 'permission', 'indexRouteName' => 'admin-rbac-permissions']),
+    Route::methods(['GET', 'POST'], 'update/{name}')->name('voyti/admin-rbac-permissions-update')
+        ->action([Controller\Admin\Rbac\RbacController::class, 'update'])
+        ->defaults(['itemType' => 'permission', 'indexRouteName' => 'admin-rbac-permissions']),
+    Route::post('delete/{name}')->name('voyti/admin-rbac-permissions-delete')
+        ->action([Controller\Admin\Rbac\RbacController::class, 'delete'])
+        ->defaults(['itemType' => 'permission', 'indexRouteName' => 'admin-rbac-permissions']),
 ];
 
 $roleRoutes = [
-    Route::methods(['GET', 'POST'], 'create')->name('voyti/admin-rbac-roles-create')->action([Controller\Admin\Rbac\Role\RoleController::class, 'create']),
-    Route::methods(['GET', 'POST'], 'update/{name}')->name('voyti/admin-rbac-roles-update')->action([Controller\Admin\Rbac\Role\RoleController::class, 'update']),
-    Route::post('delete/{name}')->name('voyti/admin-rbac-roles-delete')->action([Controller\Admin\Rbac\Role\RoleController::class, 'delete']),
+    Route::methods(['GET', 'POST'], 'create')->name('voyti/admin-rbac-roles-create')
+        ->action([Controller\Admin\Rbac\RbacController::class, 'create'])
+        ->defaults(['itemType' => 'role', 'indexRouteName' => 'admin-rbac-roles']),
+    Route::methods(['GET', 'POST'], 'update/{name}')->name('voyti/admin-rbac-roles-update')
+        ->action([Controller\Admin\Rbac\RbacController::class, 'update'])
+        ->defaults(['itemType' => 'role', 'indexRouteName' => 'admin-rbac-roles']),
+    Route::post('delete/{name}')->name('voyti/admin-rbac-roles-delete')
+        ->action([Controller\Admin\Rbac\RbacController::class, 'delete'])
+        ->defaults(['itemType' => 'role', 'indexRouteName' => 'admin-rbac-roles']),
 ];
 
 $ruleRoutes = [
@@ -56,9 +68,13 @@ $ruleRoutes = [
 ];
 
 $rbacRoutes = [
-    Route::get('permissions/')->name('voyti/admin-rbac-permissions')->action([Controller\Admin\Rbac\Permission\PermissionController::class, 'index']),
+    Route::get('permissions/')->name('voyti/admin-rbac-permissions')
+        ->action([Controller\Admin\Rbac\RbacController::class, 'index'])
+        ->defaults(['itemType' => 'permission', 'indexRouteName' => 'admin-rbac-permissions']),
     Group::create('permissions/')->routes(...$permissionRoutes),
-    Route::get('roles/')->name('voyti/admin-rbac-roles')->action([Controller\Admin\Rbac\Role\RoleController::class, 'index']),
+    Route::get('roles/')->name('voyti/admin-rbac-roles')
+        ->action([Controller\Admin\Rbac\RbacController::class, 'index'])
+        ->defaults(['itemType' => 'role', 'indexRouteName' => 'admin-rbac-roles']),
     Group::create('roles/')->routes(...$roleRoutes),
     Route::get('rules/')->name('voyti/admin-rbac-rules')->action([Controller\Admin\Rbac\Rule\RuleController::class, 'index']),
     Group::create('rules/')->routes(...$ruleRoutes),

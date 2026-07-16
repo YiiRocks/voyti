@@ -26,11 +26,7 @@ final readonly class RecoveryService
     public function run(string $email): ServiceResult
     {
         $user = User::findByEmail($email);
-        if ($user === null) {
-            return ServiceResult::success($this->translator->translate('voyti.recovery.message_sent_if_exists', category: 'voyti'));
-        }
-
-        if ($user->isBlocked()) {
+        if ($user === null || $user->isBlocked()) {
             return ServiceResult::success($this->translator->translate('voyti.recovery.message_sent_if_exists', category: 'voyti'));
         }
 

@@ -30,7 +30,7 @@ use Yiisoft\User\CurrentUser;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
-readonly class AbstractAuthItemController
+final readonly class RbacController
 {
     use ActorIdTrait;
     use InputDataTrait;
@@ -50,14 +50,12 @@ readonly class AbstractAuthItemController
         protected ModuleConfig $config,
         protected AuditLogService $auditLogService,
         protected CurrentUser $currentUser,
-        private string $itemType,
-        private string $indexRouteName,
     ) {
     }
 
-    public function create(ServerRequestInterface $request): ResponseInterface
+    public function create(ServerRequestInterface $request, string $itemType, string $indexRouteName): ResponseInterface
     {
-        $form = $this->createForm();
+        $form = $this->createForm($itemType);
         $errors = [];
 
         if ($request->getMethod() === Method::POST) {
@@ -66,7 +64,7 @@ readonly class AbstractAuthItemController
             $result = $this->validator->validate($form);
 
             if ($result->isValid()) {
-                $item = $this->itemType === 'role' ? new Role($form->name) : new Permission($form->name);
+                $item = $itemType === 'role' ? new Role($form->name) : new Permission($form->name);
                 $item = $item->withDescription($form->description);
                 if ($form->rule !== '') {
                     $item = $item->withRuleName($form->rule);
@@ -87,12 +85,12 @@ readonly class AbstractAuthItemController
 
                 $this->auditLogService->log(
                     $this->actorId(),
-                    'rbac.' . $this->itemType . '.create',
+                    'rbac.' . $itemType . '.create',
                     targetName: $form->name,
                 );
 
                 return $this->redirectWithFlash(
-                    $this->url->generate('voyti/' . $this->indexRouteName),
+                    $this->url->generate('voyti/' . $indexRouteName),
                     'voyti.auth_item.created',
                 );
             }
@@ -100,38 +98,38 @@ readonly class AbstractAuthItemController
         }
 
         return $this->renderView('admin/rbac/create', [
-            'itemType' => $this->itemType,
+            'itemType' => $itemType,
             'model' => $form,
             'errors' => $errors,
         ]);
     }
 
-    public function delete(string $name): ResponseInterface
+    public function delete(string $name, string $itemType, string $indexRouteName): ResponseInterface
     {
-        $this->itemType === 'role'
+        $itemType === 'role'
             ? $this->managerInterface->removeRole($name)
             : $this->managerInterface->removePermission($name);
 
         $this->auditLogService->log(
             $this->actorId(),
-            'rbac.' . $this->itemType . '.delete',
+            'rbac.' . $itemType . '.delete',
             targetName: $name,
         );
 
         return $this->redirectWithFlash(
-            $this->url->generate('voyti/' . $this->indexRouteName),
+            $this->url->generate('voyti/' . $indexRouteName),
             'voyti.auth_item.deleted',
         );
     }
 
-    public function index(ServerRequestInterface $request): ResponseInterface
+    public function index(ServerRequestInterface $request, string $itemType, string $indexRouteName): ResponseInterface
     {
         $queryParams = $this->queryParams($request);
         $filterName = $this->stringValue($queryParams, 'name');
         $filterDescription = $this->stringValue($queryParams, 'description');
 
         /** @var array<string, Item> $items */
-        $items = $this->itemType === 'role'
+        $items = $itemType === 'role'
             ? $this->itemsStorage->getRoles()
             : $this->itemsStorage->getPermissions();
 
@@ -154,7 +152,7 @@ readonly class AbstractAuthItemController
         }
 
         return $this->renderView('admin/rbac/index', [
-            'itemType' => $this->itemType,
+            'itemType' => $itemType,
             'items' => $items,
             'filterName' => $filterName,
             'filterDescription' => $filterDescription,
@@ -163,10 +161,14 @@ readonly class AbstractAuthItemController
         ]);
     }
 
-    public function update(ServerRequestInterface $request, string $name): ResponseInterface
-    {
-        $form = $this->createForm();
-        $item = $this->itemType === 'role'
+    public function update(
+        ServerRequestInterface $request,
+        string $name,
+        string $itemType,
+        string $indexRouteName,
+    ): ResponseInterface {
+        $form = $this->createForm($itemType);
+        $item = $itemType === 'role'
             ? $this->managerInterface->getRole($name)
             : $this->managerInterface->getPermission($name);
 
@@ -192,11 +194,11 @@ readonly class AbstractAuthItemController
             if ($result->isValid()) {
                 $oldName = $form->itemName !== '' ? $form->itemName : $form->name;
 
-                $existing = $this->itemType === 'role'
+                $existing = $itemType === 'role'
                     ? $this->itemsStorage->getRole($oldName)
                     : $this->itemsStorage->getPermission($oldName);
                 if ($existing === null) {
-                    $label = $this->itemType === 'role' ? 'Role' : 'Permission';
+                    $label = $itemType === 'role' ? 'Role' : 'Permission';
                     throw new RuntimeException("{$label} '{$oldName}' not found.");
                 }
                 $updated = $existing->withName($form->name)->withDescription($form->description);
@@ -222,13 +224,13 @@ readonly class AbstractAuthItemController
 
                 $this->auditLogService->log(
                     $this->actorId(),
-                    'rbac.' . $this->itemType . '.update',
+                    'rbac.' . $itemType . '.update',
                     targetName: $form->name,
                     context: ['previousName' => $oldName],
                 );
 
                 return $this->redirectWithFlash(
-                    $this->url->generate('voyti/' . $this->indexRouteName),
+                    $this->url->generate('voyti/' . $indexRouteName),
                     'voyti.auth_item.updated',
                 );
             }
@@ -236,16 +238,16 @@ readonly class AbstractAuthItemController
         }
 
         return $this->renderView('admin/rbac/update', [
-            'itemType' => $this->itemType,
+            'itemType' => $itemType,
             'model' => $form,
             'errors' => $errors,
             'users' => $users,
         ]);
     }
 
-    private function createForm(): AbstractAuthItemForm
+    private function createForm(string $itemType): AbstractAuthItemForm
     {
-        return new AbstractAuthItemForm($this->translator, $this->itemType);
+        return new AbstractAuthItemForm($this->translator, $itemType);
     }
 
     /**

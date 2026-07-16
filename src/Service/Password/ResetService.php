@@ -10,12 +10,10 @@ use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\ModuleConfig;
-use Yiisoft\Security\PasswordHasher;
 
 final readonly class ResetService
 {
     public function __construct(
-        private PasswordHasher $passwordHasher,
         private ModuleConfig $config,
         private EventDispatcherInterface $eventDispatcher,
         private PasswordHistoryService $passwordHistoryService,
@@ -30,11 +28,7 @@ final readonly class ResetService
 
         $this->eventDispatcher->dispatch(new UserEvent($user));
 
-        $user->setPasswordHash($this->passwordHasher->hash($password));
-        $user->setPasswordChangedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-        $this->passwordHistoryService->record($user);
+        $this->passwordHistoryService->applyPasswordChange($user, $password);
 
         $this->handleToken($userToken);
 

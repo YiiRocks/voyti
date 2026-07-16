@@ -90,13 +90,8 @@ final class RememberMeCookieService
             return;
         }
 
-        try {
-            $data = Json::decode($cookie);
-        } catch (JsonException) {
-            return;
-        }
-
-        if (!is_array($data) || count($data) !== 4) {
+        $data = $this->decodeCookie($cookie);
+        if ($data === null) {
             return;
         }
 
@@ -161,13 +156,8 @@ final class RememberMeCookieService
             return;
         }
 
-        try {
-            $data = Json::decode($rawCookie);
-        } catch (JsonException) {
-            return;
-        }
-
-        if (!is_array($data) || count($data) !== 4) {
+        $data = $this->decodeCookie($rawCookie);
+        if ($data === null) {
             return;
         }
 
@@ -184,6 +174,21 @@ final class RememberMeCookieService
 
         $expiresAt = $now + $this->duration;
         $this->emitCookie((string) $identity->getId(), $identity->getCookieLoginKey(), $expiresAt, (string) $data[3]);
+    }
+
+    private function decodeCookie(string $raw): ?array
+    {
+        try {
+            $data = Json::decode($raw);
+        } catch (JsonException) {
+            return null;
+        }
+
+        if (!is_array($data) || count($data) !== 4) {
+            return null;
+        }
+
+        return $data;
     }
 
     private function emitCookie(string $id, string $key, int $expiresAt, string $sessionId): void

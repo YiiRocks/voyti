@@ -119,6 +119,14 @@ final class UserProfileTest extends TestCase
         self::assertNull(UserProfile::findByUserId(1));
     }
 
+    public function testGetBioParsedReturnsBioUnchangedWhenBirthdayIsFuture(): void
+    {
+        $entity = new UserProfile();
+        $entity->setBio('I am {age} years old');
+        $entity->setBirthday(new DateTimeImmutable('+1 year'));
+        self::assertSame('I am {age} years old', $entity->getBioParsed());
+    }
+
     public function testGetBioParsedReturnsBioUnchangedWhenNoBirthdaySet(): void
     {
         $entity = new UserProfile();
@@ -131,14 +139,6 @@ final class UserProfileTest extends TestCase
         $entity = new UserProfile();
         $entity->setBio('I live in {location}');
         self::assertSame('I live in {location}', $entity->getBioParsed());
-    }
-
-    public function testGetBioParsedReturnsBioUnchangedWhenBirthdayIsFuture(): void
-    {
-        $entity = new UserProfile();
-        $entity->setBio('I am {age} years old');
-        $entity->setBirthday(new DateTimeImmutable('+1 year'));
-        self::assertSame('I am {age} years old', $entity->getBioParsed());
     }
 
     public function testGetBioParsedReturnsBioUnchangedWhenNoTokenPresent(): void

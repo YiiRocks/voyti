@@ -181,11 +181,6 @@ final readonly class PrivacyController
         return $this->renderView('privacy/index', ['config' => $this->config]);
     }
 
-    protected function viewPath(): string
-    {
-        return $this->config->viewPath;
-    }
-
     private function exportValue(User $user, string $property): mixed
     {
         return match ($property) {

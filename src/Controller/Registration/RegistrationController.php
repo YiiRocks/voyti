@@ -162,8 +162,4 @@ final readonly class RegistrationController
         return $this->renderView('registration/resend', ['model' => $form, 'config' => $this->config]);
     }
 
-    protected function viewPath(): string
-    {
-        return $this->config->viewPath;
-    }
 }

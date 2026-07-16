@@ -24,9 +24,12 @@ trait RenderTrait
         ]);
     }
 
+    /**
+     * @psalm-suppress UndefinedThisPropertyFetch
+     */
     protected function viewPath(): string
     {
-        return dirname(__DIR__, 2) . '/resources/views/bootstrap5';
+        return $this->config->viewPath;
     }
     /**
      * Renders a view without the host application's layout - used for AJAX fragments that

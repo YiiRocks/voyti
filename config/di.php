@@ -116,11 +116,10 @@ return [
     ) => new ExpireService($config),
     RecoveryService::class => RecoveryService::class,
     ResetService::class => fn (
-        PasswordHasher $passwordHasher,
         ModuleConfig $config,
         EventDispatcherInterface $eventDispatcher,
         PasswordHistoryService $passwordHistoryService,
-    ) => new ResetService($passwordHasher, $config, $eventDispatcher, $passwordHistoryService),
+    ) => new ResetService($config, $eventDispatcher, $passwordHistoryService),
 
     // Registration, confirmation, and email-change lifecycle.
     MailService::class => fn (

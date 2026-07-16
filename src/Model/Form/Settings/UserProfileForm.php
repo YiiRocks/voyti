@@ -7,6 +7,7 @@ namespace YiiRocks\Voyti\Model\Form\Settings;
 use DateTimeImmutable;
 use YiiRocks\Voyti\Helper\AgeHelper;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
+use YiiRocks\Voyti\Model\UserProfile;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\Result;
@@ -45,6 +46,33 @@ final class UserProfileForm extends FormModel
     public function __construct(
         private readonly TranslatorInterface $translator,
     ) {
+    }
+
+    public function applyToProfile(UserProfile $profile): void
+    {
+        $profile->setName($this->name !== '' ? $this->name : null);
+        $profile->setPublicEmail($this->publicEmail !== '' ? $this->publicEmail : null);
+        $profile->setGravatarEmail($this->gravatarEmail !== '' ? $this->gravatarEmail : null);
+        $profile->setLocation($this->location !== '' ? $this->location : null);
+        $profile->setWebsite($this->website !== '' ? $this->website : null);
+        $profile->setTimezone($this->timezone !== '' ? $this->timezone : null);
+        $profile->setBio($this->bio !== '' ? $this->bio : null);
+        $profile->setBirthday($this->birthday !== '' ? new DateTimeImmutable($this->birthday) : null);
+    }
+
+    public static function fromProfile(UserProfile $profile, TranslatorInterface $translator): self
+    {
+        $form = new self($translator);
+        $form->name = $profile->getName() ?? '';
+        $form->publicEmail = $profile->getPublicEmail() ?? '';
+        $form->gravatarEmail = $profile->getGravatarEmail() ?? '';
+        $form->location = $profile->getLocation() ?? '';
+        $form->website = $profile->getWebsite() ?? '';
+        $form->timezone = $profile->getTimezone() ?? '';
+        $form->bio = $profile->getBio() ?? '';
+        $form->birthday = $profile->getBirthday()?->format('Y-m-d') ?? '';
+
+        return $form;
     }
 
     /**

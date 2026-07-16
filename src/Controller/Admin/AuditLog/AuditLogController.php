@@ -57,8 +57,4 @@ final readonly class AuditLogController
         ]);
     }
 
-    protected function viewPath(): string
-    {
-        return $this->config->viewPath;
-    }
 }

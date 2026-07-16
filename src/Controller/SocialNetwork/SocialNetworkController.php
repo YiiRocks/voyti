@@ -86,8 +86,4 @@ final readonly class SocialNetworkController
         ]);
     }
 
-    protected function viewPath(): string
-    {
-        return $this->config->viewPath;
-    }
 }

@@ -308,11 +308,6 @@ final readonly class TwoFactorController
         return $this->renderTwoFactorIndex($user, 'email', emailCodeSent: true);
     }
 
-    protected function viewPath(): string
-    {
-        return $this->config->viewPath;
-    }
-
     /**
      * The TOTP secret and the email one-time code share the same auth_tf_key column.
      * If an email code was last sent to the user, that column holds a 6-digit code

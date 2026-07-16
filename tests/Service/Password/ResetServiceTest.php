@@ -136,7 +136,7 @@ final class ResetServiceTest extends TestCase
         $config ??= new ModuleConfig();
         $passwordHasher = new PasswordHasher();
 
-        return new ResetService($passwordHasher, $config, $eventDispatcher, new PasswordHistoryService($passwordHasher, $config));
+        return new ResetService($config, $eventDispatcher, new PasswordHistoryService($passwordHasher, $config));
     }
 
     private function createUser(string $username, string $email, ?int $createdAt = null): User

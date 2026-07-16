@@ -10,7 +10,7 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use RuntimeException;
-use YiiRocks\Voyti\Controller\Admin\Rbac\Permission\PermissionController;
+use YiiRocks\Voyti\Controller\Admin\Rbac\RbacController;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\AuditLogService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
@@ -82,7 +82,7 @@ final class PermissionControllerTest extends TestCase
             ->with('admin/rbac/create', $this->anything())
             ->willReturn($response);
 
-        $result = $controller->create($request);
+        $result = $controller->create($request, 'permission', 'admin-rbac-permissions');
 
         $this->assertSame($response, $result);
     }
@@ -95,7 +95,7 @@ final class PermissionControllerTest extends TestCase
         $this->validator->method('validate')->willReturn(new Result());
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->create($request);
+        $result = $controller->create($request, 'permission', 'admin-rbac-permissions');
 
         $this->assertSame($response, $result);
         $this->assertNotNull($this->itemsStorage->getPermission('edit-posts'));
@@ -119,7 +119,7 @@ final class PermissionControllerTest extends TestCase
             ))
             ->willReturn($response);
 
-        $result2 = $controller->create($request);
+        $result2 = $controller->create($request, 'permission', 'admin-rbac-permissions');
 
         $this->assertSame($response, $result2);
     }
@@ -132,7 +132,7 @@ final class PermissionControllerTest extends TestCase
         $this->validator->method('validate')->willReturn(new Result());
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->create($request);
+        $result = $controller->create($request, 'permission', 'admin-rbac-permissions');
 
         $this->assertSame($response, $result);
         $perm = $this->itemsStorage->getPermission('restricted-action');
@@ -147,7 +147,7 @@ final class PermissionControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->delete('edit-posts');
+        $result = $controller->delete('edit-posts', 'permission', 'admin-rbac-permissions');
 
         $this->assertSame($response, $result);
         $this->assertNull($this->itemsStorage->getPermission('edit-posts'));
@@ -169,7 +169,7 @@ final class PermissionControllerTest extends TestCase
             ->with('admin/rbac/index', $this->anything())
             ->willReturn($response);
 
-        $result = $controller->index($request);
+        $result = $controller->index($request, 'permission', 'admin-rbac-permissions');
 
         $this->assertSame($response, $result);
     }
@@ -190,7 +190,7 @@ final class PermissionControllerTest extends TestCase
             ->with('admin/rbac/update', $this->anything())
             ->willReturn($response);
 
-        $result = $controller->update($request, 'edit-posts');
+        $result = $controller->update($request, 'edit-posts', 'permission', 'admin-rbac-permissions');
 
         $this->assertSame($response, $result);
     }
@@ -208,7 +208,7 @@ final class PermissionControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->update($request, 'nonexistent');
+        $result = $controller->update($request, 'nonexistent', 'permission', 'admin-rbac-permissions');
 
         $this->assertSame($response, $result);
     }
@@ -223,7 +223,7 @@ final class PermissionControllerTest extends TestCase
         $this->validator->method('validate')->willReturn(new Result());
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->update($request, 'edit-posts');
+        $result = $controller->update($request, 'edit-posts', 'permission', 'admin-rbac-permissions');
 
         $this->assertSame($response, $result);
     }
@@ -234,7 +234,7 @@ final class PermissionControllerTest extends TestCase
         $managerOnlyStorage->add(new Permission('edit-posts'));
         $manager = new Manager($managerOnlyStorage, $this->assignmentsStorage);
 
-        $controller = new PermissionController(
+        $controller = new RbacController(
             translator: $this->translator,
             viewRenderer: $this->viewRenderer,
             url: $this->harness->getUrlGenerator(),
@@ -258,7 +258,7 @@ final class PermissionControllerTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage("Permission 'edit-posts' not found.");
 
-        $controller->update($request, 'edit-posts');
+        $controller->update($request, 'edit-posts', 'permission', 'admin-rbac-permissions');
     }
 
     public function testUpdatePostWithRule(): void
@@ -273,7 +273,7 @@ final class PermissionControllerTest extends TestCase
         $this->responseFactory->method('createResponse')->willReturn($response);
         $response->method('withHeader')->willReturnSelf();
 
-        $result = $controller->update($request, 'edit-posts');
+        $result = $controller->update($request, 'edit-posts', 'permission', 'admin-rbac-permissions');
 
         $this->assertSame($response, $result);
         $perm = $this->itemsStorage->getPermission('edit-posts');
@@ -281,9 +281,9 @@ final class PermissionControllerTest extends TestCase
         $this->assertSame('someRule', $perm->getRuleName());
     }
 
-    private function createController(): PermissionController
+    private function createController(): RbacController
     {
-        return $this->harness->createPermissionController(
+        return $this->harness->createRbacController(
             translator: $this->translator,
             viewRenderer: $this->viewRenderer,
             validator: $this->validator,

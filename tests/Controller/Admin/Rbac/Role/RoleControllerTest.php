@@ -10,7 +10,7 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use RuntimeException;
-use YiiRocks\Voyti\Controller\Admin\Rbac\Role\RoleController;
+use YiiRocks\Voyti\Controller\Admin\Rbac\RbacController;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\AuditLogService;
@@ -84,7 +84,7 @@ final class RoleControllerTest extends TestCase
             ->with('admin/rbac/create', $this->anything())
             ->willReturn($response);
 
-        $result = $controller->create($request);
+        $result = $controller->create($request, 'role', 'admin-rbac-roles');
 
         $this->assertSame($response, $result);
     }
@@ -97,7 +97,7 @@ final class RoleControllerTest extends TestCase
         $this->validator->method('validate')->willReturn(new Result());
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->create($request);
+        $result = $controller->create($request, 'role', 'admin-rbac-roles');
 
         $this->assertSame($response, $result);
         $this->assertNotNull($this->itemsStorage->getRole('editor'));
@@ -112,7 +112,7 @@ final class RoleControllerTest extends TestCase
         $this->validator->method('validate')->willReturn(new Result());
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->create($request);
+        $result = $controller->create($request, 'role', 'admin-rbac-roles');
 
         $this->assertSame($response, $result);
         $this->assertTrue($this->itemsStorage->hasChild('parent', 'child-role'));
@@ -136,7 +136,7 @@ final class RoleControllerTest extends TestCase
             ))
             ->willReturn($response);
 
-        $result2 = $controller->create($request);
+        $result2 = $controller->create($request, 'role', 'admin-rbac-roles');
 
         $this->assertSame($response, $result2);
     }
@@ -151,7 +151,7 @@ final class RoleControllerTest extends TestCase
         $this->responseFactory->method('createResponse')->willReturn($response);
         $response->method('withHeader')->willReturnSelf();
 
-        $result = $controller->create($request);
+        $result = $controller->create($request, 'role', 'admin-rbac-roles');
 
         $this->assertSame($response, $result);
         $this->assertNotNull($this->itemsStorage->getRole('editor'));
@@ -164,7 +164,7 @@ final class RoleControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->delete('editor');
+        $result = $controller->delete('editor', 'role', 'admin-rbac-roles');
 
         $this->assertSame($response, $result);
         $this->assertNull($this->itemsStorage->getRole('editor'));
@@ -186,7 +186,7 @@ final class RoleControllerTest extends TestCase
             ->with('admin/rbac/index', $this->anything())
             ->willReturn($response);
 
-        $result = $controller->index($request);
+        $result = $controller->index($request, 'role', 'admin-rbac-roles');
 
         $this->assertSame($response, $result);
     }
@@ -207,7 +207,7 @@ final class RoleControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->index($request);
+        $result = $controller->index($request, 'role', 'admin-rbac-roles');
 
         $this->assertSame($response, $result);
     }
@@ -228,7 +228,7 @@ final class RoleControllerTest extends TestCase
             ->with('admin/rbac/update', $this->anything())
             ->willReturn($response);
 
-        $result = $controller->update($request, 'editor');
+        $result = $controller->update($request, 'editor', 'role', 'admin-rbac-roles');
 
         $this->assertSame($response, $result);
     }
@@ -246,7 +246,7 @@ final class RoleControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->update($request, 'nonexistent');
+        $result = $controller->update($request, 'nonexistent', 'role', 'admin-rbac-roles');
 
         $this->assertSame($response, $result);
     }
@@ -267,7 +267,7 @@ final class RoleControllerTest extends TestCase
         $this->responseFactory->method('createResponse')->willReturn($response);
         $response->method('withHeader')->willReturnSelf();
 
-        $result = $controller->update($request, 'editor');
+        $result = $controller->update($request, 'editor', 'role', 'admin-rbac-roles');
 
         $this->assertSame($response, $result);
         $this->assertNull($this->assignmentsStorage->get('editor', '1'));
@@ -284,7 +284,7 @@ final class RoleControllerTest extends TestCase
         $this->validator->method('validate')->willReturn(new Result());
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->update($request, 'editor');
+        $result = $controller->update($request, 'editor', 'role', 'admin-rbac-roles');
 
         $this->assertSame($response, $result);
     }
@@ -295,7 +295,7 @@ final class RoleControllerTest extends TestCase
         $managerOnlyStorage->add(new Role('editor'));
         $manager = new Manager($managerOnlyStorage, $this->assignmentsStorage);
 
-        $controller = new RoleController(
+        $controller = new RbacController(
             translator: $this->translator,
             viewRenderer: $this->viewRenderer,
             url: $this->harness->getUrlGenerator(),
@@ -319,7 +319,7 @@ final class RoleControllerTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage("Role 'editor' not found.");
 
-        $controller->update($request, 'editor');
+        $controller->update($request, 'editor', 'role', 'admin-rbac-roles');
     }
 
     public function testUpdatePostWithChildren(): void
@@ -335,7 +335,7 @@ final class RoleControllerTest extends TestCase
         $this->responseFactory->method('createResponse')->willReturn($response);
         $response->method('withHeader')->willReturnSelf();
 
-        $result = $controller->update($request, 'editor');
+        $result = $controller->update($request, 'editor', 'role', 'admin-rbac-roles');
 
         $this->assertSame($response, $result);
         $this->assertTrue($this->itemsStorage->hasChild('editor', 'child-role'));
@@ -361,7 +361,7 @@ final class RoleControllerTest extends TestCase
             ))
             ->willReturn($response);
 
-        $result2 = $controller->update($request, 'editor');
+        $result2 = $controller->update($request, 'editor', 'role', 'admin-rbac-roles');
 
         $this->assertSame($response, $result2);
     }
@@ -378,7 +378,7 @@ final class RoleControllerTest extends TestCase
         $this->responseFactory->method('createResponse')->willReturn($response);
         $response->method('withHeader')->willReturnSelf();
 
-        $result = $controller->update($request, 'editor');
+        $result = $controller->update($request, 'editor', 'role', 'admin-rbac-roles');
 
         $this->assertSame($response, $result);
         $role = $this->itemsStorage->getRole('editor');
@@ -413,14 +413,14 @@ final class RoleControllerTest extends TestCase
             ))
             ->willReturn($response);
 
-        $result = $controller->update($request, 'editor');
+        $result = $controller->update($request, 'editor', 'role', 'admin-rbac-roles');
 
         $this->assertSame($response, $result);
     }
 
-    private function createController(): RoleController
+    private function createController(): RbacController
     {
-        return $this->harness->createRoleController(
+        return $this->harness->createRbacController(
             translator: $this->translator,
             viewRenderer: $this->viewRenderer,
             validator: $this->validator,

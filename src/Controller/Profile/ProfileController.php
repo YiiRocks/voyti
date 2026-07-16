@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Controller\Profile;
 
-use DateTimeImmutable;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -95,15 +94,7 @@ final readonly class ProfileController
             $userProfile->setUserId((int) $user->getId());
         }
 
-        $form = new UserProfileForm($this->translator);
-        $form->name = $userProfile->getName() ?? '';
-        $form->publicEmail = $userProfile->getPublicEmail() ?? '';
-        $form->gravatarEmail = $userProfile->getGravatarEmail() ?? '';
-        $form->location = $userProfile->getLocation() ?? '';
-        $form->website = $userProfile->getWebsite() ?? '';
-        $form->timezone = $userProfile->getTimezone() ?? '';
-        $form->bio = $userProfile->getBio() ?? '';
-        $form->birthday = $userProfile->getBirthday()?->format('Y-m-d') ?? '';
+        $form = UserProfileForm::fromProfile($userProfile, $this->translator);
 
         if ($request->getMethod() === Method::POST) {
             $body = $this->parsedBody($request);
@@ -111,15 +102,7 @@ final readonly class ProfileController
             $result = $this->validator->validate($form);
 
             if ($result->isValid()) {
-                $userProfile->setName($form->name !== '' ? $form->name : null);
-                $userProfile->setPublicEmail($form->publicEmail !== '' ? $form->publicEmail : null);
-                $userProfile->setGravatarEmail($form->gravatarEmail !== '' ? $form->gravatarEmail : null);
-                $userProfile->setLocation($form->location !== '' ? $form->location : null);
-                $userProfile->setWebsite($form->website !== '' ? $form->website : null);
-                $userProfile->setTimezone($form->timezone !== '' ? $form->timezone : null);
-                $userProfile->setBio($form->bio !== '' ? $form->bio : null);
-                $userProfile->setBirthday($form->birthday !== '' ? new DateTimeImmutable($form->birthday) : null);
-
+                $form->applyToProfile($userProfile);
                 $userProfile->save();
                 $this->eventDispatcher->dispatch(new UserProfileEvent($userProfile));
                 return $this->redirectWithFlash($this->url->generate('voyti/profile-update'), 'voyti.settings.profile_updated');
@@ -137,11 +120,6 @@ final readonly class ProfileController
             'isSwitched' => $this->switchIdentityService->isSwitched(),
             'originalUser' => $this->switchIdentityService->getOriginalUser(),
         ]);
-    }
-
-    protected function viewPath(): string
-    {
-        return $this->config->viewPath;
     }
 
     private function isAdmin(IdentityInterface $identity): bool

@@ -10,8 +10,7 @@ use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use YiiRocks\Voyti\Controller\Account\AccountController;
 use YiiRocks\Voyti\Controller\Account\SessionController as AccountSessionController;
 use YiiRocks\Voyti\Controller\Admin\AuditLog\AuditLogController;
-use YiiRocks\Voyti\Controller\Admin\Rbac\Permission\PermissionController;
-use YiiRocks\Voyti\Controller\Admin\Rbac\Role\RoleController;
+use YiiRocks\Voyti\Controller\Admin\Rbac\RbacController;
 use YiiRocks\Voyti\Controller\Admin\Rbac\Rule\RuleController;
 use YiiRocks\Voyti\Controller\Admin\User\UserController;
 use YiiRocks\Voyti\Controller\PasswordReset\PasswordResetController;
@@ -178,7 +177,6 @@ final class ControllerHarness
         $recoveryService ??= new RecoveryService();
         $passwordHasher = new PasswordHasher();
         $resetService ??= new ResetService(
-            $passwordHasher,
             $this->config,
             $this->eventDispatcher,
             new PasswordHistoryService($passwordHasher, $this->config),
@@ -196,34 +194,6 @@ final class ControllerHarness
             hydrator: $hydrator,
             responseFactory: $responseFactory,
             flash: $flash,
-        );
-    }
-
-    public function createPermissionController(
-        TranslatorInterface $translator,
-        WebViewRenderer $viewRenderer,
-        ValidatorInterface $validator,
-        ResponseFactoryInterface $responseFactory,
-        FlashInterface $flash,
-        ?CurrentUser $currentUser = null,
-        ?AuditLogService $auditLogService = null,
-    ): PermissionController {
-        $currentUser ??= new CurrentUser(new IdentityAdapter($this->config), $this->eventDispatcher);
-        $auditLogService ??= new AuditLogService($this->config);
-
-        return new PermissionController(
-            translator: $translator,
-            viewRenderer: $viewRenderer,
-            url: $this->url,
-            validator: $validator,
-            responseFactory: $responseFactory,
-            itemsStorage: $this->itemsStorage,
-            managerInterface: $this->authManager,
-            assignmentsStorage: $this->assignmentsStorage,
-            flash: $flash,
-            config: $this->config,
-            auditLogService: $auditLogService,
-            currentUser: $currentUser,
         );
     }
 
@@ -292,6 +262,34 @@ final class ControllerHarness
         );
     }
 
+    public function createRbacController(
+        TranslatorInterface $translator,
+        WebViewRenderer $viewRenderer,
+        ValidatorInterface $validator,
+        ResponseFactoryInterface $responseFactory,
+        FlashInterface $flash,
+        ?CurrentUser $currentUser = null,
+        ?AuditLogService $auditLogService = null,
+    ): RbacController {
+        $currentUser ??= new CurrentUser(new IdentityAdapter($this->config), $this->eventDispatcher);
+        $auditLogService ??= new AuditLogService($this->config);
+
+        return new RbacController(
+            translator: $translator,
+            viewRenderer: $viewRenderer,
+            url: $this->url,
+            validator: $validator,
+            responseFactory: $responseFactory,
+            itemsStorage: $this->itemsStorage,
+            managerInterface: $this->authManager,
+            assignmentsStorage: $this->assignmentsStorage,
+            flash: $flash,
+            config: $this->config,
+            auditLogService: $auditLogService,
+            currentUser: $currentUser,
+        );
+    }
+
     public function createRegistrationController(
         TranslatorInterface $translator,
         WebViewRenderer $viewRenderer,
@@ -332,34 +330,6 @@ final class ControllerHarness
             responseFactory: $responseFactory,
             flash: $flash,
             authClientRegistry: $this->authClientRegistry,
-        );
-    }
-
-    public function createRoleController(
-        TranslatorInterface $translator,
-        WebViewRenderer $viewRenderer,
-        ValidatorInterface $validator,
-        ResponseFactoryInterface $responseFactory,
-        FlashInterface $flash,
-        ?CurrentUser $currentUser = null,
-        ?AuditLogService $auditLogService = null,
-    ): RoleController {
-        $currentUser ??= new CurrentUser(new IdentityAdapter($this->config), $this->eventDispatcher);
-        $auditLogService ??= new AuditLogService($this->config);
-
-        return new RoleController(
-            translator: $translator,
-            viewRenderer: $viewRenderer,
-            url: $this->url,
-            validator: $validator,
-            responseFactory: $responseFactory,
-            itemsStorage: $this->itemsStorage,
-            managerInterface: $this->authManager,
-            assignmentsStorage: $this->assignmentsStorage,
-            flash: $flash,
-            config: $this->config,
-            auditLogService: $auditLogService,
-            currentUser: $currentUser,
         );
     }
 

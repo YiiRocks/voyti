@@ -85,8 +85,4 @@ final readonly class SessionController
         return $this->redirectWithFlash($this->url->generate('voyti/account-sessions'), 'voyti.settings.session_terminated');
     }
 
-    protected function viewPath(): string
-    {
-        return $this->config->viewPath;
-    }
 }

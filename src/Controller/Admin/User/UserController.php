@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Controller\Admin\User;
 
-use DateTimeImmutable;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -386,15 +385,7 @@ final readonly class UserController
             $userProfile->setUserId($id);
         }
 
-        $model = new UserProfileForm($this->translator);
-        $model->name = $userProfile->getName() ?? '';
-        $model->publicEmail = $userProfile->getPublicEmail() ?? '';
-        $model->gravatarEmail = $userProfile->getGravatarEmail() ?? '';
-        $model->location = $userProfile->getLocation() ?? '';
-        $model->website = $userProfile->getWebsite() ?? '';
-        $model->timezone = $userProfile->getTimezone() ?? '';
-        $model->bio = $userProfile->getBio() ?? '';
-        $model->birthday = $userProfile->getBirthday()?->format('Y-m-d') ?? '';
+        $model = UserProfileForm::fromProfile($userProfile, $this->translator);
 
         if ($request->getMethod() === Method::POST) {
             $body = $this->parsedBody($request);
@@ -402,14 +393,7 @@ final readonly class UserController
             $result = $this->validator->validate($model);
             $model->processValidationResult($result);
             if ($result->isValid()) {
-                $userProfile->setName($model->name !== '' ? $model->name : null);
-                $userProfile->setPublicEmail($model->publicEmail !== '' ? $model->publicEmail : null);
-                $userProfile->setGravatarEmail($model->gravatarEmail !== '' ? $model->gravatarEmail : null);
-                $userProfile->setLocation($model->location !== '' ? $model->location : null);
-                $userProfile->setWebsite($model->website !== '' ? $model->website : null);
-                $userProfile->setTimezone($model->timezone !== '' ? $model->timezone : null);
-                $userProfile->setBio($model->bio !== '' ? $model->bio : null);
-                $userProfile->setBirthday($model->birthday !== '' ? new DateTimeImmutable($model->birthday) : null);
+                $model->applyToProfile($userProfile);
                 $userProfile->save();
                 return $this->redirectWithFlash(
                     $this->url->generate('voyti/admin-users-update-profile', ['id' => $id]),
@@ -419,11 +403,6 @@ final readonly class UserController
         }
 
         return $this->renderView('admin/user/_profile', ['user' => $user, 'model' => $model, 'flash' => $this->flash]);
-    }
-
-    protected function viewPath(): string
-    {
-        return $this->config->viewPath;
     }
 
 }

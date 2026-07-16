@@ -298,11 +298,6 @@ final readonly class SessionController
         );
     }
 
-    protected function viewPath(): string
-    {
-        return $this->config->viewPath;
-    }
-
     /**
      * @param array<array-key, mixed> $data
      */

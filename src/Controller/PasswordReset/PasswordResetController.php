@@ -117,8 +117,4 @@ final readonly class PasswordResetController
         ]);
     }
 
-    protected function viewPath(): string
-    {
-        return $this->config->viewPath;
-    }
 }

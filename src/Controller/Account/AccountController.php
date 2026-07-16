@@ -108,8 +108,4 @@ final readonly class AccountController
         return $this->renderView('account/update', ['model' => $form, 'config' => $this->config, 'flash' => $this->flash]);
     }
 
-    protected function viewPath(): string
-    {
-        return $this->config->viewPath;
-    }
 }
