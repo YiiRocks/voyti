@@ -15,8 +15,9 @@ final class UserEventTest extends TestCase
     {
         $user = new User();
 
-        $event = new UserEvent($user);
+        $event = new UserEvent($user, UserEvent::BLOCK);
 
         self::assertSame($user, $event->getUser());
+        self::assertSame(UserEvent::BLOCK, $event->getType());
     }
 }

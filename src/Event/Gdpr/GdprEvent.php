@@ -6,12 +6,10 @@ namespace YiiRocks\Voyti\Event\Gdpr;
 
 use YiiRocks\Voyti\Model\User;
 
-final class GdprEvent
+final readonly class GdprEvent
 {
-    public bool $isValid = true;
-
     public function __construct(
-        private readonly User $user,
+        private User $user,
     ) {
     }
 

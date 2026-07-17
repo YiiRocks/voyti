@@ -6,6 +6,7 @@ namespace YiiRocks\Voyti\tests\Service\User;
 
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
+use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\ModuleConfig;
@@ -14,6 +15,7 @@ use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\User\CreateService;
 use YiiRocks\Voyti\Service\User\UserCreationHelper;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
 use YiiRocks\Voyti\tests\Support\MailCapture;
 use Yiisoft\Security\PasswordHasher;
@@ -86,8 +88,7 @@ final class CreateServiceTest extends TestCase
     {
         $mailCapture = new MailCapture();
         $mailService = $this->createMailService($mailCapture);
-        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $eventDispatcher->expects($this->exactly(2))->method('dispatch');
+        $eventDispatcher = new EventCaptureDispatcher();
         $passwordHasher = new PasswordHasher();
         $config = new ModuleConfig(enableEmailConfirmation: false);
 
@@ -107,14 +108,17 @@ final class CreateServiceTest extends TestCase
         self::assertGreaterThan(0, $foundUser->getCreatedAt());
         self::assertGreaterThan(0, $foundUser->getUpdatedAt());
         self::assertNotEmpty($mailCapture->getSentMessages());
+        self::assertCount(2, $eventDispatcher->getEvents());
+        $userEvent = $eventDispatcher->getEvent(UserEvent::class);
+        self::assertNotNull($userEvent);
+        self::assertSame(UserEvent::CREATE, $userEvent->getType());
     }
 
     public function testRunWithEmailConfirmationEnabled(): void
     {
         $mailCapture = new MailCapture();
         $mailService = $this->createMailService($mailCapture);
-        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $eventDispatcher->expects($this->exactly(2))->method('dispatch');
+        $eventDispatcher = new EventCaptureDispatcher();
         $passwordHasher = new PasswordHasher();
         $config = new ModuleConfig(enableEmailConfirmation: true);
 
@@ -140,6 +144,10 @@ final class CreateServiceTest extends TestCase
         self::assertGreaterThan(0, $userToken->getCreatedAt());
         self::assertSame(32, strlen($userToken->getCode()));
         self::assertNotEmpty($mailCapture->getSentMessages());
+        self::assertCount(2, $eventDispatcher->getEvents());
+        $userEvent = $eventDispatcher->getEvent(UserEvent::class);
+        self::assertNotNull($userEvent);
+        self::assertSame(UserEvent::CREATE, $userEvent->getType());
     }
 
     private function createMailService(MailCapture $mailCapture): MailService

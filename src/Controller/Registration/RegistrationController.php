@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Controller\Registration;
 
-use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
-use YiiRocks\Voyti\Event\User\FormEvent;
 use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Model\Form\Auth\RegistrationForm;
 use YiiRocks\Voyti\Model\Form\Auth\ResendForm;
@@ -40,7 +38,6 @@ final readonly class RegistrationController
         private RegisterService $userRegisterService,
         private ConfirmationService $confirmationService,
         private ValidatorInterface $validator,
-        private EventDispatcherInterface $eventDispatcher,
         private UrlGeneratorInterface $url,
         private ModuleConfig $config,
         private PendingSocialAccountService $pendingSocialAccountService,
@@ -110,7 +107,6 @@ final readonly class RegistrationController
                     if ($user !== null) {
                         $this->pendingSocialAccountService->connect($user);
                     }
-                    $this->eventDispatcher->dispatch(new FormEvent($form));
 
                     return $this->redirectWithFlash(
                         $this->url->generate('voyti/session-login'),

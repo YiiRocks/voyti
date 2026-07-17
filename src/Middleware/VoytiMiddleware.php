@@ -10,7 +10,7 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
 /**
- * Convenience wrapper that chains voyti's enforcement middleware in the recommended order.
+ * Convenience wrapper that chains voyti's remember-me and enforcement middleware in the recommended order.
  *
  * Add this single middleware to your app's route group (or global pipeline, after session middleware)
  * instead of adding the sub-middlewares individually. Each sub-middleware still checks its own
@@ -20,6 +20,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 final readonly class VoytiMiddleware implements MiddlewareInterface
 {
     public function __construct(
+        private MiddlewareInterface $rememberMe,
         private MiddlewareInterface $passwordAge,
         private MiddlewareInterface $sessionRevocation,
         private MiddlewareInterface $twoFactorAuth,
@@ -30,6 +31,7 @@ final readonly class VoytiMiddleware implements MiddlewareInterface
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $middlewares = [
+            $this->rememberMe,
             $this->sessionRevocation,
             $this->passwordAge,
             $this->twoFactorAuth,

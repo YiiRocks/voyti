@@ -99,7 +99,10 @@ final class SwitchIdentityServiceTest extends TestCase
 
         self::assertTrue($eventDispatcher->hasEvent(UserEvent::class));
         self::assertTrue($eventDispatcher->hasEvent(AfterLoginEvent::class));
-        self::assertCount(3, $eventDispatcher->getEvents());
+        self::assertCount(2, $eventDispatcher->getEvents());
+        $userEvent = $eventDispatcher->getEvent(UserEvent::class);
+        self::assertNotNull($userEvent);
+        self::assertSame(UserEvent::RESTORE_IDENTITY, $userEvent->getType());
         $identity = $currentUser->getIdentity();
         self::assertInstanceOf(User::class, $identity);
         self::assertSame($user->getId(), $identity->getId());
@@ -183,10 +186,11 @@ final class SwitchIdentityServiceTest extends TestCase
 
         self::assertTrue($eventDispatcher->hasEvent(UserEvent::class));
         self::assertTrue($eventDispatcher->hasEvent(AfterLoginEvent::class));
-        self::assertCount(3, $eventDispatcher->getEvents());
+        self::assertCount(2, $eventDispatcher->getEvents());
         $event = $eventDispatcher->getEvent(UserEvent::class);
         self::assertNotNull($event);
         self::assertSame($targetUser->getId(), $event->getUser()->getId());
+        self::assertSame(UserEvent::SWITCH_IDENTITY, $event->getType());
         $identity = $currentUser->getIdentity();
         self::assertInstanceOf(User::class, $identity);
         self::assertSame($targetUser->getId(), $identity->getId());

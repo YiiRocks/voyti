@@ -67,12 +67,11 @@ final readonly class SwitchIdentityService
             return ServiceResult::failure('Original user not found');
         }
 
-        $this->eventDispatcher->dispatch(new UserEvent($originalUser));
         $previousSessionId = $this->session->getId();
         $this->currentUser->login($originalUser);
         $this->session->remove($sessionKey);
         $this->eventDispatcher->dispatch(new AfterLoginEvent($originalUser, previousSessionId: $previousSessionId));
-        $this->eventDispatcher->dispatch(new UserEvent($originalUser));
+        $this->eventDispatcher->dispatch(new UserEvent($originalUser, UserEvent::RESTORE_IDENTITY));
 
         return ServiceResult::success();
     }
@@ -107,11 +106,10 @@ final readonly class SwitchIdentityService
             $this->session->set($sessionKey, $currentIdentity->getId());
         }
 
-        $this->eventDispatcher->dispatch(new UserEvent($targetUser));
         $previousSessionId = $this->session->getId();
         $this->currentUser->login($targetUser);
         $this->eventDispatcher->dispatch(new AfterLoginEvent($targetUser, previousSessionId: $previousSessionId));
-        $this->eventDispatcher->dispatch(new UserEvent($targetUser));
+        $this->eventDispatcher->dispatch(new UserEvent($targetUser, UserEvent::SWITCH_IDENTITY));
 
         return ServiceResult::success();
     }

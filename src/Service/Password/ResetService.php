@@ -26,13 +26,11 @@ final readonly class ResetService
             return false;
         }
 
-        $this->eventDispatcher->dispatch(new UserEvent($user));
-
         $this->passwordHistoryService->applyPasswordChange($user, $password);
 
         $this->handleToken($userToken);
 
-        $this->eventDispatcher->dispatch(new UserEvent($user));
+        $this->eventDispatcher->dispatch(new UserEvent($user, UserEvent::PASSWORD_RESET));
         return true;
     }
 

@@ -28,14 +28,16 @@ Stats for Nerds
 ## Table of Contents
 
 1. [Features](#features)
-2. [Quick Start](#quick-start)
-3. [Configuration](#configuration)
-4. [Social Authentication](#social-authentication)
-5. [Middleware](#middleware)
-6. [RBAC](#rbac)
-7. [Routes](#routes)
-8. [Events & Listeners](#events--listeners)
-9. [Testing](#testing)
+2. [Requirements](#requirements)
+3. [Quick Start](#quick-start)
+4. [Configuration](#configuration)
+5. [Social Authentication](#social-authentication)
+6. [Console commands](#console-commands)
+7. [Middleware](#middleware)
+8. [RBAC](#rbac)
+9. [Routes](#routes)
+10. [Events & Listeners](#events--listeners)
+11. [Testing](#testing)
 
 ## Features
 
@@ -57,6 +59,7 @@ Stats for Nerds
 ## Requirements
 
 - PHP >= 8.3
+- `ext-intl`
 - Yii3 packages (yiisoft/db, yiisoft/rbac, yiisoft/view, yiisoft/validator, etc.)
 
 ## Quick Start
@@ -347,22 +350,23 @@ With credentials configured:
 
 ## Middleware
 
-The extension ships six PSR-15 middleware classes for access control:
+The extension ships seven PSR-15 middleware classes for session handling and access control:
 
 | Middleware | Description | Auto-registered on the extension's own routes? |
 |-----------|-------------|-----------|
 | `AccessRuleMiddleware` | Redirects guests to the login page (`voyti/session-login`); checks `administratorPermissionName` for admin access | Yes — on `admin/*` (users and RBAC management) and the REST API group |
 | `ApiTokenAuthenticationMiddleware` | Resolves the `Authorization: Bearer <token>` header to a user for that request only (no session); returns `401` if missing/invalid | Yes — on the REST API group, ahead of `AccessRuleMiddleware`, in place of the session cookie |
+| `RememberMeMiddleware` | Logs a guest back in from the `autoLogin` remember-me cookie, then writes the cookie back onto the response — either the immediate reissue after a session rotation or the periodic sliding-expiration refresh. Must run after session middleware and before the enforcement middleware below, since those need `CurrentUser` already resolved | Yes |
 | `SessionRevocationEnforceMiddleware` | Logs out and redirects to the login page (`voyti/session-login`) when the current session's `user_sessions` row is gone — i.e. it was terminated from the sessions list (self-service or admin) on another request. Without this, terminating a session only removed the row; the browser that owned it stayed logged in until its PHP session expired on its own. Otherwise touches the row's `updated_at` on every request, so the sessions list can show "last seen" activity per device. | Yes |
 | `PasswordAgeEnforceMiddleware` | Redirects to the account settings page (`voyti/account-update`) when `maxPasswordAge` is exceeded | Yes, when `enablePasswordExpiration` is `true` — on the extension's whole web route group |
 | `TwoFactorAuthenticationEnforceMiddleware` | Redirects to the account settings page (`voyti/account-update`) when required permissions are assigned but 2FA isn't enabled | No |
-| `VoytiMiddleware` | Convenience wrapper that chains `SessionRevocationEnforceMiddleware`, `PasswordAgeEnforceMiddleware`, and `TwoFactorAuthenticationEnforceMiddleware` in a single middleware entry — add this to your app's route group instead of the three individual ones (see [Site-wide enforcement](#site-wide-enforcement)) | No |
+| `VoytiMiddleware` | Convenience wrapper that chains `RememberMeMiddleware`, `SessionRevocationEnforceMiddleware`, `PasswordAgeEnforceMiddleware`, and `TwoFactorAuthenticationEnforceMiddleware` in a single middleware entry — add this to your app's route group instead of the four individual ones (see [Site-wide enforcement](#site-wide-enforcement)) | No |
 
 ### Site-wide enforcement
 
-The auto-registration above only covers routes *this extension defines* — `config/routes.php` can't attach middleware to routes your host app defines itself. Without it, a user with an expired password, missing 2FA, or a revoked session can still browse your app's own dashboard, home page, or any other route outside this extension.
+The auto-registration above only covers routes *this extension defines* — `config/routes.php` can't attach middleware to routes your host app defines itself. Without it, a user with an expired password, missing 2FA, or a revoked session can still browse your app's own dashboard, home page, or any other route outside this extension — and a guest with a valid remember-me cookie won't be logged back in there either.
 
-Add `VoytiMiddleware` (or the individual middlewares, if you only need a subset) to the `Group` wrapping your app's own routes — see the [Register routes](#3-register-routes) example above — or to a global middleware pipeline above routing if your app has one; just place it after session middleware so `CurrentUser` is resolvable. Each sub-middleware checks its own feature flag, so disabled features are no-ops. Keep it scoped to your own routes, not the `voyti-routes` group: `voyti/account-update` lives inside `voyti-routes`, and `TwoFactorAuthenticationEnforceMiddleware` has no exemption for it, so wrapping `voyti-routes` too would redirect a user into a loop the moment they try to reach settings to fix the problem.
+Add `VoytiMiddleware` to the `Group` wrapping your app's own routes — see the [Register routes](#3-register-routes) example above — or to a global middleware pipeline above routing if your app has one; make sure to place it after `SessionMiddleware` so `CurrentUser` is resolvable. Each sub-middleware checks its own feature flag, so disabled features are no-ops. Keep it scoped to your own routes, not the `voyti-routes` group.
 
 ## RBAC
 
@@ -441,6 +445,17 @@ The library does not provide a menu model or navigation contract. It only expose
 | `voyti/admin-rbac-rules-delete` | `POST` | `admin/rbac/rules/delete/{name}` | Delete rule |
 | `voyti/admin-audit-log` | `GET` | `admin/audit-log/` | Audit log of admin actions (RBAC and user management changes). Populated when `enableAuditLog` is `true` |
 
+The REST API routes below live in a separate route group mounted at `adminRestPrefix` and are only registered when `enableRestApi` is `true` — see [REST API](#rest-api).
+
+| Route name | Method | Path | Purpose |
+|------------|--------|------|---------|
+| `voyti/api-openapi` | `GET` | `openapi.json` | OpenAPI 3.1 spec (JSON). Public, so tooling (Swagger UI, codegen) can fetch it without a Bearer token. |
+| `voyti/api-v1-users-index` | `GET` | `v1/users` | List users |
+| `voyti/api-v1-users-view` | `GET` | `v1/users/{id}` | View a user |
+| `voyti/api-v1-users-create` | `POST` | `v1/users` | Create a user |
+| `voyti/api-v1-users-update` | `PATCH` | `v1/users/{id}` | Update a user |
+| `voyti/api-v1-users-delete` | `DELETE` | `v1/users/{id}` | Delete a user |
+
 ## Events & Listeners
 
 Voyti dispatches events at key points in the user lifecycle, allowing your application to react, log, or extend behaviour. Each event carries a `const string` name to distinguish before/after variants. Attach your own listeners through the Yii3 event dispatcher configuration.
@@ -456,9 +471,9 @@ Voyti dispatches events at key points in the user lifecycle, allowing your appli
 
 Dispatched by the library, but nothing consumes them by default — attach your own listener via the event dispatcher configuration if you need to react to them.
 
-- **UserEvent** — Variants: create, delete, block/unblock, confirmation, account/profile update, switch identity, logout
+- **UserEvent** — Carries a `getType()` discriminator: `UserEvent::CREATE`, `BLOCK`, `UNBLOCK`, `CONFIRM`, `SWITCH_IDENTITY`, `RESTORE_IDENTITY`, `PASSWORD_RESET`, or `DELETE`
 - **UserProfileEvent** — Dispatched when a user updates their profile
-- **GdprEvent** — Specifically: delete operation
+- **GdprEvent** — Dispatched after a user's account is anonymized (not on hard delete, which fires `UserEvent` with type `UserEvent::DELETE`)
 - **ResetPasswordEvent** — Password reset flow
 - **SessionEvent** — Dispatched with type `SESSION_CREATED` on login, and with type `SESSION_TERMINATED` whenever a user's sessions are terminated (account deletion, GDPR anonymization, or being blocked). The `SESSION_UPDATED` type is defined but not currently dispatched.
 
@@ -473,6 +488,9 @@ composer infection
 
 # Static analysis
 composer psalm
+
+# Code style fixer
+composer php-cs-fixer
 ```
 
 ## License

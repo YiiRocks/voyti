@@ -14,7 +14,6 @@ use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
 use YiiRocks\Voyti\Event\Session\SessionEvent;
-use YiiRocks\Voyti\Event\User\FormEvent;
 use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Helper\LoginMetadataHelper;
 use YiiRocks\Voyti\Model\Form\Auth\LoginForm;
@@ -253,7 +252,6 @@ final readonly class SessionController
                     LoginMetadataHelper::recordLogin($user, $request->getServerParams(), $this->config);
                     $this->pendingSocialAccountService->connect($user);
 
-                    $this->eventDispatcher->dispatch(new FormEvent($form));
                     $this->eventDispatcher->dispatch(new AfterLoginEvent($user, previousSessionId: $previousSessionId));
 
                     $response = $this->homeRedirectResponse();

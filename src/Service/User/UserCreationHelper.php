@@ -63,8 +63,6 @@ final readonly class UserCreationHelper
      */
     public function persistAndNotify(User $user, string $password, bool $skipConfirmation = false): bool
     {
-        $this->eventDispatcher->dispatch(new UserEvent($user));
-
         $userProfile = new UserProfile();
 
         if ($this->config->enableEmailConfirmation && !$skipConfirmation) {
@@ -76,6 +74,7 @@ final readonly class UserCreationHelper
             $this->passwordHistoryService->record($user);
             $this->mailService->sendConfirmation($user, $userToken);
 
+            $this->eventDispatcher->dispatch(new UserEvent($user, UserEvent::CREATE));
             $this->eventDispatcher->dispatch(new AfterRegisterEvent($user));
             return true;
         }
@@ -85,6 +84,7 @@ final readonly class UserCreationHelper
         $this->passwordHistoryService->record($user);
         $this->mailService->sendWelcome($user, $password);
 
+        $this->eventDispatcher->dispatch(new UserEvent($user, UserEvent::CREATE));
         $this->eventDispatcher->dispatch(new AfterRegisterEvent($user));
         return false;
     }

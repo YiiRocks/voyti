@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Service\User;
 
 use PHPUnit\Framework\TestCase;
-use Psr\EventDispatcher\EventDispatcherInterface;
+use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\User\BlockService;
 use YiiRocks\Voyti\Service\UserSession\TerminateUserSessionsService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class BlockServiceTest extends TestCase
@@ -28,8 +29,7 @@ final class BlockServiceTest extends TestCase
 
     public function testRunWithBlockedUserUnblocks(): void
     {
-        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $eventDispatcher->expects($this->exactly(2))->method('dispatch');
+        $eventDispatcher = new EventCaptureDispatcher();
         $terminateService = $this->createMock(TerminateUserSessionsService::class);
         $terminateService->expects($this->never())->method('run');
 
@@ -41,12 +41,15 @@ final class BlockServiceTest extends TestCase
 
         self::assertTrue($service->run($user));
         self::assertNull($user->getBlockedAt());
+        self::assertCount(1, $eventDispatcher->getEvents());
+        $event = $eventDispatcher->getEvent(UserEvent::class);
+        self::assertNotNull($event);
+        self::assertSame(UserEvent::UNBLOCK, $event->getType());
     }
 
     public function testRunWithUnblockedUserBlocksAndTerminatesSessions(): void
     {
-        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $eventDispatcher->expects($this->exactly(2))->method('dispatch');
+        $eventDispatcher = new EventCaptureDispatcher();
         $terminateService = $this->createMock(TerminateUserSessionsService::class);
         $terminateService->expects($this->once())->method('run');
 
@@ -56,6 +59,10 @@ final class BlockServiceTest extends TestCase
 
         self::assertTrue($service->run($user));
         self::assertNotNull($user->getBlockedAt());
+        self::assertCount(1, $eventDispatcher->getEvents());
+        $event = $eventDispatcher->getEvent(UserEvent::class);
+        self::assertNotNull($event);
+        self::assertSame(UserEvent::BLOCK, $event->getType());
     }
 
     private function createSavedUser(): User

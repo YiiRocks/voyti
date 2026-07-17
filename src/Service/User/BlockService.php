@@ -19,18 +19,13 @@ final readonly class BlockService
 
     public function run(User $user): bool
     {
-        if ($user->isBlocked()) {
-            $this->eventDispatcher->dispatch(new UserEvent($user));
-            $user->setBlockedAt(null);
-        } else {
-            $this->eventDispatcher->dispatch(new UserEvent($user));
-            $user->setBlockedAt(time());
-        }
-
+        $wasBlocked = $user->isBlocked();
+        $user->setBlockedAt($wasBlocked ? null : time());
         $user->save();
-        $this->eventDispatcher->dispatch(new UserEvent($user));
 
-        if ($user->isBlocked()) {
+        $this->eventDispatcher->dispatch(new UserEvent($user, $wasBlocked ? UserEvent::UNBLOCK : UserEvent::BLOCK));
+
+        if (!$wasBlocked) {
             $this->terminateUserSessionsService->run($user->getIdOrZero());
         }
 

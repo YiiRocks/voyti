@@ -72,7 +72,6 @@ final readonly class PrivacyController
             if ($result->isValid() && !($identity instanceof GuestIdentityInterface)) {
                 $user = User::findById((int) ($identity->getId() ?? 0));
                 if ($user !== null &&         $this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
-                    $this->eventDispatcher->dispatch(new GdprEvent($user));
                     $prefix = $this->config->gdprAnonymizePrefix . ($user->getId() ?? '');
                     $user->setEmail($prefix . '@example.com');
                     $user->setUsername($prefix);
@@ -104,9 +103,8 @@ final readonly class PrivacyController
                 $user = User::findById((int) ($identity->getId() ?? 0));
                 if ($user !== null && $this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
                     $userId = $user->getIdOrZero();
-                    $this->eventDispatcher->dispatch(new UserEvent($user));
                     $user->delete();
-                    $this->eventDispatcher->dispatch(new UserEvent($user));
+                    $this->eventDispatcher->dispatch(new UserEvent($user, UserEvent::DELETE));
                     $this->terminateUserSessionsService->run($userId);
                     return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.account_deleted', category: 'voyti')]);
                 }

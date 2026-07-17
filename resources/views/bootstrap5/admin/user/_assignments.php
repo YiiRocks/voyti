@@ -20,6 +20,9 @@ use Yiisoft\View\WebView;
  * @var string $csrf
  */
 
+/** @psalm-suppress InvalidScope */
+$this->setTitle($translator->translate('voyti.view.assignments.title', category: 'voyti'));
+
 echo Html::div()->open();
 /** @psalm-suppress InvalidScope */
 echo $this->render('../../shared/_admin-menu', ['url' => $url, 'translator' => $translator]);

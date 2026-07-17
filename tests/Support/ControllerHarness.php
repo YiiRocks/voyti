@@ -322,7 +322,6 @@ final class ControllerHarness
             userRegisterService: $registerService,
             confirmationService: $confirmationService,
             validator: $validator,
-            eventDispatcher: $this->eventDispatcher,
             url: $this->url,
             config: $this->config,
             pendingSocialAccountService: $pendingSocialAccountService,

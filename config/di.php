@@ -15,6 +15,7 @@ use YiiRocks\Voyti\Http\ClientInterface;
 use YiiRocks\Voyti\Http\Psr18Client;
 use YiiRocks\Voyti\Listener;
 use YiiRocks\Voyti\Middleware\PasswordAgeEnforceMiddleware;
+use YiiRocks\Voyti\Middleware\RememberMeMiddleware;
 use YiiRocks\Voyti\Middleware\RouteParametersResolver;
 use YiiRocks\Voyti\Middleware\SessionRevocationEnforceMiddleware;
 use YiiRocks\Voyti\Middleware\TwoFactorAuthenticationEnforceMiddleware;
@@ -76,12 +77,13 @@ return [
     IdentityRepositoryInterface::class => IdentityAdapter::class,
     IdentityWithTokenRepositoryInterface::class => IdentityAdapter::class,
 
-    // PSR-15 middleware: VoytiMiddleware chains the three enforcement middleware.
+    // PSR-15 middleware: VoytiMiddleware chains the remember-me and enforcement middleware.
     VoytiMiddleware::class => fn (
+        RememberMeMiddleware $rememberMe,
         PasswordAgeEnforceMiddleware $passwordAge,
         SessionRevocationEnforceMiddleware $sessionRevocation,
         TwoFactorAuthenticationEnforceMiddleware $twoFactorAuth,
-    ) => new VoytiMiddleware($passwordAge, $sessionRevocation, $twoFactorAuth),
+    ) => new VoytiMiddleware($rememberMe, $passwordAge, $sessionRevocation, $twoFactorAuth),
 
     // Auditing.
     AuditLogService::class => AuditLogService::class,

@@ -6,6 +6,7 @@ namespace YiiRocks\Voyti\tests\Service\Password;
 
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
+use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserPasswordHistory;
 use YiiRocks\Voyti\Model\UserToken;
@@ -13,6 +14,7 @@ use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\Password\ResetService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 use Yiisoft\Security\PasswordHasher;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
@@ -33,7 +35,7 @@ final class ResetServiceTest extends TestCase
     public function testRunDeletesProvidedToken(): void
     {
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $eventDispatcher->expects($this->exactly(3))->method('dispatch');
+        $eventDispatcher->expects($this->exactly(2))->method('dispatch');
 
         $user = $this->createUser('tokenuser', 'token@example.com');
         $userToken = $this->createUserToken((int) $user->getId(), 'tokencode');
@@ -109,19 +111,22 @@ final class ResetServiceTest extends TestCase
 
     public function testRunWithoutUserToken(): void
     {
-        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $eventDispatcher->expects($this->exactly(2))->method('dispatch');
+        $eventDispatcher = new EventCaptureDispatcher();
 
         $user = $this->createUser('testuser', 'test@example.com');
 
         $result = $this->createService($eventDispatcher)->run('newpassword', $user, null);
         self::assertTrue($result);
+        self::assertCount(1, $eventDispatcher->getEvents());
+        $event = $eventDispatcher->getEvent(UserEvent::class);
+        self::assertNotNull($event);
+        self::assertSame(UserEvent::PASSWORD_RESET, $event->getType());
     }
 
     public function testRunWithUserToken(): void
     {
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $eventDispatcher->expects($this->exactly(3))->method('dispatch');
+        $eventDispatcher->expects($this->exactly(2))->method('dispatch');
 
         $user = $this->createUser('testuser', 'test@example.com');
         $userToken = $this->createUserToken((int) $user->getId(), 'tokencode');

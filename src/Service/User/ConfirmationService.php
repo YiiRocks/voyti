@@ -61,14 +61,12 @@ final readonly class ConfirmationService
             return false;
         }
 
-        $this->eventDispatcher->dispatch(new UserEvent($user));
-
         $user->setConfirmedAt(time());
         $user->save();
 
         UserToken::deleteAllByUserIdAndType($user->getIdOrZero(), UserToken::TYPE_CONFIRMATION);
 
-        $this->eventDispatcher->dispatch(new UserEvent($user));
+        $this->eventDispatcher->dispatch(new UserEvent($user, UserEvent::CONFIRM));
         return true;
     }
 }

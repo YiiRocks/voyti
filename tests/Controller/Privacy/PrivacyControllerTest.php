@@ -11,6 +11,8 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 use YiiRocks\Voyti\Controller\Privacy\PrivacyController;
+use YiiRocks\Voyti\Event\Gdpr\GdprEvent;
+use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserProfile;
 use YiiRocks\Voyti\Model\UserSession;
@@ -132,6 +134,9 @@ final class PrivacyControllerTest extends TestCase
         $this->assertNotNull($updated);
         $this->assertTrue($updated->isAnonymized());
         $this->assertTrue($updated->isBlocked());
+        $event = $this->harness->getEventDispatcher()->getEvent(GdprEvent::class);
+        $this->assertNotNull($event);
+        $this->assertTrue($event->getUser()->isAnonymized());
     }
 
     public function testDeleteGetShowsForm(): void
@@ -233,6 +238,9 @@ final class PrivacyControllerTest extends TestCase
 
         $this->assertSame($response, $result);
         $this->assertNull(User::findById($userId));
+        $event = $this->harness->getEventDispatcher()->getEvent(UserEvent::class);
+        $this->assertNotNull($event);
+        $this->assertSame(UserEvent::DELETE, $event->getType());
     }
 
     public function testExportIncludesSessionsAndSocialAccounts(): void

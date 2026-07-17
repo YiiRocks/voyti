@@ -6,12 +6,14 @@ namespace YiiRocks\Voyti\tests\Service\User;
 
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
+use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 
 #[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
 final class ConfirmationServiceTest extends TestCase
@@ -140,7 +142,7 @@ final class ConfirmationServiceTest extends TestCase
     public function testRunDeletesOnlyConfirmationTokens(): void
     {
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $eventDispatcher->expects($this->exactly(2))->method('dispatch');
+        $eventDispatcher->expects($this->exactly(1))->method('dispatch');
 
         $user = $this->createUser('delete_tokens', 'delete_tokens@example.com');
         $userId = (int) $user->getId();
@@ -169,7 +171,7 @@ final class ConfirmationServiceTest extends TestCase
     public function testRunPersistsConfirmation(): void
     {
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $eventDispatcher->expects($this->exactly(2))->method('dispatch');
+        $eventDispatcher->expects($this->exactly(1))->method('dispatch');
 
         $user = $this->createUser('persist_confirm', 'persist_confirm@example.com');
 
@@ -182,13 +184,16 @@ final class ConfirmationServiceTest extends TestCase
 
     public function testRunSuccess(): void
     {
-        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $eventDispatcher->expects($this->exactly(2))->method('dispatch');
+        $eventDispatcher = new EventCaptureDispatcher();
 
         $user = $this->createUser('unconfirmed', 'unconfirmed@example.com');
 
         self::assertTrue($this->createService($eventDispatcher)->run($user));
         self::assertNotNull($user->getConfirmedAt());
+        self::assertCount(1, $eventDispatcher->getEvents());
+        $event = $eventDispatcher->getEvent(UserEvent::class);
+        self::assertNotNull($event);
+        self::assertSame(UserEvent::CONFIRM, $event->getType());
     }
 
     private function createService(?EventDispatcherInterface $eventDispatcher = null): ConfirmationService
