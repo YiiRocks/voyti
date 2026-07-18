@@ -174,7 +174,7 @@ final class EmailChangeServiceTest extends TestCase
         $config = new ModuleConfig(tokenConfirmationLifespan: 999999);
         $service = new EmailChangeService($config, new UserTokenFactory(), $this->createStub(MailService::class));
 
-        $other = $this->createSavedUser();
+        $other = $this->createSavedUser('otheruser');
         $ref = new \ReflectionProperty(User::class, 'email');
         $ref->setValue($other, 'existing@example.com');
         $other->save();
@@ -477,10 +477,10 @@ final class EmailChangeServiceTest extends TestCase
         return $token;
     }
 
-    private function createSavedUser(): User
+    private function createSavedUser(string $username = 'testuser'): User
     {
         $user = new User();
-        $user->setUsername('testuser');
+        $user->setUsername($username);
         $user->setEmail('old@example.com');
         $user->setPasswordHash('hash');
         $user->setAuthKey('key');

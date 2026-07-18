@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Service;
 
 use PHPUnit\Framework\TestCase;
-use YiiRocks\Voyti\Model\AuditLog;
+use YiiRocks\Voyti\Model\UserAuditLog;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\AuditLogService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
@@ -30,7 +30,7 @@ final class AuditLogServiceTest extends TestCase
 
         $service->log(1, 'user.create');
 
-        self::assertCount(0, AuditLog::search()->all());
+        self::assertCount(0, UserAuditLog::search()->all());
     }
 
     public function testLogPersistsMinimalEntry(): void
@@ -39,7 +39,7 @@ final class AuditLogServiceTest extends TestCase
 
         $service->log(1, 'user.create');
 
-        $logs = AuditLog::search()->all();
+        $logs = UserAuditLog::search()->all();
         self::assertCount(1, $logs);
         self::assertSame(1, $logs[0]->getActorUserId());
         self::assertSame('user.create', $logs[0]->getAction());
@@ -55,7 +55,7 @@ final class AuditLogServiceTest extends TestCase
 
         $service->log(null, 'user.create', targetUserId: 5);
 
-        $logs = AuditLog::search()->all();
+        $logs = UserAuditLog::search()->all();
         self::assertCount(1, $logs);
         self::assertNull($logs[0]->getActorUserId());
         self::assertSame(5, $logs[0]->getTargetUserId());
@@ -67,7 +67,7 @@ final class AuditLogServiceTest extends TestCase
 
         $service->log(1, 'rbac.role.update', targetUserId: null, targetName: 'editor', context: ['previousName' => 'old-editor']);
 
-        $logs = AuditLog::search()->all();
+        $logs = UserAuditLog::search()->all();
         self::assertCount(1, $logs);
         self::assertSame('editor', $logs[0]->getTargetName());
         self::assertSame('{"previousName":"old-editor"}', $logs[0]->getContext());

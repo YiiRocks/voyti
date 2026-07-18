@@ -12,7 +12,7 @@ use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Controller\RequireUserTrait;
 use YiiRocks\Voyti\Event\Session\SessionEvent;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Model\UserSession;
+use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -48,7 +48,7 @@ final readonly class SessionController
         }
 
         return $this->renderView('account/sessions', [
-            'sessions' => UserSession::findByUserId($user->getIdOrZero()),
+            'sessions' => UserSessions::findByUserId($user->getIdOrZero()),
             'currentSessionId' => $this->session->getId(),
             'config' => $this->config,
             'flash' => $this->flash,
@@ -63,7 +63,7 @@ final readonly class SessionController
             return $user;
         }
 
-        $userSession = UserSession::findByUserIdAndSessionId($user->getIdOrZero(), $sessionId);
+        $userSession = UserSessions::findByUserIdAndSessionId($user->getIdOrZero(), $sessionId);
         if ($userSession === null) {
             return $this->renderError('voyti.settings.session_not_found');
         }

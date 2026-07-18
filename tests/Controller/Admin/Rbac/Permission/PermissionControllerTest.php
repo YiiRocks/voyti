@@ -24,6 +24,7 @@ use Yiisoft\Rbac\ItemsStorageInterface;
 use Yiisoft\Rbac\Manager;
 use Yiisoft\Rbac\ManagerInterface;
 use Yiisoft\Rbac\Permission;
+use Yiisoft\Rbac\Role;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
@@ -66,6 +67,28 @@ final class PermissionControllerTest extends TestCase
     protected function tearDown(): void
     {
         $this->tearDownDatabase();
+    }
+
+    public function testCreateGetShowsAvailableChildrenExcludingRoles(): void
+    {
+        $controller = $this->createController();
+        $this->itemsStorage->add(new Permission('other-permission'));
+        $this->itemsStorage->add(new Role('some-role'));
+
+        $request = new ServerRequest('GET', '/');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('admin/rbac/create', $this->callback(
+                static fn (array $params): bool => array_keys($params['availableChildren']) === ['other-permission'],
+            ))
+            ->willReturn($response);
+
+        $result = $controller->create($request, 'permission', 'admin-rbac-permissions');
+
+        $this->assertSame($response, $result);
     }
 
     public function testCreateGetShowsForm(): void
@@ -124,6 +147,29 @@ final class PermissionControllerTest extends TestCase
         $this->assertSame($response, $result2);
     }
 
+    public function testCreatePostWithRoleAsChildShowsErrors(): void
+    {
+        $controller = $this->createController();
+        $this->itemsStorage->add(new Role('some-role'));
+
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['permission' => ['name' => 'edit-posts', 'description' => '', 'rule' => '', 'children' => ['some-role']]]);
+
+        $this->validator->method('validate')->willReturn(new Result());
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('admin/rbac/create', $this->callback(
+                static fn (array $params): bool => ($params['errors']['children'] ?? []) !== [],
+            ))
+            ->willReturn($response);
+
+        $result = $controller->create($request, 'permission', 'admin-rbac-permissions');
+
+        $this->assertSame($response, $result);
+    }
+
     public function testCreatePostWithRule(): void
     {
         $controller = $this->createController();
@@ -170,6 +216,29 @@ final class PermissionControllerTest extends TestCase
             ->willReturn($response);
 
         $result = $controller->index($request, 'permission', 'admin-rbac-permissions');
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testUpdateGetShowsAvailableChildrenExcludingRolesAndSelf(): void
+    {
+        $controller = $this->createController();
+        $this->itemsStorage->add(new Permission('edit-posts'));
+        $this->itemsStorage->add(new Permission('other-permission'));
+        $this->itemsStorage->add(new Role('some-role'));
+
+        $request = new ServerRequest('GET', '/');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('admin/rbac/update', $this->callback(
+                static fn (array $params): bool => array_keys($params['availableChildren']) === ['other-permission'],
+            ))
+            ->willReturn($response);
+
+        $result = $controller->update($request, 'edit-posts', 'permission', 'admin-rbac-permissions');
 
         $this->assertSame($response, $result);
     }

@@ -8,8 +8,9 @@ use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
-use YiiRocks\Voyti\Model\AuditLog;
 use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\Model\UserAuditLog;
+use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Admin\DashboardService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
@@ -40,6 +41,26 @@ final class DashboardServiceTest extends TestCase
         $this->tearDownDatabase();
     }
 
+    public function testGetStatsActiveSessionsTrendCountsSessionsWithinEachWindowBoundaryInclusive(): void
+    {
+        $lifespan = (new ModuleConfig())->rememberLoginLifespan;
+        $user = $this->createUser('sessions-user', 'sessions-user@example.com', confirmed: true, blocked: false);
+        $userId = (int) $user->getId();
+
+        do {
+            (new UserSessions())->deleteAll(['user_id' => $userId]);
+            $now = time();
+            foreach ($this->trendBoundaryOffsets($lifespan) as $label => $offset) {
+                $this->createUserSession($userId, $label, $now + $offset);
+            }
+            $stats = $this->createService()->getStats();
+        } while (time() !== $now);
+
+        self::assertSame(2, $stats['activeSessions']['oneDay']);
+        self::assertSame(4, $stats['activeSessions']['sevenDays']);
+        self::assertSame(6, $stats['activeSessions']['lifespan']);
+    }
+
     public function testGetStatsCountsRbacItemsAndDistinctRuleNames(): void
     {
         $this->itemsStorage->add(new Role('admin'));
@@ -66,6 +87,26 @@ final class DashboardServiceTest extends TestCase
         self::assertSame(3, $stats['userTotal']);
         self::assertSame(1, $stats['userBlocked']);
         self::assertSame(1, $stats['userUnconfirmed']);
+    }
+
+    public function testGetStatsNewRegistrationsTrendCountsUsersWithinEachWindowBoundaryInclusive(): void
+    {
+        $lifespan = (new ModuleConfig())->rememberLoginLifespan;
+        $offsets = $this->trendBoundaryOffsets($lifespan);
+        $emails = array_map(static fn (string $label): string => $label . '@example.com', array_keys($offsets));
+
+        do {
+            (new User())->deleteAll(['email' => $emails]);
+            $now = time();
+            foreach ($offsets as $label => $offset) {
+                $this->createUser($label, $label . '@example.com', confirmed: true, blocked: false, createdAt: $now + $offset);
+            }
+            $stats = $this->createService()->getStats();
+        } while (time() !== $now);
+
+        self::assertSame(2, $stats['newRegistrations']['oneDay']);
+        self::assertSame(4, $stats['newRegistrations']['sevenDays']);
+        self::assertSame(6, $stats['newRegistrations']['lifespan']);
     }
 
     public function testGetStatsRecentAuditLogsEmptyWhenNoneExist(): void
@@ -103,14 +144,14 @@ final class DashboardServiceTest extends TestCase
 
     public function testGetStatsRecentAuditLogsTargetLabelIncludesUserIdOnlyWhenPresent(): void
     {
-        $withTarget = new AuditLog();
+        $withTarget = new UserAuditLog();
         $withTarget->setAction('user.block');
         $withTarget->setTargetName('someone');
         $withTarget->setTargetUserId(42);
         $withTarget->setCreatedAt(2);
         $withTarget->save();
 
-        $withoutTarget = new AuditLog();
+        $withoutTarget = new UserAuditLog();
         $withoutTarget->setAction('system.cleanup');
         $withoutTarget->setCreatedAt(1);
         $withoutTarget->save();
@@ -119,6 +160,24 @@ final class DashboardServiceTest extends TestCase
 
         self::assertSame('someone (#42)', $stats['recentAuditLogs'][0]['targetLabel']);
         self::assertSame('', $stats['recentAuditLogs'][1]['targetLabel']);
+    }
+
+    public function testGetStatsRememberLifespanDaysRoundsDownBelowHalfADay(): void
+    {
+        $config = new ModuleConfig(rememberLoginLifespan: 100000);
+
+        $stats = $this->createService($config)->getStats();
+
+        self::assertSame(1, $stats['rememberLifespanDays']);
+    }
+
+    public function testGetStatsRememberLifespanDaysRoundsUpAboveHalfADay(): void
+    {
+        $config = new ModuleConfig(rememberLoginLifespan: 130000);
+
+        $stats = $this->createService($config)->getStats();
+
+        self::assertSame(2, $stats['rememberLifespanDays']);
     }
 
     public function testGetStatsUserUnconfirmedIsNullWhenEmailConfirmationDisabled(): void
@@ -132,7 +191,7 @@ final class DashboardServiceTest extends TestCase
 
     private function createLog(string $action, int $createdAt): void
     {
-        $log = new AuditLog();
+        $log = new UserAuditLog();
         $log->setAction($action);
         $log->setCreatedAt($createdAt);
         $log->save();
@@ -154,7 +213,7 @@ final class DashboardServiceTest extends TestCase
         return new DashboardService($authHelper, $config, $this->itemsStorage, $translator);
     }
 
-    private function createUser(string $username, string $email, bool $confirmed, bool $blocked): User
+    private function createUser(string $username, string $email, bool $confirmed, bool $blocked, ?int $createdAt = null): User
     {
         $user = new User();
         $user->setUsername($username);
@@ -163,10 +222,37 @@ final class DashboardServiceTest extends TestCase
         $user->setAuthKey('key');
         $user->setConfirmedAt($confirmed ? time() : null);
         $user->setBlockedAt($blocked ? time() : null);
-        $user->setCreatedAt(time());
+        $user->setCreatedAt($createdAt ?? time());
         $user->setUpdatedAt(time());
         $user->save();
 
         return $user;
+    }
+
+    private function createUserSession(int $userId, string $sessionId, int $createdAt): void
+    {
+        $session = new UserSessions();
+        $session->setUserId($userId);
+        $session->setSessionId($sessionId);
+        $session->setIp('127.0.0.1');
+        $session->setCreatedAt($createdAt);
+        $session->setUpdatedAt($createdAt);
+        $session->save();
+    }
+
+    /**
+     * @return array<string, int> offset in seconds relative to "now", keyed by fixture label
+     */
+    private function trendBoundaryOffsets(int $lifespan): array
+    {
+        return [
+            'within-day' => 0,
+            'at-day-cutoff' => -86400,
+            'just-outside-day' => -86400 - 1,
+            'at-week-cutoff' => -(86400 * 7),
+            'just-outside-week' => -(86400 * 7) - 1,
+            'at-lifespan-cutoff' => -$lifespan,
+            'outside-lifespan' => -$lifespan - 1,
+        ];
     }
 }

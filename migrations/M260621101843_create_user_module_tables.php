@@ -2,16 +2,29 @@
 
 declare(strict_types=1);
 
+use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Db\Migration\MigrationBuilder;
 use Yiisoft\Db\Migration\RevertibleMigrationInterface;
+use Yiisoft\Db\Migration\TransactionalMigrationInterface;
 use Yiisoft\Db\Schema\Column\ColumnBuilder;
+use Yiisoft\Security\PasswordHasher;
+use Yiisoft\Security\Random;
 
-final class M260621101843_create_user_module_tables implements RevertibleMigrationInterface
+final class M260621101843_create_user_module_tables implements RevertibleMigrationInterface, TransactionalMigrationInterface
 {
+    public const ROLE_NAME = 'administrator';
+    public const SEED_EMAIL = 'admin@example.com';
+    public const SEED_USERNAME = 'admin';
+
+    public function __construct(
+        private readonly ModuleConfig $config,
+        private readonly PasswordHasher $passwordHasher,
+    ) {
+    }
 
     public function down(MigrationBuilder $b): void
     {
-        $b->dropTable('{{%audit_log}}');
+        $b->dropTable('{{%user_audit_log}}');
         $b->dropTable('{{%user_password_history}}');
         $b->dropTable('{{%user_backup_code}}');
         $b->dropTable('{{%user_sessions}}');
@@ -56,6 +69,7 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
             'public_email' => ColumnBuilder::string(255),
             'timezone' => ColumnBuilder::string(40),
             'website' => ColumnBuilder::string(255),
+            'FOREIGN KEY ([[user_id]]) REFERENCES {{%user}} ([[id]]) ON DELETE CASCADE ON UPDATE RESTRICT',
         ]);
 
         $b->createTable('{{%user_social_account}}', [
@@ -68,6 +82,7 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
             'username' => ColumnBuilder::string(255),
             'data' => ColumnBuilder::text(),
             'created_at' => ColumnBuilder::integer()->notNull(),
+            'FOREIGN KEY ([[user_id]]) REFERENCES {{%user}} ([[id]]) ON DELETE CASCADE ON UPDATE RESTRICT',
         ]);
 
         $b->createTable('{{%user_token}}', [
@@ -75,6 +90,8 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
             'code' => ColumnBuilder::string(64)->notNull(),
             'type' => ColumnBuilder::smallint()->notNull(),
             'created_at' => ColumnBuilder::integer()->notNull(),
+            'PRIMARY KEY ([[user_id]], [[code]], [[type]])',
+            'FOREIGN KEY ([[user_id]]) REFERENCES {{%user}} ([[id]]) ON DELETE CASCADE ON UPDATE RESTRICT',
         ]);
 
         $b->createTable('{{%user_sessions}}', [
@@ -84,6 +101,8 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
             'ip' => ColumnBuilder::string(45)->notNull(),
             'created_at' => ColumnBuilder::integer()->notNull(),
             'updated_at' => ColumnBuilder::integer()->notNull(),
+            'PRIMARY KEY ([[user_id]], [[session_id]])',
+            'FOREIGN KEY ([[user_id]]) REFERENCES {{%user}} ([[id]]) ON DELETE CASCADE ON UPDATE RESTRICT',
         ]);
 
         $b->createTable('{{%user_backup_code}}', [
@@ -91,15 +110,19 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
             'code_hash' => ColumnBuilder::string(255)->notNull(),
             'used_at' => ColumnBuilder::integer(),
             'created_at' => ColumnBuilder::integer()->notNull(),
+            'PRIMARY KEY ([[user_id]], [[code_hash]])',
+            'FOREIGN KEY ([[user_id]]) REFERENCES {{%user}} ([[id]]) ON DELETE CASCADE ON UPDATE RESTRICT',
         ]);
 
         $b->createTable('{{%user_password_history}}', [
             'user_id' => ColumnBuilder::integer()->notNull(),
             'password_hash' => ColumnBuilder::string(255)->notNull(),
             'created_at' => ColumnBuilder::integer()->notNull(),
+            'PRIMARY KEY ([[user_id]], [[password_hash]])',
+            'FOREIGN KEY ([[user_id]]) REFERENCES {{%user}} ([[id]]) ON DELETE CASCADE ON UPDATE RESTRICT',
         ]);
 
-        $b->createTable('{{%audit_log}}', [
+        $b->createTable('{{%user_audit_log}}', [
             'id' => ColumnBuilder::primaryKey(),
             'actor_user_id' => ColumnBuilder::integer(),
             'target_user_id' => ColumnBuilder::integer(),
@@ -108,11 +131,6 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
             'context' => ColumnBuilder::text(),
             'created_at' => ColumnBuilder::integer()->notNull(),
         ]);
-
-        $b->addPrimaryKey('{{%user_token}}', 'pk-user-token-user-id-code-type', ['user_id', 'code', 'type']);
-        $b->addPrimaryKey('{{%user_sessions}}', 'pk-user-sessions-user-id-session-id', ['user_id', 'session_id']);
-        $b->addPrimaryKey('{{%user_backup_code}}', 'pk-user-backup-code-user-id-code-hash', ['user_id', 'code_hash']);
-        $b->addPrimaryKey('{{%user_password_history}}', 'pk-user-password-history-user-id-password-hash', ['user_id', 'password_hash']);
 
         $b->createIndex('{{%user}}', 'idx-user-email', ['email'], 'UNIQUE');
         $b->createIndex('{{%user}}', 'idx-user-username', ['username'], 'UNIQUE');
@@ -126,15 +144,88 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
         $b->createIndex('{{%user_sessions}}', 'idx-user-sessions-updated-at', ['updated_at']);
         $b->createIndex('{{%user_backup_code}}', 'idx-user-backup-code-user-id', ['user_id']);
         $b->createIndex('{{%user_password_history}}', 'idx-user-password-history-user-id', ['user_id']);
-        $b->createIndex('{{%audit_log}}', 'idx-audit-log-actor-user-id', ['actor_user_id']);
-        $b->createIndex('{{%audit_log}}', 'idx-audit-log-target-user-id', ['target_user_id']);
-        $b->createIndex('{{%audit_log}}', 'idx-audit-log-created-at', ['created_at']);
+        $b->createIndex('{{%user_audit_log}}', 'idx-user-audit-log-actor-user-id', ['actor_user_id']);
+        $b->createIndex('{{%user_audit_log}}', 'idx-user-audit-log-target-user-id', ['target_user_id']);
+        $b->createIndex('{{%user_audit_log}}', 'idx-user-audit-log-created-at', ['created_at']);
 
-        $b->addForeignKey('{{%user_profile}}', 'fk-user-profile-user-id', ['user_id'], '{{%user}}', ['id'], 'CASCADE', 'RESTRICT');
-        $b->addForeignKey('{{%user_social_account}}', 'fk-user-social-account-user-id', ['user_id'], '{{%user}}', ['id'], 'CASCADE', 'RESTRICT');
-        $b->addForeignKey('{{%user_token}}', 'fk-user-token-user-id', ['user_id'], '{{%user}}', ['id'], 'CASCADE', 'RESTRICT');
-        $b->addForeignKey('{{%user_sessions}}', 'fk-user-sessions-user-id', ['user_id'], '{{%user}}', ['id'], 'CASCADE', 'RESTRICT');
-        $b->addForeignKey('{{%user_backup_code}}', 'fk-user-backup-code-user-id', ['user_id'], '{{%user}}', ['id'], 'CASCADE', 'RESTRICT');
-        $b->addForeignKey('{{%user_password_history}}', 'fk-user-password-history-user-id', ['user_id'], '{{%user}}', ['id'], 'CASCADE', 'RESTRICT');
+        $this->seedDefaultAdmin($b);
+    }
+
+    private function rbacChildExists(MigrationBuilder $b, string $parent, string $child): bool
+    {
+        return (int) $b->getDb()->createCommand(
+            'SELECT COUNT(*) FROM {{%yii_rbac_item_child}} WHERE parent = :parent AND child = :child',
+            ['parent' => $parent, 'child' => $child],
+        )->queryScalar() > 0;
+    }
+
+    private function rbacItemExists(MigrationBuilder $b, string $name): bool
+    {
+        return (int) $b->getDb()->createCommand(
+            'SELECT COUNT(*) FROM {{%yii_rbac_item}} WHERE name = :name',
+            ['name' => $name],
+        )->queryScalar() > 0;
+    }
+
+    private function seedDefaultAdmin(MigrationBuilder $b): void
+    {
+        $userCount = (int) $b->getDb()->createCommand('SELECT COUNT(*) FROM {{%user}}')->queryScalar();
+        if ($userCount > 0) {
+            return;
+        }
+
+        $now = time();
+        $password = Random::string(20);
+
+        $b->insert('{{%user}}', [
+            'username' => self::SEED_USERNAME,
+            'email' => self::SEED_EMAIL,
+            'password_hash' => $this->passwordHasher->hash($password),
+            'auth_key' => Random::string(32),
+            'confirmed_at' => $now,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        $userId = $b->getDb()->getLastInsertId();
+        $b->insert('{{%user_profile}}', ['user_id' => $userId]);
+
+        $permissionName = $this->config->administratorPermissionName;
+
+        if (!$this->rbacItemExists($b, $permissionName)) {
+            $b->insert('{{%yii_rbac_item}}', [
+                'name' => $permissionName,
+                'type' => 'permission',
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        }
+        if (!$this->rbacItemExists($b, self::ROLE_NAME)) {
+            $b->insert('{{%yii_rbac_item}}', [
+                'name' => self::ROLE_NAME,
+                'type' => 'role',
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        }
+        if (!$this->rbacChildExists($b, self::ROLE_NAME, $permissionName)) {
+            $b->insert('{{%yii_rbac_item_child}}', [
+                'parent' => self::ROLE_NAME,
+                'child' => $permissionName,
+            ]);
+        }
+        $b->insert('{{%yii_rbac_assignment}}', [
+            'item_name' => self::ROLE_NAME,
+            'user_id' => $userId,
+            'created_at' => $now,
+        ]);
+
+        echo "\n==============================================\n";
+        echo " Default admin account created:\n";
+        echo "   username: : " . self::SEED_USERNAME . "\n";
+        echo "   email:      " . self::SEED_EMAIL . "\n";
+        echo "   password:   {$password}\n";
+        echo " Change this email and password immediately after login.\n";
+        echo "==============================================\n\n";
     }
 }

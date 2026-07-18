@@ -256,6 +256,11 @@ return [
     'voyti.view.dashboard.rules' => 'Rules',
     'voyti.view.dashboard.recent_activity' => 'Recent activity',
     'voyti.view.dashboard.no_recent_activity' => 'No recent activity.',
+    'voyti.view.dashboard.new_registrations' => 'New registrations',
+    'voyti.view.dashboard.active_sessions' => 'Active sessions',
+    'voyti.view.dashboard.last_1d' => 'Last 24 hours',
+    'voyti.view.dashboard.last_7d' => 'Last 7 days',
+    'voyti.view.dashboard.last_lifespan' => 'Last {days} days',
 
     // Audit log view
     'voyti.view.audit_log.title' => 'Audit Log',

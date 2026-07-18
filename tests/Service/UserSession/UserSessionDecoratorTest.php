@@ -7,7 +7,7 @@ namespace YiiRocks\Voyti\tests\Service\UserSession;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Event\Session\SessionEvent;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Model\UserSession;
+use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\UserSession\UserSessionDecorator;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
@@ -49,7 +49,7 @@ final class UserSessionDecoratorTest extends TestCase
 
         $decorator->registerLogin($userB);
 
-        $remainingA = UserSession::query()->where(['user_id' => $userIdA])->all();
+        $remainingA = UserSessions::query()->where(['user_id' => $userIdA])->all();
         self::assertCount(1, $remainingA);
         self::assertSame('a_expired', $remainingA[0]->getSessionId());
 
@@ -70,7 +70,7 @@ final class UserSessionDecoratorTest extends TestCase
 
         $decorator->registerLogin($user);
 
-        $sessions = UserSession::query()->where(['user_id' => (int) $user->getId()])->all();
+        $sessions = UserSessions::query()->where(['user_id' => (int) $user->getId()])->all();
         self::assertCount(1, $sessions);
         self::assertSame('127.0.0.1', $sessions[0]->getIp());
         self::assertNull($sessions[0]->getUserAgent());
@@ -97,8 +97,8 @@ final class UserSessionDecoratorTest extends TestCase
 
         $decorator->registerLogin($user);
 
-        $sessions = UserSession::query()->where(['user_id' => $userId])->all();
-        $sessionIds = array_map(static fn (UserSession $s): string => $s->getSessionId(), $sessions);
+        $sessions = UserSessions::query()->where(['user_id' => $userId])->all();
+        $sessionIds = array_map(static fn (UserSessions $s): string => $s->getSessionId(), $sessions);
 
         self::assertContains('sessage', $sessionIds);
         self::assertContains('old_fresh', $sessionIds);
@@ -122,7 +122,7 @@ final class UserSessionDecoratorTest extends TestCase
 
         $decorator->registerLogin($user);
 
-        $sessions = UserSession::query()->where(['user_id' => (int) $user->getId()])->all();
+        $sessions = UserSessions::query()->where(['user_id' => (int) $user->getId()])->all();
         self::assertCount(1, $sessions);
         self::assertSame('sess123', $sessions[0]->getSessionId());
         self::assertSame('192.168.1.1', $sessions[0]->getIp());
@@ -156,8 +156,8 @@ final class UserSessionDecoratorTest extends TestCase
 
         $decorator->registerLogin($user, 'stale-session-id');
 
-        $sessions = UserSession::query()->where(['user_id' => $userId])->all();
-        $sessionIds = array_map(static fn (UserSession $s): string => $s->getSessionId(), $sessions);
+        $sessions = UserSessions::query()->where(['user_id' => $userId])->all();
+        $sessionIds = array_map(static fn (UserSessions $s): string => $s->getSessionId(), $sessions);
 
         self::assertSame(['fresh-session-id'], $sessionIds);
 
@@ -188,7 +188,7 @@ final class UserSessionDecoratorTest extends TestCase
 
         $decorator->registerLogin($user, 'nonexistent-session-id');
 
-        $sessions = UserSession::query()->where(['user_id' => (int) $user->getId()])->all();
+        $sessions = UserSessions::query()->where(['user_id' => (int) $user->getId()])->all();
         self::assertCount(1, $sessions);
         self::assertSame('sessreplacemiss', $sessions[0]->getSessionId());
 
@@ -216,7 +216,7 @@ final class UserSessionDecoratorTest extends TestCase
 
         $decorator->registerLogin($user);
 
-        $sessions = UserSession::query()->where(['user_id' => (int) $user->getId()])->all();
+        $sessions = UserSessions::query()->where(['user_id' => (int) $user->getId()])->all();
         self::assertCount(1, $sessions);
         self::assertSame('127.0.0.1', $sessions[0]->getIp());
 
@@ -237,7 +237,7 @@ final class UserSessionDecoratorTest extends TestCase
 
         $decorator->registerLogin($user, '');
 
-        $sessions = UserSession::query()->where(['user_id' => (int) $user->getId()])->all();
+        $sessions = UserSessions::query()->where(['user_id' => (int) $user->getId()])->all();
         self::assertCount(1, $sessions);
 
         unset($_SERVER['REMOTE_ADDR']);
@@ -260,7 +260,7 @@ final class UserSessionDecoratorTest extends TestCase
 
         $decorator->registerLogin($user);
 
-        $sessions = UserSession::query()->where(['user_id' => 0])->all();
+        $sessions = UserSessions::query()->where(['user_id' => 0])->all();
         self::assertCount(1, $sessions);
         self::assertSame(0, $sessions[0]->getUserId());
 
@@ -281,7 +281,7 @@ final class UserSessionDecoratorTest extends TestCase
 
         $decorator->registerLogin($user, 'sesssame');
 
-        $sessions = UserSession::query()->where(['user_id' => (int) $user->getId()])->all();
+        $sessions = UserSessions::query()->where(['user_id' => (int) $user->getId()])->all();
         self::assertCount(1, $sessions);
 
         unset($_SERVER['REMOTE_ADDR']);
@@ -300,7 +300,7 @@ final class UserSessionDecoratorTest extends TestCase
 
         $decorator->registerLogin($user);
 
-        $sessions = UserSession::query()->where(['user_id' => (int) $user->getId()])->all();
+        $sessions = UserSessions::query()->where(['user_id' => (int) $user->getId()])->all();
         self::assertCount(1, $sessions);
         self::assertSame('', $sessions[0]->getSessionId());
 
@@ -330,9 +330,9 @@ final class UserSessionDecoratorTest extends TestCase
         return $user;
     }
 
-    private function createUserSession(int $userId, string $sessionId, int $ageOffset): UserSession
+    private function createUserSession(int $userId, string $sessionId, int $ageOffset): UserSessions
     {
-        $sh = new UserSession();
+        $sh = new UserSessions();
         $sh->setUserId($userId);
         $sh->setSessionId($sessionId);
         $sh->setIp('127.0.0.1');

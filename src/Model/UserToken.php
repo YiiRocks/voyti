@@ -129,15 +129,4 @@ final class UserToken extends ActiveRecord
     {
         $this->user_id = $userId;
     }
-
-    /**
-     * @return string
-     *
-     * @psalm-return '{{%user_token}}'
-     */
-    #[\Override]
-    public function tableName(): string
-    {
-        return '{{%user_token}}';
-    }
 }

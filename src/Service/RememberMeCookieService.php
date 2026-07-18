@@ -10,7 +10,7 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Model\UserSession;
+use YiiRocks\Voyti\Model\UserSessions;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Cookies\Cookie;
 use Yiisoft\Json\Json;
@@ -28,7 +28,7 @@ use function time;
  * Cookie payload is `[identityId, cookieLoginKey, expiresAt, sessionId]`. `cookieLoginKey`
  * ({@see User::getCookieLoginKey()}) is shared across all of a user's devices, so the trailing
  * sessionId is what lets {@see loginByCookie()} revoke one device's cookie (via its
- * {@see UserSession} row) without invalidating the others.
+ * {@see UserSessions} row) without invalidating the others.
  *
  * All cookie writes go through a PSR-7 {@see ResponseInterface}. {@see loginByCookie()} only
  * authenticates and reports whether a reissue is needed; {@see \YiiRocks\Voyti\Middleware\RememberMeMiddleware}
@@ -113,7 +113,7 @@ final class RememberMeCookieService
 
         if (
             $identity instanceof User
-            && UserSession::findByUserIdAndSessionId($identity->getIdOrZero(), (string) $cookieSessionId) === null
+            && UserSessions::findByUserIdAndSessionId($identity->getIdOrZero(), (string) $cookieSessionId) === null
         ) {
             // The session this cookie was issued for was terminated (self-service or admin) - the cookie
             // must not resurrect it, even though the shared cookieLoginKey is still otherwise valid.
@@ -132,7 +132,7 @@ final class RememberMeCookieService
         //
         // Pass $cookieSessionId (the session ID the cookie was issued for) as
         // previousSessionId instead of the current PHP session ID - this is the value
-        // stored in UserSession and lets replaceSession() find/delete the old row.
+        // stored in UserSessions and lets replaceSession() find/delete the old row.
         $this->eventDispatcher?->dispatch(new AfterLoginEvent($identity, previousSessionId: (string) $cookieSessionId));
 
         $newSessionId = $session->getId();

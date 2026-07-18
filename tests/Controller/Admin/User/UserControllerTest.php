@@ -12,7 +12,7 @@ use YiiRocks\Voyti\Controller\Admin\User\UserController;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserProfile;
-use YiiRocks\Voyti\Model\UserSession;
+use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\ExpireService;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
@@ -605,7 +605,7 @@ final class UserControllerTest extends TestCase
         $result = $controller->terminateSessions($userId);
 
         $this->assertSame($response, $result);
-        $this->assertSame([], UserSession::findByUserId($userId));
+        $this->assertSame([], UserSessions::findByUserId($userId));
     }
 
     public function testTerminateSessionsUserNotFoundShowsError(): void
@@ -834,9 +834,9 @@ final class UserControllerTest extends TestCase
         );
     }
 
-    private function createSession(int $userId, string $sessionId): UserSession
+    private function createSession(int $userId, string $sessionId): UserSessions
     {
-        $session = new UserSession();
+        $session = new UserSessions();
         $session->setUserId($userId);
         $session->setSessionId($sessionId);
         $session->setIp('203.0.113.1');

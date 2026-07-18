@@ -7,7 +7,7 @@ namespace YiiRocks\Voyti\Model;
 use Yiisoft\ActiveRecord\ActiveRecord;
 use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
 
-final class UserSession extends ActiveRecord
+final class UserSessions extends ActiveRecord
 {
     use PrivatePropertiesTrait;
 
@@ -19,32 +19,32 @@ final class UserSession extends ActiveRecord
     private int $user_id = 0;
 
     /**
-     * @return UserSession[]
+     * @return UserSessions[]
      *
-     * @psalm-return list<UserSession>
+     * @psalm-return list<UserSessions>
      */
     public static function findAllSessions(): array
     {
-        /** @var list<UserSession> $sessions */
+        /** @var list<UserSessions> $sessions */
         $sessions = self::query()->all();
         return $sessions;
     }
 
     /**
-     * @return UserSession[]
+     * @return UserSessions[]
      *
-     * @psalm-return list<UserSession>
+     * @psalm-return list<UserSessions>
      */
     public static function findByUserId(int $userId): array
     {
-        /** @var list<UserSession> $sessions */
+        /** @var list<UserSessions> $sessions */
         $sessions = self::query()->where(['user_id' => $userId])->all();
         return $sessions;
     }
 
-    public static function findByUserIdAndSessionId(int $userId, string $sessionId): ?UserSession
+    public static function findByUserIdAndSessionId(int $userId, string $sessionId): ?UserSessions
     {
-        /** @var ?UserSession $session */
+        /** @var ?UserSessions $session */
         $session = self::query()->where(['user_id' => $userId, 'session_id' => $sessionId])->one();
         return $session;
     }
@@ -133,16 +133,5 @@ final class UserSession extends ActiveRecord
     public function setUserId(int $userId): void
     {
         $this->user_id = $userId;
-    }
-
-    /**
-     * @return string
-     *
-     * @psalm-return '{{%user_sessions}}'
-     */
-    #[\Override]
-    public function tableName(): string
-    {
-        return '{{%user_sessions}}';
     }
 }

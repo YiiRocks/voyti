@@ -70,10 +70,7 @@ final readonly class AuthHelper
         if ($userId === null) {
             return false;
         }
-        if ($this->config->administratorPermissionName !== null) {
-            $items = $this->authManager->getItemsByUserId($userId);
-            return isset($items[$this->config->administratorPermissionName]);
-        }
-        return false;
+        $permissions = $this->authManager->getPermissionsByUserId($userId);
+        return isset($permissions[$this->config->administratorPermissionName]);
     }
 }

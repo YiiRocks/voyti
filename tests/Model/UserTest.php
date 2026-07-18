@@ -615,12 +615,6 @@ final class UserTest extends TestCase
         self::assertSame('alice', $result[0]->getUsername());
     }
 
-    public function testTableName(): void
-    {
-        $entity = new User();
-        self::assertSame('{{%user}}', $entity->tableName());
-    }
-
     public function testValidateAuthKeyReturnsFalse(): void
     {
         $entity = new User();

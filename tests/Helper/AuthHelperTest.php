@@ -8,10 +8,13 @@ use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\tests\Support\SimpleAssignmentsStorage;
+use YiiRocks\Voyti\tests\Support\SimpleItemsStorage;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Rbac\Assignment;
 use Yiisoft\Rbac\AssignmentsStorageInterface;
 use Yiisoft\Rbac\ItemsStorageInterface;
+use Yiisoft\Rbac\Manager;
 use Yiisoft\Rbac\ManagerInterface;
 use Yiisoft\Rbac\Permission;
 use Yiisoft\Rbac\Role;
@@ -155,6 +158,44 @@ final class AuthHelperTest extends TestCase
         self::assertSame($expected, $helper->hasRole(1, 'admin'));
     }
 
+    public function testIsAdminReturnsFalseForBareRoleAssignmentWithRealManager(): void
+    {
+        $itemsStorage = new SimpleItemsStorage();
+        $itemsStorage->add(new Role('admin'));
+        $assignmentsStorage = new SimpleAssignmentsStorage();
+        $assignmentsStorage->add(new Assignment('1', 'admin', 1234567890));
+
+        $helper = $this->createHelperWithRealManager($itemsStorage, $assignmentsStorage);
+
+        self::assertFalse($helper->isAdmin(1));
+    }
+
+    public function testIsAdminReturnsTrueForDirectPermissionAssignmentWithRealManager(): void
+    {
+        $itemsStorage = new SimpleItemsStorage();
+        $itemsStorage->add(new Permission('admin'));
+        $assignmentsStorage = new SimpleAssignmentsStorage();
+        $assignmentsStorage->add(new Assignment('1', 'admin', 1234567890));
+
+        $helper = $this->createHelperWithRealManager($itemsStorage, $assignmentsStorage);
+
+        self::assertTrue($helper->isAdmin(1));
+    }
+
+    public function testIsAdminReturnsTrueForPermissionInheritedFromAssignedRole(): void
+    {
+        $itemsStorage = new SimpleItemsStorage();
+        $itemsStorage->add(new Role('superadmin'));
+        $itemsStorage->add(new Permission('admin'));
+        $itemsStorage->addChild('superadmin', 'admin');
+        $assignmentsStorage = new SimpleAssignmentsStorage();
+        $assignmentsStorage->add(new Assignment('1', 'superadmin', 1234567890));
+
+        $helper = $this->createHelperWithRealManager($itemsStorage, $assignmentsStorage);
+
+        self::assertTrue($helper->isAdmin(1));
+    }
+
     /**
      * @param array<string, Permission> $userItems
      */
@@ -164,7 +205,7 @@ final class AuthHelperTest extends TestCase
         $config = new ModuleConfig(administratorPermissionName: 'admin');
 
         $authManager = $this->createMock(ManagerInterface::class);
-        $authManager->expects(self::once())->method('getItemsByUserId')->with($userId)->willReturn($userItems);
+        $authManager->expects(self::once())->method('getPermissionsByUserId')->with($userId)->willReturn($userItems);
 
         $helper = $this->createHelper(
             authManager: $authManager,
@@ -172,22 +213,6 @@ final class AuthHelperTest extends TestCase
         );
 
         self::assertSame($expected, $helper->isAdmin($userId));
-    }
-
-    public function testIsAdminWithNullUserIdAndNoAdminPermission(): void
-    {
-        $identity = $this->createMock(\Yiisoft\Auth\IdentityInterface::class);
-        $identity->expects(self::once())->method('getId')->willReturn('1');
-        $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
-        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $currentUser = new CurrentUser($identityRepository, $eventDispatcher);
-        $currentUser->overrideIdentity($identity);
-
-        $config = new ModuleConfig(administratorPermissionName: null);
-
-        $helper = $this->createHelper(config: $config, currentUser: $currentUser);
-
-        self::assertFalse($helper->isAdmin());
     }
 
     public function testIsAdminWithNullUserIdAndUserIsAdmin(): void
@@ -202,7 +227,7 @@ final class AuthHelperTest extends TestCase
         $config = new ModuleConfig(administratorPermissionName: 'admin');
 
         $authManager = $this->createMock(ManagerInterface::class);
-        $authManager->expects(self::once())->method('getItemsByUserId')->with(1)->willReturn([
+        $authManager->expects(self::once())->method('getPermissionsByUserId')->with(1)->willReturn([
             'admin' => new Permission('admin'),
         ]);
 
@@ -225,6 +250,7 @@ final class AuthHelperTest extends TestCase
 
         self::assertFalse($helper->isAdmin());
     }
+
     private function createHelper(
         ?ManagerInterface $authManager = null,
         ?ItemsStorageInterface $itemsStorage = null,
@@ -242,6 +268,18 @@ final class AuthHelperTest extends TestCase
             $assignmentsStorage ?? $this->createMock(AssignmentsStorageInterface::class),
             $config ?? new ModuleConfig(),
             $currentUser,
+        );
+    }
+
+    private function createHelperWithRealManager(
+        SimpleItemsStorage $itemsStorage,
+        SimpleAssignmentsStorage $assignmentsStorage,
+    ): AuthHelper {
+        return $this->createHelper(
+            authManager: new Manager($itemsStorage, $assignmentsStorage),
+            itemsStorage: $itemsStorage,
+            assignmentsStorage: $assignmentsStorage,
+            config: new ModuleConfig(administratorPermissionName: 'admin'),
         );
     }
 }

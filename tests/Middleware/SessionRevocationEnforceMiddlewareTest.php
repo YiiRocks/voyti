@@ -11,7 +11,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use YiiRocks\Voyti\Middleware\SessionRevocationEnforceMiddleware;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Model\UserSession;
+use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\FakeSession;
 use Yiisoft\Router\CurrentRoute;
@@ -181,7 +181,7 @@ final class SessionRevocationEnforceMiddlewareTest extends TestCase
     {
         $user = $this->createUser();
 
-        $userSession = new UserSession();
+        $userSession = new UserSessions();
         $userSession->setUserId((int) $user->getId());
         $userSession->setSessionId('active-session-id');
         $userSession->setIp('127.0.0.1');
@@ -209,7 +209,7 @@ final class SessionRevocationEnforceMiddlewareTest extends TestCase
 
         self::assertSame($response, $result);
 
-        $refreshed = UserSession::findByUserIdAndSessionId((int) $user->getId(), 'active-session-id');
+        $refreshed = UserSessions::findByUserIdAndSessionId((int) $user->getId(), 'active-session-id');
         self::assertNotNull($refreshed);
         self::assertGreaterThanOrEqual($before, $refreshed->getUpdatedAt());
     }

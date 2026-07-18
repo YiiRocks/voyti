@@ -8,7 +8,7 @@ use Yiisoft\ActiveRecord\ActiveQueryInterface;
 use Yiisoft\ActiveRecord\ActiveRecord;
 use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
 
-final class AuditLog extends ActiveRecord
+final class UserAuditLog extends ActiveRecord
 {
     use PrivatePropertiesTrait;
 
@@ -110,14 +110,5 @@ final class AuditLog extends ActiveRecord
     public function setTargetUserId(?int $targetUserId): void
     {
         $this->target_user_id = $targetUserId;
-    }
-
-    /**
-     * @psalm-return '{{%audit_log}}'
-     */
-    #[\Override]
-    public function tableName(): string
-    {
-        return '{{%audit_log}}';
     }
 }

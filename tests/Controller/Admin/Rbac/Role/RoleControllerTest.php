@@ -25,6 +25,7 @@ use Yiisoft\Rbac\AssignmentsStorageInterface;
 use Yiisoft\Rbac\ItemsStorageInterface;
 use Yiisoft\Rbac\Manager;
 use Yiisoft\Rbac\ManagerInterface;
+use Yiisoft\Rbac\Permission;
 use Yiisoft\Rbac\Role;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -68,6 +69,27 @@ final class RoleControllerTest extends TestCase
     protected function tearDown(): void
     {
         $this->tearDownDatabase();
+    }
+
+    public function testCreateGetShowsAvailableChildrenIncludingRolesAndPermissions(): void
+    {
+        $controller = $this->createController();
+        $this->itemsStorage->add(new Role('other-role'));
+        $this->itemsStorage->add(new Permission('some-permission'));
+        $request = new ServerRequest('GET', '/');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('admin/rbac/create', $this->callback(
+                static fn (array $params): bool => array_keys($params['availableChildren']) === ['other-role', 'some-permission'],
+            ))
+            ->willReturn($response);
+
+        $result = $controller->create($request, 'role', 'admin-rbac-roles');
+
+        $this->assertSame($response, $result);
     }
 
     public function testCreateGetShowsForm(): void
@@ -141,6 +163,28 @@ final class RoleControllerTest extends TestCase
         $this->assertSame($response, $result2);
     }
 
+    public function testCreatePostWithNonexistentChildShowsErrorsAndPersistsItem(): void
+    {
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['role' => ['name' => 'parent', 'description' => '', 'rule' => '', 'children' => ['missing-child']]]);
+
+        $this->validator->method('validate')->willReturn(new Result());
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('admin/rbac/create', $this->callback(
+                static fn (array $params): bool => ($params['errors']['children'] ?? []) !== [],
+            ))
+            ->willReturn($response);
+
+        $result = $controller->create($request, 'role', 'admin-rbac-roles');
+
+        $this->assertSame($response, $result);
+        $this->assertNotNull($this->itemsStorage->getRole('parent'));
+    }
+
     public function testCreatePostWithoutChildrenKeyKeepsDefaultChildren(): void
     {
         $controller = $this->createController();
@@ -208,6 +252,29 @@ final class RoleControllerTest extends TestCase
             ->willReturn($response);
 
         $result = $controller->index($request, 'role', 'admin-rbac-roles');
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testUpdateGetShowsAvailableChildrenExcludingSelf(): void
+    {
+        $controller = $this->createController();
+        $this->itemsStorage->add(new Role('editor'));
+        $this->itemsStorage->add(new Role('other-role'));
+        $this->itemsStorage->add(new Permission('some-permission'));
+
+        $request = new ServerRequest('GET', '/');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('admin/rbac/update', $this->callback(
+                static fn (array $params): bool => array_keys($params['availableChildren']) === ['other-role', 'some-permission'],
+            ))
+            ->willReturn($response);
+
+        $result = $controller->update($request, 'editor', 'role', 'admin-rbac-roles');
 
         $this->assertSame($response, $result);
     }
@@ -364,6 +431,32 @@ final class RoleControllerTest extends TestCase
         $result2 = $controller->update($request, 'editor', 'role', 'admin-rbac-roles');
 
         $this->assertSame($response, $result2);
+    }
+
+    public function testUpdatePostWithNonexistentChildShowsErrors(): void
+    {
+        $controller = $this->createController();
+        $this->itemsStorage->add(new Role('editor'));
+
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['role' => ['name' => 'editor', 'description' => 'Updated', 'rule' => '', 'children' => ['missing-child']]]);
+
+        $this->validator->method('validate')->willReturn(new Result());
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('admin/rbac/update', $this->callback(
+                static fn (array $params): bool => ($params['errors']['children'] ?? []) !== [],
+            ))
+            ->willReturn($response);
+
+        $result = $controller->update($request, 'editor', 'role', 'admin-rbac-roles');
+
+        $this->assertSame($response, $result);
+        $role = $this->itemsStorage->getRole('editor');
+        $this->assertNotNull($role);
+        $this->assertSame('Updated', $role->getDescription());
     }
 
     public function testUpdatePostWithRule(): void

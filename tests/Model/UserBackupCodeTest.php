@@ -143,12 +143,6 @@ final class UserBackupCodeTest extends TestCase
         self::assertSame(['user_id', 'code_hash'], $entity->primaryKey());
     }
 
-    public function testTableName(): void
-    {
-        $entity = new UserBackupCode();
-        self::assertSame('{{%user_backup_code}}', $entity->tableName());
-    }
-
     private function createSqliteConnection(): ConnectionInterface
     {
         $dsn = new \Yiisoft\Db\Sqlite\Dsn('sqlite', ':memory:');

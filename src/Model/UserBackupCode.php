@@ -79,13 +79,4 @@ final class UserBackupCode extends ActiveRecord
     {
         $this->user_id = $userId;
     }
-
-    /**
-     * @psalm-return '{{%user_backup_code}}'
-     */
-    #[\Override]
-    public function tableName(): string
-    {
-        return '{{%user_backup_code}}';
-    }
 }

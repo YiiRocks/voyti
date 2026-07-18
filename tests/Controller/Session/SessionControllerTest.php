@@ -13,7 +13,7 @@ use RuntimeException;
 use YiiRocks\Voyti\Controller\Session\SessionController;
 use YiiRocks\Voyti\Model\Form\Auth\LoginForm;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Model\UserSession;
+use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
@@ -667,7 +667,7 @@ final class SessionControllerTest extends TestCase
         $user = $this->createRealUser();
         $sessionId = 'test-session-to-delete';
 
-        $userSession = new UserSession();
+        $userSession = new UserSessions();
         $userSession->setUserId($user->getIdOrZero());
         $userSession->setSessionId($sessionId);
         $userSession->setIp('192.168.1.1');
@@ -697,7 +697,7 @@ final class SessionControllerTest extends TestCase
         $controller = $this->createController();
         $controller->logout();
 
-        $deleted = UserSession::findByUserIdAndSessionId($user->getIdOrZero(), $sessionId);
+        $deleted = UserSessions::findByUserIdAndSessionId($user->getIdOrZero(), $sessionId);
         $this->assertNull($deleted);
     }
 

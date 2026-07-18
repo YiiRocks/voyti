@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service;
 
-use YiiRocks\Voyti\Model\AuditLog;
+use YiiRocks\Voyti\Model\UserAuditLog;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Json\Json;
 
@@ -29,7 +29,7 @@ final readonly class AuditLogService
             return;
         }
 
-        $log = new AuditLog();
+        $log = new UserAuditLog();
         $log->setActorUserId($actorUserId);
         $log->setAction($action);
         $log->setTargetUserId($targetUserId);

@@ -15,7 +15,7 @@ use YiiRocks\Voyti\Event\Gdpr\GdprEvent;
 use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserProfile;
-use YiiRocks\Voyti\Model\UserSession;
+use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\UserSession\TerminateUserSessionsService;
@@ -256,7 +256,7 @@ final class PrivacyControllerTest extends TestCase
         $identity->method('getId')->willReturn((string) $userId);
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
-        $sessionEntry = new UserSession();
+        $sessionEntry = new UserSessions();
         $sessionEntry->setUserId($userId);
         $sessionEntry->setSessionId('session-1');
         $sessionEntry->setIp('203.0.113.5');

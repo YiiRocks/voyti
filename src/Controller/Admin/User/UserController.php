@@ -19,7 +19,7 @@ use YiiRocks\Voyti\Model\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Model\Form\Settings\UserProfileForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserProfile;
-use YiiRocks\Voyti\Model\UserSession;
+use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\AuditLogService;
 use YiiRocks\Voyti\Service\Password\ExpireService;
@@ -249,7 +249,7 @@ final readonly class UserController
             return $this->renderError('voyti.admin.user_not_found');
         }
 
-        $sessions = UserSession::findByUserId($id);
+        $sessions = UserSessions::findByUserId($id);
         return $this->renderView('admin/user/_sessions', [
             'user' => $user,
             'sessions' => $sessions,
@@ -301,7 +301,7 @@ final readonly class UserController
             return $this->renderError('voyti.admin.user_not_found');
         }
 
-        $sessions = UserSession::findByUserId($id);
+        $sessions = UserSessions::findByUserId($id);
         foreach ($sessions as $session) {
             $session->delete();
         }

@@ -6,7 +6,7 @@ namespace YiiRocks\Voyti\Service\UserSession;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Event\Session\SessionEvent;
-use YiiRocks\Voyti\Model\UserSession;
+use YiiRocks\Voyti\Model\UserSessions;
 
 final readonly class TerminateUserSessionsService
 {
@@ -17,7 +17,7 @@ final readonly class TerminateUserSessionsService
 
     public function run(int $userId): void
     {
-        (new UserSession())->deleteAll(['user_id' => $userId]);
+        (new UserSessions())->deleteAll(['user_id' => $userId]);
 
         $this->eventDispatcher->dispatch(new SessionEvent($userId, '', ['type' => SessionEvent::SESSION_TERMINATED]));
     }

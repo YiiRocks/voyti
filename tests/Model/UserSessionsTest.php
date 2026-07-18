@@ -6,7 +6,7 @@ namespace YiiRocks\Voyti\tests\Model;
 
 use PHPUnit\Framework\TestCase;
 use Psr\SimpleCache\CacheInterface;
-use YiiRocks\Voyti\Model\UserSession;
+use YiiRocks\Voyti\Model\UserSessions;
 use Yiisoft\Db\Cache\SchemaCache;
 use Yiisoft\Db\Connection\ConnectionInterface;
 use Yiisoft\Db\Connection\ConnectionProvider;
@@ -14,7 +14,7 @@ use Yiisoft\Db\Sqlite\Connection as SqliteConnection;
 use Yiisoft\Db\Sqlite\Driver as SqliteDriver;
 use Yiisoft\Db\Sqlite\Dsn;
 
-final class UserSessionTest extends TestCase
+final class UserSessionsTest extends TestCase
 {
     private ?ConnectionInterface $connection = null;
 
@@ -63,7 +63,7 @@ final class UserSessionTest extends TestCase
 
     public function testDefaultValues(): void
     {
-        $entity = new UserSession();
+        $entity = new UserSessions();
         self::assertSame(0, $entity->getUserId());
         self::assertSame('', $entity->getSessionId());
         self::assertSame(0, $entity->getCreatedAt());
@@ -77,7 +77,7 @@ final class UserSessionTest extends TestCase
         $this->createSession(1, 'sess-1', '203.0.113.1');
         $this->createSession(2, 'sess-2', '203.0.113.2');
 
-        self::assertCount(2, UserSession::findAllSessions());
+        self::assertCount(2, UserSessions::findAllSessions());
     }
 
     public function testFindByUserIdAndSessionIdFiltersByBoth(): void
@@ -85,13 +85,13 @@ final class UserSessionTest extends TestCase
         $this->createSession(1, 'sess-1', '203.0.113.1');
         $this->createSession(2, 'sess-2', '203.0.113.2');
 
-        $found = UserSession::findByUserIdAndSessionId(1, 'sess-1');
+        $found = UserSessions::findByUserIdAndSessionId(1, 'sess-1');
         self::assertNotNull($found);
         self::assertSame(1, $found->getUserId());
         self::assertSame('sess-1', $found->getSessionId());
 
-        self::assertNull(UserSession::findByUserIdAndSessionId(1, 'sess-2'));
-        self::assertNull(UserSession::findByUserIdAndSessionId(2, 'sess-1'));
+        self::assertNull(UserSessions::findByUserIdAndSessionId(1, 'sess-2'));
+        self::assertNull(UserSessions::findByUserIdAndSessionId(2, 'sess-1'));
     }
 
     public function testFindByUserIdFiltersByUserId(): void
@@ -100,7 +100,7 @@ final class UserSessionTest extends TestCase
         $this->createSession(1, 'sess-1b', '203.0.113.3');
         $this->createSession(2, 'sess-2', '203.0.113.2');
 
-        $sessions = UserSession::findByUserId(1);
+        $sessions = UserSessions::findByUserId(1);
 
         self::assertCount(2, $sessions);
     }
@@ -108,14 +108,14 @@ final class UserSessionTest extends TestCase
     #[\PHPUnit\Framework\Attributes\DataProvider('getterSetterProvider')]
     public function testGetSetProperty(string $setter, string $getter, int|string $value): void
     {
-        $entity = new UserSession();
+        $entity = new UserSessions();
         $entity->$setter($value);
         self::assertSame($value, $entity->$getter());
     }
 
     public function testPrimaryKey(): void
     {
-        $entity = new UserSession();
+        $entity = new UserSessions();
         self::assertSame(['user_id', 'session_id'], $entity->primaryKey());
     }
 
@@ -124,7 +124,7 @@ final class UserSessionTest extends TestCase
         $this->createSession(1, 'sess-1', '203.0.113.1');
         $this->createSession(1, 'sess-2', '198.51.100.1');
 
-        $sessions = UserSession::search(['ip' => '203.0.113']);
+        $sessions = UserSessions::search(['ip' => '203.0.113']);
 
         self::assertCount(1, $sessions);
     }
@@ -134,7 +134,7 @@ final class UserSessionTest extends TestCase
         $this->createSession(1, 'sess-1', '203.0.113.1');
         $this->createSession(2, 'sess-2', '203.0.113.2');
 
-        self::assertCount(2, UserSession::search());
+        self::assertCount(2, UserSessions::search());
     }
 
     public function testSearchWithUserIdFilter(): void
@@ -142,21 +142,15 @@ final class UserSessionTest extends TestCase
         $this->createSession(1, 'sess-1', '203.0.113.1');
         $this->createSession(2, 'sess-2', '203.0.113.2');
 
-        $sessions = UserSession::search(['user_id' => 1]);
+        $sessions = UserSessions::search(['user_id' => 1]);
 
         self::assertCount(1, $sessions);
         self::assertSame('sess-1', $sessions[0]->getSessionId());
     }
 
-    public function testTableName(): void
+    private function createSession(int $userId, string $sessionId, string $ip): UserSessions
     {
-        $entity = new UserSession();
-        self::assertSame('{{%user_sessions}}', $entity->tableName());
-    }
-
-    private function createSession(int $userId, string $sessionId, string $ip): UserSession
-    {
-        $session = new UserSession();
+        $session = new UserSessions();
         $session->setUserId($userId);
         $session->setSessionId($sessionId);
         $session->setIp($ip);

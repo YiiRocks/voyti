@@ -11,7 +11,7 @@ use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
-use YiiRocks\Voyti\Model\AuditLog;
+use YiiRocks\Voyti\Model\UserAuditLog;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Data\Db\QueryDataReader;
 use Yiisoft\Data\Paginator\OffsetPaginator;
@@ -45,16 +45,16 @@ final readonly class AuditLogController
             'action' => $this->stringValue($queryParams, 'action'),
         ];
 
-        $reader = new QueryDataReader(AuditLog::search($filters));
+        $reader = new QueryDataReader(UserAuditLog::search($filters));
         $paginator = (new OffsetPaginator($reader))->withPageSize(50);
         $requestedPage = max(1, (int) ($queryParams['page'] ?? 1));
         $paginator = $paginator->withCurrentPage(min($requestedPage, max(1, $paginator->getTotalPages())));
 
-        /** @var list<AuditLog> $logs */
+        /** @var list<UserAuditLog> $logs */
         $logs = iterator_to_array($paginator->read(), false);
 
         return $this->renderView('admin/audit-log/index', [
-            'logs' => array_map(fn (AuditLog $log): array => $this->presentLog($log), $logs),
+            'logs' => array_map(fn (UserAuditLog $log): array => $this->presentLog($log), $logs),
             'paginator' => $paginator,
             'filters' => $filters,
             'flash' => $this->flash,
@@ -64,7 +64,7 @@ final readonly class AuditLogController
     /**
      * @return array{createdAt: string, actorUserId: string, action: string, targetLabel: string, context: string}
      */
-    private function presentLog(AuditLog $log): array
+    private function presentLog(UserAuditLog $log): array
     {
         return [
             'createdAt' => TimezoneHelper::formatLocalized($log->getCreatedAt(), $this->translator->getLocale()),
@@ -75,7 +75,7 @@ final readonly class AuditLogController
         ];
     }
 
-    private function targetLabel(AuditLog $log): string
+    private function targetLabel(UserAuditLog $log): string
     {
         $name = $log->getTargetName() ?? '';
         $userId = $log->getTargetUserId();

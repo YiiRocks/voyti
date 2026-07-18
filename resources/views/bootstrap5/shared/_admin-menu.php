@@ -21,11 +21,11 @@ $adminMenuItems = [
         ['class' => 'nav-item'],
     ),
     Html::li(
-        Html::a($translator->translate('voyti.view.permission.title', category: 'voyti'), $url->generate('voyti/admin-rbac-permissions'))->class('nav-link'),
+        Html::a($translator->translate('voyti.view.role.title', category: 'voyti'), $url->generate('voyti/admin-rbac-roles'))->class('nav-link'),
         ['class' => 'nav-item'],
     ),
     Html::li(
-        Html::a($translator->translate('voyti.view.role.title', category: 'voyti'), $url->generate('voyti/admin-rbac-roles'))->class('nav-link'),
+        Html::a($translator->translate('voyti.view.permission.title', category: 'voyti'), $url->generate('voyti/admin-rbac-permissions'))->class('nav-link'),
         ['class' => 'nav-item'],
     ),
     Html::li(

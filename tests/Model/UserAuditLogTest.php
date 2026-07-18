@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Model;
 
 use PHPUnit\Framework\TestCase;
-use YiiRocks\Voyti\Model\AuditLog;
+use YiiRocks\Voyti\Model\UserAuditLog;
 use Yiisoft\Db\Connection\ConnectionInterface;
 use Yiisoft\Db\Connection\ConnectionProvider;
 
-final class AuditLogTest extends TestCase
+final class UserAuditLogTest extends TestCase
 {
     private ?ConnectionInterface $connection = null;
 
@@ -24,7 +24,7 @@ final class AuditLogTest extends TestCase
         $this->connection = $connection;
 
         $this->connection->createCommand('
-            CREATE TABLE "audit_log" (
+            CREATE TABLE "user_audit_log" (
                 "id" INTEGER PRIMARY KEY AUTOINCREMENT,
                 "actor_user_id" INTEGER,
                 "target_user_id" INTEGER,
@@ -39,7 +39,7 @@ final class AuditLogTest extends TestCase
     protected function tearDown(): void
     {
         if ($this->connection !== null) {
-            $this->connection->createCommand('DROP TABLE IF EXISTS "audit_log"')->execute();
+            $this->connection->createCommand('DROP TABLE IF EXISTS "user_audit_log"')->execute();
         }
         ConnectionProvider::clear();
         $this->connection = null;
@@ -56,7 +56,7 @@ final class AuditLogTest extends TestCase
 
     public function testDefaultValues(): void
     {
-        $entity = new AuditLog();
+        $entity = new UserAuditLog();
         self::assertSame('', $entity->getAction());
         self::assertNull($entity->getActorUserId());
         self::assertNull($entity->getContext());
@@ -68,14 +68,14 @@ final class AuditLogTest extends TestCase
 
     public function testGetSetActorUserId(): void
     {
-        $entity = new AuditLog();
+        $entity = new UserAuditLog();
         $entity->setActorUserId(5);
         self::assertSame(5, $entity->getActorUserId());
     }
 
     public function testGetSetContext(): void
     {
-        $entity = new AuditLog();
+        $entity = new UserAuditLog();
         $entity->setContext('{"foo":"bar"}');
         self::assertSame('{"foo":"bar"}', $entity->getContext());
     }
@@ -83,28 +83,28 @@ final class AuditLogTest extends TestCase
     #[\PHPUnit\Framework\Attributes\DataProvider('getterSetterProvider')]
     public function testGetSetProperty(string $setter, string $getter, int|string $value): void
     {
-        $entity = new AuditLog();
+        $entity = new UserAuditLog();
         $entity->$setter($value);
         self::assertSame($value, $entity->$getter());
     }
 
     public function testGetSetTargetName(): void
     {
-        $entity = new AuditLog();
+        $entity = new UserAuditLog();
         $entity->setTargetName('editor');
         self::assertSame('editor', $entity->getTargetName());
     }
 
     public function testGetSetTargetUserId(): void
     {
-        $entity = new AuditLog();
+        $entity = new UserAuditLog();
         $entity->setTargetUserId(7);
         self::assertSame(7, $entity->getTargetUserId());
     }
 
     public function testPrimaryKey(): void
     {
-        $entity = new AuditLog();
+        $entity = new UserAuditLog();
         self::assertSame(['id'], $entity->primaryKey());
     }
 
@@ -113,7 +113,7 @@ final class AuditLogTest extends TestCase
         $this->createLog(1, 2, 'user.create');
         $this->createLog(1, 2, 'user.delete');
 
-        $found = AuditLog::search(['action' => 'create'])->all();
+        $found = UserAuditLog::search(['action' => 'create'])->all();
 
         self::assertCount(1, $found);
         self::assertSame('user.create', $found[0]->getAction());
@@ -124,7 +124,7 @@ final class AuditLogTest extends TestCase
         $this->createLog(1, 2, 'user.create');
         $this->createLog(3, 2, 'user.create');
 
-        $found = AuditLog::search(['actor_user_id' => 1])->all();
+        $found = UserAuditLog::search(['actor_user_id' => 1])->all();
 
         self::assertCount(1, $found);
         self::assertSame(1, $found[0]->getActorUserId());
@@ -135,7 +135,7 @@ final class AuditLogTest extends TestCase
         $this->createLog(1, 2, 'user.create');
         $this->createLog(1, 3, 'user.create');
 
-        $found = AuditLog::search(['target_user_id' => 2])->all();
+        $found = UserAuditLog::search(['target_user_id' => 2])->all();
 
         self::assertCount(1, $found);
         self::assertSame(2, $found[0]->getTargetUserId());
@@ -146,22 +146,16 @@ final class AuditLogTest extends TestCase
         $this->createLog(1, 2, 'user.create', 1000);
         $this->createLog(1, 2, 'user.delete', 2000);
 
-        $found = AuditLog::search()->all();
+        $found = UserAuditLog::search()->all();
 
         self::assertCount(2, $found);
         self::assertSame('user.delete', $found[0]->getAction());
         self::assertSame('user.create', $found[1]->getAction());
     }
 
-    public function testTableName(): void
-    {
-        $entity = new AuditLog();
-        self::assertSame('{{%audit_log}}', $entity->tableName());
-    }
-
     private function createLog(int $actorUserId, int $targetUserId, string $action, ?int $createdAt = null): void
     {
-        $log = new AuditLog();
+        $log = new UserAuditLog();
         $log->setActorUserId($actorUserId);
         $log->setTargetUserId($targetUserId);
         $log->setAction($action);

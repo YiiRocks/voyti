@@ -56,6 +56,7 @@ final readonly class RbacController
     public function create(ServerRequestInterface $request, string $itemType, string $indexRouteName): ResponseInterface
     {
         $form = $this->createForm($itemType);
+        $availableChildren = $this->getAvailableChildren($itemType);
         $errors = [];
 
         if ($request->getMethod() === Method::POST) {
@@ -75,29 +76,38 @@ final readonly class RbacController
                     $this->managerInterface->addPermission($item);
                 }
 
-                /** @var list<string> $children */
-                $children = $form->children;
-                foreach ($children as $childName) {
-                    if ($childName !== '') {
-                        $this->managerInterface->addChild($form->name, $childName);
+                try {
+                    /** @var list<string> $children */
+                    $children = $form->children;
+                    foreach ($children as $childName) {
+                        if ($childName !== '') {
+                            $this->managerInterface->addChild($form->name, $childName);
+                        }
                     }
+                } catch (RuntimeException $exception) {
+                    // Item itself is already committed; no transaction support exists to roll it back.
+                    $errors = ['children' => [$exception->getMessage()]];
                 }
 
-                $this->auditLogService->log(
-                    $this->actorId(),
-                    'rbac.' . $itemType . '.create',
-                    targetName: $form->name,
-                );
+                if ($errors === []) {
+                    $this->auditLogService->log(
+                        $this->actorId(),
+                        'rbac.' . $itemType . '.create',
+                        targetName: $form->name,
+                    );
 
-                return $this->redirectWithFlash(
-                    $this->url->generate('voyti/' . $indexRouteName),
-                    'voyti.auth_item.created',
-                );
+                    return $this->redirectWithFlash(
+                        $this->url->generate('voyti/' . $indexRouteName),
+                        'voyti.auth_item.created',
+                    );
+                }
+            } else {
+                $errors = $result->getErrorMessagesIndexedByProperty();
             }
-            $errors = $result->getErrorMessagesIndexedByProperty();
         }
 
         return $this->renderView('admin/rbac/create', [
+            'availableChildren' => $availableChildren,
             'itemType' => $itemType,
             'model' => $form,
             'errors' => $errors,
@@ -181,6 +191,7 @@ final readonly class RbacController
         $form->description = $item->getDescription();
         $form->rule = $item->getRuleName() ?? '';
         $form->children = array_keys($this->itemsStorage->getDirectChildren($item->getName()));
+        $availableChildren = $this->getAvailableChildren($itemType, $item->getName());
 
         $users = $this->getAssignedUsers($item->getName());
 
@@ -211,33 +222,42 @@ final readonly class RbacController
                     $this->managerInterface->updatePermission($oldName, $updated);
                 }
 
-                $this->managerInterface->removeChildren($form->name);
-                /** @var list<string> $children */
-                $children = $form->children;
-                foreach ($children as $childName) {
-                    if ($childName !== '') {
-                        $this->managerInterface->addChild($form->name, $childName);
+                try {
+                    $this->managerInterface->removeChildren($form->name);
+                    /** @var list<string> $children */
+                    $children = $form->children;
+                    foreach ($children as $childName) {
+                        if ($childName !== '') {
+                            $this->managerInterface->addChild($form->name, $childName);
+                        }
                     }
+                } catch (RuntimeException $exception) {
+                    // Item update itself is already committed; no transaction support exists to roll it back.
+                    $errors = ['children' => [$exception->getMessage()]];
                 }
 
-                $this->processUserAssignments($body, $form->name);
+                if ($errors === []) {
+                    $this->processUserAssignments($body, $form->name);
 
-                $this->auditLogService->log(
-                    $this->actorId(),
-                    'rbac.' . $itemType . '.update',
-                    targetName: $form->name,
-                    context: ['previousName' => $oldName],
-                );
+                    $this->auditLogService->log(
+                        $this->actorId(),
+                        'rbac.' . $itemType . '.update',
+                        targetName: $form->name,
+                        context: ['previousName' => $oldName],
+                    );
 
-                return $this->redirectWithFlash(
-                    $this->url->generate('voyti/' . $indexRouteName),
-                    'voyti.auth_item.updated',
-                );
+                    return $this->redirectWithFlash(
+                        $this->url->generate('voyti/' . $indexRouteName),
+                        'voyti.auth_item.updated',
+                    );
+                }
+            } else {
+                $errors = $result->getErrorMessagesIndexedByProperty();
             }
-            $errors = $result->getErrorMessagesIndexedByProperty();
         }
 
         return $this->renderView('admin/rbac/update', [
+            'availableChildren' => $availableChildren,
             'itemType' => $itemType,
             'model' => $form,
             'errors' => $errors,
@@ -261,6 +281,21 @@ final readonly class RbacController
         }
 
         return User::findByIds($userIds);
+    }
+
+    /**
+     * @return array<string, Item>
+     */
+    private function getAvailableChildren(string $itemType, string $excludeName = ''): array
+    {
+        $candidates = $itemType === 'role'
+            ? $this->itemsStorage->getAll()
+            : $this->itemsStorage->getPermissions();
+
+        unset($candidates[$excludeName]);
+        ksort($candidates);
+
+        return $candidates;
     }
 
     private function loadForm(AbstractAuthItemForm $form, array $body): void

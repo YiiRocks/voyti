@@ -95,7 +95,19 @@ enabled in your console app, run:
 One migration creates the `user`, `user_profile`, `user_social_account`,
 `user_token`, `user_sessions`, `user_backup_code`, `user_password_history`,
 and `audit_log` tables with all columns (2FA, GDPR, password expiration, last
-login IP, etc.) included.
+login IP, etc.) included. `config/params-console.php` also registers
+`yiisoft/rbac-db`'s own item/assignment migrations, so `./yii migrate:up`
+creates the RBAC tables too — no separate step needed.
+
+If the `user` table is still empty after these migrations run, a default
+admin account is seeded automatically: username `admin`, email
+`admin@example.com`, and a random 20-character password printed to the
+console — copy it immediately, it isn't stored anywhere else. The account is
+assigned the `administrator` role, which is granted the `administratorPermissionName`
+permission (`voyti-admin-dashboard` by default) needed to reach the admin
+dashboard. **Change this password immediately after first login.** If the
+`user` table already has rows (e.g. re-running migrations on an existing
+database), seeding is skipped entirely.
 
 ### 3. Register routes
 
@@ -232,7 +244,7 @@ Below are all top-level `yiirocks/voyti` options, followed by the nested `social
 | `maxPasswordAge` | `?int` | `null` | Max password age in days |
 | `enablePasswordComplexity` | `bool` | `false` | Require passwords to contain an uppercase letter, a lowercase letter, a digit, and a special character |
 | `passwordHistoryLimit` | `int` | `10` | Number of previous passwords remembered per user to prevent reuse. Only enforced when `enablePasswordExpiration` is `true` |
-| `administratorPermissionName` | `?string` | `'admin'` | Permission/role name granting admin access |
+| `administratorPermissionName` | `string` | `'voyti-admin-dashboard'` | Permission name granting admin access |
 | `profileVisibility` | `ProfileVisibility` | `ProfileVisibility::USERS` | Profile visibility: `OWNER` = owner only, `ADMIN` = owner + admins, `USERS` = any authenticated user, `PUBLIC` = public |
 | `enableAuditLog` | `bool` | `true` | Record admin actions (RBAC and user management changes) to the `audit_log` table, viewable at `admin/audit-log/` |
 

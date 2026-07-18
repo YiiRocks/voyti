@@ -164,15 +164,4 @@ final class UserSocialAccount extends ActiveRecord
     {
         $this->username = $username;
     }
-
-    /**
-     * @return string
-     *
-     * @psalm-return '{{%user_social_account}}'
-     */
-    #[\Override]
-    public function tableName(): string
-    {
-        return '{{%user_social_account}}';
-    }
 }

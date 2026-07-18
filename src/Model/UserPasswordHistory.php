@@ -68,13 +68,4 @@ final class UserPasswordHistory extends ActiveRecord
     {
         $this->user_id = $userId;
     }
-
-    /**
-     * @psalm-return '{{%user_password_history}}'
-     */
-    #[\Override]
-    public function tableName(): string
-    {
-        return '{{%user_password_history}}';
-    }
 }

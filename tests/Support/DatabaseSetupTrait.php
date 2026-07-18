@@ -4,125 +4,43 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Support;
 
+use M240118192500CreateAssignmentsTable;
+use M240118192500CreateItemsTables;
+use M260621101843_create_user_module_tables;
 use Psr\SimpleCache\CacheInterface;
+use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Db\Cache\SchemaCache;
 use Yiisoft\Db\Connection\ConnectionInterface;
 use Yiisoft\Db\Connection\ConnectionProvider;
+use Yiisoft\Db\Migration\Informer\NullMigrationInformer;
+use Yiisoft\Db\Migration\MigrationBuilder;
 use Yiisoft\Db\Sqlite\Connection as SqliteConnection;
 use Yiisoft\Db\Sqlite\Driver;
 use Yiisoft\Db\Sqlite\Dsn;
+use Yiisoft\Security\PasswordHasher;
+
+require_once dirname(__DIR__, 2) . '/vendor/yiisoft/rbac-db/migrations/items/M240118192500CreateItemsTables.php';
+require_once dirname(__DIR__, 2) . '/vendor/yiisoft/rbac-db/migrations/assignments/M240118192500CreateAssignmentsTable.php';
+require_once dirname(__DIR__, 2) . '/migrations/M260621101843_create_user_module_tables.php';
 
 trait DatabaseSetupTrait
 {
     private ?ConnectionInterface $dbConnection = null;
 
-    protected function createTables(): void
+    protected function runMigrations(): void
     {
-        $this->dbConnection->createCommand('
-            CREATE TABLE "user" (
-                "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-                "username" VARCHAR(255) NOT NULL,
-                "email" VARCHAR(255) NOT NULL,
-                "password_hash" VARCHAR(255) NOT NULL,
-                "auth_key" VARCHAR(32) NOT NULL,
-                "auth_tf_enabled" INTEGER NOT NULL DEFAULT 0,
-                "auth_tf_key" VARCHAR(64),
-                "auth_tf_type" VARCHAR(20),
-                "blocked_at" INTEGER,
-                "confirmed_at" INTEGER,
-                "created_at" INTEGER NOT NULL,
-                "flags" INTEGER NOT NULL DEFAULT 0,
-                "gdpr_consent" INTEGER NOT NULL DEFAULT 0,
-                "gdpr_consent_date" INTEGER,
-                "anonymized" INTEGER NOT NULL DEFAULT 0,
-                "last_login_at" INTEGER,
-                "last_login_ip" VARCHAR(45),
-                "password_changed_at" INTEGER,
-                "registration_ip" VARCHAR(45),
-                "unconfirmed_email" VARCHAR(255),
-                "updated_at" INTEGER NOT NULL
-            )
-        ')->execute();
+        $builder = new MigrationBuilder($this->dbConnection, new NullMigrationInformer());
 
-        $this->dbConnection->createCommand('
-            CREATE TABLE "user_profile" (
-                "user_id" INTEGER NOT NULL,
-                "bio" TEXT,
-                "birthday" DATE,
-                "gravatar_email" VARCHAR(255),
-                "location" VARCHAR(255),
-                "name" VARCHAR(255),
-                "public_email" VARCHAR(255),
-                "timezone" VARCHAR(40),
-                "website" VARCHAR(255)
-            )
-        ')->execute();
+        (new M240118192500CreateItemsTables())->up($builder);
+        (new M240118192500CreateAssignmentsTable())->up($builder);
 
-        $this->dbConnection->createCommand('
-            CREATE TABLE "user_social_account" (
-                "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-                "user_id" INTEGER,
-                "provider" VARCHAR(255) NOT NULL,
-                "client_id" VARCHAR(255) NOT NULL,
-                "code" VARCHAR(32),
-                "email" VARCHAR(255),
-                "username" VARCHAR(255),
-                "data" TEXT,
-                "created_at" INTEGER NOT NULL
-            )
-        ')->execute();
+        $config = new ModuleConfig();
+        $migration = new M260621101843_create_user_module_tables($config, new PasswordHasher());
+        ob_start();
+        $migration->up($builder);
+        ob_end_clean();
 
-        $this->dbConnection->createCommand('
-            CREATE TABLE "user_token" (
-                "user_id" INTEGER NOT NULL,
-                "code" VARCHAR(64) NOT NULL,
-                "type" SMALLINT NOT NULL,
-                "created_at" INTEGER NOT NULL
-            )
-        ')->execute();
-
-        $this->dbConnection->createCommand('
-            CREATE TABLE "user_sessions" (
-                "user_id" INTEGER NOT NULL,
-                "session_id" VARCHAR(64) NOT NULL,
-                "user_agent" TEXT,
-                "ip" VARCHAR(45) NOT NULL,
-                "created_at" INTEGER NOT NULL,
-                "updated_at" INTEGER NOT NULL,
-                PRIMARY KEY ("user_id", "session_id")
-            )
-        ')->execute();
-
-        $this->dbConnection->createCommand('
-            CREATE TABLE "user_backup_code" (
-                "user_id" INTEGER NOT NULL,
-                "code_hash" VARCHAR(255) NOT NULL,
-                "used_at" INTEGER,
-                "created_at" INTEGER NOT NULL,
-                PRIMARY KEY ("user_id", "code_hash")
-            )
-        ')->execute();
-
-        $this->dbConnection->createCommand('
-            CREATE TABLE "user_password_history" (
-                "user_id" INTEGER NOT NULL,
-                "password_hash" VARCHAR(255) NOT NULL,
-                "created_at" INTEGER NOT NULL,
-                PRIMARY KEY ("user_id", "password_hash")
-            )
-        ')->execute();
-
-        $this->dbConnection->createCommand('
-            CREATE TABLE "audit_log" (
-                "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-                "actor_user_id" INTEGER,
-                "target_user_id" INTEGER,
-                "target_name" VARCHAR(255),
-                "action" VARCHAR(64) NOT NULL,
-                "context" TEXT,
-                "created_at" INTEGER NOT NULL
-            )
-        ')->execute();
+        $this->removeSeededAdmin($config);
     }
 
     protected function setUpDatabase(): void
@@ -142,13 +60,16 @@ trait DatabaseSetupTrait
         ConnectionProvider::set($connection);
         $this->dbConnection = $connection;
 
-        $this->createTables();
+        $this->runMigrations();
     }
 
     protected function tearDownDatabase(): void
     {
         if ($this->dbConnection !== null) {
-            $this->dbConnection->createCommand('DROP TABLE IF EXISTS "audit_log"')->execute();
+            $this->dbConnection->createCommand('DROP TABLE IF EXISTS "yii_rbac_assignment"')->execute();
+            $this->dbConnection->createCommand('DROP TABLE IF EXISTS "yii_rbac_item_child"')->execute();
+            $this->dbConnection->createCommand('DROP TABLE IF EXISTS "yii_rbac_item"')->execute();
+            $this->dbConnection->createCommand('DROP TABLE IF EXISTS "user_audit_log"')->execute();
             $this->dbConnection->createCommand('DROP TABLE IF EXISTS "user_password_history"')->execute();
             $this->dbConnection->createCommand('DROP TABLE IF EXISTS "user_backup_code"')->execute();
             $this->dbConnection->createCommand('DROP TABLE IF EXISTS "user_sessions"')->execute();
@@ -159,5 +80,34 @@ trait DatabaseSetupTrait
         }
         ConnectionProvider::clear();
         $this->dbConnection = null;
+    }
+
+    private function removeSeededAdmin(ModuleConfig $config): void
+    {
+        $this->dbConnection->createCommand(
+            'DELETE FROM {{%yii_rbac_assignment}} WHERE item_name = :name',
+            ['name' => M260621101843_create_user_module_tables::ROLE_NAME],
+        )->execute();
+        $this->dbConnection->createCommand(
+            'DELETE FROM {{%yii_rbac_item_child}} WHERE parent = :name',
+            ['name' => M260621101843_create_user_module_tables::ROLE_NAME],
+        )->execute();
+        $this->dbConnection->createCommand(
+            'DELETE FROM {{%yii_rbac_item}} WHERE name = :name',
+            ['name' => M260621101843_create_user_module_tables::ROLE_NAME],
+        )->execute();
+        $this->dbConnection->createCommand(
+            'DELETE FROM {{%yii_rbac_item}} WHERE name = :name',
+            ['name' => $config->administratorPermissionName],
+        )->execute();
+        $this->dbConnection->createCommand(
+            'DELETE FROM {{%user_profile}} WHERE user_id IN (SELECT id FROM {{%user}} WHERE email = :email)',
+            ['email' => M260621101843_create_user_module_tables::SEED_EMAIL],
+        )->execute();
+        $this->dbConnection->createCommand(
+            'DELETE FROM {{%user}} WHERE email = :email',
+            ['email' => M260621101843_create_user_module_tables::SEED_EMAIL],
+        )->execute();
+        $this->dbConnection->createCommand('DELETE FROM sqlite_sequence WHERE name = :name', ['name' => 'user'])->execute();
     }
 }

@@ -379,12 +379,6 @@ final class UserProfileTest extends TestCase
         self::assertSame($user->getId(), $found->getId());
     }
 
-    public function testTableName(): void
-    {
-        $entity = new UserProfile();
-        self::assertSame('{{%user_profile}}', $entity->tableName());
-    }
-
     private function createSqliteConnection(): ConnectionInterface
     {
         $dsn = new Dsn('sqlite', ':memory:');

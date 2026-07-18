@@ -7,7 +7,7 @@ namespace YiiRocks\Voyti\Service\UserSession;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Event\Session\SessionEvent;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Model\UserSession;
+use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Session\SessionInterface;
 
@@ -29,7 +29,7 @@ final readonly class UserSessionDecorator
             $this->replaceSession($userId, $previousSessionId);
         }
 
-        $userSession = new UserSession();
+        $userSession = new UserSessions();
         $userSession->setUserId($userId);
         $userSession->setSessionId($sessionId);
         $userSession->setIp($this->config->disableIpLogging ? '127.0.0.1' : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1'));
@@ -48,7 +48,7 @@ final readonly class UserSessionDecorator
         $userId = $user->getIdOrZero();
 
         $cutoff = time() - $this->config->rememberLoginLifespan;
-        (new UserSession())->deleteAll([
+        (new UserSessions())->deleteAll([
             'and',
             ['user_id' => $userId],
             ['<', 'created_at', $cutoff],
@@ -57,7 +57,7 @@ final readonly class UserSessionDecorator
 
     private function replaceSession(int $userId, string $previousSessionId): void
     {
-        $previous = UserSession::findByUserIdAndSessionId($userId, $previousSessionId);
+        $previous = UserSessions::findByUserIdAndSessionId($userId, $previousSessionId);
         if ($previous === null) {
             return;
         }

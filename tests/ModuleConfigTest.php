@@ -95,7 +95,7 @@ final class ModuleConfigTest extends TestCase
         self::assertSame(2592000, $config->rememberLoginLifespan);
         self::assertSame(86400, $config->tokenConfirmationLifespan);
         self::assertSame(21600, $config->tokenRecoveryLifespan);
-        self::assertSame('admin', $config->administratorPermissionName);
+        self::assertSame('voyti-admin-dashboard', $config->administratorPermissionName);
         self::assertSame(ProfileVisibility::USERS, $config->profileVisibility);
         self::assertNull($config->maxPasswordAge);
         self::assertFalse($config->disableIpLogging);
@@ -197,7 +197,7 @@ final class ModuleConfigTest extends TestCase
         self::assertSame(2592000, $config->rememberLoginLifespan);
         self::assertSame(86400, $config->tokenConfirmationLifespan);
         self::assertSame(21600, $config->tokenRecoveryLifespan);
-        self::assertSame('admin', $config->administratorPermissionName);
+        self::assertSame('voyti-admin-dashboard', $config->administratorPermissionName);
         self::assertSame(ProfileVisibility::USERS, $config->profileVisibility);
         self::assertNull($config->maxPasswordAge);
         self::assertFalse($config->disableIpLogging);

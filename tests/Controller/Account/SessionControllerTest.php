@@ -10,7 +10,7 @@ use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\Account\SessionController;
 use YiiRocks\Voyti\Event\Session\SessionEvent;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Model\UserSession;
+use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
@@ -155,7 +155,7 @@ final class SessionControllerTest extends TestCase
         $result = $controller->terminate('other-session');
 
         $this->assertSame($response, $result);
-        $this->assertNull(UserSession::findByUserIdAndSessionId($user->getIdOrZero(), 'other-session'));
+        $this->assertNull(UserSessions::findByUserIdAndSessionId($user->getIdOrZero(), 'other-session'));
     }
 
     public function testTerminateUnknownSessionShowsError(): void
@@ -191,9 +191,9 @@ final class SessionControllerTest extends TestCase
         );
     }
 
-    private function createSession(User $user, string $sessionId, string $ip): UserSession
+    private function createSession(User $user, string $sessionId, string $ip): UserSessions
     {
-        $session = new UserSession();
+        $session = new UserSessions();
         $session->setUserId($user->getIdOrZero());
         $session->setSessionId($sessionId);
         $session->setIp($ip);

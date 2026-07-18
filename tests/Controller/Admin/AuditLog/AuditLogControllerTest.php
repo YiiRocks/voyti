@@ -10,7 +10,7 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\Admin\AuditLog\AuditLogController;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
-use YiiRocks\Voyti\Model\AuditLog;
+use YiiRocks\Voyti\Model\UserAuditLog;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
@@ -73,7 +73,7 @@ final class AuditLogControllerTest extends TestCase
 
     public function testIndexPresentsLogFieldsFormattedForDisplay(): void
     {
-        $log = new AuditLog();
+        $log = new UserAuditLog();
         $log->setActorUserId(1);
         $log->setAction('rbac.role.update');
         $log->setTargetName('editor');
@@ -111,7 +111,7 @@ final class AuditLogControllerTest extends TestCase
 
     public function testIndexPresentsLogWithoutTargetOrContext(): void
     {
-        $log = new AuditLog();
+        $log = new UserAuditLog();
         $log->setAction('system.cleanup');
         $log->setCreatedAt(1700000000);
         $log->save();
@@ -190,7 +190,7 @@ final class AuditLogControllerTest extends TestCase
 
     private function createLog(int $actorUserId, int $targetUserId, string $action): void
     {
-        $log = new AuditLog();
+        $log = new UserAuditLog();
         $log->setActorUserId($actorUserId);
         $log->setTargetUserId($targetUserId);
         $log->setAction($action);

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Model\UserSession;
+use YiiRocks\Voyti\Model\UserSessions;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -15,7 +15,7 @@ use Yiisoft\View\WebView;
 /**
  * @var WebView $this
  * @var User $user
- * @var UserSession[] $sessions
+ * @var UserSessions[] $sessions
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
  * @var FlashInterface $flash

@@ -256,6 +256,11 @@ return [
     'voyti.view.dashboard.rules' => 'Reglas',
     'voyti.view.dashboard.recent_activity' => 'Actividad reciente',
     'voyti.view.dashboard.no_recent_activity' => 'Sin actividad reciente.',
+    'voyti.view.dashboard.new_registrations' => 'Nuevos registros',
+    'voyti.view.dashboard.active_sessions' => 'Sesiones activas',
+    'voyti.view.dashboard.last_1d' => 'Últimas 24 horas',
+    'voyti.view.dashboard.last_7d' => 'Últimos 7 días',
+    'voyti.view.dashboard.last_lifespan' => 'Últimos {days} días',
 
     'voyti.view.audit_log.title' => 'Registro de auditoría',
     'voyti.view.audit_log.created_header' => 'Cuándo',

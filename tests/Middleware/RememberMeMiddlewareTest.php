@@ -12,7 +12,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use YiiRocks\Voyti\Middleware\RememberMeMiddleware;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Model\UserSession;
+use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
@@ -240,9 +240,9 @@ final class RememberMeMiddlewareTest extends TestCase
         return $user;
     }
 
-    private function createUserSession(int $userId, string $sessionId): UserSession
+    private function createUserSession(int $userId, string $sessionId): UserSessions
     {
-        $sh = new UserSession();
+        $sh = new UserSessions();
         $sh->setUserId($userId);
         $sh->setSessionId($sessionId);
         $sh->setIp('127.0.0.1');

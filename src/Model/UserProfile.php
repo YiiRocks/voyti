@@ -182,15 +182,4 @@ final class UserProfile extends ActiveRecord
     {
         $this->website = $website;
     }
-
-    /**
-     * @return string
-     *
-     * @psalm-return '{{%user_profile}}'
-     */
-    #[\Override]
-    public function tableName(): string
-    {
-        return '{{%user_profile}}';
-    }
 }

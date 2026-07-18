@@ -17,7 +17,7 @@ use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Model\Form\Settings\ConsentForm;
 use YiiRocks\Voyti\Model\Form\Settings\GdprConsentForm;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Model\UserSession;
+use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\UserSession\TerminateUserSessionsService;
@@ -192,13 +192,13 @@ final readonly class PrivacyController
             'userProfile.bio' => $user->getProfile()?->getBio(),
             'userProfile.birthday' => $user->getProfile()?->getBirthday()?->format('Y-m-d'),
             'userSessions' => array_map(
-                static fn (UserSession $entry): array => [
+                static fn (UserSessions $entry): array => [
                     'ip' => $entry->getIp(),
                     'user_agent' => $entry->getUserAgent(),
                     'created_at' => $entry->getCreatedAt(),
                     'updated_at' => $entry->getUpdatedAt(),
                 ],
-                UserSession::findByUserId($user->getIdOrZero()),
+                UserSessions::findByUserId($user->getIdOrZero()),
             ),
             'userSocialAccount' => array_map(
                 static fn (UserSocialAccount $account): array => [

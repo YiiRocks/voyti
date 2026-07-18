@@ -18,7 +18,7 @@ use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Helper\LoginMetadataHelper;
 use YiiRocks\Voyti\Model\Form\Auth\LoginForm;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Model\UserSession;
+use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\Auth\SocialAuthProviderService;
@@ -279,7 +279,7 @@ final readonly class SessionController
         if ($this->currentUser->logout() && $identity instanceof User) {
             if ($sessionId !== '') {
                 $userId = $identity->getIdOrZero();
-                $userSession = UserSession::findByUserIdAndSessionId($userId, $sessionId);
+                $userSession = UserSessions::findByUserIdAndSessionId($userId, $sessionId);
                 if ($userSession !== null) {
                     $userSession->delete();
                     $this->eventDispatcher->dispatch(

@@ -23,10 +23,9 @@ use Yiisoft\View\WebView;
  * @var string $csrf
  */
 
-$isRole = $itemType === 'role';
 $routePrefix = 'admin-rbac-' . $itemType . 's';
-$descriptionColClass = $isRole ? 'col-4' : 'col-5';
-$actionsColClass = $isRole ? 'col-3 text-end' : 'col-4 text-end';
+$descriptionColClass = 'col-4';
+$actionsColClass = 'col-3 text-end';
 
 /** @psalm-suppress InvalidScope */
 $this->setTitle($translator->translate('voyti.view.' . $itemType . '.title', category: 'voyti'));
@@ -72,9 +71,7 @@ echo Html::form()->close();
 echo Html::div()->class('d-none d-md-flex row fw-bold border-bottom pb-2 mb-2')->open();
 echo Html::div($translator->translate('voyti.view.name_header', category: 'voyti'))->class('col-3');
 echo Html::div($translator->translate('voyti.view.description_header', category: 'voyti'))->class($descriptionColClass);
-if ($isRole) {
-    echo Html::div($translator->translate('voyti.view.children_header', category: 'voyti'))->class('col-2');
-}
+echo Html::div($translator->translate('voyti.view.children_header', category: 'voyti'))->class('col-2');
 echo Html::div($translator->translate('voyti.view.actions_header', category: 'voyti'))->class($actionsColClass);
 echo Html::div()->close();
 
@@ -82,9 +79,7 @@ foreach ($items as $item) {
     echo Html::div()->class('row py-2 border-bottom align-items-center')->open();
     echo Html::div($item->getName())->class('col-3 text-break');
     echo Html::div($item->getDescription())->class($descriptionColClass . ' text-break');
-    if ($isRole) {
-        echo Html::div(implode(', ', $itemChildren[$item->getName()] ?? []))->class('col-2 text-break');
-    }
+    echo Html::div(implode(', ', $itemChildren[$item->getName()] ?? []))->class('col-2 text-break');
     echo Html::div()->class($actionsColClass)->open();
     echo Html::a($translator->translate('voyti.view.update_link', category: 'voyti'), $url->generate('voyti/' . $routePrefix . '-update', ['name' => $item->getName()]))->class('btn', 'btn-sm', 'btn-outline-secondary', 'me-1');
 

@@ -406,17 +406,6 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
         $this->username = $username;
     }
 
-    /**
-     * @return string
-     *
-     * @psalm-return '{{%user}}'
-     */
-    #[\Override]
-    public function tableName(): string
-    {
-        return '{{%user}}';
-    }
-
     public function validateAuthKey(string $authKey): bool
     {
         return $this->auth_key === $authKey;

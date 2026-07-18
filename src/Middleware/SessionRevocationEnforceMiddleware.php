@@ -10,7 +10,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Model\UserSession;
+use YiiRocks\Voyti\Model\UserSessions;
 use Yiisoft\Http\Header;
 use Yiisoft\Http\Status;
 use Yiisoft\Router\CurrentRoute;
@@ -20,7 +20,7 @@ use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
 
 /**
- * Terminating a session only deletes its {@see UserSession} row — the browser's PHP session
+ * Terminating a session only deletes its {@see UserSessions} row — the browser's PHP session
  * stays valid until it expires naturally. This middleware closes that gap by force-logging-out once
  * the row is gone.
  */
@@ -59,7 +59,7 @@ final readonly class SessionRevocationEnforceMiddleware implements MiddlewareInt
             return $handler->handle($request);
         }
 
-        $userSession = UserSession::findByUserIdAndSessionId($user->getIdOrZero(), $sessionId);
+        $userSession = UserSessions::findByUserIdAndSessionId($user->getIdOrZero(), $sessionId);
 
         if ($userSession === null) {
             $this->currentUser->logout();

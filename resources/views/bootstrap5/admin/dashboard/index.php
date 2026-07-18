@@ -18,6 +18,9 @@ use Yiisoft\View\WebView;
  *     roleCount: int,
  *     permissionCount: int,
  *     ruleCount: int,
+ *     newRegistrations: array{oneDay: int, sevenDays: int, lifespan: int},
+ *     activeSessions: array{oneDay: int, sevenDays: int, lifespan: int},
+ *     rememberLifespanDays: int,
  *     recentAuditLogs: list<array{createdAt: string, action: string, targetLabel: string}>,
  * } $stats
  * @var ModuleConfig $config
@@ -62,6 +65,39 @@ foreach ($tiles as $tile) {
     echo Html::div()->close();
     echo Html::div()->close();
     echo Html::a()->close();
+    echo Html::div()->close();
+}
+echo Html::div()->close();
+
+$trendWidgets = [
+    ['title' => 'voyti.view.dashboard.new_registrations', 'data' => $stats['newRegistrations']],
+    ['title' => 'voyti.view.dashboard.active_sessions', 'data' => $stats['activeSessions']],
+];
+
+echo Html::div()->class('row row-cols-1 row-cols-md-2 g-3 mb-4')->open();
+foreach ($trendWidgets as $widget) {
+    $periods = [
+        ['label' => 'voyti.view.dashboard.last_1d', 'value' => $widget['data']['oneDay'], 'params' => []],
+        ['label' => 'voyti.view.dashboard.last_7d', 'value' => $widget['data']['sevenDays'], 'params' => []],
+        ['label' => 'voyti.view.dashboard.last_lifespan', 'value' => $widget['data']['lifespan'], 'params' => ['days' => $stats['rememberLifespanDays']]],
+    ];
+
+    echo Html::div()->class('col')->open();
+    echo Html::div()->class('card h-100')->open();
+    echo Html::div()->class('card-header')->open();
+    echo Html::H2($translator->translate($widget['title'], category: 'voyti'))->class('h5 mb-0');
+    echo Html::div()->close();
+    echo Html::div()->class('card-body')->open();
+    echo Html::div()->class('row row-cols-3 text-center g-2')->open();
+    foreach ($periods as $period) {
+        echo Html::div()->class('col')->open();
+        echo Html::div((string) $period['value'])->class('fs-3 fw-bold');
+        echo Html::div($translator->translate($period['label'], $period['params'], category: 'voyti'))->class('text-muted small');
+        echo Html::div()->close();
+    }
+    echo Html::div()->close();
+    echo Html::div()->close();
+    echo Html::div()->close();
     echo Html::div()->close();
 }
 echo Html::div()->close();

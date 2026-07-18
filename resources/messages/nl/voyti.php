@@ -256,6 +256,11 @@ return [
     'voyti.view.dashboard.rules' => 'Regels',
     'voyti.view.dashboard.recent_activity' => 'Recente activiteit',
     'voyti.view.dashboard.no_recent_activity' => 'Geen recente activiteit.',
+    'voyti.view.dashboard.new_registrations' => 'Nieuwe registraties',
+    'voyti.view.dashboard.active_sessions' => 'Actieve sessies',
+    'voyti.view.dashboard.last_1d' => 'Afgelopen 24 uur',
+    'voyti.view.dashboard.last_7d' => 'Afgelopen 7 dagen',
+    'voyti.view.dashboard.last_lifespan' => 'Afgelopen {days} dagen',
 
     'voyti.view.audit_log.title' => 'Auditlogboek',
     'voyti.view.audit_log.created_header' => 'Wanneer',

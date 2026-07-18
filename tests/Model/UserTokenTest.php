@@ -333,12 +333,6 @@ final class UserTokenTest extends TestCase
         self::assertSame(['user_id', 'code', 'type'], $entity->primaryKey());
     }
 
-    public function testTableName(): void
-    {
-        $entity = new UserToken();
-        self::assertSame('{{%user_token}}', $entity->tableName());
-    }
-
     private function createSqliteConnection(): ConnectionInterface
     {
         $dsn = new \Yiisoft\Db\Sqlite\Dsn('sqlite', ':memory:');

@@ -56,7 +56,7 @@ final readonly class ModuleConfig
         public int $rememberLoginLifespan = 2592000,
         public int $tokenConfirmationLifespan = 86400,
         public int $tokenRecoveryLifespan = 21600,
-        public ?string $administratorPermissionName = 'admin',
+        public string $administratorPermissionName = 'voyti-admin-dashboard',
         public ProfileVisibility $profileVisibility = ProfileVisibility::USERS,
         public ?int $maxPasswordAge = null,
         public bool $disableIpLogging = false,
@@ -72,7 +72,7 @@ final readonly class ModuleConfig
     /**
      * @return (array|bool|int|null|string|EmailChangeConfirmation|ProfileVisibility|RecaptchaVersion)[]
      *
-     * @psalm-return array{appName: string, recaptchaVersion: null|RecaptchaVersion, enableGdprCompliance: bool, gdprExportProperties: list<string>, gdprAnonymizePrefix: string, enableTwoFactorAuthentication: bool, twoFactorAuthenticationForcedPermissions: array<array-key, string>, enableRegistration: bool, enableSocialNetworkRegistration: bool, socialNetworkClients: array<string, array<string, mixed>>, enableEmailConfirmation: bool, enableSwitchIdentities: bool, switchIdentitySessionKey: null|string, homeRoute: string, mailAdminOnRegister: null|string, enablePasswordExpiration: bool, enablePasswordComplexity: bool, passwordHistoryLimit: int, generatePasswords: bool, allowPasswordRecovery: bool, allowAdminPasswordRecovery: bool, allowAccountDelete: bool, emailChangeConfirmation: EmailChangeConfirmation, rememberLoginLifespan: int, tokenConfirmationLifespan: int, tokenRecoveryLifespan: int, administratorPermissionName: null|string, profileVisibility: ProfileVisibility, maxPasswordAge: int|null, disableIpLogging: bool, viewPath: string, mailPath: string, enableRestApi: bool, adminRestPrefix: string, apiTokenLifespan: int|null, enableAuditLog: bool}
+     * @psalm-return array{appName: string, recaptchaVersion: null|RecaptchaVersion, enableGdprCompliance: bool, gdprExportProperties: list<string>, gdprAnonymizePrefix: string, enableTwoFactorAuthentication: bool, twoFactorAuthenticationForcedPermissions: array<array-key, string>, enableRegistration: bool, enableSocialNetworkRegistration: bool, socialNetworkClients: array<string, array<string, mixed>>, enableEmailConfirmation: bool, enableSwitchIdentities: bool, switchIdentitySessionKey: null|string, homeRoute: string, mailAdminOnRegister: null|string, enablePasswordExpiration: bool, enablePasswordComplexity: bool, passwordHistoryLimit: int, generatePasswords: bool, allowPasswordRecovery: bool, allowAdminPasswordRecovery: bool, allowAccountDelete: bool, emailChangeConfirmation: EmailChangeConfirmation, rememberLoginLifespan: int, tokenConfirmationLifespan: int, tokenRecoveryLifespan: int, administratorPermissionName: string, profileVisibility: ProfileVisibility, maxPasswordAge: int|null, disableIpLogging: bool, viewPath: string, mailPath: string, enableRestApi: bool, adminRestPrefix: string, apiTokenLifespan: int|null, enableAuditLog: bool}
      */
     public static function defaults(): array
     {

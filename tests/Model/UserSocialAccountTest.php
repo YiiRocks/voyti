@@ -322,12 +322,6 @@ final class UserSocialAccountTest extends TestCase
         self::assertNull($entity->getDecodedData());
     }
 
-    public function testTableName(): void
-    {
-        $entity = new UserSocialAccount();
-        self::assertSame('{{%user_social_account}}', $entity->tableName());
-    }
-
     private function createAccount(string $provider, string $clientId, string $code): UserSocialAccount
     {
         $account = new UserSocialAccount();

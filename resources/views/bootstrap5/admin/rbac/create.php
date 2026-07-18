@@ -5,6 +5,7 @@ declare(strict_types=1);
 use YiiRocks\Voyti\Model\Form\Rbac\AbstractAuthItemForm;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
+use Yiisoft\Rbac\Item;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\View\WebView;
@@ -13,6 +14,7 @@ use Yiisoft\View\WebView;
  * @var WebView $this
  * @var string $itemType 'role' or 'permission'
  * @var AbstractAuthItemForm $model
+ * @var array<string, Item> $availableChildren
  * @var array<string, list<string>> $errors
  * @var UrlGeneratorInterface $url
  * @var TranslatorInterface $translator
@@ -51,6 +53,24 @@ echo Field::text($model, 'name')->tabIndex(++$tabindex);
 echo Field::text($model, 'description')->tabIndex(++$tabindex);
 
 echo Field::text($model, 'rule')->tabIndex(++$tabindex);
+
+echo Html::h3($translator->translate('voyti.view.children_header', category: 'voyti'))->class('mb-3');
+echo Html::div()->class('mb-3')->open();
+/** @var list<string> $selectedChildren */
+$selectedChildren = $model->children;
+foreach ($availableChildren as $child) {
+    $isChecked = in_array($child->getName(), $selectedChildren, true);
+    echo Html::div()->class('form-check')->open();
+    echo Html::input('checkbox')
+        ->class('form-check-input')
+        ->name($model->getFormName() . '[children][]')
+        ->value($child->getName())
+        ->addAttributes($isChecked ? ['checked' => true] : [])
+        ->attribute('tabindex', ++$tabindex);
+    echo Html::label($child->getName())->class('form-check-label');
+    echo Html::div()->close();
+}
+echo Html::div()->close();
 
 echo Field::buttonGroup()
     ->buttons(

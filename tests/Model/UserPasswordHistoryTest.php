@@ -118,12 +118,6 @@ final class UserPasswordHistoryTest extends TestCase
         self::assertSame(['user_id', 'password_hash'], $entity->primaryKey());
     }
 
-    public function testTableName(): void
-    {
-        $entity = new UserPasswordHistory();
-        self::assertSame('{{%user_password_history}}', $entity->tableName());
-    }
-
     private function createSqliteConnection(): ConnectionInterface
     {
         $dsn = new \Yiisoft\Db\Sqlite\Dsn('sqlite', ':memory:');
