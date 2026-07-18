@@ -8,13 +8,16 @@ use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\DataResponse\ResponseFactory\DataResponseFactoryInterface;
 
+/**
+ * Serves a hand-written OpenAPI 3.1 document describing the `enableRestApi` user endpoints
+ * (`Controller/api/v1/User/UserController`), for API consumers/tooling.
+ */
 final readonly class OpenApiController
 {
     public function __construct(
         private DataResponseFactoryInterface $responseFactory,
         private ModuleConfig $config,
-    ) {
-    }
+    ) {}
 
     public function index(): ResponseInterface
     {
@@ -43,7 +46,11 @@ final readonly class OpenApiController
                         'responses' => [
                             '200' => [
                                 'description' => 'Paginated list of users',
-                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/PaginatedUsers']]],
+                                'content' => [
+                                    'application/json' => [
+                                        'schema' => ['$ref' => '#/components/schemas/PaginatedUsers'],
+                                    ],
+                                ],
                             ],
                         ],
                     ],
@@ -53,16 +60,28 @@ final readonly class OpenApiController
                         'tags' => ['Users'],
                         'requestBody' => [
                             'required' => true,
-                            'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/UserCreateRequest']]],
+                            'content' => [
+                                'application/json' => [
+                                    'schema' => ['$ref' => '#/components/schemas/UserCreateRequest'],
+                                ],
+                            ],
                         ],
                         'responses' => [
                             '201' => [
                                 'description' => 'User created',
-                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/UserCreatedResponse']]],
+                                'content' => [
+                                    'application/json' => [
+                                        'schema' => ['$ref' => '#/components/schemas/UserCreatedResponse'],
+                                    ],
+                                ],
                             ],
                             '400' => [
                                 'description' => 'Validation error',
-                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/ErrorResponse']]],
+                                'content' => [
+                                    'application/json' => [
+                                        'schema' => ['$ref' => '#/components/schemas/ErrorResponse'],
+                                    ],
+                                ],
                             ],
                         ],
                     ],
@@ -78,11 +97,17 @@ final readonly class OpenApiController
                         'responses' => [
                             '200' => [
                                 'description' => 'User details',
-                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/User']]],
+                                'content' => [
+                                    'application/json' => ['schema' => ['$ref' => '#/components/schemas/User']],
+                                ],
                             ],
                             '404' => [
                                 'description' => 'User not found',
-                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/ErrorResponse']]],
+                                'content' => [
+                                    'application/json' => [
+                                        'schema' => ['$ref' => '#/components/schemas/ErrorResponse'],
+                                    ],
+                                ],
                             ],
                         ],
                     ],
@@ -95,20 +120,36 @@ final readonly class OpenApiController
                         ],
                         'requestBody' => [
                             'required' => true,
-                            'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/UserUpdateRequest']]],
+                            'content' => [
+                                'application/json' => [
+                                    'schema' => ['$ref' => '#/components/schemas/UserUpdateRequest'],
+                                ],
+                            ],
                         ],
                         'responses' => [
                             '200' => [
                                 'description' => 'User updated',
-                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/UserUpdatedResponse']]],
+                                'content' => [
+                                    'application/json' => [
+                                        'schema' => ['$ref' => '#/components/schemas/UserUpdatedResponse'],
+                                    ],
+                                ],
                             ],
                             '400' => [
                                 'description' => 'Validation error',
-                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/ErrorResponse']]],
+                                'content' => [
+                                    'application/json' => [
+                                        'schema' => ['$ref' => '#/components/schemas/ErrorResponse'],
+                                    ],
+                                ],
                             ],
                             '404' => [
                                 'description' => 'User not found',
-                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/ErrorResponse']]],
+                                'content' => [
+                                    'application/json' => [
+                                        'schema' => ['$ref' => '#/components/schemas/ErrorResponse'],
+                                    ],
+                                ],
                             ],
                         ],
                     ],
@@ -122,11 +163,19 @@ final readonly class OpenApiController
                         'responses' => [
                             '200' => [
                                 'description' => 'User deleted',
-                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/MessageResponse']]],
+                                'content' => [
+                                    'application/json' => [
+                                        'schema' => ['$ref' => '#/components/schemas/MessageResponse'],
+                                    ],
+                                ],
                             ],
                             '404' => [
                                 'description' => 'User not found',
-                                'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/ErrorResponse']]],
+                                'content' => [
+                                    'application/json' => [
+                                        'schema' => ['$ref' => '#/components/schemas/ErrorResponse'],
+                                    ],
+                                ],
                             ],
                         ],
                     ],

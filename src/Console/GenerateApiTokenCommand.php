@@ -9,6 +9,11 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Service\User\ApiTokenService;
 
+/**
+ * Console command (`voyti:api-token:generate`) that generates an API access token for a user, looked
+ * up via {@see UserLookupTrait}. The token is printed once and not persisted in cleartext, so it must
+ * be stored securely by the caller.
+ */
 final class GenerateApiTokenCommand extends Command
 {
     use UserLookupTrait;

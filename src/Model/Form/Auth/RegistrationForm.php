@@ -17,8 +17,12 @@ use Yiisoft\Validator\Rule\Length;
 use Yiisoft\Validator\Rule\Regex;
 use Yiisoft\Validator\Rule\Required;
 use Yiisoft\Validator\Rule\TrueValue;
+use Yiisoft\Validator\RuleInterface;
 use Yiisoft\Validator\RulesProviderInterface;
 
+/**
+ * Backs the registration page: username, email, password, and optional GDPR consent.
+ */
 final class RegistrationForm extends FormModel implements RulesProviderInterface
 {
     #[Required]
@@ -42,13 +46,18 @@ final class RegistrationForm extends FormModel implements RulesProviderInterface
     public function __construct(
         private readonly ModuleConfig $config,
         private readonly TranslatorInterface $translator,
-    ) {
-    }
+    ) {}
 
     /**
      * @return string[]
      *
-     * @psalm-return array{username: string, email: string, password: string, passwordRepeat: string, gdprConsent: string}
+     * @psalm-return array{
+     *     username: string,
+     *     email: string,
+     *     password: string,
+     *     passwordRepeat: string,
+     *     gdprConsent: string,
+     * }
      */
     public function getAttributeLabels(): array
     {
@@ -87,9 +96,12 @@ final class RegistrationForm extends FormModel implements RulesProviderInterface
         $parser = new ObjectParser($this);
         $rules = $parser->getRules();
 
-        /** @var list<\Yiisoft\Validator\RuleInterface> $passwordRules */
+        /** @var list<RuleInterface> $passwordRules */
         $passwordRules = $rules['password'];
-        $rules['password'] = array_merge($passwordRules, PasswordComplexityRule::rules($this->config, $this->translator));
+        $rules['password'] = array_merge(
+            $passwordRules,
+            PasswordComplexityRule::rules($this->config, $this->translator),
+        );
 
         if ($this->config->enableGdprCompliance) {
             $rules['gdprConsent'] = [new TrueValue(trueValue: true)];

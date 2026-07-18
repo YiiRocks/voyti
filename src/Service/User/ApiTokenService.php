@@ -8,6 +8,10 @@ use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
 use Yiisoft\Security\Random;
 
+/**
+ * Issues and revokes API bearer tokens ({@see UserToken::TYPE_API_ACCESS}) for a user; only the
+ * SHA-256 hash of the raw token is persisted.
+ */
 final readonly class ApiTokenService
 {
     public function generate(User $user): string
@@ -28,7 +32,7 @@ final readonly class ApiTokenService
     {
         $tokens = array_filter(
             UserToken::findByUserId((int) $user->getId()),
-            static fn (UserToken $token): bool => $token->getType() === UserToken::TYPE_API_ACCESS,
+            static fn(UserToken $token): bool => $token->getType() === UserToken::TYPE_API_ACCESS,
         );
 
         foreach ($tokens as $token) {

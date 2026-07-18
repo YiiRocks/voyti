@@ -7,6 +7,11 @@ namespace YiiRocks\Voyti\Model;
 use Yiisoft\ActiveRecord\ActiveRecord;
 use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
 
+/**
+ * ActiveRecord for the `user_social_account` table: a social-provider identity (e.g. Google,
+ * GitHub), either already linked to a `user_id` or still pending connection via its one-time
+ * `code`.
+ */
 final class UserSocialAccount extends ActiveRecord
 {
     use PrivatePropertiesTrait;

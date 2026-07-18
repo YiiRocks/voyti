@@ -16,8 +16,13 @@ use Yiisoft\Validator\Rule\Equal;
 use Yiisoft\Validator\Rule\Length;
 use Yiisoft\Validator\Rule\Regex;
 use Yiisoft\Validator\Rule\Required;
+use Yiisoft\Validator\RuleInterface;
 use Yiisoft\Validator\RulesProviderInterface;
 
+/**
+ * Backs the account settings page: username, email, and optional password change. Carries the
+ * {@see User} being edited via {@see self::setUser()} so validation/persistence can act on it.
+ */
 final class SettingsForm extends FormModel implements RulesProviderInterface
 {
     #[Required]
@@ -38,13 +43,22 @@ final class SettingsForm extends FormModel implements RulesProviderInterface
     public function __construct(
         private readonly ModuleConfig $config,
         private readonly TranslatorInterface $translator,
-    ) {
-    }
+    ) {}
 
     /**
      * @return string[]
      *
-     * @psalm-return array{username: string, email: string, password: string, passwordRepeat: string, publicEmail: string, name: string, bio: string, currentPassword: string, authTfEnabled: string}
+     * @psalm-return array{
+     *     username: string,
+     *     email: string,
+     *     password: string,
+     *     passwordRepeat: string,
+     *     publicEmail: string,
+     *     name: string,
+     *     bio: string,
+     *     currentPassword: string,
+     *     authTfEnabled: string,
+     * }
      */
     public function getAttributeLabels(): array
     {
@@ -84,9 +98,12 @@ final class SettingsForm extends FormModel implements RulesProviderInterface
         $parser = new ObjectParser($this);
         $rules = $parser->getRules();
 
-        /** @var list<\Yiisoft\Validator\RuleInterface> $passwordRules */
+        /** @var list<RuleInterface> $passwordRules */
         $passwordRules = $rules['password'];
-        $rules['password'] = array_merge($passwordRules, PasswordComplexityRule::rules($this->config, $this->translator));
+        $rules['password'] = array_merge(
+            $passwordRules,
+            PasswordComplexityRule::rules($this->config, $this->translator),
+        );
 
         return $rules;
     }

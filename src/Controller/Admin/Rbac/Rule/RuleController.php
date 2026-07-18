@@ -24,6 +24,11 @@ use Yiisoft\User\CurrentUser;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
+/**
+ * Admin CRUD for RBAC rules (`Yiisoft\Rbac\RuleInterface` implementations registered by class name),
+ * delegating persistence to {@see RuleEditionService}. Kept separate from {@see RbacController} since
+ * rules aren't itemType-driven.
+ */
 final readonly class RuleController
 {
     use ActorIdTrait;
@@ -43,8 +48,7 @@ final readonly class RuleController
         private ModuleConfig $config,
         private AuditLogService $auditLogService,
         private CurrentUser $currentUser,
-    ) {
-    }
+    ) {}
 
     public function create(ServerRequestInterface $request): ResponseInterface
     {
@@ -121,7 +125,10 @@ final readonly class RuleController
                         context: ['previousName' => $name],
                     );
 
-                    return $this->redirectWithFlash($this->url->generate('voyti/admin-rbac-rules'), 'voyti.rule.updated');
+                    return $this->redirectWithFlash(
+                        $this->url->generate('voyti/admin-rbac-rules'),
+                        'voyti.rule.updated',
+                    );
                 }
                 $errors['class'] = [$this->translator->translate('voyti.rule.invalid_class', category: 'voyti')];
             } else {

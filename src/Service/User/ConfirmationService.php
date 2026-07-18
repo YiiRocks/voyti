@@ -11,14 +11,17 @@ use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\Service\MailService;
 
+/**
+ * Handles account email confirmation: confirms via a mailed code, resends the confirmation email,
+ * and marks the account confirmed, dispatching {@see UserEvent::CONFIRM}.
+ */
 final readonly class ConfirmationService
 {
     public function __construct(
         private EventDispatcherInterface $eventDispatcher,
         private UserTokenFactory $userTokenFactory,
         private MailService $mailService,
-    ) {
-    }
+    ) {}
 
     public function confirmWithCode(string $code, User $user): bool
     {
@@ -32,7 +35,7 @@ final readonly class ConfirmationService
             UserToken::TYPE_CONFIRMATION,
         );
 
-        if ($userToken === null || $userToken->getIsExpired()) {
+        if ($userToken === null || $userToken->isExpired()) {
             return false;
         }
 

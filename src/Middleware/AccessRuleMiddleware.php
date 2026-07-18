@@ -16,6 +16,10 @@ use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
 
+/**
+ * Guards admin routes: redirects guests to `voyti/session-login` and returns 403 for
+ * authenticated users lacking the configured administrator permission.
+ */
 final readonly class AccessRuleMiddleware implements MiddlewareInterface
 {
     public function __construct(
@@ -23,8 +27,7 @@ final readonly class AccessRuleMiddleware implements MiddlewareInterface
         private AuthHelper $authHelper,
         private ResponseFactoryInterface $responseFactory,
         private UrlGeneratorInterface $url,
-    ) {
-    }
+    ) {}
 
     #[\Override]
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Controller\Account;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -22,7 +23,7 @@ use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class SessionControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
@@ -86,7 +87,7 @@ final class SessionControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('account/sessions', $this->callback(
-                static fn (array $params): bool => count($params['sessions']) === 2
+                static fn(array $params): bool => count($params['sessions']) === 2
                     && $params['currentSessionId'] === 'current-session'
                     && array_key_exists('timezone', $params),
             ))

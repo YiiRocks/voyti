@@ -7,9 +7,13 @@ namespace YiiRocks\Voyti\Helper;
 use Psr\Http\Message\ServerRequestInterface;
 use Yiisoft\Session\SessionInterface;
 
+/**
+ * Adds typed request-input accessors to a controller: pulling the parsed body, query params, a
+ * request attribute, or a session value out as an array/string with a safe default instead of
+ * `mixed`, plus unwrapping a form's namespaced fields out of the parsed body.
+ */
 trait InputDataTrait
 {
-
     /**
      * @param array<array-key, mixed> $body
      *
@@ -56,7 +60,7 @@ trait InputDataTrait
      *
      * @return null|string
      */
-    private function nullableStringValue(array $data, string $key): string|null
+    private function nullableStringValue(array $data, string $key): ?string
     {
         /** @var mixed $value */
         $value = $data[$key] ?? null;

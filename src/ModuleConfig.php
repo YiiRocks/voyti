@@ -11,9 +11,13 @@ use YiiRocks\Voyti\Enum\RecaptchaVersion;
 use Yiisoft\Router\RouteNotFoundException;
 use Yiisoft\Router\UrlGeneratorInterface;
 
+/**
+ * Single source of truth for all module settings: an immutable value object built from the
+ * host's `yiirocks/voyti` params array via {@see self::fromArray()} and injected into services
+ * instead of raw params.
+ */
 final readonly class ModuleConfig
 {
-
     public function __construct(
         public string $appName = 'Voyti',
         public ?RecaptchaVersion $recaptchaVersion = null,
@@ -66,13 +70,49 @@ final readonly class ModuleConfig
         public string $adminRestPrefix = 'api',
         public ?int $apiTokenLifespan = null,
         public bool $enableAuditLog = true,
-    ) {
-    }
+    ) {}
 
     /**
      * @return (array|bool|int|null|string|EmailChangeConfirmation|ProfileVisibility|RecaptchaVersion)[]
      *
-     * @psalm-return array{appName: string, recaptchaVersion: null|RecaptchaVersion, enableGdprCompliance: bool, gdprExportProperties: list<string>, gdprAnonymizePrefix: string, enableTwoFactorAuthentication: bool, twoFactorAuthenticationForcedPermissions: array<array-key, string>, enableRegistration: bool, enableSocialNetworkRegistration: bool, socialNetworkClients: array<string, array<string, mixed>>, enableEmailConfirmation: bool, enableSwitchIdentities: bool, switchIdentitySessionKey: null|string, homeRoute: string, mailAdminOnRegister: null|string, enablePasswordExpiration: bool, enablePasswordComplexity: bool, passwordHistoryLimit: int, generatePasswords: bool, allowPasswordRecovery: bool, allowAdminPasswordRecovery: bool, allowAccountDelete: bool, emailChangeConfirmation: EmailChangeConfirmation, rememberLoginLifespan: int, tokenConfirmationLifespan: int, tokenRecoveryLifespan: int, administratorPermissionName: string, profileVisibility: ProfileVisibility, maxPasswordAge: int|null, disableIpLogging: bool, viewPath: string, mailPath: string, enableRestApi: bool, adminRestPrefix: string, apiTokenLifespan: int|null, enableAuditLog: bool}
+     * @psalm-return array{
+     *     appName: string,
+     *     recaptchaVersion: null|RecaptchaVersion,
+     *     enableGdprCompliance: bool,
+     *     gdprExportProperties: list<string>,
+     *     gdprAnonymizePrefix: string,
+     *     enableTwoFactorAuthentication: bool,
+     *     twoFactorAuthenticationForcedPermissions: array<array-key, string>,
+     *     enableRegistration: bool,
+     *     enableSocialNetworkRegistration: bool,
+     *     socialNetworkClients: array<string, array<string, mixed>>,
+     *     enableEmailConfirmation: bool,
+     *     enableSwitchIdentities: bool,
+     *     switchIdentitySessionKey: null|string,
+     *     homeRoute: string,
+     *     mailAdminOnRegister: null|string,
+     *     enablePasswordExpiration: bool,
+     *     enablePasswordComplexity: bool,
+     *     passwordHistoryLimit: int,
+     *     generatePasswords: bool,
+     *     allowPasswordRecovery: bool,
+     *     allowAdminPasswordRecovery: bool,
+     *     allowAccountDelete: bool,
+     *     emailChangeConfirmation: EmailChangeConfirmation,
+     *     rememberLoginLifespan: int,
+     *     tokenConfirmationLifespan: int,
+     *     tokenRecoveryLifespan: int,
+     *     administratorPermissionName: string,
+     *     profileVisibility: ProfileVisibility,
+     *     maxPasswordAge: int|null,
+     *     disableIpLogging: bool,
+     *     viewPath: string,
+     *     mailPath: string,
+     *     enableRestApi: bool,
+     *     adminRestPrefix: string,
+     *     apiTokenLifespan: int|null,
+     *     enableAuditLog: bool,
+     * }
      */
     public static function defaults(): array
     {
@@ -102,7 +142,8 @@ final readonly class ModuleConfig
             throw new LogicException(
                 sprintf(
                     '"homeRoute" is set to "%s", but no such route is registered. '
-                    . 'Configure "homeRoute" in the "yiirocks/voyti" params to point to a route the application actually defines.',
+                    . 'Configure "homeRoute" in the "yiirocks/voyti" params to point to a route the '
+                    . 'application actually defines.',
                     $this->homeRoute,
                 ),
                 0,

@@ -6,6 +6,7 @@ namespace YiiRocks\Voyti\tests\Controller\Session;
 
 use LogicException;
 use Nyholm\Psr7\ServerRequest;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -36,7 +37,7 @@ use Yiisoft\Validator\Result;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class SessionControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
@@ -141,7 +142,7 @@ final class SessionControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('shared/message', $this->callback(
-                static fn (array $params): bool => $params['title'] === 'already connected',
+                static fn(array $params): bool => $params['title'] === 'already connected',
             ))
             ->willReturn($response);
 
@@ -167,7 +168,7 @@ final class SessionControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('shared/message', $this->callback(
-                static fn (array $params): bool => $params['title'] === 'state mismatch',
+                static fn(array $params): bool => $params['title'] === 'state mismatch',
             ))
             ->willReturn($response);
 
@@ -209,7 +210,7 @@ final class SessionControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('shared/message', $this->callback(
-                static fn (array $params): bool => $params['title'] === 'state mismatch',
+                static fn(array $params): bool => $params['title'] === 'state mismatch',
             ))
             ->willReturn($response);
 
@@ -233,7 +234,7 @@ final class SessionControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('shared/message', $this->callback(
-                static fn (array $params): bool => $params['title'] === 'could not authenticate',
+                static fn(array $params): bool => $params['title'] === 'could not authenticate',
             ))
             ->willReturn($response);
 
@@ -280,7 +281,7 @@ final class SessionControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('shared/message', $this->callback(
-                static fn (array $params): bool => $params['title'] === 'Authenticated',
+                static fn(array $params): bool => $params['title'] === 'Authenticated',
             ))
             ->willReturn($response);
 
@@ -425,7 +426,7 @@ final class SessionControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('session/confirm', $this->callback(
-                static fn (array $params): bool => $params['method'] === 'google',
+                static fn(array $params): bool => $params['method'] === 'google',
             ))
             ->willReturn($response);
 
@@ -581,7 +582,7 @@ final class SessionControllerTest extends TestCase
 
         $this->validator->method('validate')->willReturn(new Result());
         $this->twoFactorEmailCodeService->expects($this->once())->method('run')->with(
-            $this->callback(static fn (User $u): bool => $u->getId() === $user->getId()),
+            $this->callback(static fn(User $u): bool => $u->getId() === $user->getId()),
         );
 
         $response = $this->createMock(ResponseInterface::class);
@@ -589,7 +590,7 @@ final class SessionControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('session/confirm', $this->callback(
-                static fn (array $params): bool => $params['method'] === 'email',
+                static fn(array $params): bool => $params['method'] === 'email',
             ))
             ->willReturn($response);
 
@@ -616,7 +617,7 @@ final class SessionControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('session/confirm', $this->callback(
-                static fn (array $params): bool => $params['method'] === 'google',
+                static fn(array $params): bool => $params['method'] === 'google',
             ))
             ->willReturn($response);
 

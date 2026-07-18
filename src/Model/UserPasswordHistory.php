@@ -7,6 +7,10 @@ namespace YiiRocks\Voyti\Model;
 use Yiisoft\ActiveRecord\ActiveRecord;
 use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
 
+/**
+ * ActiveRecord for the `user_password_history` table: past password hashes kept to enforce
+ * password-reuse restrictions.
+ */
 final class UserPasswordHistory extends ActiveRecord
 {
     use PrivatePropertiesTrait;

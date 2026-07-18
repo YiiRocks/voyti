@@ -25,6 +25,10 @@ use Yiisoft\User\CurrentUser;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
+/**
+ * Handles the logged-in user's own account settings form (username/email/password) and the
+ * confirmation link sent when the email address changes.
+ */
 final readonly class AccountController
 {
     use InputDataTrait;
@@ -44,8 +48,7 @@ final readonly class AccountController
         private ResponseFactoryInterface $responseFactory,
         private FlashInterface $flash,
         private PasswordHistoryService $passwordHistoryService,
-    ) {
-    }
+    ) {}
 
     public function confirm(ServerRequestInterface $request, string $code): ResponseInterface
     {
@@ -55,10 +58,15 @@ final readonly class AccountController
         }
 
         if ($this->emailChangeService->run($code, $user)) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.email_changed', category: 'voyti')]);
+            return $this->renderView('shared/message', [
+                'title' => $this->translator->translate('voyti.settings.email_changed', category: 'voyti'),
+            ]);
         }
 
-        return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.email_change_failed', category: 'voyti'), 'translator' => $this->translator]);
+        return $this->renderView('shared/message', [
+            'title' => $this->translator->translate('voyti.settings.email_change_failed', category: 'voyti'),
+            'translator' => $this->translator,
+        ]);
     }
 
     public function update(ServerRequestInterface $request): ResponseInterface
@@ -77,9 +85,16 @@ final readonly class AccountController
             $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
             $result = $this->validator->validate($form);
 
-            if ($result->isValid() && $form->password !== '' && $this->passwordHistoryService->wasUsedRecently($user, $form->password)) {
+            if (
+                $result->isValid()
+                && $form->password !== ''
+                && $this->passwordHistoryService->wasUsedRecently($user, $form->password)
+            ) {
                 $form->processValidationResult($result);
-                $form->addError($this->translator->translate('voyti.settings.password_previously_used', category: 'voyti'), ['password']);
+                $form->addError(
+                    $this->translator->translate('voyti.settings.password_previously_used', category: 'voyti'),
+                    ['password'],
+                );
             } elseif ($result->isValid()) {
                 $user->setUsername($form->username);
 
@@ -105,7 +120,11 @@ final readonly class AccountController
             }
         }
 
-        return $this->renderView('account/update', ['model' => $form, 'config' => $this->config, 'flash' => $this->flash]);
+        return $this->renderView('account/update', [
+            'model' => $form,
+            'config' => $this->config,
+            'flash' => $this->flash,
+        ]);
     }
 
 }

@@ -6,6 +6,10 @@ namespace YiiRocks\Voyti\Validator\TwoFactor;
 
 use YiiRocks\Voyti\Model\User;
 
+/**
+ * Generates and verifies email-delivered two-factor authentication codes by comparing against the
+ * user's stored code.
+ */
 final class EmailValidator
 {
     private string $error = '';
@@ -14,8 +18,7 @@ final class EmailValidator
     public function __construct(
         private readonly User $user,
         private readonly string $code = '',
-    ) {
-    }
+    ) {}
 
     /**
      * @return numeric-string

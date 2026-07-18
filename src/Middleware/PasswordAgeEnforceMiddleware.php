@@ -19,6 +19,9 @@ use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
 
+/**
+ * Redirects an authenticated user with an expired password to the account settings route.
+ */
 final readonly class PasswordAgeEnforceMiddleware implements MiddlewareInterface
 {
     private const ACCOUNT_SETTINGS_ROUTE = 'voyti/account-update';
@@ -36,8 +39,7 @@ final readonly class PasswordAgeEnforceMiddleware implements MiddlewareInterface
         private TranslatorInterface $translator,
         private ResponseFactoryInterface $responseFactory,
         private UrlGeneratorInterface $url,
-    ) {
-    }
+    ) {}
 
     #[\Override]
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface

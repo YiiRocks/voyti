@@ -4,7 +4,15 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Helper;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\RequestFactoryInterface;
+use Psr\Http\Message\StreamFactoryInterface;
+use YiiRocks\Recaptcha\Exception\MissingSiteKeyException;
+use YiiRocks\Recaptcha\RecaptchaClient;
+use YiiRocks\Recaptcha\RecaptchaConfig;
 use YiiRocks\Recaptcha\RecaptchaRegistry;
 use YiiRocks\Voyti\Enum\RecaptchaVersion;
 use YiiRocks\Voyti\Helper\RecaptchaHelper;
@@ -22,7 +30,7 @@ final class RecaptchaTestForm extends FormModel
     }
 }
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class RecaptchaHelperTest extends TestCase
 {
     protected function setUp(): void
@@ -81,29 +89,29 @@ final class RecaptchaHelperTest extends TestCase
         self::assertStringNotContainsString('data-sitekey="v2-site-key"', $html);
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('renderWithMissingSiteKeyProvider')]
+    #[DataProvider('renderWithMissingSiteKeyProvider')]
     public function testRenderWithMissingSiteKeyThrowsMissingSiteKeyException(RecaptchaVersion $version): void
     {
         $config = new ModuleConfig(recaptchaVersion: $version);
         $form = $this->createMock(FormModelInterface::class);
         $form->method('getFormName')->willReturn('registerForm');
 
-        $this->expectException(\YiiRocks\Recaptcha\Exception\MissingSiteKeyException::class);
+        $this->expectException(MissingSiteKeyException::class);
 
         RecaptchaHelper::render($form, $config);
     }
 
-    private function buildClient(string $siteKeyV2, string $siteKeyV3): \YiiRocks\Recaptcha\RecaptchaClient
+    private function buildClient(string $siteKeyV2, string $siteKeyV3): RecaptchaClient
     {
-        $config = new \YiiRocks\Recaptcha\RecaptchaConfig(
+        $config = new RecaptchaConfig(
             siteKeyV2: $siteKeyV2,
             siteKeyV3: $siteKeyV3,
         );
 
-        $httpClient = $this->createMock(\Psr\Http\Client\ClientInterface::class);
-        $requestFactory = $this->createMock(\Psr\Http\Message\RequestFactoryInterface::class);
-        $streamFactory = $this->createMock(\Psr\Http\Message\StreamFactoryInterface::class);
+        $httpClient = $this->createMock(ClientInterface::class);
+        $requestFactory = $this->createMock(RequestFactoryInterface::class);
+        $streamFactory = $this->createMock(StreamFactoryInterface::class);
 
-        return new \YiiRocks\Recaptcha\RecaptchaClient($config, $httpClient, $requestFactory, $streamFactory);
+        return new RecaptchaClient($config, $httpClient, $requestFactory, $streamFactory);
     }
 }

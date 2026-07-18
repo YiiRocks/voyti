@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Controller\Registration;
 
 use Nyholm\Psr7\ServerRequest;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\Registration\RegistrationController;
 use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\ServiceResult;
@@ -26,7 +28,7 @@ use Yiisoft\Validator\Result;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class RegistrationControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
@@ -176,7 +178,7 @@ final class RegistrationControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $account = $this->createMock(\YiiRocks\Voyti\Model\UserSocialAccount::class);
+        $account = $this->createMock(UserSocialAccount::class);
         $this->pendingSocialAccountService->expects($this->once())
             ->method('useCode')
             ->willReturn($account);
@@ -227,7 +229,7 @@ final class RegistrationControllerTest extends TestCase
         $user = $this->createUser('testuser', 'test@example.com');
         $this->pendingSocialAccountService->expects($this->once())
             ->method('connect')
-            ->with($this->callback(static fn (User $u): bool => $u->getId() === $user->getId()));
+            ->with($this->callback(static fn(User $u): bool => $u->getId() === $user->getId()));
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 

@@ -6,6 +6,11 @@ namespace YiiRocks\Voyti\Event\User;
 
 use YiiRocks\Voyti\Model\User;
 
+/**
+ * Dispatched for account lifecycle changes (block/unblock, confirm, create, delete, password
+ * reset, identity switch/restore), carrying the affected `User` and a `type` set to one of the
+ * class constants identifying which change occurred.
+ */
 final readonly class UserEvent
 {
     public const string BLOCK = 'block';
@@ -20,8 +25,7 @@ final readonly class UserEvent
     public function __construct(
         private User $user,
         private string $type,
-    ) {
-    }
+    ) {}
 
     public function getType(): string
     {

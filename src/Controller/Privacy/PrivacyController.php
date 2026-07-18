@@ -36,6 +36,10 @@ use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
+/**
+ * Handles GDPR-related self-service actions on the current user's account: consent capture,
+ * data export, anonymization, and account deletion.
+ */
 final readonly class PrivacyController
 {
     use InputDataTrait;
@@ -56,8 +60,7 @@ final readonly class PrivacyController
         private ResponseFactoryInterface $responseFactory,
         private TerminateUserSessionsService $terminateUserSessionsService,
         private FlashInterface $flash,
-    ) {
-    }
+    ) {}
 
     public function anonymize(ServerRequestInterface $request): ResponseInterface
     {
@@ -71,7 +74,7 @@ final readonly class PrivacyController
             $identity = $this->currentUser->getIdentity();
             if ($result->isValid() && !($identity instanceof GuestIdentityInterface)) {
                 $user = User::findById((int) ($identity->getId() ?? 0));
-                if ($user !== null &&         $this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
+                if ($user !== null && $this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
                     $prefix = $this->config->gdprAnonymizePrefix . ($user->getId() ?? '');
                     $user->setEmail($prefix . '@example.com');
                     $user->setUsername($prefix);
@@ -81,7 +84,12 @@ final readonly class PrivacyController
                     $user->save();
                     $this->eventDispatcher->dispatch(new GdprEvent($user));
                     $this->terminateUserSessionsService->run($user->getIdOrZero());
-                    return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.personal_info_removed', category: 'voyti')]);
+                    return $this->renderView('shared/message', [
+                        'title' => $this->translator->translate(
+                            'voyti.settings.personal_info_removed',
+                            category: 'voyti',
+                        ),
+                    ]);
                 }
             }
         }
@@ -106,7 +114,9 @@ final readonly class PrivacyController
                     $user->delete();
                     $this->eventDispatcher->dispatch(new UserEvent($user, UserEvent::DELETE));
                     $this->terminateUserSessionsService->run($userId);
-                    return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.account_deleted', category: 'voyti')]);
+                    return $this->renderView('shared/message', [
+                        'title' => $this->translator->translate('voyti.settings.account_deleted', category: 'voyti'),
+                    ]);
                 }
             }
         }
@@ -122,16 +132,19 @@ final readonly class PrivacyController
         }
 
         $values = array_map(
-            fn (string $property): mixed => $this->exportValue($user, $property),
+            fn(string $property): mixed => $this->exportValue($user, $property),
             $this->config->gdprExportProperties,
         );
         /** @var array<array-key, mixed> $data */
         $data = array_filter(
             array_combine($this->config->gdprExportProperties, $values),
-            static fn (mixed $v): bool => $v !== null,
+            static fn(mixed $v): bool => $v !== null,
         );
 
-        $json = Json::encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        $json = Json::encode(
+            $data,
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR,
+        );
 
         $response = $this->responseFactory->createResponse(Status::OK)
             ->withHeader(Header::CONTENT_TYPE, 'application/json; charset=UTF-8')
@@ -192,7 +205,7 @@ final readonly class PrivacyController
             'userProfile.bio' => $user->getProfile()?->getBio(),
             'userProfile.birthday' => $user->getProfile()?->getBirthday()?->format('Y-m-d'),
             'userSessions' => array_map(
-                static fn (UserSessions $entry): array => [
+                static fn(UserSessions $entry): array => [
                     'ip' => $entry->getIp(),
                     'user_agent' => $entry->getUserAgent(),
                     'created_at' => $entry->getCreatedAt(),
@@ -201,7 +214,7 @@ final readonly class PrivacyController
                 UserSessions::findByUserId($user->getIdOrZero()),
             ),
             'userSocialAccount' => array_map(
-                static fn (UserSocialAccount $account): array => [
+                static fn(UserSocialAccount $account): array => [
                     'provider' => $account->getProvider(),
                     'username' => $account->getUsername(),
                     'email' => $account->getEmail(),

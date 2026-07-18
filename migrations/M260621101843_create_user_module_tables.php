@@ -19,8 +19,7 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
     public function __construct(
         private readonly ModuleConfig $config,
         private readonly PasswordHasher $passwordHasher,
-    ) {
-    }
+    ) {}
 
     public function down(MigrationBuilder $b): void
     {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\AuthClient;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistryFactory;
 use YiiRocks\Voyti\AuthClient\Facebook;
@@ -16,7 +17,6 @@ use YiiRocks\Voyti\ModuleConfig;
 
 final class AuthClientRegistryFactoryTest extends TestCase
 {
-
     /**
      * @return iterable<string, array{string, class-string, string}>
      */
@@ -110,7 +110,7 @@ final class AuthClientRegistryFactoryTest extends TestCase
     /**
      * @param class-string $expectedClass
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('dedicatedClientProvider')]
+    #[DataProvider('dedicatedClientProvider')]
     public function testCreateWithEnabledDedicatedClient(string $providerKey, string $expectedClass, string $expectedName): void
     {
         $config = new ModuleConfig(socialNetworkClients: [
@@ -129,7 +129,7 @@ final class AuthClientRegistryFactoryTest extends TestCase
         self::assertSame($expectedName, $clients[0]->getName());
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('genericClientProvider')]
+    #[DataProvider('genericClientProvider')]
     public function testCreateWithGenericClient(string $providerKey, string $expectedName, string $expectedTitle): void
     {
         $config = new ModuleConfig(socialNetworkClients: [
@@ -173,7 +173,7 @@ final class AuthClientRegistryFactoryTest extends TestCase
         self::assertStringContainsString('https://auth.example.com/realms/myrealm/protocol/openid-connect/auth', $url);
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('keycloakConfigVariantProvider')]
+    #[DataProvider('keycloakConfigVariantProvider')]
     public function testCreateWithKeycloakConfigVariant(
         ?string $baseUrl,
         ?string $realm,
@@ -202,7 +202,7 @@ final class AuthClientRegistryFactoryTest extends TestCase
         }
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('keycloakNonStringConfigProvider')]
+    #[DataProvider('keycloakNonStringConfigProvider')]
     public function testCreateWithKeycloakNonStringConfig(array $keycloakOverrides, string $expectedUrlFragment): void
     {
         $config = new ModuleConfig(socialNetworkClients: [

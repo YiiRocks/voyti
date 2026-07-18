@@ -17,6 +17,11 @@ use Yiisoft\Validator\Rule\Email;
 use Yiisoft\Validator\Rule\Length;
 use Yiisoft\Validator\Rule\Url;
 
+/**
+ * Backs the profile settings page. Converts to/from a {@see UserProfile} via
+ * {@see self::fromProfile()}/{@see self::applyToProfile()}, and carries its own callback
+ * validators (birthday not in the future, no HTML tags, valid timezone).
+ */
 final class UserProfileForm extends FormModel
 {
     #[Callback(method: 'validateNoHtmlTags', skipOnEmpty: true)]
@@ -45,8 +50,7 @@ final class UserProfileForm extends FormModel
 
     public function __construct(
         private readonly TranslatorInterface $translator,
-    ) {
-    }
+    ) {}
 
     public function applyToProfile(UserProfile $profile): void
     {
@@ -78,7 +82,16 @@ final class UserProfileForm extends FormModel
     /**
      * @return string[]
      *
-     * @psalm-return array{name: string, publicEmail: string, gravatarEmail: string, location: string, website: string, timezone: string, bio: string, birthday: string}
+     * @psalm-return array{
+     *     name: string,
+     *     publicEmail: string,
+     *     gravatarEmail: string,
+     *     location: string,
+     *     website: string,
+     *     timezone: string,
+     *     bio: string,
+     *     birthday: string,
+     * }
      */
     public function getAttributeLabels(): array
     {

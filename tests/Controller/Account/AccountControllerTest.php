@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Controller\Account;
 
 use Nyholm\Psr7\ServerRequest;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -26,7 +28,7 @@ use Yiisoft\Validator\Result;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class AccountControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
@@ -286,7 +288,7 @@ final class AccountControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('confirmProvider')]
+    #[DataProvider('confirmProvider')]
     public function testConfirmWithCodeShowsMessage(string $code, bool $serviceResult, string $expectedTitle): void
     {
         $controller = $this->createController();
@@ -299,7 +301,7 @@ final class AccountControllerTest extends TestCase
 
         $this->emailChangeService->expects($this->once())->method('run')->with(
             $code,
-            $this->callback(static fn (User $u): bool => $u->getId() === $user->getId()),
+            $this->callback(static fn(User $u): bool => $u->getId() === $user->getId()),
         )->willReturn($serviceResult);
 
         $response = $this->createMock(ResponseInterface::class);
@@ -307,7 +309,7 @@ final class AccountControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('shared/message', $this->callback(
-                static fn (array $params): bool => $params['title'] === $expectedTitle,
+                static fn(array $params): bool => $params['title'] === $expectedTitle,
             ))
             ->willReturn($response);
 

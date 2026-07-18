@@ -38,8 +38,7 @@ final readonly class SessionRevocationEnforceMiddleware implements MiddlewareInt
         private ResponseFactoryInterface $responseFactory,
         private SessionInterface $session,
         private UrlGeneratorInterface $url,
-    ) {
-    }
+    ) {}
 
     #[\Override]
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface

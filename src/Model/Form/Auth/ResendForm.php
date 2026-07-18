@@ -14,6 +14,9 @@ use Yiisoft\Validator\Rule\Length;
 use Yiisoft\Validator\Rule\Required;
 use Yiisoft\Validator\RulesProviderInterface;
 
+/**
+ * Backs the "resend confirmation email" page.
+ */
 final class ResendForm extends FormModel implements RulesProviderInterface
 {
     #[Required]
@@ -26,8 +29,7 @@ final class ResendForm extends FormModel implements RulesProviderInterface
     public function __construct(
         private readonly ModuleConfig $config,
         private readonly TranslatorInterface $translator,
-    ) {
-    }
+    ) {}
 
     /**
      * @return string[]

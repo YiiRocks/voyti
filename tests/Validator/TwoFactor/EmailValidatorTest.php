@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Validator\TwoFactor;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Validator\TwoFactor\EmailValidator;
 
 final class EmailValidatorTest extends TestCase
 {
-
     public function testGenerateCode(): void
     {
         $user = new User();
@@ -85,7 +85,7 @@ final class EmailValidatorTest extends TestCase
         $this->assertFalse($validator->validate());
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('unconfiguredKeyProvider')]
+    #[DataProvider('unconfiguredKeyProvider')]
     public function testValidateReturnsFalseWhenKeyIsNotConfigured(?string $authTfKey): void
     {
         $user = new User();

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Validator;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Validator\PasswordComplexityRule;
@@ -11,10 +13,9 @@ use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\Rule\Regex;
 use Yiisoft\Validator\Validator;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class PasswordComplexityRuleTest extends TestCase
 {
-
     /**
      * @return iterable<string, array{string, bool}>
      */
@@ -27,7 +28,7 @@ final class PasswordComplexityRuleTest extends TestCase
         yield 'missing special character' => ['Str0ngPass', false];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('passwordProvider')]
+    #[DataProvider('passwordProvider')]
     public function testRegexValidatesComplexity(string $password, bool $expectedValid): void
     {
         $config = new ModuleConfig(enablePasswordComplexity: true);
@@ -57,7 +58,7 @@ final class PasswordComplexityRuleTest extends TestCase
     private function createTranslator(): TranslatorInterface
     {
         $translator = $this->createMock(TranslatorInterface::class);
-        $translator->method('translate')->willReturnCallback(fn (string $id) => $id);
+        $translator->method('translate')->willReturnCallback(fn(string $id) => $id);
 
         return $translator;
     }

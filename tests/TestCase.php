@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests;
 
+use DG\BypassFinals;
 use PHPUnit\Framework\TestCase as BaseTestCase;
 use Psr\Container\ContainerInterface;
 use Psr\SimpleCache\CacheInterface;
@@ -12,6 +13,7 @@ use Yiisoft\Db\Connection\ConnectionInterface;
 use Yiisoft\Db\Sqlite\Connection as SqliteConnection;
 use Yiisoft\Db\Sqlite\Driver as SqliteDriver;
 use Yiisoft\Db\Sqlite\Dsn;
+use Yiisoft\Di\NotFoundException;
 use Yiisoft\Translator\CategorySource;
 use Yiisoft\Translator\Message\Php\MessageSource;
 use Yiisoft\Translator\SimpleMessageFormatter;
@@ -25,7 +27,7 @@ abstract class TestCase extends BaseTestCase
     private ?TranslatorInterface $translator = null;
     public static function setUpBeforeClass(): void
     {
-        \DG\BypassFinals::enable();
+        BypassFinals::enable();
     }
 
     protected function createContainer(): ContainerInterface
@@ -46,7 +48,7 @@ abstract class TestCase extends BaseTestCase
                 if (isset($this->services[$id])) {
                     return $this->services[$id];
                 }
-                throw new \Yiisoft\Di\NotFoundException("Service '$id' not found.");
+                throw new NotFoundException("Service '$id' not found.");
             }
 
             #[\Override]

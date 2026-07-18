@@ -19,6 +19,9 @@ use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
+/**
+ * Lists the current user's connected social accounts and lets them disconnect one.
+ */
 final readonly class SocialNetworkController
 {
     use RedirectTrait;
@@ -33,8 +36,7 @@ final readonly class SocialNetworkController
         private CurrentUser $currentUser,
         private ResponseFactoryInterface $responseFactory,
         private FlashInterface $flash,
-    ) {
-    }
+    ) {}
 
     public function delete(ServerRequestInterface $request, int $id): ResponseInterface
     {
@@ -60,7 +62,9 @@ final readonly class SocialNetworkController
             );
         }
 
-        return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.settings.network_not_found', category: 'voyti')]);
+        return $this->renderView('shared/message', [
+            'title' => $this->translator->translate('voyti.settings.network_not_found', category: 'voyti'),
+        ]);
     }
 
     public function index(ServerRequestInterface $request): ResponseInterface
@@ -72,7 +76,7 @@ final readonly class SocialNetworkController
 
         $accounts = UserSocialAccount::findByUserId((int) ($identity->getId() ?? 0));
         $connectedProviders = array_filter(array_map(
-            static fn (UserSocialAccount $account): string => $account->getProvider(),
+            static fn(UserSocialAccount $account): string => $account->getProvider(),
             $accounts,
         ));
 

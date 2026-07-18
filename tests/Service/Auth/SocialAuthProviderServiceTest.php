@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Service\Auth;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use YiiRocks\Voyti\AuthClient\AuthClientInterface;
@@ -13,7 +15,7 @@ use YiiRocks\Voyti\Service\Auth\SocialAuthProviderService;
 use YiiRocks\Voyti\tests\Support\FakeSession;
 use Yiisoft\Router\UrlGeneratorInterface;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class SocialAuthProviderServiceTest extends TestCase
 {
     private FakeSession $session;
@@ -50,7 +52,7 @@ final class SocialAuthProviderServiceTest extends TestCase
         $url
             ->expects(self::once())
             ->method('generateAbsolute')
-            ->with('callback_route', self::callback(fn (array $params): bool => ($params['provider'] ?? null) === 'github'));
+            ->with('callback_route', self::callback(fn(array $params): bool => ($params['provider'] ?? null) === 'github'));
 
         $service = new SocialAuthProviderService($registry, $httpClient, $this->session, $url);
         $service->begin('github', 'callback_route');
@@ -268,7 +270,7 @@ final class SocialAuthProviderServiceTest extends TestCase
     /**
      * @param array<string, string> $params
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('callbackParametersProvider')]
+    #[DataProvider('callbackParametersProvider')]
     public function testHasCallbackParameters(array $params, bool $expected): void
     {
         $client = $this->createMock(AuthClientInterface::class);

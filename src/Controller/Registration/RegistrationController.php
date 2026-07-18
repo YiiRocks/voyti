@@ -26,6 +26,10 @@ use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
+/**
+ * Handles new-account registration: the registration form, email confirmation, resending the
+ * confirmation email, and connecting a pending social account created during signup.
+ */
 final readonly class RegistrationController
 {
     use InputDataTrait;
@@ -45,8 +49,7 @@ final readonly class RegistrationController
         private ResponseFactoryInterface $responseFactory,
         private FlashInterface $flash,
         private AuthClientRegistry $authClientRegistry,
-    ) {
-    }
+    ) {}
 
     public function confirm(ServerRequestInterface $request, int $id, string $code): ResponseInterface
     {

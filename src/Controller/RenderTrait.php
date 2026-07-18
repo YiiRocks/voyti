@@ -6,9 +6,13 @@ namespace YiiRocks\Voyti\Controller;
 
 use Psr\Http\Message\ResponseInterface;
 
+/**
+ * Adds view-rendering helpers to a controller, injecting common view params (translator, url
+ * generator, home url) and providing an error-message view shortcut. Requires the consumer to
+ * have `$viewRenderer`, `$config`, `$translator`, and `$url` properties.
+ */
 trait RenderTrait
 {
-
     /**
      * @psalm-suppress UndefinedThisPropertyFetch
      */

@@ -24,7 +24,7 @@ use Yiisoft\Yii\DataView\Pagination\PaginationContext;
  * @var TranslatorInterface $translator
  * @var FlashInterface $flash
  * @var bool $isSwitched
- * @var \YiiRocks\Voyti\Model\User|null $originalUser
+ * @var User|null $originalUser
  * @var int $currentUserId
  * @var string $csrf
  */
@@ -87,14 +87,14 @@ echo Html::form()->close();
 if ($isSwitched && $originalUser !== null) {
     echo Html::div()->class('alert alert-warning d-flex justify-content-between align-items-center')->open();
     echo Html::span(
-        $translator->translate('voyti.view.admin.switched_banner', ['username' => $originalUser->getUsername()], category: 'voyti')
+        $translator->translate('voyti.view.admin.switched_banner', ['username' => $originalUser->getUsername()], category: 'voyti'),
     );
     echo Html::form()
         ->post($url->generate('voyti/admin-users-switch-identity-restore'))
         ->csrf($csrf)
         ->open();
     echo Html::submitButton(
-        $translator->translate('voyti.view.admin.restore_button', category: 'voyti')
+        $translator->translate('voyti.view.admin.restore_button', category: 'voyti'),
     )->class('btn', 'btn-warning', 'btn-sm');
     echo Html::form()->close();
     echo Html::div()->close();
@@ -204,7 +204,7 @@ foreach ($users as $user) {
         ->csrf($csrf)
         ->open();
     echo Html::submitButton(
-        $translator->translate($user->isBlocked() ? 'voyti.view.unblock_button' : 'voyti.view.block_button', category: 'voyti')
+        $translator->translate($user->isBlocked() ? 'voyti.view.unblock_button' : 'voyti.view.block_button', category: 'voyti'),
     )->class('dropdown-item', 'text-warning')->attribute('tabindex', 1);
     echo Html::form()->close();
     echo Html::li()->close();

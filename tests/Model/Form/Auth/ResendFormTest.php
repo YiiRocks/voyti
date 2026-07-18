@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Model\Form\Auth;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
+use YiiRocks\Recaptcha\RecaptchaV2Rule;
+use YiiRocks\Recaptcha\RecaptchaV3Rule;
 use YiiRocks\Voyti\Enum\RecaptchaVersion;
 use YiiRocks\Voyti\Model\Form\Auth\ResendForm;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class ResendFormTest extends TestCase
 {
     use TranslatorMockTrait;
@@ -49,7 +52,7 @@ final class ResendFormTest extends TestCase
         $form = new ResendForm($config, $this->createTranslator());
         $rules = $form->getRules();
         $this->assertArrayHasKey('gRecaptchaResponse', $rules);
-        $this->assertInstanceOf(\YiiRocks\Recaptcha\RecaptchaV2Rule::class, $rules['gRecaptchaResponse'][0]);
+        $this->assertInstanceOf(RecaptchaV2Rule::class, $rules['gRecaptchaResponse'][0]);
     }
 
     public function testGetRulesWithRecaptchaV3(): void
@@ -59,7 +62,7 @@ final class ResendFormTest extends TestCase
         $rules = $form->getRules();
         $this->assertArrayHasKey('gRecaptchaResponse', $rules);
         $rule = $rules['gRecaptchaResponse'][0];
-        $this->assertInstanceOf(\YiiRocks\Recaptcha\RecaptchaV3Rule::class, $rule);
+        $this->assertInstanceOf(RecaptchaV3Rule::class, $rule);
         $this->assertSame(0.5, $rule->getThreshold());
         $this->assertSame('voyti_resend', $rule->getAction());
     }

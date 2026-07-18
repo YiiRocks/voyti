@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\AuthClient;
 
+/**
+ * Lookup collection of configured {@see AuthClientInterface} instances, keyed by provider name.
+ */
 final class AuthClientRegistry
 {
     /**
@@ -35,7 +38,7 @@ final class AuthClientRegistry
     {
         return array_values(array_filter(
             $this->clients,
-            static fn (AuthClientInterface $client): bool => !in_array($client->getName(), $excluded, true),
+            static fn(AuthClientInterface $client): bool => !in_array($client->getName(), $excluded, true),
         ));
     }
 

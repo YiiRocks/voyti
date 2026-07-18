@@ -28,6 +28,10 @@ use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
+/**
+ * Manages two-factor authentication setup for the current user: enabling/disabling Google
+ * Authenticator or email-code 2FA, generating/regenerating backup codes, and issuing QR codes.
+ */
 final readonly class TwoFactorController
 {
     use InputDataTrait;
@@ -46,8 +50,7 @@ final readonly class TwoFactorController
         private EmailCodeGeneratorService $twoFactorEmailCodeService,
         private FlashInterface $flash,
         private BackupCodeService $backupCodeService,
-    ) {
-    }
+    ) {}
 
     public function disable(ServerRequestInterface $request): ResponseInterface
     {
@@ -272,7 +275,7 @@ final readonly class TwoFactorController
         if ($user->getAuthTfType() !== 'google') {
             $user->setAuthTfType('google');
         }
-        $qrCodeSvg = $this->twoFactorQrCodeService->generateQrCodeSvg($user, forceNewSecret: true);
+        $qrCodeSvg = $this->twoFactorQrCodeService->regenerateQrCodeSvg($user);
 
         $response = $this->responseFactory->createResponse(Status::OK)
             ->withHeader(Header::CONTENT_TYPE, 'application/json; charset=UTF-8');
@@ -386,8 +389,11 @@ final readonly class TwoFactorController
     /**
      * @param array<string, mixed> $params
      */
-    private function renderTwoFactorSetup(ServerRequestInterface $request, string $fragmentView, array $params): ResponseInterface
-    {
+    private function renderTwoFactorSetup(
+        ServerRequestInterface $request,
+        string $fragmentView,
+        array $params,
+    ): ResponseInterface {
         if (strtolower($request->getHeaderLine('X-Requested-With')) === 'xmlhttprequest') {
             return $this->renderFragment($fragmentView, $params);
         }

@@ -10,7 +10,6 @@ use YiiRocks\Voyti\Model\User;
 
 final class UserEventTest extends TestCase
 {
-
     public function testConstructorAndGetters(): void
     {
         $user = new User();

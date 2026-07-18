@@ -6,6 +6,8 @@ namespace YiiRocks\Voyti\tests\Controller\Profile;
 
 use DateTimeImmutable;
 use Nyholm\Psr7\ServerRequest;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -29,7 +31,7 @@ use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Validator\Validator;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class ProfileControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
@@ -138,7 +140,7 @@ final class ProfileControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('showProfileAllowedProvider')]
+    #[DataProvider('showProfileAllowedProvider')]
     public function testShowProfileAllowed(ProfileVisibility $visibility, ?string $identityId, ?bool $isAdminReturn): void
     {
         $config = new ModuleConfig(profileVisibility: $visibility);
@@ -168,7 +170,7 @@ final class ProfileControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('showProfileForbiddenOrNotFoundProvider')]
+    #[DataProvider('showProfileForbiddenOrNotFoundProvider')]
     public function testShowProfileForbiddenOrNotFound(ProfileVisibility $visibility, ?string $identityId, ?bool $isAdminReturn): void
     {
         $config = new ModuleConfig(profileVisibility: $visibility);

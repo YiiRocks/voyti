@@ -8,14 +8,18 @@ use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\ServiceResult;
 
+/**
+ * Handles self-registration from raw form data: generates a password if none was supplied,
+ * enforces email/username uniqueness, applies GDPR consent and registration IP per
+ * {@see ModuleConfig}, and delegates persistence/notification to {@see UserCreationHelper}.
+ */
 final readonly class RegisterService
 {
     public function __construct(
         private UserCreationHelper $userCreationHelper,
         private ModuleConfig $config,
         private PasswordGeneratorInterface $passwordGenerator,
-    ) {
-    }
+    ) {}
 
     public function run(array $data): ServiceResult
     {
@@ -33,7 +37,7 @@ final readonly class RegisterService
 
         $user = $this->userCreationHelper->buildUser($email, $username, $password);
         $user->setRegistrationIp(
-            $this->config->disableIpLogging ? '127.0.0.1' : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1')
+            $this->config->disableIpLogging ? '127.0.0.1' : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1'),
         );
         $user->setGdprConsent($this->config->enableGdprCompliance ? $gdprConsent : false);
         if ($this->config->enableGdprCompliance && $gdprConsent) {

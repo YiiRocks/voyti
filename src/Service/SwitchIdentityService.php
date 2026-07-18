@@ -13,6 +13,11 @@ use Yiisoft\Session\SessionInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
 
+/**
+ * Lets an authenticated user (e.g. an admin) temporarily assume another user's identity and later
+ * restore their original one, tracking the original identity's ID in the session under
+ * {@see ModuleConfig::$switchIdentitySessionKey}.
+ */
 final readonly class SwitchIdentityService
 {
     public function __construct(
@@ -20,8 +25,7 @@ final readonly class SwitchIdentityService
         private CurrentUser $currentUser,
         private SessionInterface $session,
         private EventDispatcherInterface $eventDispatcher,
-    ) {
-    }
+    ) {}
 
     public function getOriginalUser(): ?User
     {

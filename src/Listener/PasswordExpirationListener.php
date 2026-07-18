@@ -11,6 +11,10 @@ use YiiRocks\Voyti\Service\Password\ExpireService;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 
+/**
+ * Listens for {@see AfterLoginEvent} and, when `ModuleConfig::$enablePasswordExpiration` is on,
+ * checks whether the user's password has expired and queues a warning flash message if so.
+ */
 final readonly class PasswordExpirationListener
 {
     public function __construct(
@@ -18,8 +22,7 @@ final readonly class PasswordExpirationListener
         private ModuleConfig $config,
         private TranslatorInterface $translator,
         private ?FlashInterface $flash = null,
-    ) {
-    }
+    ) {}
 
     public function onAfterLogin(AfterLoginEvent $event): void
     {
@@ -28,7 +31,10 @@ final readonly class PasswordExpirationListener
         }
         $user = $event->getUser();
         if ($this->passwordExpireService->checkPasswordExpiration($user)) {
-            $this->flash?->set(FlashType::WARNING, $this->translator->translate('voyti.security.password_expired', category: 'voyti'));
+            $this->flash?->set(
+                FlashType::WARNING,
+                $this->translator->translate('voyti.security.password_expired', category: 'voyti'),
+            );
         }
     }
 }

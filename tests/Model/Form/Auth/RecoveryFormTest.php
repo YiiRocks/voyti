@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Model\Form\Auth;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Enum\RecaptchaVersion;
 use YiiRocks\Voyti\Model\Form\Auth\RecoveryForm;
@@ -13,9 +15,10 @@ use Yiisoft\Validator\Rule\CompareType;
 use Yiisoft\Validator\Rule\Email;
 use Yiisoft\Validator\Rule\Equal;
 use Yiisoft\Validator\Rule\Length;
+use Yiisoft\Validator\Rule\Regex;
 use Yiisoft\Validator\Rule\Required;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class RecoveryFormTest extends TestCase
 {
     use TranslatorMockTrait;
@@ -35,7 +38,7 @@ final class RecoveryFormTest extends TestCase
         $this->assertSame(RecoveryForm::SCENARIO_REQUEST, $form->scenario);
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('constructScenarioProvider')]
+    #[DataProvider('constructScenarioProvider')]
     public function testConstructWithExplicitScenario(string $scenario): void
     {
         $form = new RecoveryForm(new ModuleConfig(), $this->createTranslator(), $scenario);
@@ -113,7 +116,7 @@ final class RecoveryFormTest extends TestCase
         $form = new RecoveryForm($config, $this->createTranslator(), RecoveryForm::SCENARIO_RESET);
         $rules = $form->getRules();
         $this->assertCount(3, $rules['password']);
-        $this->assertInstanceOf(\Yiisoft\Validator\Rule\Regex::class, $rules['password'][2]);
+        $this->assertInstanceOf(Regex::class, $rules['password'][2]);
     }
 
     public function testGetRulesWithoutRecaptchaOnReset(): void

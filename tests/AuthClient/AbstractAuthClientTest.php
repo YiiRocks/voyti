@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\AuthClient;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\AuthClient\AbstractAuthClient;
 use YiiRocks\Voyti\AuthClient\GenericAuthClient;
 use YiiRocks\Voyti\Http\ClientInterface;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class AbstractAuthClientTest extends TestCase
 {
-
     /**
      * @return iterable<string, array{bool|float|int, null|string}>
      */
@@ -266,7 +267,7 @@ final class AbstractAuthClientTest extends TestCase
         self::assertSame('user@test.com', $result['email']);
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('firstStringCoercionProvider')]
+    #[DataProvider('firstStringCoercionProvider')]
     public function testFirstStringCoercion(bool|float|int $emailValue, ?string $expectedEmail): void
     {
         $httpClient = $this->createMock(ClientInterface::class);
@@ -402,7 +403,7 @@ final class AbstractAuthClientTest extends TestCase
     /**
      * @param array<string, mixed> $config
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('isEnabledProvider')]
+    #[DataProvider('isEnabledProvider')]
     public function testIsEnabled(array $config, bool $expected): void
     {
         $client = $this->createClient($config);
@@ -479,56 +480,56 @@ final class AbstractAuthClientTest extends TestCase
         ]);
 
         $authorizationParams = (\Closure::bind(
-            fn (): array => $this->authorizationParameters(),
+            fn(): array => $this->authorizationParameters(),
             $client,
             GenericAuthClient::class,
         ))();
         self::assertSame(['prompt' => 'login'], $authorizationParams);
 
         $clientId = (\Closure::bind(
-            fn (): string => $this->clientId(),
+            fn(): string => $this->clientId(),
             $client,
             GenericAuthClient::class,
         ))();
         self::assertSame('my_id', $clientId);
 
         $clientSecret = (\Closure::bind(
-            fn (): string => $this->clientSecret(),
+            fn(): string => $this->clientSecret(),
             $client,
             GenericAuthClient::class,
         ))();
         self::assertSame('my_secret', $clientSecret);
 
         $scope = (\Closure::bind(
-            fn (): string => $this->scope(),
+            fn(): string => $this->scope(),
             $client,
             GenericAuthClient::class,
         ))();
         self::assertSame('custom', $scope);
 
         $redirectUri = (\Closure::bind(
-            fn (string $fallback): string => $this->resolveRedirectUri($fallback),
+            fn(string $fallback): string => $this->resolveRedirectUri($fallback),
             $client,
             GenericAuthClient::class,
         ))('https://fallback');
         self::assertSame('https://redirect.me', $redirectUri);
 
         $userInfoQuery = (\Closure::bind(
-            fn (array $tokenData): array => $this->userInfoQuery($tokenData),
+            fn(array $tokenData): array => $this->userInfoQuery($tokenData),
             $client,
             GenericAuthClient::class,
         ))(['access_token' => 't']);
         self::assertSame(['format' => 'json'], $userInfoQuery);
 
         $identifier = (\Closure::bind(
-            fn (array $attributes, array $tokenData): string => $this->identifier($attributes, $tokenData),
+            fn(array $attributes, array $tokenData): string => $this->identifier($attributes, $tokenData),
             $client,
             GenericAuthClient::class,
         ))(['id' => 'attr_id'], ['user_id' => 'tok_id']);
         self::assertSame('attr_id', $identifier);
 
         $normalized = (\Closure::bind(
-            fn (array $attributes, array $tokenData): array => $this->normalizeUserAttributes($attributes, $tokenData),
+            fn(array $attributes, array $tokenData): array => $this->normalizeUserAttributes($attributes, $tokenData),
             $client,
             GenericAuthClient::class,
         ))(['id' => 'nid', 'email' => 'n@t.com'], []);
@@ -541,7 +542,7 @@ final class AbstractAuthClientTest extends TestCase
         $client = $this->createClient(['clientId' => 'id', 'clientSecret' => 'secret']);
 
         $redirectUri = (\Closure::bind(
-            fn (string $fallback): string => $this->resolveRedirectUri($fallback),
+            fn(string $fallback): string => $this->resolveRedirectUri($fallback),
             $client,
             GenericAuthClient::class,
         ))('https://fallback.me');
@@ -560,7 +561,7 @@ final class AbstractAuthClientTest extends TestCase
         $this->expectExceptionMessage("The 'test_provider' redirect URI is not configured.");
 
         (\Closure::bind(
-            fn (string $fallback): string => $this->resolveRedirectUri($fallback),
+            fn(string $fallback): string => $this->resolveRedirectUri($fallback),
             $client,
             GenericAuthClient::class,
         ))('');
@@ -575,7 +576,7 @@ final class AbstractAuthClientTest extends TestCase
         ]);
 
         $scope = (\Closure::bind(
-            fn (): string => $this->scope(),
+            fn(): string => $this->scope(),
             $client,
             GenericAuthClient::class,
         ))();
@@ -769,7 +770,7 @@ final class AbstractAuthClientTest extends TestCase
     /**
      * @param array<string, mixed> $userInfoResponse
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('usernameDerivationProvider')]
+    #[DataProvider('usernameDerivationProvider')]
     public function testUsernameDerivation(array $userInfoResponse, string $expectedUsername): void
     {
         $httpClient = $this->createMock(ClientInterface::class);

@@ -6,6 +6,9 @@ namespace YiiRocks\Voyti\Helper;
 
 use DateTimeImmutable;
 
+/**
+ * Computes a person's age in whole years from a birthday.
+ */
 final class AgeHelper
 {
     public static function calculate(?DateTimeImmutable $birthday, ?DateTimeImmutable $now = null): ?int

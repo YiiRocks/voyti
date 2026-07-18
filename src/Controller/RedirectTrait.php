@@ -9,6 +9,11 @@ use YiiRocks\Voyti\Helper\FlashType;
 use Yiisoft\Http\Header;
 use Yiisoft\Http\Status;
 
+/**
+ * Adds redirect-response helpers to a controller, including a variant that queues a flash
+ * message before redirecting. Requires the consumer to have `$responseFactory`, `$flash`, and
+ * `$translator` properties.
+ */
 trait RedirectTrait
 {
     private function redirect(string $url): ResponseInterface

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Service;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
@@ -12,11 +14,12 @@ use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 use YiiRocks\Voyti\tests\Support\FakeSession;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\User\CurrentUser;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class SwitchIdentityServiceTest extends TestCase
 {
     use DatabaseSetupTrait;
@@ -40,7 +43,7 @@ final class SwitchIdentityServiceTest extends TestCase
         yield 'session key config is null' => [new ModuleConfig(switchIdentitySessionKey: null)];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('noSwitchSessionKeyConfigProvider')]
+    #[DataProvider('noSwitchSessionKeyConfigProvider')]
     public function testGetOriginalUserReturnsNullWhenNoSwitchSessionKey(ModuleConfig $config): void
     {
         $service = $this->createService($config);
@@ -62,7 +65,7 @@ final class SwitchIdentityServiceTest extends TestCase
         self::assertSame($user->getId(), $found->getId());
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('noSwitchSessionKeyConfigProvider')]
+    #[DataProvider('noSwitchSessionKeyConfigProvider')]
     public function testIsSwitchedReturnsFalseWhenNoSwitchSessionKey(ModuleConfig $config): void
     {
         $service = $this->createService($config);
@@ -93,7 +96,7 @@ final class SwitchIdentityServiceTest extends TestCase
             $this->createEventDispatcher(),
         );
 
-        $eventDispatcher = new \YiiRocks\Voyti\tests\Support\EventCaptureDispatcher();
+        $eventDispatcher = new EventCaptureDispatcher();
         $service = $this->createService($config, $currentUser, $session, $eventDispatcher);
         $service->restore();
 
@@ -180,7 +183,7 @@ final class SwitchIdentityServiceTest extends TestCase
         );
         $currentUser->login($identity);
 
-        $eventDispatcher = new \YiiRocks\Voyti\tests\Support\EventCaptureDispatcher();
+        $eventDispatcher = new EventCaptureDispatcher();
         $service = $this->createService($config, $currentUser, $session, $eventDispatcher);
         $service->run((int) $targetUser->getId());
 

@@ -4,13 +4,18 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Model\Form\Auth;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
+use YiiRocks\Recaptcha\RecaptchaV2Rule;
+use YiiRocks\Recaptcha\RecaptchaV3Rule;
 use YiiRocks\Voyti\Enum\RecaptchaVersion;
 use YiiRocks\Voyti\Model\Form\Auth\RegistrationForm;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
+use Yiisoft\Validator\Rule\Regex;
+use Yiisoft\Validator\Rule\TrueValue;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class RegistrationFormTest extends TestCase
 {
     use TranslatorMockTrait;
@@ -73,7 +78,7 @@ final class RegistrationFormTest extends TestCase
         $rules = $form->getRules();
         $this->assertArrayHasKey('gdprConsent', $rules);
         $rule = $rules['gdprConsent'][0];
-        $this->assertInstanceOf(\Yiisoft\Validator\Rule\TrueValue::class, $rule);
+        $this->assertInstanceOf(TrueValue::class, $rule);
         $this->assertTrue($rule->getTrueValue());
     }
 
@@ -99,7 +104,7 @@ final class RegistrationFormTest extends TestCase
         $form = new RegistrationForm($config, $this->createTranslator());
         $rules = $form->getRules();
         $this->assertCount(2, $rules['password']);
-        $this->assertInstanceOf(\Yiisoft\Validator\Rule\Regex::class, $rules['password'][1]);
+        $this->assertInstanceOf(Regex::class, $rules['password'][1]);
     }
 
     public function testGetRulesWithRecaptchaV2(): void
@@ -108,7 +113,7 @@ final class RegistrationFormTest extends TestCase
         $form = new RegistrationForm($config, $this->createTranslator());
         $rules = $form->getRules();
         $this->assertArrayHasKey('gRecaptchaResponse', $rules);
-        $this->assertInstanceOf(\YiiRocks\Recaptcha\RecaptchaV2Rule::class, $rules['gRecaptchaResponse'][0]);
+        $this->assertInstanceOf(RecaptchaV2Rule::class, $rules['gRecaptchaResponse'][0]);
     }
 
     public function testGetRulesWithRecaptchaV3(): void
@@ -118,7 +123,7 @@ final class RegistrationFormTest extends TestCase
         $rules = $form->getRules();
         $this->assertArrayHasKey('gRecaptchaResponse', $rules);
         $rule = $rules['gRecaptchaResponse'][0];
-        $this->assertInstanceOf(\YiiRocks\Recaptcha\RecaptchaV3Rule::class, $rule);
+        $this->assertInstanceOf(RecaptchaV3Rule::class, $rule);
         $this->assertSame(0.5, $rule->getThreshold());
         $this->assertSame('voyti_register', $rule->getAction());
     }

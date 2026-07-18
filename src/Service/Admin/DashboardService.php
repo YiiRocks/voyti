@@ -13,6 +13,10 @@ use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Rbac\ItemsStorageInterface;
 use Yiisoft\Translator\TranslatorInterface;
 
+/**
+ * Aggregates the stats shown on the admin dashboard: user/role/permission/rule counts,
+ * registration and active-session trends, and recent audit log entries.
+ */
 final readonly class DashboardService
 {
     private const int RECENT_AUDIT_LOG_LIMIT = 5;
@@ -23,8 +27,7 @@ final readonly class DashboardService
         private ModuleConfig $config,
         private ItemsStorageInterface $itemsStorage,
         private TranslatorInterface $translator,
-    ) {
-    }
+    ) {}
 
     /**
      * @return array{
@@ -45,7 +48,11 @@ final readonly class DashboardService
         $now = time();
 
         return [
-            /** @infection-ignore-all Query::count() is typed int|string for driver portability; sqlite already returns int here, so the cast is unobservable in tests but keeps the return type sound on drivers that return numeric strings. */
+            /**
+             * @infection-ignore-all Query::count() is typed int|string for driver portability; sqlite
+             * already returns int here, so the cast is unobservable in tests but keeps the return
+             * type sound on drivers that return numeric strings.
+             */
             'userTotal' => (int) User::query()->count(),
             /** @infection-ignore-all Same driver-portability cast as userTotal above. */
             'userBlocked' => (int) User::searchQuery(['status' => 'blocked'])->count(),
@@ -67,11 +74,17 @@ final readonly class DashboardService
     {
         return [
             /** @infection-ignore-all Same driver-portability cast as userTotal in getStats() above. */
-            'oneDay' => (int) UserSessions::query()->andWhere(['>=', 'created_at', $now - self::SECONDS_PER_DAY])->count(),
+            'oneDay' => (int) UserSessions::query()
+                ->andWhere(['>=', 'created_at', $now - self::SECONDS_PER_DAY])
+                ->count(),
             /** @infection-ignore-all Same driver-portability cast as userTotal in getStats() above. */
-            'sevenDays' => (int) UserSessions::query()->andWhere(['>=', 'created_at', $now - (self::SECONDS_PER_DAY * 7)])->count(),
+            'sevenDays' => (int) UserSessions::query()
+                ->andWhere(['>=', 'created_at', $now - (self::SECONDS_PER_DAY * 7)])
+                ->count(),
             /** @infection-ignore-all Same driver-portability cast as userTotal in getStats() above. */
-            'lifespan' => (int) UserSessions::query()->andWhere(['>=', 'created_at', $now - $this->config->rememberLoginLifespan])->count(),
+            'lifespan' => (int) UserSessions::query()
+                ->andWhere(['>=', 'created_at', $now - $this->config->rememberLoginLifespan])
+                ->count(),
         ];
     }
 
@@ -82,11 +95,17 @@ final readonly class DashboardService
     {
         return [
             /** @infection-ignore-all Same driver-portability cast as userTotal in getStats() above. */
-            'oneDay' => (int) User::query()->andWhere(['>=', 'created_at', $now - self::SECONDS_PER_DAY])->count(),
+            'oneDay' => (int) User::query()
+                ->andWhere(['>=', 'created_at', $now - self::SECONDS_PER_DAY])
+                ->count(),
             /** @infection-ignore-all Same driver-portability cast as userTotal in getStats() above. */
-            'sevenDays' => (int) User::query()->andWhere(['>=', 'created_at', $now - (self::SECONDS_PER_DAY * 7)])->count(),
+            'sevenDays' => (int) User::query()
+                ->andWhere(['>=', 'created_at', $now - (self::SECONDS_PER_DAY * 7)])
+                ->count(),
             /** @infection-ignore-all Same driver-portability cast as userTotal in getStats() above. */
-            'lifespan' => (int) User::query()->andWhere(['>=', 'created_at', $now - $this->config->rememberLoginLifespan])->count(),
+            'lifespan' => (int) User::query()
+                ->andWhere(['>=', 'created_at', $now - $this->config->rememberLoginLifespan])
+                ->count(),
         ];
     }
 
@@ -99,7 +118,7 @@ final readonly class DashboardService
         $logs = UserAuditLog::search()->limit(self::RECENT_AUDIT_LOG_LIMIT)->all();
 
         return array_map(
-            fn (UserAuditLog $log): array => [
+            fn(UserAuditLog $log): array => [
                 'createdAt' => TimezoneHelper::formatLocalized($log->getCreatedAt(), $this->translator->getLocale()),
                 'action' => $log->getAction(),
                 'targetLabel' => $this->targetLabel($log),

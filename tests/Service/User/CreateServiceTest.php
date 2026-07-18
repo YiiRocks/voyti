@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Service\User;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Event\User\UserEvent;
@@ -21,7 +22,7 @@ use YiiRocks\Voyti\tests\Support\MailCapture;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Translator\TranslatorInterface;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class CreateServiceTest extends TestCase
 {
     use DatabaseSetupTrait;

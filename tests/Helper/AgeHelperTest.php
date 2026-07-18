@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Helper;
 
 use DateTimeImmutable;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Helper\AgeHelper;
 
 final class AgeHelperTest extends TestCase
 {
-
     /**
      * @return iterable<string, array{string, string, int|null}>
      */
@@ -23,7 +23,7 @@ final class AgeHelperTest extends TestCase
         yield 'zero when birthday equals now' => ['2000-07-12', '2000-07-12', 0];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('calculateProvider')]
+    #[DataProvider('calculateProvider')]
     public function testCalculate(string $birthday, string $now, ?int $expected): void
     {
         self::assertSame($expected, AgeHelper::calculate(new DateTimeImmutable($birthday), new DateTimeImmutable($now)));

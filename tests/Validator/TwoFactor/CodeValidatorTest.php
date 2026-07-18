@@ -4,16 +4,17 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Validator\TwoFactor;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Validator\TwoFactor\CodeValidator;
 use Yiisoft\Translator\TranslatorInterface;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class CodeValidatorTest extends TestCase
 {
-
-    #[\PHPUnit\Framework\Attributes\DataProvider('unconfiguredTwoFactorKeyProvider')]
+    #[DataProvider('unconfiguredTwoFactorKeyProvider')]
     public function testGetErrorMessageWhenKeyIsNotConfigured(?string $authTfKey): void
     {
         $user = new User();
@@ -54,7 +55,7 @@ final class CodeValidatorTest extends TestCase
             ->method('translate')
             ->with(
                 'voyti.validator.invalid_two_factor_code_with_time',
-                self::callback(static fn (array $p): bool => ($p['timeDuration'] ?? null) === 30),
+                self::callback(static fn(array $p): bool => ($p['timeDuration'] ?? null) === 30),
                 'voyti',
             )
             ->willReturn('translated');
@@ -96,7 +97,7 @@ final class CodeValidatorTest extends TestCase
             ->method('translate')
             ->with(
                 'voyti.validator.invalid_code_with_time',
-                self::callback(static fn (array $p): bool => ($p['timeDuration'] ?? null) === 30),
+                self::callback(static fn(array $p): bool => ($p['timeDuration'] ?? null) === 30),
                 'voyti',
             )
             ->willReturn('translated');
@@ -183,7 +184,7 @@ final class CodeValidatorTest extends TestCase
         $this->assertFalse($validator->validate());
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('unconfiguredTwoFactorKeyProvider')]
+    #[DataProvider('unconfiguredTwoFactorKeyProvider')]
     public function testValidateReturnsFalseWhenKeyIsNotConfigured(?string $authTfKey): void
     {
         $user = new User();

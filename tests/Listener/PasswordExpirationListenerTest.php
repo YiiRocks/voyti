@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Listener;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
 use YiiRocks\Voyti\Helper\FlashType;
@@ -14,10 +15,9 @@ use YiiRocks\Voyti\Service\Password\ExpireService;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class PasswordExpirationListenerTest extends TestCase
 {
-
     public function testOnAfterLoginDoesNotFlashWhenPasswordNotExpired(): void
     {
         $config = new ModuleConfig(enablePasswordExpiration: true);
@@ -66,7 +66,7 @@ final class PasswordExpirationListenerTest extends TestCase
         )->willReturn(true);
 
         $translator = $this->createMock(TranslatorInterface::class);
-        $translator->method('translate')->willReturnCallback(fn (string $id) => $id);
+        $translator->method('translate')->willReturnCallback(fn(string $id) => $id);
 
         $flash = $this->createMock(FlashInterface::class);
         $flash->expects(self::once())->method('set')->with(FlashType::WARNING, 'voyti.security.password_expired');
@@ -85,7 +85,7 @@ final class PasswordExpirationListenerTest extends TestCase
         $expireService->expects(self::once())->method('checkPasswordExpiration')->willReturn(true);
 
         $translator = $this->createMock(TranslatorInterface::class);
-        $translator->method('translate')->willReturnCallback(fn (string $id) => $id);
+        $translator->method('translate')->willReturnCallback(fn(string $id) => $id);
 
         $listener = new PasswordExpirationListener($expireService, $config, $translator);
         $user = new User();

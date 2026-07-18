@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Service\TwoFactor;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class EmailCodeGeneratorServiceTest extends TestCase
 {
     public function testRunGeneratesCodeAndSendsEmail(): void

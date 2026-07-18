@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Helper;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
 
 final class TimezoneHelperTest extends TestCase
 {
-
     /**
      * @return iterable<string, array{string, bool}>
      */
@@ -33,7 +33,7 @@ final class TimezoneHelperTest extends TestCase
         yield 'Spanish' => ['es', '14 nov 2023'];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('localizedDateFormatProvider')]
+    #[DataProvider('localizedDateFormatProvider')]
     public function testFormatLocalizedUsesLocaleDateFormat(string $locale, string $expectedStart): void
     {
         $formatted = TimezoneHelper::formatLocalized(1700000000, $locale);
@@ -116,7 +116,7 @@ final class TimezoneHelperTest extends TestCase
         }
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('isValidProvider')]
+    #[DataProvider('isValidProvider')]
     public function testIsValid(string $timezone, bool $expected): void
     {
         self::assertSame($expected, TimezoneHelper::isValid($timezone));

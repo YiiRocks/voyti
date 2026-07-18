@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Helper;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\SimpleAssignmentsStorage;
 use YiiRocks\Voyti\tests\Support\SimpleItemsStorage;
+use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Rbac\Assignment;
 use Yiisoft\Rbac\AssignmentsStorageInterface;
@@ -20,10 +23,9 @@ use Yiisoft\Rbac\Permission;
 use Yiisoft\Rbac\Role;
 use Yiisoft\User\CurrentUser;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class AuthHelperTest extends TestCase
 {
-
     /**
      * @return iterable<string, array{array<string, Role>, bool}>
      */
@@ -147,7 +149,7 @@ final class AuthHelperTest extends TestCase
     /**
      * @param array<string, Role> $userItems
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('hasRoleProvider')]
+    #[DataProvider('hasRoleProvider')]
     public function testHasRole(array $userItems, bool $expected): void
     {
         $authManager = $this->createMock(ManagerInterface::class);
@@ -199,7 +201,7 @@ final class AuthHelperTest extends TestCase
     /**
      * @param array<string, Permission> $userItems
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('isAdminWithGivenUserIdProvider')]
+    #[DataProvider('isAdminWithGivenUserIdProvider')]
     public function testIsAdminWithGivenUserId(int $userId, array $userItems, bool $expected): void
     {
         $config = new ModuleConfig(administratorPermissionName: 'admin');
@@ -217,7 +219,7 @@ final class AuthHelperTest extends TestCase
 
     public function testIsAdminWithNullUserIdAndUserIsAdmin(): void
     {
-        $identity = $this->createMock(\Yiisoft\Auth\IdentityInterface::class);
+        $identity = $this->createMock(IdentityInterface::class);
         $identity->expects(self::once())->method('getId')->willReturn('1');
         $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);

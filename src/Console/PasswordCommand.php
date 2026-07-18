@@ -10,6 +10,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 
+/**
+ * Console command (`voyti:password`) that resets a user's password to a freshly generated one, looked
+ * up via {@see UserLookupTrait}.
+ */
 final class PasswordCommand extends Command
 {
     use UserLookupTrait;

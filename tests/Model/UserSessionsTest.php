@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Model;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\SimpleCache\CacheInterface;
 use YiiRocks\Voyti\Model\UserSessions;
@@ -105,7 +106,7 @@ final class UserSessionsTest extends TestCase
         self::assertCount(2, $sessions);
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('getterSetterProvider')]
+    #[DataProvider('getterSetterProvider')]
     public function testGetSetProperty(string $setter, string $getter, int|string $value): void
     {
         $entity = new UserSessions();

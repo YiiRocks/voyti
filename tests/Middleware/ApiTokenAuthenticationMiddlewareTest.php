@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Middleware;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -14,7 +15,7 @@ use YiiRocks\Voyti\Model\User;
 use Yiisoft\Auth\IdentityWithTokenRepositoryInterface;
 use Yiisoft\User\CurrentUser;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class ApiTokenAuthenticationMiddlewareTest extends TestCase
 {
     public function testProcessOverridesIdentityAndDelegatesForValidToken(): void

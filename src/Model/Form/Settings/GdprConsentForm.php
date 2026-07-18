@@ -7,6 +7,10 @@ namespace YiiRocks\Voyti\Model\Form\Settings;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
 
+/**
+ * Backs the GDPR consent page: whether the user consents and, once given, the consent date and
+ * timezone it was recorded in.
+ */
 final class GdprConsentForm extends FormModel
 {
     public bool $consent = false;
@@ -15,8 +19,7 @@ final class GdprConsentForm extends FormModel
 
     public function __construct(
         private readonly TranslatorInterface $translator,
-    ) {
-    }
+    ) {}
 
     /**
      * @return string[]

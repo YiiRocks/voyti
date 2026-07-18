@@ -8,7 +8,7 @@ return $config
     ->setUsingCache(false)
     ->setRiskyAllowed(true)
     ->setRules([
-        '@PSR2' => true,
+        '@PER-CS3.0' => true,
         'ordered_class_elements' => [
             'sort_algorithm' => 'alpha',
         ],

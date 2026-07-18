@@ -187,7 +187,7 @@ if ($moduleConfig->enableRestApi) {
                     Route::post('users')->name('voyti/api-v1-users-create')->action([Controller\api\v1\User\UserController::class, 'create']),
                     Route::patch('users/{id:\d+}')->name('voyti/api-v1-users-update')->action([Controller\api\v1\User\UserController::class, 'update']),
                     Route::delete('users/{id:\d+}')->name('voyti/api-v1-users-delete')->action([Controller\api\v1\User\UserController::class, 'delete']),
-                )
+                ),
         );
 }
 

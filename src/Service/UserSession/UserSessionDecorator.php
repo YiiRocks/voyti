@@ -11,14 +11,18 @@ use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Session\SessionInterface;
 
+/**
+ * Records a new login as a {@see UserSessions} row, replacing the session record identified by
+ * `previousSessionId` (e.g. after session ID regeneration on login) and pruning sessions older than
+ * {@see ModuleConfig::$rememberLoginLifespan}.
+ */
 final readonly class UserSessionDecorator
 {
     public function __construct(
         private EventDispatcherInterface $eventDispatcher,
         private ModuleConfig $config,
         private ?SessionInterface $session = null,
-    ) {
-    }
+    ) {}
 
     public function registerLogin(User $user, ?string $previousSessionId = null): void
     {
@@ -38,7 +42,9 @@ final readonly class UserSessionDecorator
         $userSession->setUpdatedAt(time());
         $userSession->save();
 
-        $this->eventDispatcher->dispatch(new SessionEvent($userId, $sessionId, ['type' => SessionEvent::SESSION_CREATED]));
+        $this->eventDispatcher->dispatch(
+            new SessionEvent($userId, $sessionId, ['type' => SessionEvent::SESSION_CREATED]),
+        );
 
         $this->pruneOldSessions($user);
     }

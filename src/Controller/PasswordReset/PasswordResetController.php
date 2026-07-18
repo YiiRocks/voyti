@@ -25,6 +25,10 @@ use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
+/**
+ * Public "forgot password" flow: requests a recovery email via {@see RecoveryService}, then confirms
+ * the emailed token and sets the new password via {@see ResetService}.
+ */
 final readonly class PasswordResetController
 {
     use InputDataTrait;
@@ -43,19 +47,27 @@ final readonly class PasswordResetController
         private HydratorInterface $hydrator,
         private ResponseFactoryInterface $responseFactory,
         private FlashInterface $flash,
-    ) {
-    }
+    ) {}
 
     public function confirm(ServerRequestInterface $request, int $id, string $code): ResponseInterface
     {
         if (!$this->config->allowPasswordRecovery && !$this->config->allowAdminPasswordRecovery) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.recovery.reset_disabled', category: 'voyti'), 'translator' => $this->translator]);
+            return $this->renderView('shared/message', [
+                'title' => $this->translator->translate('voyti.recovery.reset_disabled', category: 'voyti'),
+                'translator' => $this->translator,
+            ]);
         }
 
         $userToken = UserToken::findByUserIdAndCodeAndType($id, $code, UserToken::TYPE_RECOVERY);
 
-        if ($userToken === null || $userToken->getIsExpired($this->config->tokenRecoveryLifespan) || $userToken->getUser() === null) {
-            return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.recovery.link_invalid', category: 'voyti')]);
+        if (
+            $userToken === null
+            || $userToken->isExpired($this->config->tokenRecoveryLifespan)
+            || $userToken->getUser() === null
+        ) {
+            return $this->renderView('shared/message', [
+                'title' => $this->translator->translate('voyti.recovery.link_invalid', category: 'voyti'),
+            ]);
         }
 
         $user = $userToken->getUser();
@@ -80,7 +92,11 @@ final readonly class PasswordResetController
                     );
                 }
 
-                $errors = ['password' => [$this->translator->translate('voyti.recovery.password_previously_used', category: 'voyti')]];
+                $errors = [
+                    'password' => [
+                        $this->translator->translate('voyti.recovery.password_previously_used', category: 'voyti'),
+                    ],
+                ];
             } else {
                 $errors = $result->getErrorMessages();
             }

@@ -7,12 +7,15 @@ namespace YiiRocks\Voyti\Service\Password;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 
+/**
+ * Checks whether a user's password has exceeded {@see ModuleConfig::$maxPasswordAge} and resets the
+ * password-changed timestamp to force expiration.
+ */
 final readonly class ExpireService
 {
     public function __construct(
         private ModuleConfig $config,
-    ) {
-    }
+    ) {}
 
     public function checkPasswordExpiration(User $user): bool
     {

@@ -10,6 +10,9 @@ use Yiisoft\Validator\Rule\Integer;
 use Yiisoft\Validator\Rule\Length;
 use Yiisoft\Validator\Rule\Required;
 
+/**
+ * Backs the two-factor authentication code entry page for a given delivery `$method`.
+ */
 final class TwoFactorCodeForm extends FormModel
 {
     #[Required]
@@ -20,8 +23,7 @@ final class TwoFactorCodeForm extends FormModel
     public function __construct(
         private readonly TranslatorInterface $translator,
         public readonly string $method,
-    ) {
-    }
+    ) {}
 
     /**
      * @return string[]

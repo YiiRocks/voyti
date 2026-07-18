@@ -14,6 +14,10 @@ use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\User\CreateService;
 use Yiisoft\Rbac\ManagerInterface;
 
+/**
+ * Console command (`voyti:create`) that creates a new user account from the CLI, auto-generating a
+ * password when `--password` is omitted and optionally assigning an RBAC role via `--role`.
+ */
 final class CreateUserCommand extends Command
 {
     public function __construct(
@@ -65,7 +69,9 @@ final class CreateUserCommand extends Command
 
         /** @var mixed $optionPassword */
         $optionPassword = $input->getOption('password');
-        $password = is_string($optionPassword) && $optionPassword !== '' ? $optionPassword : $this->passwordGenerator->generate(16);
+        $password = is_string($optionPassword) && $optionPassword !== ''
+            ? $optionPassword
+            : $this->passwordGenerator->generate(16);
 
         $result = $this->userCreateService->run($rawEmail, $rawUsername, $password);
 

@@ -18,5 +18,5 @@ echo Html::p($translator->translate('voyti.mail.hello_username', ['username' => 
 echo Html::p($translator->translate('voyti.mail.click_to_reset_password', category: 'voyti'));
 
 echo Html::p(
-    Html::a($recoveryUrl, $recoveryUrl)
+    Html::a($recoveryUrl, $recoveryUrl),
 );

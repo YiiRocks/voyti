@@ -4,10 +4,16 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Model;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Psr\SimpleCache\CacheInterface;
 use YiiRocks\Voyti\Model\UserBackupCode;
+use Yiisoft\Db\Cache\SchemaCache;
 use Yiisoft\Db\Connection\ConnectionInterface;
 use Yiisoft\Db\Connection\ConnectionProvider;
+use Yiisoft\Db\Sqlite\Connection;
+use Yiisoft\Db\Sqlite\Driver;
+use Yiisoft\Db\Sqlite\Dsn;
 
 final class UserBackupCodeTest extends TestCase
 {
@@ -122,7 +128,7 @@ final class UserBackupCodeTest extends TestCase
         self::assertSame(1, $found[0]->getUserId());
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('getterSetterProvider')]
+    #[DataProvider('getterSetterProvider')]
     public function testGetSetProperty(string $setter, string $getter, int|string $value): void
     {
         $entity = new UserBackupCode();
@@ -145,13 +151,13 @@ final class UserBackupCodeTest extends TestCase
 
     private function createSqliteConnection(): ConnectionInterface
     {
-        $dsn = new \Yiisoft\Db\Sqlite\Dsn('sqlite', ':memory:');
-        $driver = new \Yiisoft\Db\Sqlite\Driver($dsn);
-        $cache = $this->createStub(\Psr\SimpleCache\CacheInterface::class);
+        $dsn = new Dsn('sqlite', ':memory:');
+        $driver = new Driver($dsn);
+        $cache = $this->createStub(CacheInterface::class);
         $cache->method('set')->willReturn(true);
         $cache->method('get')->willReturn(null);
-        $schemaCache = new \Yiisoft\Db\Cache\SchemaCache($cache);
+        $schemaCache = new SchemaCache($cache);
         $schemaCache->setEnabled(false);
-        return new \Yiisoft\Db\Sqlite\Connection($driver, $schemaCache);
+        return new Connection($driver, $schemaCache);
     }
 }

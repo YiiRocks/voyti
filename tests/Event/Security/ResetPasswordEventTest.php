@@ -10,7 +10,6 @@ use YiiRocks\Voyti\Model\UserToken;
 
 final class ResetPasswordEventTest extends TestCase
 {
-
     public function testConstructorAndGetters(): void
     {
         $token = new UserToken();

@@ -7,6 +7,10 @@ namespace YiiRocks\Voyti\Helper;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 
+/**
+ * Records login metadata (last login time and IP) on a `User`, honoring
+ * `ModuleConfig::$disableIpLogging` by storing a loopback address instead of the real remote IP.
+ */
 final class LoginMetadataHelper
 {
     /**

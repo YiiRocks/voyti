@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\AuthClient;
 
+/**
+ * Facebook OAuth client. Facebook requires the access token and requested fields as query parameters
+ * rather than an `Authorization` header, so `userInfoHeaders()`/`userInfoQuery()` are overridden.
+ */
 final readonly class Facebook extends AbstractAuthClient
 {
     /**

@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Event\Session;
 
+/**
+ * Dispatched when a user session is created, terminated, or updated, carrying the user and
+ * session id plus a `type` entry in `$data` set to one of the `SESSION_*` constants.
+ */
 final readonly class SessionEvent
 {
     public const string SESSION_CREATED = 'sessionCreated';
@@ -14,8 +18,7 @@ final readonly class SessionEvent
         private int $userId,
         private string $sessionId,
         private array $data = [],
-    ) {
-    }
+    ) {}
 
     public function getData(): array
     {

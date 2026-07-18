@@ -16,6 +16,13 @@ use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Security\Random;
 
+/**
+ * Shared user-persistence logic for account creation: builds a {@see User} with a hashed password,
+ * checks email/username uniqueness, and persists it with its profile. `persistAndNotify()` requires
+ * email confirmation (sending a confirmation token) when {@see ModuleConfig::$enableEmailConfirmation}
+ * is on; `persistAndNotifySkippingConfirmation()` always persists as already-confirmed and sends a
+ * welcome email instead (e.g. when the identity was already verified by a social provider).
+ */
 final readonly class UserCreationHelper
 {
     public function __construct(
@@ -24,8 +31,7 @@ final readonly class UserCreationHelper
         private PasswordHasher $passwordHasher,
         private ModuleConfig $config,
         private PasswordHistoryService $passwordHistoryService,
-    ) {
-    }
+    ) {}
 
     public function buildUser(string $email, string $username, string $password): User
     {
@@ -53,15 +59,28 @@ final readonly class UserCreationHelper
     }
 
     /**
-     * Persists the user (with profile and, if required, a confirmation token), dispatches the
-     * creation/registration events, and sends the appropriate mail.
-     *
-     * @param bool $skipConfirmation Treat the account as confirmed even if email confirmation is
-     *     otherwise required, e.g. when the identity was already established by a social provider.
+     * Persists the user (with profile and confirmation token), dispatches the creation/registration
+     * events, and sends the confirmation mail.
      *
      * @return bool Whether email confirmation is required before the account can be used.
      */
-    public function persistAndNotify(User $user, string $password, bool $skipConfirmation = false): bool
+    public function persistAndNotify(User $user, string $password): bool
+    {
+        return $this->persist($user, $password, skipConfirmation: false);
+    }
+
+    /**
+     * Persists the user as already confirmed (e.g. when the identity was already established by a
+     * social provider), dispatches the creation/registration events, and sends the welcome mail.
+     *
+     * @return bool Whether email confirmation is required before the account can be used.
+     */
+    public function persistAndNotifySkippingConfirmation(User $user, string $password): bool
+    {
+        return $this->persist($user, $password, skipConfirmation: true);
+    }
+
+    private function persist(User $user, string $password, bool $skipConfirmation): bool
     {
         $userProfile = new UserProfile();
 

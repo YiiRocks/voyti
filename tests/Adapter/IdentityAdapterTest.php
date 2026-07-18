@@ -30,7 +30,7 @@ final class IdentityAdapterTest extends TestCase
         $now = time();
         $user = $this->createSavedUser();
         $this->createApiToken($user, 'raw-token', createdAt: $now - 500);
-        $adapter = $this->createAdapter(config: new ModuleConfig(apiTokenLifespan: 500), now: static fn (): int => $now);
+        $adapter = $this->createAdapter(config: new ModuleConfig(apiTokenLifespan: 500), now: static fn(): int => $now);
 
         self::assertNotNull($adapter->findIdentityByToken('raw-token'));
     }
@@ -41,7 +41,7 @@ final class IdentityAdapterTest extends TestCase
         $this->createApiToken($user, 'raw-token', createdAt: 500);
         $adapter = $this->createAdapter(
             config: new ModuleConfig(apiTokenLifespan: 500),
-            now: static fn (): float => 1000.5,
+            now: static fn(): float => 1000.5,
         );
 
         self::assertNotNull($adapter->findIdentityByToken('raw-token'));
@@ -91,7 +91,7 @@ final class IdentityAdapterTest extends TestCase
         $this->createApiToken($user, 'raw-token', createdAt: 1_000_000);
         $adapter = $this->createAdapter(
             config: new ModuleConfig(apiTokenLifespan: 500),
-            now: static fn (): int => 1_000_100,
+            now: static fn(): int => 1_000_100,
         );
 
         self::assertNotNull($adapter->findIdentityByToken('raw-token'));

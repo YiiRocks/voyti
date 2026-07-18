@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Model;
 
 use DateTimeImmutable;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\SimpleCache\CacheInterface;
 use YiiRocks\Voyti\Model\User;
@@ -343,7 +344,7 @@ final class UserProfileTest extends TestCase
         self::assertSame($birthday, $entity->getBirthday());
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('getterSetterProvider')]
+    #[DataProvider('getterSetterProvider')]
     public function testGetSetProperty(string $setter, string $getter, int|string $value): void
     {
         $entity = new UserProfile();

@@ -5,12 +5,18 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Service\Auth;
 
 use RuntimeException;
+use YiiRocks\Voyti\AuthClient\AuthClientInterface;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use YiiRocks\Voyti\Http\ClientInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Security\Random;
 use Yiisoft\Session\SessionInterface;
 
+/**
+ * Drives the OAuth redirect/callback flow for a social provider: builds the authorization URL
+ * with a per-request CSRF `state` stored in the session ({@see self::begin()}), then validates
+ * that state and exchanges the callback code for user attributes ({@see self::complete()}).
+ */
 final readonly class SocialAuthProviderService
 {
     public function __construct(
@@ -18,8 +24,7 @@ final readonly class SocialAuthProviderService
         private ClientInterface $httpClient,
         private SessionInterface $session,
         private UrlGeneratorInterface $url,
-    ) {
-    }
+    ) {}
 
     public function begin(string $provider, string $routeName): string
     {
@@ -59,7 +64,11 @@ final readonly class SocialAuthProviderService
          * versions produce the same result.  This is behaviourally
          * equivalent, not a testing gap.
          */
-        $isStateInvalid = !is_string($state) || $state === '' || !is_string($storedState) || $storedState === '' || $state !== $storedState;
+        $isStateInvalid = !is_string($state)
+            || $state === ''
+            || !is_string($storedState)
+            || $storedState === ''
+            || $state !== $storedState;
         if ($isStateInvalid) {
             throw new RuntimeException('The social authentication state is invalid or expired.');
         }
@@ -86,7 +95,7 @@ final readonly class SocialAuthProviderService
         return false;
     }
 
-    private function client(string $provider): \YiiRocks\Voyti\AuthClient\AuthClientInterface
+    private function client(string $provider): AuthClientInterface
     {
         $client = $this->authClientRegistry->get($provider);
         if ($client === null) {

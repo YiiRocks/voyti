@@ -119,10 +119,8 @@ final class UserControllerTest extends TestCase
 
         $response = $controller->create($request);
 
-        $handler = new class($response) implements RequestHandlerInterface {
-            public function __construct(private readonly ResponseInterface $response)
-            {
-            }
+        $handler = new class ($response) implements RequestHandlerInterface {
+            public function __construct(private readonly ResponseInterface $response) {}
 
             #[\Override]
             public function handle(ServerRequestInterface $request): ResponseInterface

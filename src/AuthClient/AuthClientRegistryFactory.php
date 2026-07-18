@@ -6,21 +6,44 @@ namespace YiiRocks\Voyti\AuthClient;
 
 use YiiRocks\Voyti\ModuleConfig;
 
+/**
+ * Builds an {@see AuthClientRegistry} from {@see ModuleConfig::$socialNetworkClients}: generic providers
+ * (Google, LinkedIn, Microsoft 365) and templated Keycloak instances are instantiated as
+ * {@see GenericAuthClient}, providers with custom behavior get their dedicated subclass, and only
+ * `enabled` providers are included.
+ */
 final readonly class AuthClientRegistryFactory
 {
     /**
      * @var array<string, array{string, string, string, string, string}>
      */
     private const array GENERIC_PROVIDERS = [
-        'google' => ['Google', 'https://accounts.google.com/o/oauth2/v2/auth', 'https://oauth2.googleapis.com/token', 'https://openidconnect.googleapis.com/v1/userinfo', 'openid email profile'],
-        'linkedin' => ['LinkedIn', 'https://www.linkedin.com/oauth/v2/authorization', 'https://www.linkedin.com/oauth/v2/accessToken', 'https://api.linkedin.com/v2/userinfo', 'openid profile email'],
-        'microsoft365' => ['Microsoft 365', 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize', 'https://login.microsoftonline.com/common/oauth2/v2.0/token', 'https://graph.microsoft.com/oidc/userinfo', 'openid profile email User.Read'],
+        'google' => [
+            'Google',
+            'https://accounts.google.com/o/oauth2/v2/auth',
+            'https://oauth2.googleapis.com/token',
+            'https://openidconnect.googleapis.com/v1/userinfo',
+            'openid email profile',
+        ],
+        'linkedin' => [
+            'LinkedIn',
+            'https://www.linkedin.com/oauth/v2/authorization',
+            'https://www.linkedin.com/oauth/v2/accessToken',
+            'https://api.linkedin.com/v2/userinfo',
+            'openid profile email',
+        ],
+        'microsoft365' => [
+            'Microsoft 365',
+            'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
+            'https://login.microsoftonline.com/common/oauth2/v2.0/token',
+            'https://graph.microsoft.com/oidc/userinfo',
+            'openid profile email User.Read',
+        ],
     ];
 
     public function __construct(
         private ModuleConfig $config,
-    ) {
-    }
+    ) {}
 
     public function create(): AuthClientRegistry
     {

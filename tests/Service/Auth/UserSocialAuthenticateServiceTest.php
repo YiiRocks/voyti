@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Service\Auth;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Model\User;
@@ -18,7 +19,7 @@ use YiiRocks\Voyti\tests\Support\FakeSession;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\User\CurrentUser;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class UserSocialAuthenticateServiceTest extends TestCase
 {
     use DatabaseSetupTrait;

@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\AuthClient;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\AuthClient\VKontakte;
 
 final class VKontakteTest extends TestCase
 {
-
     /**
      * @return iterable<string, array{array<string, mixed>}>
      */
@@ -19,7 +19,7 @@ final class VKontakteTest extends TestCase
         yield 'with config' => [['clientId' => 'id', 'clientSecret' => 'secret']];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('constructionProvider')]
+    #[DataProvider('constructionProvider')]
     public function testGetName(array $config): void
     {
         $client = new VKontakte($config);
@@ -130,7 +130,7 @@ final class VKontakteTest extends TestCase
         self::assertArrayNotHasKey('Authorization', $result);
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('userInfoQueryTokenProvider')]
+    #[DataProvider('userInfoQueryTokenProvider')]
     public function testUserInfoQuery(array $tokenData, string $expectedAccessToken): void
     {
         $client = new VKontakte(['clientId' => 'id', 'clientSecret' => 'secret']);

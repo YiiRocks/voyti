@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Controller\Admin\Rbac\Permission;
 
 use Nyholm\Psr7\ServerRequest;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
@@ -32,7 +33,7 @@ use Yiisoft\Validator\Result;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class PermissionControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
@@ -82,7 +83,7 @@ final class PermissionControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('admin/rbac/create', $this->callback(
-                static fn (array $params): bool => array_keys($params['availableChildren']) === ['other-permission'],
+                static fn(array $params): bool => array_keys($params['availableChildren']) === ['other-permission'],
             ))
             ->willReturn($response);
 
@@ -138,7 +139,7 @@ final class PermissionControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('admin/rbac/create', $this->callback(
-                static fn (array $params): bool => $params['errors'] !== [],
+                static fn(array $params): bool => $params['errors'] !== [],
             ))
             ->willReturn($response);
 
@@ -161,7 +162,7 @@ final class PermissionControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('admin/rbac/create', $this->callback(
-                static fn (array $params): bool => ($params['errors']['children'] ?? []) !== [],
+                static fn(array $params): bool => ($params['errors']['children'] ?? []) !== [],
             ))
             ->willReturn($response);
 
@@ -234,7 +235,7 @@ final class PermissionControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('admin/rbac/update', $this->callback(
-                static fn (array $params): bool => array_keys($params['availableChildren']) === ['other-permission'],
+                static fn(array $params): bool => array_keys($params['availableChildren']) === ['other-permission'],
             ))
             ->willReturn($response);
 

@@ -40,14 +40,14 @@ echo $this->render('../shared/_flash', ['flash' => $flash]);
 if ($isSwitched && $originalUser !== null) {
     echo Html::div()->class('alert alert-warning d-flex justify-content-between align-items-center')->open();
     echo Html::span(
-        $translator->translate('voyti.view.admin.switched_banner', ['username' => $originalUser->getUsername()], category: 'voyti')
+        $translator->translate('voyti.view.admin.switched_banner', ['username' => $originalUser->getUsername()], category: 'voyti'),
     );
     echo Html::form()
         ->post($url->generate('voyti/admin-users-switch-identity-restore'))
         ->csrf($csrf)
         ->open();
     echo Html::submitButton(
-        $translator->translate('voyti.view.admin.restore_button', category: 'voyti')
+        $translator->translate('voyti.view.admin.restore_button', category: 'voyti'),
     )->class('btn', 'btn-warning', 'btn-sm');
     echo Html::form()->close();
     echo Html::div()->close();

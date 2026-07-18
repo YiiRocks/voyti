@@ -10,7 +10,6 @@ use Yiisoft\Rbac\Role;
 
 final class SimpleItemsStorage implements ItemsStorageInterface
 {
-
     /** @var array<string, list<string>> */
     private array $children = [];
     /** @var array<string, Permission|Role> */
@@ -238,7 +237,7 @@ final class SimpleItemsStorage implements ItemsStorageInterface
         unset($this->children[$name]);
         foreach ($this->children as $parentName => $childNames) {
             $this->children[$parentName] = array_values(
-                array_filter($childNames, static fn (string $c): bool => $c !== $name),
+                array_filter($childNames, static fn(string $c): bool => $c !== $name),
             );
         }
     }
@@ -249,7 +248,7 @@ final class SimpleItemsStorage implements ItemsStorageInterface
             $this->children[$parentName] = array_values(
                 array_filter(
                     $this->children[$parentName],
-                    static fn (string $c): bool => $c !== $childName,
+                    static fn(string $c): bool => $c !== $childName,
                 ),
             );
         }
@@ -273,7 +272,7 @@ final class SimpleItemsStorage implements ItemsStorageInterface
         if ($name !== $item->getName()) {
             foreach ($this->children as $parentName => $childNames) {
                 $this->children[$parentName] = array_map(
-                    static fn (string $c): string => $c === $name ? $item->getName() : $c,
+                    static fn(string $c): string => $c === $name ? $item->getName() : $c,
                     $childNames,
                 );
             }

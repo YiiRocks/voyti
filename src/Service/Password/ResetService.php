@@ -11,14 +11,17 @@ use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\ModuleConfig;
 
+/**
+ * Applies a new password to a user, rejecting reuse via {@see PasswordHistoryService}, consuming the
+ * reset {@see UserToken} if present, and dispatching {@see UserEvent::PASSWORD_RESET}.
+ */
 final readonly class ResetService
 {
     public function __construct(
         private ModuleConfig $config,
         private EventDispatcherInterface $eventDispatcher,
         private PasswordHistoryService $passwordHistoryService,
-    ) {
-    }
+    ) {}
 
     public function run(string $password, User $user, ?UserToken $userToken = null): bool
     {

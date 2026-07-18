@@ -13,6 +13,11 @@ use Yiisoft\Rbac\Permission;
 use Yiisoft\Rbac\Role;
 use Yiisoft\User\CurrentUser;
 
+/**
+ * RBAC query helpers built on top of `yiisoft/rbac`: listing rule names, finding items not yet
+ * assigned to a user, checking role/permission membership, and the module-wide `isAdmin()` check
+ * driven by `ModuleConfig::$administratorPermissionName`.
+ */
 final readonly class AuthHelper
 {
     public function __construct(
@@ -21,8 +26,7 @@ final readonly class AuthHelper
         private AssignmentsStorageInterface $assignmentsStorage,
         private ModuleConfig $config,
         private CurrentUser $currentUser,
-    ) {
-    }
+    ) {}
 
     /**
      * @return list<string>
@@ -47,7 +51,7 @@ final readonly class AuthHelper
     public function getUnassignedItems(int $userId): array
     {
         $assigned = $this->assignmentsStorage->getByUserId((string) $userId);
-        $assignedNames = array_map(fn (Assignment $a) => $a->getItemName(), $assigned);
+        $assignedNames = array_map(fn(Assignment $a) => $a->getItemName(), $assigned);
         $all = $this->itemsStorage->getAll();
         $unassigned = [];
         foreach ($all as $name => $item) {

@@ -9,6 +9,10 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 
+/**
+ * Console command (`voyti:confirm`) that marks a user account as confirmed, looked up via
+ * {@see UserLookupTrait}.
+ */
 final class ConfirmUserCommand extends Command
 {
     use UserLookupTrait;

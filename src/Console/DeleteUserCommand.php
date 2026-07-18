@@ -8,6 +8,9 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
+/**
+ * Console command (`voyti:delete`) that deletes a user account, looked up via {@see UserLookupTrait}.
+ */
 final class DeleteUserCommand extends Command
 {
     use UserLookupTrait;

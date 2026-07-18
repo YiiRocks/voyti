@@ -20,6 +20,9 @@ use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
+/**
+ * Admin listing of {@see UserAuditLog} entries, with actor/target/action filters and pagination.
+ */
 final readonly class AuditLogController
 {
     use InputDataTrait;
@@ -33,8 +36,7 @@ final readonly class AuditLogController
         private ResponseFactoryInterface $responseFactory,
         private ModuleConfig $config,
         private FlashInterface $flash,
-    ) {
-    }
+    ) {}
 
     public function index(ServerRequestInterface $request): ResponseInterface
     {
@@ -54,7 +56,7 @@ final readonly class AuditLogController
         $logs = iterator_to_array($paginator->read(), false);
 
         return $this->renderView('admin/audit-log/index', [
-            'logs' => array_map(fn (UserAuditLog $log): array => $this->presentLog($log), $logs),
+            'logs' => array_map(fn(UserAuditLog $log): array => $this->presentLog($log), $logs),
             'paginator' => $paginator,
             'filters' => $filters,
             'flash' => $this->flash,

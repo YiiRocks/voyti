@@ -13,6 +13,10 @@ use Yiisoft\Auth\IdentityWithTokenRepositoryInterface;
 
 use function time;
 
+/**
+ * Bridges `yiisoft/auth`'s identity-repository contracts to {@see User} and {@see UserToken}, resolving
+ * identities by ID and by API token (honoring {@see ModuleConfig::$apiTokenLifespan} expiry).
+ */
 final readonly class IdentityAdapter implements IdentityRepositoryInterface, IdentityWithTokenRepositoryInterface
 {
     private \Closure $now;
@@ -21,7 +25,7 @@ final readonly class IdentityAdapter implements IdentityRepositoryInterface, Ide
         private ModuleConfig $config,
         ?\Closure $now = null,
     ) {
-        $this->now = $now ?? static fn (): int => time();
+        $this->now = $now ?? static fn(): int => time();
     }
 
     /**

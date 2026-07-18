@@ -12,7 +12,6 @@ use YiiRocks\Voyti\ModuleConfig;
 
 final class ModuleConfigTest extends TestCase
 {
-
     public function testConstructorCustomValues(): void
     {
         $config = new ModuleConfig(

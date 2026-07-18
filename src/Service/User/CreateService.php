@@ -6,12 +6,15 @@ namespace YiiRocks\Voyti\Service\User;
 
 use YiiRocks\Voyti\Service\ServiceResult;
 
+/**
+ * Creates a user account with an admin-supplied password, delegating uniqueness checks and
+ * persistence to {@see UserCreationHelper}. Used by admin user creation, not self-registration.
+ */
 final readonly class CreateService
 {
     public function __construct(
         private UserCreationHelper $userCreationHelper,
-    ) {
-    }
+    ) {}
 
     public function run(string $email, string $username, string $password): ServiceResult
     {

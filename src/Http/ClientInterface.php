@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Http;
 
+/**
+ * HTTP client abstraction used by the OAuth code→token→user-attributes flow in
+ * `AuthClient/AbstractAuthClient` and its subclasses.
+ */
 interface ClientInterface
 {
     /**

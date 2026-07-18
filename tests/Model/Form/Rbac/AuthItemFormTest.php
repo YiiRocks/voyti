@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Model\Form\Rbac;
 
 use PHPUnit\Framework\TestCase;
-use YiiRocks\Voyti\Model\Form\Rbac\AbstractAuthItemForm;
+use YiiRocks\Voyti\Model\Form\Rbac\AuthItemForm;
 use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
+use Yiisoft\Validator\Rule\Length;
+use Yiisoft\Validator\Rule\Regex;
+use Yiisoft\Validator\Rule\Required;
 
-final class AbstractAuthItemFormTest extends TestCase
+final class AuthItemFormTest extends TestCase
 {
     use TranslatorMockTrait;
 
@@ -50,10 +53,10 @@ final class AbstractAuthItemFormTest extends TestCase
         $rules = $form->getRules();
         $this->assertArrayHasKey('name', $rules);
         $this->assertArrayHasKey('description', $rules);
-        $this->assertInstanceOf(\Yiisoft\Validator\Rule\Required::class, $rules['name'][0]);
-        $this->assertInstanceOf(\Yiisoft\Validator\Rule\Regex::class, $rules['name'][1]);
-        $this->assertInstanceOf(\Yiisoft\Validator\Rule\Length::class, $rules['name'][2]);
-        $this->assertInstanceOf(\Yiisoft\Validator\Rule\Length::class, $rules['description'][0]);
+        $this->assertInstanceOf(Required::class, $rules['name'][0]);
+        $this->assertInstanceOf(Regex::class, $rules['name'][1]);
+        $this->assertInstanceOf(Length::class, $rules['name'][2]);
+        $this->assertInstanceOf(Length::class, $rules['description'][0]);
 
         $nameLength = $rules['name'][2];
         self::assertSame(1, $this->readPrivate($nameLength, 'min'));
@@ -85,9 +88,9 @@ final class AbstractAuthItemFormTest extends TestCase
         $this->assertSame('old_name', $form->itemName);
     }
 
-    private function createForm(string $type = 'authItem'): AbstractAuthItemForm
+    private function createForm(string $type = 'authItem'): AuthItemForm
     {
-        return new AbstractAuthItemForm($this->createTranslator(), $type);
+        return new AuthItemForm($this->createTranslator(), $type);
     }
 
     private function readPrivate(object $object, string $property): mixed

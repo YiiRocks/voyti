@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use YiiRocks\Voyti\Model\Form\Rbac\AbstractAuthItemForm;
+use YiiRocks\Voyti\Model\Form\Rbac\AuthItemForm;
 use YiiRocks\Voyti\Model\User;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
@@ -14,7 +14,7 @@ use Yiisoft\View\WebView;
 /**
  * @var WebView $this
  * @var string $itemType 'role' or 'permission'
- * @var AbstractAuthItemForm $model
+ * @var AuthItemForm $model
  * @var array<string, Item> $availableChildren
  * @var array<string, list<string>> $errors
  * @var UrlGeneratorInterface $url

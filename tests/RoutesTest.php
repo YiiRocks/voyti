@@ -17,7 +17,6 @@ use Yiisoft\Session\SessionMiddleware;
 
 final class RoutesTest extends TestCase
 {
-
     public function testAdminIndexRouteRendersDashboard(): void
     {
         $route = $this->getRoute('voyti/admin', []);

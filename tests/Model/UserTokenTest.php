@@ -4,11 +4,17 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Model;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Psr\SimpleCache\CacheInterface;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
+use Yiisoft\Db\Cache\SchemaCache;
 use Yiisoft\Db\Connection\ConnectionInterface;
 use Yiisoft\Db\Connection\ConnectionProvider;
+use Yiisoft\Db\Sqlite\Connection;
+use Yiisoft\Db\Sqlite\Driver;
+use Yiisoft\Db\Sqlite\Dsn;
 
 final class UserTokenTest extends TestCase
 {
@@ -71,9 +77,20 @@ final class UserTokenTest extends TestCase
     }
 
     /**
+     * @return iterable<string, array{string, string, int|string}>
+     */
+    public static function getterSetterProvider(): iterable
+    {
+        yield 'code' => ['setCode', 'getCode', 'abc123'];
+        yield 'createdAt' => ['setCreatedAt', 'getCreatedAt', 5000];
+        yield 'type' => ['setType', 'getType', UserToken::TYPE_CONFIRMATION];
+        yield 'userId' => ['setUserId', 'getUserId', 42];
+    }
+
+    /**
      * @return iterable<string, array{int, int, int|null, bool}>
      */
-    public static function getIsExpiredProvider(): iterable
+    public static function isExpiredProvider(): iterable
     {
         yield 'default lifespan for confirmation boundary' => [86401, UserToken::TYPE_CONFIRMATION, null, true];
         yield 'default lifespan for confirmation edge case' => [86400, UserToken::TYPE_CONFIRMATION, null, false];
@@ -88,17 +105,6 @@ final class UserTokenTest extends TestCase
         yield 'custom lifespan edge case' => [86400, UserToken::TYPE_CONFIRMATION, 86400, false];
         yield 'custom lifespan expired' => [100, UserToken::TYPE_CONFIRMATION, 50, true];
         yield 'custom lifespan not expired' => [0, UserToken::TYPE_CONFIRMATION, 86400, false];
-    }
-
-    /**
-     * @return iterable<string, array{string, string, int|string}>
-     */
-    public static function getterSetterProvider(): iterable
-    {
-        yield 'code' => ['setCode', 'getCode', 'abc123'];
-        yield 'createdAt' => ['setCreatedAt', 'getCreatedAt', 5000];
-        yield 'type' => ['setType', 'getType', UserToken::TYPE_CONFIRMATION];
-        yield 'userId' => ['setUserId', 'getUserId', 42];
     }
 
     public function testConstants(): void
@@ -279,17 +285,17 @@ final class UserTokenTest extends TestCase
         self::assertSame('codeA', $found->getCode());
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('getIsExpiredProvider')]
+    #[DataProvider('isExpiredProvider')]
     public function testGetIsExpired(int $offset, int $type, ?int $lifespan, bool $expected): void
     {
         $entity = new UserToken();
         $entity->setCreatedAt(time() - $offset);
         $entity->setType($type);
 
-        self::assertSame($expected, $lifespan === null ? $entity->getIsExpired() : $entity->getIsExpired($lifespan));
+        self::assertSame($expected, $lifespan === null ? $entity->isExpired() : $entity->isExpired($lifespan));
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('getterSetterProvider')]
+    #[DataProvider('getterSetterProvider')]
     public function testGetSetProperty(string $setter, string $getter, int|string $value): void
     {
         $entity = new UserToken();
@@ -335,13 +341,13 @@ final class UserTokenTest extends TestCase
 
     private function createSqliteConnection(): ConnectionInterface
     {
-        $dsn = new \Yiisoft\Db\Sqlite\Dsn('sqlite', ':memory:');
-        $driver = new \Yiisoft\Db\Sqlite\Driver($dsn);
-        $cache = $this->createStub(\Psr\SimpleCache\CacheInterface::class);
+        $dsn = new Dsn('sqlite', ':memory:');
+        $driver = new Driver($dsn);
+        $cache = $this->createStub(CacheInterface::class);
         $cache->method('set')->willReturn(true);
         $cache->method('get')->willReturn(null);
-        $schemaCache = new \Yiisoft\Db\Cache\SchemaCache($cache);
+        $schemaCache = new SchemaCache($cache);
         $schemaCache->setEnabled(false);
-        return new \Yiisoft\Db\Sqlite\Connection($driver, $schemaCache);
+        return new Connection($driver, $schemaCache);
     }
 }

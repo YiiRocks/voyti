@@ -7,6 +7,9 @@ namespace YiiRocks\Voyti\Validator\Rbac;
 use Yiisoft\Rbac\RuleInterface;
 use Yiisoft\Validator\Result;
 
+/**
+ * Validates that a class name refers to an existing class implementing {@see RuleInterface}.
+ */
 final class RuleValidator
 {
     public function validate(string $className): Result

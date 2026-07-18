@@ -6,6 +6,10 @@ namespace YiiRocks\Voyti\AuthClient;
 
 use YiiRocks\Voyti\Http\ClientInterface;
 
+/**
+ * Contract for an OAuth2 social login provider: building the authorization URL and exchanging an
+ * authorization code for normalized user attributes.
+ */
 interface AuthClientInterface
 {
     public function fetchUserAttributes(string $code, string $redirectUri, ClientInterface $httpClient): array;

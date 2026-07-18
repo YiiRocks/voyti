@@ -9,7 +9,6 @@ use YiiRocks\Voyti\Event\Session\SessionEvent;
 
 final class SessionEventTest extends TestCase
 {
-
     public function testConstants(): void
     {
         self::assertSame('sessionCreated', SessionEvent::SESSION_CREATED);

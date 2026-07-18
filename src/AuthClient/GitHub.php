@@ -7,6 +7,11 @@ namespace YiiRocks\Voyti\AuthClient;
 use YiiRocks\Voyti\Http\ClientInterface;
 use Yiisoft\Http\Method;
 
+/**
+ * GitHub OAuth client. GitHub omits `email` from `/user` when it's private, so
+ * `loadUserAttributes()` falls back to a secondary `/user/emails` call and picks the primary or
+ * first verified address.
+ */
 final readonly class GitHub extends AbstractAuthClient
 {
     /**

@@ -9,6 +9,10 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Model\User;
 
+/**
+ * Trait shared by user-targeting console commands: adds `--id`/`--email`/`--username` options and
+ * resolves them to a {@see User}, writing a usage or not-found error to the command output on failure.
+ */
 trait UserLookupTrait
 {
     private function configureUserOptions(): void

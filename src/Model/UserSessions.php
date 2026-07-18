@@ -7,6 +7,10 @@ namespace YiiRocks\Voyti\Model;
 use Yiisoft\ActiveRecord\ActiveRecord;
 use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
 
+/**
+ * ActiveRecord for the `user_sessions` table: tracks each active login session per user (IP,
+ * user agent, timestamps) for session management and admin visibility.
+ */
 final class UserSessions extends ActiveRecord
 {
     use PrivatePropertiesTrait;

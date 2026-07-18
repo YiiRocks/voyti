@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests;
 
 use Nyholm\Psr7\Factory\Psr17Factory;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Client\ClientInterface as PsrClientInterface;
@@ -38,7 +39,7 @@ use Yiisoft\Translator\TranslatorInterface;
  * to catch wiring bugs (bad bindings, unresolvable constructor args) that
  * ControllerHarness's manual object graph can't surface.
  */
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class ContainerWiringTest extends TestCase
 {
     public function testEveryDiDefinitionResolves(): void

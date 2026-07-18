@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Service\Admin;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Helper\AuthHelper;
@@ -23,7 +24,7 @@ use Yiisoft\Rbac\Role;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class DashboardServiceTest extends TestCase
 {
     use DatabaseSetupTrait;
@@ -93,7 +94,7 @@ final class DashboardServiceTest extends TestCase
     {
         $lifespan = (new ModuleConfig())->rememberLoginLifespan;
         $offsets = $this->trendBoundaryOffsets($lifespan);
-        $emails = array_map(static fn (string $label): string => $label . '@example.com', array_keys($offsets));
+        $emails = array_map(static fn(string $label): string => $label . '@example.com', array_keys($offsets));
 
         do {
             (new User())->deleteAll(['email' => $emails]);

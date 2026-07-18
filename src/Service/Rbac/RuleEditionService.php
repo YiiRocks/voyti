@@ -8,13 +8,17 @@ use YiiRocks\Voyti\Model\Form\Rbac\RuleForm;
 use YiiRocks\Voyti\Validator\Rbac\RuleValidator;
 use Yiisoft\Rbac\ItemsStorageInterface;
 
+/**
+ * Manages RBAC rule class references on authorization items: validates rule classes via
+ * {@see RuleValidator}, and renames or clears references across {@see ItemsStorageInterface} items
+ * when a rule class is renamed or removed.
+ */
 final readonly class RuleEditionService
 {
     public function __construct(
         private ItemsStorageInterface $itemsStorage,
         private RuleValidator $ruleValidator,
-    ) {
-    }
+    ) {}
 
     public function create(RuleForm $form): bool
     {

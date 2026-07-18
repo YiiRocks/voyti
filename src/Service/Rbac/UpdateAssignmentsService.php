@@ -9,14 +9,17 @@ use Yiisoft\Rbac\Assignment;
 use Yiisoft\Rbac\AssignmentsStorageInterface;
 use Yiisoft\Rbac\ManagerInterface;
 
+/**
+ * Synchronizes a user's RBAC assignments to a given set of item names, validating them via
+ * {@see ItemsValidator} then assigning/revoking through {@see ManagerInterface} to match.
+ */
 final readonly class UpdateAssignmentsService
 {
     public function __construct(
         private ManagerInterface $authManager,
         private AssignmentsStorageInterface $assignmentsStorage,
         private ItemsValidator $itemsValidator,
-    ) {
-    }
+    ) {}
 
     public function run(int $userId, array $items): bool
     {
@@ -29,7 +32,7 @@ final readonly class UpdateAssignmentsService
         }
 
         $assigned = $this->assignmentsStorage->getByUserId((string) $userId);
-        $assignedNames = array_map(fn (Assignment $a) => $a->getItemName(), $assigned);
+        $assignedNames = array_map(fn(Assignment $a) => $a->getItemName(), $assigned);
 
         foreach (array_diff($assignedNames, $itemsList) as $itemName) {
             $this->authManager->revoke($itemName, $userId);

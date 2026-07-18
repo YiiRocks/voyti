@@ -9,16 +9,46 @@ use chillerlan\QRCode\QRCode;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 
+/**
+ * Builds TOTP `otpauth://` URIs and QR-code SVGs for two-factor authentication setup. `run()`/
+ * `generateQrCodeSvg()` reuse the user's existing {@see User::getAuthTfKey()} secret if present,
+ * while `regenerate()`/`regenerateQrCodeSvg()` always issue a fresh secret. Both fall back to an
+ * empty string if the optional `chillerlan/php-authenticator`/`chillerlan/php-qrcode` packages
+ * aren't installed ({@see isAvailable()}).
+ */
 final readonly class QrCodeUriGeneratorService
 {
     public function __construct(
         private ModuleConfig $config,
-    ) {
+    ) {}
+
+    public function generateQrCodeSvg(User $user): string
+    {
+        return $this->buildSvg($this->run($user));
     }
 
-    public function generateQrCodeSvg(User $user, bool $forceNewSecret = false): string
+    public function isAvailable(): bool
     {
-        $uri = $this->run($user, $forceNewSecret);
+        return class_exists(Authenticator::class);
+    }
+
+    public function regenerate(User $user): string
+    {
+        return $this->buildUri($user, null);
+    }
+
+    public function regenerateQrCodeSvg(User $user): string
+    {
+        return $this->buildSvg($this->regenerate($user));
+    }
+
+    public function run(User $user): string
+    {
+        return $this->buildUri($user, $user->getAuthTfKey());
+    }
+
+    private function buildSvg(string $uri): string
+    {
         if ($uri === '') {
             // @codeCoverageIgnoreStart
             // Only reachable when chillerlan/php-authenticator is missing; always installed in the test environment.
@@ -39,18 +69,13 @@ final readonly class QrCodeUriGeneratorService
         return (string) $qrcode->render($uri);
     }
 
-    public function isAvailable(): bool
+    private function buildUri(User $user, ?string $secret): string
     {
-        return class_exists(Authenticator::class);
-    }
-
-    public function run(User $user, bool $forceNewSecret = false): string
-    {
-        $secret = $forceNewSecret ? null : $user->getAuthTfKey();
         if ($secret === null || $secret === '') {
             if (!$this->isAvailable()) {
                 // @codeCoverageIgnoreStart
-                // Only reachable when chillerlan/php-authenticator is missing; always installed in the test environment.
+                // Only reachable when chillerlan/php-authenticator is missing; always installed in
+                // the test environment.
                 return '';
                 // @codeCoverageIgnoreEnd
             }

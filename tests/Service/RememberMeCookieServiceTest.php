@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Service;
 
 use Nyholm\Psr7\Response;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
@@ -18,7 +20,7 @@ use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Login\Cookie\CookieLoginIdentityInterface;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class RememberMeCookieServiceTest extends TestCase
 {
     use DatabaseSetupTrait;
@@ -447,7 +449,7 @@ final class RememberMeCookieServiceTest extends TestCase
         $eventDispatcher->expects($this->once())
             ->method('dispatch')
             ->with($this->callback(
-                static fn (AfterLoginEvent $event): bool => $event->getUser() === $identity
+                static fn(AfterLoginEvent $event): bool => $event->getUser() === $identity
                     && $event->getPreviousSessionId() === 'cookie-session-id',
             ))
             ->willReturnArgument(0);
@@ -516,7 +518,7 @@ final class RememberMeCookieServiceTest extends TestCase
         self::assertSame($identity, $currentUser->getIdentity());
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('refreshCookieBoundaryProvider')]
+    #[DataProvider('refreshCookieBoundaryProvider')]
     public function testRefreshCookieBoundary(int $now, int|string $expires, bool $expectedReissued): void
     {
         $service = new RememberMeCookieService(3600, 'autoLogin', $this->fixedNowClosure($now));

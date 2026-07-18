@@ -12,7 +12,7 @@ use YiiRocks\Voyti\Controller\ActorIdTrait;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Helper\InputDataTrait;
-use YiiRocks\Voyti\Model\Form\Rbac\AbstractAuthItemForm;
+use YiiRocks\Voyti\Model\Form\Rbac\AuthItemForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\AuditLogService;
@@ -30,6 +30,13 @@ use Yiisoft\User\CurrentUser;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
+/**
+ * Generic CRUD controller for RBAC roles and permissions: every action takes an `$itemType`
+ * ('role'|'permission') and `$indexRouteName` and branches internally rather than being split into
+ * separate role/permission controllers. Also manages an item's child items and user assignments.
+ * Because {@see ManagerInterface} has no transaction support, a failure while attaching children
+ * after the item itself is committed is reported as a form error rather than rolled back.
+ */
 final readonly class RbacController
 {
     use ActorIdTrait;
@@ -38,20 +45,19 @@ final readonly class RbacController
     use RenderTrait;
 
     public function __construct(
-        protected TranslatorInterface $translator,
-        protected WebViewRenderer $viewRenderer,
-        protected UrlGeneratorInterface $url,
-        protected ValidatorInterface $validator,
-        protected ResponseFactoryInterface $responseFactory,
-        protected ItemsStorageInterface $itemsStorage,
-        protected ManagerInterface $managerInterface,
-        protected AssignmentsStorageInterface $assignmentsStorage,
-        protected FlashInterface $flash,
-        protected ModuleConfig $config,
-        protected AuditLogService $auditLogService,
-        protected CurrentUser $currentUser,
-    ) {
-    }
+        private TranslatorInterface $translator,
+        private WebViewRenderer $viewRenderer,
+        private UrlGeneratorInterface $url,
+        private ValidatorInterface $validator,
+        private ResponseFactoryInterface $responseFactory,
+        private ItemsStorageInterface $itemsStorage,
+        private ManagerInterface $managerInterface,
+        private AssignmentsStorageInterface $assignmentsStorage,
+        private FlashInterface $flash,
+        private ModuleConfig $config,
+        private AuditLogService $auditLogService,
+        private CurrentUser $currentUser,
+    ) {}
 
     public function create(ServerRequestInterface $request, string $itemType, string $indexRouteName): ResponseInterface
     {
@@ -146,13 +152,13 @@ final readonly class RbacController
         if ($filterName !== '') {
             $items = array_filter(
                 $items,
-                static fn (Item $item): bool => str_contains($item->getName(), $filterName),
+                static fn(Item $item): bool => str_contains($item->getName(), $filterName),
             );
         }
         if ($filterDescription !== '') {
             $items = array_filter(
                 $items,
-                static fn (Item $item): bool => str_contains($item->getDescription(), $filterDescription),
+                static fn(Item $item): bool => str_contains($item->getDescription(), $filterDescription),
             );
         }
 
@@ -265,9 +271,9 @@ final readonly class RbacController
         ]);
     }
 
-    private function createForm(string $itemType): AbstractAuthItemForm
+    private function createForm(string $itemType): AuthItemForm
     {
-        return new AbstractAuthItemForm($this->translator, $itemType);
+        return new AuthItemForm($this->translator, $itemType);
     }
 
     /**
@@ -298,7 +304,7 @@ final readonly class RbacController
         return $candidates;
     }
 
-    private function loadForm(AbstractAuthItemForm $form, array $body): void
+    private function loadForm(AuthItemForm $form, array $body): void
     {
         $prefix = $form->getFormName();
         $data = $this->formData($body, $prefix);

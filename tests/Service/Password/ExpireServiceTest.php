@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Service\Password;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
@@ -62,7 +63,7 @@ final class ExpireServiceTest extends TestCase
         self::assertFalse($service->checkPasswordExpiration($user));
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('checkPasswordExpirationAgeProvider')]
+    #[DataProvider('checkPasswordExpirationAgeProvider')]
     public function testCheckPasswordExpirationEnabled(int $ageDays, bool $expected): void
     {
         $config = new ModuleConfig(enablePasswordExpiration: true, maxPasswordAge: 30);
@@ -73,7 +74,7 @@ final class ExpireServiceTest extends TestCase
         self::assertSame($expected, $service->checkPasswordExpiration($user));
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('isExpiredAgeProvider')]
+    #[DataProvider('isExpiredAgeProvider')]
     public function testIsExpiredWithAge(int $ageDays, bool $expected): void
     {
         $config = new ModuleConfig(maxPasswordAge: 90);

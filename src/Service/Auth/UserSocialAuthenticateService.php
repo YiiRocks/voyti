@@ -16,6 +16,12 @@ use Yiisoft\Security\Random;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\User\CurrentUser;
 
+/**
+ * Handles social login: looks up or creates the {@see UserSocialAccount} for a provider callback,
+ * logging in an already-connected user, auto-registering a new one when enabled and the email is
+ * free, or otherwise deferring to {@see PendingSocialAccountService} until the account is
+ * connected manually.
+ */
 final readonly class UserSocialAuthenticateService
 {
     private const string SESSION_KEY = 'oauth_client_data';
@@ -26,15 +32,18 @@ final readonly class UserSocialAuthenticateService
         private SessionInterface $session,
         private EventDispatcherInterface $eventDispatcher,
         private UserCreationHelper $userCreationHelper,
-    ) {
-    }
+    ) {}
 
     /**
      * @param array<array-key, mixed> $userAttributes
      * @param array<array-key, mixed> $serverParams
      */
-    public function run(string $provider, string $clientId, array $userAttributes, array $serverParams = []): ServiceResult
-    {
+    public function run(
+        string $provider,
+        string $clientId,
+        array $userAttributes,
+        array $serverParams = [],
+    ): ServiceResult {
         if (!$this->config->enableSocialNetworkRegistration) {
             return ServiceResult::failure('Social network registration is disabled');
         }
@@ -43,7 +52,7 @@ final readonly class UserSocialAuthenticateService
             /** @var mixed $oauthData */
             $oauthData = $this->session->get(self::SESSION_KEY);
             if ($oauthData !== null && is_array($oauthData)) {
-                $clientId = (string)($oauthData['user_id'] ?? '');
+                $clientId = (string) ($oauthData['user_id'] ?? '');
                 $userAttributes = array_merge($oauthData, $userAttributes);
             }
         }
@@ -141,9 +150,11 @@ final readonly class UserSocialAuthenticateService
         $password = Random::string(24);
 
         $user = $this->userCreationHelper->buildUser($email, $username, $password);
-        $user->setRegistrationIp($this->config->disableIpLogging ? '127.0.0.1' : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1'));
+        $user->setRegistrationIp(
+            $this->config->disableIpLogging ? '127.0.0.1' : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1'),
+        );
 
-        $this->userCreationHelper->persistAndNotify($user, $password, skipConfirmation: true);
+        $this->userCreationHelper->persistAndNotifySkippingConfirmation($user, $password);
 
         return $user;
     }
@@ -164,7 +175,7 @@ final readonly class UserSocialAuthenticateService
      *
      * @return null|string
      */
-    private function stringAttribute(array $attributes, string $key): string|null
+    private function stringAttribute(array $attributes, string $key): ?string
     {
         /** @var mixed $value */
         $value = $attributes[$key] ?? null;

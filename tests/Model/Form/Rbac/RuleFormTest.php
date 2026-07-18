@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Model\Form\Rbac;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\Form\Rbac\RuleForm;
 use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
+use Yiisoft\Validator\Rule\Regex;
+use Yiisoft\Validator\Rule\Required;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class RuleFormTest extends TestCase
 {
     use TranslatorMockTrait;
@@ -47,9 +50,9 @@ final class RuleFormTest extends TestCase
         $rules = $form->getRules();
         $this->assertArrayHasKey('name', $rules);
         $this->assertArrayHasKey('class', $rules);
-        $this->assertInstanceOf(\Yiisoft\Validator\Rule\Required::class, $rules['name'][0]);
-        $this->assertInstanceOf(\Yiisoft\Validator\Rule\Regex::class, $rules['name'][1]);
-        $this->assertInstanceOf(\Yiisoft\Validator\Rule\Required::class, $rules['class'][0]);
+        $this->assertInstanceOf(Required::class, $rules['name'][0]);
+        $this->assertInstanceOf(Regex::class, $rules['name'][1]);
+        $this->assertInstanceOf(Required::class, $rules['class'][0]);
     }
 
     public function testSetProperties(): void

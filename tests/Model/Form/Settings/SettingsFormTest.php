@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Model\Form\Settings;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
+use Yiisoft\Validator\Rule\Regex;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class SettingsFormTest extends TestCase
 {
     use TranslatorMockTrait;
@@ -65,7 +67,7 @@ final class SettingsFormTest extends TestCase
         $form = new SettingsForm($config, $this->createTranslator());
         $rules = $form->getRules();
         $this->assertCount(2, $rules['password']);
-        $this->assertInstanceOf(\Yiisoft\Validator\Rule\Regex::class, $rules['password'][1]);
+        $this->assertInstanceOf(Regex::class, $rules['password'][1]);
     }
 
     public function testGetUserReturnsNullByDefault(): void

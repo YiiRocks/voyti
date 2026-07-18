@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\AuthClient;
 
+/**
+ * VKontakte OAuth client. The user-info response nests the account under `response[0]` and VK's own
+ * API version/field query parameters replace the default `Authorization`-header flow, so
+ * `normalizeUserAttributes()`, `userInfoHeaders()`, and `userInfoQuery()` are all overridden.
+ */
 final readonly class VKontakte extends AbstractAuthClient
 {
     /**

@@ -42,6 +42,10 @@ use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
+/**
+ * Handles login, logout, two-factor confirmation during login, and the social-auth callback
+ * that either logs a guest in or connects a provider to the currently authenticated user.
+ */
 final readonly class SessionController
 {
     use InputDataTrait;
@@ -71,8 +75,7 @@ final readonly class SessionController
         private EmailCodeGeneratorService $twoFactorEmailCodeService,
         private FlashInterface $flash,
         private BackupCodeService $backupCodeService,
-    ) {
-    }
+    ) {}
 
     public function auth(ServerRequestInterface $request, string $provider): ResponseInterface
     {
@@ -108,11 +111,17 @@ final readonly class SessionController
                 );
             }
         } catch (RuntimeException $exception) {
-            return $this->renderView('shared/message', ['title' => $exception->getMessage(), 'translator' => $this->translator]);
+            return $this->renderView('shared/message', [
+                'title' => $exception->getMessage(),
+                'translator' => $this->translator,
+            ]);
         }
 
         if ($result->isFailure()) {
-            return $this->renderView('shared/message', ['title' => $result->getMessage(), 'translator' => $this->translator]);
+            return $this->renderView('shared/message', [
+                'title' => $result->getMessage(),
+                'translator' => $this->translator,
+            ]);
         }
 
         if (!$isGuest) {
@@ -121,15 +130,24 @@ final readonly class SessionController
 
         $account = $this->pendingSocialAccountService->getPendingAccount();
         if ($account !== null) {
-            return $this->redirect($this->url->generate('voyti/registration-connect', ['code' => $account->getCode() ?? 'connect']));
+            return $this->redirect(
+                $this->url->generate('voyti/registration-connect', ['code' => $account->getCode() ?? 'connect']),
+            );
         }
 
         $user = $this->currentUser->getIdentity();
         if ($user instanceof User) {
-            return $this->rememberMeCookieService->addCookie($user, $this->homeRedirectResponse(), $this->session->getId() ?? '');
+            return $this->rememberMeCookieService->addCookie(
+                $user,
+                $this->homeRedirectResponse(),
+                $this->session->getId() ?? '',
+            );
         }
 
-        return $this->renderView('shared/message', ['title' => $this->translator->translate('voyti.security.authenticated', category: 'voyti'), 'translator' => $this->translator]);
+        return $this->renderView('shared/message', [
+            'title' => $this->translator->translate('voyti.security.authenticated', category: 'voyti'),
+            'translator' => $this->translator,
+        ]);
     }
 
     public function confirm(ServerRequestInterface $request): ResponseInterface
@@ -187,14 +205,20 @@ final readonly class SessionController
 
                     $response = $this->homeRedirectResponse();
                     if ($this->boolValue($credentials, 'rememberMe')) {
-                        $response = $this->rememberMeCookieService->addCookie($user, $response, $this->session->getId() ?? '');
+                        $response = $this->rememberMeCookieService->addCookie(
+                            $user,
+                            $response,
+                            $this->session->getId() ?? '',
+                        );
                     }
 
                     return $response;
                 }
 
                 $form->addError(
-                    $errorMessage !== '' ? $errorMessage : $this->translator->translate('voyti.validator.invalid_verification_code', category: 'voyti'),
+                    $errorMessage !== ''
+                        ? $errorMessage
+                        : $this->translator->translate('voyti.validator.invalid_verification_code', category: 'voyti'),
                     ['twoFactorAuthenticationCode'],
                 );
             }
@@ -221,11 +245,20 @@ final readonly class SessionController
                 $user = User::findByUsernameOrEmail($form->login);
 
                 if ($user === null || !$this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
-                    $form->addError($this->translator->translate('voyti.security.invalid_login', category: 'voyti'), ['login']);
+                    $form->addError(
+                        $this->translator->translate('voyti.security.invalid_login', category: 'voyti'),
+                        ['login'],
+                    );
                 } elseif ($user->isBlocked()) {
-                    $form->addError($this->translator->translate('voyti.security.account_blocked', category: 'voyti'), ['login']);
+                    $form->addError(
+                        $this->translator->translate('voyti.security.account_blocked', category: 'voyti'),
+                        ['login'],
+                    );
                 } elseif ($this->config->enableEmailConfirmation && !$user->isConfirmed()) {
-                    $form->addError($this->translator->translate('voyti.security.need_email_confirmation', category: 'voyti'), ['login']);
+                    $form->addError(
+                        $this->translator->translate('voyti.security.need_email_confirmation', category: 'voyti'),
+                        ['login'],
+                    );
                 } else {
                     if ($this->config->enableTwoFactorAuthentication && $user->isAuthTfEnabled()) {
                         if ($user->getAuthTfType() === 'email') {
@@ -256,7 +289,11 @@ final readonly class SessionController
 
                     $response = $this->homeRedirectResponse();
                     if ($form->rememberMe) {
-                        $response = $this->rememberMeCookieService->addCookie($user, $response, $this->session->getId() ?? '');
+                        $response = $this->rememberMeCookieService->addCookie(
+                            $user,
+                            $response,
+                            $this->session->getId() ?? '',
+                        );
                     }
 
                     return $response;

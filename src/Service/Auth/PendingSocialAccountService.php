@@ -9,14 +9,18 @@ use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\Service\ServiceResult;
 use Yiisoft\Session\SessionInterface;
 
+/**
+ * Tracks, in the session, a {@see UserSocialAccount} awaiting connection to a user account
+ * (e.g. after a social sign-in for an email that doesn't match an existing user), and connects it
+ * once the user is known.
+ */
 final readonly class PendingSocialAccountService
 {
     public const string SESSION_KEY = 'social_network_account_code';
 
     public function __construct(
         private SessionInterface $session,
-    ) {
-    }
+    ) {}
 
     public function clear(): void
     {
@@ -73,7 +77,7 @@ final readonly class PendingSocialAccountService
         return $account;
     }
 
-    private function code(): string|null
+    private function code(): ?string
     {
         /** @var mixed $code */
         $code = $this->session->get(self::SESSION_KEY);

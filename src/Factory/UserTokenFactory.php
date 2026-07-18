@@ -7,6 +7,10 @@ namespace YiiRocks\Voyti\Factory;
 use YiiRocks\Voyti\Model\UserToken;
 use Yiisoft\Security\Random;
 
+/**
+ * Creates and persists `UserToken` rows (confirmation, email-change, and password-recovery
+ * tokens) with a random code.
+ */
 final readonly class UserTokenFactory
 {
     public function makeConfirmationToken(int $userId): UserToken

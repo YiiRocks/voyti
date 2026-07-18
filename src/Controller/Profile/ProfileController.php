@@ -31,6 +31,9 @@ use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
+/**
+ * Displays a user's public profile and lets the current user edit their own profile.
+ */
 final readonly class ProfileController
 {
     use InputDataTrait;
@@ -51,8 +54,7 @@ final readonly class ProfileController
         private ResponseFactoryInterface $responseFactory,
         private FlashInterface $flash,
         private SwitchIdentityService $switchIdentityService,
-    ) {
-    }
+    ) {}
 
     public function show(ServerRequestInterface $request, int $id): ResponseInterface
     {
@@ -105,7 +107,10 @@ final readonly class ProfileController
                 $form->applyToProfile($userProfile);
                 $userProfile->save();
                 $this->eventDispatcher->dispatch(new UserProfileEvent($userProfile));
-                return $this->redirectWithFlash($this->url->generate('voyti/profile-update'), 'voyti.settings.profile_updated');
+                return $this->redirectWithFlash(
+                    $this->url->generate('voyti/profile-update'),
+                    'voyti.settings.profile_updated',
+                );
             }
 
             $form->processValidationResult($result);

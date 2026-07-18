@@ -6,6 +6,7 @@ namespace YiiRocks\Voyti\tests\Controller\TwoFactor;
 
 use chillerlan\Authenticator\Authenticator;
 use Nyholm\Psr7\ServerRequest;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -28,7 +29,7 @@ use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class TwoFactorControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
@@ -76,7 +77,7 @@ final class TwoFactorControllerTest extends TestCase
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
         $this->twoFactorEmailCodeService->expects($this->once())->method('run')->with(
-            $this->callback(static fn (User $u): bool => $u->getId() === $user->getId()),
+            $this->callback(static fn(User $u): bool => $u->getId() === $user->getId()),
         );
 
         $response = $this->createMock(ResponseInterface::class);
@@ -84,7 +85,7 @@ final class TwoFactorControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('two-factor/index', $this->callback(
-                static fn (array $params): bool => $params['method'] === 'email'
+                static fn(array $params): bool => $params['method'] === 'email'
                     && $params['emailCodeSent'] === true
                     && $params['preloadContent'] === true,
             ))
@@ -116,7 +117,7 @@ final class TwoFactorControllerTest extends TestCase
     public function testTwoFactorDisableSendCodeWhenGuestShowsError(): void
     {
         $this->assertGuestShowsError(
-            static fn (TwoFactorController $controller): ResponseInterface => $controller->disableSendCode(new ServerRequest('POST', '/')),
+            static fn(TwoFactorController $controller): ResponseInterface => $controller->disableSendCode(new ServerRequest('POST', '/')),
         );
     }
 
@@ -141,7 +142,7 @@ final class TwoFactorControllerTest extends TestCase
     public function testTwoFactorDisableWhenGuestShowsError(): void
     {
         $this->assertGuestShowsError(
-            static fn (TwoFactorController $controller): ResponseInterface => $controller->disable(new ServerRequest('POST', '/')),
+            static fn(TwoFactorController $controller): ResponseInterface => $controller->disable(new ServerRequest('POST', '/')),
         );
     }
 
@@ -160,7 +161,7 @@ final class TwoFactorControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('two-factor/index', $this->callback(
-                static fn (array $params): bool => $params['method'] === 'email'
+                static fn(array $params): bool => $params['method'] === 'email'
                     && $params['emailCodeSent'] === true
                     && $params['preloadContent'] === true
                     && $params['errors'] !== [],
@@ -190,7 +191,7 @@ final class TwoFactorControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('two-factor/index', $this->callback(
-                static fn (array $params): bool => $params['method'] === 'google'
+                static fn(array $params): bool => $params['method'] === 'google'
                     && $params['emailCodeSent'] === false
                     && $params['preloadContent'] === true
                     && $params['errors'] !== [],
@@ -302,7 +303,7 @@ final class TwoFactorControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('renderPartial')
             ->with('two-factor/_email', $this->callback(
-                static fn (array $params): bool => $params['emailCodeSent'] === false,
+                static fn(array $params): bool => $params['emailCodeSent'] === false,
             ))
             ->willReturn($response);
 
@@ -328,7 +329,7 @@ final class TwoFactorControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('two-factor/index', $this->callback(
-                static fn (array $params): bool => $params['method'] === 'email'
+                static fn(array $params): bool => $params['method'] === 'email'
                     && $params['emailCodeSent'] === false
                     && $params['preloadContent'] === true,
             ))
@@ -359,7 +360,7 @@ final class TwoFactorControllerTest extends TestCase
     public function testTwoFactorEmailWhenGuestShowsError(): void
     {
         $this->assertGuestShowsError(
-            static fn (TwoFactorController $controller): ResponseInterface => $controller->email(new ServerRequest('GET', '/')),
+            static fn(TwoFactorController $controller): ResponseInterface => $controller->email(new ServerRequest('GET', '/')),
         );
     }
 
@@ -386,7 +387,7 @@ final class TwoFactorControllerTest extends TestCase
     public function testTwoFactorEnableWhenGuestShowsError(): void
     {
         $this->assertGuestShowsError(
-            static fn (TwoFactorController $controller): ResponseInterface => $controller->enable(
+            static fn(TwoFactorController $controller): ResponseInterface => $controller->enable(
                 (new ServerRequest('POST', '/'))->withParsedBody(['method' => 'google', 'code' => '123456']),
             ),
         );
@@ -407,7 +408,7 @@ final class TwoFactorControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('two-factor/backup-codes', $this->callback(
-                static fn (array $params): bool => count($params['codes']) === 10,
+                static fn(array $params): bool => count($params['codes']) === 10,
             ))
             ->willReturn($response);
 
@@ -435,7 +436,7 @@ final class TwoFactorControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('two-factor/index', $this->callback(
-                static fn (array $params): bool => $params['method'] === 'email'
+                static fn(array $params): bool => $params['method'] === 'email'
                     && $params['emailCodeSent'] === true
                     && $params['preloadContent'] === true,
             ))
@@ -465,7 +466,7 @@ final class TwoFactorControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('two-factor/index', $this->callback(
-                static fn (array $params): bool => $params['method'] === 'google'
+                static fn(array $params): bool => $params['method'] === 'google'
                     && $params['emailCodeSent'] === false
                     && $params['preloadContent'] === true,
             ))
@@ -503,7 +504,7 @@ final class TwoFactorControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('two-factor/backup-codes', $this->callback(
-                static fn (array $params): bool => count($params['codes']) === 10,
+                static fn(array $params): bool => count($params['codes']) === 10,
             ))
             ->willReturn($response);
 
@@ -534,7 +535,7 @@ final class TwoFactorControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('renderPartial')
             ->with('two-factor/_google', $this->callback(
-                static fn (array $params): bool => $params['qrCodeUri'] === '<svg></svg>' && $params['secret'] === null,
+                static fn(array $params): bool => $params['qrCodeUri'] === '<svg></svg>' && $params['secret'] === null,
             ))
             ->willReturn($response);
 
@@ -561,7 +562,7 @@ final class TwoFactorControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('two-factor/index', $this->callback(
-                static fn (array $params): bool => $params['method'] === 'google'
+                static fn(array $params): bool => $params['method'] === 'google'
                     && $params['emailCodeSent'] === false
                     && $params['preloadContent'] === true,
             ))
@@ -593,7 +594,7 @@ final class TwoFactorControllerTest extends TestCase
     public function testTwoFactorGoogleWhenGuestShowsError(): void
     {
         $this->assertGuestShowsError(
-            static fn (TwoFactorController $controller): ResponseInterface => $controller->google(new ServerRequest('GET', '/')),
+            static fn(TwoFactorController $controller): ResponseInterface => $controller->google(new ServerRequest('GET', '/')),
         );
     }
 
@@ -614,7 +615,7 @@ final class TwoFactorControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('two-factor/index', $this->callback(
-                static fn (array $params): bool => $params['hasBackupCodes'] === true,
+                static fn(array $params): bool => $params['hasBackupCodes'] === true,
             ))
             ->willReturn($response);
 
@@ -638,7 +639,7 @@ final class TwoFactorControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('two-factor/index', $this->callback(
-                static fn (array $params): bool => $params['hasBackupCodes'] === false,
+                static fn(array $params): bool => $params['hasBackupCodes'] === false,
             ))
             ->willReturn($response);
 
@@ -672,7 +673,7 @@ final class TwoFactorControllerTest extends TestCase
     public function testTwoFactorRegenerateBackupCodesWhenGuestShowsError(): void
     {
         $this->assertGuestShowsError(
-            static fn (TwoFactorController $controller): ResponseInterface => $controller->regenerateBackupCodes(new ServerRequest('POST', '/')),
+            static fn(TwoFactorController $controller): ResponseInterface => $controller->regenerateBackupCodes(new ServerRequest('POST', '/')),
         );
     }
 
@@ -708,7 +709,7 @@ final class TwoFactorControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('two-factor/index', $this->callback(
-                static fn (array $params): bool => $params['method'] === 'email',
+                static fn(array $params): bool => $params['method'] === 'email',
             ))
             ->willReturn($response);
 
@@ -733,7 +734,7 @@ final class TwoFactorControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('two-factor/backup-codes', $this->callback(
-                static fn (array $params): bool => count($params['codes']) === 10,
+                static fn(array $params): bool => count($params['codes']) === 10,
             ))
             ->willReturn($response);
 
@@ -767,7 +768,7 @@ final class TwoFactorControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('two-factor/backup-codes', $this->callback(
-                static fn (array $params): bool => count($params['codes']) === 10,
+                static fn(array $params): bool => count($params['codes']) === 10,
             ))
             ->willReturn($response);
 
@@ -814,11 +815,8 @@ final class TwoFactorControllerTest extends TestCase
 
         $this->twoFactorQrCodeService->method('isAvailable')->willReturn(true);
         $this->twoFactorQrCodeService->expects($this->once())
-            ->method('generateQrCodeSvg')
-            ->with(
-                $this->callback(static fn (User $u): bool => $u->getId() === $user->getId()),
-                forceNewSecret: true,
-            )
+            ->method('regenerateQrCodeSvg')
+            ->with($this->callback(static fn(User $u): bool => $u->getId() === $user->getId()))
             ->willReturn('<svg>new</svg>');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -832,7 +830,7 @@ final class TwoFactorControllerTest extends TestCase
         $body->expects($this->once())
             ->method('write')
             ->with($this->callback(
-                static fn (string $json): bool => json_decode($json, true) === ['qrCodeUri' => '<svg>new</svg>', 'secret' => 'new-secret'],
+                static fn(string $json): bool => json_decode($json, true) === ['qrCodeUri' => '<svg>new</svg>', 'secret' => 'new-secret'],
             ));
         $response->method('getBody')->willReturn($body);
 
@@ -850,7 +848,7 @@ final class TwoFactorControllerTest extends TestCase
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
-        $this->twoFactorQrCodeService->expects($this->never())->method('generateQrCodeSvg');
+        $this->twoFactorQrCodeService->expects($this->never())->method('regenerateQrCodeSvg');
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
@@ -895,7 +893,7 @@ final class TwoFactorControllerTest extends TestCase
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
         $this->twoFactorQrCodeService->method('isAvailable')->willReturn(false);
-        $this->twoFactorQrCodeService->expects($this->never())->method('generateQrCodeSvg');
+        $this->twoFactorQrCodeService->expects($this->never())->method('regenerateQrCodeSvg');
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
@@ -942,7 +940,7 @@ final class TwoFactorControllerTest extends TestCase
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
         $this->twoFactorEmailCodeService->expects($this->once())->method('run')->with(
-            $this->callback(static fn (User $u): bool => $u->getId() === $user->getId()),
+            $this->callback(static fn(User $u): bool => $u->getId() === $user->getId()),
         );
 
         $response = $this->createMock(ResponseInterface::class);
@@ -967,7 +965,7 @@ final class TwoFactorControllerTest extends TestCase
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
         $this->twoFactorEmailCodeService->expects($this->once())->method('run')->with(
-            $this->callback(static fn (User $u): bool => $u->getId() === $user->getId()),
+            $this->callback(static fn(User $u): bool => $u->getId() === $user->getId()),
         );
 
         $response = $this->createMock(ResponseInterface::class);
@@ -975,7 +973,7 @@ final class TwoFactorControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('two-factor/index', $this->callback(
-                static fn (array $params): bool => $params['method'] === 'email'
+                static fn(array $params): bool => $params['method'] === 'email'
                     && $params['emailCodeSent'] === true
                     && $params['preloadContent'] === true,
             ))
@@ -1010,7 +1008,7 @@ final class TwoFactorControllerTest extends TestCase
     public function testTwoFactorSendEmailCodeWhenGuestShowsError(): void
     {
         $this->assertGuestShowsError(
-            static fn (TwoFactorController $controller): ResponseInterface => $controller->sendEmailCode(new ServerRequest('POST', '/')),
+            static fn(TwoFactorController $controller): ResponseInterface => $controller->sendEmailCode(new ServerRequest('POST', '/')),
         );
     }
 
@@ -1031,7 +1029,7 @@ final class TwoFactorControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('two-factor/index', $this->callback(
-                static fn (array $params): bool => $params['emailCodeSent'] === false
+                static fn(array $params): bool => $params['emailCodeSent'] === false
                     && $params['preloadContent'] === true,
             ))
             ->willReturn($response);
@@ -1044,7 +1042,7 @@ final class TwoFactorControllerTest extends TestCase
     public function testTwoFactorWhenGuestShowsError(): void
     {
         $this->assertGuestShowsError(
-            static fn (TwoFactorController $controller): ResponseInterface => $controller->index(new ServerRequest('GET', '/')),
+            static fn(TwoFactorController $controller): ResponseInterface => $controller->index(new ServerRequest('GET', '/')),
         );
     }
 
@@ -1066,7 +1064,7 @@ final class TwoFactorControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('two-factor/index', $this->callback(
-                static fn (array $params): bool => $params['method'] === 'google'
+                static fn(array $params): bool => $params['method'] === 'google'
                     && $params['emailCodeSent'] === false
                     && $params['preloadContent'] === false,
             ))

@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Validator\Rbac;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Validator\Rbac\ItemsValidator;
 use Yiisoft\Rbac\ItemsStorageInterface;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class ItemsValidatorTest extends TestCase
 {
     public function testValidateWithAllExistingItems(): void

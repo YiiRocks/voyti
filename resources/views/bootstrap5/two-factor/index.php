@@ -93,7 +93,7 @@ if ($user->isAuthTfEnabled()) {
 
         echo Field::buttonGroup()
             ->buttons(
-                Html::submitButton($translator->translate('voyti.view.two_factor.disable', category: 'voyti'))->class('btn', 'btn-danger')->attribute('tabindex', 2)
+                Html::submitButton($translator->translate('voyti.view.two_factor.disable', category: 'voyti'))->class('btn', 'btn-danger')->attribute('tabindex', 2),
             );
 
         echo Html::form()->close();
@@ -115,7 +115,7 @@ if ($user->isAuthTfEnabled()) {
 
         echo Field::buttonGroup()
             ->buttons(
-                Html::submitButton($translator->translate('voyti.view.two_factor.regenerate_backup_codes', category: 'voyti'))->class('btn', 'btn-secondary')->attribute('tabindex', 4)
+                Html::submitButton($translator->translate('voyti.view.two_factor.regenerate_backup_codes', category: 'voyti'))->class('btn', 'btn-secondary')->attribute('tabindex', 4),
             );
 
         echo Html::form()->close();

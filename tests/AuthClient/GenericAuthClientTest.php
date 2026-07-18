@@ -9,7 +9,6 @@ use YiiRocks\Voyti\AuthClient\GenericAuthClient;
 
 final class GenericAuthClientTest extends TestCase
 {
-
     public function testCustomScopeOverridesDefault(): void
     {
         $client = new GenericAuthClient(

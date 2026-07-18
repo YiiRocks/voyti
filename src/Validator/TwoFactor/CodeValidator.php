@@ -10,6 +10,10 @@ use Throwable;
 use YiiRocks\Voyti\Model\User;
 use Yiisoft\Translator\TranslatorInterface;
 
+/**
+ * Verifies a TOTP two-factor authentication code against the user's stored secret using
+ * {@see Authenticator}, producing translated success/error messages for the login and settings flows.
+ */
 final class CodeValidator
 {
     private string $error = '';
@@ -19,8 +23,7 @@ final class CodeValidator
         private readonly User $user,
         private readonly string $code,
         private readonly int $cycles = 1,
-    ) {
-    }
+    ) {}
 
     public function getErrorMessage(): string
     {

@@ -7,6 +7,11 @@ namespace YiiRocks\Voyti\Service\Auth;
 use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\Service\ServiceResult;
 
+/**
+ * Links a social provider identity to an already-authenticated user, creating the
+ * {@see UserSocialAccount} row if it doesn't exist yet and failing if it's already connected to
+ * a different user.
+ */
 final readonly class UserSocialAccountConnectService
 {
     public function run(string $provider, string $clientId, array $userAttributes, int $userId): ServiceResult

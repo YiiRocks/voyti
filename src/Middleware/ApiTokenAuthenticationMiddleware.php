@@ -14,6 +14,12 @@ use Yiisoft\Auth\Method\HttpBearer;
 use Yiisoft\Http\Status;
 use Yiisoft\User\CurrentUser;
 
+/**
+ * Bearer-token authentication for the `enableRestApi` route group: resolves the token to a
+ * `User` via `yiisoft/auth`'s `HttpBearer`/`IdentityWithTokenRepositoryInterface` and overrides
+ * `CurrentUser` for the request, or challenges with 401 if the token is missing/invalid. No
+ * session is involved, unlike the cookie-based web auth flow.
+ */
 final readonly class ApiTokenAuthenticationMiddleware implements MiddlewareInterface
 {
     private HttpBearer $httpBearer;

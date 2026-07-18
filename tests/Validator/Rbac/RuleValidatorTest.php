@@ -10,7 +10,6 @@ use Yiisoft\Rbac\CompositeRule;
 
 final class RuleValidatorTest extends TestCase
 {
-
     public function testValidateWithBuiltInClassNotImplementingRuleInterface(): void
     {
         $validator = new RuleValidator();

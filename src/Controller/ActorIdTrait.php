@@ -6,6 +6,10 @@ namespace YiiRocks\Voyti\Controller;
 
 use YiiRocks\Voyti\Model\User;
 
+/**
+ * Trait providing the current authenticated user's ID for audit-log attribution, relying on a
+ * `$currentUser` property supplied by the using class.
+ */
 trait ActorIdTrait
 {
     private function actorId(): ?int

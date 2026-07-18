@@ -9,9 +9,12 @@ use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\Rule\Required;
 use Yiisoft\Validator\Rule\TrueValue;
 
+/**
+ * Backs a generic password-confirmed consent page (e.g. account deletion); the form name and
+ * consent label are injected per use site rather than hardcoded.
+ */
 final class ConsentForm extends FormModel
 {
-
     #[TrueValue(trueValue: true)]
     public bool $consent = false;
     #[Required]
@@ -21,8 +24,7 @@ final class ConsentForm extends FormModel
         private readonly TranslatorInterface $translator,
         private readonly string $formName,
         private readonly string $consentLabel,
-    ) {
-    }
+    ) {}
 
     /**
      * @return string[]

@@ -11,7 +11,12 @@ use Yiisoft\Validator\Rule\Regex;
 use Yiisoft\Validator\Rule\Required;
 use Yiisoft\Validator\RulesProviderInterface;
 
-final class AbstractAuthItemForm extends FormModel implements RulesProviderInterface
+/**
+ * Backs the admin create/update page for an RBAC item. Shared by both roles and permissions —
+ * `$type` ('role'|'permission') is also used as the form name, matching how
+ * {@see \YiiRocks\Voyti\Controller\Admin\Rbac\RbacController} branches on `$itemType`.
+ */
+final class AuthItemForm extends FormModel implements RulesProviderInterface
 {
     public array $children = [];
     #[Length(max: 191)]
@@ -26,8 +31,7 @@ final class AbstractAuthItemForm extends FormModel implements RulesProviderInter
     public function __construct(
         private TranslatorInterface $translator,
         private string $type,
-    ) {
-    }
+    ) {}
 
     /**
      * @return string[]

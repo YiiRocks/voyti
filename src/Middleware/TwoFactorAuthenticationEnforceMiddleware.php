@@ -18,6 +18,10 @@ use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
 
+/**
+ * Redirects an authenticated user to the account settings route if two-factor authentication is
+ * required for one of their permissions but not yet enabled on their account.
+ */
 final readonly class TwoFactorAuthenticationEnforceMiddleware implements MiddlewareInterface
 {
     public function __construct(
@@ -26,8 +30,7 @@ final readonly class TwoFactorAuthenticationEnforceMiddleware implements Middlew
         private ManagerInterface $authManager,
         private ResponseFactoryInterface $responseFactory,
         private UrlGeneratorInterface $url,
-    ) {
-    }
+    ) {}
 
     #[\Override]
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface

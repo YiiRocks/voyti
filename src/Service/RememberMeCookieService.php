@@ -9,6 +9,7 @@ use JsonException;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
+use YiiRocks\Voyti\Middleware\RememberMeMiddleware;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
 use Yiisoft\Auth\IdentityRepositoryInterface;
@@ -31,7 +32,7 @@ use function time;
  * {@see UserSessions} row) without invalidating the others.
  *
  * All cookie writes go through a PSR-7 {@see ResponseInterface}. {@see loginByCookie()} only
- * authenticates and reports whether a reissue is needed; {@see \YiiRocks\Voyti\Middleware\RememberMeMiddleware}
+ * authenticates and reports whether a reissue is needed; {@see RememberMeMiddleware}
  * is what writes the cookie back.
  */
 final class RememberMeCookieService
@@ -44,11 +45,14 @@ final class RememberMeCookieService
         ?\Closure $now = null,
         private readonly ?EventDispatcherInterface $eventDispatcher = null,
     ) {
-        $this->now = $now ?? static fn (): int => time();
+        $this->now = $now ?? static fn(): int => time();
     }
 
-    public function addCookie(CookieLoginIdentityInterface $identity, ResponseInterface $response, string $sessionId): ResponseInterface
-    {
+    public function addCookie(
+        CookieLoginIdentityInterface $identity,
+        ResponseInterface $response,
+        string $sessionId,
+    ): ResponseInterface {
         $expiresAt = $this->duration > 0 ? (int) ($this->now)() + $this->duration : null;
         $expires = $expiresAt !== null ? (new DateTimeImmutable())->setTimestamp($expiresAt) : null;
 
@@ -148,8 +152,11 @@ final class RememberMeCookieService
      *
      * @param array<array-key, mixed> $cookies
      */
-    public function refreshCookie(CurrentUser $currentUser, array $cookies, ResponseInterface $response): ResponseInterface
-    {
+    public function refreshCookie(
+        CurrentUser $currentUser,
+        array $cookies,
+        ResponseInterface $response,
+    ): ResponseInterface {
         if ($this->duration <= 0) {
             return $response;
         }

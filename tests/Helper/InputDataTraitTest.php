@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Helper;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Helper\InputDataTrait;
 use Yiisoft\Session\SessionInterface;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class InputDataTraitTest extends TestCase
 {
     private object $tester;
@@ -127,19 +129,19 @@ final class InputDataTraitTest extends TestCase
         yield 'string value returned' => [['key' => 'hello'], 'key', '', 'hello'];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('formDataProvider')]
+    #[DataProvider('formDataProvider')]
     public function testFormData(array $body, string $formName, array $expected): void
     {
         self::assertSame($expected, $this->tester->exposedFormData($body, $formName));
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('nullableStringValueProvider')]
+    #[DataProvider('nullableStringValueProvider')]
     public function testNullableStringValue(array $data, string $key, ?string $expected): void
     {
         self::assertSame($expected, $this->tester->exposedNullableStringValue($data, $key));
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('parsedBodyProvider')]
+    #[DataProvider('parsedBodyProvider')]
     public function testParsedBody(mixed $parsedBody, array $expected): void
     {
         $request = $this->createMock(ServerRequestInterface::class);
@@ -156,7 +158,7 @@ final class InputDataTraitTest extends TestCase
         self::assertSame(['page' => '1'], $this->tester->exposedQueryParams($request));
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('requestAttributeStringProvider')]
+    #[DataProvider('requestAttributeStringProvider')]
     public function testRequestAttributeString(string $name, string $default, mixed $attributeValue, string $expected): void
     {
         $request = $this->createMock(ServerRequestInterface::class);
@@ -165,7 +167,7 @@ final class InputDataTraitTest extends TestCase
         self::assertSame($expected, $this->tester->exposedRequestAttributeString($request, $name, $default));
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('sessionArrayProvider')]
+    #[DataProvider('sessionArrayProvider')]
     public function testSessionArray(string $key, mixed $sessionValue, array $expected): void
     {
         $session = $this->createMock(SessionInterface::class);
@@ -174,7 +176,7 @@ final class InputDataTraitTest extends TestCase
         self::assertSame($expected, $this->tester->exposedSessionArray($session, $key));
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('stringValueProvider')]
+    #[DataProvider('stringValueProvider')]
     public function testStringValue(array $data, string $key, string $default, string $expected): void
     {
         self::assertSame($expected, $this->tester->exposedStringValue($data, $key, $default));

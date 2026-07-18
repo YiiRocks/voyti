@@ -21,6 +21,10 @@ use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
+/**
+ * Lets the logged-in user view and terminate their own active sessions; terminating the current
+ * session logs the user out.
+ */
 final readonly class SessionController
 {
     use RedirectTrait;
@@ -37,8 +41,7 @@ final readonly class SessionController
         private ModuleConfig $config,
         private EventDispatcherInterface $eventDispatcher,
         private FlashInterface $flash,
-    ) {
-    }
+    ) {}
 
     public function index(): ResponseInterface
     {
@@ -78,7 +81,10 @@ final readonly class SessionController
             return $this->redirectWithFlash($this->url->generate('voyti/session-login'), 'voyti.security.logged_out');
         }
 
-        return $this->redirectWithFlash($this->url->generate('voyti/account-sessions'), 'voyti.settings.session_terminated');
+        return $this->redirectWithFlash(
+            $this->url->generate('voyti/account-sessions'),
+            'voyti.settings.session_terminated',
+        );
     }
 
 }

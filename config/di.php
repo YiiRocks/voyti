@@ -71,7 +71,7 @@ use Yiisoft\User\CurrentUser;
 
 return [
     // Module configuration, built once from the host's `yiirocks/voyti` params array.
-    ModuleConfig::class => static fn () => ModuleConfig::fromArray($params['yiirocks/voyti'] ?? []),
+    ModuleConfig::class => static fn() => ModuleConfig::fromArray($params['yiirocks/voyti'] ?? []),
 
     // Bridges satisfying vendor package contracts (yiisoft/auth, yiisoft/middleware-dispatcher).
     ParametersResolverInterface::class => RouteParametersResolver::class,
@@ -79,7 +79,7 @@ return [
     IdentityWithTokenRepositoryInterface::class => IdentityAdapter::class,
 
     // PSR-15 middleware: VoytiMiddleware chains the remember-me and enforcement middleware.
-    VoytiMiddleware::class => fn (
+    VoytiMiddleware::class => fn(
         RememberMeMiddleware $rememberMe,
         PasswordAgeEnforceMiddleware $passwordAge,
         SessionRevocationEnforceMiddleware $sessionRevocation,
@@ -90,25 +90,25 @@ return [
     AuditLogService::class => AuditLogService::class,
 
     // RBAC: role/permission/rule administration and validation.
-    AuthHelper::class => fn (
+    AuthHelper::class => fn(
         ManagerInterface $authManager,
         ItemsStorageInterface $itemsStorage,
         AssignmentsStorageInterface $assignmentsStorage,
         ModuleConfig $config,
         CurrentUser $currentUser,
     ) => new AuthHelper($authManager, $itemsStorage, $assignmentsStorage, $config, $currentUser),
-    ItemsValidator::class => fn (
-        ItemsStorageInterface $itemsStorage
-    ) => new ItemsValidator($itemsStorage),
-    RuleValidator::class => new RuleValidator,
-    RuleEditionService::class => fn (
+    ItemsValidator::class => fn(
         ItemsStorageInterface $itemsStorage,
-        RuleValidator $ruleValidator
+    ) => new ItemsValidator($itemsStorage),
+    RuleValidator::class => new RuleValidator(),
+    RuleEditionService::class => fn(
+        ItemsStorageInterface $itemsStorage,
+        RuleValidator $ruleValidator,
     ) => new RuleEditionService($itemsStorage, $ruleValidator),
-    UpdateAssignmentsService::class => fn (
+    UpdateAssignmentsService::class => fn(
         ManagerInterface $authManager,
         AssignmentsStorageInterface $assignmentsStorage,
-        ItemsValidator $itemsValidator
+        ItemsValidator $itemsValidator,
     ) => new UpdateAssignmentsService($authManager, $assignmentsStorage, $itemsValidator),
 
     // Admin dashboard: aggregates stats shown on the /admin/ landing page.
@@ -117,86 +117,86 @@ return [
     // Passwords: generation, expiry, history and reset/recovery flows.
     PasswordGeneratorInterface::class => RandomPasswordGenerator::class,
     PasswordHistoryService::class => PasswordHistoryService::class,
-    ExpireService::class => fn (
-        ModuleConfig $config
+    ExpireService::class => fn(
+        ModuleConfig $config,
     ) => new ExpireService($config),
     RecoveryService::class => RecoveryService::class,
-    ResetService::class => fn (
+    ResetService::class => fn(
         ModuleConfig $config,
         EventDispatcherInterface $eventDispatcher,
         PasswordHistoryService $passwordHistoryService,
     ) => new ResetService($config, $eventDispatcher, $passwordHistoryService),
 
     // Registration, confirmation, and email-change lifecycle.
-    MailService::class => fn (
+    MailService::class => fn(
         MailerInterface $mailer,
         ModuleConfig $config,
         TranslatorInterface $translator,
-        UrlGeneratorInterface $url
+        UrlGeneratorInterface $url,
     ) => new MailService($mailer, $config->mailPath, $translator, $url, $config->appName),
     UserTokenFactory::class => UserTokenFactory::class,
     UserCreationHelper::class => UserCreationHelper::class,
     CreateService::class => CreateService::class,
     RegisterService::class => RegisterService::class,
-    ConfirmationService::class => fn (
+    ConfirmationService::class => fn(
         EventDispatcherInterface $eventDispatcher,
         UserTokenFactory $userTokenFactory,
         MailService $mailService,
     ) => new ConfirmationService($eventDispatcher, $userTokenFactory, $mailService),
-    EmailChangeService::class => fn (
+    EmailChangeService::class => fn(
         ModuleConfig $config,
         UserTokenFactory $tokenFactory,
         MailService $mailService,
     ) => new EmailChangeService($config, $tokenFactory, $mailService),
-    BlockService::class => fn (
+    BlockService::class => fn(
         EventDispatcherInterface $eventDispatcher,
-        TerminateUserSessionsService $terminateUserSessionsService
+        TerminateUserSessionsService $terminateUserSessionsService,
     ) => new BlockService($eventDispatcher, $terminateUserSessionsService),
 
     // Sessions and identity: login persistence, switching, API tokens, session tracking.
-    RememberMeCookieService::class => static fn (
+    RememberMeCookieService::class => static fn(
         ModuleConfig $config,
         ?EventDispatcherInterface $eventDispatcher = null,
     ) => new RememberMeCookieService(
         $config->rememberLoginLifespan,
         eventDispatcher: $eventDispatcher,
     ),
-    SwitchIdentityService::class => fn (
+    SwitchIdentityService::class => fn(
         ModuleConfig $config,
         CurrentUser $currentUser,
         SessionInterface $session,
         EventDispatcherInterface $eventDispatcher,
     ) => new SwitchIdentityService($config, $currentUser, $session, $eventDispatcher),
     ApiTokenService::class => ApiTokenService::class,
-    UserSessionDecorator::class => fn (
+    UserSessionDecorator::class => fn(
         EventDispatcherInterface $eventDispatcher,
         ModuleConfig $config,
-        ?SessionInterface $session = null
+        ?SessionInterface $session = null,
     ) => new UserSessionDecorator($eventDispatcher, $config, $session),
     TerminateUserSessionsService::class => TerminateUserSessionsService::class,
 
     // Two-factor authentication: email codes, TOTP QR URIs, backup codes.
-    EmailCodeGeneratorService::class => fn (
-        MailService $mailService
+    EmailCodeGeneratorService::class => fn(
+        MailService $mailService,
     ) => new EmailCodeGeneratorService($mailService),
-    QrCodeUriGeneratorService::class => fn (
-        ModuleConfig $config
+    QrCodeUriGeneratorService::class => fn(
+        ModuleConfig $config,
     ) => new QrCodeUriGeneratorService($config),
-    BackupCodeService::class => fn () => new BackupCodeService(
+    BackupCodeService::class => fn() => new BackupCodeService(
         new PasswordHasher(PASSWORD_BCRYPT, ['cost' => 5]),
     ),
 
     // Social auth: OAuth client registry and account linking/authentication.
-    ClientInterface::class => static fn (
+    ClientInterface::class => static fn(
         PsrClientInterface $httpClient,
         RequestFactoryInterface $requestFactory,
         StreamFactoryInterface $streamFactory,
     ) => new Psr18Client($httpClient, $requestFactory, $streamFactory),
     AuthClientRegistryFactory::class => AuthClientRegistryFactory::class,
-    AuthClientRegistry::class => fn (AuthClientRegistryFactory $factory) => $factory->create(),
+    AuthClientRegistry::class => fn(AuthClientRegistryFactory $factory) => $factory->create(),
     PendingSocialAccountService::class => PendingSocialAccountService::class,
     SocialAuthProviderService::class => SocialAuthProviderService::class,
-    UserSocialAuthenticateService::class => fn (
+    UserSocialAuthenticateService::class => fn(
         ModuleConfig $config,
         CurrentUser $currentUser,
         SessionInterface $session,
@@ -217,7 +217,7 @@ return [
 
     // Translation category source for this module's message files.
     'yiirocks/voyti.translator' => [
-        'definition' => static fn () => new CategorySource(
+        'definition' => static fn() => new CategorySource(
             'voyti',
             new MessageSource(dirname(__DIR__) . '/resources/messages'),
             new SimpleMessageFormatter(),

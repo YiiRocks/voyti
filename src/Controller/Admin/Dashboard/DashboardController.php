@@ -13,6 +13,9 @@ use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
+/**
+ * Renders the admin dashboard landing page, delegating stat aggregation to {@see DashboardService}.
+ */
 final readonly class DashboardController
 {
     use RenderTrait;
@@ -24,8 +27,7 @@ final readonly class DashboardController
         private ModuleConfig $config,
         private DashboardService $dashboardService,
         private FlashInterface $flash,
-    ) {
-    }
+    ) {}
 
     public function index(): ResponseInterface
     {

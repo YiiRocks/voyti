@@ -11,14 +11,18 @@ use Psr\Http\Message\StreamFactoryInterface;
 use RuntimeException;
 use Yiisoft\Http\Header;
 
+/**
+ * PSR-18 backed implementation of {@see ClientInterface}: builds the request via PSR-17
+ * factories, sends it, and decodes the response body as JSON or, failing that,
+ * `application/x-www-form-urlencoded` data - some OAuth providers reply in that format.
+ */
 final readonly class Psr18Client implements ClientInterface
 {
     public function __construct(
         private PsrClientInterface $httpClient,
         private RequestFactoryInterface $requestFactory,
         private StreamFactoryInterface $streamFactory,
-    ) {
-    }
+    ) {}
 
     #[\Override]
     public function send(
@@ -53,7 +57,9 @@ final readonly class Psr18Client implements ClientInterface
 
         if ($statusCode >= 400) {
             $message = $this->errorMessage($data);
-            throw new RuntimeException($message !== '' ? $message : "OAuth provider request failed with status {$statusCode}.");
+            throw new RuntimeException(
+                $message !== '' ? $message : "OAuth provider request failed with status {$statusCode}.",
+            );
         }
 
         return $data;

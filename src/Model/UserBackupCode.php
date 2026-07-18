@@ -7,6 +7,10 @@ namespace YiiRocks\Voyti\Model;
 use Yiisoft\ActiveRecord\ActiveRecord;
 use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
 
+/**
+ * ActiveRecord for the `user_backup_code` table: a two-factor-authentication backup code hash
+ * that can be consumed once, tracked via `used_at`.
+ */
 final class UserBackupCode extends ActiveRecord
 {
     use PrivatePropertiesTrait;

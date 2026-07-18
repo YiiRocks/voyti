@@ -4,17 +4,18 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Model\Form\Auth;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
+use YiiRocks\Recaptcha\RecaptchaV3Rule;
 use YiiRocks\Voyti\Enum\RecaptchaVersion;
 use YiiRocks\Voyti\Model\Form\Auth\LoginForm;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\Rule\Required;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class LoginFormTest extends TestCase
 {
-
     public function testConstruct(): void
     {
         $config = new ModuleConfig();
@@ -76,7 +77,7 @@ final class LoginFormTest extends TestCase
         $this->assertArrayHasKey('gRecaptchaResponse', $rules);
         $this->assertCount(1, $rules['gRecaptchaResponse']);
         $rule = $rules['gRecaptchaResponse'][0];
-        $this->assertInstanceOf(\YiiRocks\Recaptcha\RecaptchaV3Rule::class, $rule);
+        $this->assertInstanceOf(RecaptchaV3Rule::class, $rule);
         $this->assertSame(0.5, $rule->getThreshold());
         $this->assertSame('voyti_login', $rule->getAction());
     }
@@ -113,7 +114,7 @@ final class LoginFormTest extends TestCase
     {
         $translator = $this->createMock(TranslatorInterface::class);
         $translator->method('translate')->willReturnCallback(
-            fn (string $id, array $parameters = [], string $category = 'voyti') => $id,
+            fn(string $id, array $parameters = [], string $category = 'voyti') => $id,
         );
         return $translator;
     }

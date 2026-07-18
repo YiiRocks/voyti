@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Http;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface as PsrClientInterface;
@@ -15,10 +16,9 @@ use Psr\Http\Message\StreamInterface;
 use RuntimeException;
 use YiiRocks\Voyti\Http\Psr18Client;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class Psr18ClientTest extends TestCase
 {
-
     public function testErrorWithErrorDescription(): void
     {
         $request = $this->createMockRequest();

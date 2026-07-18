@@ -8,6 +8,10 @@ use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\Rule\Regex;
 
+/**
+ * Builds the {@see Regex} validation rule enforcing password complexity (upper/lower/digit/symbol)
+ * when {@see ModuleConfig::$enablePasswordComplexity} is enabled.
+ */
 final class PasswordComplexityRule
 {
     /**

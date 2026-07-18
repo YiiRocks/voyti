@@ -18,5 +18,5 @@ echo Html::p($translator->translate('voyti.mail.hello_username', ['username' => 
 echo Html::p($translator->translate('voyti.mail.click_to_confirm_email', category: 'voyti'));
 
 echo Html::p(
-    Html::a($confirmationUrl, $confirmationUrl)
+    Html::a($confirmationUrl, $confirmationUrl),
 );

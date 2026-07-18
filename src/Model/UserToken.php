@@ -7,6 +7,11 @@ namespace YiiRocks\Voyti\Model;
 use Yiisoft\ActiveRecord\ActiveRecord;
 use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
 
+/**
+ * ActiveRecord for the `user_token` table: a one-time code used for email confirmation, password
+ * recovery, email change confirmation, or API access, distinguished by the `TYPE_*` constants and
+ * expiring per {@see self::isExpired()}.
+ */
 final class UserToken extends ActiveRecord
 {
     use PrivatePropertiesTrait;
@@ -71,18 +76,6 @@ final class UserToken extends ActiveRecord
         return $this->created_at;
     }
 
-    public function getIsExpired(?int $lifespan = null): bool
-    {
-        if ($lifespan === null) {
-            $lifespan = match ($this->type) {
-                self::TYPE_RECOVERY => 21600,
-                default => 86400,
-            };
-        }
-
-        return (time() - $this->created_at) > $lifespan;
-    }
-
     public function getType(): int
     {
         return $this->type;
@@ -97,6 +90,18 @@ final class UserToken extends ActiveRecord
     public function getUserId(): int
     {
         return $this->user_id;
+    }
+
+    public function isExpired(?int $lifespan = null): bool
+    {
+        if ($lifespan === null) {
+            $lifespan = match ($this->type) {
+                self::TYPE_RECOVERY => 21600,
+                default => 86400,
+            };
+        }
+
+        return (time() - $this->created_at) > $lifespan;
     }
 
     /**

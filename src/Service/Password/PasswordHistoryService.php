@@ -19,8 +19,7 @@ final readonly class PasswordHistoryService
     public function __construct(
         private PasswordHasher $passwordHasher,
         private ModuleConfig $config,
-    ) {
-    }
+    ) {}
 
     public function applyPasswordChange(User $user, string $plainPassword): void
     {

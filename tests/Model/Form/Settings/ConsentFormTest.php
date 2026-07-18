@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Model\Form\Settings;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\Form\Settings\ConsentForm;
 use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class ConsentFormTest extends TestCase
 {
     use TranslatorMockTrait;

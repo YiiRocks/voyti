@@ -11,6 +11,10 @@ use Yiisoft\Mailer\Message;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 
+/**
+ * Sends the module's transactional emails (confirmation, recovery, welcome, two-factor code, etc.)
+ * by rendering HTML/text view pairs from `mailPath` and dispatching them via {@see MailerInterface}.
+ */
 final readonly class MailService
 {
     public function __construct(
@@ -19,8 +23,7 @@ final readonly class MailService
         private TranslatorInterface $translator,
         private UrlGeneratorInterface $url,
         private string $appName = 'Voyti',
-    ) {
-    }
+    ) {}
 
     /**
      * @return true
@@ -72,7 +75,10 @@ final readonly class MailService
             'confirmation',
             [
                 'username' => $user->getUsername(),
-                'confirmationUrl' => $this->url->generateAbsolute('voyti/registration-confirm', ['id' => $userId, 'code' => $userToken->getCode()]),
+                'confirmationUrl' => $this->url->generateAbsolute(
+                    'voyti/registration-confirm',
+                    ['id' => $userId, 'code' => $userToken->getCode()],
+                ),
                 'translator' => $this->translator,
             ],
         );
@@ -87,7 +93,10 @@ final readonly class MailService
             'reconfirmation',
             [
                 'username' => $user->getUsername(),
-                'confirmationUrl' => $this->url->generateAbsolute('voyti/account-confirm', ['code' => $userToken->getCode()]),
+                'confirmationUrl' => $this->url->generateAbsolute(
+                    'voyti/account-confirm',
+                    ['code' => $userToken->getCode()],
+                ),
                 'translator' => $this->translator,
             ],
         );
@@ -102,7 +111,10 @@ final readonly class MailService
             'recovery',
             [
                 'username' => $username,
-                'recoveryUrl' => $this->url->generateAbsolute('voyti/password-reset-confirm', ['id' => $userToken->getUserId(), 'code' => $userToken->getCode()]),
+                'recoveryUrl' => $this->url->generateAbsolute(
+                    'voyti/password-reset-confirm',
+                    ['id' => $userToken->getUserId(), 'code' => $userToken->getCode()],
+                ),
                 'translator' => $this->translator,
             ],
         );

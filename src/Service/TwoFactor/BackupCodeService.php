@@ -9,12 +9,15 @@ use YiiRocks\Voyti\Model\UserBackupCode;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Security\Random;
 
+/**
+ * Generates, consumes, and clears two-factor authentication backup codes for a user, storing them
+ * hashed via {@see PasswordHasher}.
+ */
 final readonly class BackupCodeService
 {
     public function __construct(
         private PasswordHasher $passwordHasher,
-    ) {
-    }
+    ) {}
 
     public function clear(User $user): void
     {

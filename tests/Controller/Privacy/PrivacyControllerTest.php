@@ -6,6 +6,7 @@ namespace YiiRocks\Voyti\tests\Controller\Privacy;
 
 use DateTimeImmutable;
 use Nyholm\Psr7\ServerRequest;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -33,7 +34,7 @@ use Yiisoft\Validator\Result;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class PrivacyControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
@@ -294,7 +295,7 @@ final class PrivacyControllerTest extends TestCase
         $body->expects($this->once())
             ->method('write')
             ->with($this->callback(
-                static fn (string $json): bool => json_decode($json, true) === $expected,
+                static fn(string $json): bool => json_decode($json, true) === $expected,
             ));
         $response->method('getBody')->willReturn($body);
 
@@ -352,7 +353,7 @@ final class PrivacyControllerTest extends TestCase
         $body->expects($this->once())
             ->method('write')
             ->with($this->callback(
-                static fn (string $json): bool => json_decode($json, true) === $expected,
+                static fn(string $json): bool => json_decode($json, true) === $expected,
             ));
         $response->method('getBody')->willReturn($body);
 
@@ -386,7 +387,7 @@ final class PrivacyControllerTest extends TestCase
         $body->expects($this->once())
             ->method('write')
             ->with($this->callback(
-                static fn (string $json): bool => json_decode($json, true) === ['email' => 'test@example.com', 'username' => 'testuser'],
+                static fn(string $json): bool => json_decode($json, true) === ['email' => 'test@example.com', 'username' => 'testuser'],
             ));
         $response->method('getBody')->willReturn($body);
 

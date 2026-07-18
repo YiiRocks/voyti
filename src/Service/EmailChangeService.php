@@ -11,14 +11,18 @@ use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\ModuleConfig;
 
+/**
+ * Handles user email changes: `initiate()` sends confirmation email(s) according to the configured
+ * {@see EmailChangeConfirmation} strategy, and `run()` applies the change once the emailed
+ * {@see UserToken} is confirmed.
+ */
 final readonly class EmailChangeService
 {
     public function __construct(
         private ModuleConfig $config,
         private UserTokenFactory $tokenFactory,
         private MailService $mailService,
-    ) {
-    }
+    ) {}
 
     public function initiate(EmailChangeConfirmation $confirmation, SettingsForm $form): bool
     {
@@ -34,18 +38,25 @@ final readonly class EmailChangeService
         };
     }
 
-    public function run(string $code, User $user): bool|null
+    public function run(string $code, User $user): ?bool
     {
         $userToken = UserToken::findByUserIdAndCode(
             $user->getIdOrZero(),
             $code,
         );
 
-        if ($userToken === null || !in_array($userToken->getType(), [UserToken::TYPE_CONFIRM_NEW_EMAIL, UserToken::TYPE_CONFIRM_OLD_EMAIL], true)) {
+        if (
+            $userToken === null
+            || !in_array(
+                $userToken->getType(),
+                [UserToken::TYPE_CONFIRM_NEW_EMAIL, UserToken::TYPE_CONFIRM_OLD_EMAIL],
+                true,
+            )
+        ) {
             return false;
         }
 
-        if ($userToken->getIsExpired($this->config->tokenConfirmationLifespan)) {
+        if ($userToken->isExpired($this->config->tokenConfirmationLifespan)) {
             $userToken->delete();
             return false;
         }

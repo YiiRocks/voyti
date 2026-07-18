@@ -10,6 +10,9 @@ use Yiisoft\Validator\Rule\Regex;
 use Yiisoft\Validator\Rule\Required;
 use Yiisoft\Validator\RulesProviderInterface;
 
+/**
+ * Backs the admin create/update page for an RBAC rule (name and rule class).
+ */
 final class RuleForm extends FormModel implements RulesProviderInterface
 {
     #[Required]
@@ -21,8 +24,7 @@ final class RuleForm extends FormModel implements RulesProviderInterface
 
     public function __construct(
         private readonly TranslatorInterface $translator,
-    ) {
-    }
+    ) {}
 
     /**
      * @return string[]

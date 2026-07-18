@@ -14,6 +14,11 @@ use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\FormModel\FormModelInterface;
 use Yiisoft\Validator\RuleInterface;
 
+/**
+ * Renders the reCAPTCHA widget and builds its validation rule for a form, based on
+ * `ModuleConfig::$recaptchaVersion`. The optional `yiirocks/recaptcha` package is guarded by
+ * `class_exists()` checks so forms degrade to a no-op when it isn't installed.
+ */
 final class RecaptchaHelper
 {
     public static function isAvailable(): bool
@@ -28,8 +33,11 @@ final class RecaptchaHelper
             || class_exists(RecaptchaV2Field::class);
     }
 
-    public static function render(FormModelInterface $form, ModuleConfig $config, string $attribute = 'gRecaptchaResponse'): string
-    {
+    public static function render(
+        FormModelInterface $form,
+        ModuleConfig $config,
+        string $attribute = 'gRecaptchaResponse',
+    ): string {
         if (!self::isAvailable()) {
             // @codeCoverageIgnoreStart
             // Both classes are always present in the test environment (see isAvailable()); this branch only

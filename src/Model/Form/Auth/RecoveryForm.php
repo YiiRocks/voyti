@@ -16,6 +16,11 @@ use Yiisoft\Validator\Rule\Length;
 use Yiisoft\Validator\Rule\Required;
 use Yiisoft\Validator\RulesProviderInterface;
 
+/**
+ * Backs the password recovery pages, covering both the {@see self::SCENARIO_REQUEST} step
+ * (email address) and the {@see self::SCENARIO_RESET} step (new password), each with its own
+ * validation rules.
+ */
 final class RecoveryForm extends FormModel implements RulesProviderInterface
 {
     public const string SCENARIO_REQUEST = 'request';
@@ -33,8 +38,7 @@ final class RecoveryForm extends FormModel implements RulesProviderInterface
         private readonly ModuleConfig $config,
         private readonly TranslatorInterface $translator,
         public readonly string $scenario = self::SCENARIO_REQUEST,
-    ) {
-    }
+    ) {}
 
     /**
      * @return string[]

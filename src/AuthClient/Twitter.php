@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\AuthClient;
 
+/**
+ * X (formerly Twitter) OAuth2 client. The user-info response nests attributes under a `data` key and
+ * never returns an email address, so `normalizeUserAttributes()` unwraps that and always reports
+ * `email` as `null`.
+ */
 final readonly class Twitter extends AbstractAuthClient
 {
     /**

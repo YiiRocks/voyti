@@ -21,6 +21,7 @@ use YiiRocks\Voyti\Controller\Registration\RegistrationController;
 use YiiRocks\Voyti\Controller\Session\SessionController;
 use YiiRocks\Voyti\Controller\SocialNetwork\SocialNetworkController;
 use YiiRocks\Voyti\Controller\TwoFactor\TwoFactorController;
+use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Admin\DashboardService;
@@ -34,6 +35,7 @@ use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\Password\ExpireService;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
+use YiiRocks\Voyti\Service\Password\RandomPasswordGenerator;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
 use YiiRocks\Voyti\Service\Password\ResetService;
 use YiiRocks\Voyti\Service\Rbac\RuleEditionService;
@@ -104,7 +106,7 @@ final class ControllerHarness
         $passwordHasher ??= new PasswordHasher();
         $emailChangeService ??= new EmailChangeService(
             $this->config,
-            new \YiiRocks\Voyti\Factory\UserTokenFactory(),
+            new UserTokenFactory(),
             new MailService(
                 $this->mailer,
                 $this->config->mailPath,
@@ -337,7 +339,7 @@ final class ControllerHarness
         );
         $confirmationService ??= new ConfirmationService(
             $this->eventDispatcher,
-            new \YiiRocks\Voyti\Factory\UserTokenFactory(),
+            new UserTokenFactory(),
             $mailService,
         );
         $pendingSocialAccountService ??= new PendingSocialAccountService();
@@ -555,7 +557,7 @@ final class ControllerHarness
         $authHelper ??= $this->createAuthHelper($currentUser);
         $confirmationService ??= new ConfirmationService(
             $this->eventDispatcher,
-            new \YiiRocks\Voyti\Factory\UserTokenFactory(),
+            new UserTokenFactory(),
             new MailService(
                 $this->mailer,
                 $this->config->mailPath,
@@ -662,7 +664,7 @@ final class ControllerHarness
 
     private function createPasswordGenerator(): PasswordGeneratorInterface
     {
-        return new \YiiRocks\Voyti\Service\Password\RandomPasswordGenerator();
+        return new RandomPasswordGenerator();
     }
 
     private function createTerminateUserSessionsService(): TerminateUserSessionsService

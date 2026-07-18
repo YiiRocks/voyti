@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Middleware;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Middleware\RouteParametersResolver;
 use Yiisoft\Router\CurrentRoute;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class RouteParametersResolverTest extends TestCase
 {
-
     public function testResolveReturnsEmptyArrayWhenNoArguments(): void
     {
         $currentRoute = $this->createMock(CurrentRoute::class);
@@ -32,10 +32,8 @@ final class RouteParametersResolverTest extends TestCase
 
         $resolver = $this->createResolver($currentRoute);
 
-        $param1 = new \ReflectionParameter(function (int $id) {
-        }, 'id');
-        $param2 = new \ReflectionParameter(function (string $name) {
-        }, 'name');
+        $param1 = new \ReflectionParameter(function (int $id) {}, 'id');
+        $param2 = new \ReflectionParameter(function (string $name) {}, 'name');
 
         $result = $resolver->resolve(
             ['id' => $param1, 'name' => $param2],
@@ -52,8 +50,7 @@ final class RouteParametersResolverTest extends TestCase
 
         $resolver = $this->createResolver($currentRoute);
 
-        $param = new \ReflectionParameter(function (bool $active) {
-        }, 'active');
+        $param = new \ReflectionParameter(function (bool $active) {}, 'active');
 
         $result = $resolver->resolve(['active' => $param], $this->createMock(ServerRequestInterface::class));
 
@@ -67,8 +64,7 @@ final class RouteParametersResolverTest extends TestCase
 
         $resolver = $this->createResolver($currentRoute);
 
-        $param = new \ReflectionParameter(function (float $price) {
-        }, 'price');
+        $param = new \ReflectionParameter(function (float $price) {}, 'price');
 
         $result = $resolver->resolve(['price' => $param], $this->createMock(ServerRequestInterface::class));
 
@@ -82,8 +78,7 @@ final class RouteParametersResolverTest extends TestCase
 
         $resolver = $this->createResolver($currentRoute);
 
-        $param = new \ReflectionParameter(function (int $id) {
-        }, 'id');
+        $param = new \ReflectionParameter(function (int $id) {}, 'id');
 
         $result = $resolver->resolve(['id' => $param], $this->createMock(ServerRequestInterface::class));
 
@@ -97,8 +92,7 @@ final class RouteParametersResolverTest extends TestCase
 
         $resolver = $this->createResolver($currentRoute);
 
-        $param = new \ReflectionParameter(function (mixed $value) {
-        }, 'value');
+        $param = new \ReflectionParameter(function (mixed $value) {}, 'value');
 
         $result = $resolver->resolve(['value' => $param], $this->createMock(ServerRequestInterface::class));
 
@@ -112,8 +106,7 @@ final class RouteParametersResolverTest extends TestCase
 
         $resolver = $this->createResolver($currentRoute);
 
-        $param = new \ReflectionParameter(function (\stdClass $user) {
-        }, 'user');
+        $param = new \ReflectionParameter(function (\stdClass $user) {}, 'user');
 
         $result = $resolver->resolve(['user' => $param], $this->createMock(ServerRequestInterface::class));
 
@@ -127,8 +120,7 @@ final class RouteParametersResolverTest extends TestCase
 
         $resolver = $this->createResolver($currentRoute);
 
-        $param = new \ReflectionParameter(function (string $slug) {
-        }, 'slug');
+        $param = new \ReflectionParameter(function (string $slug) {}, 'slug');
 
         $result = $resolver->resolve(['slug' => $param], $this->createMock(ServerRequestInterface::class));
 
@@ -142,8 +134,7 @@ final class RouteParametersResolverTest extends TestCase
 
         $resolver = $this->createResolver($currentRoute);
 
-        $fn = function ($value) {
-        };
+        $fn = function ($value) {};
         $param = new \ReflectionParameter($fn, 'value');
 
         $result = $resolver->resolve(['value' => $param], $this->createMock(ServerRequestInterface::class));

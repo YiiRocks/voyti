@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Controller\Admin\User;
 
 use Nyholm\Psr7\ServerRequest;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -37,7 +38,7 @@ use Yiisoft\Validator\Result;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class UserControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
@@ -140,7 +141,7 @@ final class UserControllerTest extends TestCase
     public function testAssignmentsUserNotFoundShowsError(): void
     {
         $this->assertNotFoundRendersError(
-            static fn (UserController $controller): ResponseInterface => $controller->assignments(new ServerRequest('GET', '/'), 999999),
+            static fn(UserController $controller): ResponseInterface => $controller->assignments(new ServerRequest('GET', '/'), 999999),
         );
     }
 
@@ -163,7 +164,7 @@ final class UserControllerTest extends TestCase
 
         $this->blockService->expects($this->once())
             ->method('run')
-            ->with($this->callback(static fn (User $u): bool => $u->getId() === $user->getId()));
+            ->with($this->callback(static fn(User $u): bool => $u->getId() === $user->getId()));
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
@@ -364,7 +365,7 @@ final class UserControllerTest extends TestCase
     public function testForcePasswordChangeFailsShowsError(): void
     {
         $this->assertNotFoundRendersError(
-            static fn (UserController $controller): ResponseInterface => $controller->forcePasswordChange(999999),
+            static fn(UserController $controller): ResponseInterface => $controller->forcePasswordChange(999999),
         );
     }
 
@@ -461,7 +462,7 @@ final class UserControllerTest extends TestCase
     public function testInfoUserNotFoundShowsError(): void
     {
         $this->assertNotFoundRendersError(
-            static fn (UserController $controller): ResponseInterface => $controller->show(999999),
+            static fn(UserController $controller): ResponseInterface => $controller->show(999999),
         );
     }
 
@@ -491,7 +492,7 @@ final class UserControllerTest extends TestCase
     public function testPasswordResetUserNotFoundShowsError(): void
     {
         $this->assertNotFoundRendersError(
-            static fn (UserController $controller): ResponseInterface => $controller->passwordReset(999999),
+            static fn(UserController $controller): ResponseInterface => $controller->passwordReset(999999),
         );
     }
 
@@ -517,7 +518,7 @@ final class UserControllerTest extends TestCase
     public function testSessionsUserNotFoundShowsError(): void
     {
         $this->assertNotFoundRendersError(
-            static fn (UserController $controller): ResponseInterface => $controller->sessions(999999),
+            static fn(UserController $controller): ResponseInterface => $controller->sessions(999999),
         );
     }
 
@@ -611,7 +612,7 @@ final class UserControllerTest extends TestCase
     public function testTerminateSessionsUserNotFoundShowsError(): void
     {
         $this->assertNotFoundRendersError(
-            static fn (UserController $controller): ResponseInterface => $controller->terminateSessions(999999),
+            static fn(UserController $controller): ResponseInterface => $controller->terminateSessions(999999),
         );
     }
 
@@ -699,7 +700,7 @@ final class UserControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('admin/user/_account', $this->callback(
-                static fn (array $params): bool => $params['errors'] !== [],
+                static fn(array $params): bool => $params['errors'] !== [],
             ))
             ->willReturn($response);
 
@@ -784,14 +785,14 @@ final class UserControllerTest extends TestCase
     public function testUpdateProfileUserNotFoundShowsError(): void
     {
         $this->assertNotFoundRendersError(
-            static fn (UserController $controller): ResponseInterface => $controller->updateProfile(new ServerRequest('GET', '/'), 999999),
+            static fn(UserController $controller): ResponseInterface => $controller->updateProfile(new ServerRequest('GET', '/'), 999999),
         );
     }
 
     public function testUpdateUserNotFoundShowsError(): void
     {
         $this->assertNotFoundRendersError(
-            static fn (UserController $controller): ResponseInterface => $controller->update(new ServerRequest('GET', '/'), 999999),
+            static fn(UserController $controller): ResponseInterface => $controller->update(new ServerRequest('GET', '/'), 999999),
         );
     }
 

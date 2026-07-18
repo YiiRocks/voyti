@@ -33,7 +33,7 @@ final class SimpleAssignmentsStorage implements AssignmentsStorageInterface
 
         return array_values(array_filter(
             $itemNames,
-            static fn (string $name): bool => isset($userAssignments[$name]),
+            static fn(string $name): bool => isset($userAssignments[$name]),
         ));
     }
 

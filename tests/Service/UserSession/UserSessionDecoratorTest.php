@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Service\UserSession;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Event\Session\SessionEvent;
 use YiiRocks\Voyti\Model\User;
@@ -14,7 +15,7 @@ use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 use YiiRocks\Voyti\tests\Support\FakeSession;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class UserSessionDecoratorTest extends TestCase
 {
     use DatabaseSetupTrait;
@@ -98,7 +99,7 @@ final class UserSessionDecoratorTest extends TestCase
         $decorator->registerLogin($user);
 
         $sessions = UserSessions::query()->where(['user_id' => $userId])->all();
-        $sessionIds = array_map(static fn (UserSessions $s): string => $s->getSessionId(), $sessions);
+        $sessionIds = array_map(static fn(UserSessions $s): string => $s->getSessionId(), $sessions);
 
         self::assertContains('sessage', $sessionIds);
         self::assertContains('old_fresh', $sessionIds);
@@ -157,13 +158,13 @@ final class UserSessionDecoratorTest extends TestCase
         $decorator->registerLogin($user, 'stale-session-id');
 
         $sessions = UserSessions::query()->where(['user_id' => $userId])->all();
-        $sessionIds = array_map(static fn (UserSessions $s): string => $s->getSessionId(), $sessions);
+        $sessionIds = array_map(static fn(UserSessions $s): string => $s->getSessionId(), $sessions);
 
         self::assertSame(['fresh-session-id'], $sessionIds);
 
         $events = array_values(array_filter(
             $eventDispatcher->getEvents(),
-            static fn (object $event): bool => $event instanceof SessionEvent,
+            static fn(object $event): bool => $event instanceof SessionEvent,
         ));
         self::assertCount(2, $events);
         self::assertSame(['type' => SessionEvent::SESSION_TERMINATED], $events[0]->getData());
@@ -194,7 +195,7 @@ final class UserSessionDecoratorTest extends TestCase
 
         $events = array_filter(
             $eventDispatcher->getEvents(),
-            static fn (object $event): bool => $event instanceof SessionEvent && $event->getData() === ['type' => SessionEvent::SESSION_TERMINATED],
+            static fn(object $event): bool => $event instanceof SessionEvent && $event->getData() === ['type' => SessionEvent::SESSION_TERMINATED],
         );
         self::assertCount(0, $events);
 

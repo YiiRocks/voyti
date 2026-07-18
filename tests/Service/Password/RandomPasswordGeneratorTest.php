@@ -9,7 +9,6 @@ use YiiRocks\Voyti\Service\Password\RandomPasswordGenerator;
 
 final class RandomPasswordGeneratorTest extends TestCase
 {
-
     public function testGenerateProducesDifferentResults(): void
     {
         $generator = new RandomPasswordGenerator();

@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Enum;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Enum\ServiceResultStatus;
 
 final class ServiceResultStatusTest extends TestCase
 {
-
     /**
      * @return iterable<string, array{ServiceResultStatus, string}>
      */
@@ -31,7 +31,7 @@ final class ServiceResultStatusTest extends TestCase
         self::assertTrue(ServiceResultStatus::SUCCESS === ServiceResultStatus::SUCCESS);
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('statusCaseProvider')]
+    #[DataProvider('statusCaseProvider')]
     public function testStatusCase(ServiceResultStatus $status, string $expectedName): void
     {
         self::assertSame($expectedName, $status->name);

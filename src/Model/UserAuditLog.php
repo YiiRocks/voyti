@@ -8,6 +8,10 @@ use Yiisoft\ActiveRecord\ActiveQueryInterface;
 use Yiisoft\ActiveRecord\ActiveRecord;
 use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
 
+/**
+ * ActiveRecord for the `user_audit_log` table: records an admin/system action with its actor,
+ * optional target user, and free-form JSON context.
+ */
 final class UserAuditLog extends ActiveRecord
 {
     use PrivatePropertiesTrait;

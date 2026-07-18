@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Service\Auth;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSocialAccount;
@@ -91,7 +92,7 @@ final class PendingSocialAccountServiceTest extends TestCase
         self::assertFalse($this->session->has('social_network_account_code'));
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('invalidSessionCodeProvider')]
+    #[DataProvider('invalidSessionCodeProvider')]
     public function testGetPendingAccountWithInvalidSessionCodeReturnsNull(int|string $sessionCode): void
     {
         $this->session->set('social_network_account_code', $sessionCode);
@@ -116,7 +117,7 @@ final class PendingSocialAccountServiceTest extends TestCase
         self::assertSame('valid_code', $result->getCode());
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('rememberCodeProvider')]
+    #[DataProvider('rememberCodeProvider')]
     public function testRememberStoresCodeInSession(?string $code, ?string $expectedStored): void
     {
         $account = new UserSocialAccount();

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Controller\Admin\Rbac\Role;
 
 use Nyholm\Psr7\ServerRequest;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
@@ -34,7 +35,7 @@ use Yiisoft\Validator\Result;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class RoleControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
@@ -83,7 +84,7 @@ final class RoleControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('admin/rbac/create', $this->callback(
-                static fn (array $params): bool => array_keys($params['availableChildren']) === ['other-role', 'some-permission'],
+                static fn(array $params): bool => array_keys($params['availableChildren']) === ['other-role', 'some-permission'],
             ))
             ->willReturn($response);
 
@@ -154,7 +155,7 @@ final class RoleControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('admin/rbac/create', $this->callback(
-                static fn (array $params): bool => $params['errors'] !== [],
+                static fn(array $params): bool => $params['errors'] !== [],
             ))
             ->willReturn($response);
 
@@ -175,7 +176,7 @@ final class RoleControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('admin/rbac/create', $this->callback(
-                static fn (array $params): bool => ($params['errors']['children'] ?? []) !== [],
+                static fn(array $params): bool => ($params['errors']['children'] ?? []) !== [],
             ))
             ->willReturn($response);
 
@@ -270,7 +271,7 @@ final class RoleControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('admin/rbac/update', $this->callback(
-                static fn (array $params): bool => array_keys($params['availableChildren']) === ['other-role', 'some-permission'],
+                static fn(array $params): bool => array_keys($params['availableChildren']) === ['other-role', 'some-permission'],
             ))
             ->willReturn($response);
 
@@ -424,7 +425,7 @@ final class RoleControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('admin/rbac/update', $this->callback(
-                static fn (array $params): bool => $params['errors'] !== [],
+                static fn(array $params): bool => $params['errors'] !== [],
             ))
             ->willReturn($response);
 
@@ -447,7 +448,7 @@ final class RoleControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('admin/rbac/update', $this->callback(
-                static fn (array $params): bool => ($params['errors']['children'] ?? []) !== [],
+                static fn(array $params): bool => ($params['errors']['children'] ?? []) !== [],
             ))
             ->willReturn($response);
 
@@ -501,7 +502,7 @@ final class RoleControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('admin/rbac/update', $this->callback(
-                static fn (array $params): bool => count($params['users']) === 1
+                static fn(array $params): bool => count($params['users']) === 1
                     && $params['users'][0]->getId() === $assignedUser->getId(),
             ))
             ->willReturn($response);

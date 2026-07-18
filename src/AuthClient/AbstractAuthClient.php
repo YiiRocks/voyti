@@ -9,6 +9,12 @@ use YiiRocks\Voyti\Http\ClientInterface;
 use Yiisoft\Http\Header;
 use Yiisoft\Http\Method;
 
+/**
+ * Base OAuth2 authorization-code-flow implementation shared by all social auth providers: builds the
+ * authorization URL, exchanges the code for a token, fetches and normalizes user attributes. Subclasses
+ * override the `protected` hooks (`normalizeUserAttributes()`, `userInfoHeaders()`, `userInfoQuery()`,
+ * `loadUserAttributes()`) to accommodate provider-specific request/response shapes.
+ */
 abstract readonly class AbstractAuthClient implements AuthClientInterface
 {
     /**
@@ -22,8 +28,7 @@ abstract readonly class AbstractAuthClient implements AuthClientInterface
         private string $userInfoUrl,
         private string $scope = '',
         private array $config = [],
-    ) {
-    }
+    ) {}
 
     /**
      * @return array
@@ -133,7 +138,7 @@ abstract readonly class AbstractAuthClient implements AuthClientInterface
      *
      * @return null|string
      */
-    protected function firstString(array $data, array $keys): string|null
+    protected function firstString(array $data, array $keys): ?string
     {
         foreach ($keys as $key) {
             if (!array_key_exists($key, $data)) {
@@ -284,7 +289,7 @@ abstract readonly class AbstractAuthClient implements AuthClientInterface
     {
         $query = array_filter(
             $query,
-            static fn (mixed $value): bool => $value !== null && $value !== '',
+            static fn(mixed $value): bool => $value !== null && $value !== '',
         );
 
         $queryString = http_build_query($query);

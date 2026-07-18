@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Service\Rbac;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\Form\Rbac\RuleForm;
 use YiiRocks\Voyti\Service\Rbac\RuleEditionService;
@@ -13,10 +15,9 @@ use Yiisoft\Rbac\ItemsStorageInterface;
 use Yiisoft\Rbac\Role;
 use Yiisoft\Translator\TranslatorInterface;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class RuleEditionServiceTest extends TestCase
 {
-
     /**
      * @return iterable<string, array{string, bool}>
      */
@@ -26,7 +27,7 @@ final class RuleEditionServiceTest extends TestCase
         yield 'returns true when valid' => [CompositeRule::class, true];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('createProvider')]
+    #[DataProvider('createProvider')]
     public function testCreate(string $class, bool $expected): void
     {
         $itemsStorage = $this->createMock(ItemsStorageInterface::class);
@@ -45,7 +46,7 @@ final class RuleEditionServiceTest extends TestCase
         $itemsStorage->method('getAll')->willReturn([$roleWithRule, $roleWithoutRule]);
         $itemsStorage->expects(self::once())->method('update')->with(
             'editor',
-            self::callback(fn (Role $r): bool => $r->getRuleName() === null),
+            self::callback(fn(Role $r): bool => $r->getRuleName() === null),
         );
         $ruleValidator = new RuleValidator();
         $service = new RuleEditionService($itemsStorage, $ruleValidator);
@@ -73,7 +74,7 @@ final class RuleEditionServiceTest extends TestCase
         $itemsStorage->method('getAll')->willReturn([$oldRole]);
         $itemsStorage->expects(self::once())->method('update')->with(
             'editor',
-            self::callback(fn (Role $r): bool => $r->getRuleName() === CompositeRule::class),
+            self::callback(fn(Role $r): bool => $r->getRuleName() === CompositeRule::class),
         );
         $ruleValidator = new RuleValidator();
         $service = new RuleEditionService($itemsStorage, $ruleValidator);

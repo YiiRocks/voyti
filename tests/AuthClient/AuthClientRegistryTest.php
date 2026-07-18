@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\AuthClient;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\AuthClient\AuthClientInterface;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class AuthClientRegistryTest extends TestCase
 {
-
     public function testAllExceptExcludesNamedClients(): void
     {
         $github = $this->createMock(AuthClientInterface::class);

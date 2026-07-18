@@ -9,6 +9,11 @@ use YiiRocks\Voyti\Helper\AgeHelper;
 use Yiisoft\ActiveRecord\ActiveRecord;
 use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
 
+/**
+ * ActiveRecord for the `user_profile` table: a user's public profile fields (name, bio, location,
+ * etc.), keyed one-to-one on `user_id`. {@see self::getBioParsed()} expands `{age}`/`{location}`
+ * tokens in the bio text.
+ */
 final class UserProfile extends ActiveRecord
 {
     use PrivatePropertiesTrait;

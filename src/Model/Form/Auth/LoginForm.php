@@ -13,6 +13,9 @@ use Yiisoft\Validator\Rule\Length;
 use Yiisoft\Validator\Rule\Required;
 use Yiisoft\Validator\RulesProviderInterface;
 
+/**
+ * Backs the login page: username/email, password, remember-me, and optionally a two-factor code.
+ */
 final class LoginForm extends FormModel implements RulesProviderInterface
 {
     public string $gRecaptchaResponse = '';
@@ -28,8 +31,7 @@ final class LoginForm extends FormModel implements RulesProviderInterface
         private readonly ModuleConfig $config,
         private readonly TranslatorInterface $translator,
         private readonly bool $requireTwoFactorAuthenticationCode = false,
-    ) {
-    }
+    ) {}
 
     /**
      * @return string[]

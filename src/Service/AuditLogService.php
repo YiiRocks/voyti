@@ -8,12 +8,15 @@ use YiiRocks\Voyti\Model\UserAuditLog;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Json\Json;
 
+/**
+ * Records an admin/system action as a {@see UserAuditLog} row, a no-op when
+ * `ModuleConfig::$enableAuditLog` is disabled.
+ */
 final readonly class AuditLogService
 {
     public function __construct(
         private ModuleConfig $config,
-    ) {
-    }
+    ) {}
 
     /**
      * @param array<string, mixed> $context

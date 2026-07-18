@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\AuthClient;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\AuthClient\GitHub;
 use YiiRocks\Voyti\Http\ClientInterface;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class GitHubTest extends TestCase
 {
-
     /**
      * @return iterable<string, array{array<string, mixed>}>
      */
@@ -90,7 +91,7 @@ final class GitHubTest extends TestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('constructionProvider')]
+    #[DataProvider('constructionProvider')]
     public function testGetName(array $config): void
     {
         $client = new GitHub($config);
@@ -107,7 +108,7 @@ final class GitHubTest extends TestCase
      * @param array<string, mixed> $userBody
      * @param array<int, mixed> $emailsBody
      */
-    #[\PHPUnit\Framework\Attributes\DataProvider('loadUserAttributesEmailFallbackProvider')]
+    #[DataProvider('loadUserAttributesEmailFallbackProvider')]
     public function testLoadUserAttributesEmailFallback(array $userBody, array $emailsBody, string $expectedEmail): void
     {
         $httpClient = $this->createMock(ClientInterface::class);

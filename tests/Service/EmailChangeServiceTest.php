@@ -40,7 +40,7 @@ final class EmailChangeServiceTest extends TestCase
         $service = new EmailChangeService($config, new UserTokenFactory(), $mailService);
 
         $user = $this->createSavedUser();
-        $form = new SettingsForm($config, $this->createStub(\Yiisoft\Translator\TranslatorInterface::class));
+        $form = new SettingsForm($config, $this->createStub(TranslatorInterface::class));
         $form->setUser($user);
         $form->email = 'new@example.com';
 
@@ -61,7 +61,7 @@ final class EmailChangeServiceTest extends TestCase
         self::assertTrue($service->initiate(EmailChangeConfirmation::BOTH, $form));
         self::assertCount(2, $mailCapture->getSentMessages());
         $tokens = UserToken::findByUserId((int) $user->getId());
-        $types = array_map(static fn (UserToken $t): int => $t->getType(), $tokens);
+        $types = array_map(static fn(UserToken $t): int => $t->getType(), $tokens);
         self::assertContains(UserToken::TYPE_CONFIRM_NEW_EMAIL, $types);
         self::assertContains(UserToken::TYPE_CONFIRM_OLD_EMAIL, $types);
     }
@@ -88,7 +88,7 @@ final class EmailChangeServiceTest extends TestCase
         self::assertTrue($service->initiate(EmailChangeConfirmation::NEW, $form));
 
         $tokens = UserToken::findByUserId(0);
-        $newEmailTokens = array_filter($tokens, static fn (UserToken $t): bool => $t->getType() === UserToken::TYPE_CONFIRM_NEW_EMAIL);
+        $newEmailTokens = array_filter($tokens, static fn(UserToken $t): bool => $t->getType() === UserToken::TYPE_CONFIRM_NEW_EMAIL);
         self::assertNotEmpty($newEmailTokens);
     }
 
@@ -96,7 +96,7 @@ final class EmailChangeServiceTest extends TestCase
     {
         $config = new ModuleConfig();
         $service = new EmailChangeService($config, new UserTokenFactory(), $this->createStub(MailService::class));
-        $form = new SettingsForm($config, $this->createStub(\Yiisoft\Translator\TranslatorInterface::class));
+        $form = new SettingsForm($config, $this->createStub(TranslatorInterface::class));
 
         self::assertFalse($service->initiate(EmailChangeConfirmation::NEW, $form));
     }
@@ -116,7 +116,7 @@ final class EmailChangeServiceTest extends TestCase
         self::assertSame('new@example.com', $user->getUnconfirmedEmail());
         self::assertCount(1, $mailCapture->getSentMessages());
         $tokens = UserToken::findByUserId((int) $user->getId());
-        $newEmailTokens = array_filter($tokens, static fn (UserToken $t): bool => $t->getType() === UserToken::TYPE_CONFIRM_NEW_EMAIL);
+        $newEmailTokens = array_filter($tokens, static fn(UserToken $t): bool => $t->getType() === UserToken::TYPE_CONFIRM_NEW_EMAIL);
         self::assertNotEmpty($newEmailTokens);
     }
 
@@ -124,7 +124,7 @@ final class EmailChangeServiceTest extends TestCase
     {
         $config = new ModuleConfig();
         $service = new EmailChangeService($config, new UserTokenFactory(), $this->createStub(MailService::class));
-        $form = new SettingsForm($config, $this->createStub(\Yiisoft\Translator\TranslatorInterface::class));
+        $form = new SettingsForm($config, $this->createStub(TranslatorInterface::class));
 
         self::assertFalse($service->initiate(EmailChangeConfirmation::NONE, $form));
     }
@@ -135,7 +135,7 @@ final class EmailChangeServiceTest extends TestCase
         $service = new EmailChangeService($config, new UserTokenFactory(), $this->createStub(MailService::class));
 
         $user = $this->createSavedUser();
-        $form = new SettingsForm($config, $this->createStub(\Yiisoft\Translator\TranslatorInterface::class));
+        $form = new SettingsForm($config, $this->createStub(TranslatorInterface::class));
         $form->setUser($user);
         $form->email = 'new@example.com';
 
@@ -493,7 +493,7 @@ final class EmailChangeServiceTest extends TestCase
     private function createTranslator(): TranslatorInterface
     {
         $translator = $this->createStub(TranslatorInterface::class);
-        $translator->method('translate')->willReturnCallback(static fn (string $id): string => $id);
+        $translator->method('translate')->willReturnCallback(static fn(string $id): string => $id);
         return $translator;
     }
 }

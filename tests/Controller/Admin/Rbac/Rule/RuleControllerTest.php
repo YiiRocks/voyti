@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Controller\Admin\Rbac\Rule;
 
 use Nyholm\Psr7\ServerRequest;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -22,7 +23,7 @@ use Yiisoft\Validator\Result;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class RuleControllerTest extends TestCase
 {
     use RedirectResponseMockTrait;
@@ -126,7 +127,7 @@ final class RuleControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('admin/rbac/rule/create', $this->callback(
-                static fn (array $params): bool => $params['errors'] !== [],
+                static fn(array $params): bool => $params['errors'] !== [],
             ))
             ->willReturn($response);
 
@@ -242,7 +243,7 @@ final class RuleControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('admin/rbac/rule/update', $this->callback(
-                static fn (array $params): bool => $params['errors'] !== [],
+                static fn(array $params): bool => $params['errors'] !== [],
             ))
             ->willReturn($response);
 

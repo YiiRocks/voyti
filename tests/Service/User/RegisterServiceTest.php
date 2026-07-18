@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Service\User;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
+use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
@@ -15,7 +17,7 @@ use YiiRocks\Voyti\Service\User\UserCreationHelper;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use Yiisoft\Security\PasswordHasher;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class RegisterServiceTest extends TestCase
 {
     use DatabaseSetupTrait;
@@ -34,7 +36,7 @@ final class RegisterServiceTest extends TestCase
 
     public function testRunEmailAlreadyExistsReturnsFailure(): void
     {
-        $existing = new \YiiRocks\Voyti\Model\User();
+        $existing = new User();
         $existing->setUsername('existing');
         $existing->setEmail('existing@example.com');
         $existing->setPasswordHash('hash');
@@ -59,7 +61,7 @@ final class RegisterServiceTest extends TestCase
 
     public function testRunUsernameAlreadyExistsReturnsFailure(): void
     {
-        $existing = new \YiiRocks\Voyti\Model\User();
+        $existing = new User();
         $existing->setUsername('existinguser');
         $existing->setEmail('other@example.com');
         $existing->setPasswordHash('hash');
@@ -121,7 +123,7 @@ final class RegisterServiceTest extends TestCase
         ]);
 
         self::assertTrue($result->isSuccess());
-        $saved = \YiiRocks\Voyti\Model\User::findByEmail('gdpr@example.com');
+        $saved = User::findByEmail('gdpr@example.com');
         self::assertNotNull($saved);
         self::assertTrue($saved->isGdprConsent());
         self::assertNotNull($saved->getGdprConsentDate());
@@ -148,7 +150,7 @@ final class RegisterServiceTest extends TestCase
         ]);
 
         self::assertTrue($result->isSuccess());
-        $saved = \YiiRocks\Voyti\Model\User::findByEmail('nogdpr@example.com');
+        $saved = User::findByEmail('nogdpr@example.com');
         self::assertNotNull($saved);
         self::assertFalse($saved->isGdprConsent());
         self::assertNull($saved->getGdprConsentDate());
@@ -209,7 +211,7 @@ final class RegisterServiceTest extends TestCase
         self::assertTrue($result->isSuccess());
         self::assertSame('voyti.registration.account_created', $result->getMessage());
 
-        $saved = \YiiRocks\Voyti\Model\User::findByEmail('noconfirm@example.com');
+        $saved = User::findByEmail('noconfirm@example.com');
         self::assertNotNull($saved);
         self::assertNotNull($saved->getConfirmedAt());
     }

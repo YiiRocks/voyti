@@ -18,9 +18,7 @@ final class MailCapture implements MailerInterface
         $this->sentMessages = [];
     }
 
-    public function compose(): void
-    {
-    }
+    public function compose(): void {}
 
     public function getLastMessage(): ?MessageInterface
     {

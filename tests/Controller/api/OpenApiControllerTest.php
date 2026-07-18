@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Controller\api;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\api\OpenApiController;
 use YiiRocks\Voyti\ModuleConfig;
@@ -14,7 +15,7 @@ use Yiisoft\DataResponse\ResponseFactory\DataResponseFactoryInterface;
 #[AllowMockObjectsWithoutExpectations]
 final class OpenApiControllerTest extends TestCase
 {
-    private DataResponseFactoryInterface&\PHPUnit\Framework\MockObject\MockObject $responseFactory;
+    private DataResponseFactoryInterface&MockObject $responseFactory;
 
     protected function setUp(): void
     {

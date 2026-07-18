@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Service;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
@@ -12,7 +13,7 @@ use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
 use YiiRocks\Voyti\tests\Support\MailCapture;
 use Yiisoft\Translator\TranslatorInterface;
 
-#[\PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations]
+#[AllowMockObjectsWithoutExpectations]
 final class MailServiceTest extends TestCase
 {
     private MailCapture $mailer;
@@ -24,7 +25,7 @@ final class MailServiceTest extends TestCase
         $this->mailer = new MailCapture();
         $this->url = new FakeUrlGenerator();
         $translator = $this->createMock(TranslatorInterface::class);
-        $translator->method('translate')->willReturnCallback(fn (string $key) => match (true) {
+        $translator->method('translate')->willReturnCallback(fn(string $key) => match (true) {
             str_contains($key, 'subject') => 'Subject ' . $key,
             default => $key,
         });
@@ -68,7 +69,7 @@ final class MailServiceTest extends TestCase
         self::assertNotNull($message);
         self::assertStringContainsString('voyti.mail.welcome_subject', (string) $message->getSubject());
 
-        $subjectCalls = array_filter($captured, static fn (array $c): bool => str_contains($c['key'], 'subject'));
+        $subjectCalls = array_filter($captured, static fn(array $c): bool => str_contains($c['key'], 'subject'));
         self::assertNotEmpty($subjectCalls);
         foreach ($subjectCalls as $call) {
             self::assertSame('Voyti', $call['params']['app']);

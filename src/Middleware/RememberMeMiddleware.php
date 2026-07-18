@@ -27,8 +27,7 @@ final readonly class RememberMeMiddleware implements MiddlewareInterface
         private RememberMeCookieService $rememberMeCookieService,
         private IdentityRepositoryInterface $identityRepository,
         private SessionInterface $session,
-    ) {
-    }
+    ) {}
 
     #[\Override]
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
@@ -36,7 +35,12 @@ final readonly class RememberMeMiddleware implements MiddlewareInterface
         $cookies = $request->getCookieParams();
 
         $rotated = $this->currentUser->isGuest()
-            && $this->rememberMeCookieService->loginByCookie($cookies, $this->currentUser, $this->identityRepository, $this->session);
+            && $this->rememberMeCookieService->loginByCookie(
+                $cookies,
+                $this->currentUser,
+                $this->identityRepository,
+                $this->session,
+            );
 
         $response = $handler->handle($request);
 

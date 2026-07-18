@@ -11,6 +11,12 @@ use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
 use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\User\Login\Cookie\CookieLoginIdentityInterface;
 
+/**
+ * ActiveRecord for the `user` table and the module's identity implementation, consumed by
+ * `yiisoft/auth` ({@see IdentityInterface}) and remember-me cookie login
+ * ({@see CookieLoginIdentityInterface}). {@see self::delete()} overrides the inherited method to
+ * cascade-delete the associated {@see UserProfile}.
+ */
 final class User extends ActiveRecord implements IdentityInterface, CookieLoginIdentityInterface
 {
     use PrivatePropertiesTrait;
@@ -178,7 +184,7 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
         if ($this->password_changed_at === null) {
             return 9999;
         }
-        return (int)((time() - $this->password_changed_at) / 86400);
+        return (int) ((time() - $this->password_changed_at) / 86400);
     }
 
     public function getPasswordChangedAt(): ?int

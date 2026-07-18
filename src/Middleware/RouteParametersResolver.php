@@ -11,12 +11,15 @@ use Yiisoft\Router\CurrentRoute;
 
 use function array_key_exists;
 
+/**
+ * Resolves controller action parameters from the current route's arguments, casting each value
+ * to the parameter's declared scalar type.
+ */
 final readonly class RouteParametersResolver implements ParametersResolverInterface
 {
     public function __construct(
         private CurrentRoute $currentRoute,
-    ) {
-    }
+    ) {}
 
     /**
      * @psalm-return array<string, scalar>

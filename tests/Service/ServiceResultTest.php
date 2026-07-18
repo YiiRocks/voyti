@@ -10,7 +10,6 @@ use YiiRocks\Voyti\Service\ServiceResult;
 
 final class ServiceResultTest extends TestCase
 {
-
     public function testConstructorWithCustomStatus(): void
     {
         $result = new ServiceResult(ServiceResultStatus::SUCCESS, 'test', ['err']);

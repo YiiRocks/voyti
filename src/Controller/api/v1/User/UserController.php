@@ -16,6 +16,10 @@ use Yiisoft\DataResponse\ResponseFactory\DataResponseFactoryInterface;
 use Yiisoft\Http\Status;
 use Yiisoft\Translator\TranslatorInterface;
 
+/**
+ * REST CRUD endpoints for users under the `enableRestApi` route group, authenticated via
+ * {@see ApiTokenAuthenticationMiddleware}. Returns JSON only, no view rendering.
+ */
 final readonly class UserController
 {
     use InputDataTrait;
@@ -27,8 +31,7 @@ final readonly class UserController
         private PasswordGeneratorInterface $passwordGenerator,
         private PasswordHistoryService $passwordHistoryService,
         private UserCreationHelper $userCreationHelper,
-    ) {
-    }
+    ) {}
 
     public function create(ServerRequestInterface $request): ResponseInterface
     {
@@ -59,17 +62,22 @@ final readonly class UserController
     {
         $user = User::findById($id);
         if ($user === null) {
-            return $this->responseFactory->createResponse(['error' => $this->translator->translate('voyti.api.not_found', category: 'voyti')], Status::NOT_FOUND);
+            return $this->responseFactory->createResponse(
+                ['error' => $this->translator->translate('voyti.api.not_found', category: 'voyti')],
+                Status::NOT_FOUND,
+            );
         }
 
         $user->delete();
-        return $this->responseFactory->createResponse(['message' => $this->translator->translate('voyti.api.user_deleted', category: 'voyti')]);
+        return $this->responseFactory->createResponse([
+            'message' => $this->translator->translate('voyti.api.user_deleted', category: 'voyti'),
+        ]);
     }
 
     public function index(): ResponseInterface
     {
         $users = User::findAllUsers();
-        $data = array_map(fn ($u) => [
+        $data = array_map(fn($u) => [
             'id' => $u->getId(),
             'username' => $u->getUsername(),
             'email' => $u->getEmail(),
@@ -85,14 +93,20 @@ final readonly class UserController
     {
         $user = User::findById($id);
         if ($user === null) {
-            return $this->responseFactory->createResponse(['error' => $this->translator->translate('voyti.api.not_found', category: 'voyti')], Status::NOT_FOUND);
+            return $this->responseFactory->createResponse(
+                ['error' => $this->translator->translate('voyti.api.not_found', category: 'voyti')],
+                Status::NOT_FOUND,
+            );
         }
 
         $body = $this->parsedBody($request);
         $password = isset($body['password']) && is_string($body['password']) ? $body['password'] : '';
 
         if ($password !== '' && $this->passwordHistoryService->wasUsedRecently($user, $password)) {
-            return $this->responseFactory->createResponse(['error' => $this->translator->translate('voyti.api.password_previously_used', category: 'voyti')], Status::BAD_REQUEST);
+            return $this->responseFactory->createResponse(
+                ['error' => $this->translator->translate('voyti.api.password_previously_used', category: 'voyti')],
+                Status::BAD_REQUEST,
+            );
         }
 
         if (isset($body['username']) && is_string($body['username'])) {
@@ -120,7 +134,10 @@ final readonly class UserController
     {
         $user = User::findById($id);
         if ($user === null) {
-            return $this->responseFactory->createResponse(['error' => $this->translator->translate('voyti.api.not_found', category: 'voyti')], Status::NOT_FOUND);
+            return $this->responseFactory->createResponse(
+                ['error' => $this->translator->translate('voyti.api.not_found', category: 'voyti')],
+                Status::NOT_FOUND,
+            );
         }
 
         return $this->responseFactory->createResponse([
