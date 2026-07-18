@@ -21,6 +21,7 @@ use YiiRocks\Voyti\Middleware\SessionRevocationEnforceMiddleware;
 use YiiRocks\Voyti\Middleware\TwoFactorAuthenticationEnforceMiddleware;
 use YiiRocks\Voyti\Middleware\VoytiMiddleware;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Service\Admin\DashboardService;
 use YiiRocks\Voyti\Service\AuditLogService;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\Auth\SocialAuthProviderService;
@@ -109,6 +110,9 @@ return [
         AssignmentsStorageInterface $assignmentsStorage,
         ItemsValidator $itemsValidator
     ) => new UpdateAssignmentsService($authManager, $assignmentsStorage, $itemsValidator),
+
+    // Admin dashboard: aggregates stats shown on the /admin/ landing page.
+    DashboardService::class => DashboardService::class,
 
     // Passwords: generation, expiry, history and reset/recovery flows.
     PasswordGeneratorInterface::class => RandomPasswordGenerator::class,

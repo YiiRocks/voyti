@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use YiiRocks\Voyti\Model\AuditLog;
 use Yiisoft\Data\Paginator\OffsetPaginator;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
@@ -15,7 +14,7 @@ use Yiisoft\Yii\DataView\Pagination\PaginationContext;
 
 /**
  * @var WebView $this
- * @var list<AuditLog> $logs
+ * @var list<array{createdAt: string, actorUserId: string, action: string, targetLabel: string, context: string}> $logs
  * @var array<string, string> $filters
  * @var OffsetPaginator $paginator
  * @var UrlGeneratorInterface $url
@@ -77,11 +76,11 @@ echo Html::div()->close();
 
 foreach ($logs as $log) {
     echo Html::div()->class('row py-2 border-bottom align-items-center')->open();
-    echo Html::div(date('Y-m-d H:i', $log->getCreatedAt()))->class('col-2');
-    echo Html::div((string) ($log->getActorUserId() ?? ''))->class('col-2');
-    echo Html::div($log->getAction())->class('col-2 text-break');
-    echo Html::div(($log->getTargetName() ?? '') . ($log->getTargetUserId() !== null ? ' (#' . $log->getTargetUserId() . ')' : ''))->class('col-2 text-break');
-    echo Html::div($log->getContext() ?? '')->class('col-4 text-break small');
+    echo Html::div($log['createdAt'])->class('col-2');
+    echo Html::div($log['actorUserId'])->class('col-2');
+    echo Html::div($log['action'])->class('col-2 text-break');
+    echo Html::div($log['targetLabel'])->class('col-2 text-break');
+    echo Html::div($log['context'])->class('col-4 text-break small');
     echo Html::div()->close();
 }
 

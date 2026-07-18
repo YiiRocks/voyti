@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests;
 
 use PHPUnit\Framework\TestCase;
+use YiiRocks\Voyti\Controller\Admin\Dashboard\DashboardController;
 use YiiRocks\Voyti\Middleware\AccessRuleMiddleware;
 use YiiRocks\Voyti\Middleware\ApiTokenAuthenticationMiddleware;
 use Yiisoft\DataResponse\Middleware\JsonDataResponseMiddleware;
@@ -16,6 +17,15 @@ use Yiisoft\Session\SessionMiddleware;
 
 final class RoutesTest extends TestCase
 {
+
+    public function testAdminIndexRouteRendersDashboard(): void
+    {
+        $route = $this->getRoute('voyti/admin', []);
+        $middlewares = $route->getData('enabledMiddlewares');
+
+        self::assertSame('admin/', $route->getData('pattern'));
+        self::assertSame([DashboardController::class, 'index'], end($middlewares));
+    }
 
     public function testOpenApiRouteIsPublic(): void
     {

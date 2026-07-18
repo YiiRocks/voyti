@@ -245,6 +245,18 @@ return [
     'voyti.view.role.create_title' => 'Rol aanmaken',
     'voyti.view.role.create_link' => 'Rol aanmaken',
     'voyti.view.role.update_title' => 'Rol bijwerken: {name}',
+
+    // Dashboard view
+    'voyti.view.dashboard.title' => 'Dashboard',
+    'voyti.view.dashboard.users_total' => 'Totaal aantal gebruikers',
+    'voyti.view.dashboard.users_blocked' => 'Geblokkeerde gebruikers',
+    'voyti.view.dashboard.users_unconfirmed' => 'Onbevestigde gebruikers',
+    'voyti.view.dashboard.roles' => 'Rollen',
+    'voyti.view.dashboard.permissions' => 'Machtigingen',
+    'voyti.view.dashboard.rules' => 'Regels',
+    'voyti.view.dashboard.recent_activity' => 'Recente activiteit',
+    'voyti.view.dashboard.no_recent_activity' => 'Geen recente activiteit.',
+
     'voyti.view.audit_log.title' => 'Auditlogboek',
     'voyti.view.audit_log.created_header' => 'Wanneer',
     'voyti.view.audit_log.actor_header' => 'Actor',

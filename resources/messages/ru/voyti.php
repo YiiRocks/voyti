@@ -245,6 +245,18 @@ return [
     'voyti.view.role.create_title' => 'Создание роли',
     'voyti.view.role.create_link' => 'Создать роль',
     'voyti.view.role.update_title' => 'Редактирование роли: {name}',
+
+    // Dashboard view
+    'voyti.view.dashboard.title' => 'Панель управления',
+    'voyti.view.dashboard.users_total' => 'Всего пользователей',
+    'voyti.view.dashboard.users_blocked' => 'Заблокированные пользователи',
+    'voyti.view.dashboard.users_unconfirmed' => 'Неподтверждённые пользователи',
+    'voyti.view.dashboard.roles' => 'Роли',
+    'voyti.view.dashboard.permissions' => 'Разрешения',
+    'voyti.view.dashboard.rules' => 'Правила',
+    'voyti.view.dashboard.recent_activity' => 'Последние действия',
+    'voyti.view.dashboard.no_recent_activity' => 'Нет недавних действий.',
+
     'voyti.view.audit_log.title' => 'Журнал аудита',
     'voyti.view.audit_log.created_header' => 'Когда',
     'voyti.view.audit_log.actor_header' => 'Инициатор',

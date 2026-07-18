@@ -13,6 +13,10 @@ use Yiisoft\Translator\TranslatorInterface;
 
 $adminMenuItems = [
     Html::li(
+        Html::a($translator->translate('voyti.view.dashboard.title', category: 'voyti'), $url->generate('voyti/admin'))->class('nav-link'),
+        ['class' => 'nav-item'],
+    ),
+    Html::li(
         Html::a($translator->translate('voyti.view.admin.title', category: 'voyti'), $url->generate('voyti/admin-users'))->class('nav-link'),
         ['class' => 'nav-item'],
     ),

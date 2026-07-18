@@ -10,6 +10,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Helper\InputDataTrait;
+use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\Model\AuditLog;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Data\Db\QueryDataReader;
@@ -49,12 +50,37 @@ final readonly class AuditLogController
         $requestedPage = max(1, (int) ($queryParams['page'] ?? 1));
         $paginator = $paginator->withCurrentPage(min($requestedPage, max(1, $paginator->getTotalPages())));
 
+        /** @var list<AuditLog> $logs */
+        $logs = iterator_to_array($paginator->read(), false);
+
         return $this->renderView('admin/audit-log/index', [
-            'logs' => iterator_to_array($paginator->read(), false),
+            'logs' => array_map(fn (AuditLog $log): array => $this->presentLog($log), $logs),
             'paginator' => $paginator,
             'filters' => $filters,
             'flash' => $this->flash,
         ]);
+    }
+
+    /**
+     * @return array{createdAt: string, actorUserId: string, action: string, targetLabel: string, context: string}
+     */
+    private function presentLog(AuditLog $log): array
+    {
+        return [
+            'createdAt' => TimezoneHelper::formatLocalized($log->getCreatedAt(), $this->translator->getLocale()),
+            'actorUserId' => (string) ($log->getActorUserId() ?? ''),
+            'action' => $log->getAction(),
+            'targetLabel' => $this->targetLabel($log),
+            'context' => $log->getContext() ?? '',
+        ];
+    }
+
+    private function targetLabel(AuditLog $log): string
+    {
+        $name = $log->getTargetName() ?? '';
+        $userId = $log->getTargetUserId();
+
+        return $userId !== null ? $name . ' (#' . $userId . ')' : $name;
     }
 
 }

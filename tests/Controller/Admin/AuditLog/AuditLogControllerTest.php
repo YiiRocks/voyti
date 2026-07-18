@@ -9,6 +9,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\Admin\AuditLog\AuditLogController;
+use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\Model\AuditLog;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
@@ -68,6 +69,71 @@ final class AuditLogControllerTest extends TestCase
         $controller->index($request);
 
         $this->assertCount(1, $captured['logs']);
+    }
+
+    public function testIndexPresentsLogFieldsFormattedForDisplay(): void
+    {
+        $log = new AuditLog();
+        $log->setActorUserId(1);
+        $log->setAction('rbac.role.update');
+        $log->setTargetName('editor');
+        $log->setTargetUserId(7);
+        $log->setContext('{"previousName":"old-editor"}');
+        $log->setCreatedAt(1700000000);
+        $log->save();
+
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $captured = [];
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->method('render')->willReturnCallback(
+            function (string $view, array $params) use (&$captured, $response): ResponseInterface {
+                $captured = $params;
+                return $response;
+            },
+        );
+
+        $controller->index($request);
+
+        self::assertSame(
+            [
+                'createdAt' => TimezoneHelper::formatLocalized(1700000000, $this->translator->getLocale()),
+                'actorUserId' => '1',
+                'action' => 'rbac.role.update',
+                'targetLabel' => 'editor (#7)',
+                'context' => '{"previousName":"old-editor"}',
+            ],
+            $captured['logs'][0],
+        );
+    }
+
+    public function testIndexPresentsLogWithoutTargetOrContext(): void
+    {
+        $log = new AuditLog();
+        $log->setAction('system.cleanup');
+        $log->setCreatedAt(1700000000);
+        $log->save();
+
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
+        $captured = [];
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->method('render')->willReturnCallback(
+            function (string $view, array $params) use (&$captured, $response): ResponseInterface {
+                $captured = $params;
+                return $response;
+            },
+        );
+
+        $controller->index($request);
+
+        self::assertSame('', $captured['logs'][0]['actorUserId']);
+        self::assertSame('', $captured['logs'][0]['targetLabel']);
+        self::assertSame('', $captured['logs'][0]['context']);
     }
 
     public function testIndexShowsLogs(): void

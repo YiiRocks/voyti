@@ -246,6 +246,17 @@ return [
     'voyti.view.role.create_link' => 'Create role',
     'voyti.view.role.update_title' => 'Update role: {name}',
 
+    // Dashboard view
+    'voyti.view.dashboard.title' => 'Dashboard',
+    'voyti.view.dashboard.users_total' => 'Total users',
+    'voyti.view.dashboard.users_blocked' => 'Blocked users',
+    'voyti.view.dashboard.users_unconfirmed' => 'Unconfirmed users',
+    'voyti.view.dashboard.roles' => 'Roles',
+    'voyti.view.dashboard.permissions' => 'Permissions',
+    'voyti.view.dashboard.rules' => 'Rules',
+    'voyti.view.dashboard.recent_activity' => 'Recent activity',
+    'voyti.view.dashboard.no_recent_activity' => 'No recent activity.',
+
     // Audit log view
     'voyti.view.audit_log.title' => 'Audit Log',
     'voyti.view.audit_log.created_header' => 'When',

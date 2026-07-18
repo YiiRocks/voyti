@@ -14,7 +14,6 @@ use Yiisoft\DataResponse\Middleware\JsonDataResponseMiddleware;
 use Yiisoft\Router\Group;
 use Yiisoft\Router\Route;
 use Yiisoft\Session\SessionMiddleware;
-use Yiisoft\Yii\Middleware\Redirect;
 
 $moduleConfig = ModuleConfig::fromArray($params['yiirocks/voyti'] ?? []);
 
@@ -39,6 +38,9 @@ if ($moduleConfig->enableSwitchIdentities) {
 }
 
 $permissionRoutes = [
+    Route::get('')->name('voyti/admin-rbac-permissions')
+        ->action([Controller\Admin\Rbac\RbacController::class, 'index'])
+        ->defaults(['itemType' => 'permission', 'indexRouteName' => 'admin-rbac-permissions']),
     Route::methods(['GET', 'POST'], 'create')->name('voyti/admin-rbac-permissions-create')
         ->action([Controller\Admin\Rbac\RbacController::class, 'create'])
         ->defaults(['itemType' => 'permission', 'indexRouteName' => 'admin-rbac-permissions']),
@@ -51,6 +53,9 @@ $permissionRoutes = [
 ];
 
 $roleRoutes = [
+    Route::get('')->name('voyti/admin-rbac-roles')
+        ->action([Controller\Admin\Rbac\RbacController::class, 'index'])
+        ->defaults(['itemType' => 'role', 'indexRouteName' => 'admin-rbac-roles']),
     Route::methods(['GET', 'POST'], 'create')->name('voyti/admin-rbac-roles-create')
         ->action([Controller\Admin\Rbac\RbacController::class, 'create'])
         ->defaults(['itemType' => 'role', 'indexRouteName' => 'admin-rbac-roles']),
@@ -63,22 +68,10 @@ $roleRoutes = [
 ];
 
 $ruleRoutes = [
+    Route::get('')->name('voyti/admin-rbac-rules')->action([Controller\Admin\Rbac\Rule\RuleController::class, 'index']),
     Route::methods(['GET', 'POST'], 'create')->name('voyti/admin-rbac-rules-create')->action([Controller\Admin\Rbac\Rule\RuleController::class, 'create']),
     Route::methods(['GET', 'POST'], 'update/{name}')->name('voyti/admin-rbac-rules-update')->action([Controller\Admin\Rbac\Rule\RuleController::class, 'update']),
     Route::post('delete/{name}')->name('voyti/admin-rbac-rules-delete')->action([Controller\Admin\Rbac\Rule\RuleController::class, 'delete']),
-];
-
-$rbacRoutes = [
-    Route::get('permissions/')->name('voyti/admin-rbac-permissions')
-        ->action([Controller\Admin\Rbac\RbacController::class, 'index'])
-        ->defaults(['itemType' => 'permission', 'indexRouteName' => 'admin-rbac-permissions']),
-    Group::create('permissions/')->routes(...$permissionRoutes),
-    Route::get('roles/')->name('voyti/admin-rbac-roles')
-        ->action([Controller\Admin\Rbac\RbacController::class, 'index'])
-        ->defaults(['itemType' => 'role', 'indexRouteName' => 'admin-rbac-roles']),
-    Group::create('roles/')->routes(...$roleRoutes),
-    Route::get('rules/')->name('voyti/admin-rbac-rules')->action([Controller\Admin\Rbac\Rule\RuleController::class, 'index']),
-    Group::create('rules/')->routes(...$ruleRoutes),
 ];
 
 $sessionRoutes = [
@@ -101,6 +94,7 @@ $passwordResetRoutes = [
 ];
 
 $settingsRoutes = [
+    Route::methods(['GET', 'POST'], '')->name('voyti/profile-update')->action([Controller\Profile\ProfileController::class, 'update']),
     Route::methods(['GET', 'POST'], 'account')->name('voyti/account-update')->action([Controller\Account\AccountController::class, 'update']),
     Route::get('confirm/{code}')->name('voyti/account-confirm')->action([Controller\Account\AccountController::class, 'confirm']),
     Route::get('networks/')->name('voyti/social-network')->action([Controller\SocialNetwork\SocialNetworkController::class, 'index']),
@@ -143,7 +137,6 @@ $routes = [
     ...$registrationRoutes,
     ...$passwordResetRoutes,
 
-    Route::methods(['GET', 'POST'], 'settings/')->name('voyti/profile-update')->action([Controller\Profile\ProfileController::class, 'update']),
     Group::create('settings/')->routes(...$settingsRoutes),
 
     // Admin + RBAC
@@ -152,9 +145,13 @@ $routes = [
         ->routes(
             Route::get('')
                 ->name('voyti/admin')
-                ->action(fn (Redirect $redirect) => $redirect->toRoute('voyti/admin-users')->temporary()),
+                ->action([Controller\Admin\Dashboard\DashboardController::class, 'index']),
             Group::create('users/')->routes(...$userRoutes),
-            Group::create('rbac/')->routes(...$rbacRoutes),
+            Group::create('rbac/')->routes(
+                Group::create('permissions/')->routes(...$permissionRoutes),
+                Group::create('roles/')->routes(...$roleRoutes),
+                Group::create('rules/')->routes(...$ruleRoutes),
+            ),
             Group::create('audit-log/')->routes(
                 Route::get('')->name('voyti/admin-audit-log')->action([Controller\Admin\AuditLog\AuditLogController::class, 'index']),
             ),

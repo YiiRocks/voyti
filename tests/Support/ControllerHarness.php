@@ -10,6 +10,7 @@ use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use YiiRocks\Voyti\Controller\Account\AccountController;
 use YiiRocks\Voyti\Controller\Account\SessionController as AccountSessionController;
 use YiiRocks\Voyti\Controller\Admin\AuditLog\AuditLogController;
+use YiiRocks\Voyti\Controller\Admin\Dashboard\DashboardController;
 use YiiRocks\Voyti\Controller\Admin\Rbac\RbacController;
 use YiiRocks\Voyti\Controller\Admin\Rbac\Rule\RuleController;
 use YiiRocks\Voyti\Controller\Admin\User\UserController;
@@ -22,6 +23,7 @@ use YiiRocks\Voyti\Controller\SocialNetwork\SocialNetworkController;
 use YiiRocks\Voyti\Controller\TwoFactor\TwoFactorController;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Service\Admin\DashboardService;
 use YiiRocks\Voyti\Service\AuditLogService;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\Auth\SocialAuthProviderService;
@@ -160,6 +162,30 @@ final class ControllerHarness
             url: $this->url,
             responseFactory: $responseFactory,
             config: $this->config,
+            flash: $flash,
+        );
+    }
+
+    public function createDashboardController(
+        TranslatorInterface $translator,
+        WebViewRenderer $viewRenderer,
+        CurrentUser $currentUser,
+        FlashInterface $flash,
+        ?DashboardService $dashboardService = null,
+    ): DashboardController {
+        $dashboardService ??= new DashboardService(
+            $this->createAuthHelper($currentUser),
+            $this->config,
+            $this->itemsStorage,
+            $translator,
+        );
+
+        return new DashboardController(
+            translator: $translator,
+            viewRenderer: $viewRenderer,
+            url: $this->url,
+            config: $this->config,
+            dashboardService: $dashboardService,
             flash: $flash,
         );
     }

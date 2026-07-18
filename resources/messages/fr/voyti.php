@@ -246,6 +246,17 @@ return [
     'voyti.view.role.create_link' => 'Créer un rôle',
     'voyti.view.role.update_title' => 'Modifier le rôle : {name}',
 
+    // Dashboard view
+    'voyti.view.dashboard.title' => 'Tableau de bord',
+    'voyti.view.dashboard.users_total' => 'Utilisateurs au total',
+    'voyti.view.dashboard.users_blocked' => 'Utilisateurs bloqués',
+    'voyti.view.dashboard.users_unconfirmed' => 'Utilisateurs non confirmés',
+    'voyti.view.dashboard.roles' => 'Rôles',
+    'voyti.view.dashboard.permissions' => 'Permissions',
+    'voyti.view.dashboard.rules' => 'Règles',
+    'voyti.view.dashboard.recent_activity' => 'Activité récente',
+    'voyti.view.dashboard.no_recent_activity' => 'Aucune activité récente.',
+
     // Audit log view
     'voyti.view.audit_log.title' => "Journal d'audit",
     'voyti.view.audit_log.created_header' => 'Quand',

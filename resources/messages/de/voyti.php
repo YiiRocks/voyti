@@ -245,6 +245,18 @@ return [
     'voyti.view.role.create_title' => 'Rolle erstellen',
     'voyti.view.role.create_link' => 'Rolle erstellen',
     'voyti.view.role.update_title' => 'Rolle aktualisieren: {name}',
+
+    // Dashboard view
+    'voyti.view.dashboard.title' => 'Dashboard',
+    'voyti.view.dashboard.users_total' => 'Benutzer insgesamt',
+    'voyti.view.dashboard.users_blocked' => 'Gesperrte Benutzer',
+    'voyti.view.dashboard.users_unconfirmed' => 'Unbestätigte Benutzer',
+    'voyti.view.dashboard.roles' => 'Rollen',
+    'voyti.view.dashboard.permissions' => 'Berechtigungen',
+    'voyti.view.dashboard.rules' => 'Regeln',
+    'voyti.view.dashboard.recent_activity' => 'Letzte Aktivität',
+    'voyti.view.dashboard.no_recent_activity' => 'Keine kürzliche Aktivität.',
+
     'voyti.view.audit_log.title' => 'Audit-Log',
     'voyti.view.audit_log.created_header' => 'Wann',
     'voyti.view.audit_log.actor_header' => 'Akteur',
