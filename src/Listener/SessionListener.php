@@ -20,6 +20,6 @@ final readonly class SessionListener
     public function onAfterLogin(AfterLoginEvent $event): void
     {
         $user = $event->getUser();
-        $this->userSessionDecorator->registerLogin($user, $event->getPreviousSessionId());
+        $this->userSessionDecorator->registerLogin($user, $event->getPreviousSessionId(), $event->getServerParams());
     }
 }

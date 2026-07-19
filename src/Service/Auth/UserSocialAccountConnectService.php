@@ -6,6 +6,7 @@ namespace YiiRocks\Voyti\Service\Auth;
 
 use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\Service\ServiceResult;
+use Yiisoft\Json\Json;
 
 /**
  * Links a social provider identity to an already-authenticated user, creating the
@@ -26,7 +27,7 @@ final readonly class UserSocialAccountConnectService
             $account = new UserSocialAccount();
             $account->setProvider($provider);
             $account->setClientId($clientId);
-            $account->setData(json_encode($userAttributes, JSON_THROW_ON_ERROR));
+            $account->setData(Json::encode($userAttributes));
             $account->setCreatedAt(time());
         }
 

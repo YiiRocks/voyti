@@ -6,6 +6,7 @@ namespace YiiRocks\Voyti\Service\UserSession;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Event\Session\SessionEvent;
+use YiiRocks\Voyti\Helper\LoginMetadataHelper;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\ModuleConfig;
@@ -24,7 +25,10 @@ final readonly class UserSessionDecorator
         private ?SessionInterface $session = null,
     ) {}
 
-    public function registerLogin(User $user, ?string $previousSessionId = null): void
+    /**
+     * @param array<array-key, mixed> $serverParams
+     */
+    public function registerLogin(User $user, ?string $previousSessionId = null, array $serverParams = []): void
     {
         $userId = $user->getIdOrZero();
         $sessionId = $this->session?->getId() ?? '';
@@ -36,8 +40,10 @@ final readonly class UserSessionDecorator
         $userSession = new UserSessions();
         $userSession->setUserId($userId);
         $userSession->setSessionId($sessionId);
-        $userSession->setIp($this->config->disableIpLogging ? '127.0.0.1' : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1'));
-        $userSession->setUserAgent($_SERVER['HTTP_USER_AGENT'] ?? null);
+        $userSession->setIp(
+            $this->config->disableIpLogging ? '127.0.0.1' : LoginMetadataHelper::remoteAddr($serverParams),
+        );
+        $userSession->setUserAgent(LoginMetadataHelper::userAgent($serverParams));
         $userSession->setCreatedAt(time());
         $userSession->setUpdatedAt(time());
         $userSession->save();

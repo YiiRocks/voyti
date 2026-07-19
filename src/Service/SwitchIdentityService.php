@@ -53,7 +53,10 @@ final readonly class SwitchIdentityService
         return $this->session->has($sessionKey);
     }
 
-    public function restore(): ServiceResult
+    /**
+     * @param array<array-key, mixed> $serverParams
+     */
+    public function restore(array $serverParams = []): ServiceResult
     {
         $sessionKey = $this->config->switchIdentitySessionKey;
         if ($sessionKey === null) {
@@ -74,13 +77,18 @@ final readonly class SwitchIdentityService
         $previousSessionId = $this->session->getId();
         $this->currentUser->login($originalUser);
         $this->session->remove($sessionKey);
-        $this->eventDispatcher->dispatch(new AfterLoginEvent($originalUser, previousSessionId: $previousSessionId));
+        $this->eventDispatcher->dispatch(
+            new AfterLoginEvent($originalUser, previousSessionId: $previousSessionId, serverParams: $serverParams),
+        );
         $this->eventDispatcher->dispatch(new UserEvent($originalUser, UserEvent::RESTORE_IDENTITY));
 
         return ServiceResult::success();
     }
 
-    public function run(int $id): ServiceResult
+    /**
+     * @param array<array-key, mixed> $serverParams
+     */
+    public function run(int $id, array $serverParams = []): ServiceResult
     {
         if (!$this->config->enableSwitchIdentities) {
             return ServiceResult::failure('Switch identities is disabled');
@@ -112,7 +120,9 @@ final readonly class SwitchIdentityService
 
         $previousSessionId = $this->session->getId();
         $this->currentUser->login($targetUser);
-        $this->eventDispatcher->dispatch(new AfterLoginEvent($targetUser, previousSessionId: $previousSessionId));
+        $this->eventDispatcher->dispatch(
+            new AfterLoginEvent($targetUser, previousSessionId: $previousSessionId, serverParams: $serverParams),
+        );
         $this->eventDispatcher->dispatch(new UserEvent($targetUser, UserEvent::SWITCH_IDENTITY));
 
         return ServiceResult::success();

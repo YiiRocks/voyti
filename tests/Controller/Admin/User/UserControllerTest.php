@@ -540,7 +540,7 @@ final class UserControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->switchIdentity(1);
+        $result = $controller->switchIdentity(new ServerRequest('POST', '/'), 1);
 
         $this->assertSame($response, $result);
     }
@@ -561,7 +561,7 @@ final class UserControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->switchIdentityRestore();
+        $result = $controller->switchIdentityRestore(new ServerRequest('POST', '/'));
 
         $this->assertSame($response, $result);
     }
@@ -576,7 +576,7 @@ final class UserControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->switchIdentityRestore();
+        $result = $controller->switchIdentityRestore(new ServerRequest('POST', '/'));
 
         $this->assertSame($response, $result);
     }
@@ -591,7 +591,7 @@ final class UserControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->switchIdentity(1);
+        $result = $controller->switchIdentity(new ServerRequest('POST', '/'), 1);
 
         $this->assertSame($response, $result);
     }

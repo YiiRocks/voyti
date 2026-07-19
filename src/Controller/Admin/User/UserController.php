@@ -281,9 +281,9 @@ final readonly class UserController
         ]);
     }
 
-    public function switchIdentity(int $id): ResponseInterface
+    public function switchIdentity(ServerRequestInterface $request, int $id): ResponseInterface
     {
-        $result = $this->switchIdentityService->run($id);
+        $result = $this->switchIdentityService->run($id, $request->getServerParams());
         if ($result->isSuccess()) {
             $this->auditLogService->log($this->actorId(), 'user.switch_identity', targetUserId: $id);
             $this->flash->set(
@@ -297,9 +297,9 @@ final readonly class UserController
         return $this->renderError($result->getMessage() !== '' ? $result->getMessage() : 'voyti.admin.error_occurred');
     }
 
-    public function switchIdentityRestore(): ResponseInterface
+    public function switchIdentityRestore(ServerRequestInterface $request): ResponseInterface
     {
-        $result = $this->switchIdentityService->restore();
+        $result = $this->switchIdentityService->restore($request->getServerParams());
         if ($result->isSuccess()) {
             $this->flash->set(
                 FlashType::SUCCESS,

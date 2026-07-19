@@ -98,12 +98,15 @@ final readonly class RegistrationController
             $form->processValidationResult($result);
 
             if ($result->isValid()) {
-                $serviceResult = $this->userRegisterService->run([
-                    'username' => $form->username,
-                    'email' => $form->email,
-                    'password' => $form->password,
-                    'gdprConsent' => $form->gdprConsent,
-                ]);
+                $serviceResult = $this->userRegisterService->run(
+                    [
+                        'username' => $form->username,
+                        'email' => $form->email,
+                        'password' => $form->password,
+                        'gdprConsent' => $form->gdprConsent,
+                    ],
+                    $request->getServerParams(),
+                );
 
                 if ($serviceResult->isSuccess()) {
                     $user = User::findByEmail($form->email);

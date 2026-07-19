@@ -201,7 +201,13 @@ final readonly class SessionController
                     $currentUser->login($user);
                     LoginMetadataHelper::recordLogin($user, $request->getServerParams(), $this->config);
                     $this->pendingSocialAccountService->connect($user);
-                    $this->eventDispatcher->dispatch(new AfterLoginEvent($user, previousSessionId: $previousSessionId));
+                    $this->eventDispatcher->dispatch(
+                        new AfterLoginEvent(
+                            $user,
+                            previousSessionId: $previousSessionId,
+                            serverParams: $request->getServerParams(),
+                        ),
+                    );
 
                     $response = $this->homeRedirectResponse();
                     if ($this->boolValue($credentials, 'rememberMe')) {
@@ -285,7 +291,13 @@ final readonly class SessionController
                     LoginMetadataHelper::recordLogin($user, $request->getServerParams(), $this->config);
                     $this->pendingSocialAccountService->connect($user);
 
-                    $this->eventDispatcher->dispatch(new AfterLoginEvent($user, previousSessionId: $previousSessionId));
+                    $this->eventDispatcher->dispatch(
+                        new AfterLoginEvent(
+                            $user,
+                            previousSessionId: $previousSessionId,
+                            serverParams: $request->getServerParams(),
+                        ),
+                    );
 
                     $response = $this->homeRedirectResponse();
                     if ($form->rememberMe) {

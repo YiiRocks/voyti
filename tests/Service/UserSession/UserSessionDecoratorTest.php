@@ -47,16 +47,11 @@ final class UserSessionDecoratorTest extends TestCase
 
         $userB = $this->createUser('userb', 'userb@example.com');
 
-        $_SERVER['REMOTE_ADDR'] = '192.168.1.1';
-        $_SERVER['HTTP_USER_AGENT'] = 'TestAgent';
-
-        $decorator->registerLogin($userB);
+        $decorator->registerLogin($userB, serverParams: ['REMOTE_ADDR' => '192.168.1.1', 'HTTP_USER_AGENT' => 'TestAgent']);
 
         $remainingA = UserSessions::query()->where(['user_id' => $userIdA])->all();
         self::assertCount(1, $remainingA);
         self::assertSame('a_expired', $remainingA[0]->getSessionId());
-
-        unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
     }
 
     public function testRegisterLoginFallsBackToLocalhostWhenNoRemoteAddr(): void
@@ -68,8 +63,6 @@ final class UserSessionDecoratorTest extends TestCase
         $decorator = new UserSessionDecorator($eventDispatcher, $config, $session);
 
         $user = $this->createUser('fallback', 'fallback@example.com');
-
-        unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
 
         $decorator->registerLogin($user);
 
@@ -95,10 +88,7 @@ final class UserSessionDecoratorTest extends TestCase
         $this->createUserSession($userId, 'old_expired', $lifespan + 1);
         $this->createUserSession($userId, 'old_fresh', $lifespan - 1);
 
-        $_SERVER['REMOTE_ADDR'] = '192.168.1.1';
-        $_SERVER['HTTP_USER_AGENT'] = 'TestAgent';
-
-        $decorator->registerLogin($user);
+        $decorator->registerLogin($user, serverParams: ['REMOTE_ADDR' => '192.168.1.1', 'HTTP_USER_AGENT' => 'TestAgent']);
 
         $sessions = UserSessions::query()->where(['user_id' => $userId])->all();
         $sessionIds = array_map(static fn(UserSessions $s): string => $s->getSessionId(), $sessions);
@@ -106,8 +96,6 @@ final class UserSessionDecoratorTest extends TestCase
         self::assertContains('sessage', $sessionIds);
         self::assertContains('old_fresh', $sessionIds);
         self::assertNotContains('old_expired', $sessionIds);
-
-        unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
     }
 
     public function testRegisterLoginRecordsSession(): void
@@ -120,10 +108,7 @@ final class UserSessionDecoratorTest extends TestCase
 
         $user = $this->createUser('test', 'test@example.com');
 
-        $_SERVER['REMOTE_ADDR'] = '192.168.1.1';
-        $_SERVER['HTTP_USER_AGENT'] = 'TestAgent';
-
-        $decorator->registerLogin($user);
+        $decorator->registerLogin($user, serverParams: ['REMOTE_ADDR' => '192.168.1.1', 'HTTP_USER_AGENT' => 'TestAgent']);
 
         $sessions = UserSessions::query()->where(['user_id' => (int) $user->getId()])->all();
         self::assertCount(1, $sessions);
@@ -137,8 +122,6 @@ final class UserSessionDecoratorTest extends TestCase
         $event = $eventDispatcher->getEvent(SessionEvent::class);
         self::assertInstanceOf(SessionEvent::class, $event);
         self::assertSame(['type' => SessionEvent::SESSION_CREATED], $event->getData());
-
-        unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
     }
 
     public function testRegisterLoginReplacesStalePreviousSessionForSameUser(): void
@@ -154,10 +137,11 @@ final class UserSessionDecoratorTest extends TestCase
         $session = $this->createOpenSession('fresh-session-id');
         $decorator = new UserSessionDecorator($eventDispatcher, $config, $session);
 
-        $_SERVER['REMOTE_ADDR'] = '192.168.1.1';
-        $_SERVER['HTTP_USER_AGENT'] = 'TestAgent';
-
-        $decorator->registerLogin($user, 'stale-session-id');
+        $decorator->registerLogin(
+            $user,
+            'stale-session-id',
+            ['REMOTE_ADDR' => '192.168.1.1', 'HTTP_USER_AGENT' => 'TestAgent'],
+        );
 
         $sessions = UserSessions::query()->where(['user_id' => $userId])->all();
         $sessionIds = array_map(static fn(UserSessions $s): string => $s->getSessionId(), $sessions);
@@ -173,8 +157,6 @@ final class UserSessionDecoratorTest extends TestCase
         self::assertSame('stale-session-id', $events[0]->getSessionId());
         self::assertSame(['type' => SessionEvent::SESSION_CREATED], $events[1]->getData());
         self::assertSame('fresh-session-id', $events[1]->getSessionId());
-
-        unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
     }
 
     public function testRegisterLoginWithDifferentPreviousSessionIdButNoMatchingRowIsNoop(): void
@@ -187,9 +169,7 @@ final class UserSessionDecoratorTest extends TestCase
 
         $user = $this->createUser('replacemiss', 'replacemiss@example.com');
 
-        $_SERVER['REMOTE_ADDR'] = '192.168.1.1';
-
-        $decorator->registerLogin($user, 'nonexistent-session-id');
+        $decorator->registerLogin($user, 'nonexistent-session-id', ['REMOTE_ADDR' => '192.168.1.1']);
 
         $sessions = UserSessions::query()->where(['user_id' => (int) $user->getId()])->all();
         self::assertCount(1, $sessions);
@@ -200,8 +180,6 @@ final class UserSessionDecoratorTest extends TestCase
             static fn(object $event): bool => $event instanceof SessionEvent && $event->getData() === ['type' => SessionEvent::SESSION_TERMINATED],
         );
         self::assertCount(0, $events);
-
-        unset($_SERVER['REMOTE_ADDR']);
     }
 
     public function testRegisterLoginWithDisableIpLogging(): void
@@ -214,16 +192,11 @@ final class UserSessionDecoratorTest extends TestCase
 
         $user = $this->createUser('test2', 'test2@example.com');
 
-        $_SERVER['REMOTE_ADDR'] = '203.0.113.9';
-        $_SERVER['HTTP_USER_AGENT'] = 'TestAgent';
-
-        $decorator->registerLogin($user);
+        $decorator->registerLogin($user, serverParams: ['REMOTE_ADDR' => '203.0.113.9', 'HTTP_USER_AGENT' => 'TestAgent']);
 
         $sessions = UserSessions::query()->where(['user_id' => (int) $user->getId()])->all();
         self::assertCount(1, $sessions);
         self::assertSame('127.0.0.1', $sessions[0]->getIp());
-
-        unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
     }
 
     public function testRegisterLoginWithEmptyPreviousSessionIdSkipsReplace(): void
@@ -236,14 +209,10 @@ final class UserSessionDecoratorTest extends TestCase
 
         $user = $this->createUser('emptyprev', 'emptyprev@example.com');
 
-        $_SERVER['REMOTE_ADDR'] = '192.168.1.1';
-
-        $decorator->registerLogin($user, '');
+        $decorator->registerLogin($user, '', ['REMOTE_ADDR' => '192.168.1.1']);
 
         $sessions = UserSessions::query()->where(['user_id' => (int) $user->getId()])->all();
         self::assertCount(1, $sessions);
-
-        unset($_SERVER['REMOTE_ADDR']);
     }
 
     public function testRegisterLoginWithNullUserIdRecordsZero(): void
@@ -259,15 +228,11 @@ final class UserSessionDecoratorTest extends TestCase
         $user->setPasswordHash('hash');
         $user->setAuthKey('key');
 
-        $_SERVER['REMOTE_ADDR'] = '10.0.0.1';
-
-        $decorator->registerLogin($user);
+        $decorator->registerLogin($user, serverParams: ['REMOTE_ADDR' => '10.0.0.1']);
 
         $sessions = UserSessions::query()->where(['user_id' => 0])->all();
         self::assertCount(1, $sessions);
         self::assertSame(0, $sessions[0]->getUserId());
-
-        unset($_SERVER['REMOTE_ADDR']);
     }
 
     public function testRegisterLoginWithPreviousSessionIdEqualToCurrentSkipsReplace(): void
@@ -280,14 +245,10 @@ final class UserSessionDecoratorTest extends TestCase
 
         $user = $this->createUser('samesession', 'samesession@example.com');
 
-        $_SERVER['REMOTE_ADDR'] = '192.168.1.1';
-
-        $decorator->registerLogin($user, 'sesssame');
+        $decorator->registerLogin($user, 'sesssame', ['REMOTE_ADDR' => '192.168.1.1']);
 
         $sessions = UserSessions::query()->where(['user_id' => (int) $user->getId()])->all();
         self::assertCount(1, $sessions);
-
-        unset($_SERVER['REMOTE_ADDR']);
     }
 
     public function testRegisterLoginWithSessionNullId(): void
@@ -299,15 +260,11 @@ final class UserSessionDecoratorTest extends TestCase
 
         $user = $this->createUser('nosess', 'nosess@example.com');
 
-        $_SERVER['REMOTE_ADDR'] = '10.0.0.1';
-
-        $decorator->registerLogin($user);
+        $decorator->registerLogin($user, serverParams: ['REMOTE_ADDR' => '10.0.0.1']);
 
         $sessions = UserSessions::query()->where(['user_id' => (int) $user->getId()])->all();
         self::assertCount(1, $sessions);
         self::assertSame('', $sessions[0]->getSessionId());
-
-        unset($_SERVER['REMOTE_ADDR']);
     }
 
     private function createOpenSession(string $id): FakeSession

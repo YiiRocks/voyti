@@ -40,6 +40,7 @@ final readonly class RememberMeMiddleware implements MiddlewareInterface
                 $this->currentUser,
                 $this->identityRepository,
                 $this->session,
+                $request->getServerParams(),
             );
 
         $response = $handler->handle($request);

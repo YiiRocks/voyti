@@ -33,4 +33,15 @@ final class LoginMetadataHelper
 
         return is_string($remoteAddr) && $remoteAddr !== '' ? $remoteAddr : '127.0.0.1';
     }
+
+    /**
+     * @param array<array-key, mixed> $serverParams
+     */
+    public static function userAgent(array $serverParams): ?string
+    {
+        /** @var mixed $userAgent */
+        $userAgent = $serverParams['HTTP_USER_AGENT'] ?? null;
+
+        return is_string($userAgent) && $userAgent !== '' ? $userAgent : null;
+    }
 }

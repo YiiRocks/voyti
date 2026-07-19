@@ -78,6 +78,7 @@ final class RememberMeCookieService
 
     /**
      * @param array<array-key, mixed> $cookies
+     * @param array<array-key, mixed> $serverParams
      *
      * @return bool Whether the cookie logged a {@see User} identity in and its cookie must be
      * reissued on the response - the session (and therefore the sessionId embedded in the cookie)
@@ -89,6 +90,7 @@ final class RememberMeCookieService
         CurrentUser $currentUser,
         IdentityRepositoryInterface $identityRepository,
         SessionInterface $session,
+        array $serverParams = [],
     ): bool {
         $now = (int) ($this->now)();
         $cookieName = $this->getCookieName();
@@ -137,7 +139,9 @@ final class RememberMeCookieService
         // Pass $cookieSessionId (the session ID the cookie was issued for) as
         // previousSessionId instead of the current PHP session ID - this is the value
         // stored in UserSessions and lets replaceSession() find/delete the old row.
-        $this->eventDispatcher?->dispatch(new AfterLoginEvent($identity, previousSessionId: (string) $cookieSessionId));
+        $this->eventDispatcher?->dispatch(
+            new AfterLoginEvent($identity, previousSessionId: (string) $cookieSessionId, serverParams: $serverParams),
+        );
 
         $newSessionId = $session->getId();
         return $newSessionId !== null && $newSessionId !== '';

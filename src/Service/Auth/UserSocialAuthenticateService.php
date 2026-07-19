@@ -12,6 +12,7 @@ use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\ServiceResult;
 use YiiRocks\Voyti\Service\User\UserCreationHelper;
+use Yiisoft\Json\Json;
 use Yiisoft\Security\Random;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\User\CurrentUser;
@@ -64,7 +65,7 @@ final readonly class UserSocialAuthenticateService
         $account = UserSocialAccount::findByProviderAndClientId($provider, $clientId);
 
         if ($account === null) {
-            $account = $this->createAccount($provider, $clientId, $userAttributes);
+            $account = $this->createAccount($provider, $clientId, $userAttributes, $serverParams);
         }
 
         if ($account->getUserId() !== null) {
@@ -79,7 +80,9 @@ final readonly class UserSocialAuthenticateService
             $previousSessionId = $this->session->getId();
             $this->currentUser->login($user);
             LoginMetadataHelper::recordLogin($user, $serverParams, $this->config);
-            $this->eventDispatcher->dispatch(new AfterLoginEvent($user, previousSessionId: $previousSessionId));
+            $this->eventDispatcher->dispatch(
+                new AfterLoginEvent($user, previousSessionId: $previousSessionId, serverParams: $serverParams),
+            );
 
             $this->session->remove(self::SESSION_KEY);
 
@@ -112,9 +115,14 @@ final readonly class UserSocialAuthenticateService
 
     /**
      * @param array $attributes
+     * @param array<array-key, mixed> $serverParams
      */
-    private function createAccount(string $provider, string $clientId, array $attributes): UserSocialAccount
-    {
+    private function createAccount(
+        string $provider,
+        string $clientId,
+        array $attributes,
+        array $serverParams,
+    ): UserSocialAccount {
         $account = new UserSocialAccount();
         $account->setProvider($provider);
         $account->setClientId($clientId);
@@ -123,12 +131,12 @@ final readonly class UserSocialAuthenticateService
         $account->setUsername($username);
         $account->setEmail($email);
         $account->setCode(Random::string(32));
-        $account->setData(json_encode($attributes, JSON_THROW_ON_ERROR));
+        $account->setData(Json::encode($attributes));
         $account->setCreatedAt(time());
 
         $email = $account->getEmail();
         if ($email !== null && $this->config->enableRegistration && User::findByEmail($email) === null) {
-            $user = $this->registerUser($email, $account->getUsername());
+            $user = $this->registerUser($email, $account->getUsername(), $serverParams);
             $account->setUserId((int) $user->getId());
         }
 
@@ -144,14 +152,17 @@ final readonly class UserSocialAuthenticateService
         return $account;
     }
 
-    private function registerUser(string $email, ?string $usernameHint): User
+    /**
+     * @param array<array-key, mixed> $serverParams
+     */
+    private function registerUser(string $email, ?string $usernameHint, array $serverParams): User
     {
         $username = $this->buildUniqueUsername($usernameHint, $email);
         $password = Random::string(24);
 
         $user = $this->userCreationHelper->buildUser($email, $username, $password);
         $user->setRegistrationIp(
-            $this->config->disableIpLogging ? '127.0.0.1' : ($_SERVER['REMOTE_ADDR'] ?? '127.0.0.1'),
+            $this->config->disableIpLogging ? '127.0.0.1' : LoginMetadataHelper::remoteAddr($serverParams),
         );
 
         $this->userCreationHelper->persistAndNotifySkippingConfirmation($user, $password);
