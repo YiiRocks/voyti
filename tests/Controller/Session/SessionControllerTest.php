@@ -733,10 +733,25 @@ final class SessionControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    public function testLogoutDeletesUserSessionRecord(): void
+    public function testLogoutRedirectsToHomeRouteByDefault(): void
+    {
+        $controller = $this->createController();
+
+        $this->currentUser->method('logout')->willReturn(false);
+        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
+        $this->rememberMeCookieService->method('expireCookie')->willReturnArgument(0);
+
+        $response = $this->mockRedirectResponse($this->responseFactory, '//home');
+
+        $result = $controller->logout();
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testLogoutRevokesUserSessionRecord(): void
     {
         $user = $this->createRealUser();
-        $sessionId = 'test-session-to-delete';
+        $sessionId = 'test-session-to-revoke';
 
         $userSession = new UserSessions();
         $userSession->setUserId($user->getIdOrZero());
@@ -768,23 +783,9 @@ final class SessionControllerTest extends TestCase
         $controller = $this->createController();
         $controller->logout();
 
-        $deleted = UserSessions::findByUserIdAndSessionId($user->getIdOrZero(), $sessionId);
-        $this->assertNull($deleted);
-    }
-
-    public function testLogoutRedirectsToHomeRouteByDefault(): void
-    {
-        $controller = $this->createController();
-
-        $this->currentUser->method('logout')->willReturn(false);
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-        $this->rememberMeCookieService->method('expireCookie')->willReturnArgument(0);
-
-        $response = $this->mockRedirectResponse($this->responseFactory, '//home');
-
-        $result = $controller->logout();
-
-        $this->assertSame($response, $result);
+        $revoked = UserSessions::findByUserIdAndSessionId($user->getIdOrZero(), $sessionId);
+        $this->assertNotNull($revoked);
+        $this->assertTrue($revoked->isRevoked());
     }
 
     public function testLogoutWhenLoggedInRotatesAuthKeyAndSaves(): void

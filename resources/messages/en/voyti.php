@@ -284,6 +284,8 @@ return [
     'voyti.view.sessions.this_device' => 'This device',
     'voyti.view.sessions.none' => 'No active sessions.',
     'voyti.view.sessions.revoke_button' => 'Revoke',
+    'voyti.view.sessions.revoked' => 'Revoked',
+    'voyti.view.sessions.active' => 'Active',
 
     // Pagination
     'voyti.view.filter_button' => 'Filter',

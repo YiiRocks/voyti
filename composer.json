@@ -126,7 +126,7 @@
         }
     },
     "config": {
-        "process-timeout": 900,
+        "process-timeout": 600,
         "sort-packages": true,
         "allow-plugins": {
             "yiisoft/config": true,

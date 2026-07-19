@@ -321,7 +321,10 @@ final readonly class UserController
 
         $sessions = UserSessions::findByUserId($id);
         foreach ($sessions as $session) {
-            $session->delete();
+            if (!$session->isRevoked()) {
+                $session->setRevokedAt(time());
+                $session->save();
+            }
         }
 
         return $this->redirectWithFlash(

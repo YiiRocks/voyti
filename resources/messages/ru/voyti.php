@@ -283,6 +283,8 @@ return [
     'voyti.view.sessions.this_device' => 'Это устройство',
     'voyti.view.sessions.none' => 'Нет активных сеансов.',
     'voyti.view.sessions.revoke_button' => 'Отозвать',
+    'voyti.view.sessions.revoked' => 'Отозван',
+    'voyti.view.sessions.active' => 'Активен',
 
     // Pagination
     'voyti.view.filter_button' => 'Фильтр',

@@ -75,15 +75,18 @@ final readonly class DashboardService
         return [
             /** @infection-ignore-all Same driver-portability cast as userTotal in getStats() above. */
             'oneDay' => (int) UserSessions::query()
-                ->andWhere(['>=', 'created_at', $now - self::SECONDS_PER_DAY])
+                ->andWhere(['revoked_at' => null])
+                ->andWhere(['>=', 'updated_at', $now - self::SECONDS_PER_DAY])
                 ->count(),
             /** @infection-ignore-all Same driver-portability cast as userTotal in getStats() above. */
             'sevenDays' => (int) UserSessions::query()
-                ->andWhere(['>=', 'created_at', $now - (self::SECONDS_PER_DAY * 7)])
+                ->andWhere(['revoked_at' => null])
+                ->andWhere(['>=', 'updated_at', $now - (self::SECONDS_PER_DAY * 7)])
                 ->count(),
             /** @infection-ignore-all Same driver-portability cast as userTotal in getStats() above. */
             'lifespan' => (int) UserSessions::query()
-                ->andWhere(['>=', 'created_at', $now - $this->config->rememberLoginLifespan])
+                ->andWhere(['revoked_at' => null])
+                ->andWhere(['>=', 'updated_at', $now - $this->config->rememberLoginLifespan])
                 ->count(),
         ];
     }

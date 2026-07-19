@@ -113,13 +113,17 @@ final class RememberMeCookieService
             return false;
         }
 
-        if (
-            $identity instanceof User
-            && UserSessions::findByUserIdAndSessionId($identity->getIdOrZero(), (string) $cookieSessionId) === null
-        ) {
-            // The session this cookie was issued for was terminated (self-service or admin) - the cookie
-            // must not resurrect it, even though the shared cookieLoginKey is still otherwise valid.
-            return false;
+        if ($identity instanceof User) {
+            $userSession = UserSessions::findByUserIdAndSessionId(
+                $identity->getIdOrZero(),
+                (string) $cookieSessionId,
+            );
+            if ($userSession === null || $userSession->isRevoked()) {
+                // The session this cookie was issued for was terminated (self-service or admin) - the
+                // cookie must not resurrect it, even though the shared cookieLoginKey is still otherwise
+                // valid.
+                return false;
+            }
         }
 
         $currentUser->login($identity);

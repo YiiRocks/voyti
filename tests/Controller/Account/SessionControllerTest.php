@@ -145,7 +145,7 @@ final class SessionControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    public function testTerminateOtherSessionDeletesItAndRedirects(): void
+    public function testTerminateOtherSessionRevokesItAndRedirects(): void
     {
         $user = $this->createUser(username: 'sessionuser', email: 'sessionuser@example.com');
         $this->authenticateAs($user);
@@ -158,7 +158,9 @@ final class SessionControllerTest extends TestCase
         $result = $controller->terminate('other-session');
 
         $this->assertSame($response, $result);
-        $this->assertNull(UserSessions::findByUserIdAndSessionId($user->getIdOrZero(), 'other-session'));
+        $revoked = UserSessions::findByUserIdAndSessionId($user->getIdOrZero(), 'other-session');
+        $this->assertNotNull($revoked);
+        $this->assertTrue($revoked->isRevoked());
     }
 
     public function testTerminateUnknownSessionShowsError(): void

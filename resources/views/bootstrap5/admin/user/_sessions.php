@@ -37,8 +37,9 @@ echo Html::H3()->close();
 
 echo Html::div()->class('d-none d-md-flex row fw-bold border-bottom pb-2 mb-2')->open();
 echo Html::div($translator->translate('voyti.view.sessions.ip', category: 'voyti'))->class('col-3');
-echo Html::div($translator->translate('voyti.view.sessions.user_agent', category: 'voyti'))->class('col-6');
-echo Html::div($translator->translate('voyti.view.sessions.last_seen', category: 'voyti'))->class('col-3');
+echo Html::div($translator->translate('voyti.view.sessions.user_agent', category: 'voyti'))->class('col-5');
+echo Html::div($translator->translate('voyti.view.sessions.last_seen', category: 'voyti'))->class('col-2');
+echo Html::div()->class('col-2');
 echo Html::div()->close();
 
 $timezone = $user->getProfile()?->getTimezone();
@@ -46,8 +47,21 @@ $timezone = $user->getProfile()?->getTimezone();
 foreach ($sessions as $session) {
     echo Html::div()->class('row py-2 border-bottom align-items-center')->open();
     echo Html::div($session->getIp() ?? '')->class('col-3 text-break');
-    echo Html::div($session->getUserAgent() ?? '')->class('col-6 text-break');
-    echo Html::div(TimezoneHelper::formatLocalized($session->getUpdatedAt(), $translator->getLocale(), $timezone))->class('col-3');
+    echo Html::div($session->getUserAgent() ?? '')->class('col-5 text-break');
+    echo Html::div(TimezoneHelper::formatLocalized($session->getUpdatedAt(), $translator->getLocale(), $timezone))->class('col-2');
+    echo Html::div()->class('col-2 text-end')->open();
+    if ($session->isRevoked()) {
+        $revokedAt = TimezoneHelper::formatLocalized($session->getRevokedAt() ?? 0, $translator->getLocale(), $timezone);
+        $revokedButton = Html::button($translator->translate('voyti.view.sessions.revoked', category: 'voyti'))
+            ->class('btn', 'btn-sm', 'btn-outline-secondary')
+            ->disabled();
+        echo Html::span($revokedButton)->attribute('title', $revokedAt);
+    } else {
+        echo Html::button($translator->translate('voyti.view.sessions.active', category: 'voyti'))
+            ->class('btn', 'btn-sm', 'btn-outline-success')
+            ->disabled();
+    }
+    echo Html::div()->close();
     echo Html::div()->close();
 }
 

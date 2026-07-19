@@ -283,6 +283,8 @@ return [
     'voyti.view.sessions.this_device' => 'Dit apparaat',
     'voyti.view.sessions.none' => 'Geen actieve sessies.',
     'voyti.view.sessions.revoke_button' => 'Intrekken',
+    'voyti.view.sessions.revoked' => 'Ingetrokken',
+    'voyti.view.sessions.active' => 'Actief',
 
     // Pagination
     'voyti.view.filter_button' => 'Filteren',

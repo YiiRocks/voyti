@@ -330,7 +330,8 @@ final readonly class SessionController
                 $userId = $identity->getIdOrZero();
                 $userSession = UserSessions::findByUserIdAndSessionId($userId, $sessionId);
                 if ($userSession !== null) {
-                    $userSession->delete();
+                    $userSession->setRevokedAt(time());
+                    $userSession->save();
                     $this->eventDispatcher->dispatch(
                         new SessionEvent($userId, $sessionId, ['type' => SessionEvent::SESSION_TERMINATED]),
                     );

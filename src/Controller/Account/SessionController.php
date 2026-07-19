@@ -71,7 +71,8 @@ final readonly class SessionController
             return $this->renderError('voyti.settings.session_not_found');
         }
 
-        $userSession->delete();
+        $userSession->setRevokedAt(time());
+        $userSession->save();
         $this->eventDispatcher->dispatch(
             new SessionEvent($user->getIdOrZero(), $sessionId, ['type' => SessionEvent::SESSION_TERMINATED]),
         );

@@ -100,6 +100,7 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
             'ip' => ColumnBuilder::string(45)->notNull(),
             'created_at' => ColumnBuilder::integer()->notNull(),
             'updated_at' => ColumnBuilder::integer()->notNull(),
+            'revoked_at' => ColumnBuilder::integer(),
             'PRIMARY KEY ([[user_id]], [[session_id]])',
             'FOREIGN KEY ([[user_id]]) REFERENCES {{%user}} ([[id]]) ON DELETE CASCADE ON UPDATE RESTRICT',
         ]);

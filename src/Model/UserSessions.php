@@ -8,8 +8,11 @@ use Yiisoft\ActiveRecord\ActiveRecord;
 use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
 
 /**
- * ActiveRecord for the `user_sessions` table: tracks each active login session per user (IP,
- * user agent, timestamps) for session management and admin visibility.
+ * ActiveRecord for the `user_sessions` table: tracks each login session per user (IP, user
+ * agent, timestamps) for session management and admin visibility. Terminating a session sets
+ * `revoked_at` rather than deleting the row, so the row remains visible as history until it is
+ * pruned for age; only {@see \YiiRocks\Voyti\Service\UserSession\UserSessionDecorator}'s
+ * lifespan-based pruning hard-deletes rows.
  */
 final class UserSessions extends ActiveRecord
 {
@@ -17,6 +20,7 @@ final class UserSessions extends ActiveRecord
 
     private int $created_at = 0;
     private ?string $ip = null;
+    private ?int $revoked_at = null;
     private string $session_id = '';
     private int $updated_at = 0;
     private ?string $user_agent = null;
@@ -63,6 +67,11 @@ final class UserSessions extends ActiveRecord
         return $this->ip;
     }
 
+    public function getRevokedAt(): ?int
+    {
+        return $this->revoked_at;
+    }
+
     public function getSessionId(): string
     {
         return $this->session_id;
@@ -81,6 +90,11 @@ final class UserSessions extends ActiveRecord
     public function getUserId(): int
     {
         return $this->user_id;
+    }
+
+    public function isRevoked(): bool
+    {
+        return $this->revoked_at !== null;
     }
 
     /**
@@ -117,6 +131,11 @@ final class UserSessions extends ActiveRecord
     public function setIp(?string $ip): void
     {
         $this->ip = $ip;
+    }
+
+    public function setRevokedAt(?int $revokedAt): void
+    {
+        $this->revoked_at = $revokedAt;
     }
 
     public function setSessionId(string $sessionId): void

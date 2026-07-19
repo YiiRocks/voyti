@@ -20,9 +20,9 @@ use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
 
 /**
- * Terminating a session only deletes its {@see UserSessions} row — the browser's PHP session
- * stays valid until it expires naturally. This middleware closes that gap by force-logging-out once
- * the row is gone.
+ * Terminating a session only flags its {@see UserSessions} row as revoked — the browser's PHP
+ * session stays valid until it expires naturally. This middleware closes that gap by
+ * force-logging-out once the row is gone or revoked.
  */
 final readonly class SessionRevocationEnforceMiddleware implements MiddlewareInterface
 {
@@ -60,7 +60,7 @@ final readonly class SessionRevocationEnforceMiddleware implements MiddlewareInt
 
         $userSession = UserSessions::findByUserIdAndSessionId($user->getIdOrZero(), $sessionId);
 
-        if ($userSession === null) {
+        if ($userSession === null || $userSession->isRevoked()) {
             $this->currentUser->logout();
             $response = $this->responseFactory->createResponse(Status::FOUND);
             return $response->withHeader(Header::LOCATION, $this->url->generate('voyti/session-login'));

@@ -74,6 +74,52 @@ final class SessionRevocationEnforceMiddlewareTest extends TestCase
         $middleware->process($request, $handler);
     }
 
+    public function testProcessLogsOutAndRedirectsWhenSessionRowRevoked(): void
+    {
+        $user = $this->createUser('revokeduser', 'revokeduser@example.com');
+
+        $userSession = new UserSessions();
+        $userSession->setUserId((int) $user->getId());
+        $userSession->setSessionId('revoked-session-id');
+        $userSession->setIp('127.0.0.1');
+        $userSession->setCreatedAt(time());
+        $userSession->setUpdatedAt(time());
+        $userSession->setRevokedAt(time());
+        $userSession->save();
+
+        $currentUser = $this->createMock(CurrentUser::class);
+        $currentUser->expects(self::once())->method('getIdentity')->willReturn($user);
+        $currentUser->expects(self::once())->method('logout');
+
+        $currentRoute = $this->createMock(CurrentRoute::class);
+        $currentRoute->method('getName')->willReturn('voyti/profile-update');
+
+        $request = $this->createMock(ServerRequestInterface::class);
+        $handler = $this->createMock(RequestHandlerInterface::class);
+        $handler->expects(self::never())->method('handle');
+
+        $url = $this->createMock(UrlGeneratorInterface::class);
+        $url->expects(self::once())->method('generate')->with('voyti/session-login')->willReturn('/voyti/session-login');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $response->expects(self::once())->method('withHeader')->with('Location', '/voyti/session-login')->willReturnSelf();
+
+        $responseFactory = $this->createMock(ResponseFactoryInterface::class);
+        $responseFactory->expects(self::once())->method('createResponse')->with(302)->willReturn($response);
+
+        $session = $this->createOpenSession('revoked-session-id');
+
+        $middleware = $this->createMiddleware(
+            currentUser: $currentUser,
+            currentRoute: $currentRoute,
+            responseFactory: $responseFactory,
+            session: $session,
+            url: $url,
+        );
+
+        $middleware->process($request, $handler);
+    }
+
     public function testProcessPassesThroughForExemptLoginRoute(): void
     {
         $user = $this->createUser('sessuser', 'sessuser@example.com');

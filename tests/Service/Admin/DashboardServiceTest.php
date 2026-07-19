@@ -64,6 +64,47 @@ final class DashboardServiceTest extends TestCase
         self::assertSame(6, $stats['activeSessions']['lifespan']);
     }
 
+    public function testGetStatsActiveSessionsTrendExcludesRevokedSessions(): void
+    {
+        $user = $this->createUser('revoked-sessions-user', 'revoked-sessions-user@example.com', confirmedAt: time());
+        $userId = (int) $user->getId();
+
+        $session = $this->createUserSession($userId, 'revoked-recent', time());
+        $session->setRevokedAt(time());
+        $session->save();
+
+        $stats = $this->createService()->getStats();
+
+        self::assertSame(0, $stats['activeSessions']['oneDay']);
+    }
+
+    public function testGetStatsActiveSessionsTrendFiltersByUpdatedAtNotCreatedAt(): void
+    {
+        $lifespan = (new ModuleConfig())->rememberLoginLifespan;
+        $user = $this->createUser('updated-at-user', 'updated-at-user@example.com', confirmedAt: time());
+        $userId = (int) $user->getId();
+
+        $staleCreatedRecentlyUpdated = new UserSessions();
+        $staleCreatedRecentlyUpdated->setUserId($userId);
+        $staleCreatedRecentlyUpdated->setSessionId('stale-created-recently-updated');
+        $staleCreatedRecentlyUpdated->setIp('127.0.0.1');
+        $staleCreatedRecentlyUpdated->setCreatedAt(time() - $lifespan - 1);
+        $staleCreatedRecentlyUpdated->setUpdatedAt(time());
+        $staleCreatedRecentlyUpdated->save();
+
+        $recentlyCreatedStaleUpdated = new UserSessions();
+        $recentlyCreatedStaleUpdated->setUserId($userId);
+        $recentlyCreatedStaleUpdated->setSessionId('recently-created-stale-updated');
+        $recentlyCreatedStaleUpdated->setIp('127.0.0.1');
+        $recentlyCreatedStaleUpdated->setCreatedAt(time());
+        $recentlyCreatedStaleUpdated->setUpdatedAt(time() - $lifespan - 1);
+        $recentlyCreatedStaleUpdated->save();
+
+        $stats = $this->createService()->getStats();
+
+        self::assertSame(1, $stats['activeSessions']['oneDay']);
+    }
+
     public function testGetStatsCountsRbacItemsAndDistinctRuleNames(): void
     {
         $this->itemsStorage->add(new Role('admin'));
@@ -216,7 +257,7 @@ final class DashboardServiceTest extends TestCase
         return new DashboardService($authHelper, $config, $this->itemsStorage, $translator);
     }
 
-    private function createUserSession(int $userId, string $sessionId, int $createdAt): void
+    private function createUserSession(int $userId, string $sessionId, int $createdAt): UserSessions
     {
         $session = new UserSessions();
         $session->setUserId($userId);
@@ -225,6 +266,8 @@ final class DashboardServiceTest extends TestCase
         $session->setCreatedAt($createdAt);
         $session->setUpdatedAt($createdAt);
         $session->save();
+
+        return $session;
     }
 
     /**

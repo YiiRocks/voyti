@@ -49,9 +49,17 @@ foreach ($sessions as $session) {
     echo Html::div(TimezoneHelper::formatLocalized($session->getUpdatedAt(), $translator->getLocale(), $timezone))->class('col-2');
 
     $isCurrentSession = $session->getSessionId() === $currentSessionId;
-    echo Html::div()->class($isCurrentSession ? 'col-2 text-end' : 'col-2')->open();
+    echo Html::div()->class($isCurrentSession || $session->isRevoked() ? 'col-2 text-end' : 'col-2')->open();
     if ($isCurrentSession) {
-        echo Html::span($translator->translate('voyti.view.sessions.this_device', category: 'voyti'))->class('badge bg-primary');
+        echo Html::button($translator->translate('voyti.view.sessions.this_device', category: 'voyti'))
+            ->class('btn', 'btn-sm', 'btn-outline-primary')
+            ->disabled();
+    } elseif ($session->isRevoked()) {
+        $revokedAt = TimezoneHelper::formatLocalized($session->getRevokedAt() ?? 0, $translator->getLocale(), $timezone);
+        $revokedButton = Html::button($translator->translate('voyti.view.sessions.revoked', category: 'voyti'))
+            ->class('btn', 'btn-sm', 'btn-outline-secondary')
+            ->disabled();
+        echo Html::span($revokedButton)->attribute('title', $revokedAt);
     } else {
         echo Html::form()
             ->post($url->generate('voyti/account-sessions-terminate', ['sessionId' => $session->getSessionId()]))
@@ -59,7 +67,7 @@ foreach ($sessions as $session) {
             ->open();
         echo Field::buttonGroup()
             ->buttons(
-                Html::submitButton($translator->translate('voyti.view.sessions.revoke_button', category: 'voyti'))->class('btn', 'btn-sm', 'btn-outline-danger'),
+                Html::submitButton($translator->translate('voyti.view.sessions.revoke_button', category: 'voyti'))->class('btn', 'btn-sm', 'btn-danger'),
             );
         echo Html::form()->close();
     }

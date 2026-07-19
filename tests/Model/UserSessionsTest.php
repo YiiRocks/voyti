@@ -33,6 +33,7 @@ final class UserSessionsTest extends TestCase
                 "user_agent" TEXT,
                 "created_at" INTEGER NOT NULL,
                 "updated_at" INTEGER NOT NULL,
+                "revoked_at" INTEGER,
                 PRIMARY KEY ("user_id", "session_id")
             )
         ')->execute();
@@ -52,6 +53,7 @@ final class UserSessionsTest extends TestCase
     {
         yield 'createdAt' => ['setCreatedAt', 'getCreatedAt', 1000];
         yield 'ip' => ['setIp', 'getIp', '192.168.1.1'];
+        yield 'revokedAt' => ['setRevokedAt', 'getRevokedAt', 3000];
         yield 'sessionId' => ['setSessionId', 'getSessionId', 'sess-abc-123'];
         yield 'updatedAt' => ['setUpdatedAt', 'getUpdatedAt', 2000];
         yield 'userAgent' => ['setUserAgent', 'getUserAgent', 'Mozilla/5.0'];
@@ -67,6 +69,8 @@ final class UserSessionsTest extends TestCase
         self::assertSame(0, $entity->getUpdatedAt());
         self::assertNull($entity->getIp());
         self::assertNull($entity->getUserAgent());
+        self::assertNull($entity->getRevokedAt());
+        self::assertFalse($entity->isRevoked());
     }
 
     public function testFindAllSessionsReturnsAll(): void
@@ -108,6 +112,15 @@ final class UserSessionsTest extends TestCase
         $entity = new UserSessions();
         $entity->$setter($value);
         self::assertSame($value, $entity->$getter());
+    }
+
+    public function testIsRevokedReflectsRevokedAt(): void
+    {
+        $entity = new UserSessions();
+        self::assertFalse($entity->isRevoked());
+
+        $entity->setRevokedAt(time());
+        self::assertTrue($entity->isRevoked());
     }
 
     public function testPrimaryKey(): void

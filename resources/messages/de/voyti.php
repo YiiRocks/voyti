@@ -283,6 +283,8 @@ return [
     'voyti.view.sessions.this_device' => 'Dieses Gerät',
     'voyti.view.sessions.none' => 'Keine aktiven Sitzungen.',
     'voyti.view.sessions.revoke_button' => 'Widerrufen',
+    'voyti.view.sessions.revoked' => 'Widerrufen',
+    'voyti.view.sessions.active' => 'Aktiv',
 
     // Pagination
     'voyti.view.filter_button' => 'Filtern',

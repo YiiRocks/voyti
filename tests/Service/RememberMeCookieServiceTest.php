@@ -353,6 +353,38 @@ final class RememberMeCookieServiceTest extends TestCase
         self::assertFalse($result);
     }
 
+    public function testLoginByCookieWithMissingSessionRowReturns(): void
+    {
+        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
+        $eventDispatcher->expects($this->never())->method('dispatch');
+
+        $service = new RememberMeCookieService(3600, new SystemClock(), eventDispatcher: $eventDispatcher);
+
+        $user = $this->createUser(
+            username: 'cookieuser' . random_int(1, 1000000),
+            email: 'cookieuser' . random_int(1, 1000000) . '@example.com',
+        );
+        $userId = (int) $user->getId();
+        // Deliberately no matching UserSessions row for 'terminated-session-id' -
+        // simulates the device's session having been terminated from elsewhere.
+
+        $session = new FakeSession();
+        $currentUser = $this->createCurrentUser();
+        $identity = $this->createMock(User::class);
+        $identity->method('validateCookieLoginKey')->willReturn(true);
+        $identity->method('getId')->willReturn((string) $userId);
+        $identity->method('getIdOrZero')->willReturn($userId);
+        $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
+        $identityRepository->method('findIdentity')->willReturn($identity);
+
+        $future = time() + 3600;
+        $cookie = json_encode(['id123', 'key123', $future, 'terminated-session-id']);
+        $result = $service->loginByCookie(['autoLogin' => $cookie], $currentUser, $identityRepository, $session);
+
+        self::assertNotSame($identity, $currentUser->getIdentity());
+        self::assertFalse($result);
+    }
+
     public function testLoginByCookieWithNonNumericExpiresLogsIn(): void
     {
         $service = new RememberMeCookieService(3600, new SystemClock());
@@ -456,8 +488,9 @@ final class RememberMeCookieServiceTest extends TestCase
             email: 'cookieuser' . random_int(1, 1000000) . '@example.com',
         );
         $userId = (int) $user->getId();
-        // Deliberately no matching UserSessions row for 'terminated-session-id' -
-        // simulates the device's session having been terminated from elsewhere.
+        $revokedSession = $this->createUserSession($userId, 'revoked-session-id');
+        $revokedSession->setRevokedAt(time());
+        $revokedSession->save();
 
         $session = new FakeSession();
         $currentUser = $this->createCurrentUser();
@@ -469,7 +502,7 @@ final class RememberMeCookieServiceTest extends TestCase
         $identityRepository->method('findIdentity')->willReturn($identity);
 
         $future = time() + 3600;
-        $cookie = json_encode(['id123', 'key123', $future, 'terminated-session-id']);
+        $cookie = json_encode(['id123', 'key123', $future, 'revoked-session-id']);
         $result = $service->loginByCookie(['autoLogin' => $cookie], $currentUser, $identityRepository, $session);
 
         self::assertNotSame($identity, $currentUser->getIdentity());

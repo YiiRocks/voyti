@@ -37,7 +37,39 @@ final class TerminateUserSessionsServiceTest extends TestCase
         self::assertSame(['type' => SessionEvent::SESSION_TERMINATED], $event->getData());
     }
 
-    public function testRunDeletesNothingForUnrelatedUserId(): void
+    public function testRunDispatchesEvent(): void
+    {
+        $eventDispatcher = new EventCaptureDispatcher();
+
+        $service = new TerminateUserSessionsService($eventDispatcher);
+        $service->run(42);
+
+        $event = $eventDispatcher->getEvent(SessionEvent::class);
+        self::assertInstanceOf(SessionEvent::class, $event);
+        self::assertSame(42, $event->getUserId());
+        self::assertSame('', $event->getSessionId());
+        self::assertSame(['type' => SessionEvent::SESSION_TERMINATED], $event->getData());
+    }
+
+    public function testRunDoesNotOverwriteAlreadyRevokedTimestamp(): void
+    {
+        $session = new UserSessions();
+        $session->setUserId(42);
+        $session->setSessionId('already-revoked');
+        $session->setIp('127.0.0.1');
+        $session->setRevokedAt(1000);
+        $session->save();
+
+        $eventDispatcher = new EventCaptureDispatcher();
+        $service = new TerminateUserSessionsService($eventDispatcher);
+        $service->run(42);
+
+        $refreshed = UserSessions::query()->where(['user_id' => 42, 'session_id' => 'already-revoked'])->one();
+        self::assertNotNull($refreshed);
+        self::assertSame(1000, $refreshed->getRevokedAt());
+    }
+
+    public function testRunDoesNotRevokeUnrelatedUserId(): void
     {
         $session = new UserSessions();
         $session->setUserId(99);
@@ -49,10 +81,12 @@ final class TerminateUserSessionsServiceTest extends TestCase
         $service = new TerminateUserSessionsService($eventDispatcher);
         $service->run(123);
 
-        self::assertCount(1, UserSessions::query()->where(['user_id' => 99, 'session_id' => 'keep'])->all());
+        $kept = UserSessions::query()->where(['user_id' => 99, 'session_id' => 'keep'])->one();
+        self::assertNotNull($kept);
+        self::assertFalse($kept->isRevoked());
     }
 
-    public function testRunDeletesOnlyMatchingUserSessions(): void
+    public function testRunRevokesOnlyMatchingUserSessions(): void
     {
         $other = new UserSessions();
         $other->setUserId(7);
@@ -70,21 +104,12 @@ final class TerminateUserSessionsServiceTest extends TestCase
         $service = new TerminateUserSessionsService($eventDispatcher);
         $service->run(42);
 
-        self::assertCount(0, UserSessions::query()->where(['user_id' => 42, 'session_id' => 'remove'])->all());
-        self::assertCount(1, UserSessions::query()->where(['user_id' => 7, 'session_id' => 'keep'])->all());
-    }
+        $mineRefreshed = UserSessions::query()->where(['user_id' => 42, 'session_id' => 'remove'])->one();
+        self::assertNotNull($mineRefreshed);
+        self::assertTrue($mineRefreshed->isRevoked());
 
-    public function testRunDispatchesEvent(): void
-    {
-        $eventDispatcher = new EventCaptureDispatcher();
-
-        $service = new TerminateUserSessionsService($eventDispatcher);
-        $service->run(42);
-
-        $event = $eventDispatcher->getEvent(SessionEvent::class);
-        self::assertInstanceOf(SessionEvent::class, $event);
-        self::assertSame(42, $event->getUserId());
-        self::assertSame('', $event->getSessionId());
-        self::assertSame(['type' => SessionEvent::SESSION_TERMINATED], $event->getData());
+        $otherRefreshed = UserSessions::query()->where(['user_id' => 7, 'session_id' => 'keep'])->one();
+        self::assertNotNull($otherRefreshed);
+        self::assertFalse($otherRefreshed->isRevoked());
     }
 }

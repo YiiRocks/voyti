@@ -597,6 +597,24 @@ final class UserControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
+    public function testTerminateSessionsDoesNotOverwriteAlreadyRevokedTimestamp(): void
+    {
+        $user = $this->createUser(email: 'testuser2@example.com');
+        $userId = (int) $user->getId();
+        $session = $this->createSession($userId, 'sess-1');
+        $session->setRevokedAt(1000);
+        $session->save();
+        $controller = $this->createController();
+
+        $this->mockRedirectResponse($this->responseFactory);
+
+        $controller->terminateSessions($userId);
+
+        $refreshed = UserSessions::findByUserIdAndSessionId($userId, 'sess-1');
+        $this->assertNotNull($refreshed);
+        $this->assertSame(1000, $refreshed->getRevokedAt());
+    }
+
     public function testTerminateSessionsUserFound(): void
     {
         $user = $this->createUser(email: 'testuser@example.com');
@@ -609,7 +627,9 @@ final class UserControllerTest extends TestCase
         $result = $controller->terminateSessions($userId);
 
         $this->assertSame($response, $result);
-        $this->assertSame([], UserSessions::findByUserId($userId));
+        $sessions = UserSessions::findByUserId($userId);
+        $this->assertCount(1, $sessions);
+        $this->assertTrue($sessions[0]->isRevoked());
     }
 
     public function testTerminateSessionsUserNotFoundShowsError(): void
