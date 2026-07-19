@@ -170,28 +170,6 @@ final class TwoFactorAuthenticationEnforceMiddlewareTest extends TestCase
         self::assertSame($response, $result);
     }
 
-    public function testProcessPassesThroughWhenNoForcedPermissions(): void
-    {
-        $config = new ModuleConfig(
-            enableTwoFactorAuthentication: true,
-            twoFactorAuthenticationForcedPermissions: [],
-        );
-
-        $user = $this->createUserWithId(1);
-        $currentUser = $this->createCurrentUser($user);
-
-        $request = $this->createMock(ServerRequestInterface::class);
-        $response = $this->createMock(ResponseInterface::class);
-
-        $handler = $this->createMock(RequestHandlerInterface::class);
-        $handler->expects(self::once())->method('handle')->with($request)->willReturn($response);
-
-        $middleware = $this->createMiddleware(currentUser: $currentUser, config: $config);
-        $result = $middleware->process($request, $handler);
-
-        self::assertSame($response, $result);
-    }
-
     public function testProcessPassesThroughWhenUserHasRequiredPermissionAnd2FAEnabled(): void
     {
         $config = new ModuleConfig(

@@ -11,6 +11,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use YiiRocks\Voyti\Clock\SystemClock;
 use YiiRocks\Voyti\Middleware\PasswordAgeEnforceMiddleware;
 use YiiRocks\Voyti\Middleware\RememberMeMiddleware;
 use YiiRocks\Voyti\Middleware\SessionRevocationEnforceMiddleware;
@@ -251,7 +252,7 @@ final class VoytiMiddlewareTest extends TestCase
 
         $rememberMe ??= new RememberMeMiddleware(
             $currentUser,
-            new RememberMeCookieService(2592000),
+            new RememberMeCookieService(2592000, new SystemClock()),
             $identityRepository,
             $session,
         );

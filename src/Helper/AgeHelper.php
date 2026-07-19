@@ -11,14 +11,10 @@ use DateTimeImmutable;
  */
 final class AgeHelper
 {
-    public static function calculate(?DateTimeImmutable $birthday, ?DateTimeImmutable $now = null): ?int
+    public static function calculate(?DateTimeImmutable $birthday): ?int
     {
-        if ($birthday === null) {
-            return null;
-        }
-
-        $now ??= new DateTimeImmutable();
-        if ($birthday > $now) {
+        $now = new DateTimeImmutable();
+        if ($birthday === null || $birthday > $now) {
             return null;
         }
 

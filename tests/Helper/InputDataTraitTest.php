@@ -41,11 +41,6 @@ final class InputDataTraitTest extends TestCase
                 return $this->queryParams($request);
             }
 
-            public function exposedRequestAttributeString(ServerRequestInterface $request, string $name, string $default = ''): string
-            {
-                return $this->requestAttributeString($request, $name, $default);
-            }
-
             public function exposedSessionArray(SessionInterface $session, string $key): array
             {
                 return $this->sessionArray($session, $key);
@@ -99,16 +94,6 @@ final class InputDataTraitTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{string, string, mixed, string}>
-     */
-    public static function requestAttributeStringProvider(): iterable
-    {
-        yield 'non-string coerces to default' => ['id', '', 42, ''];
-        yield 'missing falls back to given default' => ['id', 'fallback', 'fallback', 'fallback'];
-        yield 'string value returned' => ['id', '', '123', '123'];
-    }
-
-    /**
      * @return iterable<string, array{string, mixed, array<string, mixed>}>
      */
     public static function sessionArrayProvider(): iterable
@@ -156,15 +141,6 @@ final class InputDataTraitTest extends TestCase
         $request->expects(self::once())->method('getQueryParams')->willReturn(['page' => '1']);
 
         self::assertSame(['page' => '1'], $this->tester->exposedQueryParams($request));
-    }
-
-    #[DataProvider('requestAttributeStringProvider')]
-    public function testRequestAttributeString(string $name, string $default, mixed $attributeValue, string $expected): void
-    {
-        $request = $this->createMock(ServerRequestInterface::class);
-        $request->expects(self::once())->method('getAttribute')->with($name, $default)->willReturn($attributeValue);
-
-        self::assertSame($expected, $this->tester->exposedRequestAttributeString($request, $name, $default));
     }
 
     #[DataProvider('sessionArrayProvider')]

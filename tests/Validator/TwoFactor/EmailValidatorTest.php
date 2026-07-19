@@ -11,31 +11,10 @@ use YiiRocks\Voyti\Validator\TwoFactor\EmailValidator;
 
 final class EmailValidatorTest extends TestCase
 {
-    public function testGenerateCode(): void
-    {
-        $user = new User();
-
-        $validator = new EmailValidator($user);
-        $code = $validator->generateCode();
-
-        $this->assertMatchesRegularExpression('/^\d{6}$/', $code);
-    }
-
-    public function testGenerateCodeReturnsDifferentCodesOnMultipleCalls(): void
-    {
-        $user = new User();
-
-        $validator = new EmailValidator($user);
-        $code1 = $validator->generateCode();
-        $code2 = $validator->generateCode();
-
-        $this->assertNotSame($code1, $code2);
-    }
-
     public function testGetErrorMessageDefault(): void
     {
         $user = new User();
-        $validator = new EmailValidator($user);
+        $validator = new EmailValidator($user, '');
 
         $this->assertSame('', $validator->getErrorMessage());
     }
@@ -43,7 +22,7 @@ final class EmailValidatorTest extends TestCase
     public function testGetSuccessMessage(): void
     {
         $user = new User();
-        $validator = new EmailValidator($user);
+        $validator = new EmailValidator($user, '');
 
         $this->assertSame('Email two factor authentication has been enabled.', $validator->getSuccessMessage());
     }
@@ -51,7 +30,7 @@ final class EmailValidatorTest extends TestCase
     public function testGetUnsuccessLoginMessage(): void
     {
         $user = new User();
-        $validator = new EmailValidator($user);
+        $validator = new EmailValidator($user, '');
 
         $this->assertStringContainsString('30', $validator->getUnsuccessLoginMessage(30));
     }
@@ -59,7 +38,7 @@ final class EmailValidatorTest extends TestCase
     public function testGetUnsuccessMessage(): void
     {
         $user = new User();
-        $validator = new EmailValidator($user);
+        $validator = new EmailValidator($user, '');
 
         $this->assertStringContainsString('30', $validator->getUnsuccessMessage(30));
     }

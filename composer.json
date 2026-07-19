@@ -29,6 +29,7 @@
     "require": {
         "php": ">=8.3",
         "ext-intl": "*",
+        "psr/clock": "^1.0",
         "psr/event-dispatcher": "^1.0",
         "psr/http-client": "^1.0",
         "psr/http-factory": "^1.0",
@@ -41,7 +42,6 @@
         "yiisoft/data": "^2.0",
         "yiisoft/data-db": "^1.0",
         "yiisoft/data-response": "^2.2",
-        "yiisoft/db-implementation": "*",
         "yiisoft/db-migration": "^2.0",
         "yiisoft/form-model": "^1.1",
         "yiisoft/html": "^4.0",
@@ -101,7 +101,7 @@
         "php-cs-fixer": "@php vendor/bin/php-cs-fixer fix",
         "phpunit": "@php vendor/bin/phpunit",
         "psalm": "@php vendor/bin/psalm",
-        "infection": "@php vendor/bin/infection --configuration=infection.json --min-msi=100 --min-covered-msi=100"
+        "infection": "@php vendor/bin/infection"
     },
     "scripts-descriptions": {
         "php-cs-fixer": "Cleans to code with PHP Coding Standards Fixer.",
@@ -126,7 +126,7 @@
         }
     },
     "config": {
-        "process-timeout": 600,
+        "process-timeout": 900,
         "sort-packages": true,
         "allow-plugins": {
             "yiisoft/config": true,

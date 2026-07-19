@@ -7,6 +7,7 @@ namespace YiiRocks\Voyti\tests;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
+use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Client\ClientInterface as PsrClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
@@ -100,6 +101,7 @@ final class ContainerWiringTest extends TestCase
 
         $container = new Container(ContainerConfig::create()->withDefinitions([
             ModuleConfig::class => $definitions[ModuleConfig::class],
+            ClockInterface::class => $definitions[ClockInterface::class],
             RememberMeCookieService::class => $definitions[RememberMeCookieService::class],
         ]));
 

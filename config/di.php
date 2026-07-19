@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Client\ClientInterface as PsrClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
@@ -9,6 +10,7 @@ use Psr\Http\Message\StreamFactoryInterface;
 use YiiRocks\Voyti\Adapter\IdentityAdapter;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistryFactory;
+use YiiRocks\Voyti\Clock\SystemClock;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Http\ClientInterface;
@@ -72,6 +74,9 @@ use Yiisoft\User\CurrentUser;
 return [
     // Module configuration, built once from the host's `yiirocks/voyti` params array.
     ModuleConfig::class => static fn() => ModuleConfig::fromArray($params['yiirocks/voyti'] ?? []),
+
+    // Default now() source; hosts with their own PSR-20 clock package can override this binding.
+    ClockInterface::class => SystemClock::class,
 
     // Bridges satisfying vendor package contracts (yiisoft/auth, yiisoft/middleware-dispatcher).
     ParametersResolverInterface::class => RouteParametersResolver::class,
@@ -156,9 +161,11 @@ return [
     // Sessions and identity: login persistence, switching, API tokens, session tracking.
     RememberMeCookieService::class => static fn(
         ModuleConfig $config,
+        ClockInterface $clock,
         ?EventDispatcherInterface $eventDispatcher = null,
     ) => new RememberMeCookieService(
         $config->rememberLoginLifespan,
+        clock: $clock,
         eventDispatcher: $eventDispatcher,
     ),
     SwitchIdentityService::class => fn(
@@ -202,12 +209,14 @@ return [
         SessionInterface $session,
         EventDispatcherInterface $eventDispatcher,
         UserCreationHelper $userCreationHelper,
+        PendingSocialAccountService $pendingSocialAccountService,
     ) => new UserSocialAuthenticateService(
         $config,
         $currentUser,
         $session,
         $eventDispatcher,
         $userCreationHelper,
+        $pendingSocialAccountService,
     ),
 
     // Event listeners bound to their concrete class for autowiring; wiring to events is in events.php.

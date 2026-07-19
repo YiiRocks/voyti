@@ -11,6 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use YiiRocks\Voyti\Clock\SystemClock;
 use YiiRocks\Voyti\Middleware\RememberMeMiddleware;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
@@ -51,7 +52,7 @@ final class RememberMeMiddlewareTest extends TestCase
         $sessionId = $session->getId();
         self::assertNotNull($sessionId);
 
-        $service = new RememberMeCookieService(3600, 'autoLogin');
+        $service = new RememberMeCookieService(3600, new SystemClock(), 'autoLogin');
         $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
 
         $middleware = new RememberMeMiddleware($currentUser, $service, $identityRepository, $session);
@@ -83,7 +84,7 @@ final class RememberMeMiddlewareTest extends TestCase
         $currentUser = $this->createCurrentUser()->withSession($session);
         $currentUser->login($identity);
 
-        $service = new RememberMeCookieService(3600, 'autoLogin');
+        $service = new RememberMeCookieService(3600, new SystemClock(), 'autoLogin');
         $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
 
         $middleware = new RememberMeMiddleware($currentUser, $service, $identityRepository, $session);
@@ -101,7 +102,12 @@ final class RememberMeMiddlewareTest extends TestCase
     {
         $session = new FakeSession();
         $currentUser = $this->createCurrentUser()->withSession($session);
-        $service = new RememberMeCookieService(3600, 'autoLogin', eventDispatcher: new EventCaptureDispatcher());
+        $service = new RememberMeCookieService(
+            3600,
+            new SystemClock(),
+            'autoLogin',
+            eventDispatcher: new EventCaptureDispatcher(),
+        );
         $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
         $identityRepository->method('findIdentity')->willReturn(null);
 
@@ -120,7 +126,12 @@ final class RememberMeMiddlewareTest extends TestCase
     {
         $session = new FakeSession();
         $currentUser = $this->createCurrentUser()->withSession($session);
-        $service = new RememberMeCookieService(3600, 'autoLogin', eventDispatcher: new EventCaptureDispatcher());
+        $service = new RememberMeCookieService(
+            3600,
+            new SystemClock(),
+            'autoLogin',
+            eventDispatcher: new EventCaptureDispatcher(),
+        );
         $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
 
         $middleware = new RememberMeMiddleware($currentUser, $service, $identityRepository, $session);
@@ -155,7 +166,12 @@ final class RememberMeMiddlewareTest extends TestCase
         $session->setId('cookie-session-id');
         $session->open();
         $currentUser = $this->createCurrentUser()->withSession($session);
-        $service = new RememberMeCookieService(3600, 'autoLogin', eventDispatcher: new EventCaptureDispatcher());
+        $service = new RememberMeCookieService(
+            3600,
+            new SystemClock(),
+            'autoLogin',
+            eventDispatcher: new EventCaptureDispatcher(),
+        );
 
         $middleware = new RememberMeMiddleware($currentUser, $service, $identityRepository, $session);
 
@@ -196,7 +212,12 @@ final class RememberMeMiddlewareTest extends TestCase
         $session->setId('cookie-session-id');
         $session->open();
         $currentUser = $this->createCurrentUser()->withSession($session);
-        $service = new RememberMeCookieService(3600, 'autoLogin', eventDispatcher: new EventCaptureDispatcher());
+        $service = new RememberMeCookieService(
+            3600,
+            new SystemClock(),
+            'autoLogin',
+            eventDispatcher: new EventCaptureDispatcher(),
+        );
 
         $middleware = new RememberMeMiddleware($currentUser, $service, $identityRepository, $session);
 

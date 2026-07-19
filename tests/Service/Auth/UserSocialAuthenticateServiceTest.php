@@ -10,6 +10,7 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\Auth\UserSocialAuthenticateService;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
@@ -344,6 +345,7 @@ final class UserSocialAuthenticateServiceTest extends TestCase
             $this->session,
             $eventDispatcher,
             $this->createUserCreationHelper($config, $eventDispatcher),
+            new PendingSocialAccountService($this->session),
         );
     }
 

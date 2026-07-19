@@ -12,21 +12,21 @@ use YiiRocks\Voyti\Helper\AgeHelper;
 final class AgeHelperTest extends TestCase
 {
     /**
-     * @return iterable<string, array{string, string, int|null}>
+     * @return iterable<string, array{string, int|null}>
      */
     public static function calculateProvider(): iterable
     {
-        yield 'age for birthday earlier this year' => ['1990-01-15', '2000-07-12', 10];
-        yield 'age on exact birthday' => ['1990-07-12', '2000-07-12', 10];
-        yield 'null for future birthday' => ['2030-01-01', '2000-07-12', null];
-        yield 'one less for birthday not yet reached this year' => ['1990-12-25', '2000-07-12', 9];
-        yield 'zero when birthday equals now' => ['2000-07-12', '2000-07-12', 0];
+        yield 'birthday already passed this year' => ['-10 years -1 day', 10];
+        yield 'birthday is exactly today' => ['-10 years', 10];
+        yield 'birthday not yet reached this year' => ['-10 years +1 day', 9];
+        yield 'future birthday' => ['+10 years', null];
     }
 
     #[DataProvider('calculateProvider')]
-    public function testCalculate(string $birthday, string $now, ?int $expected): void
+    public function testCalculate(string $birthdayModifier, ?int $expected): void
     {
-        self::assertSame($expected, AgeHelper::calculate(new DateTimeImmutable($birthday), new DateTimeImmutable($now)));
+        $birthday = (new DateTimeImmutable())->modify($birthdayModifier);
+        self::assertSame($expected, AgeHelper::calculate($birthday));
     }
 
     public function testCalculateReturnsNullForNull(): void
@@ -34,9 +34,8 @@ final class AgeHelperTest extends TestCase
         self::assertNull(AgeHelper::calculate(null));
     }
 
-    public function testCalculateUsesCurrentTimeWhenNowNotProvided(): void
+    public function testCalculateReturnsZeroWhenBirthdayIsNow(): void
     {
-        $birthday = new DateTimeImmutable('-10 years');
-        self::assertSame(10, AgeHelper::calculate($birthday));
+        self::assertSame(0, AgeHelper::calculate(new DateTimeImmutable()));
     }
 }

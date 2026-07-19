@@ -68,14 +68,6 @@ trait InputDataTrait
         return is_string($value) && $value !== '' ? $value : null;
     }
 
-    private function requestAttributeString(ServerRequestInterface $request, string $name, string $default = ''): string
-    {
-        /** @var mixed $value */
-        $value = $request->getAttribute($name, $default);
-
-        return is_string($value) ? $value : $default;
-    }
-
     private function sessionArray(SessionInterface $session, string $key): array
     {
         /** @var mixed $value */

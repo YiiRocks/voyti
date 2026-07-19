@@ -13,26 +13,11 @@ use YiiRocks\Voyti\Model\User;
 final class EmailValidator
 {
     private string $error = '';
-    private string $generatedCode = '';
 
     public function __construct(
         private readonly User $user,
-        private readonly string $code = '',
+        private readonly string $code,
     ) {}
-
-    /**
-     * @return numeric-string
-     */
-    public function generateCode(): string
-    {
-        /**
-         * @infection-ignore-all
-         * random_int is non-deterministic; boundary mutants (100001, 999998,
-         * etc.) produce values indistinguishable from real output within the 6-digit range.
-         */
-        $this->generatedCode = (string) random_int(100000, 999999);
-        return $this->generatedCode;
-    }
 
     public function getErrorMessage(): string
     {

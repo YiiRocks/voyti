@@ -30,8 +30,6 @@ final class RegisterServiceTest extends TestCase
     protected function tearDown(): void
     {
         $this->tearDownDatabase();
-
-        unset($_SERVER['REMOTE_ADDR']);
     }
 
     public function testRunEmailAlreadyExistsReturnsFailure(): void

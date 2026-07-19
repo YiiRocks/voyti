@@ -33,6 +33,7 @@ final readonly class UserSocialAuthenticateService
         private SessionInterface $session,
         private EventDispatcherInterface $eventDispatcher,
         private UserCreationHelper $userCreationHelper,
+        private PendingSocialAccountService $pendingSocialAccountService,
     ) {}
 
     /**
@@ -94,7 +95,7 @@ final readonly class UserSocialAuthenticateService
             return ServiceResult::failure('Unable to prepare the social account connection');
         }
 
-        $this->session->set(PendingSocialAccountService::SESSION_KEY, $code);
+        $this->pendingSocialAccountService->remember($account);
 
         return ServiceResult::success();
     }

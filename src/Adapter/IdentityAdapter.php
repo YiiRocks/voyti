@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Adapter;
 
+use Psr\Clock\ClockInterface;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\ModuleConfig;
@@ -11,22 +12,16 @@ use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Auth\IdentityWithTokenRepositoryInterface;
 
-use function time;
-
 /**
  * Bridges `yiisoft/auth`'s identity-repository contracts to {@see User} and {@see UserToken}, resolving
  * identities by ID and by API token (honoring {@see ModuleConfig::$apiTokenLifespan} expiry).
  */
 final readonly class IdentityAdapter implements IdentityRepositoryInterface, IdentityWithTokenRepositoryInterface
 {
-    private \Closure $now;
-
     public function __construct(
         private ModuleConfig $config,
-        ?\Closure $now = null,
-    ) {
-        $this->now = $now ?? static fn(): int => time();
-    }
+        private ClockInterface $clock,
+    ) {}
 
     /**
      * @return User|null
@@ -51,7 +46,7 @@ final readonly class IdentityAdapter implements IdentityRepositoryInterface, Ide
 
         if (
             $this->config->apiTokenLifespan !== null
-            && ((int) ($this->now)() - $userToken->getCreatedAt()) > $this->config->apiTokenLifespan
+            && ($this->clock->now()->getTimestamp() - $userToken->getCreatedAt()) > $this->config->apiTokenLifespan
         ) {
             return null;
         }

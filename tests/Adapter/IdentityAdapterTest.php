@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Adapter;
 
+use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
+use Psr\Clock\ClockInterface;
 use YiiRocks\Voyti\Adapter\IdentityAdapter;
+use YiiRocks\Voyti\Clock\SystemClock;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\FixedClock;
 
 final class IdentityAdapterTest extends TestCase
 {
@@ -30,19 +34,7 @@ final class IdentityAdapterTest extends TestCase
         $now = time();
         $user = $this->createSavedUser();
         $this->createApiToken($user, 'raw-token', createdAt: $now - 500);
-        $adapter = $this->createAdapter(config: new ModuleConfig(apiTokenLifespan: 500), now: static fn(): int => $now);
-
-        self::assertNotNull($adapter->findIdentityByToken('raw-token'));
-    }
-
-    public function testFindIdentityByTokenAtExactLifespanBoundaryWithFractionalNowIsStillValid(): void
-    {
-        $user = $this->createSavedUser();
-        $this->createApiToken($user, 'raw-token', createdAt: 500);
-        $adapter = $this->createAdapter(
-            config: new ModuleConfig(apiTokenLifespan: 500),
-            now: static fn(): float => 1000.5,
-        );
+        $adapter = $this->createAdapter(config: new ModuleConfig(apiTokenLifespan: 500), clock: $this->fixedClock($now));
 
         self::assertNotNull($adapter->findIdentityByToken('raw-token'));
     }
@@ -85,13 +77,13 @@ final class IdentityAdapterTest extends TestCase
         self::assertSame($user->getId(), $identity->getId());
     }
 
-    public function testFindIdentityByTokenUsesInjectedNowClosureNotRealTime(): void
+    public function testFindIdentityByTokenUsesInjectedClockNotRealTime(): void
     {
         $user = $this->createSavedUser();
         $this->createApiToken($user, 'raw-token', createdAt: 1_000_000);
         $adapter = $this->createAdapter(
             config: new ModuleConfig(apiTokenLifespan: 500),
-            now: static fn(): int => 1_000_100,
+            clock: $this->fixedClock(1_000_100),
         );
 
         self::assertNotNull($adapter->findIdentityByToken('raw-token'));
@@ -133,9 +125,9 @@ final class IdentityAdapterTest extends TestCase
         self::assertNull($adapter->findIdentity('999999'));
     }
 
-    private function createAdapter(?ModuleConfig $config = null, ?\Closure $now = null): IdentityAdapter
+    private function createAdapter(?ModuleConfig $config = null, ?ClockInterface $clock = null): IdentityAdapter
     {
-        return new IdentityAdapter($config ?? new ModuleConfig(), $now);
+        return new IdentityAdapter($config ?? new ModuleConfig(), $clock ?? new SystemClock());
     }
 
     private function createApiToken(User $user, string $rawToken, ?int $createdAt = null): UserToken
@@ -160,5 +152,10 @@ final class IdentityAdapterTest extends TestCase
         $user->setUpdatedAt(time());
         $user->save();
         return $user;
+    }
+
+    private function fixedClock(int $timestamp): ClockInterface
+    {
+        return new FixedClock((new DateTimeImmutable())->setTimestamp($timestamp));
     }
 }

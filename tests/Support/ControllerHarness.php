@@ -7,6 +7,7 @@ namespace YiiRocks\Voyti\tests\Support;
 use Psr\Http\Message\ResponseFactoryInterface;
 use YiiRocks\Voyti\Adapter\IdentityAdapter;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
+use YiiRocks\Voyti\Clock\SystemClock;
 use YiiRocks\Voyti\Controller\Account\AccountController;
 use YiiRocks\Voyti\Controller\Account\SessionController as AccountSessionController;
 use YiiRocks\Voyti\Controller\Admin\AuditLog\AuditLogController;
@@ -299,7 +300,7 @@ final class ControllerHarness
         ?CurrentUser $currentUser = null,
         ?AuditLogService $auditLogService = null,
     ): RbacController {
-        $currentUser ??= new CurrentUser(new IdentityAdapter($this->config), $this->eventDispatcher);
+        $currentUser ??= new CurrentUser(new IdentityAdapter($this->config, new SystemClock()), $this->eventDispatcher);
         $auditLogService ??= new AuditLogService($this->config);
 
         return new RbacController(
@@ -371,7 +372,7 @@ final class ControllerHarness
         ?CurrentUser $currentUser = null,
         ?AuditLogService $auditLogService = null,
     ): RuleController {
-        $currentUser ??= new CurrentUser(new IdentityAdapter($this->config), $this->eventDispatcher);
+        $currentUser ??= new CurrentUser(new IdentityAdapter($this->config, new SystemClock()), $this->eventDispatcher);
         $authHelper ??= $this->createAuthHelper($currentUser);
         $ruleEditionService ??= new RuleEditionService(
             $this->itemsStorage,
@@ -414,10 +415,11 @@ final class ControllerHarness
         $passwordHasher ??= new PasswordHasher();
         $rememberMeCookieService ??= new RememberMeCookieService(
             $this->config->rememberLoginLifespan,
+            new SystemClock(),
             eventDispatcher: $this->eventDispatcher,
         );
         $socialAuthProviderService ??= new SocialAuthProviderService();
-        $pendingSocialAccountService ??= new PendingSocialAccountService();
+        $pendingSocialAccountService ??= new PendingSocialAccountService($this->session);
         $socialNetworkAuthenticateService ??= new UserSocialAuthenticateService(
             $this->config,
             $currentUser,
@@ -436,6 +438,7 @@ final class ControllerHarness
                 $this->config,
                 new PasswordHistoryService($passwordHasher, $this->config),
             ),
+            $pendingSocialAccountService,
         );
         $socialNetworkAccountConnectService ??= new UserSocialAccountConnectService();
         $twoFactorEmailCodeService ??= new EmailCodeGeneratorService(

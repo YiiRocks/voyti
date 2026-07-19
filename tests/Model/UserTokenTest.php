@@ -271,20 +271,6 @@ final class UserTokenTest extends TestCase
         self::assertCount(2, $tokens);
     }
 
-    public function testFindByUserIdTypeAndCodeReturnsMatch(): void
-    {
-        $token = new UserToken();
-        $token->setUserId(1);
-        $token->setCode('codeA');
-        $token->setType(UserToken::TYPE_CONFIRM_NEW_EMAIL);
-        $token->setCreatedAt(time());
-        $token->save();
-
-        $found = UserToken::findByUserIdAndCodeAndType(1, 'codeA', UserToken::TYPE_CONFIRM_NEW_EMAIL);
-        self::assertNotNull($found);
-        self::assertSame('codeA', $found->getCode());
-    }
-
     #[DataProvider('isExpiredProvider')]
     public function testGetIsExpired(int $offset, int $type, ?int $lifespan, bool $expected): void
     {

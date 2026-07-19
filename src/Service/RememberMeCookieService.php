@@ -6,6 +6,7 @@ namespace YiiRocks\Voyti\Service;
 
 use DateTimeImmutable;
 use JsonException;
+use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
@@ -23,7 +24,6 @@ use Yiisoft\User\Login\Cookie\CookieLoginIdentityInterface;
 use function count;
 use function is_array;
 use function is_string;
-use function time;
 
 /**
  * Cookie payload is `[identityId, cookieLoginKey, expiresAt, sessionId]`. `cookieLoginKey`
@@ -37,23 +37,19 @@ use function time;
  */
 final class RememberMeCookieService
 {
-    private \Closure $now;
-
     public function __construct(
         private readonly int $duration,
+        private readonly ClockInterface $clock,
         private readonly string $cookieName = 'autoLogin',
-        ?\Closure $now = null,
         private readonly ?EventDispatcherInterface $eventDispatcher = null,
-    ) {
-        $this->now = $now ?? static fn(): int => time();
-    }
+    ) {}
 
     public function addCookie(
         CookieLoginIdentityInterface $identity,
         ResponseInterface $response,
         string $sessionId,
     ): ResponseInterface {
-        $expiresAt = $this->duration > 0 ? (int) ($this->now)() + $this->duration : null;
+        $expiresAt = $this->duration > 0 ? $this->clock->now()->getTimestamp() + $this->duration : null;
         $expires = $expiresAt !== null ? (new DateTimeImmutable())->setTimestamp($expiresAt) : null;
 
         $value = Json::encode([
@@ -92,7 +88,7 @@ final class RememberMeCookieService
         SessionInterface $session,
         array $serverParams = [],
     ): bool {
-        $now = (int) ($this->now)();
+        $now = $this->clock->now()->getTimestamp();
         $cookieName = $this->getCookieName();
         $cookie = $cookies[$cookieName] ?? null;
 
@@ -165,7 +161,7 @@ final class RememberMeCookieService
             return $response;
         }
 
-        $now = (int) ($this->now)();
+        $now = $this->clock->now()->getTimestamp();
 
         $rawCookie = $cookies[$this->cookieName] ?? null;
         if (!is_string($rawCookie)) {
