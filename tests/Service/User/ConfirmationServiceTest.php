@@ -15,11 +15,13 @@ use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 
 #[AllowMockObjectsWithoutExpectations]
 final class ConfirmationServiceTest extends TestCase
 {
     use DatabaseSetupTrait;
+    use UserFactoryTrait;
 
     protected function setUp(): void
     {
@@ -204,19 +206,5 @@ final class ConfirmationServiceTest extends TestCase
             new UserTokenFactory(),
             $this->createMock(MailService::class),
         );
-    }
-
-    private function createUser(string $username, string $email): User
-    {
-        $user = new User();
-        $user->setUsername($username);
-        $user->setEmail($email);
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-
-        return $user;
     }
 }

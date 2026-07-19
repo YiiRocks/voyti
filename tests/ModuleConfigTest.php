@@ -28,7 +28,6 @@ final class ModuleConfigTest extends TestCase
             mailAdminOnRegister: 'admin@example.com',
             enablePasswordExpiration: true,
             enablePasswordComplexity: true,
-            generatePasswords: true,
             allowPasswordRecovery: false,
             allowAdminPasswordRecovery: false,
             allowAccountDelete: true,
@@ -57,7 +56,6 @@ final class ModuleConfigTest extends TestCase
         self::assertSame('admin@example.com', $config->mailAdminOnRegister);
         self::assertTrue($config->enablePasswordExpiration);
         self::assertTrue($config->enablePasswordComplexity);
-        self::assertTrue($config->generatePasswords);
         self::assertFalse($config->allowPasswordRecovery);
         self::assertFalse($config->allowAdminPasswordRecovery);
         self::assertTrue($config->allowAccountDelete);
@@ -89,7 +87,6 @@ final class ModuleConfigTest extends TestCase
         self::assertSame('home', $config->homeRoute);
         self::assertFalse($config->enablePasswordExpiration);
         self::assertFalse($config->enablePasswordComplexity);
-        self::assertFalse($config->generatePasswords);
         self::assertSame(EmailChangeConfirmation::NEW, $config->emailChangeConfirmation);
         self::assertSame(2592000, $config->rememberLoginLifespan);
         self::assertSame(86400, $config->tokenConfirmationLifespan);
@@ -124,7 +121,6 @@ final class ModuleConfigTest extends TestCase
             'enablePasswordExpiration',
             'enablePasswordComplexity',
             'passwordHistoryLimit',
-            'generatePasswords',
             'allowPasswordRecovery',
             'allowAdminPasswordRecovery',
             'allowAccountDelete',
@@ -188,7 +184,6 @@ final class ModuleConfigTest extends TestCase
         self::assertNull($config->mailAdminOnRegister);
         self::assertFalse($config->enablePasswordExpiration);
         self::assertFalse($config->enablePasswordComplexity);
-        self::assertFalse($config->generatePasswords);
         self::assertTrue($config->allowPasswordRecovery);
         self::assertTrue($config->allowAdminPasswordRecovery);
         self::assertFalse($config->allowAccountDelete);

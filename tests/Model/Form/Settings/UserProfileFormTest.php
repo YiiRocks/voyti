@@ -28,10 +28,16 @@ final class UserProfileFormTest extends TestCase
         $this->assertSame('', $form->birthday);
     }
 
-    public function testGetAttributeLabels(): void
+    public function testGetFormName(): void
     {
         $form = new UserProfileForm($this->createTranslator());
-        $labels = $form->getAttributeLabels();
+        $this->assertSame('userProfile', $form->getFormName());
+    }
+
+    public function testGetPropertyLabels(): void
+    {
+        $form = new UserProfileForm($this->createTranslator());
+        $labels = $form->getPropertyLabels();
         $this->assertArrayHasKey('name', $labels);
         $this->assertArrayHasKey('publicEmail', $labels);
         $this->assertArrayHasKey('gravatarEmail', $labels);
@@ -42,16 +48,10 @@ final class UserProfileFormTest extends TestCase
         $this->assertArrayHasKey('birthday', $labels);
     }
 
-    public function testGetFormName(): void
+    public function testGetValidationPropertyLabels(): void
     {
         $form = new UserProfileForm($this->createTranslator());
-        $this->assertSame('userProfile', $form->getFormName());
-    }
-
-    public function testGetPropertyLabels(): void
-    {
-        $form = new UserProfileForm($this->createTranslator());
-        $this->assertSame($form->getAttributeLabels(), $form->getPropertyLabels());
+        $this->assertSame($form->getPropertyLabels(), $form->getValidationPropertyLabels());
     }
 
     public function testSetProperties(): void

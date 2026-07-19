@@ -153,7 +153,7 @@ final class AuthHelperTest extends TestCase
     public function testHasRole(array $userItems, bool $expected): void
     {
         $authManager = $this->createMock(ManagerInterface::class);
-        $authManager->expects(self::once())->method('getItemsByUserId')->with(1)->willReturn($userItems);
+        $authManager->expects(self::once())->method('getRolesByUserId')->with(1)->willReturn($userItems);
 
         $helper = $this->createHelper(authManager: $authManager);
 

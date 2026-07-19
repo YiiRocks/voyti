@@ -22,13 +22,6 @@ final class GdprConsentFormTest extends TestCase
         $this->assertNull($form->timezone);
     }
 
-    public function testGetAttributeLabels(): void
-    {
-        $form = new GdprConsentForm($this->createTranslator());
-        $labels = $form->getAttributeLabels();
-        $this->assertArrayHasKey('consent', $labels);
-    }
-
     public function testGetFormName(): void
     {
         $form = new GdprConsentForm($this->createTranslator());
@@ -38,7 +31,14 @@ final class GdprConsentFormTest extends TestCase
     public function testGetPropertyLabels(): void
     {
         $form = new GdprConsentForm($this->createTranslator());
-        $this->assertSame($form->getAttributeLabels(), $form->getPropertyLabels());
+        $labels = $form->getPropertyLabels();
+        $this->assertArrayHasKey('consent', $labels);
+    }
+
+    public function testGetValidationPropertyLabels(): void
+    {
+        $form = new GdprConsentForm($this->createTranslator());
+        $this->assertSame($form->getPropertyLabels(), $form->getValidationPropertyLabels());
     }
 
     public function testSetConsent(): void

@@ -17,6 +17,7 @@ use YiiRocks\Voyti\Service\Admin\DashboardService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\SimpleAssignmentsStorage;
 use YiiRocks\Voyti\tests\Support\SimpleItemsStorage;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Rbac\Manager;
 use Yiisoft\Rbac\Permission;
@@ -28,6 +29,7 @@ use Yiisoft\User\CurrentUser;
 final class DashboardServiceTest extends TestCase
 {
     use DatabaseSetupTrait;
+    use UserFactoryTrait;
 
     private SimpleItemsStorage $itemsStorage;
 
@@ -45,7 +47,7 @@ final class DashboardServiceTest extends TestCase
     public function testGetStatsActiveSessionsTrendCountsSessionsWithinEachWindowBoundaryInclusive(): void
     {
         $lifespan = (new ModuleConfig())->rememberLoginLifespan;
-        $user = $this->createUser('sessions-user', 'sessions-user@example.com', confirmed: true, blocked: false);
+        $user = $this->createUser('sessions-user', 'sessions-user@example.com', confirmedAt: time());
         $userId = (int) $user->getId();
 
         do {
@@ -79,9 +81,9 @@ final class DashboardServiceTest extends TestCase
 
     public function testGetStatsCountsUsersByStatusIndependently(): void
     {
-        $this->createUser('confirmed', 'confirmed@example.com', confirmed: true, blocked: false);
-        $this->createUser('unconfirmed', 'unconfirmed@example.com', confirmed: false, blocked: false);
-        $this->createUser('blocked', 'blocked@example.com', confirmed: true, blocked: true);
+        $this->createUser('confirmed', 'confirmed@example.com', confirmedAt: time());
+        $this->createUser('unconfirmed', 'unconfirmed@example.com');
+        $this->createUser('blocked', 'blocked@example.com', confirmedAt: time(), blockedAt: time());
 
         $stats = $this->createService()->getStats();
 
@@ -100,7 +102,7 @@ final class DashboardServiceTest extends TestCase
             (new User())->deleteAll(['email' => $emails]);
             $now = time();
             foreach ($offsets as $label => $offset) {
-                $this->createUser($label, $label . '@example.com', confirmed: true, blocked: false, createdAt: $now + $offset);
+                $this->createUser($label, $label . '@example.com', createdAt: $now + $offset, confirmedAt: time());
             }
             $stats = $this->createService()->getStats();
         } while (time() !== $now);
@@ -183,7 +185,7 @@ final class DashboardServiceTest extends TestCase
 
     public function testGetStatsUserUnconfirmedIsNullWhenEmailConfirmationDisabled(): void
     {
-        $this->createUser('unconfirmed', 'unconfirmed@example.com', confirmed: false, blocked: false);
+        $this->createUser('unconfirmed', 'unconfirmed@example.com');
 
         $stats = $this->createService(new ModuleConfig(enableEmailConfirmation: false))->getStats();
 
@@ -212,22 +214,6 @@ final class DashboardServiceTest extends TestCase
         $translator->method('getLocale')->willReturn($locale);
 
         return new DashboardService($authHelper, $config, $this->itemsStorage, $translator);
-    }
-
-    private function createUser(string $username, string $email, bool $confirmed, bool $blocked, ?int $createdAt = null): User
-    {
-        $user = new User();
-        $user->setUsername($username);
-        $user->setEmail($email);
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setConfirmedAt($confirmed ? time() : null);
-        $user->setBlockedAt($blocked ? time() : null);
-        $user->setCreatedAt($createdAt ?? time());
-        $user->setUpdatedAt(time());
-        $user->save();
-
-        return $user;
     }
 
     private function createUserSession(int $userId, string $sessionId, int $createdAt): void

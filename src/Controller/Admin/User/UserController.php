@@ -85,9 +85,9 @@ final readonly class UserController
 
     public function assignments(ServerRequestInterface $request, int $id): ResponseInterface
     {
-        $user = User::findById($id);
-        if ($user === null) {
-            return $this->renderError('voyti.admin.user_not_found');
+        $user = $this->resolveUser($id);
+        if (!$user instanceof User) {
+            return $user;
         }
 
         if ($request->getMethod() === Method::POST) {
@@ -256,9 +256,9 @@ final readonly class UserController
 
     public function sessions(int $id): ResponseInterface
     {
-        $user = User::findById($id);
-        if ($user === null) {
-            return $this->renderError('voyti.admin.user_not_found');
+        $user = $this->resolveUser($id);
+        if (!$user instanceof User) {
+            return $user;
         }
 
         $sessions = UserSessions::findByUserId($id);
@@ -271,9 +271,9 @@ final readonly class UserController
 
     public function show(int $id): ResponseInterface
     {
-        $user = User::findById($id);
-        if ($user === null) {
-            return $this->renderError('voyti.admin.user_not_found');
+        $user = $this->resolveUser($id);
+        if (!$user instanceof User) {
+            return $user;
         }
         return $this->renderView('admin/user/_info', [
             'user' => $user,
@@ -314,9 +314,9 @@ final readonly class UserController
 
     public function terminateSessions(int $id): ResponseInterface
     {
-        $user = User::findById($id);
-        if ($user === null) {
-            return $this->renderError('voyti.admin.user_not_found');
+        $user = $this->resolveUser($id);
+        if (!$user instanceof User) {
+            return $user;
         }
 
         $sessions = UserSessions::findByUserId($id);
@@ -332,9 +332,9 @@ final readonly class UserController
 
     public function update(ServerRequestInterface $request, int $id): ResponseInterface
     {
-        $user = User::findById($id);
-        if ($user === null) {
-            return $this->renderError('voyti.admin.user_not_found');
+        $user = $this->resolveUser($id);
+        if (!$user instanceof User) {
+            return $user;
         }
 
         $model = new SettingsForm($this->config, $this->translator);
@@ -399,9 +399,9 @@ final readonly class UserController
 
     public function updateProfile(ServerRequestInterface $request, int $id): ResponseInterface
     {
-        $user = User::findById($id);
-        if ($user === null) {
-            return $this->renderError('voyti.admin.user_not_found');
+        $user = $this->resolveUser($id);
+        if (!$user instanceof User) {
+            return $user;
         }
 
         $userProfile = $user->getProfile();
@@ -430,4 +430,9 @@ final readonly class UserController
         return $this->renderView('admin/user/_profile', ['user' => $user, 'model' => $model, 'flash' => $this->flash]);
     }
 
+    private function resolveUser(int $id): User|ResponseInterface
+    {
+        $user = User::findById($id);
+        return $user ?? $this->renderError('voyti.admin.user_not_found');
+    }
 }

@@ -20,6 +20,7 @@ use YiiRocks\Voyti\Service\User\RegisterService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -33,6 +34,7 @@ final class RegistrationControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
     use RedirectResponseMockTrait;
+    use UserFactoryTrait;
 
     private ModuleConfig $config;
     private ConfirmationService&MockObject $confirmationService;
@@ -389,21 +391,6 @@ final class RegistrationControllerTest extends TestCase
             pendingSocialAccountService: $this->pendingSocialAccountService,
         );
     }
-
-    private function createUser(string $username, string $email): User
-    {
-        $user = new User();
-        $user->setUsername($username);
-        $user->setEmail($email);
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-
-        return $user;
-    }
-
     private function hydrateObject(object $object, array $data): void
     {
         foreach ($data as $key => $value) {

@@ -18,6 +18,7 @@ use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 use YiiRocks\Voyti\tests\Support\FakeSession;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\User\CurrentUser;
 
@@ -25,6 +26,7 @@ use Yiisoft\User\CurrentUser;
 final class RememberMeMiddlewareTest extends TestCase
 {
     use DatabaseSetupTrait;
+    use UserFactoryTrait;
 
     protected function setUp(): void
     {
@@ -134,7 +136,10 @@ final class RememberMeMiddlewareTest extends TestCase
 
     public function testProcessGuestWithValidCookieReissuesCookieOnResponse(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser(
+            username: 'remembermiddleware' . random_int(1, 1000000),
+            email: 'remembermiddleware' . random_int(1, 1000000) . '@example.com',
+        );
         $userId = (int) $user->getId();
         $this->createUserSession($userId, 'cookie-session-id');
 
@@ -173,7 +178,10 @@ final class RememberMeMiddlewareTest extends TestCase
 
     public function testProcessRotatedButIdentityChangedDuringHandleReturnsResponseUnchanged(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser(
+            username: 'remembermiddleware' . random_int(1, 1000000),
+            email: 'remembermiddleware' . random_int(1, 1000000) . '@example.com',
+        );
         $userId = (int) $user->getId();
         $this->createUserSession($userId, 'cookie-session-id');
 
@@ -225,20 +233,6 @@ final class RememberMeMiddlewareTest extends TestCase
         $handler = $this->createMock(RequestHandlerInterface::class);
         $handler->method('handle')->willReturn($response);
         return $handler;
-    }
-
-    private function createUser(): User
-    {
-        $user = new User();
-        $user->setUsername('remembermiddleware' . random_int(1, 1000000));
-        $user->setEmail('remembermiddleware' . random_int(1, 1000000) . '@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-
-        return $user;
     }
 
     private function createUserSession(int $userId, string $sessionId): UserSessions

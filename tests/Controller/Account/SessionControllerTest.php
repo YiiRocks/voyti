@@ -16,6 +16,7 @@ use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -28,6 +29,7 @@ final class SessionControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
     use RedirectResponseMockTrait;
+    use UserFactoryTrait;
 
     private ModuleConfig $config;
     private CurrentUser&MockObject $currentUser;
@@ -72,7 +74,7 @@ final class SessionControllerTest extends TestCase
 
     public function testIndexFlagsCurrentDevice(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser(username: 'sessionuser', email: 'sessionuser@example.com');
         $this->authenticateAs($user);
 
         $this->createSession($user, 'current-session', '203.0.113.1');
@@ -112,7 +114,7 @@ final class SessionControllerTest extends TestCase
 
     public function testTerminateCurrentSessionLogsOutAndRedirectsToLogin(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser(username: 'sessionuser', email: 'sessionuser@example.com');
         $this->authenticateAs($user);
         $this->createSession($user, 'current-session', '203.0.113.1');
 
@@ -145,7 +147,7 @@ final class SessionControllerTest extends TestCase
 
     public function testTerminateOtherSessionDeletesItAndRedirects(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser(username: 'sessionuser', email: 'sessionuser@example.com');
         $this->authenticateAs($user);
         $this->createSession($user, 'other-session', '203.0.113.1');
 
@@ -161,7 +163,7 @@ final class SessionControllerTest extends TestCase
 
     public function testTerminateUnknownSessionShowsError(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser(username: 'sessionuser', email: 'sessionuser@example.com');
         $this->authenticateAs($user);
 
         $controller = $this->createController();
@@ -205,17 +207,4 @@ final class SessionControllerTest extends TestCase
         return $session;
     }
 
-    private function createUser(): User
-    {
-        $user = new User();
-        $user->setUsername('sessionuser');
-        $user->setEmail('sessionuser@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-
-        return $user;
-    }
 }

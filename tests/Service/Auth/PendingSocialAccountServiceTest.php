@@ -6,15 +6,17 @@ namespace YiiRocks\Voyti\tests\Service\Auth;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\FakeSession;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 
 final class PendingSocialAccountServiceTest extends TestCase
 {
     use DatabaseSetupTrait;
+    use UserFactoryTrait;
+
     private PendingSocialAccountService $service;
 
     private FakeSession $session;
@@ -62,13 +64,13 @@ final class PendingSocialAccountServiceTest extends TestCase
 
     public function testConnectWithNoPendingAccountReturnsSuccess(): void
     {
-        $result = $this->service->connect($this->createUser());
+        $result = $this->service->connect($this->createUser(username: 'test'));
         self::assertTrue($result->isSuccess());
     }
 
     public function testConnectWithPendingAccountConnectsAndClears(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser(username: 'test');
         $this->createSocialAccount('123', 'pending_code');
         $this->session->set('social_network_account_code', 'pending_code');
 
@@ -83,7 +85,7 @@ final class PendingSocialAccountServiceTest extends TestCase
 
     public function testGetPendingAccountWithConnectedAccountClearsSession(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser(username: 'test');
         $this->createSocialAccount('106', 'connected_get_code', (int) $user->getId());
         $this->session->set('social_network_account_code', 'connected_get_code');
 
@@ -138,7 +140,7 @@ final class PendingSocialAccountServiceTest extends TestCase
 
     public function testUseCodeWithConnectedAccountClearsSessionOnFailure(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser(username: 'test');
         $this->createSocialAccount('107', 'connected_use_clear', (int) $user->getId());
         $this->session->set('social_network_account_code', 'connected_use_clear');
 
@@ -149,7 +151,7 @@ final class PendingSocialAccountServiceTest extends TestCase
 
     public function testUseCodeWithConnectedAccountReturnsNull(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser(username: 'test');
         $this->createSocialAccount('105', 'connected_use_code', (int) $user->getId());
 
         $result = $this->service->useCode('connected_use_code');
@@ -188,19 +190,5 @@ final class PendingSocialAccountServiceTest extends TestCase
         $account->save();
 
         return $account;
-    }
-
-    private function createUser(): User
-    {
-        $user = new User();
-        $user->setUsername('test');
-        $user->setEmail('test@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-
-        return $user;
     }
 }

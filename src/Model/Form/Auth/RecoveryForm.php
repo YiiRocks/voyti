@@ -9,6 +9,7 @@ use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Validator\PasswordComplexityRule;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\Validator\LabelsProviderInterface;
 use Yiisoft\Validator\Rule\CompareType;
 use Yiisoft\Validator\Rule\Email;
 use Yiisoft\Validator\Rule\Equal;
@@ -21,7 +22,7 @@ use Yiisoft\Validator\RulesProviderInterface;
  * (email address) and the {@see self::SCENARIO_RESET} step (new password), each with its own
  * validation rules.
  */
-final class RecoveryForm extends FormModel implements RulesProviderInterface
+final class RecoveryForm extends FormModel implements LabelsProviderInterface, RulesProviderInterface
 {
     public const string SCENARIO_REQUEST = 'request';
     public const string SCENARIO_RESET = 'reset';
@@ -41,20 +42,6 @@ final class RecoveryForm extends FormModel implements RulesProviderInterface
     ) {}
 
     /**
-     * @return string[]
-     *
-     * @psalm-return array{email: string, password: string, passwordRepeat: string}
-     */
-    public function getAttributeLabels(): array
-    {
-        return [
-            'email' => $this->translator->translate('voyti.view.email_label', category: 'voyti'),
-            'password' => $this->translator->translate('voyti.view.new_password_label', category: 'voyti'),
-            'passwordRepeat' => $this->translator->translate('voyti.view.new_password_repeat_label', category: 'voyti'),
-        ];
-    }
-
-    /**
      * @return string
      *
      * @psalm-return 'recovery'
@@ -65,10 +52,19 @@ final class RecoveryForm extends FormModel implements RulesProviderInterface
         return 'recovery';
     }
 
+    /**
+     * @return string[]
+     *
+     * @psalm-return array{email: string, password: string, passwordRepeat: string}
+     */
     #[\Override]
     public function getPropertyLabels(): array
     {
-        return $this->getAttributeLabels();
+        return [
+            'email' => $this->translator->translate('voyti.view.email_label', category: 'voyti'),
+            'password' => $this->translator->translate('voyti.view.new_password_label', category: 'voyti'),
+            'passwordRepeat' => $this->translator->translate('voyti.view.new_password_repeat_label', category: 'voyti'),
+        ];
     }
 
     #[\Override]
@@ -104,5 +100,11 @@ final class RecoveryForm extends FormModel implements RulesProviderInterface
         }
 
         return $rules;
+    }
+
+    #[\Override]
+    public function getValidationPropertyLabels(): array
+    {
+        return $this->getPropertyLabels();
     }
 }

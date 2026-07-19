@@ -16,6 +16,7 @@ use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 use YiiRocks\Voyti\tests\Support\FakeSession;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Login\Cookie\CookieLoginIdentityInterface;
@@ -24,6 +25,7 @@ use Yiisoft\User\Login\Cookie\CookieLoginIdentityInterface;
 final class RememberMeCookieServiceTest extends TestCase
 {
     use DatabaseSetupTrait;
+    use UserFactoryTrait;
 
     protected function setUp(): void
     {
@@ -107,7 +109,10 @@ final class RememberMeCookieServiceTest extends TestCase
     {
         $service = new RememberMeCookieService(3600, 'autoLogin', eventDispatcher: new EventCaptureDispatcher());
 
-        $user = $this->createUser();
+        $user = $this->createUser(
+            username: 'cookieuser' . random_int(1, 1000000),
+            email: 'cookieuser' . random_int(1, 1000000) . '@example.com',
+        );
         $userId = (int) $user->getId();
         $this->createUserSession($userId, 'cookie-session-id');
 
@@ -137,7 +142,10 @@ final class RememberMeCookieServiceTest extends TestCase
     {
         $service = new RememberMeCookieService(3600, 'autoLogin', eventDispatcher: new EventCaptureDispatcher());
 
-        $user = $this->createUser();
+        $user = $this->createUser(
+            username: 'cookieuser' . random_int(1, 1000000),
+            email: 'cookieuser' . random_int(1, 1000000) . '@example.com',
+        );
         $userId = (int) $user->getId();
         $this->createUserSession($userId, 'cookie-session-id');
 
@@ -185,7 +193,10 @@ final class RememberMeCookieServiceTest extends TestCase
     {
         $service = new RememberMeCookieService(3600, 'autoLogin', eventDispatcher: new EventCaptureDispatcher());
 
-        $user = $this->createUser();
+        $user = $this->createUser(
+            username: 'cookieuser' . random_int(1, 1000000),
+            email: 'cookieuser' . random_int(1, 1000000) . '@example.com',
+        );
         $userId = (int) $user->getId();
         $this->createUserSession($userId, 'cookie-session-id');
 
@@ -384,7 +395,10 @@ final class RememberMeCookieServiceTest extends TestCase
     {
         $service = new RememberMeCookieService(3600);
 
-        $user = $this->createUser();
+        $user = $this->createUser(
+            username: 'cookieuser' . random_int(1, 1000000),
+            email: 'cookieuser' . random_int(1, 1000000) . '@example.com',
+        );
         $userId = (int) $user->getId();
         $this->createUserSession($userId, 'cookie-session-id');
 
@@ -412,7 +426,10 @@ final class RememberMeCookieServiceTest extends TestCase
 
         $service = new RememberMeCookieService(3600, eventDispatcher: $eventDispatcher);
 
-        $user = $this->createUser();
+        $user = $this->createUser(
+            username: 'cookieuser' . random_int(1, 1000000),
+            email: 'cookieuser' . random_int(1, 1000000) . '@example.com',
+        );
         $userId = (int) $user->getId();
         // Deliberately no matching UserSessions row for 'terminated-session-id' -
         // simulates the device's session having been terminated from elsewhere.
@@ -436,7 +453,10 @@ final class RememberMeCookieServiceTest extends TestCase
 
     public function testLoginByCookieWithUserIdentityDispatchesAfterLoginEventWithCookieSessionId(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser(
+            username: 'cookieuser' . random_int(1, 1000000),
+            email: 'cookieuser' . random_int(1, 1000000) . '@example.com',
+        );
         $userId = (int) $user->getId();
         $this->createUserSession($userId, 'cookie-session-id');
 
@@ -688,20 +708,6 @@ final class RememberMeCookieServiceTest extends TestCase
             $this->createMock(IdentityRepositoryInterface::class),
             $eventDispatcher,
         );
-    }
-
-    private function createUser(): User
-    {
-        $user = new User();
-        $user->setUsername('cookieuser' . random_int(1, 1000000));
-        $user->setEmail('cookieuser' . random_int(1, 1000000) . '@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-
-        return $user;
     }
 
     private function createUserSession(int $userId, string $sessionId): UserSessions

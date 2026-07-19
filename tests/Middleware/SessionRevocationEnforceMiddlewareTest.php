@@ -11,10 +11,10 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use YiiRocks\Voyti\Middleware\SessionRevocationEnforceMiddleware;
-use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\FakeSession;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\Router\CurrentRoute;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -25,6 +25,7 @@ use Yiisoft\User\Guest\GuestIdentityInterface;
 final class SessionRevocationEnforceMiddlewareTest extends TestCase
 {
     use DatabaseSetupTrait;
+    use UserFactoryTrait;
 
     protected function setUp(): void
     {
@@ -38,7 +39,7 @@ final class SessionRevocationEnforceMiddlewareTest extends TestCase
 
     public function testProcessLogsOutAndRedirectsWhenSessionRowMissing(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser('sessuser', 'sessuser@example.com');
 
         $currentUser = $this->createMock(CurrentUser::class);
         $currentUser->expects(self::once())->method('getIdentity')->willReturn($user);
@@ -75,7 +76,7 @@ final class SessionRevocationEnforceMiddlewareTest extends TestCase
 
     public function testProcessPassesThroughForExemptLoginRoute(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser('sessuser', 'sessuser@example.com');
 
         $currentUser = $this->createMock(CurrentUser::class);
         $currentUser->expects(self::once())->method('getIdentity')->willReturn($user);
@@ -99,7 +100,7 @@ final class SessionRevocationEnforceMiddlewareTest extends TestCase
 
     public function testProcessPassesThroughForExemptLogoutRoute(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser('sessuser', 'sessuser@example.com');
 
         $currentUser = $this->createMock(CurrentUser::class);
         $currentUser->expects(self::once())->method('getIdentity')->willReturn($user);
@@ -159,7 +160,7 @@ final class SessionRevocationEnforceMiddlewareTest extends TestCase
 
     public function testProcessPassesThroughWhenSessionIdIsNull(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser('sessuser', 'sessuser@example.com');
 
         $currentUser = $this->createMock(CurrentUser::class);
         $currentUser->expects(self::once())->method('getIdentity')->willReturn($user);
@@ -181,7 +182,7 @@ final class SessionRevocationEnforceMiddlewareTest extends TestCase
 
     public function testProcessPassesThroughWhenSessionRowExists(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser('sessuser', 'sessuser@example.com');
 
         $userSession = new UserSessions();
         $userSession->setUserId((int) $user->getId());
@@ -239,19 +240,5 @@ final class SessionRevocationEnforceMiddlewareTest extends TestCase
         $session->open();
 
         return $session;
-    }
-
-    private function createUser(): User
-    {
-        $user = new User();
-        $user->setUsername('sessuser');
-        $user->setEmail('sessuser@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-
-        return $user;
     }
 }

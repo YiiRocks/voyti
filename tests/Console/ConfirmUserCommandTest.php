@@ -10,14 +10,15 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Console\ConfirmUserCommand;
-use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 
 #[AllowMockObjectsWithoutExpectations]
 final class ConfirmUserCommandTest extends TestCase
 {
     use DatabaseSetupTrait;
+    use UserFactoryTrait;
 
     protected function setUp(): void
     {
@@ -31,7 +32,7 @@ final class ConfirmUserCommandTest extends TestCase
 
     public function testExecuteByEmail(): void
     {
-        $this->createUser();
+        $this->createUser(createdAt: 1000);
 
         $input = $this->createMock(InputInterface::class);
         $input->expects(self::exactly(3))->method('getOption')->willReturnMap([
@@ -54,7 +55,7 @@ final class ConfirmUserCommandTest extends TestCase
 
     public function testExecuteById(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser(createdAt: 1000);
 
         $input = $this->createMock(InputInterface::class);
         $input->expects(self::exactly(3))->method('getOption')->willReturnMap([
@@ -77,7 +78,7 @@ final class ConfirmUserCommandTest extends TestCase
 
     public function testExecuteByUsername(): void
     {
-        $this->createUser();
+        $this->createUser(createdAt: 1000);
 
         $input = $this->createMock(InputInterface::class);
         $input->expects(self::exactly(3))->method('getOption')->willReturnMap([
@@ -100,7 +101,7 @@ final class ConfirmUserCommandTest extends TestCase
 
     public function testExecuteConfirmationFails(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser(createdAt: 1000);
 
         $input = $this->createMock(InputInterface::class);
         $input->expects(self::exactly(3))->method('getOption')->willReturnMap([
@@ -162,19 +163,5 @@ final class ConfirmUserCommandTest extends TestCase
         return new ConfirmUserCommand(
             $confirmationService ?? $this->createMock(ConfirmationService::class),
         );
-    }
-
-    private function createUser(): User
-    {
-        $user = new User();
-        $user->setUsername('testuser');
-        $user->setEmail('test@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(1000);
-        $user->setUpdatedAt(1000);
-        $user->save();
-
-        return $user;
     }
 }

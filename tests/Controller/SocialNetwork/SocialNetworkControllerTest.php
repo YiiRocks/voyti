@@ -16,6 +16,7 @@ use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -29,6 +30,7 @@ final class SocialNetworkControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
     use RedirectResponseMockTrait;
+    use UserFactoryTrait;
 
     private ModuleConfig $config;
     private CurrentUser&MockObject $currentUser;
@@ -76,7 +78,7 @@ final class SocialNetworkControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $user = $this->createUser();
+        $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'));
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -97,7 +99,7 @@ final class SocialNetworkControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $user = $this->createUser();
+        $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'));
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -174,19 +176,5 @@ final class SocialNetworkControllerTest extends TestCase
         $account->save();
 
         return $account;
-    }
-
-    private function createUser(): User
-    {
-        $user = new User();
-        $user->setUsername('testuser');
-        $user->setEmail('test@example.com');
-        $user->setPasswordHash($this->passwordHasher->hash('secret'));
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-
-        return $user;
     }
 }

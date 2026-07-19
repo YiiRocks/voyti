@@ -16,12 +16,14 @@ use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\Password\ResetService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use Yiisoft\Security\PasswordHasher;
 
 #[AllowMockObjectsWithoutExpectations]
 final class ResetServiceTest extends TestCase
 {
     use DatabaseSetupTrait;
+    use UserFactoryTrait;
 
     protected function setUp(): void
     {
@@ -38,7 +40,7 @@ final class ResetServiceTest extends TestCase
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $eventDispatcher->expects($this->exactly(2))->method('dispatch');
 
-        $user = $this->createUser('tokenuser', 'token@example.com');
+        $user = $this->createUser(username: 'tokenuser', email: 'token@example.com', passwordHash: 'oldhash');
         $userToken = $this->createUserToken((int) $user->getId(), 'tokencode');
 
         $this->createService($eventDispatcher)->run('newpassword', $user, $userToken);
@@ -49,7 +51,7 @@ final class ResetServiceTest extends TestCase
     public function testRunRecordsPasswordHistoryWhenEnabled(): void
     {
         $config = new ModuleConfig(enablePasswordExpiration: true);
-        $user = $this->createUser('historyuser', 'history@example.com');
+        $user = $this->createUser(username: 'historyuser', email: 'history@example.com', passwordHash: 'oldhash');
 
         $this->createService(config: $config)->run('newpassword', $user, null);
 
@@ -63,7 +65,7 @@ final class ResetServiceTest extends TestCase
     public function testRunRejectsRecentlyUsedPassword(): void
     {
         $config = new ModuleConfig(enablePasswordExpiration: true);
-        $user = $this->createUser('reuseuser', 'reuse@example.com');
+        $user = $this->createUser(username: 'reuseuser', email: 'reuse@example.com', passwordHash: 'oldhash');
 
         $this->createService(config: $config)->run('newpassword', $user, null);
         $reloaded = User::findById((int) $user->getId());
@@ -76,7 +78,7 @@ final class ResetServiceTest extends TestCase
 
     public function testRunSetsPasswordChangedAt(): void
     {
-        $user = $this->createUser('changeduser', 'changed@example.com', time() - 1000);
+        $user = $this->createUser(username: 'changeduser', email: 'changed@example.com', passwordHash: 'oldhash', createdAt: time() - 1000);
 
         $this->createService()->run('newpassword', $user, null);
 
@@ -88,7 +90,7 @@ final class ResetServiceTest extends TestCase
 
     public function testRunSetsPasswordHash(): void
     {
-        $user = $this->createUser('hashuser', 'hash@example.com');
+        $user = $this->createUser(username: 'hashuser', email: 'hash@example.com', passwordHash: 'oldhash');
 
         $this->createService()->run('newpassword', $user, null);
 
@@ -100,7 +102,7 @@ final class ResetServiceTest extends TestCase
 
     public function testRunSetsUpdatedAt(): void
     {
-        $user = $this->createUser('updateduser', 'updated@example.com', time() - 1000);
+        $user = $this->createUser(username: 'updateduser', email: 'updated@example.com', passwordHash: 'oldhash', createdAt: time() - 1000);
 
         $this->createService()->run('newpassword', $user, null);
 
@@ -114,7 +116,7 @@ final class ResetServiceTest extends TestCase
     {
         $eventDispatcher = new EventCaptureDispatcher();
 
-        $user = $this->createUser('testuser', 'test@example.com');
+        $user = $this->createUser(username: 'testuser', email: 'test@example.com', passwordHash: 'oldhash');
 
         $result = $this->createService($eventDispatcher)->run('newpassword', $user, null);
         self::assertTrue($result);
@@ -129,7 +131,7 @@ final class ResetServiceTest extends TestCase
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $eventDispatcher->expects($this->exactly(2))->method('dispatch');
 
-        $user = $this->createUser('testuser', 'test@example.com');
+        $user = $this->createUser(username: 'testuser', email: 'test@example.com', passwordHash: 'oldhash');
         $userToken = $this->createUserToken((int) $user->getId(), 'tokencode');
 
         $result = $this->createService($eventDispatcher)->run('newpassword', $user, $userToken);
@@ -143,22 +145,6 @@ final class ResetServiceTest extends TestCase
         $passwordHasher = new PasswordHasher();
 
         return new ResetService($config, $eventDispatcher, new PasswordHistoryService($passwordHasher, $config));
-    }
-
-    private function createUser(string $username, string $email, ?int $createdAt = null): User
-    {
-        $createdAt ??= time();
-
-        $user = new User();
-        $user->setUsername($username);
-        $user->setEmail($email);
-        $user->setPasswordHash('oldhash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt($createdAt);
-        $user->setUpdatedAt($createdAt);
-        $user->save();
-
-        return $user;
     }
 
     private function createUserToken(int $userId, string $code): UserToken

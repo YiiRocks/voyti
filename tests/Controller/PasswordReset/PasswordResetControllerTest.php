@@ -19,6 +19,7 @@ use YiiRocks\Voyti\Service\ServiceResult;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -32,6 +33,7 @@ final class PasswordResetControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
     use RedirectResponseMockTrait;
+    use UserFactoryTrait;
 
     private ModuleConfig $config;
     private FlashInterface&MockObject $flash;
@@ -128,7 +130,7 @@ final class PasswordResetControllerTest extends TestCase
 
     public function testResetGetWithValidTokenShowsForm(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser(username: 'recoveryuser', email: 'recoveryuser@example.com');
         $this->createRecoveryToken((int) $user->getId(), 'valid', time());
 
         $controller = $this->createController();
@@ -150,7 +152,7 @@ final class PasswordResetControllerTest extends TestCase
 
     public function testResetPostSuccessful(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser(username: 'recoveryuser', email: 'recoveryuser@example.com');
         $this->createRecoveryToken((int) $user->getId(), 'valid', time());
 
         $controller = $this->createController();
@@ -175,7 +177,7 @@ final class PasswordResetControllerTest extends TestCase
 
     public function testResetPostWithInvalidDataShowsErrors(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser(username: 'recoveryuser', email: 'recoveryuser@example.com');
         $this->createRecoveryToken((int) $user->getId(), 'valid', time());
 
         $controller = $this->createController();
@@ -202,7 +204,7 @@ final class PasswordResetControllerTest extends TestCase
 
     public function testResetPostWithPreviouslyUsedPasswordShowsError(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser(username: 'recoveryuser', email: 'recoveryuser@example.com');
         $this->createRecoveryToken((int) $user->getId(), 'valid', time());
 
         $controller = $this->createController();
@@ -247,7 +249,7 @@ final class PasswordResetControllerTest extends TestCase
 
     public function testResetWithExpiredTokenShowsMessage(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser(username: 'recoveryuser', email: 'recoveryuser@example.com');
         $this->createRecoveryToken((int) $user->getId(), 'expired', time() - 1_000_000);
 
         $controller = $this->createController();
@@ -308,20 +310,6 @@ final class PasswordResetControllerTest extends TestCase
         $userToken->save();
 
         return $userToken;
-    }
-
-    private function createUser(): User
-    {
-        $user = new User();
-        $user->setUsername('recoveryuser');
-        $user->setEmail('recoveryuser@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-
-        return $user;
     }
 
     private function hydrateObject(object $object, array $data): void

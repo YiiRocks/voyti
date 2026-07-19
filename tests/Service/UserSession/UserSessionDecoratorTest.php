@@ -14,11 +14,13 @@ use YiiRocks\Voyti\Service\UserSession\UserSessionDecorator;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 use YiiRocks\Voyti\tests\Support\FakeSession;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 
 #[AllowMockObjectsWithoutExpectations]
 final class UserSessionDecoratorTest extends TestCase
 {
     use DatabaseSetupTrait;
+    use UserFactoryTrait;
 
     protected function setUp(): void
     {
@@ -315,20 +317,6 @@ final class UserSessionDecoratorTest extends TestCase
         $session->open();
 
         return $session;
-    }
-
-    private function createUser(string $username, string $email): User
-    {
-        $user = new User();
-        $user->setUsername($username);
-        $user->setEmail($email);
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-
-        return $user;
     }
 
     private function createUserSession(int $userId, string $sessionId, int $ageOffset): UserSessions

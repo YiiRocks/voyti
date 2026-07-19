@@ -16,6 +16,7 @@ use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\User\UserCreationHelper;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\FakeSession;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\User\CurrentUser;
 
@@ -23,6 +24,7 @@ use Yiisoft\User\CurrentUser;
 final class UserSocialAuthenticateServiceTest extends TestCase
 {
     use DatabaseSetupTrait;
+    use UserFactoryTrait;
 
     private FakeSession $session;
 
@@ -343,26 +345,6 @@ final class UserSocialAuthenticateServiceTest extends TestCase
             $eventDispatcher,
             $this->createUserCreationHelper($config, $eventDispatcher),
         );
-    }
-
-    private function createUser(string $username, string $email, ?int $blockedAt = null, ?string $lastLoginIp = null): User
-    {
-        $user = new User();
-        $user->setUsername($username);
-        $user->setEmail($email);
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        if ($blockedAt !== null) {
-            $user->setBlockedAt($blockedAt);
-        }
-        if ($lastLoginIp !== null) {
-            $user->setLastLoginIp($lastLoginIp);
-        }
-        $user->save();
-
-        return $user;
     }
 
     private function createUserCreationHelper(ModuleConfig $config, EventDispatcherInterface $eventDispatcher): UserCreationHelper

@@ -5,16 +5,17 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Service\Password;
 
 use PHPUnit\Framework\TestCase;
-use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserPasswordHistory;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use Yiisoft\Security\PasswordHasher;
 
 final class PasswordHistoryServiceTest extends TestCase
 {
     use DatabaseSetupTrait;
+    use UserFactoryTrait;
 
     protected function setUp(): void
     {
@@ -30,7 +31,11 @@ final class PasswordHistoryServiceTest extends TestCase
     {
         $config = new ModuleConfig(enablePasswordExpiration: false);
         $passwordHasher = new PasswordHasher();
-        $user = $this->createUser($passwordHasher->hash('currentpass'));
+        $user = $this->createUser(
+            username: 'historyuser',
+            email: 'history@example.com',
+            passwordHash: $passwordHasher->hash('currentpass'),
+        );
         $service = new PasswordHistoryService($passwordHasher, $config);
 
         $service->record($user);
@@ -42,7 +47,11 @@ final class PasswordHistoryServiceTest extends TestCase
     {
         $config = new ModuleConfig(enablePasswordExpiration: true, passwordHistoryLimit: 2);
         $passwordHasher = new PasswordHasher();
-        $user = $this->createUser($passwordHasher->hash('pass0'));
+        $user = $this->createUser(
+            username: 'historyuser',
+            email: 'history@example.com',
+            passwordHash: $passwordHasher->hash('pass0'),
+        );
         $service = new PasswordHistoryService($passwordHasher, $config);
 
         $service->record($user);
@@ -62,7 +71,11 @@ final class PasswordHistoryServiceTest extends TestCase
     {
         $config = new ModuleConfig(enablePasswordExpiration: true);
         $passwordHasher = new PasswordHasher();
-        $user = $this->createUser($passwordHasher->hash('currentpass'));
+        $user = $this->createUser(
+            username: 'historyuser',
+            email: 'history@example.com',
+            passwordHash: $passwordHasher->hash('currentpass'),
+        );
         $service = new PasswordHistoryService($passwordHasher, $config);
 
         $beforeRecord = time();
@@ -78,7 +91,11 @@ final class PasswordHistoryServiceTest extends TestCase
     {
         $config = new ModuleConfig(enablePasswordExpiration: true);
         $passwordHasher = new PasswordHasher();
-        $user = $this->createUser($passwordHasher->hash('originalpass'));
+        $user = $this->createUser(
+            username: 'historyuser',
+            email: 'history@example.com',
+            passwordHash: $passwordHasher->hash('originalpass'),
+        );
         $service = new PasswordHistoryService($passwordHasher, $config);
         $service->record($user);
 
@@ -95,7 +112,11 @@ final class PasswordHistoryServiceTest extends TestCase
     {
         $config = new ModuleConfig(enablePasswordExpiration: false);
         $passwordHasher = new PasswordHasher();
-        $user = $this->createUser($passwordHasher->hash('currentpass'));
+        $user = $this->createUser(
+            username: 'historyuser',
+            email: 'history@example.com',
+            passwordHash: $passwordHasher->hash('currentpass'),
+        );
         $service = new PasswordHistoryService($passwordHasher, $config);
 
         self::assertFalse($service->wasUsedRecently($user, 'currentpass'));
@@ -105,23 +126,13 @@ final class PasswordHistoryServiceTest extends TestCase
     {
         $config = new ModuleConfig(enablePasswordExpiration: true);
         $passwordHasher = new PasswordHasher();
-        $user = $this->createUser($passwordHasher->hash('currentpass'));
+        $user = $this->createUser(
+            username: 'historyuser',
+            email: 'history@example.com',
+            passwordHash: $passwordHasher->hash('currentpass'),
+        );
         $service = new PasswordHistoryService($passwordHasher, $config);
 
         self::assertTrue($service->wasUsedRecently($user, 'currentpass'));
-    }
-
-    private function createUser(string $passwordHash): User
-    {
-        $user = new User();
-        $user->setUsername('historyuser');
-        $user->setEmail('history@example.com');
-        $user->setPasswordHash($passwordHash);
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-
-        return $user;
     }
 }

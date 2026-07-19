@@ -25,26 +25,20 @@ final class AuthItemFormTest extends TestCase
         $this->assertNull($form->rule);
     }
 
-    public function testGetAttributeLabels(): void
-    {
-        $form = $this->createForm();
-        $labels = $form->getAttributeLabels();
-        $this->assertArrayHasKey('name', $labels);
-        $this->assertArrayHasKey('description', $labels);
-        $this->assertArrayHasKey('children', $labels);
-        $this->assertArrayHasKey('rule', $labels);
-    }
-
     public function testGetFormNameReturnsType(): void
     {
         $form = $this->createForm('permission');
         $this->assertSame('permission', $form->getFormName());
     }
 
-    public function testGetPropertyLabelsMatchesAttributeLabels(): void
+    public function testGetPropertyLabels(): void
     {
         $form = $this->createForm();
-        $this->assertSame($form->getAttributeLabels(), $form->getPropertyLabels());
+        $labels = $form->getPropertyLabels();
+        $this->assertArrayHasKey('name', $labels);
+        $this->assertArrayHasKey('description', $labels);
+        $this->assertArrayHasKey('children', $labels);
+        $this->assertArrayHasKey('rule', $labels);
     }
 
     public function testGetRules(): void
@@ -70,6 +64,12 @@ final class AuthItemFormTest extends TestCase
     {
         $form = $this->createForm('role');
         $this->assertSame('role', $form->getType());
+    }
+
+    public function testGetValidationPropertyLabelsMatchesPropertyLabels(): void
+    {
+        $form = $this->createForm();
+        $this->assertSame($form->getPropertyLabels(), $form->getValidationPropertyLabels());
     }
 
     public function testSetProperties(): void

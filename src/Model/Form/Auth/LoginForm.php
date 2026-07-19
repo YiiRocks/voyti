@@ -9,6 +9,7 @@ use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\Helper\ObjectParser;
+use Yiisoft\Validator\LabelsProviderInterface;
 use Yiisoft\Validator\Rule\Length;
 use Yiisoft\Validator\Rule\Required;
 use Yiisoft\Validator\RulesProviderInterface;
@@ -16,7 +17,7 @@ use Yiisoft\Validator\RulesProviderInterface;
 /**
  * Backs the login page: username/email, password, remember-me, and optionally a two-factor code.
  */
-final class LoginForm extends FormModel implements RulesProviderInterface
+final class LoginForm extends FormModel implements LabelsProviderInterface, RulesProviderInterface
 {
     public string $gRecaptchaResponse = '';
     #[Required]
@@ -34,24 +35,6 @@ final class LoginForm extends FormModel implements RulesProviderInterface
     ) {}
 
     /**
-     * @return string[]
-     *
-     * @psalm-return array{login: string, password: string, rememberMe: string, twoFactorAuthenticationCode: string}
-     */
-    public function getAttributeLabels(): array
-    {
-        return [
-            'login' => $this->translator->translate('voyti.view.login.login_label', category: 'voyti'),
-            'password' => $this->translator->translate('voyti.view.login.password_label', category: 'voyti'),
-            'rememberMe' => $this->translator->translate('voyti.view.login.remember_me_label', category: 'voyti'),
-            'twoFactorAuthenticationCode' => $this->translator->translate(
-                'voyti.view.two_factor.code_label',
-                category: 'voyti',
-            ),
-        ];
-    }
-
-    /**
      * @return string
      *
      * @psalm-return 'login'
@@ -62,10 +45,23 @@ final class LoginForm extends FormModel implements RulesProviderInterface
         return 'login';
     }
 
+    /**
+     * @return string[]
+     *
+     * @psalm-return array{login: string, password: string, rememberMe: string, twoFactorAuthenticationCode: string}
+     */
     #[\Override]
     public function getPropertyLabels(): array
     {
-        return $this->getAttributeLabels();
+        return [
+            'login' => $this->translator->translate('voyti.view.login.login_label', category: 'voyti'),
+            'password' => $this->translator->translate('voyti.view.login.password_label', category: 'voyti'),
+            'rememberMe' => $this->translator->translate('voyti.view.login.remember_me_label', category: 'voyti'),
+            'twoFactorAuthenticationCode' => $this->translator->translate(
+                'voyti.view.two_factor.code_label',
+                category: 'voyti',
+            ),
+        ];
     }
 
     #[\Override]
@@ -87,5 +83,11 @@ final class LoginForm extends FormModel implements RulesProviderInterface
         }
 
         return $rules;
+    }
+
+    #[\Override]
+    public function getValidationPropertyLabels(): array
+    {
+        return $this->getPropertyLabels();
     }
 }

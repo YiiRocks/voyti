@@ -64,8 +64,8 @@ final readonly class AuthHelper
 
     public function hasRole(int $userId, string $role): bool
     {
-        $items = $this->authManager->getItemsByUserId($userId);
-        return isset($items[$role]);
+        $roles = $this->authManager->getRolesByUserId($userId);
+        return isset($roles[$role]);
     }
 
     public function isAdmin(int|string|null $userId = null): bool

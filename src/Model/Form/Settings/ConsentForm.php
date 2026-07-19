@@ -6,6 +6,7 @@ namespace YiiRocks\Voyti\Model\Form\Settings;
 
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\Validator\LabelsProviderInterface;
 use Yiisoft\Validator\Rule\Required;
 use Yiisoft\Validator\Rule\TrueValue;
 
@@ -13,7 +14,7 @@ use Yiisoft\Validator\Rule\TrueValue;
  * Backs a generic password-confirmed consent page (e.g. account deletion); the form name and
  * consent label are injected per use site rather than hardcoded.
  */
-final class ConsentForm extends FormModel
+final class ConsentForm extends FormModel implements LabelsProviderInterface
 {
     #[TrueValue(trueValue: true)]
     public bool $consent = false;
@@ -26,12 +27,19 @@ final class ConsentForm extends FormModel
         private readonly string $consentLabel,
     ) {}
 
+    #[\Override]
+    public function getFormName(): string
+    {
+        return $this->formName;
+    }
+
     /**
      * @return string[]
      *
      * @psalm-return array{password: string, consent: string}
      */
-    public function getAttributeLabels(): array
+    #[\Override]
+    public function getPropertyLabels(): array
     {
         return [
             'password' => $this->translator->translate('voyti.view.current_password_label', category: 'voyti'),
@@ -40,14 +48,8 @@ final class ConsentForm extends FormModel
     }
 
     #[\Override]
-    public function getFormName(): string
+    public function getValidationPropertyLabels(): array
     {
-        return $this->formName;
-    }
-
-    #[\Override]
-    public function getPropertyLabels(): array
-    {
-        return $this->getAttributeLabels();
+        return $this->getPropertyLabels();
     }
 }

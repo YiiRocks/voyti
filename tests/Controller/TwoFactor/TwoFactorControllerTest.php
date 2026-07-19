@@ -21,6 +21,7 @@ use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -34,6 +35,7 @@ final class TwoFactorControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
     use RedirectResponseMockTrait;
+    use UserFactoryTrait;
 
     private ModuleConfig $config;
     private CurrentUser&MockObject $currentUser;
@@ -71,7 +73,7 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('POST', '/');
 
-        $user = $this->createUser(authTfEnabled: true, authTfType: 'email');
+        $user = $this->createUser(authTfEnabled: true, authTfType: 'email', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -101,7 +103,7 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('POST', '/');
 
-        $user = $this->createUser(authTfEnabled: true, authTfType: 'google');
+        $user = $this->createUser(authTfEnabled: true, authTfType: 'google', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -126,7 +128,7 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('POST', '/');
 
-        $user = $this->createUser(authTfEnabled: false);
+        $user = $this->createUser(authTfEnabled: false, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -151,7 +153,7 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['code' => 'wrong']);
 
-        $user = $this->createUser(authTfType: 'email', authTfKey: '123456');
+        $user = $this->createUser(authTfType: 'email', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -181,7 +183,7 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['code' => 'wrong']);
 
-        $user = $this->createUser(authTfType: 'google', authTfKey: null);
+        $user = $this->createUser(authTfType: 'google', authTfKey: null, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -210,7 +212,7 @@ final class TwoFactorControllerTest extends TestCase
     {
         $backupCodeService = new BackupCodeService($this->passwordHasher);
 
-        $user = $this->createUser(authTfEnabled: true, authTfType: 'email', authTfKey: '123456');
+        $user = $this->createUser(authTfEnabled: true, authTfType: 'email', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $codes = $backupCodeService->generate($user);
 
         $controller = $this->createController(backupCodeService: $backupCodeService);
@@ -237,7 +239,7 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['code' => '123456']);
 
-        $user = $this->createUser(authTfEnabled: true, authTfType: 'email', authTfKey: '123456');
+        $user = $this->createUser(authTfEnabled: true, authTfType: 'email', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -269,7 +271,7 @@ final class TwoFactorControllerTest extends TestCase
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['code' => $code]);
 
         $identity = $this->createMock(User::class);
-        $user = $this->createUser(authTfEnabled: true, authTfType: 'google', authTfKey: $secret);
+        $user = $this->createUser(authTfEnabled: true, authTfType: 'google', authTfKey: $secret, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
@@ -290,7 +292,7 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('GET', '/'))->withHeader('X-Requested-With', 'XMLHttpRequest');
 
-        $user = $this->createUser(authTfEnabled: false);
+        $user = $this->createUser(authTfEnabled: false, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -317,7 +319,7 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $user = $this->createUser(authTfEnabled: false);
+        $user = $this->createUser(authTfEnabled: false, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -345,7 +347,7 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $user = $this->createUser(authTfEnabled: true);
+        $user = $this->createUser(authTfEnabled: true, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -369,7 +371,7 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['method' => 'google', 'code' => '123456']);
 
-        $user = $this->createUser(authTfEnabled: true);
+        $user = $this->createUser(authTfEnabled: true, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -398,7 +400,7 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['method' => 'email', 'code' => '123456']);
 
-        $user = $this->createUser(authTfKey: '123456');
+        $user = $this->createUser(authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -426,7 +428,7 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['method' => 'email', 'code' => 'wrong']);
 
-        $user = $this->createUser(authTfKey: '123456');
+        $user = $this->createUser(authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -455,7 +457,7 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['method' => 'google', 'code' => 'wrong']);
 
-        $user = $this->createUser(authTfType: 'google', authTfKey: null);
+        $user = $this->createUser(authTfType: 'google', authTfKey: null, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -494,7 +496,7 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['method' => 'google', 'code' => $code]);
 
-        $user = $this->createUser(authTfType: 'google', authTfKey: $secret);
+        $user = $this->createUser(authTfType: 'google', authTfKey: $secret, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -522,7 +524,7 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('GET', '/'))->withHeader('X-Requested-With', 'XMLHttpRequest');
 
-        $user = $this->createUser(authTfEnabled: false, authTfType: null, authTfKey: 'secret');
+        $user = $this->createUser(authTfEnabled: false, authTfType: null, authTfKey: 'secret', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -549,7 +551,7 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $user = $this->createUser(authTfEnabled: false, authTfType: null, authTfKey: null);
+        $user = $this->createUser(authTfEnabled: false, authTfType: null, authTfKey: null, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -578,7 +580,7 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $user = $this->createUser(authTfEnabled: true);
+        $user = $this->createUser(authTfEnabled: true, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -602,7 +604,7 @@ final class TwoFactorControllerTest extends TestCase
     {
         $backupCodeService = new BackupCodeService($this->passwordHasher);
 
-        $user = $this->createUser(authTfEnabled: true, authTfType: 'google', authTfKey: '123456');
+        $user = $this->createUser(authTfEnabled: true, authTfType: 'google', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $backupCodeService->generate($user);
 
         $controller = $this->createController($backupCodeService);
@@ -627,7 +629,7 @@ final class TwoFactorControllerTest extends TestCase
     public function testTwoFactorIndexReportsNoBackupCodesWhenNoneRemain(): void
     {
 
-        $user = $this->createUser(authTfEnabled: true, authTfType: 'google', authTfKey: '123456');
+        $user = $this->createUser(authTfEnabled: true, authTfType: 'google', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
 
         $controller = $this->createController();
         $identity = $this->createMock(User::class);
@@ -682,7 +684,7 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('POST', '/');
 
-        $user = $this->createUser(authTfEnabled: false);
+        $user = $this->createUser(authTfEnabled: false, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -699,7 +701,7 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['code' => 'wrong']);
 
-        $user = $this->createUser(authTfEnabled: true, authTfType: 'email', authTfKey: '123456');
+        $user = $this->createUser(authTfEnabled: true, authTfType: 'email', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -721,7 +723,7 @@ final class TwoFactorControllerTest extends TestCase
     public function testTwoFactorRegenerateBackupCodesWithValidCodeShowsNewCodes(): void
     {
 
-        $user = $this->createUser(authTfEnabled: true, authTfType: 'email', authTfKey: '123456');
+        $user = $this->createUser(authTfEnabled: true, authTfType: 'email', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['code' => '123456']);
 
@@ -755,7 +757,7 @@ final class TwoFactorControllerTest extends TestCase
         $code = $authenticator->code();
 
 
-        $user = $this->createUser(authTfEnabled: true, authTfType: 'google', authTfKey: $secret);
+        $user = $this->createUser(authTfEnabled: true, authTfType: 'google', authTfKey: $secret, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['code' => $code]);
 
@@ -782,7 +784,7 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('POST', '/');
 
-        $user = $this->createUser(authTfEnabled: false, authTfType: 'google', authTfKey: 'secret');
+        $user = $this->createUser(authTfEnabled: false, authTfType: 'google', authTfKey: 'secret', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -808,7 +810,7 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('POST', '/');
 
-        $user = $this->createUser(authTfEnabled: false, authTfType: 'email', authTfKey: 'new-secret');
+        $user = $this->createUser(authTfEnabled: false, authTfType: 'email', authTfKey: 'new-secret', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -844,7 +846,7 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('POST', '/');
 
-        $user = $this->createUser(authTfEnabled: true);
+        $user = $this->createUser(authTfEnabled: true, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -888,7 +890,7 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('POST', '/');
 
-        $user = $this->createUser(authTfEnabled: false);
+        $user = $this->createUser(authTfEnabled: false, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -935,7 +937,7 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('POST', '/');
 
-        $user = $this->createUser(authTfEnabled: false, authTfType: 'email');
+        $user = $this->createUser(authTfEnabled: false, authTfType: 'email', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -960,7 +962,7 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('POST', '/');
 
-        $user = $this->createUser(authTfEnabled: false, authTfType: null);
+        $user = $this->createUser(authTfEnabled: false, authTfType: null, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -992,7 +994,7 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('POST', '/');
 
-        $user = $this->createUser(authTfEnabled: true);
+        $user = $this->createUser(authTfEnabled: true, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -1017,7 +1019,7 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $user = $this->createUser(authTfEnabled: true, authTfType: 'google');
+        $user = $this->createUser(authTfEnabled: true, authTfType: 'google', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -1051,7 +1053,7 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $user = $this->createUser(authTfEnabled: false);
+        $user = $this->createUser(authTfEnabled: false, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -1102,27 +1104,4 @@ final class TwoFactorControllerTest extends TestCase
         );
     }
 
-    private function createUser(
-        string $username = 'testuser',
-        string $email = 'test@example.com',
-        string $password = 'secret',
-        bool $authTfEnabled = false,
-        ?string $authTfType = null,
-        ?string $authTfKey = null,
-    ): User {
-        $user = new User();
-        $user->setUsername($username);
-        $user->setEmail($email);
-        $user->setPasswordHash($this->passwordHasher->hash($password));
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->setConfirmedAt(time());
-        $user->setAuthTfEnabled($authTfEnabled);
-        $user->setAuthTfType($authTfType);
-        $user->setAuthTfKey($authTfKey);
-        $user->save();
-
-        return $user;
-    }
 }

@@ -52,15 +52,6 @@ final class RecoveryFormTest extends TestCase
         $this->assertSame('test@example.com', $form->email);
     }
 
-    public function testGetAttributeLabels(): void
-    {
-        $form = new RecoveryForm(new ModuleConfig(), $this->createTranslator());
-        $labels = $form->getAttributeLabels();
-        $this->assertArrayHasKey('email', $labels);
-        $this->assertArrayHasKey('password', $labels);
-        $this->assertArrayHasKey('passwordRepeat', $labels);
-    }
-
     public function testGetFormName(): void
     {
         $form = new RecoveryForm(new ModuleConfig(), $this->createTranslator());
@@ -70,7 +61,10 @@ final class RecoveryFormTest extends TestCase
     public function testGetPropertyLabels(): void
     {
         $form = new RecoveryForm(new ModuleConfig(), $this->createTranslator());
-        $this->assertSame($form->getAttributeLabels(), $form->getPropertyLabels());
+        $labels = $form->getPropertyLabels();
+        $this->assertArrayHasKey('email', $labels);
+        $this->assertArrayHasKey('password', $labels);
+        $this->assertArrayHasKey('passwordRepeat', $labels);
     }
 
     public function testGetRulesForRequestScenario(): void
@@ -144,6 +138,12 @@ final class RecoveryFormTest extends TestCase
         $this->assertCount(1, $rules['gRecaptchaResponse']);
         $this->assertSame('voyti_recovery', $rules['gRecaptchaResponse'][0]->getAction());
         $this->assertSame(0.5, $rules['gRecaptchaResponse'][0]->getThreshold());
+    }
+
+    public function testGetValidationPropertyLabels(): void
+    {
+        $form = new RecoveryForm(new ModuleConfig(), $this->createTranslator());
+        $this->assertSame($form->getPropertyLabels(), $form->getValidationPropertyLabels());
     }
 
     public function testPasswordProperty(): void

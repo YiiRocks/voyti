@@ -6,12 +6,13 @@ namespace YiiRocks\Voyti\Model\Form\Settings;
 
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\Validator\LabelsProviderInterface;
 
 /**
  * Backs the GDPR consent page: whether the user consents and, once given, the consent date and
  * timezone it was recorded in.
  */
-final class GdprConsentForm extends FormModel
+final class GdprConsentForm extends FormModel implements LabelsProviderInterface
 {
     public bool $consent = false;
     public ?int $consentDate = null;
@@ -20,18 +21,6 @@ final class GdprConsentForm extends FormModel
     public function __construct(
         private readonly TranslatorInterface $translator,
     ) {}
-
-    /**
-     * @return string[]
-     *
-     * @psalm-return array{consent: string}
-     */
-    public function getAttributeLabels(): array
-    {
-        return [
-            'consent' => $this->translator->translate('voyti.view.gdpr.consent_label', category: 'voyti'),
-        ];
-    }
 
     /**
      * @return string
@@ -44,9 +33,22 @@ final class GdprConsentForm extends FormModel
         return 'gdpr-consent';
     }
 
+    /**
+     * @return string[]
+     *
+     * @psalm-return array{consent: string}
+     */
     #[\Override]
     public function getPropertyLabels(): array
     {
-        return $this->getAttributeLabels();
+        return [
+            'consent' => $this->translator->translate('voyti.view.gdpr.consent_label', category: 'voyti'),
+        ];
+    }
+
+    #[\Override]
+    public function getValidationPropertyLabels(): array
+    {
+        return $this->getPropertyLabels();
     }
 }

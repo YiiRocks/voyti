@@ -60,12 +60,9 @@ final readonly class UserController
 
     public function delete(int $id): ResponseInterface
     {
-        $user = User::findById($id);
-        if ($user === null) {
-            return $this->responseFactory->createResponse(
-                ['error' => $this->translator->translate('voyti.api.not_found', category: 'voyti')],
-                Status::NOT_FOUND,
-            );
+        $user = $this->resolveUser($id);
+        if (!$user instanceof User) {
+            return $user;
         }
 
         $user->delete();
@@ -91,12 +88,9 @@ final readonly class UserController
 
     public function update(ServerRequestInterface $request, int $id): ResponseInterface
     {
-        $user = User::findById($id);
-        if ($user === null) {
-            return $this->responseFactory->createResponse(
-                ['error' => $this->translator->translate('voyti.api.not_found', category: 'voyti')],
-                Status::NOT_FOUND,
-            );
+        $user = $this->resolveUser($id);
+        if (!$user instanceof User) {
+            return $user;
         }
 
         $body = $this->parsedBody($request);
@@ -132,12 +126,9 @@ final readonly class UserController
 
     public function view(int $id): ResponseInterface
     {
-        $user = User::findById($id);
-        if ($user === null) {
-            return $this->responseFactory->createResponse(
-                ['error' => $this->translator->translate('voyti.api.not_found', category: 'voyti')],
-                Status::NOT_FOUND,
-            );
+        $user = $this->resolveUser($id);
+        if (!$user instanceof User) {
+            return $user;
         }
 
         return $this->responseFactory->createResponse([
@@ -146,5 +137,14 @@ final readonly class UserController
             'email' => $user->getEmail(),
             'createdAt' => $user->getCreatedAt(),
         ]);
+    }
+
+    private function resolveUser(int $id): User|ResponseInterface
+    {
+        $user = User::findById($id);
+        return $user ?? $this->responseFactory->createResponse(
+            ['error' => $this->translator->translate('voyti.api.not_found', category: 'voyti')],
+            Status::NOT_FOUND,
+        );
     }
 }

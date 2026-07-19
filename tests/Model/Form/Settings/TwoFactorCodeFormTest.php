@@ -21,13 +21,6 @@ final class TwoFactorCodeFormTest extends TestCase
         $this->assertSame('google', $form->method);
     }
 
-    public function testGetAttributeLabels(): void
-    {
-        $form = new TwoFactorCodeForm($this->createTranslator(), 'email');
-        $labels = $form->getAttributeLabels();
-        $this->assertArrayHasKey('code', $labels);
-    }
-
     public function testGetFormName(): void
     {
         $form = new TwoFactorCodeForm($this->createTranslator(), 'google');
@@ -36,8 +29,15 @@ final class TwoFactorCodeFormTest extends TestCase
 
     public function testGetPropertyLabels(): void
     {
+        $form = new TwoFactorCodeForm($this->createTranslator(), 'email');
+        $labels = $form->getPropertyLabels();
+        $this->assertArrayHasKey('code', $labels);
+    }
+
+    public function testGetValidationPropertyLabels(): void
+    {
         $form = new TwoFactorCodeForm($this->createTranslator(), 'google');
-        $this->assertSame($form->getAttributeLabels(), $form->getPropertyLabels());
+        $this->assertSame($form->getPropertyLabels(), $form->getValidationPropertyLabels());
     }
 
     public function testSetProperties(): void

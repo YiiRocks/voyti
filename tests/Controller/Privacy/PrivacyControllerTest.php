@@ -23,6 +23,7 @@ use YiiRocks\Voyti\Service\UserSession\TerminateUserSessionsService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Security\PasswordHasher;
@@ -39,6 +40,7 @@ final class PrivacyControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
     use RedirectResponseMockTrait;
+    use UserFactoryTrait;
 
     private ModuleConfig $config;
     private CurrentUser&MockObject $currentUser;
@@ -115,7 +117,7 @@ final class PrivacyControllerTest extends TestCase
             },
         );
         $this->validator->method('validate')->willReturn(new Result());
-        $user = $this->createUser(password: $password);
+        $user = $this->createUser(passwordHash: $this->passwordHasher->hash($password), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -180,7 +182,7 @@ final class PrivacyControllerTest extends TestCase
             },
         );
         $this->validator->method('validate')->willReturn(new Result());
-        $user = $this->createUser(password: 'correctpassword');
+        $user = $this->createUser(passwordHash: $this->passwordHasher->hash('correctpassword'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -221,7 +223,7 @@ final class PrivacyControllerTest extends TestCase
             },
         );
         $this->validator->method('validate')->willReturn(new Result());
-        $user = $this->createUser(password: $password);
+        $user = $this->createUser(passwordHash: $this->passwordHasher->hash($password), confirmedAt: time());
         $userId = (int) $user->getId();
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $userId);
@@ -251,7 +253,7 @@ final class PrivacyControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $user = $this->createUser();
+        $user = $this->createUser(confirmedAt: time());
         $userId = (int) $user->getId();
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $userId);
@@ -319,7 +321,7 @@ final class PrivacyControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $user = $this->createUser();
+        $user = $this->createUser(confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -369,7 +371,7 @@ final class PrivacyControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $user = $this->createUser();
+        $user = $this->createUser(confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -443,7 +445,7 @@ final class PrivacyControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $user = $this->createUser(gdprConsent: true, gdprConsentDate: 1700000000);
+        $user = $this->createUser(gdprConsent: true, gdprConsentDate: 1700000000, confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -481,7 +483,7 @@ final class PrivacyControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $user = $this->createUser(gdprConsent: false);
+        $user = $this->createUser(gdprConsent: false, confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -520,7 +522,7 @@ final class PrivacyControllerTest extends TestCase
             },
         );
 
-        $user = $this->createUser(gdprConsent: true);
+        $user = $this->createUser(gdprConsent: true, confirmedAt: time());
         $consentDate = $user->getGdprConsentDate();
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
@@ -551,7 +553,7 @@ final class PrivacyControllerTest extends TestCase
             },
         );
 
-        $user = $this->createUser(gdprConsent: true);
+        $user = $this->createUser(gdprConsent: true, confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -581,7 +583,7 @@ final class PrivacyControllerTest extends TestCase
             },
         );
 
-        $user = $this->createUser(gdprConsent: false);
+        $user = $this->createUser(gdprConsent: false, confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -641,27 +643,5 @@ final class PrivacyControllerTest extends TestCase
         $account->save();
 
         return $account;
-    }
-
-    private function createUser(
-        string $username = 'testuser',
-        string $email = 'test@example.com',
-        string $password = 'secret',
-        bool $gdprConsent = false,
-        ?int $gdprConsentDate = null,
-    ): User {
-        $user = new User();
-        $user->setUsername($username);
-        $user->setEmail($email);
-        $user->setPasswordHash($this->passwordHasher->hash($password));
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->setConfirmedAt(time());
-        $user->setGdprConsent($gdprConsent);
-        $user->setGdprConsentDate($gdprConsentDate);
-        $user->save();
-
-        return $user;
     }
 }

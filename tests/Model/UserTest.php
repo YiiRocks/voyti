@@ -11,6 +11,7 @@ use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserProfile;
 use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\Model\UserToken;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use Yiisoft\ActiveRecord\ActiveQueryInterface;
 use Yiisoft\Db\Cache\SchemaCache;
 use Yiisoft\Db\Connection\ConnectionInterface;
@@ -21,6 +22,8 @@ use Yiisoft\Db\Sqlite\Dsn;
 
 final class UserTest extends TestCase
 {
+    use UserFactoryTrait;
+
     private ?ConnectionInterface $connection = null;
 
     protected function setUp(): void
@@ -183,7 +186,7 @@ final class UserTest extends TestCase
 
     public function testDeleteRemovesUserAndProfile(): void
     {
-        $user = $this->createUser('alice', 'alice@example.com', time());
+        $user = $this->createUser('alice', 'alice@example.com', createdAt: time());
 
         $profile = new UserProfile();
         $profile->setUserId((int) $user->getId());
@@ -198,7 +201,7 @@ final class UserTest extends TestCase
 
     public function testDeleteWithoutProfileOnlyRemovesUser(): void
     {
-        $user = $this->createUser('alice', 'alice@example.com', time());
+        $user = $this->createUser('alice', 'alice@example.com', createdAt: time());
 
         $user->delete();
 
@@ -207,17 +210,17 @@ final class UserTest extends TestCase
 
     public function testFindAllUsersReturnsAllUsers(): void
     {
-        $this->createUser('alice', 'alice@example.com', time());
-        $this->createUser('bob', 'bob@example.com', time());
+        $this->createUser('alice', 'alice@example.com', createdAt: time());
+        $this->createUser('bob', 'bob@example.com', createdAt: time());
 
         self::assertCount(2, User::findAllUsers());
     }
 
     public function testFindByIdsReturnsMatchingUsers(): void
     {
-        $alice = $this->createUser('alice', 'alice@example.com', time());
-        $bob = $this->createUser('bob', 'bob@example.com', time());
-        $this->createUser('carol', 'carol@example.com', time());
+        $alice = $this->createUser('alice', 'alice@example.com', createdAt: time());
+        $bob = $this->createUser('bob', 'bob@example.com', createdAt: time());
+        $this->createUser('carol', 'carol@example.com', createdAt: time());
 
         $result = User::findByIds([(int) $alice->getId(), (int) $bob->getId()]);
 
@@ -226,7 +229,7 @@ final class UserTest extends TestCase
 
     public function testFindByUsernameOrEmailMatchesByEmail(): void
     {
-        $this->createUser('alice', 'alice@example.com', time());
+        $this->createUser('alice', 'alice@example.com', createdAt: time());
 
         $user = User::findByUsernameOrEmail('alice@example.com');
 
@@ -236,7 +239,7 @@ final class UserTest extends TestCase
 
     public function testFindByUsernameOrEmailMatchesByUsername(): void
     {
-        $this->createUser('alice', 'alice@example.com', time());
+        $this->createUser('alice', 'alice@example.com', createdAt: time());
 
         $user = User::findByUsernameOrEmail('alice');
 
@@ -522,13 +525,13 @@ final class UserTest extends TestCase
 
     public function testIsSwitchDisabledForReturnsFalseForOtherActiveUser(): void
     {
-        $user = $this->createUser('alice', 'alice@example.com', time());
+        $user = $this->createUser('alice', 'alice@example.com', createdAt: time());
         self::assertFalse($user->isSwitchDisabledFor((int) $user->getId() + 1));
     }
 
     public function testIsSwitchDisabledForReturnsTrueForBlockedUser(): void
     {
-        $user = $this->createUser('alice', 'alice@example.com', time());
+        $user = $this->createUser('alice', 'alice@example.com', createdAt: time());
         $user->setBlockedAt(time());
         $user->save();
         self::assertTrue($user->isSwitchDisabledFor((int) $user->getId() + 1));
@@ -536,7 +539,7 @@ final class UserTest extends TestCase
 
     public function testIsSwitchDisabledForReturnsTrueForSameUser(): void
     {
-        $user = $this->createUser('alice', 'alice@example.com', time());
+        $user = $this->createUser('alice', 'alice@example.com', createdAt: time());
         self::assertTrue($user->isSwitchDisabledFor((int) $user->getId()));
     }
 
@@ -552,10 +555,10 @@ final class UserTest extends TestCase
 
     public function testSearchQueryCountReflectsStatusFilter(): void
     {
-        $blocked = $this->createUser('alice', 'alice@example.com', time());
+        $blocked = $this->createUser('alice', 'alice@example.com', createdAt: time());
         $blocked->setBlockedAt(time());
         $blocked->save();
-        $this->createUser('bob', 'bob@example.com', time());
+        $this->createUser('bob', 'bob@example.com', createdAt: time());
 
         self::assertSame(1, User::searchQuery(['status' => 'blocked'])->count());
         self::assertSame(2, User::searchQuery()->count());
@@ -563,10 +566,10 @@ final class UserTest extends TestCase
 
     public function testSearchQueryWithBlockedStatusFilter(): void
     {
-        $blocked = $this->createUser('alice', 'alice@example.com', time());
+        $blocked = $this->createUser('alice', 'alice@example.com', createdAt: time());
         $blocked->setBlockedAt(time());
         $blocked->save();
-        $this->createUser('bob', 'bob@example.com', time());
+        $this->createUser('bob', 'bob@example.com', createdAt: time());
 
         $result = User::searchQuery(['status' => 'blocked'])->all();
 
@@ -576,10 +579,10 @@ final class UserTest extends TestCase
 
     public function testSearchQueryWithConfirmedStatusFilter(): void
     {
-        $confirmed = $this->createUser('alice', 'alice@example.com', time());
+        $confirmed = $this->createUser('alice', 'alice@example.com', createdAt: time());
         $confirmed->setConfirmedAt(time());
         $confirmed->save();
-        $this->createUser('bob', 'bob@example.com', time());
+        $this->createUser('bob', 'bob@example.com', createdAt: time());
 
         $result = User::searchQuery(['status' => 'confirmed'])->all();
 
@@ -589,8 +592,8 @@ final class UserTest extends TestCase
 
     public function testSearchQueryWithEmailFilter(): void
     {
-        $this->createUser('alice', 'alice@example.com', time());
-        $this->createUser('bob', 'bob@other.com', time());
+        $this->createUser('alice', 'alice@example.com', createdAt: time());
+        $this->createUser('bob', 'bob@other.com', createdAt: time());
 
         $result = User::searchQuery(['email' => 'example.com'])->all();
 
@@ -600,10 +603,10 @@ final class UserTest extends TestCase
 
     public function testSearchQueryWithUnconfirmedStatusFilter(): void
     {
-        $confirmed = $this->createUser('alice', 'alice@example.com', time());
+        $confirmed = $this->createUser('alice', 'alice@example.com', createdAt: time());
         $confirmed->setConfirmedAt(time());
         $confirmed->save();
-        $this->createUser('bob', 'bob@example.com', time());
+        $this->createUser('bob', 'bob@example.com', createdAt: time());
 
         $result = User::searchQuery(['status' => 'unconfirmed'])->all();
 
@@ -613,8 +616,8 @@ final class UserTest extends TestCase
 
     public function testSearchQueryWithUsernameFilter(): void
     {
-        $this->createUser('alice', 'alice@example.com', time());
-        $this->createUser('bob', 'bob@example.com', time());
+        $this->createUser('alice', 'alice@example.com', createdAt: time());
+        $this->createUser('bob', 'bob@example.com', createdAt: time());
 
         $result = User::searchQuery(['username' => 'ali'])->all();
 
@@ -668,19 +671,5 @@ final class UserTest extends TestCase
         $schemaCache = new SchemaCache($cache);
         $schemaCache->setEnabled(false);
         return new Connection($driver, $schemaCache);
-    }
-
-    private function createUser(string $username, string $email, int $createdAt): User
-    {
-        $user = new User();
-        $user->setUsername($username);
-        $user->setEmail($email);
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt($createdAt);
-        $user->setUpdatedAt($createdAt);
-        $user->save();
-
-        return $user;
     }
 }

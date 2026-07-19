@@ -16,12 +16,12 @@ use YiiRocks\Voyti\Middleware\RememberMeMiddleware;
 use YiiRocks\Voyti\Middleware\SessionRevocationEnforceMiddleware;
 use YiiRocks\Voyti\Middleware\TwoFactorAuthenticationEnforceMiddleware;
 use YiiRocks\Voyti\Middleware\VoytiMiddleware;
-use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\ExpireService;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\FakeSession;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Http\Status;
 use Yiisoft\Rbac\ManagerInterface;
@@ -35,6 +35,7 @@ use Yiisoft\User\CurrentUser;
 final class VoytiMiddlewareTest extends TestCase
 {
     use DatabaseSetupTrait;
+    use UserFactoryTrait;
 
     protected function setUp(): void
     {
@@ -168,7 +169,7 @@ final class VoytiMiddlewareTest extends TestCase
     {
         $config = new ModuleConfig();
 
-        $user = $this->createUser();
+        $user = $this->createUser(username: 'voytiuser', email: 'voytiuser@example.com');
 
         $currentUser = $this->createMock(CurrentUser::class);
         $currentUser->expects(self::once())->method('getIdentity')->willReturn($user);
@@ -288,19 +289,5 @@ final class VoytiMiddlewareTest extends TestCase
         $middleware = $this->createMock(MiddlewareInterface::class);
         $middleware->method('process')->willReturn($response);
         return $middleware;
-    }
-
-    private function createUser(): User
-    {
-        $user = new User();
-        $user->setUsername('voytiuser');
-        $user->setEmail('voytiuser@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-
-        return $user;
     }
 }

@@ -27,6 +27,7 @@ use YiiRocks\Voyti\Service\User\CreateService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Data\Paginator\OffsetPaginator;
 use Yiisoft\Hydrator\HydratorInterface;
@@ -43,6 +44,7 @@ final class UserControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
     use RedirectResponseMockTrait;
+    use UserFactoryTrait;
 
     private AuthHelper&MockObject $authHelper;
     private BlockService&MockObject $blockService;
@@ -95,7 +97,7 @@ final class UserControllerTest extends TestCase
 
     public function testAssignmentsGetShowsAssignments(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser(email: 'testuser@example.com');
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
@@ -117,7 +119,7 @@ final class UserControllerTest extends TestCase
 
     public function testAssignmentsPostUpdates(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser(email: 'testuser@example.com');
         $userId = (int) $user->getId();
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['items' => ['admin', 'editor']]);
@@ -158,7 +160,7 @@ final class UserControllerTest extends TestCase
 
     public function testBlockTogglesUserBlock(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser(email: 'testuser@example.com');
         $userId = (int) $user->getId();
         $controller = $this->createController();
 
@@ -175,7 +177,7 @@ final class UserControllerTest extends TestCase
 
     public function testConfirmFailureShowsError(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser(email: 'testuser@example.com');
         $controller = $this->createController();
 
         $this->confirmationService->expects($this->once())->method('run')->willReturn(false);
@@ -195,7 +197,7 @@ final class UserControllerTest extends TestCase
 
     public function testConfirmSuccessful(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser(email: 'testuser@example.com');
         $controller = $this->createController();
 
         $this->confirmationService->expects($this->once())->method('run')->willReturn(true);
@@ -304,7 +306,7 @@ final class UserControllerTest extends TestCase
         $identity->method('getId')->willReturn('999999');
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
-        $user = $this->createUser();
+        $user = $this->createUser(email: 'testuser@example.com');
         $userId = (int) $user->getId();
 
         $controller = $this->createController();
@@ -371,7 +373,7 @@ final class UserControllerTest extends TestCase
 
     public function testForcePasswordChangeUserFound(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser(email: 'testuser@example.com');
         $controller = $this->createController();
 
         $this->expireService->expects($this->once())->method('run')->willReturn(true);
@@ -468,7 +470,7 @@ final class UserControllerTest extends TestCase
 
     public function testPasswordResetUserFound(): void
     {
-        $user = $this->createUser('test@example.com');
+        $user = $this->createUser(email: 'test@example.com');
         $controller = $this->createController();
 
         $this->recoveryService->expects($this->once())
@@ -498,7 +500,7 @@ final class UserControllerTest extends TestCase
 
     public function testSessionsUserFound(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser(email: 'testuser@example.com');
         $controller = $this->createController();
 
         $response = $this->createMock(ResponseInterface::class);
@@ -596,7 +598,7 @@ final class UserControllerTest extends TestCase
 
     public function testTerminateSessionsUserFound(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser(email: 'testuser@example.com');
         $userId = (int) $user->getId();
         $this->createSession($userId, 'sess-1');
         $controller = $this->createController();
@@ -618,7 +620,7 @@ final class UserControllerTest extends TestCase
 
     public function testUpdateGetShowsForm(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser(email: 'testuser@example.com');
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
@@ -638,7 +640,7 @@ final class UserControllerTest extends TestCase
 
     public function testUpdatePostSuccessful(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser(email: 'testuser@example.com');
         $userId = (int) $user->getId();
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['user' => ['username' => 'updated', 'email' => 'updated@example.com', 'password' => ''], 'assignedItems' => []]);
@@ -658,7 +660,7 @@ final class UserControllerTest extends TestCase
 
     public function testUpdatePostWithPasswordChange(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser(email: 'testuser@example.com');
         $userId = (int) $user->getId();
         $originalHash = $user->getPasswordHash();
         $controller = $this->createController();
@@ -714,7 +716,7 @@ final class UserControllerTest extends TestCase
 
     public function testUpdateProfileGetCreatesNewProfileWhenNoneExists(): void
     {
-        $user = $this->createUser();
+        $user = $this->createUser(email: 'testuser@example.com');
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
@@ -848,23 +850,9 @@ final class UserControllerTest extends TestCase
         return $session;
     }
 
-    private function createUser(string $email = 'testuser@example.com'): User
-    {
-        $user = new User();
-        $user->setUsername('testuser');
-        $user->setEmail($email);
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-
-        return $user;
-    }
-
     private function createUserWithProfile(string $name = 'John'): User
     {
-        $user = $this->createUser();
+        $user = $this->createUser(email: 'testuser@example.com');
 
         $profile = new UserProfile();
         $profile->setUserId((int) $user->getId());

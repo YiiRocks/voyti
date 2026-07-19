@@ -24,14 +24,6 @@ final class RuleFormTest extends TestCase
         $this->assertSame('', $form->previousName);
     }
 
-    public function testGetAttributeLabels(): void
-    {
-        $form = new RuleForm($this->createTranslator());
-        $labels = $form->getAttributeLabels();
-        $this->assertArrayHasKey('name', $labels);
-        $this->assertArrayHasKey('class', $labels);
-    }
-
     public function testGetFormName(): void
     {
         $form = new RuleForm($this->createTranslator());
@@ -41,7 +33,9 @@ final class RuleFormTest extends TestCase
     public function testGetPropertyLabels(): void
     {
         $form = new RuleForm($this->createTranslator());
-        $this->assertSame($form->getAttributeLabels(), $form->getPropertyLabels());
+        $labels = $form->getPropertyLabels();
+        $this->assertArrayHasKey('name', $labels);
+        $this->assertArrayHasKey('class', $labels);
     }
 
     public function testGetRules(): void
@@ -53,6 +47,12 @@ final class RuleFormTest extends TestCase
         $this->assertInstanceOf(Required::class, $rules['name'][0]);
         $this->assertInstanceOf(Regex::class, $rules['name'][1]);
         $this->assertInstanceOf(Required::class, $rules['class'][0]);
+    }
+
+    public function testGetValidationPropertyLabels(): void
+    {
+        $form = new RuleForm($this->createTranslator());
+        $this->assertSame($form->getPropertyLabels(), $form->getValidationPropertyLabels());
     }
 
     public function testSetProperties(): void

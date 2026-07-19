@@ -6,6 +6,7 @@ namespace YiiRocks\Voyti\Model\Form\Rbac;
 
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\Validator\LabelsProviderInterface;
 use Yiisoft\Validator\Rule\Length;
 use Yiisoft\Validator\Rule\Regex;
 use Yiisoft\Validator\Rule\Required;
@@ -16,7 +17,7 @@ use Yiisoft\Validator\RulesProviderInterface;
  * `$type` ('role'|'permission') is also used as the form name, matching how
  * {@see \YiiRocks\Voyti\Controller\Admin\Rbac\RbacController} branches on `$itemType`.
  */
-final class AuthItemForm extends FormModel implements RulesProviderInterface
+final class AuthItemForm extends FormModel implements LabelsProviderInterface, RulesProviderInterface
 {
     public array $children = [];
     #[Length(max: 191)]
@@ -33,12 +34,19 @@ final class AuthItemForm extends FormModel implements RulesProviderInterface
         private string $type,
     ) {}
 
+    #[\Override]
+    public function getFormName(): string
+    {
+        return $this->type;
+    }
+
     /**
      * @return string[]
      *
      * @psalm-return array{name: string, description: string, children: string, rule: string}
      */
-    public function getAttributeLabels(): array
+    #[\Override]
+    public function getPropertyLabels(): array
     {
         return [
             'name' => $this->translator->translate('voyti.view.name_label', category: 'voyti'),
@@ -46,18 +54,6 @@ final class AuthItemForm extends FormModel implements RulesProviderInterface
             'children' => $this->translator->translate('voyti.view.children_header', category: 'voyti'),
             'rule' => $this->translator->translate('voyti.view.rule.class_label', category: 'voyti'),
         ];
-    }
-
-    #[\Override]
-    public function getFormName(): string
-    {
-        return $this->type;
-    }
-
-    #[\Override]
-    public function getPropertyLabels(): array
-    {
-        return $this->getAttributeLabels();
     }
 
     #[\Override]
@@ -72,5 +68,11 @@ final class AuthItemForm extends FormModel implements RulesProviderInterface
     public function getType(): string
     {
         return $this->type;
+    }
+
+    #[\Override]
+    public function getValidationPropertyLabels(): array
+    {
+        return $this->getPropertyLabels();
     }
 }

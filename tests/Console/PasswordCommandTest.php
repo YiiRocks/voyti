@@ -17,12 +17,14 @@ use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\Password\RandomPasswordGenerator;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use Yiisoft\Security\PasswordHasher;
 
 #[AllowMockObjectsWithoutExpectations]
 final class PasswordCommandTest extends TestCase
 {
     use DatabaseSetupTrait;
+    use UserFactoryTrait;
 
     protected function setUp(): void
     {
@@ -47,7 +49,12 @@ final class PasswordCommandTest extends TestCase
 
     public function testExecuteByEmail(): void
     {
-        $user = $this->createUser('testuser', 'pw_reset@example.com');
+        $user = $this->createUser(
+            username: 'testuser',
+            email: 'pw_reset@example.com',
+            passwordHash: 'old_hash',
+            createdAt: 1000,
+        );
 
         $input = $this->createMock(InputInterface::class);
         $input->expects(self::exactly(3))->method('getOption')->willReturnMap([
@@ -76,7 +83,12 @@ final class PasswordCommandTest extends TestCase
 
     public function testExecuteByEmailRecordsPasswordHistory(): void
     {
-        $user = $this->createUser('historyuser', 'pw_history@example.com');
+        $user = $this->createUser(
+            username: 'historyuser',
+            email: 'pw_history@example.com',
+            passwordHash: 'old_hash',
+            createdAt: 1000,
+        );
 
         $input = $this->createMock(InputInterface::class);
         $input->method('getOption')->willReturnMap([
@@ -98,7 +110,12 @@ final class PasswordCommandTest extends TestCase
 
     public function testExecuteById(): void
     {
-        $user = $this->createUser('testuser', 'test@example.com');
+        $user = $this->createUser(
+            username: 'testuser',
+            email: 'test@example.com',
+            passwordHash: 'old_hash',
+            createdAt: 1000,
+        );
 
         $input = $this->createMock(InputInterface::class);
         $input->expects(self::exactly(3))->method('getOption')->willReturnMap([
@@ -118,7 +135,12 @@ final class PasswordCommandTest extends TestCase
 
     public function testExecuteByUsername(): void
     {
-        $user = $this->createUser('pw_user', 'pw@example.com');
+        $user = $this->createUser(
+            username: 'pw_user',
+            email: 'pw@example.com',
+            passwordHash: 'old_hash',
+            createdAt: 1000,
+        );
 
         $input = $this->createMock(InputInterface::class);
         $input->expects(self::exactly(3))->method('getOption')->willReturnMap([
@@ -182,19 +204,5 @@ final class PasswordCommandTest extends TestCase
             $passwordGenerator ?? new RandomPasswordGenerator(),
             new PasswordHistoryService($passwordHasher, $config ?? new ModuleConfig()),
         );
-    }
-
-    private function createUser(string $username, string $email): User
-    {
-        $user = new User();
-        $user->setUsername($username);
-        $user->setEmail($email);
-        $user->setPasswordHash('old_hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(1000);
-        $user->setUpdatedAt(1000);
-        $user->save();
-
-        return $user;
     }
 }

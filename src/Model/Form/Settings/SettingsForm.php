@@ -10,6 +10,7 @@ use YiiRocks\Voyti\Validator\PasswordComplexityRule;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\Helper\ObjectParser;
+use Yiisoft\Validator\LabelsProviderInterface;
 use Yiisoft\Validator\Rule\CompareType;
 use Yiisoft\Validator\Rule\Email;
 use Yiisoft\Validator\Rule\Equal;
@@ -23,7 +24,7 @@ use Yiisoft\Validator\RulesProviderInterface;
  * Backs the account settings page: username, email, and optional password change. Carries the
  * {@see User} being edited via {@see self::setUser()} so validation/persistence can act on it.
  */
-final class SettingsForm extends FormModel implements RulesProviderInterface
+final class SettingsForm extends FormModel implements LabelsProviderInterface, RulesProviderInterface
 {
     #[Required]
     #[Email(checkDns: true, enableIdn: true, skipOnEmpty: true)]
@@ -46,6 +47,17 @@ final class SettingsForm extends FormModel implements RulesProviderInterface
     ) {}
 
     /**
+     * @return string
+     *
+     * @psalm-return 'settings'
+     */
+    #[\Override]
+    public function getFormName(): string
+    {
+        return 'settings';
+    }
+
+    /**
      * @return string[]
      *
      * @psalm-return array{
@@ -60,7 +72,8 @@ final class SettingsForm extends FormModel implements RulesProviderInterface
      *     authTfEnabled: string,
      * }
      */
-    public function getAttributeLabels(): array
+    #[\Override]
+    public function getPropertyLabels(): array
     {
         return [
             'username' => $this->translator->translate('voyti.view.username_label', category: 'voyti'),
@@ -73,23 +86,6 @@ final class SettingsForm extends FormModel implements RulesProviderInterface
             'currentPassword' => $this->translator->translate('voyti.view.current_password_label', category: 'voyti'),
             'authTfEnabled' => $this->translator->translate('voyti.view.account.two_factor_title', category: 'voyti'),
         ];
-    }
-
-    /**
-     * @return string
-     *
-     * @psalm-return 'settings'
-     */
-    #[\Override]
-    public function getFormName(): string
-    {
-        return 'settings';
-    }
-
-    #[\Override]
-    public function getPropertyLabels(): array
-    {
-        return $this->getAttributeLabels();
     }
 
     #[\Override]
@@ -111,6 +107,12 @@ final class SettingsForm extends FormModel implements RulesProviderInterface
     public function getUser(): ?User
     {
         return $this->user;
+    }
+
+    #[\Override]
+    public function getValidationPropertyLabels(): array
+    {
+        return $this->getPropertyLabels();
     }
 
     public function setUser(User $user): void

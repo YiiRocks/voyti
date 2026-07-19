@@ -33,18 +33,18 @@ final class ConsentFormTest extends TestCase
         $this->assertSame('delete-account', $form->getFormName());
     }
 
-    public function testGetAttributeLabels(): void
+    public function testGetPropertyLabels(): void
     {
         $form = new ConsentForm($this->createTranslator(), 'test', 'voyti.view.anonymize.confirm_label');
-        $labels = $form->getAttributeLabels();
+        $labels = $form->getPropertyLabels();
         $this->assertArrayHasKey('password', $labels);
         $this->assertArrayHasKey('consent', $labels);
     }
 
-    public function testGetPropertyLabels(): void
+    public function testGetValidationPropertyLabels(): void
     {
         $form = new ConsentForm($this->createTranslator(), 'test', 'voyti.view.anonymize.confirm_label');
-        $this->assertSame($form->getAttributeLabels(), $form->getPropertyLabels());
+        $this->assertSame($form->getPropertyLabels(), $form->getValidationPropertyLabels());
     }
 
     public function testSetProperties(): void

@@ -25,17 +25,17 @@ final class ResendFormTest extends TestCase
         $this->assertSame('', $form->gRecaptchaResponse);
     }
 
-    public function testGetAttributeLabels(): void
-    {
-        $form = new ResendForm(new ModuleConfig(), $this->createTranslator());
-        $labels = $form->getAttributeLabels();
-        $this->assertArrayHasKey('email', $labels);
-    }
-
     public function testGetFormName(): void
     {
         $form = new ResendForm(new ModuleConfig(), $this->createTranslator());
         $this->assertSame('resend', $form->getFormName());
+    }
+
+    public function testGetPropertyLabels(): void
+    {
+        $form = new ResendForm(new ModuleConfig(), $this->createTranslator());
+        $labels = $form->getPropertyLabels();
+        $this->assertArrayHasKey('email', $labels);
     }
 
     public function testGetRules(): void
@@ -65,6 +65,12 @@ final class ResendFormTest extends TestCase
         $this->assertInstanceOf(RecaptchaV3Rule::class, $rule);
         $this->assertSame(0.5, $rule->getThreshold());
         $this->assertSame('voyti_resend', $rule->getAction());
+    }
+
+    public function testGetValidationPropertyLabels(): void
+    {
+        $form = new ResendForm(new ModuleConfig(), $this->createTranslator());
+        $this->assertSame($form->getPropertyLabels(), $form->getValidationPropertyLabels());
     }
 
     public function testSetEmail(): void

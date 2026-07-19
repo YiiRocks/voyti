@@ -20,6 +20,7 @@ use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Security\PasswordHasher;
@@ -36,6 +37,7 @@ final class ProfileControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
     use RedirectResponseMockTrait;
+    use UserFactoryTrait;
 
     private AuthHelper&MockObject $authHelper;
     private ModuleConfig $config;
@@ -202,7 +204,7 @@ final class ProfileControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $user = $this->createUser();
+        $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -227,7 +229,7 @@ final class ProfileControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $user = $this->createUser();
+        $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $this->createUserProfile((int) $user->getId());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
@@ -256,7 +258,7 @@ final class ProfileControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $user = $this->createUser();
+        $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $this->createUserProfile((int) $user->getId());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
@@ -278,12 +280,12 @@ final class ProfileControllerTest extends TestCase
 
     public function testUpdateGetShowsSwitchedBanner(): void
     {
-        $originalUser = $this->createUser(username: 'original', email: 'original@example.com');
+        $originalUser = $this->createUser(username: 'original', email: 'original@example.com', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
 
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $user = $this->createUser(username: 'switcheduser', email: 'switched@example.com');
+        $user = $this->createUser(username: 'switcheduser', email: 'switched@example.com', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $this->createUserProfile((int) $user->getId());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
@@ -320,7 +322,7 @@ final class ProfileControllerTest extends TestCase
             },
         );
 
-        $user = $this->createUser();
+        $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $profile = $this->createUserProfile((int) $user->getId());
         $profile->setPublicEmail('public@example.com');
         $profile->setGravatarEmail('gravatar@example.com');
@@ -363,7 +365,7 @@ final class ProfileControllerTest extends TestCase
             },
         );
 
-        $user = $this->createUser();
+        $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $this->createUserProfile((int) $user->getId(), name: 'OldName');
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
@@ -397,7 +399,7 @@ final class ProfileControllerTest extends TestCase
             },
         );
 
-        $user = $this->createUser();
+        $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $this->createUserProfile((int) $user->getId(), name: 'OldName');
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
@@ -430,7 +432,7 @@ final class ProfileControllerTest extends TestCase
             },
         );
 
-        $user = $this->createUser();
+        $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $this->createUserProfile((int) $user->getId(), name: 'OldName');
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
@@ -495,24 +497,6 @@ final class ProfileControllerTest extends TestCase
             flash: $this->flash,
             authHelper: $this->authHelper,
         );
-    }
-
-    private function createUser(
-        string $username = 'testuser',
-        string $email = 'test@example.com',
-        string $password = 'secret',
-    ): User {
-        $user = new User();
-        $user->setUsername($username);
-        $user->setEmail($email);
-        $user->setPasswordHash($this->passwordHasher->hash($password));
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->setConfirmedAt(time());
-        $user->save();
-
-        return $user;
     }
 
     private function createUserProfile(int $userId, string $name = 'John'): UserProfile

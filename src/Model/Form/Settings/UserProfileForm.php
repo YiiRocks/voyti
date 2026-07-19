@@ -10,6 +10,7 @@ use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\Model\UserProfile;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\Validator\LabelsProviderInterface;
 use Yiisoft\Validator\Result;
 use Yiisoft\Validator\Rule\Callback;
 use Yiisoft\Validator\Rule\Date\Date;
@@ -22,7 +23,7 @@ use Yiisoft\Validator\Rule\Url;
  * {@see self::fromProfile()}/{@see self::applyToProfile()}, and carries its own callback
  * validators (birthday not in the future, no HTML tags, valid timezone).
  */
-final class UserProfileForm extends FormModel
+final class UserProfileForm extends FormModel implements LabelsProviderInterface
 {
     #[Callback(method: 'validateNoHtmlTags', skipOnEmpty: true)]
     #[Length(max: 65535)]
@@ -80,6 +81,17 @@ final class UserProfileForm extends FormModel
     }
 
     /**
+     * @return string
+     *
+     * @psalm-return 'userProfile'
+     */
+    #[\Override]
+    public function getFormName(): string
+    {
+        return 'userProfile';
+    }
+
+    /**
      * @return string[]
      *
      * @psalm-return array{
@@ -93,7 +105,8 @@ final class UserProfileForm extends FormModel
      *     birthday: string,
      * }
      */
-    public function getAttributeLabels(): array
+    #[\Override]
+    public function getPropertyLabels(): array
     {
         return [
             'name' => $this->translator->translate('voyti.view.name_label', category: 'voyti'),
@@ -107,21 +120,10 @@ final class UserProfileForm extends FormModel
         ];
     }
 
-    /**
-     * @return string
-     *
-     * @psalm-return 'userProfile'
-     */
     #[\Override]
-    public function getFormName(): string
+    public function getValidationPropertyLabels(): array
     {
-        return 'userProfile';
-    }
-
-    #[\Override]
-    public function getPropertyLabels(): array
-    {
-        return $this->getAttributeLabels();
+        return $this->getPropertyLabels();
     }
 
     public function validateBirthdayNotInFuture(mixed $value): Result

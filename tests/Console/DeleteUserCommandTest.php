@@ -12,11 +12,13 @@ use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Console\DeleteUserCommand;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 
 #[AllowMockObjectsWithoutExpectations]
 final class DeleteUserCommandTest extends TestCase
 {
     use DatabaseSetupTrait;
+    use UserFactoryTrait;
 
     protected function setUp(): void
     {
@@ -41,7 +43,7 @@ final class DeleteUserCommandTest extends TestCase
 
     public function testExecuteByEmail(): void
     {
-        $this->createUser('testuser', 'del@example.com');
+        $this->createUser('testuser', 'del@example.com', createdAt: 1000);
 
         $input = $this->createMock(InputInterface::class);
         $input->expects(self::exactly(3))->method('getOption')->willReturnMap([
@@ -62,7 +64,7 @@ final class DeleteUserCommandTest extends TestCase
 
     public function testExecuteById(): void
     {
-        $user = $this->createUser('testuser', 'test@example.com');
+        $user = $this->createUser('testuser', 'test@example.com', createdAt: 1000);
 
         $input = $this->createMock(InputInterface::class);
         $input->expects(self::exactly(3))->method('getOption')->willReturnMap([
@@ -83,7 +85,7 @@ final class DeleteUserCommandTest extends TestCase
 
     public function testExecuteByUsername(): void
     {
-        $this->createUser('delete_me', 'delete@example.com');
+        $this->createUser('delete_me', 'delete@example.com', createdAt: 1000);
 
         $input = $this->createMock(InputInterface::class);
         $input->expects(self::exactly(3))->method('getOption')->willReturnMap([
@@ -141,19 +143,5 @@ final class DeleteUserCommandTest extends TestCase
     private function createCommand(): DeleteUserCommand
     {
         return new DeleteUserCommand();
-    }
-
-    private function createUser(string $username, string $email): User
-    {
-        $user = new User();
-        $user->setUsername($username);
-        $user->setEmail($email);
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(1000);
-        $user->setUpdatedAt(1000);
-        $user->save();
-
-        return $user;
     }
 }

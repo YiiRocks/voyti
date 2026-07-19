@@ -56,7 +56,6 @@
         "yiisoft/user": "^2.3",
         "yiisoft/validator": "^2.6",
         "yiisoft/yii-dataview": "^1.1",
-        "yiisoft/yii-middleware": "^1.1",
         "yiisoft/yii-view-renderer": "^7.1"
     },
     "suggest": {

@@ -23,6 +23,7 @@ use YiiRocks\Voyti\Service\User\UserCreationHelper;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 use YiiRocks\Voyti\tests\Support\MailCapture;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\DataResponse\Middleware\JsonDataResponseMiddleware;
 use Yiisoft\DataResponse\ResponseFactory\DataResponseFactory;
@@ -35,6 +36,7 @@ use Yiisoft\Translator\TranslatorInterface;
 final class UserControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
+    use UserFactoryTrait;
 
     private ModuleConfig $config;
     private PasswordGeneratorInterface&MockObject $passwordGenerator;
@@ -472,19 +474,5 @@ final class UserControllerTest extends TestCase
             passwordHistoryService: new PasswordHistoryService(new PasswordHasher(), $config),
             userCreationHelper: $this->userCreationHelper,
         );
-    }
-
-    private function createUser(string $username, string $email): User
-    {
-        $user = new User();
-        $user->setUsername($username);
-        $user->setEmail($email);
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-
-        return $user;
     }
 }

@@ -17,6 +17,7 @@ use YiiRocks\Voyti\Service\EmailChangeService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Security\PasswordHasher;
@@ -33,6 +34,7 @@ final class AccountControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
     use RedirectResponseMockTrait;
+    use UserFactoryTrait;
 
     private ModuleConfig $config;
     private CurrentUser&MockObject $currentUser;
@@ -81,7 +83,7 @@ final class AccountControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $user = $this->createUser();
+        $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -106,7 +108,7 @@ final class AccountControllerTest extends TestCase
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['settings' => ['username' => 'testuser', 'email' => 'test@example.com', 'password' => '', 'passwordRepeat' => '']]);
 
         $this->validator->method('validate')->willReturn(new Result());
-        $user = $this->createUser();
+        $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -137,7 +139,7 @@ final class AccountControllerTest extends TestCase
             },
         );
         $this->validator->method('validate')->willReturn(new Result());
-        $user = $this->createUser(email: 'old@example.com');
+        $user = $this->createUser(email: 'old@example.com', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -177,7 +179,7 @@ final class AccountControllerTest extends TestCase
             },
         );
         $this->validator->method('validate')->willReturn(new Result());
-        $user = $this->createUser();
+        $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $originalHash = $user->getPasswordHash();
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
@@ -218,7 +220,7 @@ final class AccountControllerTest extends TestCase
             },
         );
         $this->validator->method('validate')->willReturn(new Result());
-        $user = $this->createUser(password: 'secret');
+        $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -294,7 +296,7 @@ final class AccountControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $user = $this->createUser();
+        $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -333,21 +335,4 @@ final class AccountControllerTest extends TestCase
         );
     }
 
-    private function createUser(
-        string $username = 'testuser',
-        string $email = 'test@example.com',
-        string $password = 'secret',
-    ): User {
-        $user = new User();
-        $user->setUsername($username);
-        $user->setEmail($email);
-        $user->setPasswordHash($this->passwordHasher->hash($password));
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->setConfirmedAt(time());
-        $user->save();
-
-        return $user;
-    }
 }

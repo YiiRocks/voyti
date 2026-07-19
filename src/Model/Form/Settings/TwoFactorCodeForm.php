@@ -6,6 +6,7 @@ namespace YiiRocks\Voyti\Model\Form\Settings;
 
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\Validator\LabelsProviderInterface;
 use Yiisoft\Validator\Rule\Integer;
 use Yiisoft\Validator\Rule\Length;
 use Yiisoft\Validator\Rule\Required;
@@ -13,7 +14,7 @@ use Yiisoft\Validator\Rule\Required;
 /**
  * Backs the two-factor authentication code entry page for a given delivery `$method`.
  */
-final class TwoFactorCodeForm extends FormModel
+final class TwoFactorCodeForm extends FormModel implements LabelsProviderInterface
 {
     #[Required]
     #[Integer]
@@ -26,18 +27,6 @@ final class TwoFactorCodeForm extends FormModel
     ) {}
 
     /**
-     * @return string[]
-     *
-     * @psalm-return array{code: string}
-     */
-    public function getAttributeLabels(): array
-    {
-        return [
-            'code' => $this->translator->translate('voyti.view.two_factor.enter_code', category: 'voyti'),
-        ];
-    }
-
-    /**
      * @return string
      *
      * @psalm-return ''
@@ -48,9 +37,22 @@ final class TwoFactorCodeForm extends FormModel
         return '';
     }
 
+    /**
+     * @return string[]
+     *
+     * @psalm-return array{code: string}
+     */
     #[\Override]
     public function getPropertyLabels(): array
     {
-        return $this->getAttributeLabels();
+        return [
+            'code' => $this->translator->translate('voyti.view.two_factor.enter_code', category: 'voyti'),
+        ];
+    }
+
+    #[\Override]
+    public function getValidationPropertyLabels(): array
+    {
+        return $this->getPropertyLabels();
     }
 }

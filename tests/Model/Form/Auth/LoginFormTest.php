@@ -12,6 +12,7 @@ use YiiRocks\Voyti\Model\Form\Auth\LoginForm;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\Rule\Required;
+use Yiisoft\Validator\Validator;
 
 #[AllowMockObjectsWithoutExpectations]
 final class LoginFormTest extends TestCase
@@ -27,16 +28,6 @@ final class LoginFormTest extends TestCase
         $this->assertSame('', $form->gRecaptchaResponse);
     }
 
-    public function testGetAttributeLabels(): void
-    {
-        $form = new LoginForm(new ModuleConfig(), $this->createTranslator());
-        $labels = $form->getAttributeLabels();
-        $this->assertArrayHasKey('login', $labels);
-        $this->assertArrayHasKey('password', $labels);
-        $this->assertArrayHasKey('rememberMe', $labels);
-        $this->assertArrayHasKey('twoFactorAuthenticationCode', $labels);
-    }
-
     public function testGetFormName(): void
     {
         $form = new LoginForm(new ModuleConfig(), $this->createTranslator());
@@ -46,7 +37,11 @@ final class LoginFormTest extends TestCase
     public function testGetPropertyLabels(): void
     {
         $form = new LoginForm(new ModuleConfig(), $this->createTranslator());
-        $this->assertSame($form->getAttributeLabels(), $form->getPropertyLabels());
+        $labels = $form->getPropertyLabels();
+        $this->assertArrayHasKey('login', $labels);
+        $this->assertArrayHasKey('password', $labels);
+        $this->assertArrayHasKey('rememberMe', $labels);
+        $this->assertArrayHasKey('twoFactorAuthenticationCode', $labels);
     }
 
     public function testGetRulesReturnsLoginRules(): void
@@ -91,6 +86,12 @@ final class LoginFormTest extends TestCase
         $this->assertInstanceOf(Required::class, $rules['twoFactorAuthenticationCode'][0]);
     }
 
+    public function testGetValidationPropertyLabels(): void
+    {
+        $form = new LoginForm(new ModuleConfig(), $this->createTranslator());
+        $this->assertSame($form->getPropertyLabels(), $form->getValidationPropertyLabels());
+    }
+
     public function testRememberMeDefaultsToFalse(): void
     {
         $form = new LoginForm(new ModuleConfig(), $this->createTranslator());
@@ -109,6 +110,16 @@ final class LoginFormTest extends TestCase
         $this->assertSame('secret', $form->password);
         $this->assertTrue($form->rememberMe);
         $this->assertSame('123456', $form->twoFactorAuthenticationCode);
+    }
+
+    public function testValidationErrorMessageUsesPropertyLabelNotRawPropertyName(): void
+    {
+        $form = new LoginForm(new ModuleConfig(), $this->createTranslator());
+        $result = (new Validator())->validate($form);
+
+        $messages = $result->getErrorMessagesIndexedByProperty();
+        $this->assertArrayHasKey('login', $messages);
+        $this->assertSame('Voyti.view.login.login_label cannot be blank.', $messages['login'][0]);
     }
     private function createTranslator(): TranslatorInterface
     {

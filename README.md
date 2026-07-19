@@ -193,7 +193,6 @@ Below are all top-level `yiirocks/voyti` options, followed by the nested `social
 | `enableSocialNetworkRegistration` | `bool` | `true` | Allow social network registration |
 | `socialNetworkClients` | `array` | `[]` | OAuth client IDs, secrets, and provider-specific options |
 | `enableEmailConfirmation` | `bool` | `true` | Require email confirmation |
-| `generatePasswords` | `bool` | `false` | Auto-generate passwords on registration |
 | `allowPasswordRecovery` | `bool` | `true` | Allow password recovery |
 | `allowAdminPasswordRecovery` | `bool` | `true` | Allow admin-initiated password recovery |
 | `allowAccountDelete` | `bool` | `false` | Allow users to delete their account |

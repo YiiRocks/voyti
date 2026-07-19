@@ -27,6 +27,7 @@ use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Security\PasswordHasher;
@@ -42,6 +43,7 @@ final class SessionControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
     use RedirectResponseMockTrait;
+    use UserFactoryTrait;
 
     private ModuleConfig $config;
     private CurrentUser&MockObject $currentUser;
@@ -373,7 +375,15 @@ final class SessionControllerTest extends TestCase
 
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['twoFactorAuthenticationCode' => '123456']]);
 
-        $this->createUser(authTfEnabled: true, authTfType: 'email', authTfKey: '123456');
+        $this->createUser(
+            username: 'jdoe',
+            email: 'jdoe@example.com',
+            passwordHash: $this->passwordHasher->hash('secret'),
+            confirmedAt: time(),
+            authTfEnabled: true,
+            authTfType: 'email',
+            authTfKey: '123456',
+        );
 
         $response = $this->mockRedirectResponse($this->responseFactory, '//app/dashboard');
 
@@ -394,7 +404,15 @@ final class SessionControllerTest extends TestCase
 
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['twoFactorAuthenticationCode' => '123456']]);
 
-        $this->createUser(authTfEnabled: true, authTfType: 'email', authTfKey: '123456');
+        $this->createUser(
+            username: 'jdoe',
+            email: 'jdoe@example.com',
+            passwordHash: $this->passwordHasher->hash('secret'),
+            confirmedAt: time(),
+            authTfEnabled: true,
+            authTfType: 'email',
+            authTfKey: '123456',
+        );
 
         $this->rememberMeCookieService->expects($this->once())->method('addCookie')->willReturnArgument(1);
 
@@ -419,7 +437,14 @@ final class SessionControllerTest extends TestCase
 
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['twoFactorAuthenticationCode' => 'wrong']]);
 
-        $this->createUser(authTfEnabled: true, authTfType: 'google', authTfKey: null);
+        $this->createUser(
+            username: 'jdoe',
+            email: 'jdoe@example.com',
+            passwordHash: $this->passwordHasher->hash('secret'),
+            confirmedAt: time(),
+            authTfEnabled: true,
+            authTfType: 'google',
+        );
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -464,7 +489,12 @@ final class SessionControllerTest extends TestCase
 
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
-        $this->createUser();
+        $this->createUser(
+            username: 'jdoe',
+            email: 'jdoe@example.com',
+            passwordHash: $this->passwordHasher->hash('secret'),
+            confirmedAt: time(),
+        );
         $this->validator->method('validate')->willReturn(new Result());
 
         $response = $this->mockRedirectResponse($this->responseFactory, '//app/dashboard');
@@ -480,7 +510,12 @@ final class SessionControllerTest extends TestCase
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
-        $this->createUser();
+        $this->createUser(
+            username: 'jdoe',
+            email: 'jdoe@example.com',
+            passwordHash: $this->passwordHasher->hash('secret'),
+            confirmedAt: time(),
+        );
         $this->validator->method('validate')->willReturn(new Result());
 
         $response = $this->mockRedirectResponse($this->responseFactory, '//home');
@@ -500,7 +535,12 @@ final class SessionControllerTest extends TestCase
 
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
-        $this->createUser();
+        $this->createUser(
+            username: 'jdoe',
+            email: 'jdoe@example.com',
+            passwordHash: $this->passwordHasher->hash('secret'),
+            confirmedAt: time(),
+        );
         $this->validator->method('validate')->willReturn(new Result());
 
         $this->expectException(LogicException::class);
@@ -515,7 +555,12 @@ final class SessionControllerTest extends TestCase
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret', 'rememberMe' => true]]);
 
-        $this->createUser();
+        $this->createUser(
+            username: 'jdoe',
+            email: 'jdoe@example.com',
+            passwordHash: $this->passwordHasher->hash('secret'),
+            confirmedAt: time(),
+        );
         $this->validator->method('validate')->willReturn(new Result());
         $this->currentUser->method('withAuthTimeout')->willReturnSelf();
         $this->rememberMeCookieService->expects($this->once())->method('addCookie')->willReturnArgument(1);
@@ -535,7 +580,13 @@ final class SessionControllerTest extends TestCase
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
-        $this->createUser(blocked: true);
+        $this->createUser(
+            username: 'jdoe',
+            email: 'jdoe@example.com',
+            passwordHash: $this->passwordHasher->hash('secret'),
+            confirmedAt: time(),
+            blockedAt: time(),
+        );
         $this->validator->method('validate')->willReturn(new Result());
 
         $response = $this->createMock(ResponseInterface::class);
@@ -578,7 +629,14 @@ final class SessionControllerTest extends TestCase
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
-        $user = $this->createUser(authTfEnabled: true, authTfType: 'email');
+        $user = $this->createUser(
+            username: 'jdoe',
+            email: 'jdoe@example.com',
+            passwordHash: $this->passwordHasher->hash('secret'),
+            confirmedAt: time(),
+            authTfEnabled: true,
+            authTfType: 'email',
+        );
 
         $this->validator->method('validate')->willReturn(new Result());
         $this->twoFactorEmailCodeService->expects($this->once())->method('run')->with(
@@ -607,7 +665,14 @@ final class SessionControllerTest extends TestCase
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
-        $this->createUser(authTfEnabled: true, authTfType: 'google');
+        $this->createUser(
+            username: 'jdoe',
+            email: 'jdoe@example.com',
+            passwordHash: $this->passwordHasher->hash('secret'),
+            confirmedAt: time(),
+            authTfEnabled: true,
+            authTfType: 'google',
+        );
 
         $this->validator->method('validate')->willReturn(new Result());
         $this->twoFactorEmailCodeService->expects($this->never())->method('run');
@@ -632,7 +697,11 @@ final class SessionControllerTest extends TestCase
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
-        $this->createUser(confirmed: false);
+        $this->createUser(
+            username: 'jdoe',
+            email: 'jdoe@example.com',
+            passwordHash: $this->passwordHasher->hash('secret'),
+        );
         $this->validator->method('validate')->willReturn(new Result());
 
         $response = $this->createMock(ResponseInterface::class);
@@ -768,31 +837,6 @@ final class SessionControllerTest extends TestCase
         $user->setAuthKey('key');
         $user->setCreatedAt(time());
         $user->setUpdatedAt(time());
-        $user->save();
-
-        return $user;
-    }
-
-    private function createUser(
-        string $password = 'secret',
-        bool $blocked = false,
-        bool $confirmed = true,
-        bool $authTfEnabled = false,
-        ?string $authTfType = null,
-        ?string $authTfKey = null,
-    ): User {
-        $user = new User();
-        $user->setUsername('jdoe');
-        $user->setEmail('jdoe@example.com');
-        $user->setPasswordHash($this->passwordHasher->hash($password));
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->setBlockedAt($blocked ? time() : null);
-        $user->setConfirmedAt($confirmed ? time() : null);
-        $user->setAuthTfEnabled($authTfEnabled);
-        $user->setAuthTfType($authTfType);
-        $user->setAuthTfKey($authTfKey);
         $user->save();
 
         return $user;

@@ -27,21 +27,6 @@ final class SettingsFormTest extends TestCase
         $this->assertNull($form->getUser());
     }
 
-    public function testGetAttributeLabels(): void
-    {
-        $form = new SettingsForm(new ModuleConfig(), $this->createTranslator());
-        $labels = $form->getAttributeLabels();
-        $this->assertArrayHasKey('username', $labels);
-        $this->assertArrayHasKey('email', $labels);
-        $this->assertArrayHasKey('password', $labels);
-        $this->assertArrayHasKey('passwordRepeat', $labels);
-        $this->assertArrayHasKey('publicEmail', $labels);
-        $this->assertArrayHasKey('name', $labels);
-        $this->assertArrayHasKey('bio', $labels);
-        $this->assertArrayHasKey('currentPassword', $labels);
-        $this->assertArrayHasKey('authTfEnabled', $labels);
-    }
-
     public function testGetFormName(): void
     {
         $form = new SettingsForm(new ModuleConfig(), $this->createTranslator());
@@ -51,7 +36,16 @@ final class SettingsFormTest extends TestCase
     public function testGetPropertyLabels(): void
     {
         $form = new SettingsForm(new ModuleConfig(), $this->createTranslator());
-        $this->assertSame($form->getAttributeLabels(), $form->getPropertyLabels());
+        $labels = $form->getPropertyLabels();
+        $this->assertArrayHasKey('username', $labels);
+        $this->assertArrayHasKey('email', $labels);
+        $this->assertArrayHasKey('password', $labels);
+        $this->assertArrayHasKey('passwordRepeat', $labels);
+        $this->assertArrayHasKey('publicEmail', $labels);
+        $this->assertArrayHasKey('name', $labels);
+        $this->assertArrayHasKey('bio', $labels);
+        $this->assertArrayHasKey('currentPassword', $labels);
+        $this->assertArrayHasKey('authTfEnabled', $labels);
     }
 
     public function testGetRulesWithPasswordComplexityDisabled(): void
@@ -74,6 +68,12 @@ final class SettingsFormTest extends TestCase
     {
         $form = new SettingsForm(new ModuleConfig(), $this->createTranslator());
         $this->assertNull($form->getUser());
+    }
+
+    public function testGetValidationPropertyLabels(): void
+    {
+        $form = new SettingsForm(new ModuleConfig(), $this->createTranslator());
+        $this->assertSame($form->getPropertyLabels(), $form->getValidationPropertyLabels());
     }
 
     public function testSetAndGetUser(): void
