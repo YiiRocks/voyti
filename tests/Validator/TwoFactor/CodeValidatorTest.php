@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Validator\TwoFactor;
 
+use chillerlan\Authenticator\Authenticator;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -146,16 +147,12 @@ final class CodeValidatorTest extends TestCase
 
     public function testValidateAcceptsPreviousWindowCodeWithDefaultCycles(): void
     {
-        if (!class_exists(\chillerlan\Authenticator\Authenticator::class)) {
-            $this->markTestSkipped('chillerlan/php-authenticator not installed.');
-        }
-
         $now = time();
-        $secret = (new \chillerlan\Authenticator\Authenticator())->createSecret();
+        $secret = (new Authenticator())->createSecret();
         $user = new User();
         $user->setAuthTfKey($secret);
 
-        $authenticator = new \chillerlan\Authenticator\Authenticator();
+        $authenticator = new Authenticator();
         $authenticator->setSecret($secret);
         $code = $authenticator->code($now - 30);
 
@@ -166,16 +163,12 @@ final class CodeValidatorTest extends TestCase
 
     public function testValidateRejectsTwoWindowsBackCodeWithDefaultCycles(): void
     {
-        if (!class_exists(\chillerlan\Authenticator\Authenticator::class)) {
-            $this->markTestSkipped('chillerlan/php-authenticator not installed.');
-        }
-
         $now = time();
-        $secret = (new \chillerlan\Authenticator\Authenticator())->createSecret();
+        $secret = (new Authenticator())->createSecret();
         $user = new User();
         $user->setAuthTfKey($secret);
 
-        $authenticator = new \chillerlan\Authenticator\Authenticator();
+        $authenticator = new Authenticator();
         $authenticator->setSecret($secret);
         $code = $authenticator->code($now - 60);
 
@@ -198,15 +191,11 @@ final class CodeValidatorTest extends TestCase
 
     public function testValidateReturnsTrueWithValidCurrentCode(): void
     {
-        if (!class_exists(\chillerlan\Authenticator\Authenticator::class)) {
-            $this->markTestSkipped('chillerlan/php-authenticator not installed.');
-        }
-
-        $secret = (new \chillerlan\Authenticator\Authenticator())->createSecret();
+        $secret = (new Authenticator())->createSecret();
         $user = new User();
         $user->setAuthTfKey($secret);
 
-        $authenticator = new \chillerlan\Authenticator\Authenticator();
+        $authenticator = new Authenticator();
         $authenticator->setSecret($secret);
         $code = $authenticator->code();
 
@@ -217,10 +206,6 @@ final class CodeValidatorTest extends TestCase
 
     public function testValidateWithValidAuthTfKeyAndInvalidCode(): void
     {
-        if (!class_exists(\chillerlan\Authenticator\Authenticator::class)) {
-            $this->markTestSkipped('chillerlan/php-authenticator not installed.');
-        }
-
         $user = new User();
         $user->setAuthTfKey('VEVTVFNlY3JldEtleTEyMw==');
 

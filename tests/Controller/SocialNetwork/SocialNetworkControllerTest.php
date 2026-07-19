@@ -16,6 +16,7 @@ use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
+use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Security\PasswordHasher;
@@ -51,7 +52,7 @@ final class SocialNetworkControllerTest extends TestCase
         $this->currentUser = $this->createMock(CurrentUser::class);
         $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
         $this->flash = $this->createMock(FlashInterface::class);
-        $this->passwordHasher = new PasswordHasher();
+        $this->passwordHasher = TestPasswordHasherFactory::create();
     }
 
     protected function tearDown(): void

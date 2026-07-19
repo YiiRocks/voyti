@@ -21,10 +21,6 @@ final class UserSessionsTest extends TestCase
 
     protected function setUp(): void
     {
-        if (!extension_loaded('pdo_sqlite')) {
-            self::markTestSkipped('pdo_sqlite extension required.');
-        }
-
         $connection = $this->createSqliteConnection();
         ConnectionProvider::set($connection);
         $this->connection = $connection;

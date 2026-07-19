@@ -104,7 +104,7 @@ final class ControllerHarness
         ?EmailChangeService $emailChangeService = null,
         ?PasswordHistoryService $passwordHistoryService = null,
     ): AccountController {
-        $passwordHasher ??= new PasswordHasher();
+        $passwordHasher ??= TestPasswordHasherFactory::create();
         $emailChangeService ??= new EmailChangeService(
             $this->config,
             new UserTokenFactory(),
@@ -204,7 +204,7 @@ final class ControllerHarness
         ?ResetService $resetService = null,
     ): PasswordResetController {
         $recoveryService ??= new RecoveryService();
-        $passwordHasher = new PasswordHasher();
+        $passwordHasher = TestPasswordHasherFactory::create();
         $resetService ??= new ResetService(
             $this->config,
             $this->eventDispatcher,
@@ -237,7 +237,7 @@ final class ControllerHarness
         ?PasswordHasher $passwordHasher = null,
         ?TerminateUserSessionsService $terminateUserSessionsService = null,
     ): PrivacyController {
-        $passwordHasher ??= new PasswordHasher();
+        $passwordHasher ??= TestPasswordHasherFactory::create();
         $terminateUserSessionsService ??= $this->createTerminateUserSessionsService();
 
         return new PrivacyController(
@@ -412,7 +412,7 @@ final class ControllerHarness
         ?EmailCodeGeneratorService $twoFactorEmailCodeService = null,
         ?BackupCodeService $backupCodeService = null,
     ): SessionController {
-        $passwordHasher ??= new PasswordHasher();
+        $passwordHasher ??= TestPasswordHasherFactory::create();
         $rememberMeCookieService ??= new RememberMeCookieService(
             $this->config->rememberLoginLifespan,
             new SystemClock(),
@@ -515,7 +515,7 @@ final class ControllerHarness
                 $this->config->appName,
             ),
         );
-        $backupCodeService ??= new BackupCodeService(new PasswordHasher());
+        $backupCodeService ??= new BackupCodeService(TestPasswordHasherFactory::create());
 
         return new TwoFactorController(
             translator: $translator,
@@ -551,7 +551,7 @@ final class ControllerHarness
         ?PasswordHistoryService $passwordHistoryService = null,
         ?AuditLogService $auditLogService = null,
     ): UserController {
-        $passwordHasher = new PasswordHasher();
+        $passwordHasher = TestPasswordHasherFactory::create();
         $passwordGenerator ??= $this->createPasswordGenerator();
         $passwordHistoryService ??= new PasswordHistoryService($passwordHasher, $this->config);
         $auditLogService ??= new AuditLogService($this->config);

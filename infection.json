@@ -4,7 +4,7 @@
             "src"
         ]
     },
-    "timeout": 250,
+    "timeout": 60,
     "minMsi": 100,
     "minCoveredMsi": 100
 }

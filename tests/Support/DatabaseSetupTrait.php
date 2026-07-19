@@ -17,7 +17,6 @@ use Yiisoft\Db\Migration\MigrationBuilder;
 use Yiisoft\Db\Sqlite\Connection as SqliteConnection;
 use Yiisoft\Db\Sqlite\Driver;
 use Yiisoft\Db\Sqlite\Dsn;
-use Yiisoft\Security\PasswordHasher;
 
 require_once dirname(__DIR__, 2) . '/vendor/yiisoft/rbac-db/migrations/items/M240118192500CreateItemsTables.php';
 require_once dirname(__DIR__, 2) . '/vendor/yiisoft/rbac-db/migrations/assignments/M240118192500CreateAssignmentsTable.php';
@@ -35,7 +34,7 @@ trait DatabaseSetupTrait
         (new M240118192500CreateAssignmentsTable())->up($builder);
 
         $config = new ModuleConfig();
-        $migration = new M260621101843_create_user_module_tables($config, new PasswordHasher());
+        $migration = new M260621101843_create_user_module_tables($config, TestPasswordHasherFactory::create());
         ob_start();
         $migration->up($builder);
         ob_end_clean();
@@ -45,10 +44,6 @@ trait DatabaseSetupTrait
 
     protected function setUpDatabase(): void
     {
-        if (!extension_loaded('pdo_sqlite')) {
-            self::markTestSkipped('pdo_sqlite extension required.');
-        }
-
         $dsn = new Dsn('sqlite', ':memory:');
         $driver = new Driver($dsn);
         $cache = $this->createStub(CacheInterface::class);

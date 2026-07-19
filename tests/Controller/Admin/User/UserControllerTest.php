@@ -27,6 +27,7 @@ use YiiRocks\Voyti\Service\User\CreateService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
+use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Data\Paginator\OffsetPaginator;
@@ -78,7 +79,7 @@ final class UserControllerTest extends TestCase
         $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
         $this->hydrator = $this->createMock(HydratorInterface::class);
         $this->flash = $this->createMock(FlashInterface::class);
-        $this->passwordHasher = new PasswordHasher();
+        $this->passwordHasher = TestPasswordHasherFactory::create();
         $this->passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
         $this->createService = $this->createMock(CreateService::class);
         $this->blockService = $this->createMock(BlockService::class);

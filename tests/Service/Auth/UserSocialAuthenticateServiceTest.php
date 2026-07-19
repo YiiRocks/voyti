@@ -17,8 +17,8 @@ use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\User\UserCreationHelper;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\FakeSession;
+use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
-use Yiisoft\Security\PasswordHasher;
 use Yiisoft\User\CurrentUser;
 
 #[AllowMockObjectsWithoutExpectations]
@@ -351,7 +351,7 @@ final class UserSocialAuthenticateServiceTest extends TestCase
 
     private function createUserCreationHelper(ModuleConfig $config, EventDispatcherInterface $eventDispatcher): UserCreationHelper
     {
-        $passwordHasher = new PasswordHasher();
+        $passwordHasher = TestPasswordHasherFactory::create();
 
         return new UserCreationHelper(
             $this->createMock(MailService::class),

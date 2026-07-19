@@ -16,8 +16,8 @@ use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\Password\ResetService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
+use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
-use Yiisoft\Security\PasswordHasher;
 
 #[AllowMockObjectsWithoutExpectations]
 final class ResetServiceTest extends TestCase
@@ -59,7 +59,7 @@ final class ResetServiceTest extends TestCase
         self::assertNotNull($reloaded);
         $history = UserPasswordHistory::findByUserId($reloaded->getIdOrZero());
         self::assertCount(1, $history);
-        self::assertTrue((new PasswordHasher())->validate('newpassword', $history[0]->getPasswordHash()));
+        self::assertTrue((TestPasswordHasherFactory::create())->validate('newpassword', $history[0]->getPasswordHash()));
     }
 
     public function testRunRejectsRecentlyUsedPassword(): void
@@ -142,7 +142,7 @@ final class ResetServiceTest extends TestCase
     {
         $eventDispatcher ??= $this->createMock(EventDispatcherInterface::class);
         $config ??= new ModuleConfig();
-        $passwordHasher = new PasswordHasher();
+        $passwordHasher = TestPasswordHasherFactory::create();
 
         return new ResetService($config, $eventDispatcher, new PasswordHistoryService($passwordHasher, $config));
     }

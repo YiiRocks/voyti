@@ -8,8 +8,8 @@ use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\UserBackupCode;
 use YiiRocks\Voyti\Service\TwoFactor\BackupCodeService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
-use Yiisoft\Security\PasswordHasher;
 
 final class BackupCodeServiceTest extends TestCase
 {
@@ -29,7 +29,7 @@ final class BackupCodeServiceTest extends TestCase
     public function testClearRemovesAllCodesIncludingUsedOnes(): void
     {
         $user = $this->createUser(username: 'backupcodeuser', email: 'backupcode@example.com');
-        $service = new BackupCodeService(new PasswordHasher());
+        $service = new BackupCodeService(TestPasswordHasherFactory::create());
         $codes = $service->generate($user);
         $service->consume($user, $codes[0]);
 
@@ -42,7 +42,7 @@ final class BackupCodeServiceTest extends TestCase
     public function testConsumeFailsForBlankCode(): void
     {
         $user = $this->createUser(username: 'backupcodeuser', email: 'backupcode@example.com');
-        $service = new BackupCodeService(new PasswordHasher());
+        $service = new BackupCodeService(TestPasswordHasherFactory::create());
         $service->generate($user);
 
         self::assertFalse($service->consume($user, ''));
@@ -51,7 +51,7 @@ final class BackupCodeServiceTest extends TestCase
     public function testConsumeFailsForUnknownCode(): void
     {
         $user = $this->createUser(username: 'backupcodeuser', email: 'backupcode@example.com');
-        $service = new BackupCodeService(new PasswordHasher());
+        $service = new BackupCodeService(TestPasswordHasherFactory::create());
         $service->generate($user);
 
         self::assertFalse($service->consume($user, 'not-a-real-code'));
@@ -60,7 +60,7 @@ final class BackupCodeServiceTest extends TestCase
     public function testConsumeMarksCodeAsUsedAndSucceeds(): void
     {
         $user = $this->createUser(username: 'backupcodeuser', email: 'backupcode@example.com');
-        $service = new BackupCodeService(new PasswordHasher());
+        $service = new BackupCodeService(TestPasswordHasherFactory::create());
         $codes = $service->generate($user);
 
         self::assertTrue($service->consume($user, $codes[0]));
@@ -72,7 +72,7 @@ final class BackupCodeServiceTest extends TestCase
     public function testConsumeRejectsAlreadyUsedCode(): void
     {
         $user = $this->createUser(username: 'backupcodeuser', email: 'backupcode@example.com');
-        $service = new BackupCodeService(new PasswordHasher());
+        $service = new BackupCodeService(TestPasswordHasherFactory::create());
         $codes = $service->generate($user);
 
         self::assertTrue($service->consume($user, $codes[0]));
@@ -82,7 +82,7 @@ final class BackupCodeServiceTest extends TestCase
     public function testGenerateProducesRequestedCountOfUniqueUnusedCodes(): void
     {
         $user = $this->createUser(username: 'backupcodeuser', email: 'backupcode@example.com');
-        $service = new BackupCodeService(new PasswordHasher());
+        $service = new BackupCodeService(TestPasswordHasherFactory::create());
 
         $codes = $service->generate($user, 5);
 
@@ -94,7 +94,7 @@ final class BackupCodeServiceTest extends TestCase
     public function testGenerateReplacesExistingCodes(): void
     {
         $user = $this->createUser(username: 'backupcodeuser', email: 'backupcode@example.com');
-        $service = new BackupCodeService(new PasswordHasher());
+        $service = new BackupCodeService(TestPasswordHasherFactory::create());
 
         $firstBatch = $service->generate($user, 3);
         $service->generate($user, 3);
@@ -107,7 +107,7 @@ final class BackupCodeServiceTest extends TestCase
     public function testHasUnusedIsFalseWithNoCodes(): void
     {
         $user = $this->createUser(username: 'backupcodeuser', email: 'backupcode@example.com');
-        $service = new BackupCodeService(new PasswordHasher());
+        $service = new BackupCodeService(TestPasswordHasherFactory::create());
 
         self::assertFalse($service->hasUnused($user));
     }
@@ -115,7 +115,7 @@ final class BackupCodeServiceTest extends TestCase
     public function testHasUnusedIsTrueAfterGenerate(): void
     {
         $user = $this->createUser(username: 'backupcodeuser', email: 'backupcode@example.com');
-        $service = new BackupCodeService(new PasswordHasher());
+        $service = new BackupCodeService(TestPasswordHasherFactory::create());
         $service->generate($user);
 
         self::assertTrue($service->hasUnused($user));

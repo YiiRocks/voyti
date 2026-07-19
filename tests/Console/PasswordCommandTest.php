@@ -17,8 +17,8 @@ use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\Password\RandomPasswordGenerator;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
-use Yiisoft\Security\PasswordHasher;
 
 #[AllowMockObjectsWithoutExpectations]
 final class PasswordCommandTest extends TestCase
@@ -198,7 +198,7 @@ final class PasswordCommandTest extends TestCase
         ?PasswordGeneratorInterface $passwordGenerator = null,
         ?ModuleConfig $config = null,
     ): PasswordCommand {
-        $passwordHasher = new PasswordHasher();
+        $passwordHasher = TestPasswordHasherFactory::create();
 
         return new PasswordCommand(
             $passwordGenerator ?? new RandomPasswordGenerator(),

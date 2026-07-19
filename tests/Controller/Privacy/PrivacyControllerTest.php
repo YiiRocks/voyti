@@ -23,6 +23,7 @@ use YiiRocks\Voyti\Service\UserSession\TerminateUserSessionsService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
+use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Hydrator\HydratorInterface;
@@ -66,7 +67,7 @@ final class PrivacyControllerTest extends TestCase
         $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
         $this->hydrator = $this->createMock(HydratorInterface::class);
         $this->flash = $this->createMock(FlashInterface::class);
-        $this->passwordHasher = new PasswordHasher();
+        $this->passwordHasher = TestPasswordHasherFactory::create();
         $this->terminateUserSessionsService = $this->createMock(TerminateUserSessionsService::class);
     }
 

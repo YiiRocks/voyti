@@ -23,13 +23,13 @@ use YiiRocks\Voyti\Service\User\UserCreationHelper;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 use YiiRocks\Voyti\tests\Support\MailCapture;
+use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\DataResponse\Middleware\JsonDataResponseMiddleware;
 use Yiisoft\DataResponse\ResponseFactory\DataResponseFactory;
 use Yiisoft\DataResponse\ResponseFactory\DataResponseFactoryInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
-use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Translator\TranslatorInterface;
 
 #[AllowMockObjectsWithoutExpectations]
@@ -49,7 +49,7 @@ final class UserControllerTest extends TestCase
         $this->setUpDatabase();
         $this->config = new ModuleConfig();
         $this->translator = $this->createTranslator();
-        $passwordHasher = new PasswordHasher();
+        $passwordHasher = TestPasswordHasherFactory::create();
         $passwordHistoryService = new PasswordHistoryService($passwordHasher, $this->config);
         $mailer = new MailCapture();
         $url = $this->createMock(UrlGeneratorInterface::class);
@@ -112,7 +112,7 @@ final class UserControllerTest extends TestCase
             config: $this->config,
             responseFactory: new DataResponseFactory(new Psr17Factory()),
             passwordGenerator: new RandomPasswordGenerator(),
-            passwordHistoryService: new PasswordHistoryService(new PasswordHasher(), $this->config),
+            passwordHistoryService: new PasswordHistoryService(TestPasswordHasherFactory::create(), $this->config),
             userCreationHelper: $this->userCreationHelper,
         );
 
@@ -405,7 +405,7 @@ final class UserControllerTest extends TestCase
         $config = new ModuleConfig(enablePasswordExpiration: true);
         $user = $this->createUser('testuser', 'test@example.com');
         $userId = (int) $user->getId();
-        $passwordHasher = new PasswordHasher();
+        $passwordHasher = TestPasswordHasherFactory::create();
         $user->setPasswordHash($passwordHasher->hash('originalpass'));
         $user->save();
         (new PasswordHistoryService($passwordHasher, $config))->record($user);
@@ -471,7 +471,7 @@ final class UserControllerTest extends TestCase
             config: $config,
             responseFactory: $this->responseFactory,
             passwordGenerator: $this->passwordGenerator,
-            passwordHistoryService: new PasswordHistoryService(new PasswordHasher(), $config),
+            passwordHistoryService: new PasswordHistoryService(TestPasswordHasherFactory::create(), $config),
             userCreationHelper: $this->userCreationHelper,
         );
     }

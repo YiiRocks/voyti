@@ -61,9 +61,6 @@ abstract class TestCase extends BaseTestCase
 
     protected function createSqliteConnection(): ConnectionInterface
     {
-        if (!extension_loaded('pdo_sqlite')) {
-            self::markTestSkipped('pdo_sqlite extension required.');
-        }
         $dsn = new Dsn('sqlite', ':memory:');
         $driver = new SqliteDriver($dsn);
         $cache = $this->createStub(CacheInterface::class);

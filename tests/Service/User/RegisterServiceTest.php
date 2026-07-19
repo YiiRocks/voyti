@@ -15,7 +15,7 @@ use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\User\RegisterService;
 use YiiRocks\Voyti\Service\User\UserCreationHelper;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
-use Yiisoft\Security\PasswordHasher;
+use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 
 #[AllowMockObjectsWithoutExpectations]
 final class RegisterServiceTest extends TestCase
@@ -45,7 +45,7 @@ final class RegisterServiceTest extends TestCase
 
         $mailService = $this->createMock(MailService::class);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $passwordHasher = new PasswordHasher();
+        $passwordHasher = TestPasswordHasherFactory::create();
         $config = new ModuleConfig();
         $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
 
@@ -70,7 +70,7 @@ final class RegisterServiceTest extends TestCase
 
         $mailService = $this->createMock(MailService::class);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $passwordHasher = new PasswordHasher();
+        $passwordHasher = TestPasswordHasherFactory::create();
         $config = new ModuleConfig();
         $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
 
@@ -87,7 +87,7 @@ final class RegisterServiceTest extends TestCase
         $mailService = $this->createMock(MailService::class);
         $mailService->method('sendConfirmation')->willReturn(true);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $passwordHasher = new PasswordHasher();
+        $passwordHasher = TestPasswordHasherFactory::create();
         $config = new ModuleConfig(enableEmailConfirmation: true, disableIpLogging: true);
         $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
         $passwordGenerator->method('generate')->willReturn('genpwd');
@@ -105,7 +105,7 @@ final class RegisterServiceTest extends TestCase
         $mailService = $this->createMock(MailService::class);
         $mailService->method('sendConfirmation')->willReturn(true);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $passwordHasher = new PasswordHasher();
+        $passwordHasher = TestPasswordHasherFactory::create();
         $config = new ModuleConfig(enableEmailConfirmation: true, enableGdprCompliance: true);
         $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
         $passwordGenerator->method('generate')->willReturn('genpwd');
@@ -132,7 +132,7 @@ final class RegisterServiceTest extends TestCase
         $mailService = $this->createMock(MailService::class);
         $mailService->method('sendConfirmation')->willReturn(true);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $passwordHasher = new PasswordHasher();
+        $passwordHasher = TestPasswordHasherFactory::create();
         $config = new ModuleConfig(enableEmailConfirmation: true, enableGdprCompliance: true);
         $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
         $passwordGenerator->method('generate')->willReturn('genpwd');
@@ -159,7 +159,7 @@ final class RegisterServiceTest extends TestCase
         $mailService = $this->createMock(MailService::class);
         $mailService->method('sendConfirmation')->willReturn(true);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $passwordHasher = new PasswordHasher();
+        $passwordHasher = TestPasswordHasherFactory::create();
         $config = new ModuleConfig(enableEmailConfirmation: true);
         $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
         $passwordGenerator->method('generate')->willReturn('auto-generated-pwd');
@@ -177,7 +177,7 @@ final class RegisterServiceTest extends TestCase
     {
         $mailService = $this->createMock(MailService::class);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $passwordHasher = new PasswordHasher();
+        $passwordHasher = TestPasswordHasherFactory::create();
         $config = new ModuleConfig(enableEmailConfirmation: true);
         $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
         $passwordGenerator->method('generate')->willReturn('genpwd');
@@ -196,7 +196,7 @@ final class RegisterServiceTest extends TestCase
         $mailService = $this->createMock(MailService::class);
         $mailService->method('sendWelcome')->willReturn(true);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $passwordHasher = new PasswordHasher();
+        $passwordHasher = TestPasswordHasherFactory::create();
         $config = new ModuleConfig(enableEmailConfirmation: false);
         $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
         $passwordGenerator->method('generate')->willReturn('genpwd');
@@ -219,7 +219,7 @@ final class RegisterServiceTest extends TestCase
         $mailService = $this->createMock(MailService::class);
         $mailService->method('sendConfirmation')->willReturn(true);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $passwordHasher = new PasswordHasher();
+        $passwordHasher = TestPasswordHasherFactory::create();
         $config = new ModuleConfig(enableEmailConfirmation: true);
         $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
         $passwordGenerator->expects($this->never())->method('generate');

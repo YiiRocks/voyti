@@ -21,6 +21,7 @@ use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
+use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Security\PasswordHasher;
@@ -58,7 +59,7 @@ final class TwoFactorControllerTest extends TestCase
         $this->currentUser = $this->createMock(CurrentUser::class);
         $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
         $this->flash = $this->createMock(FlashInterface::class);
-        $this->passwordHasher = new PasswordHasher();
+        $this->passwordHasher = TestPasswordHasherFactory::create();
         $this->twoFactorQrCodeService = $this->createMock(QrCodeUriGeneratorService::class);
         $this->twoFactorEmailCodeService = $this->createMock(EmailCodeGeneratorService::class);
     }
@@ -258,10 +259,6 @@ final class TwoFactorControllerTest extends TestCase
 
     public function testTwoFactorDisableWithValidGoogleCodeDisablesAndRedirects(): void
     {
-        if (!class_exists(Authenticator::class)) {
-            $this->markTestSkipped('chillerlan/php-authenticator not installed.');
-        }
-
         $secret = (new Authenticator())->createSecret();
         $authenticator = new Authenticator();
         $authenticator->setSecret($secret);
@@ -484,10 +481,6 @@ final class TwoFactorControllerTest extends TestCase
 
     public function testTwoFactorEnableWithValidGoogleCodeEnablesAndRedirects(): void
     {
-        if (!class_exists(Authenticator::class)) {
-            $this->markTestSkipped('chillerlan/php-authenticator not installed.');
-        }
-
         $secret = (new Authenticator())->createSecret();
         $authenticator = new Authenticator();
         $authenticator->setSecret($secret);
@@ -628,7 +621,6 @@ final class TwoFactorControllerTest extends TestCase
 
     public function testTwoFactorIndexReportsNoBackupCodesWhenNoneRemain(): void
     {
-
         $user = $this->createUser(authTfEnabled: true, authTfType: 'google', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
 
         $controller = $this->createController();
@@ -722,7 +714,6 @@ final class TwoFactorControllerTest extends TestCase
 
     public function testTwoFactorRegenerateBackupCodesWithValidCodeShowsNewCodes(): void
     {
-
         $user = $this->createUser(authTfEnabled: true, authTfType: 'email', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['code' => '123456']);
@@ -747,15 +738,10 @@ final class TwoFactorControllerTest extends TestCase
 
     public function testTwoFactorRegenerateBackupCodesWithValidGoogleCodeShowsNewCodes(): void
     {
-        if (!class_exists(Authenticator::class)) {
-            $this->markTestSkipped('chillerlan/php-authenticator not installed.');
-        }
-
         $secret = (new Authenticator())->createSecret();
         $authenticator = new Authenticator();
         $authenticator->setSecret($secret);
         $code = $authenticator->code();
-
 
         $user = $this->createUser(authTfEnabled: true, authTfType: 'google', authTfKey: $secret, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $controller = $this->createController();

@@ -9,6 +9,7 @@ use M240118192500CreateItemsTables;
 use M260621101843_create_user_module_tables;
 use ReflectionMethod;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Db\Connection\ConnectionInterface;
 use Yiisoft\Db\Migration\Informer\NullMigrationInformer;
@@ -34,7 +35,7 @@ final class UserModuleMigrationTest extends TestCase
 
     public function testMigrationsRunSuccessfullyOnSqliteAndSeedDefaultAdmin(): void
     {
-        $hasher = new PasswordHasher();
+        $hasher = TestPasswordHasherFactory::create();
         $output = $this->runMigration($hasher);
 
         preg_match('/password:\s*(\S+)/', $output, $matches);
@@ -69,7 +70,7 @@ final class UserModuleMigrationTest extends TestCase
 
     public function testSeedDefaultAdminIsIdempotent(): void
     {
-        $migration = new M260621101843_create_user_module_tables(new ModuleConfig(), new PasswordHasher());
+        $migration = new M260621101843_create_user_module_tables(new ModuleConfig(), TestPasswordHasherFactory::create());
         ob_start();
         $migration->up($this->builder);
         ob_get_clean();
@@ -149,7 +150,7 @@ final class UserModuleMigrationTest extends TestCase
 
     private function runMigration(?PasswordHasher $hasher = null): string
     {
-        $migration = new M260621101843_create_user_module_tables(new ModuleConfig(), $hasher ?? new PasswordHasher());
+        $migration = new M260621101843_create_user_module_tables(new ModuleConfig(), $hasher ?? TestPasswordHasherFactory::create());
         ob_start();
         $migration->up($this->builder);
         return (string) ob_get_clean();
