@@ -29,6 +29,8 @@ use YiiRocks\Voyti\Service\TwoFactor\BackupCodeService;
 use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
 use YiiRocks\Voyti\Validator\TwoFactor\CodeValidator;
 use YiiRocks\Voyti\Validator\TwoFactor\EmailValidator;
+use YiiRocks\Voyti\ViewData\Session\ConfirmViewData;
+use YiiRocks\Voyti\ViewData\Session\LoginViewData;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -113,14 +115,14 @@ final readonly class SessionController
         } catch (RuntimeException $exception) {
             return $this->renderView('shared/message', [
                 'title' => $exception->getMessage(),
-                'translator' => $this->translator,
+                'translator' => $this->translator(),
             ]);
         }
 
         if ($result->isFailure()) {
             return $this->renderView('shared/message', [
                 'title' => $result->getMessage(),
-                'translator' => $this->translator,
+                'translator' => $this->translator(),
             ]);
         }
 
@@ -146,7 +148,7 @@ final readonly class SessionController
 
         return $this->renderView('shared/message', [
             'title' => $this->translator->translate('voyti.security.authenticated', category: 'voyti'),
-            'translator' => $this->translator,
+            'translator' => $this->translator(),
         ]);
     }
 
@@ -154,11 +156,11 @@ final readonly class SessionController
     {
         $credentials = $this->sessionArray($this->session, self::SESSION_KEY_CREDENTIALS);
         if ($credentials === []) {
+            $form = new LoginForm($this->config, $this->translator);
+
             return $this->renderView('session/login', [
-                'model' => new LoginForm($this->config, $this->translator),
-                'config' => $this->config,
-                'authClients' => $this->authClientRegistry,
-                'flash' => $this->flash,
+                'form' => $form,
+                'data' => LoginViewData::create($form, $this->config, $this->url, $this->authClientRegistry),
             ]);
         }
 
@@ -230,7 +232,7 @@ final readonly class SessionController
             }
         }
 
-        return $this->renderView('session/confirm', ['model' => $form, 'method' => $method]);
+        return $this->renderView('session/confirm', ['form' => $form, 'data' => ConfirmViewData::create($method, $this->url)]);
     }
 
     public function login(ServerRequestInterface $request): ResponseInterface
@@ -277,8 +279,8 @@ final readonly class SessionController
                             'rememberMe' => $form->rememberMe,
                         ]);
                         return $this->renderView('session/confirm', [
-                            'model' => $form,
-                            'method' => $user->getAuthTfType() ?? 'google',
+                            'form' => $form,
+                            'data' => ConfirmViewData::create($user->getAuthTfType() ?? 'google', $this->url),
                         ]);
                     }
 
@@ -314,10 +316,8 @@ final readonly class SessionController
         }
 
         return $this->renderView('session/login', [
-            'model' => $form,
-            'config' => $this->config,
-            'authClients' => $this->authClientRegistry,
-            'flash' => $this->flash,
+            'form' => $form,
+            'data' => LoginViewData::create($form, $this->config, $this->url, $this->authClientRegistry),
         ]);
     }
 

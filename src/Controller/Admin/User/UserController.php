@@ -31,6 +31,14 @@ use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\Service\User\BlockService;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\CreateService;
+use YiiRocks\Voyti\ViewData\Admin\User\AccountViewData;
+use YiiRocks\Voyti\ViewData\Admin\User\AssignmentsViewData;
+use YiiRocks\Voyti\ViewData\Admin\User\CreateViewData;
+use YiiRocks\Voyti\ViewData\Admin\User\IndexViewData;
+use YiiRocks\Voyti\ViewData\Admin\User\InfoViewData;
+use YiiRocks\Voyti\ViewData\Admin\User\ProfileViewData;
+use YiiRocks\Voyti\ViewData\Admin\User\SessionsViewData;
+use YiiRocks\Voyti\ViewData\Shared\MessageViewData;
 use Yiisoft\Data\Db\QueryDataReader;
 use Yiisoft\Data\Paginator\OffsetPaginator;
 use Yiisoft\Http\Method;
@@ -100,13 +108,11 @@ final readonly class UserController
         }
 
         $assignments = $this->assignmentsStorage->getByUserId((string) $id);
-        $assignedNames = array_map(fn(Assignment $a) => $a->getItemName(), $assignments);
+        $assignedNames = array_values(array_map(fn(Assignment $a) => $a->getItemName(), $assignments));
         $available = $this->authHelper->getUnassignedItems($id);
 
         return $this->renderView('admin/user/_assignments', [
-            'user' => $user,
-            'assignments' => $assignedNames,
-            'available' => $available,
+            'data' => AssignmentsViewData::create($user, $assignedNames, $available, $this->url, $this->translator()),
         ]);
     }
 
@@ -139,14 +145,14 @@ final readonly class UserController
     public function create(ServerRequestInterface $request): ResponseInterface
     {
         $errors = [];
-        $model = new RegistrationForm($this->config, $this->translator);
+        $form = new RegistrationForm($this->config, $this->translator);
 
         if ($request->getMethod() === Method::POST) {
             $body = $this->parsedBody($request);
-            $this->hydrator->hydrate($model, $this->formData($body, $model->getFormName()));
-            $email = $model->email;
-            $username = $model->username;
-            $password = $model->password !== '' ? $model->password : $this->passwordGenerator->generate(12);
+            $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
+            $email = $form->email;
+            $username = $form->username;
+            $password = $form->password !== '' ? $form->password : $this->passwordGenerator->generate(12);
 
             $result = $this->userCreateService->run($email, $username, $password);
             if ($result->isSuccess()) {
@@ -168,16 +174,13 @@ final readonly class UserController
 
                 return $this->redirectWithFlash($this->url->generate('voyti/admin-users'), 'voyti.admin.user_created');
             }
+            /** @var array<string, list<string>> $errors */
             $errors = $result->getErrors();
         }
 
-        $allItems = $this->itemsStorage->getAll();
-
         return $this->renderView('admin/user/create', [
-            'model' => $model,
-            'errors' => $errors,
-            'allItems' => $allItems,
-            'assignedItems' => [],
+            'form' => $form,
+            'data' => CreateViewData::create($form, $this->itemsStorage->getAll(), [], $errors, $this->url, $this->translator()),
         ]);
     }
 
@@ -230,15 +233,21 @@ final readonly class UserController
         $requestedPage = max(1, (int) ($queryParams['page'] ?? 1));
         $paginator = $paginator->withCurrentPage(min($requestedPage, max(1, $paginator->getTotalPages())));
 
+        /** @var list<User> $users */
+        $users = iterator_to_array($paginator->read(), false);
+
         return $this->renderView('admin/user/index', [
-            'users' => iterator_to_array($paginator->read(), false),
-            'paginator' => $paginator,
-            'config' => $this->config,
-            'filters' => $filters,
-            'flash' => $this->flash,
-            'isSwitched' => $this->switchIdentityService->isSwitched(),
-            'originalUser' => $this->switchIdentityService->getOriginalUser(),
-            'currentUserId' => (int) $this->currentUser->getIdentity()->getId(),
+            'data' => IndexViewData::create(
+                $users,
+                $paginator,
+                $filters,
+                $this->config,
+                $this->url,
+                $this->translator(),
+                $this->switchIdentityService->isSwitched(),
+                $this->switchIdentityService->getOriginalUser(),
+                (int) $this->currentUser->getIdentity()->getId(),
+            ),
         ]);
     }
 
@@ -249,7 +258,9 @@ final readonly class UserController
             $result = $this->passwordRecoveryService->run($user->getEmail());
             $this->auditLogService->log($this->actorId(), 'user.password_reset_triggered', targetUserId: $id);
 
-            return $this->renderView('shared/message', ['title' => $result->getMessage()]);
+            return $this->renderView('shared/message', [
+                'data' => new MessageViewData(title: $result->getMessage(), homeUrl: $this->homeUrl()),
+            ]);
         }
         return $this->renderError('voyti.admin.user_not_found');
     }
@@ -262,10 +273,11 @@ final readonly class UserController
         }
 
         $sessions = UserSessions::findByUserId($id);
+        $viewer = $this->currentUser->getIdentity();
+        $viewerTimezone = $viewer instanceof User ? $viewer->getProfile()?->getTimezone() : null;
+
         return $this->renderView('admin/user/_sessions', [
-            'user' => $user,
-            'sessions' => $sessions,
-            'flash' => $this->flash,
+            'data' => SessionsViewData::create($user, $sessions, $this->url, $this->translator(), $viewerTimezone),
         ]);
     }
 
@@ -275,9 +287,17 @@ final readonly class UserController
         if (!$user instanceof User) {
             return $user;
         }
+        $userProfile = $user->getProfile();
+        if ($userProfile === null) {
+            $userProfile = new UserProfile();
+            $userProfile->setUserId($id);
+        }
+
+        $viewer = $this->currentUser->getIdentity();
+        $viewerTimezone = $viewer instanceof User ? $viewer->getProfile()?->getTimezone() : null;
+
         return $this->renderView('admin/user/_info', [
-            'user' => $user,
-            'userProfile' => $user->getProfile(),
+            'data' => InfoViewData::create($user, $userProfile, $this->url, $this->translator(), $viewerTimezone),
         ]);
     }
 
@@ -340,9 +360,9 @@ final readonly class UserController
             return $user;
         }
 
-        $model = new SettingsForm($this->config, $this->translator);
-        $model->username = $user->getUsername();
-        $model->email = $user->getEmail();
+        $form = new SettingsForm($this->config, $this->translator);
+        $form->username = $user->getUsername();
+        $form->email = $user->getEmail();
         $errors = [];
 
         if ($request->getMethod() === Method::POST) {
@@ -388,15 +408,19 @@ final readonly class UserController
         }
 
         $assignments = $this->assignmentsStorage->getByUserId((string) $id);
-        $assignedNames = array_map(fn(Assignment $a) => $a->getItemName(), $assignments);
-        $allItems = $this->itemsStorage->getAll();
+        $assignedNames = array_values(array_map(fn(Assignment $a) => $a->getItemName(), $assignments));
 
         return $this->renderView('admin/user/_account', [
-            'user' => $user,
-            'model' => $model,
-            'errors' => $errors,
-            'allItems' => $allItems,
-            'assignedItems' => $assignedNames,
+            'form' => $form,
+            'data' => AccountViewData::create(
+                $user,
+                $form,
+                $this->itemsStorage->getAll(),
+                $assignedNames,
+                $errors,
+                $this->url,
+                $this->translator(),
+            ),
         ]);
     }
 
@@ -413,15 +437,15 @@ final readonly class UserController
             $userProfile->setUserId($id);
         }
 
-        $model = UserProfileForm::fromProfile($userProfile, $this->translator);
+        $form = UserProfileForm::fromProfile($userProfile, $this->translator);
 
         if ($request->getMethod() === Method::POST) {
             $body = $this->parsedBody($request);
-            $this->hydrator->hydrate($model, $this->formData($body, $model->getFormName()));
-            $result = $this->validator->validate($model);
-            $model->processValidationResult($result);
+            $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
+            $result = $this->validator->validate($form);
+            $form->processValidationResult($result);
             if ($result->isValid()) {
-                $model->applyToProfile($userProfile);
+                $form->applyToProfile($userProfile);
                 $userProfile->save();
                 return $this->redirectWithFlash(
                     $this->url->generate('voyti/admin-users-update-profile', ['id' => $id]),
@@ -430,7 +454,10 @@ final readonly class UserController
             }
         }
 
-        return $this->renderView('admin/user/_profile', ['user' => $user, 'model' => $model, 'flash' => $this->flash]);
+        return $this->renderView('admin/user/_profile', [
+            'form' => $form,
+            'data' => ProfileViewData::create($user, $this->url, $this->translator()),
+        ]);
     }
 
     private function resolveUser(int $id): User|ResponseInterface

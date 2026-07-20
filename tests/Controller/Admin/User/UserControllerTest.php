@@ -11,6 +11,7 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\Admin\User\UserController;
 use YiiRocks\Voyti\Helper\AuthHelper;
+use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserProfile;
 use YiiRocks\Voyti\Model\UserSessions;
@@ -409,8 +410,8 @@ final class UserControllerTest extends TestCase
 
         $controller->index($request);
 
-        $this->assertArrayHasKey('paginator', $captured);
-        $paginator = $captured['paginator'];
+        $this->assertArrayHasKey('data', $captured);
+        $paginator = $captured['data']->paginator;
         $this->assertInstanceOf(OffsetPaginator::class, $paginator);
         $this->assertSame(0, $paginator->getTotalPages());
         $this->assertSame(1, $paginator->getCurrentPage());
@@ -442,6 +443,43 @@ final class UserControllerTest extends TestCase
     public function testInfoShowsUserInfo(): void
     {
         $user = $this->createUserWithProfile();
+        $profile = $user->getProfile();
+        $this->assertNotNull($profile);
+        $profile->setTimezone('America/New_York');
+        $profile->save();
+        $controller = $this->createController();
+
+        $viewerProfile = new UserProfile();
+        $viewerProfile->setTimezone('Asia/Tokyo');
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $identity->method('getProfile')->willReturn($viewerProfile);
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $captured = [];
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('withViewPath')
+            ->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->willReturnCallback(function (string $view, array $params) use (&$captured, $response): ResponseInterface {
+                $captured = $params;
+                return $response;
+            });
+
+        $result = $controller->show((int) $user->getId());
+
+        $this->assertSame($response, $result);
+        $this->assertSame(
+            TimezoneHelper::formatLocalized($user->getCreatedAt(), $this->translator->getLocale(), 'Asia/Tokyo'),
+            $captured['data']->profile->registeredDisplay,
+        );
+    }
+
+    public function testInfoShowsUserInfoWhenUserHasNoProfile(): void
+    {
+        $user = $this->createUser();
         $controller = $this->createController();
 
         $identity = $this->createMock(User::class);
@@ -502,20 +540,48 @@ final class UserControllerTest extends TestCase
     public function testSessionsUserFound(): void
     {
         $user = $this->createUser(email: 'testuser@example.com');
+        $targetProfile = new UserProfile();
+        $targetProfile->setUserId((int) $user->getId());
+        $targetProfile->setTimezone('America/New_York');
+        $targetProfile->save();
+
+        $updatedAt = time();
+        $session = new UserSessions();
+        $session->setUserId((int) $user->getId());
+        $session->setSessionId('abc');
+        $session->setIp('203.0.113.1');
+        $session->setCreatedAt($updatedAt);
+        $session->setUpdatedAt($updatedAt);
+        $session->save();
+
+        $viewerProfile = new UserProfile();
+        $viewerProfile->setTimezone('Asia/Tokyo');
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $identity->method('getProfile')->willReturn($viewerProfile);
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
         $controller = $this->createController();
 
+        $captured = [];
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
             ->method('withViewPath')
             ->willReturnSelf();
         $this->viewRenderer->expects($this->once())
             ->method('render')
-            ->with('admin/user/_sessions', $this->anything())
-            ->willReturn($response);
+            ->willReturnCallback(function (string $view, array $params) use (&$captured, $response): ResponseInterface {
+                $captured = $params;
+                return $response;
+            });
 
         $result = $controller->sessions((int) $user->getId());
 
         $this->assertSame($response, $result);
+        $this->assertSame(
+            TimezoneHelper::formatLocalized($updatedAt, $this->translator->getLocale(), 'Asia/Tokyo'),
+            $captured['data']->sessions[0]->lastSeenDisplay,
+        );
     }
 
     public function testSessionsUserNotFoundShowsError(): void
@@ -723,7 +789,7 @@ final class UserControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('admin/user/_account', $this->callback(
-                static fn(array $params): bool => $params['errors'] !== [],
+                static fn(array $params): bool => $params['data']->errors !== [],
             ))
             ->willReturn($response);
 
@@ -753,7 +819,7 @@ final class UserControllerTest extends TestCase
         $result = $controller->updateProfile($request, (int) $user->getId());
 
         $this->assertSame($response, $result);
-        $this->assertSame('', $captured['model']->name);
+        $this->assertSame('', $captured['form']->name);
     }
 
     public function testUpdateProfileGetShowsForm(): void

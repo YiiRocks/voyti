@@ -3,48 +3,37 @@
 declare(strict_types=1);
 
 use YiiRocks\Voyti\Model\Form\Settings\TwoFactorCodeForm;
-use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\ViewData\Shared\FlashViewData;
+use YiiRocks\Voyti\ViewData\TwoFactor\IndexViewData;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Json\Json;
-use Yiisoft\Router\UrlGeneratorInterface;
-use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\View\WebView;
 
 /**
  * @var WebView $this
- * @var User $user
- * @var string $method
- * @var string $qrCodeUri
- * @var string|null $secret
- * @var bool $emailCodeSent
- * @var bool $hasBackupCodes
- * @var bool $preloadContent
- * @var ModuleConfig $config
- * @var array<string, list<string>> $errors
- * @var UrlGeneratorInterface $url
+ * @var TwoFactorCodeForm $form
+ * @var IndexViewData $data
  * @var TranslatorInterface $translator
- * @var FlashInterface $flash
+ * @var FlashViewData $flash
  * @var string $csrf
  */
 
 /** @psalm-suppress InvalidScope */
-$this->setTitle($translator->translate('voyti.view.two_factor.title', category: 'voyti'));
+$this->setTitle($translator->translate('voyti.view.two_factor.title'));
 
 echo Html::div()->open();
 /** @psalm-suppress InvalidScope */
-echo $this->render('../shared/_menu', ['config' => $config, 'url' => $url, 'translator' => $translator]);
+echo $this->render('../shared/_menu', ['menu' => $data->menu]);
 /** @psalm-suppress InvalidScope */
 echo $this->render('../shared/_flash', ['flash' => $flash]);
 
-echo Html::H1($translator->translate('voyti.view.two_factor.title', category: 'voyti'));
+echo Html::H1($translator->translate('voyti.view.two_factor.title'));
 
-if (!empty($errors)) {
+if (!empty($data->errors)) {
     echo Html::div()->class('alert alert-danger')->open();
-    foreach ($errors as $field => $fieldErrors) {
-        /** @var string $error */
+    foreach ($data->errors as $fieldErrors) {
         foreach ($fieldErrors as $error) {
             echo Html::div($error);
         }
@@ -52,115 +41,103 @@ if (!empty($errors)) {
     echo Html::div()->close();
 }
 
-if ($user->isAuthTfEnabled()) {
-    $methodName = $translator->translate(
-        $method === 'email' ? 'voyti.view.two_factor_email.method_name' : 'voyti.view.two_factor_google.button_label',
-        category: 'voyti',
-    );
-    echo Html::p($translator->translate('voyti.view.two_factor.enabled_with_method', ['method' => $methodName], category: 'voyti'));
+if ($data->isEnabled) {
+    echo Html::p($data->enabledWithMethodMessage);
 
-    if ($method === 'email' && !$emailCodeSent) {
+    if ($data->method === 'email' && !$data->emailCodeSent) {
         echo Html::div()->class('alert alert-info')->open();
-        echo $translator->translate('voyti.view.two_factor.disable_confirm_intro', category: 'voyti');
+        echo $translator->translate('voyti.view.two_factor.disable_confirm_intro');
         echo Html::div()->close();
 
         echo Html::form()
-            ->post($url->generate('voyti/two-factor-disable-send-code'))
+            ->post($data->disableSendCodeUrl)
             ->csrf($csrf)
             ->open();
 
         echo Field::buttonGroup()
             ->buttons(
-                Html::submitButton($translator->translate('voyti.view.two_factor.disable_send_code', category: 'voyti'))->class('btn', 'btn-danger')->attribute('tabindex', 1),
+                Html::submitButton($translator->translate('voyti.view.two_factor.disable_send_code'))->class('btn', 'btn-danger')->attribute('tabindex', 1),
             );
 
         echo Html::form()->close();
     } else {
-        if ($method === 'email') {
+        if ($data->method === 'email') {
             echo Html::div()->class('alert alert-info')->open();
-            echo $translator->translate('voyti.view.two_factor_email.enter_code', category: 'voyti');
+            echo $translator->translate('voyti.view.two_factor_email.enter_code');
             echo Html::div()->close();
         }
 
         echo Html::form()
-            ->post($url->generate('voyti/two-factor-disable'))
+            ->post($data->disableUrl)
             ->csrf($csrf)
             ->open();
 
-        echo Html::p($translator->translate('voyti.view.two_factor.backup_code_hint', category: 'voyti'))->class('text-muted small');
+        echo Html::p($translator->translate('voyti.view.two_factor.backup_code_hint'))->class('text-muted small');
 
-        echo Field::text(new TwoFactorCodeForm($translator, $method), 'code')->tabIndex(1);
+        echo Field::text($form, 'code')->tabIndex(1);
 
         echo Field::buttonGroup()
             ->buttons(
-                Html::submitButton($translator->translate('voyti.view.two_factor.disable', category: 'voyti'))->class('btn', 'btn-danger')->attribute('tabindex', 2),
+                Html::submitButton($translator->translate('voyti.view.two_factor.disable'))->class('btn', 'btn-danger')->attribute('tabindex', 2),
             );
 
         echo Html::form()->close();
 
         echo Html::hr();
-        echo Html::H2($translator->translate('voyti.view.two_factor.regenerate_backup_codes', category: 'voyti'))->class('h5');
-        echo Html::p($translator->translate('voyti.view.two_factor.regenerate_backup_codes_intro', category: 'voyti'))->class('text-muted small');
+        echo Html::H2($translator->translate('voyti.view.two_factor.regenerate_backup_codes'))->class('h5');
+        echo Html::p($translator->translate('voyti.view.two_factor.regenerate_backup_codes_intro'))->class('text-muted small');
 
-        if (!$hasBackupCodes) {
-            echo Html::div($translator->translate('voyti.view.two_factor.no_backup_codes_remaining', category: 'voyti'))->class('alert alert-warning');
+        if (!$data->hasBackupCodes) {
+            echo Html::div($translator->translate('voyti.view.two_factor.no_backup_codes_remaining'))->class('alert alert-warning');
         }
 
         echo Html::form()
-            ->post($url->generate('voyti/two-factor-regenerate-backup-codes'))
+            ->post($data->regenerateBackupCodesUrl)
             ->csrf($csrf)
             ->open();
 
-        echo Field::text(new TwoFactorCodeForm($translator, $method), 'code')->tabIndex(3);
+        echo Field::text($form, 'code')->tabIndex(3);
 
         echo Field::buttonGroup()
             ->buttons(
-                Html::submitButton($translator->translate('voyti.view.two_factor.regenerate_backup_codes', category: 'voyti'))->class('btn', 'btn-secondary')->attribute('tabindex', 4),
+                Html::submitButton($translator->translate('voyti.view.two_factor.regenerate_backup_codes'))->class('btn', 'btn-secondary')->attribute('tabindex', 4),
             );
 
         echo Html::form()->close();
     }
 } else {
-    $googleUrl = $url->generate('voyti/two-factor-google');
-    $emailUrl = $url->generate('voyti/two-factor-email');
-
     echo Html::div()->class('d-flex justify-content-center mb-3')->open();
     echo Html::div()->class('btn-group')->open();
-    echo Html::a($translator->translate('voyti.view.two_factor_google.button_label', category: 'voyti'), $googleUrl)
-        ->class('btn', $method === 'google' ? 'btn-primary' : 'btn-outline-primary')
+    echo Html::a($translator->translate('voyti.view.two_factor_google.button_label'), $data->googleUrl)
+        ->class('btn', $data->method === 'google' ? 'btn-primary' : 'btn-outline-primary')
         ->attribute('data-voyti-2fa-method', 'google');
-    echo Html::a($translator->translate('voyti.view.two_factor_email.button_label', category: 'voyti'), $emailUrl)
-        ->class('btn', $method === 'email' ? 'btn-primary' : 'btn-outline-primary')
+    echo Html::a($translator->translate('voyti.view.two_factor_email.button_label'), $data->emailUrl)
+        ->class('btn', $data->method === 'email' ? 'btn-primary' : 'btn-outline-primary')
         ->attribute('data-voyti-2fa-method', 'email');
     echo Html::div()->close();
     echo Html::div()->close();
 
     echo Html::div()->id('voyti-2fa-content')->open();
-    if (!$preloadContent) {
+    if (!$data->preloadContent) {
         echo Html::div()->class('d-flex justify-content-center')->open();
         echo Html::div()
             ->class('spinner-border')
             ->attribute('role', 'status')
-            ->content(Html::span($translator->translate('voyti.view.two_factor.loading', category: 'voyti'))->class('visually-hidden'));
+            ->content(Html::span($translator->translate('voyti.view.two_factor.loading'))->class('visually-hidden'));
         echo Html::div()->close();
-    } elseif ($method === 'email') {
+    } elseif ($data->method === 'email') {
         /** @psalm-suppress InvalidScope */
         echo $this->render('./_email', [
-            'user' => $user,
-            'emailCodeSent' => $emailCodeSent,
-            'config' => $config,
-            'url' => $url,
+            'data' => $data->emailSetup,
+            'form' => $form,
             'translator' => $translator,
             'csrf' => $csrf,
         ]);
     } else {
         /** @psalm-suppress InvalidScope */
         echo $this->render('./_google', [
-            'user' => $user,
-            'qrCodeUri' => $qrCodeUri,
-            'secret' => $secret,
-            'config' => $config,
-            'url' => $url,
+            'data' => $data->googleSetup,
+            'form' => $form,
             'translator' => $translator,
             'csrf' => $csrf,
         ]);
@@ -168,13 +145,13 @@ if ($user->isAuthTfEnabled()) {
     echo Html::div()->close();
 
     $switchConfig = [
-        'renewUrl' => $url->generate('voyti/two-factor-renew'),
+        'renewUrl' => $data->renewUrl,
         // Json::encode() only reads public properties via get_object_vars(), so passing
         // the Csrf object itself would silently serialize as {} - force the string value.
         'csrfToken' => $csrf . '',
-        'renewErrorMessage' => $translator->translate('voyti.view.two_factor.renew_error', category: 'voyti'),
-        'autoloadUrl' => $preloadContent ? null : ($method === 'email' ? $emailUrl : $googleUrl),
-        'autoloadMethod' => $method,
+        'renewErrorMessage' => $data->renewErrorMessage,
+        'autoloadUrl' => $data->autoloadUrl,
+        'autoloadMethod' => $data->method,
     ];
     echo Html::script(
         '(function(){'

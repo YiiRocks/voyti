@@ -21,6 +21,11 @@ use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\UserSession\TerminateUserSessionsService;
+use YiiRocks\Voyti\ViewData\Privacy\AnonymizeViewData;
+use YiiRocks\Voyti\ViewData\Privacy\DeleteViewData;
+use YiiRocks\Voyti\ViewData\Privacy\GdprConsentViewData;
+use YiiRocks\Voyti\ViewData\Privacy\IndexViewData;
+use YiiRocks\Voyti\ViewData\Shared\MessageViewData;
 use Yiisoft\Http\Header;
 use Yiisoft\Http\Method;
 use Yiisoft\Http\Status;
@@ -85,16 +90,16 @@ final readonly class PrivacyController
                     $this->eventDispatcher->dispatch(new GdprEvent($user));
                     $this->terminateUserSessionsService->run($user->getIdOrZero());
                     return $this->renderView('shared/message', [
-                        'title' => $this->translator->translate(
-                            'voyti.settings.personal_info_removed',
-                            category: 'voyti',
+                        'data' => new MessageViewData(
+                            title: $this->translator->translate('voyti.settings.personal_info_removed', category: 'voyti'),
+                            homeUrl: $this->homeUrl(),
                         ),
                     ]);
                 }
             }
         }
 
-        return $this->renderView('privacy/anonymize', ['model' => $form]);
+        return $this->renderView('privacy/anonymize', ['form' => $form, 'data' => AnonymizeViewData::create($this->url)]);
     }
 
     public function delete(ServerRequestInterface $request): ResponseInterface
@@ -115,13 +120,16 @@ final readonly class PrivacyController
                     $this->eventDispatcher->dispatch(new UserEvent($user, UserEvent::DELETE));
                     $this->terminateUserSessionsService->run($userId);
                     return $this->renderView('shared/message', [
-                        'title' => $this->translator->translate('voyti.settings.account_deleted', category: 'voyti'),
+                        'data' => new MessageViewData(
+                            title: $this->translator->translate('voyti.settings.account_deleted', category: 'voyti'),
+                            homeUrl: $this->homeUrl(),
+                        ),
                     ]);
                 }
             }
         }
 
-        return $this->renderView('privacy/delete', ['model' => $form]);
+        return $this->renderView('privacy/delete', ['form' => $form, 'data' => DeleteViewData::create($this->url)]);
     }
 
     public function export(ServerRequestInterface $request): ResponseInterface
@@ -184,12 +192,17 @@ final readonly class PrivacyController
             }
         }
 
-        return $this->renderView('privacy/gdpr-consent', ['model' => $form, 'flash' => $this->flash]);
+        return $this->renderView('privacy/gdpr-consent', [
+            'form' => $form,
+            'data' => GdprConsentViewData::create($form, $this->url, $this->translator->getLocale()),
+        ]);
     }
 
     public function index(): ResponseInterface
     {
-        return $this->renderView('privacy/index', ['config' => $this->config]);
+        return $this->renderView('privacy/index', [
+            'data' => IndexViewData::create($this->config, $this->url, $this->translator()),
+        ]);
     }
 
     private function exportValue(User $user, string $property): mixed

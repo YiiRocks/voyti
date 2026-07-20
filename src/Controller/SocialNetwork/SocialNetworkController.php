@@ -12,6 +12,7 @@ use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\ViewData\SocialNetwork\IndexViewData;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -62,9 +63,7 @@ final readonly class SocialNetworkController
             );
         }
 
-        return $this->renderView('shared/message', [
-            'title' => $this->translator->translate('voyti.settings.network_not_found', category: 'voyti'),
-        ]);
+        return $this->renderError('voyti.settings.network_not_found');
     }
 
     public function index(ServerRequestInterface $request): ResponseInterface
@@ -81,12 +80,15 @@ final readonly class SocialNetworkController
         ));
 
         return $this->renderView('social-network/index', [
-            'accounts' => $accounts,
-            'config' => $this->config,
-            'authClients' => $this->authClientRegistry,
-            'connectRouteName' => 'voyti/session-auth',
-            'excludedProviders' => $connectedProviders,
-            'flash' => $this->flash,
+            'data' => IndexViewData::create(
+                $accounts,
+                $this->authClientRegistry,
+                array_values($connectedProviders),
+                'voyti/session-auth',
+                $this->config,
+                $this->url,
+                $this->translator(),
+            ),
         ]);
     }
 

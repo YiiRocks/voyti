@@ -2,37 +2,27 @@
 
 declare(strict_types=1);
 
-use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Model\UserProfile;
+use YiiRocks\Voyti\ViewData\Admin\User\InfoViewData;
 use Yiisoft\Html\Html;
-use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\View\WebView;
 
 /**
  * @var WebView $this
- * @var User $user
- * @var UserProfile|null $userProfile
- * @var UrlGeneratorInterface $url
+ * @var InfoViewData $data
  * @var TranslatorInterface $translator
  */
 
 /** @psalm-suppress InvalidScope */
-$this->setTitle($user->getUsername());
+$this->setTitle($data->username);
 
 echo Html::div()->open();
 /** @psalm-suppress InvalidScope */
-echo $this->render('../../shared/_admin-menu', ['url' => $url, 'translator' => $translator]);
+echo $this->render('../../shared/_admin-menu', ['menu' => $data->menu]);
 
-echo Html::H1($user->getUsername());
+echo Html::H1($data->username);
 
 /** @psalm-suppress InvalidScope */
-echo $this->render('../../shared/view_profile', [
-    'user' => $user,
-    'userProfile' => $userProfile,
-    'translator' => $translator,
-    'showAdminFields' => true,
-    'profilePreviewClass' => 'list-group list-group-flush',
-]);
+echo $this->render('../../shared/view_profile', ['profile' => $data->profile, 'translator' => $translator]);
 
 echo Html::div()->close();

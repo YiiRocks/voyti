@@ -11,7 +11,9 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\Admin\AuditLog\AuditLogController;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
+use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserAuditLog;
+use YiiRocks\Voyti\Model\UserProfile;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
@@ -19,6 +21,7 @@ use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Data\Paginator\OffsetPaginator;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\User\CurrentUser;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 #[AllowMockObjectsWithoutExpectations]
@@ -27,6 +30,7 @@ final class AuditLogControllerTest extends TestCase
     use DatabaseSetupTrait;
 
     private ModuleConfig $config;
+    private CurrentUser&MockObject $currentUser;
     private FlashInterface&MockObject $flash;
     private ControllerHarness $harness;
     private ResponseFactoryInterface&MockObject $responseFactory;
@@ -42,6 +46,7 @@ final class AuditLogControllerTest extends TestCase
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
         $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
         $this->flash = $this->createMock(FlashInterface::class);
+        $this->currentUser = $this->createMock(CurrentUser::class);
     }
 
     protected function tearDown(): void
@@ -69,7 +74,7 @@ final class AuditLogControllerTest extends TestCase
 
         $controller->index($request);
 
-        $this->assertCount(1, $captured['logs']);
+        $this->assertCount(1, $captured['data']->logs);
     }
 
     public function testIndexPresentsLogFieldsFormattedForDisplay(): void
@@ -82,6 +87,12 @@ final class AuditLogControllerTest extends TestCase
         $log->setContext('{"previousName":"old-editor"}');
         $log->setCreatedAt(1700000000);
         $log->save();
+
+        $viewerProfile = new UserProfile();
+        $viewerProfile->setTimezone('Asia/Tokyo');
+        $viewer = $this->createMock(User::class);
+        $viewer->method('getProfile')->willReturn($viewerProfile);
+        $this->currentUser->method('getIdentity')->willReturn($viewer);
 
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
@@ -100,13 +111,17 @@ final class AuditLogControllerTest extends TestCase
 
         self::assertSame(
             [
-                'createdAt' => TimezoneHelper::formatLocalized(1700000000, $this->translator->getLocale()),
+                'createdAt' => TimezoneHelper::formatLocalized(
+                    1700000000,
+                    $this->translator->getLocale(),
+                    'Asia/Tokyo',
+                ),
                 'actorUserId' => '1',
                 'action' => 'rbac.role.update',
                 'targetLabel' => 'editor (#7)',
                 'context' => '{"previousName":"old-editor"}',
             ],
-            $captured['logs'][0],
+            $captured['data']->logs[0],
         );
     }
 
@@ -132,9 +147,9 @@ final class AuditLogControllerTest extends TestCase
 
         $controller->index($request);
 
-        self::assertSame('', $captured['logs'][0]['actorUserId']);
-        self::assertSame('', $captured['logs'][0]['targetLabel']);
-        self::assertSame('', $captured['logs'][0]['context']);
+        self::assertSame('', $captured['data']->logs[0]['actorUserId']);
+        self::assertSame('', $captured['data']->logs[0]['targetLabel']);
+        self::assertSame('', $captured['data']->logs[0]['context']);
     }
 
     public function testIndexShowsLogs(): void
@@ -175,8 +190,8 @@ final class AuditLogControllerTest extends TestCase
 
         $controller->index($request);
 
-        $this->assertInstanceOf(OffsetPaginator::class, $captured['paginator']);
-        $this->assertSame(0, $captured['paginator']->getTotalPages());
+        $this->assertInstanceOf(OffsetPaginator::class, $captured['data']->paginator);
+        $this->assertSame(0, $captured['data']->paginator->getTotalPages());
     }
 
     private function createController(): AuditLogController
@@ -186,6 +201,7 @@ final class AuditLogControllerTest extends TestCase
             viewRenderer: $this->viewRenderer,
             responseFactory: $this->responseFactory,
             flash: $this->flash,
+            currentUser: $this->currentUser,
         );
     }
 

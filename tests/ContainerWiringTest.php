@@ -32,6 +32,10 @@ use Yiisoft\Rbac\ManagerInterface;
 use Yiisoft\Router\CurrentRoute;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\SessionInterface;
+use Yiisoft\Translator\CategorySource;
+use Yiisoft\Translator\Message\Php\MessageSource;
+use Yiisoft\Translator\SimpleMessageFormatter;
+use Yiisoft\Translator\Translator;
 use Yiisoft\Translator\TranslatorInterface;
 
 /**
@@ -66,7 +70,7 @@ final class ContainerWiringTest extends TestCase
             ResponseFactoryInterface::class => $psr17Factory,
             SessionInterface::class => new FakeSession(),
             StreamFactoryInterface::class => $psr17Factory,
-            TranslatorInterface::class => $this->createMock(TranslatorInterface::class),
+            TranslatorInterface::class => $this->createTranslator(),
             UrlGeneratorInterface::class => new FakeUrlGenerator(),
         ]);
 
@@ -106,5 +110,18 @@ final class ContainerWiringTest extends TestCase
         ]));
 
         self::assertInstanceOf(RememberMeCookieService::class, $container->get(RememberMeCookieService::class));
+    }
+
+    private function createTranslator(): TranslatorInterface
+    {
+        $translator = new Translator('en', null, 'voyti');
+        $translator->addCategorySources(
+            new CategorySource(
+                'voyti',
+                new MessageSource(dirname(__DIR__) . '/resources/messages'),
+                new SimpleMessageFormatter(),
+            ),
+        );
+        return $translator;
     }
 }

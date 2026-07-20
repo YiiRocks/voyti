@@ -2,20 +2,17 @@
 
 declare(strict_types=1);
 
-use YiiRocks\Voyti\Helper\FlashType;
+use YiiRocks\Voyti\ViewData\Shared\FlashViewData;
 use Yiisoft\Html\Html;
-use Yiisoft\Session\Flash\FlashInterface;
 
 /**
- * @var FlashInterface $flash
+ * @var FlashViewData $flash
  */
 
-$warning = (string) $flash->get(FlashType::WARNING);
-if ($warning !== '') {
-    echo Html::div($warning)->class('alert', 'alert-warning');
+if ($flash->warning !== null) {
+    echo Html::div($flash->warning)->class('alert', 'alert-warning');
 }
 
-$message = (string) $flash->get(FlashType::SUCCESS);
-if ($message !== '') {
-    echo Html::div($message)->class('alert', 'alert-success');
+if ($flash->success !== null) {
+    echo Html::div($flash->success)->class('alert', 'alert-success');
 }

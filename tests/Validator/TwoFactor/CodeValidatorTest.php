@@ -7,10 +7,9 @@ namespace YiiRocks\Voyti\tests\Validator\TwoFactor;
 use chillerlan\Authenticator\Authenticator;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\tests\TestCase;
 use YiiRocks\Voyti\Validator\TwoFactor\CodeValidator;
-use Yiisoft\Translator\TranslatorInterface;
 
 #[AllowMockObjectsWithoutExpectations]
 final class CodeValidatorTest extends TestCase
@@ -39,32 +38,10 @@ final class CodeValidatorTest extends TestCase
     public function testGetSuccessMessageWithTranslator(): void
     {
         $user = new User();
-        $translator = $this->createMock(TranslatorInterface::class);
-        $translator->method('translate')->willReturn('2FA enabled');
-
         $validator = new CodeValidator($user, '123456');
-        $validator->setTranslator($translator);
+        $validator->setTranslator($this->createTranslator());
 
-        $this->assertSame('2FA enabled', $validator->getSuccessMessage());
-    }
-
-    public function testGetUnsuccessLoginMessagePassesTimeDurationParameter(): void
-    {
-        $translator = $this->createMock(TranslatorInterface::class);
-        $translator
-            ->expects(self::once())
-            ->method('translate')
-            ->with(
-                'voyti.validator.invalid_two_factor_code_with_time',
-                self::callback(static fn(array $p): bool => ($p['timeDuration'] ?? null) === 30),
-                'voyti',
-            )
-            ->willReturn('translated');
-
-        $validator = new CodeValidator(new User(), '123456');
-        $validator->setTranslator($translator);
-
-        $this->assertSame('translated', $validator->getUnsuccessLoginMessage(30));
+        $this->assertSame('Two factor authentication has been enabled.', $validator->getSuccessMessage());
     }
 
     public function testGetUnsuccessLoginMessageWithoutTranslator(): void
@@ -81,32 +58,13 @@ final class CodeValidatorTest extends TestCase
     public function testGetUnsuccessLoginMessageWithTranslator(): void
     {
         $user = new User();
-        $translator = $this->createMock(TranslatorInterface::class);
-        $translator->method('translate')->willReturn('Invalid 2FA code');
-
         $validator = new CodeValidator($user, '123456');
-        $validator->setTranslator($translator);
+        $validator->setTranslator($this->createTranslator());
 
-        $this->assertSame('Invalid 2FA code', $validator->getUnsuccessLoginMessage(30));
-    }
-
-    public function testGetUnsuccessMessagePassesTimeDurationParameter(): void
-    {
-        $translator = $this->createMock(TranslatorInterface::class);
-        $translator
-            ->expects(self::once())
-            ->method('translate')
-            ->with(
-                'voyti.validator.invalid_code_with_time',
-                self::callback(static fn(array $p): bool => ($p['timeDuration'] ?? null) === 30),
-                'voyti',
-            )
-            ->willReturn('translated');
-
-        $validator = new CodeValidator(new User(), '123456');
-        $validator->setTranslator($translator);
-
-        $this->assertSame('translated', $validator->getUnsuccessMessage(30));
+        $this->assertSame(
+            'Invalid two factor authentication code. Please try again within 30 seconds.',
+            $validator->getUnsuccessLoginMessage(30),
+        );
     }
 
     public function testGetUnsuccessMessageWithoutTranslator(): void
@@ -123,26 +81,23 @@ final class CodeValidatorTest extends TestCase
     public function testGetUnsuccessMessageWithTranslator(): void
     {
         $user = new User();
-        $translator = $this->createMock(TranslatorInterface::class);
-        $translator->method('translate')->willReturn('Invalid code');
-
         $validator = new CodeValidator($user, '123456');
-        $validator->setTranslator($translator);
+        $validator->setTranslator($this->createTranslator());
 
-        $this->assertSame('Invalid code', $validator->getUnsuccessMessage(30));
+        $this->assertSame(
+            'Invalid code. Please try again within 30 seconds.',
+            $validator->getUnsuccessMessage(30),
+        );
     }
 
     public function testTranslateErrorMessageWhenKeyIsNull(): void
     {
         $user = new User();
 
-        $translator = $this->createMock(TranslatorInterface::class);
-        $translator->method('translate')->willReturn('translated message');
-
         $validator = new CodeValidator($user, '123456');
-        $validator->setTranslator($translator);
+        $validator->setTranslator($this->createTranslator());
         $validator->validate();
-        $this->assertSame('translated message', $validator->getErrorMessage());
+        $this->assertSame('Two factor authentication is not configured.', $validator->getErrorMessage());
     }
 
     public function testValidateAcceptsPreviousWindowCodeWithDefaultCycles(): void

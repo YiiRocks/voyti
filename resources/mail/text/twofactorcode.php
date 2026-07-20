@@ -9,8 +9,8 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var TranslatorInterface $translator
  */
 
-?><?= $translator->translate('voyti.mail.twofactor_heading', category: 'voyti') ?>
+?><?= $translator->translate('voyti.mail.twofactor_heading') ?>
 
-<?= $translator->translate('voyti.mail.your_twofactor_code', category: 'voyti') ?>
+<?= $translator->translate('voyti.mail.your_twofactor_code') ?>
 
 <?= $code ?>

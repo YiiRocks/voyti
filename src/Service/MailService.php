@@ -17,13 +17,17 @@ use Yiisoft\Translator\TranslatorInterface;
  */
 final readonly class MailService
 {
+    private TranslatorInterface $translator;
+
     public function __construct(
         private MailerInterface $mailer,
         private string $mailPath,
-        private TranslatorInterface $translator,
+        TranslatorInterface $translator,
         private UrlGeneratorInterface $url,
         private string $appName = 'Voyti',
-    ) {}
+    ) {
+        $this->translator = $translator->withDefaultCategory('voyti');
+    }
 
     /**
      * @return true
@@ -153,7 +157,6 @@ final readonly class MailService
         return $this->translator->translate(
             'voyti.mail.' . $key,
             ['app' => $this->appName],
-            category: 'voyti',
         );
     }
 

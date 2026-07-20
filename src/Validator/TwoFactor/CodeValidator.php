@@ -79,6 +79,6 @@ final class CodeValidator
 
     private function t(string $id, array $parameters = []): string
     {
-        return $this->translator?->translate($id, $parameters, 'voyti') ?? $id;
+        return $this->translator?->translate($id, $parameters, category: 'voyti') ?? $id;
     }
 }

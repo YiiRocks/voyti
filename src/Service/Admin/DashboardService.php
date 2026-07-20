@@ -43,7 +43,7 @@ final readonly class DashboardService
      *     recentAuditLogs: list<array{createdAt: string, action: string, targetLabel: string}>,
      * }
      */
-    public function getStats(): array
+    public function getStats(?string $viewerTimezone = null): array
     {
         $now = time();
 
@@ -63,11 +63,15 @@ final readonly class DashboardService
             'newRegistrations' => $this->newRegistrationsTrend($now),
             'activeSessions' => $this->activeSessionsTrend($now),
             'rememberLifespanDays' => (int) round($this->config->rememberLoginLifespan / self::SECONDS_PER_DAY),
-            'recentAuditLogs' => $this->recentAuditLogs(),
+            'recentAuditLogs' => $this->recentAuditLogs($viewerTimezone),
         ];
     }
 
     /**
+     * Counts sessions with activity (`updated_at`) inside each window, regardless of whether they
+     * have since been revoked - this is a usage trend ("how many sessions were active in this
+     * period"), not a live count of currently-unrevoked sessions.
+     *
      * @return array{oneDay: int, sevenDays: int, lifespan: int}
      */
     private function activeSessionsTrend(int $now): array
@@ -75,17 +79,14 @@ final readonly class DashboardService
         return [
             /** @infection-ignore-all Same driver-portability cast as userTotal in getStats() above. */
             'oneDay' => (int) UserSessions::query()
-                ->andWhere(['revoked_at' => null])
                 ->andWhere(['>=', 'updated_at', $now - self::SECONDS_PER_DAY])
                 ->count(),
             /** @infection-ignore-all Same driver-portability cast as userTotal in getStats() above. */
             'sevenDays' => (int) UserSessions::query()
-                ->andWhere(['revoked_at' => null])
                 ->andWhere(['>=', 'updated_at', $now - (self::SECONDS_PER_DAY * 7)])
                 ->count(),
             /** @infection-ignore-all Same driver-portability cast as userTotal in getStats() above. */
             'lifespan' => (int) UserSessions::query()
-                ->andWhere(['revoked_at' => null])
                 ->andWhere(['>=', 'updated_at', $now - $this->config->rememberLoginLifespan])
                 ->count(),
         ];
@@ -115,14 +116,18 @@ final readonly class DashboardService
     /**
      * @return list<array{createdAt: string, action: string, targetLabel: string}>
      */
-    private function recentAuditLogs(): array
+    private function recentAuditLogs(?string $viewerTimezone): array
     {
         /** @var list<UserAuditLog> $logs */
         $logs = UserAuditLog::search()->limit(self::RECENT_AUDIT_LOG_LIMIT)->all();
 
         return array_map(
             fn(UserAuditLog $log): array => [
-                'createdAt' => TimezoneHelper::formatLocalized($log->getCreatedAt(), $this->translator->getLocale()),
+                'createdAt' => TimezoneHelper::formatLocalized(
+                    $log->getCreatedAt(),
+                    $this->translator->getLocale(),
+                    $viewerTimezone,
+                ),
                 'action' => $log->getAction(),
                 'targetLabel' => $this->targetLabel($log),
             ],

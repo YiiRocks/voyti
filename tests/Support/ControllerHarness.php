@@ -158,6 +158,7 @@ final class ControllerHarness
         WebViewRenderer $viewRenderer,
         ResponseFactoryInterface $responseFactory,
         FlashInterface $flash,
+        CurrentUser $currentUser,
     ): AuditLogController {
         return new AuditLogController(
             translator: $translator,
@@ -166,6 +167,7 @@ final class ControllerHarness
             responseFactory: $responseFactory,
             config: $this->config,
             flash: $flash,
+            currentUser: $currentUser,
         );
     }
 
@@ -190,6 +192,7 @@ final class ControllerHarness
             config: $this->config,
             dashboardService: $dashboardService,
             flash: $flash,
+            currentUser: $currentUser,
         );
     }
 

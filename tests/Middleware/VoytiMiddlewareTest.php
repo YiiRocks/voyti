@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Middleware;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
-use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -23,6 +22,7 @@ use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\FakeSession;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Http\Status;
 use Yiisoft\Rbac\ManagerInterface;
@@ -246,7 +246,7 @@ final class VoytiMiddlewareTest extends TestCase
         $responseFactory ??= $this->createMock(ResponseFactoryInterface::class);
         $url ??= $this->createMock(UrlGeneratorInterface::class);
         $session ??= new FakeSession();
-        $translator ??= $this->createMock(TranslatorInterface::class);
+        $translator ??= $this->createTranslator();
         $authManager ??= $this->createMock(ManagerInterface::class);
         $identityRepository ??= $this->createMock(IdentityRepositoryInterface::class);
 

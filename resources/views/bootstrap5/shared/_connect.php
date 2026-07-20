@@ -2,29 +2,17 @@
 
 declare(strict_types=1);
 
-use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
+use YiiRocks\Voyti\ViewData\Shared\SocialConnectViewData;
 use Yiisoft\Html\Html;
-use Yiisoft\Router\UrlGeneratorInterface;
 
 /**
- * @var AuthClientRegistry $authClients
- * @var list<string>|null $excludedProviders
- * @var string|null $routeName
- * @var UrlGeneratorInterface $url
+ * @var SocialConnectViewData $connect
  */
 
-$excludedProviders ??= [];
-$routeName ??= 'voyti/session-auth';
-
-$clients = $authClients->allExcept($excludedProviders);
-
-if ($clients !== []) {
+if ($connect->providers !== []) {
     echo Html::div()->class('btn-group')->open();
-    foreach ($clients as $client) {
-        echo Html::a(
-            $client->getTitle(),
-            $url->generate($routeName, ['provider' => $client->getName()]),
-        )->class('btn btn-primary');
+    foreach ($connect->providers as $provider) {
+        echo Html::a($provider->title, $provider->url)->class('btn btn-primary');
     }
     echo Html::div()->close();
 }

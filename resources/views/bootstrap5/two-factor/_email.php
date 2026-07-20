@@ -3,44 +3,38 @@
 declare(strict_types=1);
 
 use YiiRocks\Voyti\Model\Form\Settings\TwoFactorCodeForm;
-use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\ViewData\TwoFactor\EmailSetupViewData;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
-use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\View\WebView;
 
 /**
  * @var WebView $this
- * @var User $user
- * @var bool $emailCodeSent
- * @var ModuleConfig $config
- * @var UrlGeneratorInterface $url
+ * @var TwoFactorCodeForm $form
+ * @var EmailSetupViewData $data
  * @var TranslatorInterface $translator
  * @var string $csrf
  */
 
-if ($emailCodeSent) {
-    echo Html::div()->class('alert alert-info')->open();
-    echo $translator->translate('voyti.view.two_factor_email.enter_code', category: 'voyti');
-    echo Html::div()->close();
+if ($data->emailCodeSent) {
+    echo Html::div($translator->translate('voyti.view.two_factor_email.enter_code'))->class('alert alert-info');
 
     /** @psalm-suppress InvalidScope */
-    echo $this->render('./_code-form', ['form' => new TwoFactorCodeForm($translator, 'email'), 'url' => $url, 'translator' => $translator, 'csrf' => $csrf]);
+    echo $this->render('./_code-form', ['form' => $form, 'formSubmitUrl' => $data->enableUrl, 'translator' => $translator, 'csrf' => $csrf]);
 } else {
     echo Html::div()->class('alert alert-info')->open();
-    echo Html::p($translator->translate('voyti.view.two_factor_email.confirm_intro', category: 'voyti'));
-    echo Html::p(Html::strong($user->getEmail())->render())->encode(false);
+    echo Html::p($translator->translate('voyti.view.two_factor_email.confirm_intro'));
+    echo Html::p(Html::strong($data->userEmail)->render())->encode(false);
     echo Html::div()->close();
 
     echo Html::form()
-        ->post($url->generate('voyti/two-factor-send-email-code'))
+        ->post($data->sendCodeUrl)
         ->csrf($csrf)
         ->open();
     echo Field::buttonGroup()
         ->buttons(
-            Html::submitButton($translator->translate('voyti.view.two_factor_email.send_button', category: 'voyti'))->class('btn', 'btn-primary')->attribute('tabindex', 1),
+            Html::submitButton($translator->translate('voyti.view.two_factor_email.send_button'))->class('btn', 'btn-primary')->attribute('tabindex', 1),
         );
     echo Html::form()->close();
 }

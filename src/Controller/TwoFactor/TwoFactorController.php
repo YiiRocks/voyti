@@ -11,6 +11,7 @@ use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Controller\RequireUserTrait;
 use YiiRocks\Voyti\Helper\InputDataTrait;
+use YiiRocks\Voyti\Model\Form\Settings\TwoFactorCodeForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\TwoFactor\BackupCodeService;
@@ -18,6 +19,10 @@ use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
 use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
 use YiiRocks\Voyti\Validator\TwoFactor\CodeValidator;
 use YiiRocks\Voyti\Validator\TwoFactor\EmailValidator;
+use YiiRocks\Voyti\ViewData\TwoFactor\BackupCodesViewData;
+use YiiRocks\Voyti\ViewData\TwoFactor\EmailSetupViewData;
+use YiiRocks\Voyti\ViewData\TwoFactor\GoogleSetupViewData;
+use YiiRocks\Voyti\ViewData\TwoFactor\IndexViewData;
 use Yiisoft\Http\Header;
 use Yiisoft\Http\Status;
 use Yiisoft\Json\Json;
@@ -126,7 +131,7 @@ final readonly class TwoFactorController
             return $this->redirect($this->url->generate('voyti/two-factor'));
         }
 
-        return $this->renderTwoFactorSetup($request, 'two-factor/_email', $this->twoFactorViewParams($user, 'email'));
+        return $this->renderTwoFactorSetup($request, 'email', $user);
     }
 
     public function enable(ServerRequestInterface $request): ResponseInterface
@@ -351,9 +356,7 @@ final readonly class TwoFactorController
     private function renderBackupCodes(array $codes): ResponseInterface
     {
         return $this->renderView('two-factor/backup-codes', [
-            'codes' => $codes,
-            'config' => $this->config,
-            'flash' => $this->flash,
+            'data' => BackupCodesViewData::create($codes, $this->config, $this->url, $this->translator()),
         ]);
     }
 
@@ -362,15 +365,11 @@ final readonly class TwoFactorController
         $this->ensureFreshGoogleAuthenticatorSecret($user);
         $qrCodeSvg = $this->twoFactorQrCodeService->generateQrCodeSvg($user);
 
-        return $this->renderTwoFactorSetup(
-            $request,
-            'two-factor/_google',
-            $this->twoFactorViewParams($user, 'google', qrCodeUri: $qrCodeSvg, secret: $user->getAuthTfKey()),
-        );
+        return $this->renderTwoFactorSetup($request, 'google', $user, qrCodeUri: $qrCodeSvg, secret: $user->getAuthTfKey());
     }
 
     /**
-     * @param array<string, mixed> $errors
+     * @param array<string, list<string>> $errors
      */
     private function renderTwoFactorIndex(
         User $user,
@@ -381,49 +380,47 @@ final readonly class TwoFactorController
         bool $emailCodeSent = false,
         bool $preloadContent = true,
     ): ResponseInterface {
-        $params = $this->twoFactorViewParams($user, $method, $errors, $qrCodeUri, $secret, $emailCodeSent);
-
-        return $this->renderView('two-factor/index', $params + ['preloadContent' => $preloadContent]);
+        return $this->renderView('two-factor/index', [
+            'form' => new TwoFactorCodeForm($this->translator, $method),
+            'data' => IndexViewData::create(
+                $user,
+                $method,
+                $errors,
+                $qrCodeUri,
+                $secret,
+                $emailCodeSent,
+                $this->backupCodeService->hasUnused($user),
+                $preloadContent,
+                $this->config,
+                $this->url,
+                $this->translator(),
+            ),
+        ]);
     }
 
-    /**
-     * @param array<string, mixed> $params
-     */
     private function renderTwoFactorSetup(
         ServerRequestInterface $request,
-        string $fragmentView,
-        array $params,
-    ): ResponseInterface {
-        if (strtolower($request->getHeaderLine('X-Requested-With')) === 'xmlhttprequest') {
-            return $this->renderFragment($fragmentView, $params);
-        }
-
-        return $this->renderView('two-factor/index', $params + ['preloadContent' => true]);
-    }
-
-    /**
-     * @param array<string, mixed> $errors
-     *
-     * @return array<string, mixed>
-     */
-    private function twoFactorViewParams(
-        User $user,
         string $method,
-        array $errors = [],
+        User $user,
         string $qrCodeUri = '',
         ?string $secret = null,
         bool $emailCodeSent = false,
-    ): array {
-        return [
-            'user' => $user,
-            'method' => $method,
-            'qrCodeUri' => $qrCodeUri,
-            'secret' => $secret,
-            'emailCodeSent' => $emailCodeSent,
-            'hasBackupCodes' => $this->backupCodeService->hasUnused($user),
-            'config' => $this->config,
-            'errors' => $errors,
-            'flash' => $this->flash,
-        ];
+    ): ResponseInterface {
+        if (strtolower($request->getHeaderLine('X-Requested-With')) === 'xmlhttprequest') {
+            if ($method === 'email') {
+                $fragmentView = 'two-factor/_email';
+                $data = EmailSetupViewData::create($user, $emailCodeSent, $this->url);
+            } else {
+                $fragmentView = 'two-factor/_google';
+                $data = GoogleSetupViewData::create($qrCodeUri, $secret, $this->url, $this->translator());
+            }
+
+            return $this->renderFragment($fragmentView, [
+                'form' => new TwoFactorCodeForm($this->translator, $method),
+                'data' => $data,
+            ]);
+        }
+
+        return $this->renderTwoFactorIndex($user, $method, qrCodeUri: $qrCodeUri, secret: $secret, emailCodeSent: $emailCodeSent);
     }
 }

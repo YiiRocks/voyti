@@ -6,14 +6,13 @@ namespace YiiRocks\Voyti\tests\Service\Rbac;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\Form\Rbac\RuleForm;
 use YiiRocks\Voyti\Service\Rbac\RuleEditionService;
+use YiiRocks\Voyti\tests\TestCase;
 use YiiRocks\Voyti\Validator\Rbac\RuleValidator;
 use Yiisoft\Rbac\CompositeRule;
 use Yiisoft\Rbac\ItemsStorageInterface;
 use Yiisoft\Rbac\Role;
-use Yiisoft\Translator\TranslatorInterface;
 
 #[AllowMockObjectsWithoutExpectations]
 final class RuleEditionServiceTest extends TestCase
@@ -109,8 +108,7 @@ final class RuleEditionServiceTest extends TestCase
         string $name = '',
         string $previousName = '',
     ): RuleForm {
-        $translator = $this->createMock(TranslatorInterface::class);
-        $form = new RuleForm($translator);
+        $form = new RuleForm($this->createTranslator());
         $form->class = $class;
         $form->name = $name;
         $form->previousName = $previousName;

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Service\Password;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
-use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Model\User;
@@ -13,7 +12,7 @@ use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
-use Yiisoft\Translator\TranslatorInterface;
+use YiiRocks\Voyti\tests\TestCase;
 
 #[AllowMockObjectsWithoutExpectations]
 final class RecoveryServiceTest extends TestCase
@@ -45,8 +44,7 @@ final class RecoveryServiceTest extends TestCase
         $userTokenFactory = new UserTokenFactory();
         $mailService = $this->createMock(MailService::class);
         $config = new ModuleConfig();
-        $translator = $this->createMock(TranslatorInterface::class);
-        $translator->method('translate')->willReturn('If the email exists, a recovery message was sent.');
+        $translator = $this->createTranslator();
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 
         $service = new RecoveryService(
@@ -66,8 +64,7 @@ final class RecoveryServiceTest extends TestCase
         $userTokenFactory = new UserTokenFactory();
         $mailService = $this->createMock(MailService::class);
         $config = new ModuleConfig();
-        $translator = $this->createMock(TranslatorInterface::class);
-        $translator->method('translate')->willReturn('If the email exists, a recovery message was sent.');
+        $translator = $this->createTranslator();
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 
         $service = new RecoveryService(
@@ -80,7 +77,7 @@ final class RecoveryServiceTest extends TestCase
 
         $result = $service->run('unknown@example.com');
         self::assertTrue($result->isSuccess());
-        self::assertSame('If the email exists, a recovery message was sent.', $result->getMessage());
+        self::assertSame('If the email exists, a recovery message has been sent', $result->getMessage());
     }
 
     public function testRunWithValidUserSendsRecovery(): void
@@ -98,8 +95,7 @@ final class RecoveryServiceTest extends TestCase
         $mailService = $this->createMock(MailService::class);
         $mailService->method('sendRecovery')->willReturn(true);
         $config = new ModuleConfig();
-        $translator = $this->createMock(TranslatorInterface::class);
-        $translator->method('translate')->willReturn('Recovery message sent.');
+        $translator = $this->createTranslator();
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 
         $service = new RecoveryService(
@@ -112,6 +108,6 @@ final class RecoveryServiceTest extends TestCase
 
         $result = $service->run('valid@example.com');
         self::assertTrue($result->isSuccess());
-        self::assertSame('Recovery message sent.', $result->getMessage());
+        self::assertSame('Recovery message sent', $result->getMessage());
     }
 }

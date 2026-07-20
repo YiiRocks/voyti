@@ -71,9 +71,9 @@ abstract class TestCase extends BaseTestCase
         return new SqliteConnection($driver, $schemaCache);
     }
 
-    protected function createTranslator(): TranslatorInterface
+    protected function createTranslator(string $locale = 'en'): TranslatorInterface
     {
-        $translator = new Translator('en', null, 'voyti');
+        $translator = new Translator($locale, null, 'voyti');
         $translator->addCategorySources(
             new CategorySource(
                 'voyti',

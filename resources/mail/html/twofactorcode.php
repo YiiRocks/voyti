@@ -10,8 +10,8 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var TranslatorInterface $translator
  */
 
-echo Html::H2($translator->translate('voyti.mail.twofactor_heading', category: 'voyti'));
+echo Html::H2($translator->translate('voyti.mail.twofactor_heading'));
 
-echo Html::p($translator->translate('voyti.mail.your_twofactor_code', category: 'voyti'));
+echo Html::p($translator->translate('voyti.mail.your_twofactor_code'));
 
 echo Html::p($code)->addStyle('font-size: 24px; font-weight: bold; letter-spacing: 4px;');

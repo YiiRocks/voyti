@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Service\Admin;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
-use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
@@ -18,11 +17,11 @@ use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\SimpleAssignmentsStorage;
 use YiiRocks\Voyti\tests\Support\SimpleItemsStorage;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Rbac\Manager;
 use Yiisoft\Rbac\Permission;
 use Yiisoft\Rbac\Role;
-use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 
 #[AllowMockObjectsWithoutExpectations]
@@ -64,20 +63,6 @@ final class DashboardServiceTest extends TestCase
         self::assertSame(6, $stats['activeSessions']['lifespan']);
     }
 
-    public function testGetStatsActiveSessionsTrendExcludesRevokedSessions(): void
-    {
-        $user = $this->createUser('revoked-sessions-user', 'revoked-sessions-user@example.com', confirmedAt: time());
-        $userId = (int) $user->getId();
-
-        $session = $this->createUserSession($userId, 'revoked-recent', time());
-        $session->setRevokedAt(time());
-        $session->save();
-
-        $stats = $this->createService()->getStats();
-
-        self::assertSame(0, $stats['activeSessions']['oneDay']);
-    }
-
     public function testGetStatsActiveSessionsTrendFiltersByUpdatedAtNotCreatedAt(): void
     {
         $lifespan = (new ModuleConfig())->rememberLoginLifespan;
@@ -99,6 +84,20 @@ final class DashboardServiceTest extends TestCase
         $recentlyCreatedStaleUpdated->setCreatedAt(time());
         $recentlyCreatedStaleUpdated->setUpdatedAt(time() - $lifespan - 1);
         $recentlyCreatedStaleUpdated->save();
+
+        $stats = $this->createService()->getStats();
+
+        self::assertSame(1, $stats['activeSessions']['oneDay']);
+    }
+
+    public function testGetStatsActiveSessionsTrendIncludesRevokedSessionsActiveWithinWindow(): void
+    {
+        $user = $this->createUser('revoked-sessions-user', 'revoked-sessions-user@example.com', confirmedAt: time());
+        $userId = (int) $user->getId();
+
+        $session = $this->createUserSession($userId, 'revoked-recent', time());
+        $session->setRevokedAt(time());
+        $session->save();
 
         $stats = $this->createService()->getStats();
 
@@ -169,6 +168,19 @@ final class DashboardServiceTest extends TestCase
 
         self::assertSame(
             TimezoneHelper::formatLocalized($timestamp, 'fr'),
+            $stats['recentAuditLogs'][0]['createdAt'],
+        );
+    }
+
+    public function testGetStatsRecentAuditLogsFormatCreatedAtUsingViewerTimezone(): void
+    {
+        $timestamp = 1700000000;
+        $this->createLog('user.create', $timestamp);
+
+        $stats = $this->createService(locale: 'fr')->getStats(viewerTimezone: 'Asia/Tokyo');
+
+        self::assertSame(
+            TimezoneHelper::formatLocalized($timestamp, 'fr', 'Asia/Tokyo'),
             $stats['recentAuditLogs'][0]['createdAt'],
         );
     }
@@ -251,8 +263,7 @@ final class DashboardServiceTest extends TestCase
             $this->createMock(EventDispatcherInterface::class),
         );
         $authHelper = new AuthHelper($manager, $this->itemsStorage, $assignmentsStorage, $config, $currentUser);
-        $translator = $this->createMock(TranslatorInterface::class);
-        $translator->method('getLocale')->willReturn($locale);
+        $translator = $this->createTranslator($locale);
 
         return new DashboardService($authHelper, $config, $this->itemsStorage, $translator);
     }

@@ -20,6 +20,8 @@ use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserProfile;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\SwitchIdentityService;
+use YiiRocks\Voyti\ViewData\Profile\UpdateViewData;
+use YiiRocks\Voyti\ViewData\Shared\ProfileCardViewData;
 use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
@@ -79,8 +81,14 @@ final readonly class ProfileController
         }
 
         $user = User::findById($id);
+        // zend.assertions=-1 strips this statement at compile time, so it can never register as executed.
+        // @codeCoverageIgnoreStart
+        assert($user !== null);
+        // @codeCoverageIgnoreEnd
 
-        return $this->renderView('profile/show', ['user' => $user, 'userProfile' => $userProfile]);
+        return $this->renderView('profile/show', [
+            'profile' => ProfileCardViewData::create($user, $userProfile, $this->translator()),
+        ]);
     }
 
     public function update(ServerRequestInterface $request): ResponseInterface
@@ -117,13 +125,16 @@ final readonly class ProfileController
         }
 
         return $this->renderView('profile/update', [
-            'model' => $form,
-            'user' => $user,
-            'userProfile' => $userProfile,
-            'config' => $this->config,
-            'flash' => $this->flash,
-            'isSwitched' => $this->switchIdentityService->isSwitched(),
-            'originalUser' => $this->switchIdentityService->getOriginalUser(),
+            'form' => $form,
+            'data' => UpdateViewData::create(
+                $user,
+                $userProfile,
+                $this->config,
+                $this->url,
+                $this->translator(),
+                $this->switchIdentityService->isSwitched(),
+                $this->switchIdentityService->getOriginalUser(),
+            ),
         ]);
     }
 

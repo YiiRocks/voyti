@@ -127,7 +127,7 @@ final class RuleControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('admin/rbac/rule/create', $this->callback(
-                static fn(array $params): bool => $params['errors'] !== [],
+                static fn(array $params): bool => $params['data']->errors !== [],
             ))
             ->willReturn($response);
 
@@ -243,7 +243,7 @@ final class RuleControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('admin/rbac/rule/update', $this->callback(
-                static fn(array $params): bool => $params['errors'] !== [],
+                static fn(array $params): bool => $params['data']->errors !== [],
             ))
             ->willReturn($response);
 

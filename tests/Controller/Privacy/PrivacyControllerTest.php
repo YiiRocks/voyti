@@ -465,9 +465,9 @@ final class PrivacyControllerTest extends TestCase
             ->with(
                 'privacy/gdpr-consent',
                 $this->callback(static function (array $params): bool {
-                    return $params['model']->consent === true
-                        && $params['model']->consentDate === 1700000000
-                        && $params['model']->timezone === 'America/New_York';
+                    return $params['form']->consent === true
+                        && $params['form']->consentDate === 1700000000
+                        && $params['form']->timezone === 'America/New_York';
                 }),
             )
             ->willReturn($response);
@@ -498,7 +498,7 @@ final class PrivacyControllerTest extends TestCase
             ->with(
                 'privacy/gdpr-consent',
                 $this->callback(static function (array $params): bool {
-                    return $params['model']->consent === false && $params['model']->timezone === null;
+                    return $params['form']->consent === false && $params['form']->timezone === null;
                 }),
             )
             ->willReturn($response);

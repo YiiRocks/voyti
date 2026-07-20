@@ -9,6 +9,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\Admin\Dashboard\DashboardController;
+use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\Model\UserProfile;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Admin\DashboardService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
@@ -44,6 +46,41 @@ final class DashboardControllerTest extends TestCase
         );
     }
 
+    public function testIndexPassesViewerTimezoneToDashboardService(): void
+    {
+        $viewerProfile = new UserProfile();
+        $viewerProfile->setTimezone('Asia/Tokyo');
+        $viewer = $this->createMock(User::class);
+        $viewer->method('getProfile')->willReturn($viewerProfile);
+        $this->currentUser->overrideIdentity($viewer);
+
+        $this->dashboardService->expects($this->once())
+            ->method('getStats')
+            ->with('Asia/Tokyo')
+            ->willReturn([
+                'userTotal' => 0,
+                'userBlocked' => 0,
+                'userUnconfirmed' => null,
+                'roleCount' => 0,
+                'permissionCount' => 0,
+                'ruleCount' => 0,
+                'newRegistrations' => ['oneDay' => 0, 'sevenDays' => 0, 'lifespan' => 0],
+                'activeSessions' => ['oneDay' => 0, 'sevenDays' => 0, 'lifespan' => 0],
+                'rememberLifespanDays' => 0,
+                'recentAuditLogs' => [],
+            ]);
+
+        $controller = $this->createController();
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->method('render')->willReturn($response);
+
+        $result = $controller->index();
+
+        self::assertSame($response, $result);
+    }
+
     public function testIndexRendersDashboardViewWithStats(): void
     {
         $stats = [
@@ -53,6 +90,9 @@ final class DashboardControllerTest extends TestCase
             'roleCount' => 3,
             'permissionCount' => 4,
             'ruleCount' => 1,
+            'newRegistrations' => ['oneDay' => 1, 'sevenDays' => 2, 'lifespan' => 3],
+            'activeSessions' => ['oneDay' => 4, 'sevenDays' => 5, 'lifespan' => 6],
+            'rememberLifespanDays' => 30,
             'recentAuditLogs' => [],
         ];
         $this->dashboardService->method('getStats')->willReturn($stats);
@@ -73,9 +113,9 @@ final class DashboardControllerTest extends TestCase
         $result = $controller->index();
 
         self::assertSame($response, $result);
-        self::assertSame($stats, $captured['stats']);
-        self::assertSame($this->config, $captured['config']);
-        self::assertSame($this->flash, $captured['flash']);
+        self::assertSame($stats['recentAuditLogs'], $captured['data']->recentAuditLogs);
+        self::assertSame($stats['userTotal'], $captured['data']->tiles[0]->value);
+        self::assertNotEmpty($captured['data']->menu->items);
     }
 
     private function createController(): DashboardController

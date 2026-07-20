@@ -312,7 +312,7 @@ final class AccountControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('shared/message', $this->callback(
-                static fn(array $params): bool => $params['title'] === $expectedTitle,
+                static fn(array $params): bool => $params['data']->title === $expectedTitle,
             ))
             ->willReturn($response);
 

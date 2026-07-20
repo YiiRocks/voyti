@@ -16,6 +16,9 @@ use YiiRocks\Voyti\Model\Form\Rbac\RuleForm;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\AuditLogService;
 use YiiRocks\Voyti\Service\Rbac\RuleEditionService;
+use YiiRocks\Voyti\ViewData\Admin\Rbac\Rule\CreateViewData;
+use YiiRocks\Voyti\ViewData\Admin\Rbac\Rule\IndexViewData;
+use YiiRocks\Voyti\ViewData\Admin\Rbac\Rule\UpdateViewData;
 use Yiisoft\Http\Method;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -76,8 +79,8 @@ final readonly class RuleController
         }
 
         return $this->renderView('admin/rbac/rule/create', [
-            'model' => $form,
-            'errors' => $errors,
+            'form' => $form,
+            'data' => CreateViewData::create($errors, $this->url, $this->translator()),
         ]);
     }
 
@@ -94,8 +97,7 @@ final readonly class RuleController
         $rules = $this->authHelper->getRuleNames();
 
         return $this->renderView('admin/rbac/rule/index', [
-            'rules' => $rules,
-            'flash' => $this->flash,
+            'data' => IndexViewData::create($rules, $this->url, $this->translator()),
         ]);
     }
 
@@ -137,8 +139,8 @@ final readonly class RuleController
         }
 
         return $this->renderView('admin/rbac/rule/update', [
-            'model' => $form,
-            'errors' => $errors,
+            'form' => $form,
+            'data' => UpdateViewData::create($form, $errors, $this->url, $this->translator()),
         ]);
     }
 

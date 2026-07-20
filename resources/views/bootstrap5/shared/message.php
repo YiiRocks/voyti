@@ -2,24 +2,24 @@
 
 declare(strict_types=1);
 
+use YiiRocks\Voyti\ViewData\Shared\MessageViewData;
 use Yiisoft\Html\Html;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\View\WebView;
 
 /**
  * @var WebView $this
- * @var string $title
+ * @var MessageViewData $data
  * @var TranslatorInterface $translator
- * @var string $homeUrl
  */
 
 /** @psalm-suppress InvalidScope */
-$this->setTitle($title);
+$this->setTitle($data->title);
 
 echo Html::div()->class('card shadow-sm')->open();
 echo Html::div()->class('card-body text-center py-5')->open();
-echo Html::H1($title);
+echo Html::H1($data->title);
 
-echo Html::a($translator->translate('voyti.view.go_home', category: 'voyti'), $homeUrl)->class('btn', 'btn-primary');
+echo Html::a($translator->translate('voyti.view.go_home'), $data->homeUrl)->class('btn', 'btn-primary');
 echo Html::div()->close();
 echo Html::div()->close();

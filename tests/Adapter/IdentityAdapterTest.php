@@ -14,10 +14,12 @@ use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\FixedClock;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 
 final class IdentityAdapterTest extends TestCase
 {
     use DatabaseSetupTrait;
+    use UserFactoryTrait;
 
     protected function setUp(): void
     {
@@ -32,7 +34,7 @@ final class IdentityAdapterTest extends TestCase
     public function testFindIdentityByTokenAtExactLifespanBoundaryIsStillValid(): void
     {
         $now = time();
-        $user = $this->createSavedUser();
+        $user = $this->createUser();
         $this->createApiToken($user, 'raw-token', createdAt: $now - 500);
         $adapter = $this->createAdapter(config: new ModuleConfig(apiTokenLifespan: 500), clock: $this->fixedClock($now));
 
@@ -41,7 +43,7 @@ final class IdentityAdapterTest extends TestCase
 
     public function testFindIdentityByTokenHashesInputBeforeLookup(): void
     {
-        $user = $this->createSavedUser();
+        $user = $this->createUser();
         $this->createApiToken($user, 'raw-token');
         $adapter = $this->createAdapter();
 
@@ -51,7 +53,7 @@ final class IdentityAdapterTest extends TestCase
 
     public function testFindIdentityByTokenReturnsNullForExpiredToken(): void
     {
-        $user = $this->createSavedUser();
+        $user = $this->createUser();
         $this->createApiToken($user, 'raw-token', createdAt: time() - 1000);
         $adapter = $this->createAdapter(config: new ModuleConfig(apiTokenLifespan: 500));
 
@@ -67,7 +69,7 @@ final class IdentityAdapterTest extends TestCase
 
     public function testFindIdentityByTokenReturnsUserForValidToken(): void
     {
-        $user = $this->createSavedUser();
+        $user = $this->createUser();
         $this->createApiToken($user, 'raw-token');
         $adapter = $this->createAdapter();
 
@@ -79,7 +81,7 @@ final class IdentityAdapterTest extends TestCase
 
     public function testFindIdentityByTokenUsesInjectedClockNotRealTime(): void
     {
-        $user = $this->createSavedUser();
+        $user = $this->createUser();
         $this->createApiToken($user, 'raw-token', createdAt: 1_000_000);
         $adapter = $this->createAdapter(
             config: new ModuleConfig(apiTokenLifespan: 500),
@@ -91,7 +93,7 @@ final class IdentityAdapterTest extends TestCase
 
     public function testFindIdentityByTokenWithinLifespanIsValid(): void
     {
-        $user = $this->createSavedUser();
+        $user = $this->createUser();
         $this->createApiToken($user, 'raw-token', createdAt: time() - 100);
         $adapter = $this->createAdapter(config: new ModuleConfig(apiTokenLifespan: 500));
 
@@ -100,7 +102,7 @@ final class IdentityAdapterTest extends TestCase
 
     public function testFindIdentityByTokenWithNullLifespanNeverExpires(): void
     {
-        $user = $this->createSavedUser();
+        $user = $this->createUser();
         $this->createApiToken($user, 'raw-token', createdAt: time() - 1_000_000);
         $adapter = $this->createAdapter(config: new ModuleConfig(apiTokenLifespan: null));
 
@@ -109,7 +111,7 @@ final class IdentityAdapterTest extends TestCase
 
     public function testFindIdentityDelegatesToUserRepository(): void
     {
-        $user = $this->createSavedUser();
+        $user = $this->createUser();
         $adapter = $this->createAdapter();
 
         $found = $adapter->findIdentity((string) $user->getId());
@@ -139,19 +141,6 @@ final class IdentityAdapterTest extends TestCase
         $userToken->setCreatedAt($createdAt ?? time());
         $userToken->save();
         return $userToken;
-    }
-
-    private function createSavedUser(): User
-    {
-        $user = new User();
-        $user->setUsername('testuser');
-        $user->setEmail('test@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-        return $user;
     }
 
     private function fixedClock(int $timestamp): ClockInterface

@@ -14,6 +14,7 @@ use YiiRocks\Voyti\Event\Session\SessionEvent;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\ViewData\Account\SessionsViewData;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Session\SessionInterface;
@@ -51,11 +52,14 @@ final readonly class SessionController
         }
 
         return $this->renderView('account/sessions', [
-            'sessions' => UserSessions::findByUserId($user->getIdOrZero()),
-            'currentSessionId' => $this->session->getId(),
-            'config' => $this->config,
-            'flash' => $this->flash,
-            'timezone' => $user->getProfile()?->getTimezone(),
+            'data' => SessionsViewData::create(
+                UserSessions::findByUserId($user->getIdOrZero()),
+                $this->session->getId(),
+                $user->getProfile()?->getTimezone(),
+                $this->config,
+                $this->url,
+                $this->translator(),
+            ),
         ]);
     }
 

@@ -210,7 +210,7 @@ final class RegistrationControllerTest extends TestCase
             ->willReturnSelf();
         $this->viewRenderer->expects($this->once())
             ->method('render')
-            ->with('registration/register', $this->arrayHasKey('model'))
+            ->with('registration/register', $this->arrayHasKey('form'))
             ->willReturn($response);
 
         $result = $controller->register($request);

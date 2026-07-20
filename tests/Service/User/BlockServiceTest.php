@@ -7,16 +7,17 @@ namespace YiiRocks\Voyti\tests\Service\User;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Event\User\UserEvent;
-use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\User\BlockService;
 use YiiRocks\Voyti\Service\UserSession\TerminateUserSessionsService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 
 #[AllowMockObjectsWithoutExpectations]
 final class BlockServiceTest extends TestCase
 {
     use DatabaseSetupTrait;
+    use UserFactoryTrait;
 
     protected function setUp(): void
     {
@@ -36,7 +37,7 @@ final class BlockServiceTest extends TestCase
 
         $service = new BlockService($eventDispatcher, $terminateService);
 
-        $user = $this->createSavedUser();
+        $user = $this->createUser();
         $user->setBlockedAt(time());
         $user->save();
 
@@ -56,7 +57,7 @@ final class BlockServiceTest extends TestCase
 
         $service = new BlockService($eventDispatcher, $terminateService);
 
-        $user = $this->createSavedUser();
+        $user = $this->createUser();
 
         self::assertTrue($service->run($user));
         self::assertNotNull($user->getBlockedAt());
@@ -64,18 +65,5 @@ final class BlockServiceTest extends TestCase
         $event = $eventDispatcher->getEvent(UserEvent::class);
         self::assertNotNull($event);
         self::assertSame(UserEvent::BLOCK, $event->getType());
-    }
-
-    private function createSavedUser(): User
-    {
-        $user = new User();
-        $user->setUsername('testuser');
-        $user->setEmail('test@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-        return $user;
     }
 }

@@ -11,11 +11,11 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var TranslatorInterface $translator
  */
 
-echo Html::H2($translator->translate('voyti.mail.email_change_heading', category: 'voyti'));
+echo Html::H2($translator->translate('voyti.mail.email_change_heading'));
 
-echo Html::p($translator->translate('voyti.mail.hello_username', ['username' => $username], category: 'voyti'));
+echo Html::p($translator->translate('voyti.mail.hello_username', ['username' => $username]));
 
-echo Html::p($translator->translate('voyti.mail.click_to_confirm_email', category: 'voyti'));
+echo Html::p($translator->translate('voyti.mail.click_to_confirm_email'));
 
 echo Html::p(
     Html::a($confirmationUrl, $confirmationUrl),

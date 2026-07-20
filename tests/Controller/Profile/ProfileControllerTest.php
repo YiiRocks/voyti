@@ -200,31 +200,6 @@ final class ProfileControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    public function testUpdateGetCreatesNewProfileWhenNoneExists(): void
-    {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
-        $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $captured = [];
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->method('render')
-            ->willReturnCallback(function (string $view, array $params) use (&$captured, $response): ResponseInterface {
-                $captured = $params;
-                return $response;
-            });
-
-        $controller->update($request);
-
-        $this->assertInstanceOf(UserProfile::class, $captured['userProfile']);
-        $this->assertSame((int) $user->getId(), $captured['userProfile']->getUserId());
-    }
-
     public function testUpdateGetDoesNotShowSwitchedBannerWhenNotSwitched(): void
     {
         $controller = $this->createController();
@@ -250,8 +225,7 @@ final class ProfileControllerTest extends TestCase
 
         $controller->update($request);
 
-        $this->assertFalse($captured['isSwitched']);
-        $this->assertNull($captured['originalUser']);
+        $this->assertNull($captured['data']->switchedBannerMessage);
     }
 
     public function testUpdateGetShowsFormWithExistingProfile(): void
@@ -308,8 +282,7 @@ final class ProfileControllerTest extends TestCase
 
         $controller->update($request);
 
-        $this->assertTrue($captured['isSwitched']);
-        $this->assertSame($originalUser->getId(), $captured['originalUser']->getId());
+        $this->assertStringContainsString('original', (string) $captured['data']->switchedBannerMessage);
     }
 
     public function testUpdatePostClearingFieldsSetsThemToNullNotEmptyString(): void
@@ -353,6 +326,33 @@ final class ProfileControllerTest extends TestCase
         $this->assertNull($updatedProfile->getTimezone());
         $this->assertNull($updatedProfile->getBio());
         $this->assertNull($updatedProfile->getBirthday());
+    }
+
+    public function testUpdatePostCreatesAndSavesNewProfileWhenNoneExists(): void
+    {
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['userProfile' => ['name' => 'Jane']]);
+
+        $this->hydrator->method('hydrate')->willReturnCallback(
+            function (object $object, array $data = []): void {
+                $this->hydrateObject($object, $data);
+            },
+        );
+
+        $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn((string) $user->getId());
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $response = $this->mockRedirectResponse($this->responseFactory);
+
+        $result = $controller->update($request);
+
+        $this->assertSame($response, $result);
+        $savedProfile = UserProfile::findByUserId((int) $user->getId());
+        $this->assertNotNull($savedProfile);
+        $this->assertSame((int) $user->getId(), $savedProfile->getUserId());
+        $this->assertSame('Jane', $savedProfile->getName());
     }
 
     public function testUpdatePostRejectsHtmlInBioAndDoesNotSave(): void

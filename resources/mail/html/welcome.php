@@ -10,8 +10,8 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var TranslatorInterface $translator
  */
 
-echo Html::H2($translator->translate('voyti.mail.welcome_heading', category: 'voyti'));
+echo Html::H2($translator->translate('voyti.mail.welcome_heading'));
 
-echo Html::p($translator->translate('voyti.mail.hello_username', ['username' => $username], category: 'voyti'));
+echo Html::p($translator->translate('voyti.mail.hello_username', ['username' => $username]));
 
-echo Html::p($translator->translate('voyti.mail.account_created_successfully', category: 'voyti'));
+echo Html::p($translator->translate('voyti.mail.account_created_successfully'));

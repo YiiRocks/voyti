@@ -18,6 +18,9 @@ use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\RegisterService;
+use YiiRocks\Voyti\ViewData\Registration\ConnectViewData;
+use YiiRocks\Voyti\ViewData\Registration\RegisterViewData;
+use YiiRocks\Voyti\ViewData\Registration\ResendViewData;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -78,8 +81,7 @@ final readonly class RegistrationController
         }
 
         return $this->renderView('registration/connect', [
-            'account' => $account,
-            'authClients' => $this->authClientRegistry,
+            'data' => ConnectViewData::create($account, $this->authClientRegistry, $this->url),
         ]);
     }
 
@@ -132,8 +134,8 @@ final readonly class RegistrationController
         }
 
         return $this->renderView('registration/register', [
-            'model' => $form,
-            'config' => $this->config,
+            'form' => $form,
+            'data' => RegisterViewData::create($form, $this->config, $this->url),
         ]);
     }
 
@@ -161,7 +163,10 @@ final readonly class RegistrationController
             }
         }
 
-        return $this->renderView('registration/resend', ['model' => $form, 'config' => $this->config]);
+        return $this->renderView('registration/resend', [
+            'form' => $form,
+            'data' => ResendViewData::create($form, $this->config, $this->url),
+        ]);
     }
 
 }

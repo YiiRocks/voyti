@@ -452,7 +452,7 @@ final class SessionControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('session/confirm', $this->callback(
-                static fn(array $params): bool => $params['method'] === 'google',
+                static fn(array $params): bool => $params['data']->method === 'google',
             ))
             ->willReturn($response);
 
@@ -473,7 +473,7 @@ final class SessionControllerTest extends TestCase
             ->willReturnSelf();
         $this->viewRenderer->expects($this->once())
             ->method('render')
-            ->with('session/login', $this->arrayHasKey('model'))
+            ->with('session/login', $this->arrayHasKey('form'))
             ->willReturn($response);
 
         $result = $controller->login($request);
@@ -649,7 +649,7 @@ final class SessionControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('session/confirm', $this->callback(
-                static fn(array $params): bool => $params['method'] === 'email',
+                static fn(array $params): bool => $params['data']->method === 'email',
             ))
             ->willReturn($response);
 
@@ -683,7 +683,7 @@ final class SessionControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('session/confirm', $this->callback(
-                static fn(array $params): bool => $params['method'] === 'google',
+                static fn(array $params): bool => $params['data']->method === 'google',
             ))
             ->willReturn($response);
 

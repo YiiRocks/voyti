@@ -184,22 +184,29 @@ final class PasswordResetControllerTest extends TestCase
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['recovery' => ['password' => '', 'passwordRepeat' => '']]);
 
         $result = new Result();
-        $result->addError('Password is required.');
+        $result->addError('Password is required.', valuePath: ['password']);
         $this->validator->method('validate')->willReturn($result);
         $this->resetService->expects($this->never())->method('run');
 
+        $captured = [];
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
         $this->viewRenderer->expects($this->once())
             ->method('render')
-            ->with('password-reset/confirm', $this->callback(
-                static fn(array $params): bool => $params['errors'] !== [],
-            ))
+            ->with('password-reset/confirm', $this->callback(function (array $params) use (&$captured): bool {
+                $captured = $params;
+                return true;
+            }))
             ->willReturn($response);
 
         $result2 = $controller->confirm($request, (int) $user->getId(), 'valid');
 
         $this->assertSame($response, $result2);
+        $this->assertFalse($captured['form']->isValid());
+        $this->assertSame(
+            ['Password is required.'],
+            $captured['form']->getValidationResult()->getPropertyErrorMessages('password'),
+        );
     }
 
     public function testResetPostWithPreviouslyUsedPasswordShowsError(): void
@@ -213,18 +220,25 @@ final class PasswordResetControllerTest extends TestCase
         $this->validator->method('validate')->willReturn(new Result());
         $this->resetService->expects($this->once())->method('run')->willReturn(false);
 
+        $captured = [];
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
         $this->viewRenderer->expects($this->once())
             ->method('render')
-            ->with('password-reset/confirm', $this->callback(
-                static fn(array $params): bool => $params['errors'] !== [],
-            ))
+            ->with('password-reset/confirm', $this->callback(function (array $params) use (&$captured): bool {
+                $captured = $params;
+                return true;
+            }))
             ->willReturn($response);
 
         $result = $controller->confirm($request, (int) $user->getId(), 'valid');
 
         $this->assertSame($response, $result);
+        $this->assertFalse($captured['form']->isValid());
+        $this->assertSame(
+            ['This password has been used recently. Please choose a different one.'],
+            $captured['form']->getValidationResult()->getPropertyErrorMessages('password'),
+        );
     }
 
     public function testResetWithDisabledConfigShowsMessage(): void

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Service\User;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
-use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Model\User;
@@ -20,7 +19,7 @@ use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
 use YiiRocks\Voyti\tests\Support\MailCapture;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
-use Yiisoft\Translator\TranslatorInterface;
+use YiiRocks\Voyti\tests\TestCase;
 
 #[AllowMockObjectsWithoutExpectations]
 final class CreateServiceTest extends TestCase
@@ -156,7 +155,7 @@ final class CreateServiceTest extends TestCase
         return new MailService(
             $mailCapture,
             '',
-            $this->createMock(TranslatorInterface::class),
+            $this->createTranslator(),
             new FakeUrlGenerator(),
         );
     }

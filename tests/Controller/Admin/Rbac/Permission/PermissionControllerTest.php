@@ -83,7 +83,7 @@ final class PermissionControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('admin/rbac/create', $this->callback(
-                static fn(array $params): bool => array_keys($params['availableChildren']) === ['other-permission'],
+                static fn(array $params): bool => array_map(static fn($c) => $c->name, $params['data']->children) === ['other-permission'],
             ))
             ->willReturn($response);
 
@@ -139,7 +139,7 @@ final class PermissionControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('admin/rbac/create', $this->callback(
-                static fn(array $params): bool => $params['errors'] !== [],
+                static fn(array $params): bool => $params['data']->errors !== [],
             ))
             ->willReturn($response);
 
@@ -162,7 +162,7 @@ final class PermissionControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('admin/rbac/create', $this->callback(
-                static fn(array $params): bool => ($params['errors']['children'] ?? []) !== [],
+                static fn(array $params): bool => ($params['data']->errors['children'] ?? []) !== [],
             ))
             ->willReturn($response);
 
@@ -235,7 +235,7 @@ final class PermissionControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('admin/rbac/update', $this->callback(
-                static fn(array $params): bool => array_keys($params['availableChildren']) === ['other-permission'],
+                static fn(array $params): bool => array_map(static fn($c) => $c->name, $params['data']->children) === ['other-permission'],
             ))
             ->willReturn($response);
 

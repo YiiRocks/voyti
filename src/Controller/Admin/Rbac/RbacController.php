@@ -16,6 +16,9 @@ use YiiRocks\Voyti\Model\Form\Rbac\AuthItemForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\AuditLogService;
+use YiiRocks\Voyti\ViewData\Admin\Rbac\CreateViewData;
+use YiiRocks\Voyti\ViewData\Admin\Rbac\IndexViewData;
+use YiiRocks\Voyti\ViewData\Admin\Rbac\UpdateViewData;
 use Yiisoft\Http\Method;
 use Yiisoft\Rbac\AssignmentsStorageInterface;
 use Yiisoft\Rbac\Item;
@@ -113,10 +116,8 @@ final readonly class RbacController
         }
 
         return $this->renderView('admin/rbac/create', [
-            'availableChildren' => $availableChildren,
-            'itemType' => $itemType,
-            'model' => $form,
-            'errors' => $errors,
+            'form' => $form,
+            'data' => CreateViewData::create($itemType, $form, $availableChildren, $errors, $this->url, $this->translator()),
         ]);
     }
 
@@ -168,12 +169,15 @@ final readonly class RbacController
         }
 
         return $this->renderView('admin/rbac/index', [
-            'itemType' => $itemType,
-            'items' => $items,
-            'filterName' => $filterName,
-            'filterDescription' => $filterDescription,
-            'itemChildren' => $itemChildren,
-            'flash' => $this->flash,
+            'data' => IndexViewData::create(
+                $itemType,
+                $items,
+                $itemChildren,
+                $filterName,
+                $filterDescription,
+                $this->url,
+                $this->translator(),
+            ),
         ]);
     }
 
@@ -263,11 +267,8 @@ final readonly class RbacController
         }
 
         return $this->renderView('admin/rbac/update', [
-            'availableChildren' => $availableChildren,
-            'itemType' => $itemType,
-            'model' => $form,
-            'errors' => $errors,
-            'users' => $users,
+            'form' => $form,
+            'data' => UpdateViewData::create($itemType, $form, $availableChildren, $users, $errors, $this->url, $this->translator()),
         ]);
     }
 

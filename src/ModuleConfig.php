@@ -18,6 +18,8 @@ use Yiisoft\Router\UrlGeneratorInterface;
  */
 final readonly class ModuleConfig
 {
+    public const DEFAULT_VIEW_PATH = __DIR__ . '/../resources/views/bootstrap5';
+
     public function __construct(
         public string $appName = 'Voyti',
         public ?RecaptchaVersion $recaptchaVersion = null,
@@ -63,7 +65,7 @@ final readonly class ModuleConfig
         public ProfileVisibility $profileVisibility = ProfileVisibility::USERS,
         public ?int $maxPasswordAge = null,
         public bool $disableIpLogging = false,
-        public string $viewPath = __DIR__ . '/../resources/views/bootstrap5',
+        public string $viewPath = self::DEFAULT_VIEW_PATH,
         public string $mailPath = __DIR__ . '/../resources/mail',
         public bool $enableRestApi = false,
         public string $adminRestPrefix = 'api',

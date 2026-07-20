@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Model\Form\Auth;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
-use PHPUnit\Framework\TestCase;
 use YiiRocks\Recaptcha\RecaptchaV3Rule;
 use YiiRocks\Voyti\Enum\RecaptchaVersion;
 use YiiRocks\Voyti\Model\Form\Auth\LoginForm;
 use YiiRocks\Voyti\ModuleConfig;
-use Yiisoft\Translator\TranslatorInterface;
+use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Validator\Rule\Required;
 use Yiisoft\Validator\Validator;
 
@@ -119,14 +118,6 @@ final class LoginFormTest extends TestCase
 
         $messages = $result->getErrorMessagesIndexedByProperty();
         $this->assertArrayHasKey('login', $messages);
-        $this->assertSame('Voyti.view.login.login_label cannot be blank.', $messages['login'][0]);
-    }
-    private function createTranslator(): TranslatorInterface
-    {
-        $translator = $this->createMock(TranslatorInterface::class);
-        $translator->method('translate')->willReturnCallback(
-            fn(string $id, array $parameters = [], string $category = 'voyti') => $id,
-        );
-        return $translator;
+        $this->assertSame('Username or Email cannot be blank.', $messages['login'][0]);
     }
 }

@@ -5,13 +5,12 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Service;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
-use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
 use YiiRocks\Voyti\tests\Support\MailCapture;
-use Yiisoft\Translator\TranslatorInterface;
+use YiiRocks\Voyti\tests\TestCase;
 
 #[AllowMockObjectsWithoutExpectations]
 final class MailServiceTest extends TestCase
@@ -24,16 +23,11 @@ final class MailServiceTest extends TestCase
     {
         $this->mailer = new MailCapture();
         $this->url = new FakeUrlGenerator();
-        $translator = $this->createMock(TranslatorInterface::class);
-        $translator->method('translate')->willReturnCallback(fn(string $key) => match (true) {
-            str_contains($key, 'subject') => 'Subject ' . $key,
-            default => $key,
-        });
 
         $this->service = new MailService(
             $this->mailer,
             __DIR__ . '/../../resources/mail',
-            $translator,
+            $this->createTranslator(),
             $this->url,
             'Voyti',
         );
@@ -41,40 +35,15 @@ final class MailServiceTest extends TestCase
 
     public function testMailSubjectContainsAppName(): void
     {
-        $captured = [];
-        $translator = $this->createMock(TranslatorInterface::class);
-        $translator
-            ->method('translate')
-            ->willReturnCallback(static function (string $key, array $params = [], string $category = '') use (&$captured): string {
-                $captured[] = ['key' => $key, 'params' => $params, 'category' => $category];
-
-                return str_contains($key, 'subject') ? 'Subject ' . $key : $key;
-            });
-
-        $service = new MailService(
-            $this->mailer,
-            __DIR__ . '/../../resources/mail',
-            $translator,
-            $this->url,
-            'Voyti',
-        );
-
         $user = new User();
         $user->setEmail('test@example.com');
         $user->setUsername('testuser');
 
-        $result = $service->sendWelcome($user, 'password123');
+        $result = $this->service->sendWelcome($user, 'password123');
         self::assertTrue($result);
         $message = $this->mailer->getLastMessage();
         self::assertNotNull($message);
-        self::assertStringContainsString('voyti.mail.welcome_subject', (string) $message->getSubject());
-
-        $subjectCalls = array_filter($captured, static fn(array $c): bool => str_contains($c['key'], 'subject'));
-        self::assertNotEmpty($subjectCalls);
-        foreach ($subjectCalls as $call) {
-            self::assertSame('Voyti', $call['params']['app']);
-            self::assertSame('voyti', $call['category']);
-        }
+        self::assertSame('Welcome to Voyti', (string) $message->getSubject());
     }
 
     public function testSendAdminNotification(): void
@@ -165,7 +134,7 @@ final class MailServiceTest extends TestCase
 
     public function testSendWithBothHtmlAndText(): void
     {
-        $result = $this->service->send('test@example.com', 'Test', 'welcome', ['username' => 'testuser', 'translator' => $this->createMock(TranslatorInterface::class)]);
+        $result = $this->service->send('test@example.com', 'Test', 'welcome', ['username' => 'testuser', 'translator' => $this->createTranslator()]);
         self::assertTrue($result);
         $message = $this->mailer->getLastMessage();
         self::assertNotNull($message);

@@ -11,13 +11,16 @@ use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
+use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserAuditLog;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\ViewData\Admin\AuditLog\IndexViewData;
 use Yiisoft\Data\Db\QueryDataReader;
 use Yiisoft\Data\Paginator\OffsetPaginator;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\User\CurrentUser;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 /**
@@ -36,6 +39,7 @@ final readonly class AuditLogController
         private ResponseFactoryInterface $responseFactory,
         private ModuleConfig $config,
         private FlashInterface $flash,
+        private CurrentUser $currentUser,
     ) {}
 
     public function index(ServerRequestInterface $request): ResponseInterface
@@ -55,21 +59,31 @@ final readonly class AuditLogController
         /** @var list<UserAuditLog> $logs */
         $logs = iterator_to_array($paginator->read(), false);
 
+        $viewer = $this->currentUser->getIdentity();
+        $viewerTimezone = $viewer instanceof User ? $viewer->getProfile()?->getTimezone() : null;
+
         return $this->renderView('admin/audit-log/index', [
-            'logs' => array_map(fn(UserAuditLog $log): array => $this->presentLog($log), $logs),
-            'paginator' => $paginator,
-            'filters' => $filters,
-            'flash' => $this->flash,
+            'data' => IndexViewData::create(
+                array_map(fn(UserAuditLog $log): array => $this->presentLog($log, $viewerTimezone), $logs),
+                $paginator,
+                $filters,
+                $this->url,
+                $this->translator(),
+            ),
         ]);
     }
 
     /**
      * @return array{createdAt: string, actorUserId: string, action: string, targetLabel: string, context: string}
      */
-    private function presentLog(UserAuditLog $log): array
+    private function presentLog(UserAuditLog $log, ?string $viewerTimezone): array
     {
         return [
-            'createdAt' => TimezoneHelper::formatLocalized($log->getCreatedAt(), $this->translator->getLocale()),
+            'createdAt' => TimezoneHelper::formatLocalized(
+                $log->getCreatedAt(),
+                $this->translator->getLocale(),
+                $viewerTimezone,
+            ),
             'actorUserId' => (string) ($log->getActorUserId() ?? ''),
             'action' => $log->getAction(),
             'targetLabel' => $this->targetLabel($log),

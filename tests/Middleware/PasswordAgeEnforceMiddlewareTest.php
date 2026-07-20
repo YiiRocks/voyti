@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Middleware;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
-use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -14,6 +13,7 @@ use YiiRocks\Voyti\Middleware\PasswordAgeEnforceMiddleware;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\ExpireService;
+use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\Router\CurrentRoute;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -268,7 +268,7 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
             $currentUser ?? $this->createMock(CurrentUser::class),
             new ExpireService($config),
             $currentRoute ?? $this->createMock(CurrentRoute::class),
-            $translator ?? $this->createMock(TranslatorInterface::class),
+            $translator ?? $this->createTranslator(),
             $responseFactory ?? $this->createMock(ResponseFactoryInterface::class),
             $url ?? $this->createMock(UrlGeneratorInterface::class),
         );

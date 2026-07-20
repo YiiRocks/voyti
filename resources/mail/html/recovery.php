@@ -11,11 +11,11 @@ use Yiisoft\Translator\TranslatorInterface;
  * @var TranslatorInterface $translator
  */
 
-echo Html::H2($translator->translate('voyti.mail.password_recovery_heading', category: 'voyti'));
+echo Html::H2($translator->translate('voyti.mail.password_recovery_heading'));
 
-echo Html::p($translator->translate('voyti.mail.hello_username', ['username' => $username], category: 'voyti'));
+echo Html::p($translator->translate('voyti.mail.hello_username', ['username' => $username]));
 
-echo Html::p($translator->translate('voyti.mail.click_to_reset_password', category: 'voyti'));
+echo Html::p($translator->translate('voyti.mail.click_to_reset_password'));
 
 echo Html::p(
     Html::a($recoveryUrl, $recoveryUrl),
