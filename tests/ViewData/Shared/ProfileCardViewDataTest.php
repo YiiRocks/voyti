@@ -8,12 +8,12 @@ use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserProfile;
+use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
 use YiiRocks\Voyti\ViewData\Shared\ProfileCardViewData;
-use Yiisoft\Translator\Translator;
-use Yiisoft\Translator\TranslatorInterface;
 
 final class ProfileCardViewDataTest extends TestCase
 {
+    use TranslatorMockTrait;
     public function testCreateFormatsRegisteredDisplayInViewerTimezoneNotProfileTimezone(): void
     {
         $createdAt = time();
@@ -22,7 +22,7 @@ final class ProfileCardViewDataTest extends TestCase
         $profile = $this->createProfile();
         $profile->setTimezone('America/New_York');
 
-        $translator = $this->translator();
+        $translator = $this->createTranslator();
 
         $data = ProfileCardViewData::create(
             $user,
@@ -51,7 +51,7 @@ final class ProfileCardViewDataTest extends TestCase
         $data = ProfileCardViewData::create(
             $this->createUser(),
             $profile,
-            $this->translator(),
+            $this->createTranslator(),
             profilePreviewClass: 'list-group list-group-flush',
         );
 
@@ -70,7 +70,7 @@ final class ProfileCardViewDataTest extends TestCase
         $profile = $this->createProfile();
         $profile->setName('Jane Doe');
 
-        $data = ProfileCardViewData::create($user, $profile, $this->translator());
+        $data = ProfileCardViewData::create($user, $profile, $this->createTranslator());
 
         self::assertSame('Jane Doe', $data->displayName);
     }
@@ -80,7 +80,7 @@ final class ProfileCardViewDataTest extends TestCase
         $user = $this->createUser(username: 'janedoe');
         $profile = $this->createProfile();
 
-        $data = ProfileCardViewData::create($user, $profile, $this->translator());
+        $data = ProfileCardViewData::create($user, $profile, $this->createTranslator());
 
         self::assertSame('janedoe', $data->displayName);
     }
@@ -90,7 +90,7 @@ final class ProfileCardViewDataTest extends TestCase
         $user = $this->createUser();
         $user->setBlockedAt(time());
 
-        $data = ProfileCardViewData::create($user, $this->createProfile(), $this->translator(), showAdminFields: true);
+        $data = ProfileCardViewData::create($user, $this->createProfile(), $this->createTranslator(), showAdminFields: true);
 
         self::assertTrue($data->showAdminFields);
         self::assertSame('voyti.view.status_blocked', $data->statusLabel);
@@ -104,7 +104,7 @@ final class ProfileCardViewDataTest extends TestCase
         $user = $this->createUser();
         $user->setConfirmedAt(time());
 
-        $data = ProfileCardViewData::create($user, $this->createProfile(), $this->translator(), showAdminFields: true);
+        $data = ProfileCardViewData::create($user, $this->createProfile(), $this->createTranslator(), showAdminFields: true);
 
         self::assertSame('voyti.view.status_active', $data->statusLabel);
         self::assertSame('bg-success', $data->statusBadgeClass);
@@ -114,7 +114,7 @@ final class ProfileCardViewDataTest extends TestCase
     {
         $user = $this->createUser();
 
-        $data = ProfileCardViewData::create($user, $this->createProfile(), $this->translator(), showAdminFields: true);
+        $data = ProfileCardViewData::create($user, $this->createProfile(), $this->createTranslator(), showAdminFields: true);
 
         self::assertSame('voyti.view.status_pending', $data->statusLabel);
         self::assertSame('bg-warning text-dark', $data->statusBadgeClass);
@@ -125,7 +125,7 @@ final class ProfileCardViewDataTest extends TestCase
         $user = $this->createUser();
         $profile = $this->createProfile();
 
-        $data = ProfileCardViewData::create($user, $profile, $this->translator());
+        $data = ProfileCardViewData::create($user, $profile, $this->createTranslator());
 
         self::assertFalse($data->showAdminFields);
         self::assertNull($data->email);
@@ -156,8 +156,5 @@ final class ProfileCardViewDataTest extends TestCase
         return $user;
     }
 
-    private function translator(): TranslatorInterface
-    {
-        return new Translator('en', null, 'voyti');
-    }
+
 }

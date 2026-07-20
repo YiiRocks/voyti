@@ -7,17 +7,17 @@ namespace YiiRocks\Voyti\tests\ViewData\Privacy;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
+use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
 use YiiRocks\Voyti\ViewData\Privacy\IndexViewData;
-use Yiisoft\Translator\Translator;
-use Yiisoft\Translator\TranslatorInterface;
 
 final class IndexViewDataTest extends TestCase
 {
+    use TranslatorMockTrait;
     public function testCreateWithGdprAndDeleteDisabled(): void
     {
         $config = new ModuleConfig(enableGdprCompliance: false, allowAccountDelete: false);
 
-        $data = IndexViewData::create($config, new FakeUrlGenerator(), $this->translator());
+        $data = IndexViewData::create($config, new FakeUrlGenerator(), $this->createTranslator());
 
         self::assertFalse($data->showGdprLinks);
         self::assertFalse($data->showDeleteLink);
@@ -27,7 +27,7 @@ final class IndexViewDataTest extends TestCase
     {
         $config = new ModuleConfig(enableGdprCompliance: true, allowAccountDelete: true);
 
-        $data = IndexViewData::create($config, new FakeUrlGenerator(), $this->translator());
+        $data = IndexViewData::create($config, new FakeUrlGenerator(), $this->createTranslator());
 
         self::assertTrue($data->showGdprLinks);
         self::assertTrue($data->showDeleteLink);
@@ -38,8 +38,5 @@ final class IndexViewDataTest extends TestCase
         self::assertNotEmpty($data->menu->items);
     }
 
-    private function translator(): TranslatorInterface
-    {
-        return new Translator('en', null, 'voyti');
-    }
+
 }

@@ -4,16 +4,11 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Model;
 
-use PHPUnit\Framework\TestCase;
-use Psr\SimpleCache\CacheInterface;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSocialAccount;
-use Yiisoft\Db\Cache\SchemaCache;
+use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Db\Connection\ConnectionInterface;
 use Yiisoft\Db\Connection\ConnectionProvider;
-use Yiisoft\Db\Sqlite\Connection;
-use Yiisoft\Db\Sqlite\Driver;
-use Yiisoft\Db\Sqlite\Dsn;
 
 final class UserSocialAccountTest extends TestCase
 {
@@ -335,15 +330,4 @@ final class UserSocialAccountTest extends TestCase
         return $account;
     }
 
-    private function createSqliteConnection(): ConnectionInterface
-    {
-        $dsn = new Dsn('sqlite', ':memory:');
-        $driver = new Driver($dsn);
-        $cache = $this->createStub(CacheInterface::class);
-        $cache->method('set')->willReturn(true);
-        $cache->method('get')->willReturn(null);
-        $schemaCache = new SchemaCache($cache);
-        $schemaCache->setEnabled(false);
-        return new Connection($driver, $schemaCache);
-    }
 }

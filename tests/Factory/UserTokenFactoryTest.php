@@ -4,17 +4,12 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Factory;
 
-use PHPUnit\Framework\TestCase;
-use Psr\SimpleCache\CacheInterface;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Model\UserToken;
+use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\ActiveRecord\ActiveQuery;
-use Yiisoft\Db\Cache\SchemaCache;
 use Yiisoft\Db\Connection\ConnectionInterface;
 use Yiisoft\Db\Connection\ConnectionProvider;
-use Yiisoft\Db\Sqlite\Connection as SqliteConnection;
-use Yiisoft\Db\Sqlite\Driver;
-use Yiisoft\Db\Sqlite\Dsn;
 
 final class UserTokenFactoryTest extends TestCase
 {
@@ -134,15 +129,4 @@ final class UserTokenFactoryTest extends TestCase
         self::assertNotSame($token1->getCode(), $token2->getCode());
     }
 
-    private function createSqliteConnection(): ConnectionInterface
-    {
-        $dsn = new Dsn('sqlite', ':memory:');
-        $driver = new Driver($dsn);
-        $cache = $this->createStub(CacheInterface::class);
-        $cache->method('set')->willReturn(true);
-        $cache->method('get')->willReturn(null);
-        $schemaCache = new SchemaCache($cache);
-        $schemaCache->setEnabled(false);
-        return new SqliteConnection($driver, $schemaCache);
-    }
 }

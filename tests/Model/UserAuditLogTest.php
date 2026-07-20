@@ -5,15 +5,10 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Model;
 
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\TestCase;
-use Psr\SimpleCache\CacheInterface;
 use YiiRocks\Voyti\Model\UserAuditLog;
-use Yiisoft\Db\Cache\SchemaCache;
+use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Db\Connection\ConnectionInterface;
 use Yiisoft\Db\Connection\ConnectionProvider;
-use Yiisoft\Db\Sqlite\Connection;
-use Yiisoft\Db\Sqlite\Driver;
-use Yiisoft\Db\Sqlite\Dsn;
 
 final class UserAuditLogTest extends TestCase
 {
@@ -165,15 +160,4 @@ final class UserAuditLogTest extends TestCase
         $log->save();
     }
 
-    private function createSqliteConnection(): ConnectionInterface
-    {
-        $dsn = new Dsn('sqlite', ':memory:');
-        $driver = new Driver($dsn);
-        $cache = $this->createStub(CacheInterface::class);
-        $cache->method('set')->willReturn(true);
-        $cache->method('get')->willReturn(null);
-        $schemaCache = new SchemaCache($cache);
-        $schemaCache->setEnabled(false);
-        return new Connection($driver, $schemaCache);
-    }
 }

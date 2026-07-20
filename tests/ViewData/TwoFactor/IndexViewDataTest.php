@@ -8,12 +8,12 @@ use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
+use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
 use YiiRocks\Voyti\ViewData\TwoFactor\IndexViewData;
-use Yiisoft\Translator\Translator;
-use Yiisoft\Translator\TranslatorInterface;
 
 final class IndexViewDataTest extends TestCase
 {
+    use TranslatorMockTrait;
     public function testCreateWhenEnabled(): void
     {
         $user = $this->createUser(authTfEnabled: true);
@@ -29,7 +29,7 @@ final class IndexViewDataTest extends TestCase
             true,
             new ModuleConfig(),
             new FakeUrlGenerator(),
-            $this->translator(),
+            $this->createTranslator(),
         );
 
         self::assertTrue($data->isEnabled);
@@ -55,7 +55,7 @@ final class IndexViewDataTest extends TestCase
             false,
             new ModuleConfig(),
             new FakeUrlGenerator(),
-            $this->translator(),
+            $this->createTranslator(),
         );
 
         self::assertNull($data->emailSetup);
@@ -78,7 +78,7 @@ final class IndexViewDataTest extends TestCase
             true,
             new ModuleConfig(),
             new FakeUrlGenerator(),
-            $this->translator(),
+            $this->createTranslator(),
         );
 
         self::assertFalse($data->isEnabled);
@@ -103,7 +103,7 @@ final class IndexViewDataTest extends TestCase
             true,
             new ModuleConfig(),
             new FakeUrlGenerator(),
-            $this->translator(),
+            $this->createTranslator(),
         );
 
         self::assertNotNull($data->googleSetup);
@@ -125,8 +125,5 @@ final class IndexViewDataTest extends TestCase
         return $user;
     }
 
-    private function translator(): TranslatorInterface
-    {
-        return new Translator('en', null, 'voyti');
-    }
+
 }

@@ -10,7 +10,6 @@ use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
 use YiiRocks\Voyti\tests\TestCase;
 use YiiRocks\Voyti\ViewData\Profile\UpdateViewData;
-use Yiisoft\Translator\TranslatorInterface;
 
 final class UpdateViewDataTest extends TestCase
 {
@@ -23,7 +22,7 @@ final class UpdateViewDataTest extends TestCase
             new UserProfile(),
             new ModuleConfig(),
             new FakeUrlGenerator(),
-            $this->translator(),
+            $this->createTranslator(),
             isSwitched: false,
             originalUser: null,
         );
@@ -43,7 +42,7 @@ final class UpdateViewDataTest extends TestCase
             new UserProfile(),
             new ModuleConfig(),
             new FakeUrlGenerator(),
-            $this->translator(),
+            $this->createTranslator(),
             isSwitched: true,
             originalUser: $originalUser,
         );
@@ -65,8 +64,5 @@ final class UpdateViewDataTest extends TestCase
         return $user;
     }
 
-    private function translator(): TranslatorInterface
-    {
-        return $this->createTranslator();
-    }
+
 }

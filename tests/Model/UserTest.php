@@ -5,20 +5,15 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Model;
 
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\TestCase;
-use Psr\SimpleCache\CacheInterface;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserProfile;
 use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\ActiveRecord\ActiveQueryInterface;
-use Yiisoft\Db\Cache\SchemaCache;
 use Yiisoft\Db\Connection\ConnectionInterface;
 use Yiisoft\Db\Connection\ConnectionProvider;
-use Yiisoft\Db\Sqlite\Connection;
-use Yiisoft\Db\Sqlite\Driver;
-use Yiisoft\Db\Sqlite\Dsn;
 
 final class UserTest extends TestCase
 {
@@ -657,15 +652,5 @@ final class UserTest extends TestCase
         self::assertTrue($entity->validateCookieLoginKey('cookie_key_val'));
     }
 
-    private function createSqliteConnection(): ConnectionInterface
-    {
-        $dsn = new Dsn('sqlite', ':memory:');
-        $driver = new Driver($dsn);
-        $cache = $this->createStub(CacheInterface::class);
-        $cache->method('set')->willReturn(true);
-        $cache->method('get')->willReturn(null);
-        $schemaCache = new SchemaCache($cache);
-        $schemaCache->setEnabled(false);
-        return new Connection($driver, $schemaCache);
-    }
+
 }

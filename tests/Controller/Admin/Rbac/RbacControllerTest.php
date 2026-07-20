@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace YiiRocks\Voyti\tests\Controller\Admin\Rbac\Role;
+namespace YiiRocks\Voyti\tests\Controller\Admin\Rbac;
 
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
@@ -36,7 +37,7 @@ use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 #[AllowMockObjectsWithoutExpectations]
-final class RoleControllerTest extends TestCase
+final class RbacControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
     use RedirectResponseMockTrait;
@@ -72,6 +73,36 @@ final class RoleControllerTest extends TestCase
         $this->tearDownDatabase();
     }
 
+    public static function itemTypeProvider(): array
+    {
+        return [
+            'role' => ['role', 'admin-rbac-roles', 'editor'],
+            'permission' => ['permission', 'admin-rbac-permissions', 'edit-posts'],
+        ];
+    }
+
+    public function testCreateGetShowsAvailableChildrenExcludingRoles(): void
+    {
+        $controller = $this->createController();
+        $this->itemsStorage->add(new Permission('other-permission'));
+        $this->itemsStorage->add(new Role('some-role'));
+
+        $request = new ServerRequest('GET', '/');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('admin/rbac/create', $this->callback(
+                static fn(array $params): bool => array_map(static fn($c) => $c->name, $params['data']->children) === ['other-permission'],
+            ))
+            ->willReturn($response);
+
+        $result = $controller->create($request, 'permission', 'admin-rbac-permissions');
+
+        $this->assertSame($response, $result);
+    }
+
     public function testCreateGetShowsAvailableChildrenIncludingRolesAndPermissions(): void
     {
         $controller = $this->createController();
@@ -93,7 +124,8 @@ final class RoleControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    public function testCreateGetShowsForm(): void
+    #[DataProvider('itemTypeProvider')]
+    public function testCreateGetShowsForm(string $itemType, string $indexRouteName, string $itemName): void
     {
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
@@ -107,23 +139,24 @@ final class RoleControllerTest extends TestCase
             ->with('admin/rbac/create', $this->anything())
             ->willReturn($response);
 
-        $result = $controller->create($request, 'role', 'admin-rbac-roles');
+        $result = $controller->create($request, $itemType, $indexRouteName);
 
         $this->assertSame($response, $result);
     }
 
-    public function testCreatePostSuccessful(): void
+    #[DataProvider('itemTypeProvider')]
+    public function testCreatePostSuccessful(string $itemType, string $indexRouteName, string $itemName): void
     {
         $controller = $this->createController();
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['role' => ['name' => 'editor', 'description' => 'Editors', 'rule' => '', 'children' => ['']]]);
+        $request = (new ServerRequest('POST', '/'))->withParsedBody([$itemType => ['name' => $itemName, 'description' => '', 'rule' => '', 'children' => ['']]]);
 
         $this->validator->method('validate')->willReturn(new Result());
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->create($request, 'role', 'admin-rbac-roles');
+        $result = $controller->create($request, $itemType, $indexRouteName);
 
         $this->assertSame($response, $result);
-        $this->assertNotNull($this->itemsStorage->getRole('editor'));
+        $this->assertNotNull($this->getItem($itemType, $itemName));
     }
 
     public function testCreatePostWithChildren(): void
@@ -141,10 +174,11 @@ final class RoleControllerTest extends TestCase
         $this->assertTrue($this->itemsStorage->hasChild('parent', 'child-role'));
     }
 
-    public function testCreatePostWithInvalidDataShowsErrors(): void
+    #[DataProvider('itemTypeProvider')]
+    public function testCreatePostWithInvalidDataShowsErrors(string $itemType, string $indexRouteName, string $itemName): void
     {
         $controller = $this->createController();
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['role' => ['name' => '', 'description' => '', 'rule' => '', 'children' => ['']]]);
+        $request = (new ServerRequest('POST', '/'))->withParsedBody([$itemType => ['name' => '', 'description' => '', 'rule' => '', 'children' => ['']]]);
 
         $result = new Result();
         $result->addError('Name is required.');
@@ -159,7 +193,7 @@ final class RoleControllerTest extends TestCase
             ))
             ->willReturn($response);
 
-        $result2 = $controller->create($request, 'role', 'admin-rbac-roles');
+        $result2 = $controller->create($request, $itemType, $indexRouteName);
 
         $this->assertSame($response, $result2);
     }
@@ -202,25 +236,66 @@ final class RoleControllerTest extends TestCase
         $this->assertNotNull($this->itemsStorage->getRole('editor'));
     }
 
-    public function testDeleteRemovesRole(): void
+    public function testCreatePostWithRoleAsChildShowsErrors(): void
     {
         $controller = $this->createController();
-        $this->itemsStorage->add(new Role('editor'));
+        $this->itemsStorage->add(new Role('some-role'));
+
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['permission' => ['name' => 'edit-posts', 'description' => '', 'rule' => '', 'children' => ['some-role']]]);
+
+        $this->validator->method('validate')->willReturn(new Result());
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('admin/rbac/create', $this->callback(
+                static fn(array $params): bool => ($params['data']->errors['children'] ?? []) !== [],
+            ))
+            ->willReturn($response);
+
+        $result = $controller->create($request, 'permission', 'admin-rbac-permissions');
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testCreatePostWithRule(): void
+    {
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['permission' => ['name' => 'restricted-action', 'description' => '', 'rule' => 'ownerRule', 'children' => ['']]]);
+
+        $this->validator->method('validate')->willReturn(new Result());
+        $response = $this->mockRedirectResponse($this->responseFactory);
+
+        $result = $controller->create($request, 'permission', 'admin-rbac-permissions');
+
+        $this->assertSame($response, $result);
+        $perm = $this->itemsStorage->getPermission('restricted-action');
+        $this->assertNotNull($perm);
+        $this->assertSame('ownerRule', $perm->getRuleName());
+    }
+
+    #[DataProvider('itemTypeProvider')]
+    public function testDeleteRemovesItem(string $itemType, string $indexRouteName, string $itemName): void
+    {
+        $controller = $this->createController();
+        $this->addItem($itemType, $itemName);
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->delete('editor', 'role', 'admin-rbac-roles');
+        $result = $controller->delete($itemName, $itemType, $indexRouteName);
 
         $this->assertSame($response, $result);
-        $this->assertNull($this->itemsStorage->getRole('editor'));
+        $this->assertNull($this->getItem($itemType, $itemName));
     }
 
-    public function testIndexShowsRoles(): void
+    #[DataProvider('itemTypeProvider')]
+    public function testIndexShowsItems(string $itemType, string $indexRouteName, string $itemName): void
     {
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $this->itemsStorage->add(new Role('admin'));
+        $this->addItem($itemType, $itemName);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -231,7 +306,7 @@ final class RoleControllerTest extends TestCase
             ->with('admin/rbac/index', $this->anything())
             ->willReturn($response);
 
-        $result = $controller->index($request, 'role', 'admin-rbac-roles');
+        $result = $controller->index($request, $itemType, $indexRouteName);
 
         $this->assertSame($response, $result);
     }
@@ -280,10 +355,11 @@ final class RoleControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    public function testUpdateGetShowsForm(): void
+    #[DataProvider('itemTypeProvider')]
+    public function testUpdateGetShowsForm(string $itemType, string $indexRouteName, string $itemName): void
     {
         $controller = $this->createController();
-        $this->itemsStorage->add(new Role('editor'));
+        $this->addItem($itemType, $itemName);
 
         $request = new ServerRequest('GET', '/');
 
@@ -296,12 +372,13 @@ final class RoleControllerTest extends TestCase
             ->with('admin/rbac/update', $this->anything())
             ->willReturn($response);
 
-        $result = $controller->update($request, 'editor', 'role', 'admin-rbac-roles');
+        $result = $controller->update($request, $itemName, $itemType, $indexRouteName);
 
         $this->assertSame($response, $result);
     }
 
-    public function testUpdateNonExistentShowsError(): void
+    #[DataProvider('itemTypeProvider')]
+    public function testUpdateNonExistentShowsError(string $itemType, string $indexRouteName, string $itemName): void
     {
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
@@ -314,7 +391,7 @@ final class RoleControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->update($request, 'nonexistent', 'role', 'admin-rbac-roles');
+        $result = $controller->update($request, 'nonexistent', $itemType, $indexRouteName);
 
         $this->assertSame($response, $result);
     }
@@ -342,25 +419,28 @@ final class RoleControllerTest extends TestCase
         $this->assertNotNull($this->assignmentsStorage->get('editor', '2'));
     }
 
-    public function testUpdatePostSuccessful(): void
+    #[DataProvider('itemTypeProvider')]
+    public function testUpdatePostSuccessful(string $itemType, string $indexRouteName, string $itemName): void
     {
         $controller = $this->createController();
-        $this->itemsStorage->add(new Role('editor'));
+        $this->addItem($itemType, $itemName);
 
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['role' => ['name' => 'editor', 'description' => 'Updated', 'rule' => '', 'children' => ['']], 'assignedUsers' => []]);
+        $request = (new ServerRequest('POST', '/'))->withParsedBody([$itemType => ['name' => $itemName, 'description' => 'Updated', 'rule' => '', 'children' => ['']], 'assignedUsers' => []]);
 
         $this->validator->method('validate')->willReturn(new Result());
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->update($request, 'editor', 'role', 'admin-rbac-roles');
+        $result = $controller->update($request, $itemName, $itemType, $indexRouteName);
 
         $this->assertSame($response, $result);
     }
 
-    public function testUpdatePostThrowsWhenRoleMissingFromItemsStorage(): void
+    #[DataProvider('itemTypeProvider')]
+    public function testUpdatePostThrowsWhenItemMissingFromItemsStorage(string $itemType, string $indexRouteName, string $itemName): void
     {
         $managerOnlyStorage = new SimpleItemsStorage();
-        $managerOnlyStorage->add(new Role('editor'));
+        $item = $itemType === 'role' ? new Role($itemName) : new Permission($itemName);
+        $managerOnlyStorage->add($item);
         $manager = new Manager($managerOnlyStorage, $this->assignmentsStorage);
 
         $controller = new RbacController(
@@ -381,13 +461,13 @@ final class RoleControllerTest extends TestCase
             ),
         );
 
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['role' => ['name' => 'editor', 'description' => '', 'rule' => '', 'children' => ['']]]);
+        $request = (new ServerRequest('POST', '/'))->withParsedBody([$itemType => ['name' => $itemName, 'description' => '', 'rule' => '', 'children' => ['']]]);
         $this->validator->method('validate')->willReturn(new Result());
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage("Role 'editor' not found.");
+        $this->expectExceptionMessage(ucfirst($itemType) . " '$itemName' not found.");
 
-        $controller->update($request, 'editor', 'role', 'admin-rbac-roles');
+        $controller->update($request, $itemName, $itemType, $indexRouteName);
     }
 
     public function testUpdatePostWithChildren(): void
@@ -460,24 +540,25 @@ final class RoleControllerTest extends TestCase
         $this->assertSame('Updated', $role->getDescription());
     }
 
-    public function testUpdatePostWithRule(): void
+    #[DataProvider('itemTypeProvider')]
+    public function testUpdatePostWithRule(string $itemType, string $indexRouteName, string $itemName): void
     {
         $controller = $this->createController();
-        $this->itemsStorage->add(new Role('editor'));
+        $this->addItem($itemType, $itemName);
 
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['role' => ['name' => 'editor', 'description' => '', 'rule' => 'someRule', 'children' => ['']], 'assignedUsers' => []]);
+        $request = (new ServerRequest('POST', '/'))->withParsedBody([$itemType => ['name' => $itemName, 'description' => '', 'rule' => 'someRule', 'children' => ['']], 'assignedUsers' => []]);
 
         $this->validator->method('validate')->willReturn(new Result());
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->method('createResponse')->willReturn($response);
         $response->method('withHeader')->willReturnSelf();
 
-        $result = $controller->update($request, 'editor', 'role', 'admin-rbac-roles');
+        $result = $controller->update($request, $itemName, $itemType, $indexRouteName);
 
         $this->assertSame($response, $result);
-        $role = $this->itemsStorage->getRole('editor');
-        $this->assertNotNull($role);
-        $this->assertSame('someRule', $role->getRuleName());
+        $item = $this->getItem($itemType, $itemName);
+        $this->assertNotNull($item);
+        $this->assertSame('someRule', $item->getRuleName());
     }
 
     public function testUpdateShowsAssignedUsers(): void
@@ -512,6 +593,12 @@ final class RoleControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
+    private function addItem(string $itemType, string $name): void
+    {
+        $item = $itemType === 'role' ? new Role($name) : new Permission($name);
+        $this->itemsStorage->add($item);
+    }
+
     private function createController(): RbacController
     {
         return $this->harness->createRbacController(
@@ -521,5 +608,12 @@ final class RoleControllerTest extends TestCase
             responseFactory: $this->responseFactory,
             flash: $this->flash,
         );
+    }
+
+    private function getItem(string $itemType, string $name): Role|Permission|null
+    {
+        return $itemType === 'role'
+            ? $this->itemsStorage->getRole($name)
+            : $this->itemsStorage->getPermission($name);
     }
 }

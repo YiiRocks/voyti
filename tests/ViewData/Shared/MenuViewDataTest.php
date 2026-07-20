@@ -7,17 +7,17 @@ namespace YiiRocks\Voyti\tests\ViewData\Shared;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
+use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
 use YiiRocks\Voyti\ViewData\Shared\MenuViewData;
-use Yiisoft\Translator\Translator;
-use Yiisoft\Translator\TranslatorInterface;
 
 final class MenuViewDataTest extends TestCase
 {
+    use TranslatorMockTrait;
     public function testForAccountIncludesPrivacyWhenAccountDeleteAllowedWithoutGdpr(): void
     {
         $config = new ModuleConfig(enableGdprCompliance: false, allowAccountDelete: true);
 
-        $menu = MenuViewData::forAccount($config, new FakeUrlGenerator(), $this->translator());
+        $menu = MenuViewData::forAccount($config, new FakeUrlGenerator(), $this->createTranslator());
 
         $labels = array_map(static fn($item) => $item->label, $menu->items);
 
@@ -28,7 +28,7 @@ final class MenuViewDataTest extends TestCase
     {
         $config = new ModuleConfig(enableTwoFactorAuthentication: true, enableGdprCompliance: true);
 
-        $menu = MenuViewData::forAccount($config, new FakeUrlGenerator(), $this->translator());
+        $menu = MenuViewData::forAccount($config, new FakeUrlGenerator(), $this->createTranslator());
 
         $labels = array_map(static fn($item) => $item->label, $menu->items);
 
@@ -38,7 +38,7 @@ final class MenuViewDataTest extends TestCase
 
     public function testForAccountOmitsOptionalItemsWhenDisabled(): void
     {
-        $menu = MenuViewData::forAccount(new ModuleConfig(), new FakeUrlGenerator(), $this->translator());
+        $menu = MenuViewData::forAccount(new ModuleConfig(), new FakeUrlGenerator(), $this->createTranslator());
 
         $labels = array_map(static fn($item) => $item->label, $menu->items);
 
@@ -55,7 +55,7 @@ final class MenuViewDataTest extends TestCase
 
     public function testForAdminBuildsFixedMenu(): void
     {
-        $menu = MenuViewData::forAdmin(new FakeUrlGenerator(), $this->translator());
+        $menu = MenuViewData::forAdmin(new FakeUrlGenerator(), $this->createTranslator());
 
         $labels = array_map(static fn($item) => $item->label, $menu->items);
 
@@ -71,8 +71,5 @@ final class MenuViewDataTest extends TestCase
         self::assertTrue($menu->items[array_key_last($menu->items)]->alignEnd);
     }
 
-    private function translator(): TranslatorInterface
-    {
-        return new Translator('en', null, 'voyti');
-    }
+
 }

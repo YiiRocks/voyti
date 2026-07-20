@@ -6,12 +6,12 @@ namespace YiiRocks\Voyti\tests\ViewData\Admin\Dashboard;
 
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
+use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
 use YiiRocks\Voyti\ViewData\Admin\Dashboard\IndexViewData;
-use Yiisoft\Translator\Translator;
-use Yiisoft\Translator\TranslatorInterface;
 
 final class IndexViewDataTest extends TestCase
 {
+    use TranslatorMockTrait;
     private const array BASE_STATS = [
         'userTotal' => 10,
         'userBlocked' => 2,
@@ -27,7 +27,7 @@ final class IndexViewDataTest extends TestCase
 
     public function testCreateBuildsTrendPeriodsWithLifespanParam(): void
     {
-        $data = IndexViewData::create(self::BASE_STATS, new FakeUrlGenerator(), $this->translator());
+        $data = IndexViewData::create(self::BASE_STATS, new FakeUrlGenerator(), $this->createTranslator());
 
         self::assertCount(2, $data->trendWidgets);
         $lifespanPeriod = $data->trendWidgets[0]->periods[2];
@@ -40,14 +40,14 @@ final class IndexViewDataTest extends TestCase
         $stats = self::BASE_STATS;
         $stats['userUnconfirmed'] = null;
 
-        $data = IndexViewData::create($stats, new FakeUrlGenerator(), $this->translator());
+        $data = IndexViewData::create($stats, new FakeUrlGenerator(), $this->createTranslator());
 
         self::assertCount(5, $data->tiles);
     }
 
     public function testCreateWithUnconfirmedUsersAddsExtraTile(): void
     {
-        $data = IndexViewData::create(self::BASE_STATS, new FakeUrlGenerator(), $this->translator());
+        $data = IndexViewData::create(self::BASE_STATS, new FakeUrlGenerator(), $this->createTranslator());
 
         self::assertCount(6, $data->tiles);
         self::assertSame('voyti.view.dashboard.users_unconfirmed', $data->tiles[2]->labelKey);
@@ -57,8 +57,5 @@ final class IndexViewDataTest extends TestCase
         self::assertNotEmpty($data->menu->items);
     }
 
-    private function translator(): TranslatorInterface
-    {
-        return new Translator('en', null, 'voyti');
-    }
+
 }
