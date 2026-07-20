@@ -33,11 +33,11 @@ final readonly class IndexViewData
         return new self(
             menu: MenuViewData::forAccount($config, $url, $translator),
             showGdprLinks: $config->enableGdprCompliance,
-            gdprConsentUrl: $url->generate('voyti/privacy-gdpr-consent'),
-            exportUrl: $url->generate('voyti/privacy-export'),
-            anonymizeUrl: $url->generate('voyti/privacy-anonymize'),
+            gdprConsentUrl: $config->enableGdprCompliance ? $url->generate('voyti/privacy-gdpr-consent') : '',
+            exportUrl: $config->enableGdprCompliance ? $url->generate('voyti/privacy-export') : '',
+            anonymizeUrl: $config->enableGdprCompliance ? $url->generate('voyti/privacy-anonymize') : '',
             showDeleteLink: $config->allowAccountDelete,
-            deleteUrl: $url->generate('voyti/privacy-delete'),
+            deleteUrl: $config->allowAccountDelete ? $url->generate('voyti/privacy-delete') : '',
         );
     }
 }
