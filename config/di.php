@@ -58,6 +58,8 @@ use Yiisoft\Auth\IdentityWithTokenRepositoryInterface;
 use Yiisoft\Mailer\MailerInterface;
 use Yiisoft\Middleware\Dispatcher\ParametersResolverInterface;
 use Yiisoft\Rbac\AssignmentsStorageInterface;
+use Yiisoft\Rbac\Db\AssignmentsStorage;
+use Yiisoft\Rbac\Db\ItemsStorage;
 use Yiisoft\Rbac\ItemsStorageInterface;
 use Yiisoft\Rbac\ManagerInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -95,6 +97,10 @@ return [
     AuditLogService::class => AuditLogService::class,
 
     // RBAC: role/permission/rule administration and validation.
+    // Default DB-backed storage, matching the tables this module's migration creates;
+    // hosts with a different backend (e.g. rbac-php, a caching decorator) can override these.
+    ItemsStorageInterface::class => ItemsStorage::class,
+    AssignmentsStorageInterface::class => AssignmentsStorage::class,
     AuthHelper::class => fn(
         ManagerInterface $authManager,
         ItemsStorageInterface $itemsStorage,
