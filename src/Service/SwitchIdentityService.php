@@ -15,11 +15,12 @@ use Yiisoft\User\Guest\GuestIdentityInterface;
 
 /**
  * Lets an authenticated user (e.g. an admin) temporarily assume another user's identity and later
- * restore their original one, tracking the original identity's ID in the session under
- * {@see ModuleConfig::$switchIdentitySessionKey}.
+ * restore their original one, tracking the original identity's ID in the session.
  */
 final readonly class SwitchIdentityService
 {
+    private const SESSION_KEY = 'voyti_original_admin_user';
+
     public function __construct(
         private ModuleConfig $config,
         private CurrentUser $currentUser,
@@ -29,13 +30,8 @@ final readonly class SwitchIdentityService
 
     public function getOriginalUser(): ?User
     {
-        $sessionKey = $this->config->switchIdentitySessionKey;
-        if ($sessionKey === null) {
-            return null;
-        }
-
         /** @var mixed $originalId */
-        $originalId = $this->session->get($sessionKey);
+        $originalId = $this->session->get(self::SESSION_KEY);
         if ($originalId === null) {
             return null;
         }
@@ -45,12 +41,7 @@ final readonly class SwitchIdentityService
 
     public function isSwitched(): bool
     {
-        $sessionKey = $this->config->switchIdentitySessionKey;
-        if ($sessionKey === null) {
-            return false;
-        }
-
-        return $this->session->has($sessionKey);
+        return $this->session->has(self::SESSION_KEY);
     }
 
     /**
@@ -58,13 +49,8 @@ final readonly class SwitchIdentityService
      */
     public function restore(array $serverParams = []): ServiceResult
     {
-        $sessionKey = $this->config->switchIdentitySessionKey;
-        if ($sessionKey === null) {
-            return ServiceResult::failure('No original identity to restore');
-        }
-
         /** @var mixed $originalId */
-        $originalId = $this->session->get($sessionKey);
+        $originalId = $this->session->get(self::SESSION_KEY);
         if ($originalId === null) {
             return ServiceResult::failure('No original identity to restore');
         }
@@ -76,7 +62,7 @@ final readonly class SwitchIdentityService
 
         $previousSessionId = $this->session->getId();
         $this->currentUser->login($originalUser);
-        $this->session->remove($sessionKey);
+        $this->session->remove(self::SESSION_KEY);
         $this->eventDispatcher->dispatch(
             new AfterLoginEvent($originalUser, previousSessionId: $previousSessionId, serverParams: $serverParams),
         );
@@ -110,12 +96,7 @@ final readonly class SwitchIdentityService
                 return ServiceResult::failure('Cannot switch to yourself');
             }
 
-            $sessionKey = $this->config->switchIdentitySessionKey;
-            if ($sessionKey === null) {
-                return ServiceResult::failure('Switch identity session key is not configured');
-            }
-
-            $this->session->set($sessionKey, $currentIdentity->getId());
+            $this->session->set(self::SESSION_KEY, $currentIdentity->getId());
         }
 
         $previousSessionId = $this->session->getId();

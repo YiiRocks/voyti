@@ -266,7 +266,7 @@ final class ProfileControllerTest extends TestCase
         $identity->method('getId')->willReturn((string) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
-        $this->harness->getSession()->set('voyti_original_user', (string) $originalUser->getId());
+        $this->harness->getSession()->set('voyti_original_admin_user', (string) $originalUser->getId());
 
         $captured = [];
         $response = $this->createMock(ResponseInterface::class);

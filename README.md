@@ -194,14 +194,13 @@ Below are all top-level `yiirocks/voyti` options, followed by the nested `social
 | `socialNetworkClients` | `array` | `[]` | OAuth client IDs, secrets, and provider-specific options |
 | `enableEmailConfirmation` | `bool` | `true` | Require email confirmation |
 | `allowPasswordRecovery` | `bool` | `true` | Allow password recovery |
-| `allowAdminPasswordRecovery` | `bool` | `true` | Allow admin-initiated password recovery |
+| `allowAdminPasswordRecovery` | `bool` | `false` | Allow admin-initiated password recovery |
 | `allowAccountDelete` | `bool` | `false` | Allow users to delete their account |
 | `emailChangeConfirmation` | `EmailChangeConfirmation` | `EmailChangeConfirmation::NEW` | `NONE` (change immediately), `NEW` (confirm new address only), or `BOTH` (confirm both old and new addresses) |
 | `rememberLoginLifespan` | `int` | `2592000` | Remember-me cookie lifetime and idle auth timeout in seconds |
 | `tokenConfirmationLifespan` | `int` | `86400` | Confirmation token validity |
 | `tokenRecoveryLifespan` | `int` | `21600` | Recovery token validity |
 | `enableSwitchIdentities` | `bool` | `true` | Allow admin to switch user identities |
-| `switchIdentitySessionKey` | `?string` | `'voyti_original_user'` | Session key for switched identity |
 | `mailAdminOnRegister` | `?string` | `null` | Email notified on new registration |
 | `recaptchaVersion` | `?RecaptchaVersion` | `null` | `RecaptchaVersion::V2`, `RecaptchaVersion::V3`, or `null` to disable |
 

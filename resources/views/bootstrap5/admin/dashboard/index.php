@@ -66,6 +66,7 @@ foreach ($data->trendWidgets as $widget) {
 }
 echo Html::div()->close();
 
+echo Html::a()->href($data->auditLogUrl)->class('text-decoration-none')->open();
 echo Html::div()->class('card')->open();
 echo Html::div()->class('card-header')->open();
 echo Html::H2($translator->translate('voyti.view.dashboard.recent_activity'))->class('h5 mb-0');
@@ -75,19 +76,18 @@ echo Html::div()->class('card-body')->open();
 if ($data->recentAuditLogs === []) {
     echo Html::p($translator->translate('voyti.view.dashboard.no_recent_activity'))->class('text-muted mb-0');
 } else {
-    foreach ($data->recentAuditLogs as $log) {
-        echo Html::div()->class('row py-2 border-bottom align-items-center')->open();
+    $lastKey = array_key_last($data->recentAuditLogs);
+    foreach ($data->recentAuditLogs as $key => $log) {
+        echo Html::div()->class('row py-2 align-items-center' . ($key !== $lastKey ? ' border-bottom' : ''))->open();
         echo Html::div($log['createdAt'])->class('col-3 col-md-2 text-muted small');
         echo Html::div($log['action'])->class('col-9 col-md-4 text-break');
         echo Html::div($log['targetLabel'])->class('col-12 col-md-6 text-break small text-muted');
         echo Html::div()->close();
     }
-    echo Html::div()->class('mt-3')->open();
-    echo Html::a($translator->translate('voyti.view.audit_log.title'), $data->auditLogUrl)->class('btn btn-outline-secondary btn-sm');
-    echo Html::div()->close();
 }
 
 echo Html::div()->close();
 echo Html::div()->close();
+echo Html::a()->close();
 
 echo Html::div()->close();

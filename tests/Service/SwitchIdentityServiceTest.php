@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Service;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
@@ -36,29 +35,12 @@ final class SwitchIdentityServiceTest extends TestCase
         $this->tearDownDatabase();
     }
 
-    /**
-     * @return iterable<string, array{ModuleConfig}>
-     */
-    public static function noSwitchSessionKeyConfigProvider(): iterable
-    {
-        yield 'session has no key' => [new ModuleConfig()];
-        yield 'session key config is null' => [new ModuleConfig(switchIdentitySessionKey: null)];
-    }
-
-    #[DataProvider('noSwitchSessionKeyConfigProvider')]
-    public function testGetOriginalUserReturnsNullWhenNoSwitchSessionKey(ModuleConfig $config): void
-    {
-        $service = $this->createService($config);
-
-        self::assertNull($service->getOriginalUser());
-    }
-
     public function testGetOriginalUserReturnsUserWhenSessionHasKey(): void
     {
         $config = new ModuleConfig();
         $user = $this->createUser(username: 'original', email: 'original@example.com');
         $session = new FakeSession();
-        $session->set('voyti_original_user', (string) $user->getId());
+        $session->set('voyti_original_admin_user', (string) $user->getId());
 
         $service = $this->createService($config, session: $session);
 
@@ -67,19 +49,11 @@ final class SwitchIdentityServiceTest extends TestCase
         self::assertSame($user->getId(), $found->getId());
     }
 
-    #[DataProvider('noSwitchSessionKeyConfigProvider')]
-    public function testIsSwitchedReturnsFalseWhenNoSwitchSessionKey(ModuleConfig $config): void
-    {
-        $service = $this->createService($config);
-
-        self::assertFalse($service->isSwitched());
-    }
-
     public function testIsSwitchedReturnsTrueWhenSessionHasKey(): void
     {
         $config = new ModuleConfig();
         $session = new FakeSession();
-        $session->set('voyti_original_user', '42');
+        $session->set('voyti_original_admin_user', '42');
 
         $service = $this->createService($config, session: $session);
 
@@ -91,7 +65,7 @@ final class SwitchIdentityServiceTest extends TestCase
         $config = new ModuleConfig();
         $user = $this->createUser(username: 'restoredispatch', email: 'restoredispatch@example.com');
         $session = new FakeSession();
-        $session->set('voyti_original_user', (string) $user->getId());
+        $session->set('voyti_original_admin_user', (string) $user->getId());
 
         $currentUser = new CurrentUser(
             $this->createMock(IdentityRepositoryInterface::class),
@@ -118,7 +92,7 @@ final class SwitchIdentityServiceTest extends TestCase
         $config = new ModuleConfig();
         $user = $this->createUser(username: 'restoresuccess', email: 'restoresuccess@example.com');
         $session = new FakeSession();
-        $session->set('voyti_original_user', (string) $user->getId());
+        $session->set('voyti_original_admin_user', (string) $user->getId());
 
         $currentUser = new CurrentUser(
             $this->createMock(IdentityRepositoryInterface::class),
@@ -130,18 +104,7 @@ final class SwitchIdentityServiceTest extends TestCase
         $result = $service->restore();
 
         self::assertTrue($result->isSuccess());
-        self::assertFalse($session->has('voyti_original_user'));
-    }
-
-    public function testRestoreWithNullSessionKeyReturnsFailure(): void
-    {
-        $config = new ModuleConfig(switchIdentitySessionKey: null);
-        $service = $this->createService($config);
-
-        $result = $service->restore();
-
-        self::assertTrue($result->isFailure());
-        self::assertSame('No original identity to restore', $result->getMessage());
+        self::assertFalse($session->has('voyti_original_admin_user'));
     }
 
     public function testRestoreWithNullSessionValueReturnsFailure(): void
@@ -160,7 +123,7 @@ final class SwitchIdentityServiceTest extends TestCase
     {
         $config = new ModuleConfig();
         $session = new FakeSession();
-        $session->set('voyti_original_user', '999999');
+        $session->set('voyti_original_admin_user', '999999');
 
         $service = $this->createService($config, session: $session);
         $result = $service->restore();
@@ -222,7 +185,7 @@ final class SwitchIdentityServiceTest extends TestCase
         $result = $service->run((int) $targetUser->getId());
 
         self::assertTrue($result->isSuccess());
-        self::assertSame('999999', $session->get('voyti_original_user'));
+        self::assertSame('999999', $session->get('voyti_original_admin_user'));
     }
 
     public function testRunWithBlockedUserReturnsFailure(): void
@@ -255,30 +218,7 @@ final class SwitchIdentityServiceTest extends TestCase
         $result = $service->run((int) $targetUser->getId());
 
         self::assertTrue($result->isSuccess());
-        self::assertFalse($session->has('voyti_original_user'));
-    }
-
-    public function testRunWithNullSwitchSessionKeyWhenIdentityPresentReturnsFailure(): void
-    {
-        $config = new ModuleConfig(switchIdentitySessionKey: null);
-        $targetUser = $this->createUser(username: 'nullsessionkey', email: 'nullsessionkey@example.com');
-
-        $identity = new User();
-        $ref = new \ReflectionProperty(User::class, 'id');
-        $ref->setValue($identity, 999999);
-
-        $session = new FakeSession();
-        $currentUser = new CurrentUser(
-            $this->createMock(IdentityRepositoryInterface::class),
-            $this->createEventDispatcher(),
-        );
-        $currentUser->login($identity);
-
-        $service = $this->createService($config, $currentUser, $session);
-        $result = $service->run((int) $targetUser->getId());
-
-        self::assertTrue($result->isFailure());
-        self::assertSame('Switch identity session key is not configured', $result->getMessage());
+        self::assertFalse($session->has('voyti_original_admin_user'));
     }
 
     public function testRunWithSelfTargetReturnsFailure(): void

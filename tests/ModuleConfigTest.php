@@ -23,7 +23,6 @@ final class ModuleConfigTest extends TestCase
             enableSocialNetworkRegistration: false,
             enableEmailConfirmation: false,
             enableSwitchIdentities: false,
-            switchIdentitySessionKey: null,
             homeRoute: 'custom/home',
             mailAdminOnRegister: 'admin@example.com',
             enablePasswordExpiration: true,
@@ -51,7 +50,6 @@ final class ModuleConfigTest extends TestCase
         self::assertFalse($config->enableSocialNetworkRegistration);
         self::assertFalse($config->enableEmailConfirmation);
         self::assertFalse($config->enableSwitchIdentities);
-        self::assertNull($config->switchIdentitySessionKey);
         self::assertSame('custom/home', $config->homeRoute);
         self::assertSame('admin@example.com', $config->mailAdminOnRegister);
         self::assertTrue($config->enablePasswordExpiration);
@@ -83,7 +81,6 @@ final class ModuleConfigTest extends TestCase
         self::assertFalse($config->enableTwoFactorAuthentication);
         self::assertSame([], $config->twoFactorAuthenticationForcedPermissions);
         self::assertSame([], $config->socialNetworkClients);
-        self::assertSame('voyti_original_user', $config->switchIdentitySessionKey);
         self::assertSame('home', $config->homeRoute);
         self::assertFalse($config->enablePasswordExpiration);
         self::assertFalse($config->enablePasswordComplexity);
@@ -115,7 +112,6 @@ final class ModuleConfigTest extends TestCase
             'socialNetworkClients',
             'enableEmailConfirmation',
             'enableSwitchIdentities',
-            'switchIdentitySessionKey',
             'homeRoute',
             'mailAdminOnRegister',
             'enablePasswordExpiration',
@@ -179,13 +175,12 @@ final class ModuleConfigTest extends TestCase
         self::assertTrue($config->enableSocialNetworkRegistration);
         self::assertTrue($config->enableEmailConfirmation);
         self::assertTrue($config->enableSwitchIdentities);
-        self::assertSame('voyti_original_user', $config->switchIdentitySessionKey);
         self::assertSame('home', $config->homeRoute);
         self::assertNull($config->mailAdminOnRegister);
         self::assertFalse($config->enablePasswordExpiration);
         self::assertFalse($config->enablePasswordComplexity);
         self::assertTrue($config->allowPasswordRecovery);
-        self::assertTrue($config->allowAdminPasswordRecovery);
+        self::assertFalse($config->allowAdminPasswordRecovery);
         self::assertFalse($config->allowAccountDelete);
         self::assertSame(EmailChangeConfirmation::NEW, $config->emailChangeConfirmation);
         self::assertSame(2592000, $config->rememberLoginLifespan);
