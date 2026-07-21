@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Model\Form\Settings;
 
+use Override;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\LabelsProviderInterface;
@@ -31,7 +32,7 @@ final class TwoFactorCodeForm extends FormModel implements LabelsProviderInterfa
      *
      * @psalm-return ''
      */
-    #[\Override]
+    #[Override]
     public function getFormName(): string
     {
         return '';
@@ -42,7 +43,7 @@ final class TwoFactorCodeForm extends FormModel implements LabelsProviderInterfa
      *
      * @psalm-return array{code: string}
      */
-    #[\Override]
+    #[Override]
     public function getPropertyLabels(): array
     {
         return [
@@ -50,7 +51,7 @@ final class TwoFactorCodeForm extends FormModel implements LabelsProviderInterfa
         ];
     }
 
-    #[\Override]
+    #[Override]
     public function getValidationPropertyLabels(): array
     {
         return $this->getPropertyLabels();

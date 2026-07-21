@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Model\Form\Auth;
 
+use Override;
 use YiiRocks\Voyti\Helper\RecaptchaHelper;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\FormModel\FormModel;
@@ -39,7 +40,7 @@ final class LoginForm extends FormModel implements LabelsProviderInterface, Rule
      *
      * @psalm-return 'login'
      */
-    #[\Override]
+    #[Override]
     public function getFormName(): string
     {
         return 'login';
@@ -50,7 +51,7 @@ final class LoginForm extends FormModel implements LabelsProviderInterface, Rule
      *
      * @psalm-return array{login: string, password: string, rememberMe: string, twoFactorAuthenticationCode: string}
      */
-    #[\Override]
+    #[Override]
     public function getPropertyLabels(): array
     {
         return [
@@ -64,7 +65,7 @@ final class LoginForm extends FormModel implements LabelsProviderInterface, Rule
         ];
     }
 
-    #[\Override]
+    #[Override]
     public function getRules(): iterable
     {
         $parser = new ObjectParser($this);
@@ -85,7 +86,7 @@ final class LoginForm extends FormModel implements LabelsProviderInterface, Rule
         return $rules;
     }
 
-    #[\Override]
+    #[Override]
     public function getValidationPropertyLabels(): array
     {
         return $this->getPropertyLabels();

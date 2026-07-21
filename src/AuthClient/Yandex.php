@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\AuthClient;
 
+use Override;
+
 /**
  * Yandex OAuth client. Yandex uses its own attribute keys (`default_email`, `real_name`, etc.) and
  * requires a `format=json` query parameter, so `normalizeUserAttributes()` and `userInfoQuery()` are
@@ -35,7 +37,7 @@ final readonly class Yandex extends AbstractAuthClient
      *
      * @psalm-return array{id: string, email: null|string, username: null|string, name: null|string}
      */
-    #[\Override]
+    #[Override]
     protected function normalizeUserAttributes(array $attributes, array $tokenData): array
     {
         return [
@@ -53,7 +55,7 @@ final readonly class Yandex extends AbstractAuthClient
      *
      * @psalm-return array{format: 'json'}
      */
-    #[\Override]
+    #[Override]
     protected function userInfoQuery(array $tokenData): array
     {
         return [

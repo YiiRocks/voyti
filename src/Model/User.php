@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Model;
 
+use Override;
 use Yiisoft\ActiveRecord\ActiveQueryInterface;
 use Yiisoft\ActiveRecord\ActiveRecord;
 use Yiisoft\ActiveRecord\ActiveRecordInterface;
@@ -47,7 +48,7 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
     private int $updated_at = 0;
     private string $username = '';
 
-    #[\Override]
+    #[Override]
     public function delete(): int
     {
         $this->getProfile()?->delete();
@@ -129,7 +130,7 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
         return $this->confirmed_at;
     }
 
-    #[\Override]
+    #[Override]
     public function getCookieLoginKey(): string
     {
         return $this->auth_key;
@@ -158,7 +159,7 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
     /**
      * @return null|numeric-string
      */
-    #[\Override]
+    #[Override]
     public function getId(): ?string
     {
         return $this->id !== null ? (string) $this->id : null;
@@ -417,7 +418,7 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
         return $this->auth_key === $authKey;
     }
 
-    #[\Override]
+    #[Override]
     public function validateCookieLoginKey(string $key): bool
     {
         return $this->validateAuthKey($key);

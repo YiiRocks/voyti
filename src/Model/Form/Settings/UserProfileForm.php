@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Model\Form\Settings;
 
 use DateTimeImmutable;
+use Override;
 use YiiRocks\Voyti\Helper\AgeHelper;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\Model\UserProfile;
@@ -85,7 +86,7 @@ final class UserProfileForm extends FormModel implements LabelsProviderInterface
      *
      * @psalm-return 'userProfile'
      */
-    #[\Override]
+    #[Override]
     public function getFormName(): string
     {
         return 'userProfile';
@@ -105,7 +106,7 @@ final class UserProfileForm extends FormModel implements LabelsProviderInterface
      *     birthday: string,
      * }
      */
-    #[\Override]
+    #[Override]
     public function getPropertyLabels(): array
     {
         return [
@@ -120,7 +121,7 @@ final class UserProfileForm extends FormModel implements LabelsProviderInterface
         ];
     }
 
-    #[\Override]
+    #[Override]
     public function getValidationPropertyLabels(): array
     {
         return $this->getPropertyLabels();

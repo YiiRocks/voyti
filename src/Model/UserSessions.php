@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Model;
 
+use Override;
 use Yiisoft\ActiveRecord\ActiveRecord;
 use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
 
@@ -100,7 +101,7 @@ final class UserSessions extends ActiveRecord
     /**
      * @psalm-return list{'user_id', 'session_id'}
      */
-    #[\Override]
+    #[Override]
     public function primaryKey(): array
     {
         return ['user_id', 'session_id'];

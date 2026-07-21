@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Middleware;
 
+use Override;
 use Psr\Http\Message\ServerRequestInterface;
+use ReflectionNamedType;
 use ReflectionParameter;
 use Yiisoft\Middleware\Dispatcher\ParametersResolverInterface;
 use Yiisoft\Router\CurrentRoute;
@@ -24,7 +26,7 @@ final readonly class RouteParametersResolver implements ParametersResolverInterf
     /**
      * @psalm-return array<string, scalar>
      */
-    #[\Override]
+    #[Override]
     public function resolve(array $parameters, ServerRequestInterface $request): array
     {
         $arguments = $this->currentRoute->getArguments();
@@ -36,11 +38,11 @@ final readonly class RouteParametersResolver implements ParametersResolverInterf
                 $value = $arguments[$name];
 
                 $type = $parameter->getType();
-                if ($type instanceof \ReflectionNamedType && !$type->isBuiltin()) {
+                if ($type instanceof ReflectionNamedType && !$type->isBuiltin()) {
                     continue;
                 }
 
-                if ($type instanceof \ReflectionNamedType) {
+                if ($type instanceof ReflectionNamedType) {
                     $resolved[$name] = match ($type->getName()) {
                         'int' => (int) $value,
                         'float' => (float) $value,

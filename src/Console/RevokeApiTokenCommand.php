@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Console;
 
+use Override;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -23,7 +24,7 @@ final class RevokeApiTokenCommand extends Command
         parent::__construct();
     }
 
-    #[\Override]
+    #[Override]
     protected function configure(): void
     {
         $this
@@ -37,7 +38,7 @@ final class RevokeApiTokenCommand extends Command
      *
      * @psalm-return 0|1
      */
-    #[\Override]
+    #[Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $user = $this->findUserFromInput($input, $output, 'voyti:api-token:revoke');

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Model\Form\Settings;
 
+use Override;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\LabelsProviderInterface;
@@ -27,7 +28,7 @@ final class ConsentForm extends FormModel implements LabelsProviderInterface
         private readonly string $consentLabel,
     ) {}
 
-    #[\Override]
+    #[Override]
     public function getFormName(): string
     {
         return $this->formName;
@@ -38,7 +39,7 @@ final class ConsentForm extends FormModel implements LabelsProviderInterface
      *
      * @psalm-return array{password: string, consent: string}
      */
-    #[\Override]
+    #[Override]
     public function getPropertyLabels(): array
     {
         return [
@@ -47,7 +48,7 @@ final class ConsentForm extends FormModel implements LabelsProviderInterface
         ];
     }
 
-    #[\Override]
+    #[Override]
     public function getValidationPropertyLabels(): array
     {
         return $this->getPropertyLabels();

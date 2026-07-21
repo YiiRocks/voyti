@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Model;
 
 use DateTimeImmutable;
+use Override;
 use YiiRocks\Voyti\Helper\AgeHelper;
 use Yiisoft\ActiveRecord\ActiveRecord;
 use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
@@ -137,7 +138,7 @@ final class UserProfile extends ActiveRecord
     /**
      * @psalm-return list{'user_id'}
      */
-    #[\Override]
+    #[Override]
     public function primaryKey(): array
     {
         return ['user_id'];

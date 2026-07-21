@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\AuthClient;
 
+use Override;
+
 /**
  * VKontakte OAuth client. The user-info response nests the account under `response[0]` and VK's own
  * API version/field query parameters replace the default `Authorization`-header flow, so
@@ -35,7 +37,7 @@ final readonly class VKontakte extends AbstractAuthClient
      *
      * @psalm-return array{id: string, email: null|string, username: null|string, name: null|string}
      */
-    #[\Override]
+    #[Override]
     protected function normalizeUserAttributes(array $attributes, array $tokenData): array
     {
         $account = is_array($attributes['response'] ?? null)
@@ -61,7 +63,7 @@ final readonly class VKontakte extends AbstractAuthClient
      *
      * @psalm-return array<string, string>
      */
-    #[\Override]
+    #[Override]
     protected function userInfoHeaders(array $tokenData): array
     {
         return [
@@ -77,7 +79,7 @@ final readonly class VKontakte extends AbstractAuthClient
      *
      * @psalm-return array{access_token: string, fields: 'screen_name', v: '5.199'}
      */
-    #[\Override]
+    #[Override]
     protected function userInfoQuery(array $tokenData): array
     {
         return [

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\AuthClient;
 
+use Override;
+
 /**
  * X (formerly Twitter) OAuth2 client. The user-info response nests attributes under a `data` key and
  * never returns an email address, so `normalizeUserAttributes()` unwraps that and always reports
@@ -35,7 +37,7 @@ final readonly class Twitter extends AbstractAuthClient
      *
      * @psalm-return array{id: string, email: null, username: null|string, name: null|string}
      */
-    #[\Override]
+    #[Override]
     protected function normalizeUserAttributes(array $attributes, array $tokenData): array
     {
         /** @var mixed $rawData */
@@ -57,7 +59,7 @@ final readonly class Twitter extends AbstractAuthClient
      *
      * @psalm-return array{'user.fields': 'id,name,username,profile_image_url'}
      */
-    #[\Override]
+    #[Override]
     protected function userInfoQuery(array $tokenData): array
     {
         return [

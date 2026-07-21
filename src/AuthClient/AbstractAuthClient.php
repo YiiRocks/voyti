@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\AuthClient;
 
+use Override;
 use RuntimeException;
 use YiiRocks\Voyti\Http\ClientInterface;
 use Yiisoft\Http\Header;
@@ -35,7 +36,7 @@ abstract readonly class AbstractAuthClient implements AuthClientInterface
      *
      * @psalm-return array<string, mixed>
      */
-    #[\Override]
+    #[Override]
     public function fetchUserAttributes(string $code, string $redirectUri, ClientInterface $httpClient): array
     {
         if (!$this->isEnabled()) {
@@ -54,7 +55,7 @@ abstract readonly class AbstractAuthClient implements AuthClientInterface
         return $normalized;
     }
 
-    #[\Override]
+    #[Override]
     public function getAuthorizationUrl(string $redirectUri, string $state): string
     {
         if (!$this->isEnabled()) {
@@ -76,19 +77,19 @@ abstract readonly class AbstractAuthClient implements AuthClientInterface
         );
     }
 
-    #[\Override]
+    #[Override]
     public function getName(): string
     {
         return $this->name;
     }
 
-    #[\Override]
+    #[Override]
     public function getTitle(): string
     {
         return $this->title;
     }
 
-    #[\Override]
+    #[Override]
     public function isEnabled(): bool
     {
         /** @var mixed $rawEnabled */

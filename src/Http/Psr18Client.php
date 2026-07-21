@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Http;
 
+use Override;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface as PsrClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
@@ -24,7 +25,7 @@ final readonly class Psr18Client implements ClientInterface
         private StreamFactoryInterface $streamFactory,
     ) {}
 
-    #[\Override]
+    #[Override]
     public function send(
         string $method,
         string $url,

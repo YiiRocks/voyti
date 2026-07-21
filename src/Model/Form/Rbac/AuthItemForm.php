@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Model\Form\Rbac;
 
+use Override;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\LabelsProviderInterface;
@@ -34,7 +35,7 @@ final class AuthItemForm extends FormModel implements LabelsProviderInterface, R
         private string $type,
     ) {}
 
-    #[\Override]
+    #[Override]
     public function getFormName(): string
     {
         return $this->type;
@@ -45,7 +46,7 @@ final class AuthItemForm extends FormModel implements LabelsProviderInterface, R
      *
      * @psalm-return array{name: string, description: string, children: string, rule: string}
      */
-    #[\Override]
+    #[Override]
     public function getPropertyLabels(): array
     {
         return [
@@ -56,7 +57,7 @@ final class AuthItemForm extends FormModel implements LabelsProviderInterface, R
         ];
     }
 
-    #[\Override]
+    #[Override]
     public function getRules(): iterable
     {
         return [
@@ -70,7 +71,7 @@ final class AuthItemForm extends FormModel implements LabelsProviderInterface, R
         return $this->type;
     }
 
-    #[\Override]
+    #[Override]
     public function getValidationPropertyLabels(): array
     {
         return $this->getPropertyLabels();

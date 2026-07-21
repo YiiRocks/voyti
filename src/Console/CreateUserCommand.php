@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Console;
 
+use Override;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -28,7 +29,7 @@ final class CreateUserCommand extends Command
         parent::__construct();
     }
 
-    #[\Override]
+    #[Override]
     protected function configure(): void
     {
         $this
@@ -45,7 +46,7 @@ final class CreateUserCommand extends Command
      *
      * @psalm-return 0|1|2
      */
-    #[\Override]
+    #[Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         /** @var mixed $rawEmail */

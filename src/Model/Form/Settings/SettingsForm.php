@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Model\Form\Settings;
 
+use Override;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Validator\PasswordComplexityRule;
@@ -51,7 +52,7 @@ final class SettingsForm extends FormModel implements LabelsProviderInterface, R
      *
      * @psalm-return 'settings'
      */
-    #[\Override]
+    #[Override]
     public function getFormName(): string
     {
         return 'settings';
@@ -72,7 +73,7 @@ final class SettingsForm extends FormModel implements LabelsProviderInterface, R
      *     authTfEnabled: string,
      * }
      */
-    #[\Override]
+    #[Override]
     public function getPropertyLabels(): array
     {
         return [
@@ -88,7 +89,7 @@ final class SettingsForm extends FormModel implements LabelsProviderInterface, R
         ];
     }
 
-    #[\Override]
+    #[Override]
     public function getRules(): iterable
     {
         $parser = new ObjectParser($this);
@@ -109,7 +110,7 @@ final class SettingsForm extends FormModel implements LabelsProviderInterface, R
         return $this->user;
     }
 
-    #[\Override]
+    #[Override]
     public function getValidationPropertyLabels(): array
     {
         return $this->getPropertyLabels();

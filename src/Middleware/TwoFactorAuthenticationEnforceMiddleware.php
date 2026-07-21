@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Middleware;
 
+use Override;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -32,7 +33,7 @@ final readonly class TwoFactorAuthenticationEnforceMiddleware implements Middlew
         private UrlGeneratorInterface $url,
     ) {}
 
-    #[\Override]
+    #[Override]
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         if (!$this->config->enableTwoFactorAuthentication) {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service\Password;
 
+use Override;
 use Yiisoft\Security\Random;
 
 /**
@@ -11,7 +12,7 @@ use Yiisoft\Security\Random;
  */
 final class RandomPasswordGenerator implements PasswordGeneratorInterface
 {
-    #[\Override]
+    #[Override]
     public function generate(int $length): string
     {
         return Random::string($length);

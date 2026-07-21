@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Model\Form\Rbac;
 
+use Override;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\LabelsProviderInterface;
@@ -32,7 +33,7 @@ final class RuleForm extends FormModel implements LabelsProviderInterface, Rules
      *
      * @psalm-return 'rule'
      */
-    #[\Override]
+    #[Override]
     public function getFormName(): string
     {
         return 'rule';
@@ -43,7 +44,7 @@ final class RuleForm extends FormModel implements LabelsProviderInterface, Rules
      *
      * @psalm-return array{name: string, class: string}
      */
-    #[\Override]
+    #[Override]
     public function getPropertyLabels(): array
     {
         return [
@@ -52,7 +53,7 @@ final class RuleForm extends FormModel implements LabelsProviderInterface, Rules
         ];
     }
 
-    #[\Override]
+    #[Override]
     public function getRules(): iterable
     {
         return [
@@ -61,7 +62,7 @@ final class RuleForm extends FormModel implements LabelsProviderInterface, Rules
         ];
     }
 
-    #[\Override]
+    #[Override]
     public function getValidationPropertyLabels(): array
     {
         return $this->getPropertyLabels();

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Middleware;
 
+use Override;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -32,7 +33,7 @@ final readonly class ApiTokenAuthenticationMiddleware implements MiddlewareInter
         $this->httpBearer = new HttpBearer($identityRepository);
     }
 
-    #[\Override]
+    #[Override]
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $identity = $this->httpBearer->authenticate($request);

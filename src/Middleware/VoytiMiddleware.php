@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Middleware;
 
+use Override;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -27,7 +28,7 @@ final readonly class VoytiMiddleware implements MiddlewareInterface
         private MiddlewareInterface $twoFactorAuth,
     ) {}
 
-    #[\Override]
+    #[Override]
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $middlewares = [
@@ -48,7 +49,7 @@ final readonly class VoytiMiddleware implements MiddlewareInterface
                     private RequestHandlerInterface $next,
                 ) {}
 
-                #[\Override]
+                #[Override]
                 public function handle(ServerRequestInterface $request): ResponseInterface
                 {
                     return $this->middleware->process($request, $this->next);

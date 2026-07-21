@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Model;
 
+use Override;
 use Yiisoft\ActiveRecord\ActiveQueryInterface;
 use Yiisoft\ActiveRecord\ActiveRecord;
 use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
@@ -62,7 +63,7 @@ final class UserAuditLog extends ActiveRecord
     /**
      * @psalm-return list{'id'}
      */
-    #[\Override]
+    #[Override]
     public function primaryKey(): array
     {
         return ['id'];

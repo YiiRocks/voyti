@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Adapter;
 
+use Override;
 use Psr\Clock\ClockInterface;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
@@ -26,13 +27,13 @@ final readonly class IdentityAdapter implements IdentityRepositoryInterface, Ide
     /**
      * @return User|null
      */
-    #[\Override]
+    #[Override]
     public function findIdentity(string $id): ?IdentityInterface
     {
         return User::findById((int) $id);
     }
 
-    #[\Override]
+    #[Override]
     public function findIdentityByToken(string $token, ?string $type = null): ?IdentityInterface
     {
         $userToken = UserToken::findByCodeAndType(

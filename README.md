@@ -407,7 +407,7 @@ Every `settings/*` route below requires an authenticated user — `RequireLoginM
 | `voyti/password-reset-request` | `GET`, `POST` | `forgot` | Password recovery request |
 | `voyti/password-reset-confirm` | `GET`, `POST` | `recover/{id}/{code}` | Password reset |
 | `voyti/profile` | `GET` | `profile/{id}` | Public user profile |
-| `voyti/user` | `GET` | `settings/` | User dashboard — welcome message and basic account info |
+| `voyti/user` | `GET` | `settings/` | User dashboard |
 | `voyti/user-profile` | `GET`, `POST` | `settings/profile` | Profile settings |
 | `voyti/user-account` | `GET`, `POST` | `settings/account` | Account settings |
 | `voyti/user-account-confirm` | `GET` | `settings/account/confirm/{code}` | Confirm account changes |

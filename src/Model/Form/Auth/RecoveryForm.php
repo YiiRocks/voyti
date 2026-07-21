@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Model\Form\Auth;
 
+use Override;
 use YiiRocks\Voyti\Helper\RecaptchaHelper;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Validator\PasswordComplexityRule;
@@ -46,7 +47,7 @@ final class RecoveryForm extends FormModel implements LabelsProviderInterface, R
      *
      * @psalm-return 'recovery'
      */
-    #[\Override]
+    #[Override]
     public function getFormName(): string
     {
         return 'recovery';
@@ -57,7 +58,7 @@ final class RecoveryForm extends FormModel implements LabelsProviderInterface, R
      *
      * @psalm-return array{email: string, password: string, passwordRepeat: string}
      */
-    #[\Override]
+    #[Override]
     public function getPropertyLabels(): array
     {
         return [
@@ -67,7 +68,7 @@ final class RecoveryForm extends FormModel implements LabelsProviderInterface, R
         ];
     }
 
-    #[\Override]
+    #[Override]
     public function getRules(): iterable
     {
         $rules = [];
@@ -102,7 +103,7 @@ final class RecoveryForm extends FormModel implements LabelsProviderInterface, R
         return $rules;
     }
 
-    #[\Override]
+    #[Override]
     public function getValidationPropertyLabels(): array
     {
         return $this->getPropertyLabels();

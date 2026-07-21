@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Clock;
 
 use DateTimeImmutable;
+use Override;
 use Psr\Clock\ClockInterface;
 
 /**
@@ -12,7 +13,7 @@ use Psr\Clock\ClockInterface;
  */
 final class SystemClock implements ClockInterface
 {
-    #[\Override]
+    #[Override]
     public function now(): DateTimeImmutable
     {
         return new DateTimeImmutable();
