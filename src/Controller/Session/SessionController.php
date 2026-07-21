@@ -109,7 +109,7 @@ final readonly class SessionController
                     $provider,
                     $clientIdStr,
                     $attributes,
-                    (int) ($identity->getId() ?? 0),
+                    (int) $identity->getId(),
                 );
             }
         } catch (RuntimeException $exception) {
@@ -127,7 +127,7 @@ final readonly class SessionController
         }
 
         if (!$isGuest) {
-            return $this->redirect($this->url->generate('voyti/social-network'));
+            return $this->redirect($this->url->generate('voyti/user-social-network'));
         }
 
         $account = $this->pendingSocialAccountService->getPendingAccount();

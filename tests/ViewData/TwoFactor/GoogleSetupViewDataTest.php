@@ -19,7 +19,7 @@ final class GoogleSetupViewDataTest extends TestCase
 
         self::assertSame('<svg></svg>', $data->qrCodeUri);
         self::assertSame('ABC123', $data->secret);
-        self::assertSame('//voyti/two-factor-enable', $data->formSubmitUrl);
+        self::assertSame('//voyti/user-two-factor-enable', $data->formSubmitUrl);
         self::assertSame('voyti.view.two_factor.renew', $data->renewLabel);
         self::assertSame('voyti.view.two_factor.manual_entry', $data->manualEntryLabel);
     }

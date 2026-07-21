@@ -311,7 +311,7 @@ final readonly class UserController
                 $this->translator->translate('voyti.admin.switch_identity_success', category: 'voyti'),
             );
 
-            return $this->redirect($this->url->generate('voyti/profile-update'));
+            return $this->redirect($this->url->generate('voyti/user-profile'));
         }
 
         return $this->renderError($result->getMessage() !== '' ? $result->getMessage() : 'voyti.admin.error_occurred');
@@ -326,7 +326,7 @@ final readonly class UserController
                 $this->translator->translate('voyti.admin.switch_identity_restored', category: 'voyti'),
             );
 
-            return $this->redirect($this->url->generate('voyti/profile-update'));
+            return $this->redirect($this->url->generate('voyti/user-profile'));
         }
 
         return $this->renderError($result->getMessage() !== '' ? $result->getMessage() : 'voyti.admin.error_occurred');

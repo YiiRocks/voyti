@@ -50,7 +50,7 @@ final readonly class UpdateViewData
                 ? $translator->translate('voyti.view.admin.switched_banner', ['username' => $originalUser->getUsername()])
                 : null,
             switchIdentityRestoreUrl: $url->generate('voyti/admin-users-switch-identity-restore'),
-            updateUrl: $url->generate('voyti/profile-update'),
+            updateUrl: $url->generate('voyti/user-profile'),
             profile: ProfileCardViewData::create(
                 $user,
                 $userProfile,

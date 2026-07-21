@@ -25,7 +25,7 @@ final class IndexViewDataTest extends TestCase
         self::assertSame('', $data->gdprConsentUrl);
         self::assertSame('', $data->exportUrl);
         self::assertSame('', $data->anonymizeUrl);
-        self::assertSame('//voyti/privacy-delete', $data->deleteUrl);
+        self::assertSame('//voyti/user-privacy-delete', $data->deleteUrl);
     }
 
     public function testCreateWithGdprAndDeleteDisabled(): void
@@ -46,10 +46,10 @@ final class IndexViewDataTest extends TestCase
 
         self::assertTrue($data->showGdprLinks);
         self::assertTrue($data->showDeleteLink);
-        self::assertSame('//voyti/privacy-gdpr-consent', $data->gdprConsentUrl);
-        self::assertSame('//voyti/privacy-export', $data->exportUrl);
-        self::assertSame('//voyti/privacy-anonymize', $data->anonymizeUrl);
-        self::assertSame('//voyti/privacy-delete', $data->deleteUrl);
+        self::assertSame('//voyti/user-privacy-gdpr-consent', $data->gdprConsentUrl);
+        self::assertSame('//voyti/user-privacy-export', $data->exportUrl);
+        self::assertSame('//voyti/user-privacy-anonymize', $data->anonymizeUrl);
+        self::assertSame('//voyti/user-privacy-delete', $data->deleteUrl);
         self::assertNotEmpty($data->menu->items);
     }
 

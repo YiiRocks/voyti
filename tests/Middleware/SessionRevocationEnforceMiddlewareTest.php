@@ -46,7 +46,7 @@ final class SessionRevocationEnforceMiddlewareTest extends TestCase
         $currentUser->expects(self::once())->method('logout');
 
         $currentRoute = $this->createMock(CurrentRoute::class);
-        $currentRoute->method('getName')->willReturn('voyti/profile-update');
+        $currentRoute->method('getName')->willReturn('voyti/user-profile');
 
         $request = $this->createMock(ServerRequestInterface::class);
         $handler = $this->createMock(RequestHandlerInterface::class);
@@ -92,7 +92,7 @@ final class SessionRevocationEnforceMiddlewareTest extends TestCase
         $currentUser->expects(self::once())->method('logout');
 
         $currentRoute = $this->createMock(CurrentRoute::class);
-        $currentRoute->method('getName')->willReturn('voyti/profile-update');
+        $currentRoute->method('getName')->willReturn('voyti/user-profile');
 
         $request = $this->createMock(ServerRequestInterface::class);
         $handler = $this->createMock(RequestHandlerInterface::class);
@@ -213,7 +213,7 @@ final class SessionRevocationEnforceMiddlewareTest extends TestCase
         $currentUser->expects(self::never())->method('logout');
 
         $currentRoute = $this->createMock(CurrentRoute::class);
-        $currentRoute->method('getName')->willReturn('voyti/profile-update');
+        $currentRoute->method('getName')->willReturn('voyti/user-profile');
 
         $request = $this->createMock(ServerRequestInterface::class);
         $response = $this->createMock(ResponseInterface::class);
@@ -243,7 +243,7 @@ final class SessionRevocationEnforceMiddlewareTest extends TestCase
         $currentUser->expects(self::never())->method('logout');
 
         $currentRoute = $this->createMock(CurrentRoute::class);
-        $currentRoute->method('getName')->willReturn('voyti/profile-update');
+        $currentRoute->method('getName')->willReturn('voyti/user-profile');
 
         $request = $this->createMock(ServerRequestInterface::class);
         $response = $this->createMock(ResponseInterface::class);

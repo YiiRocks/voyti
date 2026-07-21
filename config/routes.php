@@ -7,6 +7,7 @@ use YiiRocks\Voyti\Middleware\AccessRuleMiddleware;
 use YiiRocks\Voyti\Middleware\ApiTokenAuthenticationMiddleware;
 use YiiRocks\Voyti\Middleware\PasswordAgeEnforceMiddleware;
 use YiiRocks\Voyti\Middleware\RememberMeMiddleware;
+use YiiRocks\Voyti\Middleware\RequireLoginMiddleware;
 use YiiRocks\Voyti\Middleware\SessionRevocationEnforceMiddleware;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Csrf\CsrfMiddleware;
@@ -94,39 +95,40 @@ $passwordResetRoutes = [
 ];
 
 $settingsRoutes = [
-    Route::methods(['GET', 'POST'], '')->name('voyti/profile-update')->action([Controller\Profile\ProfileController::class, 'update']),
-    Route::methods(['GET', 'POST'], 'account')->name('voyti/account-update')->action([Controller\Account\AccountController::class, 'update']),
-    Route::get('confirm/{code}')->name('voyti/account-confirm')->action([Controller\Account\AccountController::class, 'confirm']),
-    Route::get('networks/')->name('voyti/social-network')->action([Controller\SocialNetwork\SocialNetworkController::class, 'index']),
-    Route::post('networks/disconnect/{id:\d+}')->name('voyti/social-network-delete')->action([Controller\SocialNetwork\SocialNetworkController::class, 'delete']),
-    Route::get('sessions/')->name('voyti/account-sessions')->action([Controller\Account\SessionController::class, 'index']),
-    Route::post('sessions/terminate/{sessionId}')->name('voyti/account-sessions-terminate')->action([Controller\Account\SessionController::class, 'terminate']),
+    Route::get('')->name('voyti/user')->action([Controller\Settings\SettingsController::class, 'index']),
+    Route::methods(['GET', 'POST'], 'profile')->name('voyti/user-profile')->action([Controller\Profile\ProfileController::class, 'update']),
+    Route::methods(['GET', 'POST'], 'account')->name('voyti/user-account')->action([Controller\Account\AccountController::class, 'update']),
+    Route::get('account/confirm/{code}')->name('voyti/user-account-confirm')->action([Controller\Account\AccountController::class, 'confirm']),
+    Route::get('networks/')->name('voyti/user-social-network')->action([Controller\SocialNetwork\SocialNetworkController::class, 'index']),
+    Route::post('networks/disconnect/{id:\d+}')->name('voyti/user-social-network-delete')->action([Controller\SocialNetwork\SocialNetworkController::class, 'delete']),
+    Route::get('sessions/')->name('voyti/user-account-sessions')->action([Controller\Account\SessionController::class, 'index']),
+    Route::post('sessions/terminate/{sessionId}')->name('voyti/user-account-sessions-terminate')->action([Controller\Account\SessionController::class, 'terminate']),
 ];
 
 if ($moduleConfig->enableGdprCompliance || $moduleConfig->allowAccountDelete) {
-    $settingsRoutes[] = Route::get('privacy/')->name('voyti/privacy')->action([Controller\Privacy\PrivacyController::class, 'index']);
+    $settingsRoutes[] = Route::get('privacy/')->name('voyti/user-privacy')->action([Controller\Privacy\PrivacyController::class, 'index']);
 }
 
 if ($moduleConfig->enableGdprCompliance) {
-    $settingsRoutes[] = Route::methods(['GET', 'POST'], 'privacy/gdpr-consent')->name('voyti/privacy-gdpr-consent')->action([Controller\Privacy\PrivacyController::class, 'gdprConsent']);
-    $settingsRoutes[] = Route::get('privacy/export')->name('voyti/privacy-export')->action([Controller\Privacy\PrivacyController::class, 'export']);
-    $settingsRoutes[] = Route::methods(['GET', 'POST'], 'privacy/anonymize')->name('voyti/privacy-anonymize')->action([Controller\Privacy\PrivacyController::class, 'anonymize']);
+    $settingsRoutes[] = Route::methods(['GET', 'POST'], 'privacy/gdpr-consent')->name('voyti/user-privacy-gdpr-consent')->action([Controller\Privacy\PrivacyController::class, 'gdprConsent']);
+    $settingsRoutes[] = Route::get('privacy/export')->name('voyti/user-privacy-export')->action([Controller\Privacy\PrivacyController::class, 'export']);
+    $settingsRoutes[] = Route::methods(['GET', 'POST'], 'privacy/anonymize')->name('voyti/user-privacy-anonymize')->action([Controller\Privacy\PrivacyController::class, 'anonymize']);
 }
 
 if ($moduleConfig->allowAccountDelete) {
-    $settingsRoutes[] = Route::methods(['GET', 'POST'], 'privacy/delete')->name('voyti/privacy-delete')->action([Controller\Privacy\PrivacyController::class, 'delete']);
+    $settingsRoutes[] = Route::methods(['GET', 'POST'], 'privacy/delete')->name('voyti/user-privacy-delete')->action([Controller\Privacy\PrivacyController::class, 'delete']);
 }
 
 if ($moduleConfig->enableTwoFactorAuthentication) {
-    $settingsRoutes[] = Route::methods(['GET', 'POST'], 'two-factor/')->name('voyti/two-factor')->action([Controller\TwoFactor\TwoFactorController::class, 'index']);
-    $settingsRoutes[] = Route::get('two-factor-google/')->name('voyti/two-factor-google')->action([Controller\TwoFactor\TwoFactorController::class, 'google']);
-    $settingsRoutes[] = Route::get('two-factor-email/')->name('voyti/two-factor-email')->action([Controller\TwoFactor\TwoFactorController::class, 'email']);
-    $settingsRoutes[] = Route::post('two-factor-google/enable')->name('voyti/two-factor-enable')->action([Controller\TwoFactor\TwoFactorController::class, 'enable']);
-    $settingsRoutes[] = Route::post('two-factor/disable/')->name('voyti/two-factor-disable')->action([Controller\TwoFactor\TwoFactorController::class, 'disable']);
-    $settingsRoutes[] = Route::post('two-factor/disable/send-code')->name('voyti/two-factor-disable-send-code')->action([Controller\TwoFactor\TwoFactorController::class, 'disableSendCode']);
-    $settingsRoutes[] = Route::post('two-factor-google/renew')->name('voyti/two-factor-renew')->action([Controller\TwoFactor\TwoFactorController::class, 'renew']);
-    $settingsRoutes[] = Route::post('two-factor-email/send-code')->name('voyti/two-factor-send-email-code')->action([Controller\TwoFactor\TwoFactorController::class, 'sendEmailCode']);
-    $settingsRoutes[] = Route::post('two-factor/backup-codes/regenerate')->name('voyti/two-factor-regenerate-backup-codes')->action([Controller\TwoFactor\TwoFactorController::class, 'regenerateBackupCodes']);
+    $settingsRoutes[] = Route::methods(['GET', 'POST'], 'two-factor/')->name('voyti/user-two-factor')->action([Controller\TwoFactor\TwoFactorController::class, 'index']);
+    $settingsRoutes[] = Route::get('two-factor/google/')->name('voyti/user-two-factor-google')->action([Controller\TwoFactor\TwoFactorController::class, 'google']);
+    $settingsRoutes[] = Route::get('two-factor/email/')->name('voyti/user-two-factor-email')->action([Controller\TwoFactor\TwoFactorController::class, 'email']);
+    $settingsRoutes[] = Route::post('two-factor/enable')->name('voyti/user-two-factor-enable')->action([Controller\TwoFactor\TwoFactorController::class, 'enable']);
+    $settingsRoutes[] = Route::post('two-factor/disable/')->name('voyti/user-two-factor-disable')->action([Controller\TwoFactor\TwoFactorController::class, 'disable']);
+    $settingsRoutes[] = Route::post('two-factor/disable/send-code')->name('voyti/user-two-factor-disable-send-code')->action([Controller\TwoFactor\TwoFactorController::class, 'disableSendCode']);
+    $settingsRoutes[] = Route::post('two-factor/google/renew')->name('voyti/user-two-factor-renew')->action([Controller\TwoFactor\TwoFactorController::class, 'renew']);
+    $settingsRoutes[] = Route::post('two-factor/email/send-code')->name('voyti/user-two-factor-send-email-code')->action([Controller\TwoFactor\TwoFactorController::class, 'sendEmailCode']);
+    $settingsRoutes[] = Route::post('two-factor/backup-codes/regenerate')->name('voyti/user-two-factor-regenerate-backup-codes')->action([Controller\TwoFactor\TwoFactorController::class, 'regenerateBackupCodes']);
 }
 
 $routes = [
@@ -137,7 +139,7 @@ $routes = [
     ...$registrationRoutes,
     ...$passwordResetRoutes,
 
-    Group::create('settings/')->routes(...$settingsRoutes),
+    Group::create('settings/')->middleware(RequireLoginMiddleware::class)->routes(...$settingsRoutes),
 
     // Admin + RBAC
     Group::create('admin/')

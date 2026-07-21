@@ -18,7 +18,7 @@ final class UpdateViewDataTest extends TestCase
 
         $data = UpdateViewData::create(new ModuleConfig(), new FakeUrlGenerator(), $translator);
 
-        self::assertSame('//voyti/account-update', $data->formSubmitUrl);
+        self::assertSame('//voyti/user-account', $data->formSubmitUrl);
         self::assertNotEmpty($data->menu->items);
     }
 }

@@ -38,7 +38,7 @@ final readonly class GoogleSetupViewData
             secret: $secret,
             renewLabel: $translator->translate('voyti.view.two_factor.renew'),
             manualEntryLabel: $translator->translate('voyti.view.two_factor.manual_entry'),
-            formSubmitUrl: $url->generate('voyti/two-factor-enable'),
+            formSubmitUrl: $url->generate('voyti/user-two-factor-enable'),
         );
     }
 }

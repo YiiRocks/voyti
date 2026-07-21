@@ -177,7 +177,7 @@ final class VoytiMiddlewareTest extends TestCase
         $currentUser->expects(self::once())->method('logout');
 
         $currentRoute = $this->createMock(CurrentRoute::class);
-        $currentRoute->method('getName')->willReturn('voyti/profile-update');
+        $currentRoute->method('getName')->willReturn('voyti/user-profile');
 
         $request = $this->createMock(ServerRequestInterface::class);
         $handler = $this->createMock(RequestHandlerInterface::class);

@@ -28,7 +28,7 @@ final class UpdateViewDataTest extends TestCase
         );
 
         self::assertNull($data->switchedBannerMessage);
-        self::assertSame('//voyti/profile-update', $data->updateUrl);
+        self::assertSame('//voyti/user-profile', $data->updateUrl);
         self::assertNotEmpty($data->timezoneOptions);
         self::assertSame('list-group list-group-flush', $data->profile->profilePreviewClass);
     }

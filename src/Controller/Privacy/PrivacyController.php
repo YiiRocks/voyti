@@ -10,7 +10,6 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
-use YiiRocks\Voyti\Controller\RequireUserTrait;
 use YiiRocks\Voyti\Event\Gdpr\GdprEvent;
 use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Helper\InputDataTrait;
@@ -37,7 +36,6 @@ use Yiisoft\Security\Random;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
-use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
@@ -50,7 +48,6 @@ final readonly class PrivacyController
     use InputDataTrait;
     use RedirectTrait;
     use RenderTrait;
-    use RequireUserTrait;
 
     public function __construct(
         private TranslatorInterface $translator,
@@ -76,26 +73,25 @@ final readonly class PrivacyController
             $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
             $result = $this->validator->validate($form);
 
-            $identity = $this->currentUser->getIdentity();
-            if ($result->isValid() && !($identity instanceof GuestIdentityInterface)) {
-                $user = User::findById((int) ($identity->getId() ?? 0));
-                if ($user !== null && $this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
-                    $prefix = $this->config->gdprAnonymizePrefix . ($user->getId() ?? '');
-                    $user->setEmail($prefix . '@example.com');
-                    $user->setUsername($prefix);
-                    $user->setAnonymized(true);
-                    $user->setBlockedAt(time());
-                    $user->setAuthKey(Random::string());
-                    $user->save();
-                    $this->eventDispatcher->dispatch(new GdprEvent($user));
-                    $this->terminateUserSessionsService->run($user->getIdOrZero());
-                    return $this->renderView('shared/message', [
-                        'data' => new MessageViewData(
-                            title: $this->translator->translate('voyti.settings.personal_info_removed', category: 'voyti'),
-                            homeUrl: $this->homeUrl(),
-                        ),
-                    ]);
-                }
+            /** @var User $user */
+            $user = $this->currentUser->getIdentity();
+
+            if ($result->isValid() && $this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
+                $prefix = $this->config->gdprAnonymizePrefix . ($user->getId() ?? '');
+                $user->setEmail($prefix . '@example.com');
+                $user->setUsername($prefix);
+                $user->setAnonymized(true);
+                $user->setBlockedAt(time());
+                $user->setAuthKey(Random::string());
+                $user->save();
+                $this->eventDispatcher->dispatch(new GdprEvent($user));
+                $this->terminateUserSessionsService->run($user->getIdOrZero());
+                return $this->renderView('shared/message', [
+                    'data' => new MessageViewData(
+                        title: $this->translator->translate('voyti.settings.personal_info_removed', category: 'voyti'),
+                        homeUrl: $this->homeUrl(),
+                    ),
+                ]);
             }
         }
 
@@ -111,21 +107,20 @@ final readonly class PrivacyController
             $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
             $result = $this->validator->validate($form);
 
-            $identity = $this->currentUser->getIdentity();
-            if ($result->isValid() && !($identity instanceof GuestIdentityInterface)) {
-                $user = User::findById((int) ($identity->getId() ?? 0));
-                if ($user !== null && $this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
-                    $userId = $user->getIdOrZero();
-                    $user->delete();
-                    $this->eventDispatcher->dispatch(new UserEvent($user, UserEvent::DELETE));
-                    $this->terminateUserSessionsService->run($userId);
-                    return $this->renderView('shared/message', [
-                        'data' => new MessageViewData(
-                            title: $this->translator->translate('voyti.settings.account_deleted', category: 'voyti'),
-                            homeUrl: $this->homeUrl(),
-                        ),
-                    ]);
-                }
+            /** @var User $user */
+            $user = $this->currentUser->getIdentity();
+
+            if ($result->isValid() && $this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
+                $userId = $user->getIdOrZero();
+                $user->delete();
+                $this->eventDispatcher->dispatch(new UserEvent($user, UserEvent::DELETE));
+                $this->terminateUserSessionsService->run($userId);
+                return $this->renderView('shared/message', [
+                    'data' => new MessageViewData(
+                        title: $this->translator->translate('voyti.settings.account_deleted', category: 'voyti'),
+                        homeUrl: $this->homeUrl(),
+                    ),
+                ]);
             }
         }
 
@@ -134,10 +129,8 @@ final readonly class PrivacyController
 
     public function export(ServerRequestInterface $request): ResponseInterface
     {
-        $user = $this->requireUser();
-        if (!$user instanceof User) {
-            return $user;
-        }
+        /** @var User $user */
+        $user = $this->currentUser->getIdentity();
 
         $values = array_map(
             fn(string $property): mixed => $this->exportValue($user, $property),
@@ -164,33 +157,28 @@ final readonly class PrivacyController
 
     public function gdprConsent(ServerRequestInterface $request): ResponseInterface
     {
+        /** @var User $user */
+        $user = $this->currentUser->getIdentity();
+
         $form = new GdprConsentForm($this->translator);
-        $identity = $this->currentUser->getIdentity();
-        if (!($identity instanceof GuestIdentityInterface) && $request->getMethod() === Method::POST) {
+
+        if ($request->getMethod() === Method::POST) {
             $body = $this->parsedBody($request);
             $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
-            $user = User::findById((int) ($identity->getId() ?? 0));
-            if ($user !== null) {
-                if ($form->consent && !$user->isGdprConsent()) {
-                    $user->setGdprConsent(true);
-                    $user->setGdprConsentDate(time());
-                    $user->save();
-                }
-                return $this->redirectWithFlash(
-                    $this->url->generate('voyti/privacy-gdpr-consent'),
-                    'voyti.settings.gdpr_consent_saved',
-                );
+            if ($form->consent && !$user->isGdprConsent()) {
+                $user->setGdprConsent(true);
+                $user->setGdprConsentDate(time());
+                $user->save();
             }
+            return $this->redirectWithFlash(
+                $this->url->generate('voyti/user-privacy-gdpr-consent'),
+                'voyti.settings.gdpr_consent_saved',
+            );
         }
 
-        if (!($identity instanceof GuestIdentityInterface)) {
-            $user = User::findById((int) ($identity->getId() ?? 0));
-            if ($user !== null) {
-                $form->consent = $user->isGdprConsent();
-                $form->consentDate = $user->getGdprConsentDate();
-                $form->timezone = $user->getProfile()?->getTimezone();
-            }
-        }
+        $form->consent = $user->isGdprConsent();
+        $form->consentDate = $user->getGdprConsentDate();
+        $form->timezone = $user->getProfile()?->getTimezone();
 
         return $this->renderView('privacy/gdpr-consent', [
             'form' => $form,

@@ -17,6 +17,6 @@ final readonly class DeleteViewData
 
     public static function create(UrlGeneratorInterface $url): self
     {
-        return new self(formSubmitUrl: $url->generate('voyti/privacy-delete'));
+        return new self(formSubmitUrl: $url->generate('voyti/user-privacy-delete'));
     }
 }

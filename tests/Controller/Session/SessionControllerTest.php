@@ -193,7 +193,7 @@ final class SessionControllerTest extends TestCase
         $this->socialAuthProviderService->method('complete')->willReturn(['id' => 'client123']);
         $this->socialNetworkAccountConnectService->method('run')->willReturn(ServiceResult::success());
 
-        $response = $this->mockRedirectResponse($this->responseFactory, '//voyti/social-network');
+        $response = $this->mockRedirectResponse($this->responseFactory, '//voyti/user-social-network');
 
         $result = $controller->auth($request, 'github');
 

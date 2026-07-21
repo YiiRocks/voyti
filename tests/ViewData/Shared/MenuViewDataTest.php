@@ -43,6 +43,7 @@ final class MenuViewDataTest extends TestCase
         $labels = array_map(static fn($item) => $item->label, $menu->items);
 
         self::assertSame([
+            'voyti.menu.dashboard',
             'voyti.menu.userProfile',
             'voyti.menu.account',
             'voyti.menu.networks',

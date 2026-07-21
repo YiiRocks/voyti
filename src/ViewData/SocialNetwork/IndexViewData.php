@@ -42,7 +42,7 @@ final readonly class IndexViewData
         $rows = array_map(
             static fn(UserSocialAccount $account): SocialAccountRow => new SocialAccountRow(
                 providerTitle: $authClients->getTitle($account->getProvider()),
-                formSubmitUrl: $url->generate('voyti/social-network-delete', ['id' => $account->getId() ?? 0]),
+                formSubmitUrl: $url->generate('voyti/user-social-network-delete', ['id' => $account->getId()]),
             ),
             $accounts,
         );

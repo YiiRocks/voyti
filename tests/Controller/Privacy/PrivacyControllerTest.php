@@ -31,7 +31,6 @@ use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
-use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Validator\Result;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
@@ -119,9 +118,7 @@ final class PrivacyControllerTest extends TestCase
         );
         $this->validator->method('validate')->willReturn(new Result());
         $user = $this->createUser(passwordHash: $this->passwordHasher->hash($password), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -184,9 +181,7 @@ final class PrivacyControllerTest extends TestCase
         );
         $this->validator->method('validate')->willReturn(new Result());
         $user = $this->createUser(passwordHash: $this->passwordHasher->hash('correctpassword'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -226,9 +221,7 @@ final class PrivacyControllerTest extends TestCase
         $this->validator->method('validate')->willReturn(new Result());
         $user = $this->createUser(passwordHash: $this->passwordHasher->hash($password), confirmedAt: time());
         $userId = (int) $user->getId();
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $userId);
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -256,9 +249,7 @@ final class PrivacyControllerTest extends TestCase
 
         $user = $this->createUser(confirmedAt: time());
         $userId = (int) $user->getId();
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $userId);
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $sessionEntry = new UserSessions();
         $sessionEntry->setUserId($userId);
@@ -323,9 +314,7 @@ final class PrivacyControllerTest extends TestCase
         $request = new ServerRequest('GET', '/');
 
         $user = $this->createUser(confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $profile = new UserProfile();
         $profile->setUserId((int) $user->getId());
@@ -373,9 +362,7 @@ final class PrivacyControllerTest extends TestCase
         $request = new ServerRequest('GET', '/');
 
         $user = $this->createUser(confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
@@ -399,46 +386,6 @@ final class PrivacyControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    public function testExportWhenGuestRedirectsToLogin(): void
-    {
-        $config = new ModuleConfig(enableGdprCompliance: true);
-        $this->harness = new ControllerHarness($config);
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-
-        $response = $this->mockRedirectResponse($this->responseFactory, '//voyti/session-login');
-
-        $result = $controller->export($request);
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testExportWhenUserNotFoundShowsError(): void
-    {
-        $config = new ModuleConfig(enableGdprCompliance: true);
-        $this->harness = new ControllerHarness($config);
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('999999');
-        $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturn($response);
-
-        $result = $controller->export($request);
-
-        $this->assertSame($response, $result);
-    }
-
     public function testGdprConsentGetShowsConsentDateWhenAlreadyConsented(): void
     {
         $config = new ModuleConfig(enableGdprCompliance: true);
@@ -447,9 +394,7 @@ final class PrivacyControllerTest extends TestCase
         $request = new ServerRequest('GET', '/');
 
         $user = $this->createUser(gdprConsent: true, gdprConsentDate: 1700000000, confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $profile = new UserProfile();
         $profile->setUserId((int) $user->getId());
@@ -485,9 +430,7 @@ final class PrivacyControllerTest extends TestCase
         $request = new ServerRequest('GET', '/');
 
         $user = $this->createUser(gdprConsent: false, confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -525,9 +468,7 @@ final class PrivacyControllerTest extends TestCase
 
         $user = $this->createUser(gdprConsent: true, confirmedAt: time());
         $consentDate = $user->getGdprConsentDate();
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
@@ -555,9 +496,7 @@ final class PrivacyControllerTest extends TestCase
         );
 
         $user = $this->createUser(gdprConsent: true, confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
@@ -585,9 +524,7 @@ final class PrivacyControllerTest extends TestCase
         );
 
         $user = $this->createUser(gdprConsent: false, confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 

@@ -9,7 +9,6 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
-use YiiRocks\Voyti\Controller\RequireUserTrait;
 use YiiRocks\Voyti\Event\Session\SessionEvent;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
@@ -30,7 +29,6 @@ final readonly class SessionController
 {
     use RedirectTrait;
     use RenderTrait;
-    use RequireUserTrait;
 
     public function __construct(
         private TranslatorInterface $translator,
@@ -46,10 +44,8 @@ final readonly class SessionController
 
     public function index(): ResponseInterface
     {
-        $user = $this->requireUser();
-        if (!$user instanceof User) {
-            return $user;
-        }
+        /** @var User $user */
+        $user = $this->currentUser->getIdentity();
 
         return $this->renderView('account/sessions', [
             'data' => SessionsViewData::create(
@@ -65,10 +61,8 @@ final readonly class SessionController
 
     public function terminate(string $sessionId): ResponseInterface
     {
-        $user = $this->requireUser();
-        if (!$user instanceof User) {
-            return $user;
-        }
+        /** @var User $user */
+        $user = $this->currentUser->getIdentity();
 
         $userSession = UserSessions::findByUserIdAndSessionId($user->getIdOrZero(), $sessionId);
         if ($userSession === null) {
@@ -87,7 +81,7 @@ final readonly class SessionController
         }
 
         return $this->redirectWithFlash(
-            $this->url->generate('voyti/account-sessions'),
+            $this->url->generate('voyti/user-account-sessions'),
             'voyti.settings.session_terminated',
         );
     }

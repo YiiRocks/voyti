@@ -28,7 +28,7 @@ final class SessionRowTest extends TestCase
 
         self::assertTrue($row->isCurrentSession);
         self::assertSame('203.0.113.1', $row->session->ip);
-        self::assertSame('//voyti/account-sessions-terminate?sessionId=abc', $row->formSubmitUrl);
+        self::assertSame('//voyti/user-account-sessions-terminate?sessionId=abc', $row->formSubmitUrl);
     }
 
     private function createSession(string $sessionId): UserSessions

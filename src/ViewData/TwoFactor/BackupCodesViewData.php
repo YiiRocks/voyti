@@ -31,7 +31,7 @@ final readonly class BackupCodesViewData
         return new self(
             menu: MenuViewData::forAccount($config, $url, $translator),
             codes: $codes,
-            continueUrl: $url->generate('voyti/two-factor'),
+            continueUrl: $url->generate('voyti/user-two-factor'),
         );
     }
 }

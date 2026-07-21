@@ -39,7 +39,7 @@ final readonly class AccessRuleMiddleware implements MiddlewareInterface
             return $response->withHeader(Header::LOCATION, $this->url->generate('voyti/session-login'));
         }
 
-        $userId = $user->getId() ?? 0;
+        $userId = $user->getId();
         if (!$this->authHelper->isAdmin($userId)) {
             $response = $this->responseFactory->createResponse(Status::FORBIDDEN);
             return $response;

@@ -253,10 +253,10 @@ final class TwoFactorAuthenticationEnforceMiddlewareTest extends TestCase
         $handler->expects(self::never())->method('handle');
 
         $url = $this->createMock(UrlGeneratorInterface::class);
-        $url->expects(self::once())->method('generate')->with('voyti/account-update')->willReturn('/voyti/account-update');
+        $url->expects(self::once())->method('generate')->with('voyti/user-account')->willReturn('/voyti/user-account');
 
         $response = $this->createMock(ResponseInterface::class);
-        $response->expects(self::once())->method('withHeader')->with('Location', '/voyti/account-update')->willReturnSelf();
+        $response->expects(self::once())->method('withHeader')->with('Location', '/voyti/user-account')->willReturnSelf();
 
         $responseFactory = $this->createMock(ResponseFactoryInterface::class);
         $responseFactory->expects(self::once())->method('createResponse')->with(302)->willReturn($response);

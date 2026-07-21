@@ -25,7 +25,7 @@ final class EmailSetupViewDataTest extends TestCase
 
         self::assertTrue($data->emailCodeSent);
         self::assertSame('jane@example.com', $data->userEmail);
-        self::assertSame('//voyti/two-factor-send-email-code', $data->sendCodeUrl);
-        self::assertSame('//voyti/two-factor-enable', $data->enableUrl);
+        self::assertSame('//voyti/user-two-factor-send-email-code', $data->sendCodeUrl);
+        self::assertSame('//voyti/user-two-factor-enable', $data->enableUrl);
     }
 }

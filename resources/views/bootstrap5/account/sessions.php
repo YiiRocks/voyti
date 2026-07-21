@@ -41,16 +41,11 @@ foreach ($data->sessions as $row) {
     echo Html::div($row->session->userAgent)->class('col-5 text-break');
     echo Html::div($row->session->lastSeenDisplay)->class('col-2');
 
-    echo Html::div()->class($row->isCurrentSession || $row->session->isRevoked ? 'col-2 text-end' : 'col-2')->open();
+    echo Html::div()->class($row->isCurrentSession ? 'col-2 text-end' : 'col-2')->open();
     if ($row->isCurrentSession) {
         echo Html::button($translator->translate('voyti.view.sessions.this_device'))
             ->class('btn', 'btn-sm', 'btn-outline-primary')
             ->disabled();
-    } elseif ($row->session->isRevoked) {
-        $revokedButton = Html::button($translator->translate('voyti.view.sessions.revoked'))
-            ->class('btn', 'btn-sm', 'btn-outline-secondary')
-            ->disabled();
-        echo Html::span($revokedButton)->attribute('title', $row->session->revokedAtDisplay);
     } else {
         echo Html::form()
             ->post($row->formSubmitUrl)

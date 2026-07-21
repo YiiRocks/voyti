@@ -24,7 +24,7 @@ use Yiisoft\User\Guest\GuestIdentityInterface;
  */
 final readonly class PasswordAgeEnforceMiddleware implements MiddlewareInterface
 {
-    private const ACCOUNT_SETTINGS_ROUTE = 'voyti/account-update';
+    private const ACCOUNT_SETTINGS_ROUTE = 'voyti/user-account';
 
     /**
      * @var string[] Route names that must stay reachable even with an expired password, to avoid a redirect

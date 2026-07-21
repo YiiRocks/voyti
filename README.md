@@ -153,7 +153,7 @@ return [
 
 When `enableRestApi` is `true`, the API routes are mounted under `adminRestPrefix . '/v1/'` and expose user CRUD endpoints.
 
-The privacy/GDPR routes (`settings/privacy/`, `settings/privacy/gdpr-consent`, `settings/privacy/export`, `settings/privacy/anonymize`, `settings/privacy/delete`) and the two-factor routes (`settings/two-factor/`, `settings/two-factor-google/enable`, `settings/two-factor/disable/`) are likewise only registered when their governing config flag (`enableGdprCompliance`, `allowAccountDelete`, and/or `enableTwoFactorAuthentication`) is `true` — see the route table below. When a flag is off, the corresponding route doesn't exist at all, so a request to it falls through to the host application's own router-level not-found handling.
+The privacy/GDPR routes (`settings/privacy/`, `settings/privacy/gdpr-consent`, `settings/privacy/export`, `settings/privacy/anonymize`, `settings/privacy/delete`) and the two-factor routes (`settings/two-factor/`, `settings/two-factor/enable`, `settings/two-factor/disable/`) are likewise only registered when their governing config flag (`enableGdprCompliance`, `allowAccountDelete`, and/or `enableTwoFactorAuthentication`) is `true` — see the route table below. When a flag is off, the corresponding route doesn't exist at all, so a request to it falls through to the host application's own router-level not-found handling.
 
 ### 4. Done
 
@@ -360,16 +360,17 @@ With credentials configured:
 
 ## Middleware
 
-The extension ships seven PSR-15 middleware classes for session handling and access control:
+The extension ships eight PSR-15 middleware classes for session handling and access control:
 
 | Middleware | Description | Auto-registered on the extension's own routes? |
 |-----------|-------------|-----------|
 | `AccessRuleMiddleware` | Redirects guests to the login page (`voyti/session-login`); checks `administratorPermissionName` for admin access | Yes — on `admin/*` (users and RBAC management) and the REST API group |
+| `RequireLoginMiddleware` | Redirects guests to the login page (`voyti/session-login`); unlike `AccessRuleMiddleware`, only requires an authenticated user, not an admin permission. Returns a JSON `401` instead of a redirect for the one AJAX-only route, `voyti/user-two-factor-renew` | Yes — on `settings/*` (profile, account, social networks, sessions, privacy, two-factor) |
 | `ApiTokenAuthenticationMiddleware` | Resolves the `Authorization: Bearer <token>` header to a user for that request only (no session); returns `401` if missing/invalid | Yes — on the REST API group, ahead of `AccessRuleMiddleware`, in place of the session cookie |
 | `RememberMeMiddleware` | Logs a guest back in from the `autoLogin` remember-me cookie, then writes the cookie back onto the response — either the immediate reissue after a session rotation or the periodic sliding-expiration refresh. Must run after session middleware and before the enforcement middleware below, since those need `CurrentUser` already resolved | Yes |
 | `SessionRevocationEnforceMiddleware` | Logs out and redirects to the login page (`voyti/session-login`) when the current session's `user_sessions` row is gone — i.e. it was terminated from the sessions list (self-service or admin) on another request. Without this, terminating a session only removed the row; the browser that owned it stayed logged in until its PHP session expired on its own. Otherwise touches the row's `updated_at` on every request, so the sessions list can show "last seen" activity per device. | Yes |
-| `PasswordAgeEnforceMiddleware` | Redirects to the account settings page (`voyti/account-update`) when `maxPasswordAge` is exceeded | Yes, when `enablePasswordExpiration` is `true` — on the extension's whole web route group |
-| `TwoFactorAuthenticationEnforceMiddleware` | Redirects to the account settings page (`voyti/account-update`) when required permissions are assigned but 2FA isn't enabled | No |
+| `PasswordAgeEnforceMiddleware` | Redirects to the account settings page (`voyti/user-account`) when `maxPasswordAge` is exceeded | Yes, when `enablePasswordExpiration` is `true` — on the extension's whole web route group |
+| `TwoFactorAuthenticationEnforceMiddleware` | Redirects to the account settings page (`voyti/user-account`) when required permissions are assigned but 2FA isn't enabled | No |
 | `VoytiMiddleware` | Convenience wrapper that chains `RememberMeMiddleware`, `SessionRevocationEnforceMiddleware`, `PasswordAgeEnforceMiddleware`, and `TwoFactorAuthenticationEnforceMiddleware` in a single middleware entry — add this to your app's route group instead of the four individual ones (see [Site-wide enforcement](#site-wide-enforcement)) | No |
 
 ### Site-wide enforcement
@@ -391,6 +392,8 @@ Built on [`yiisoft/rbac`](https://github.com/yiisoft/rbac). The extension provid
 
 The library does not provide a menu model or navigation contract. It only exposes named routes that the host application can use in its own menu, sidebar, or access rules.
 
+Every `settings/*` route below requires an authenticated user — `RequireLoginMiddleware` redirects a guest to `voyti/session-login` (or returns a JSON `401` for the AJAX-only `voyti/user-two-factor-renew`) before the request reaches the controller; see [Middleware](#middleware).
+
 | Route name | Method | Path | Purpose |
 |------------|--------|------|---------|
 | `voyti/session-login` | `GET`, `POST` | `login` | User login |
@@ -404,29 +407,30 @@ The library does not provide a menu model or navigation contract. It only expose
 | `voyti/password-reset-request` | `GET`, `POST` | `forgot` | Password recovery request |
 | `voyti/password-reset-confirm` | `GET`, `POST` | `recover/{id}/{code}` | Password reset |
 | `voyti/profile` | `GET` | `profile/{id}` | Public user profile |
-| `voyti/profile-update` | `GET`, `POST` | `settings/` | Profile settings |
-| `voyti/account-update` | `GET`, `POST` | `settings/account` | Account settings |
-| `voyti/account-confirm` | `GET` | `settings/confirm/{code}` | Confirm account changes |
-| `voyti/social-network` | `GET` | `settings/networks/` | Linked social networks |
-| `voyti/social-network-delete` | `POST` | `settings/networks/disconnect/{id}` | Disconnect social account |
-| `voyti/account-sessions` | `GET` | `settings/sessions/` | Self-service session/device list, current device highlighted |
-| `voyti/account-sessions-terminate` | `POST` | `settings/sessions/terminate/{sessionId}` | Terminate one of the current user's own sessions |
-| `voyti/privacy` | `GET` | `settings/privacy/` | Privacy settings. Only registered when `enableGdprCompliance` or `allowAccountDelete` is `true` |
-| `voyti/privacy-gdpr-consent` | `GET`, `POST` | `settings/privacy/gdpr-consent` | GDPR consent. Only registered when `enableGdprCompliance` is `true` |
-| `voyti/privacy-export` | `GET` | `settings/privacy/export` | Export user data. Only registered when `enableGdprCompliance` is `true` |
-| `voyti/privacy-anonymize` | `GET`, `POST` | `settings/privacy/anonymize` | Anonymize account (blanks email/username, blocks login; row is kept). Only registered when `enableGdprCompliance` is `true` |
-| `voyti/privacy-delete` | `GET`, `POST` | `settings/privacy/delete` | Account deletion (hard delete). Only registered when `allowAccountDelete` is `true` |
-| `voyti/two-factor` | `GET`, `POST` | `settings/two-factor/` | Two-factor status/entry point. Only registered when `enableTwoFactorAuthentication` is `true` |
-| `voyti/two-factor-google` | `GET` | `settings/two-factor-google/` | Google Authenticator setup page (method-selector buttons + QR/secret). Only registered when `enableTwoFactorAuthentication` is `true` |
-| `voyti/two-factor-email` | `GET` | `settings/two-factor-email/` | Email 2FA setup page (method-selector buttons + confirm/send screen). Only registered when `enableTwoFactorAuthentication` is `true` |
-| `voyti/two-factor-enable` | `POST` | `settings/two-factor-google/enable` | Enable 2FA - shared by both the Google Authenticator and email code-entry forms. Only registered when `enableTwoFactorAuthentication` is `true` |
-| `voyti/two-factor-disable` | `POST` | `settings/two-factor/disable/` | Disable 2FA. Only registered when `enableTwoFactorAuthentication` is `true` |
-| `voyti/two-factor-disable-send-code` | `POST` | `settings/two-factor/disable/send-code` | Send the disable-2FA one-time code. Only registered when `enableTwoFactorAuthentication` is `true` |
-| `voyti/two-factor-renew` | `POST` | `settings/two-factor-google/renew` | Regenerate the Google Authenticator secret/QR code via AJAX. Only registered when `enableTwoFactorAuthentication` is `true` |
-| `voyti/two-factor-send-email-code` | `POST` | `settings/two-factor-email/send-code` | Send the email 2FA one-time code after explicit confirmation. Only registered when `enableTwoFactorAuthentication` is `true` |
-| `voyti/two-factor-regenerate-backup-codes` | `POST` | `settings/two-factor/backup-codes/regenerate` | Invalidate existing backup codes and generate a fresh set (requires re-verifying the current 2FA method). Only registered when `enableTwoFactorAuthentication` is `true` |
-| `voyti/admin` | `GET` | `admin/` | Redirects to the admin user dashboard |
-| `voyti/admin-users` | `GET` | `admin/users/` | User dashboard |
+| `voyti/user` | `GET` | `settings/` | User dashboard — welcome message and basic account info |
+| `voyti/user-profile` | `GET`, `POST` | `settings/profile` | Profile settings |
+| `voyti/user-account` | `GET`, `POST` | `settings/account` | Account settings |
+| `voyti/user-account-confirm` | `GET` | `settings/account/confirm/{code}` | Confirm account changes |
+| `voyti/user-social-network` | `GET` | `settings/networks/` | Linked social networks |
+| `voyti/user-social-network-delete` | `POST` | `settings/networks/disconnect/{id}` | Disconnect social account |
+| `voyti/user-account-sessions` | `GET` | `settings/sessions/` | Self-service session/device list, current device highlighted |
+| `voyti/user-account-sessions-terminate` | `POST` | `settings/sessions/terminate/{sessionId}` | Terminate one of the current user's own sessions |
+| `voyti/user-privacy` | `GET` | `settings/privacy/` | Privacy settings. Only registered when `enableGdprCompliance` or `allowAccountDelete` is `true` |
+| `voyti/user-privacy-gdpr-consent` | `GET`, `POST` | `settings/privacy/gdpr-consent` | GDPR consent. Only registered when `enableGdprCompliance` is `true` |
+| `voyti/user-privacy-export` | `GET` | `settings/privacy/export` | Export user data. Only registered when `enableGdprCompliance` is `true` |
+| `voyti/user-privacy-anonymize` | `GET`, `POST` | `settings/privacy/anonymize` | Anonymize account (blanks email/username, blocks login; row is kept). Only registered when `enableGdprCompliance` is `true` |
+| `voyti/user-privacy-delete` | `GET`, `POST` | `settings/privacy/delete` | Account deletion (hard delete). Only registered when `allowAccountDelete` is `true` |
+| `voyti/user-two-factor` | `GET`, `POST` | `settings/two-factor/` | Two-factor status/entry point. Only registered when `enableTwoFactorAuthentication` is `true` |
+| `voyti/user-two-factor-google` | `GET` | `settings/two-factor/google/` | Google Authenticator setup page (method-selector buttons + QR/secret). Only registered when `enableTwoFactorAuthentication` is `true` |
+| `voyti/user-two-factor-email` | `GET` | `settings/two-factor/email/` | Email 2FA setup page (method-selector buttons + confirm/send screen). Only registered when `enableTwoFactorAuthentication` is `true` |
+| `voyti/user-two-factor-enable` | `POST` | `settings/two-factor/enable` | Enable 2FA - shared by both the Google Authenticator and email code-entry forms. Only registered when `enableTwoFactorAuthentication` is `true` |
+| `voyti/user-two-factor-disable` | `POST` | `settings/two-factor/disable/` | Disable 2FA. Only registered when `enableTwoFactorAuthentication` is `true` |
+| `voyti/user-two-factor-disable-send-code` | `POST` | `settings/two-factor/disable/send-code` | Send the disable-2FA one-time code. Only registered when `enableTwoFactorAuthentication` is `true` |
+| `voyti/user-two-factor-renew` | `POST` | `settings/two-factor/google/renew` | Regenerate the Google Authenticator secret/QR code via AJAX. Only registered when `enableTwoFactorAuthentication` is `true` |
+| `voyti/user-two-factor-send-email-code` | `POST` | `settings/two-factor/email/send-code` | Send the email 2FA one-time code after explicit confirmation. Only registered when `enableTwoFactorAuthentication` is `true` |
+| `voyti/user-two-factor-regenerate-backup-codes` | `POST` | `settings/two-factor/backup-codes/regenerate` | Invalidate existing backup codes and generate a fresh set (requires re-verifying the current 2FA method). Only registered when `enableTwoFactorAuthentication` is `true` |
+| `voyti/admin` | `GET` | `admin/` | Admin dashboard |
+| `voyti/admin-users` | `GET` | `admin/users/` | Users |
 | `voyti/admin-users-create` | `GET`, `POST` | `admin/users/create` | Create user |
 | `voyti/admin-users-update` | `GET`, `POST` | `admin/users/update/{id}` | Update user |
 | `voyti/admin-users-update-profile` | `GET`, `POST` | `admin/users/update-profile/{id}` | Update user profile |

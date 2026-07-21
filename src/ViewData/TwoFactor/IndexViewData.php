@@ -94,8 +94,8 @@ final readonly class IndexViewData
             }
         }
 
-        $googleUrl = $url->generate('voyti/two-factor-google');
-        $emailUrl = $url->generate('voyti/two-factor-email');
+        $googleUrl = $url->generate('voyti/user-two-factor-google');
+        $emailUrl = $url->generate('voyti/user-two-factor-email');
 
         return new self(
             menu: MenuViewData::forAccount($config, $url, $translator),
@@ -104,14 +104,14 @@ final readonly class IndexViewData
             method: $method,
             enabledWithMethodMessage: $translator->translate('voyti.view.two_factor.enabled_with_method', ['method' => $methodName]),
             emailCodeSent: $emailCodeSent,
-            disableSendCodeUrl: $url->generate('voyti/two-factor-disable-send-code'),
-            disableUrl: $url->generate('voyti/two-factor-disable'),
+            disableSendCodeUrl: $url->generate('voyti/user-two-factor-disable-send-code'),
+            disableUrl: $url->generate('voyti/user-two-factor-disable'),
             hasBackupCodes: $hasBackupCodes,
-            regenerateBackupCodesUrl: $url->generate('voyti/two-factor-regenerate-backup-codes'),
+            regenerateBackupCodesUrl: $url->generate('voyti/user-two-factor-regenerate-backup-codes'),
             googleUrl: $googleUrl,
             emailUrl: $emailUrl,
             preloadContent: $preloadContent,
-            renewUrl: $url->generate('voyti/two-factor-renew'),
+            renewUrl: $url->generate('voyti/user-two-factor-renew'),
             renewErrorMessage: $translator->translate('voyti.view.two_factor.renew_error'),
             autoloadUrl: $preloadContent ? null : ($method === 'email' ? $emailUrl : $googleUrl),
             emailSetup: $emailSetup,

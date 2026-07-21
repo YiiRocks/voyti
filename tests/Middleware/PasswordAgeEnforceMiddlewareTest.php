@@ -38,7 +38,7 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
         $currentUser->expects(self::once())->method('getIdentity')->willReturn($user);
 
         $currentRoute = $this->createMock(CurrentRoute::class);
-        $currentRoute->method('getName')->willReturn('voyti/account-update');
+        $currentRoute->method('getName')->willReturn('voyti/user-account');
 
         $request = $this->createMock(ServerRequestInterface::class);
         $response = $this->createMock(ResponseInterface::class);
@@ -202,10 +202,10 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
         $handler->expects(self::never())->method('handle');
 
         $url = $this->createMock(UrlGeneratorInterface::class);
-        $url->expects(self::once())->method('generate')->with('voyti/account-update')->willReturn('/voyti/account-update');
+        $url->expects(self::once())->method('generate')->with('voyti/user-account')->willReturn('/voyti/user-account');
 
         $response = $this->createMock(ResponseInterface::class);
-        $response->expects(self::once())->method('withHeader')->with('Location', '/voyti/account-update')->willReturnSelf();
+        $response->expects(self::once())->method('withHeader')->with('Location', '/voyti/user-account')->willReturnSelf();
 
         $responseFactory = $this->createMock(ResponseFactoryInterface::class);
         $responseFactory->expects(self::once())->method('createResponse')->with(302)->willReturn($response);
@@ -237,10 +237,10 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
         $handler->expects(self::never())->method('handle');
 
         $url = $this->createMock(UrlGeneratorInterface::class);
-        $url->expects(self::once())->method('generate')->with('voyti/account-update')->willReturn('/voyti/account-update');
+        $url->expects(self::once())->method('generate')->with('voyti/user-account')->willReturn('/voyti/user-account');
 
         $response = $this->createMock(ResponseInterface::class);
-        $response->expects(self::once())->method('withHeader')->with('Location', '/voyti/account-update')->willReturnSelf();
+        $response->expects(self::once())->method('withHeader')->with('Location', '/voyti/user-account')->willReturnSelf();
 
         $responseFactory = $this->createMock(ResponseFactoryInterface::class);
         $responseFactory->expects(self::once())->method('createResponse')->with(302)->willReturn($response);

@@ -37,7 +37,7 @@ final readonly class SessionsViewData
         $locale = $translator->getLocale();
         $rows = array_map(
             static fn(UserSessions $session): SessionRow => SessionRow::create($session, $currentSessionId, $timezone, $locale, $url),
-            $sessions,
+            array_values(array_filter($sessions, static fn(UserSessions $session): bool => !$session->isRevoked())),
         );
 
         return new self(

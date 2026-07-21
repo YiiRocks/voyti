@@ -29,7 +29,7 @@ final readonly class GdprConsentViewData
         $isLocked = $form->consent;
 
         return new self(
-            formSubmitUrl: $url->generate('voyti/privacy-gdpr-consent'),
+            formSubmitUrl: $url->generate('voyti/user-privacy-gdpr-consent'),
             isLocked: $isLocked,
             consentDateDisplay: $isLocked && $form->consentDate !== null
                 ? TimezoneHelper::formatLocalized($form->consentDate, $locale, $form->timezone)

@@ -23,7 +23,6 @@ use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
-use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 #[AllowMockObjectsWithoutExpectations]
@@ -58,20 +57,6 @@ final class SocialNetworkControllerTest extends TestCase
     protected function tearDown(): void
     {
         $this->tearDownDatabase();
-    }
-
-    public function testDeleteWhenGuestRedirectsToLogin(): void
-    {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-
-        $response = $this->mockRedirectResponse($this->responseFactory, '//voyti/session-login');
-
-        $result = $controller->delete($request, 1);
-
-        $this->assertSame($response, $result);
     }
 
     public function testDeleteWithFoundAccountDeletesAndRedirects(): void
@@ -135,20 +120,6 @@ final class SocialNetworkControllerTest extends TestCase
             ->method('render')
             ->with('social-network/index', $this->anything())
             ->willReturn($response);
-
-        $result = $controller->index($request);
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testIndexWhenGuestRedirectsToLogin(): void
-    {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-
-        $response = $this->mockRedirectResponse($this->responseFactory, '//voyti/session-login');
 
         $result = $controller->index($request);
 

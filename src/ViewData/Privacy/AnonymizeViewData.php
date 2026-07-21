@@ -17,6 +17,6 @@ final readonly class AnonymizeViewData
 
     public static function create(UrlGeneratorInterface $url): self
     {
-        return new self(formSubmitUrl: $url->generate('voyti/privacy-anonymize'));
+        return new self(formSubmitUrl: $url->generate('voyti/user-privacy-anonymize'));
     }
 }

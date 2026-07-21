@@ -21,7 +21,6 @@ use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
-use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 #[AllowMockObjectsWithoutExpectations]
@@ -56,22 +55,6 @@ final class SessionControllerTest extends TestCase
         $this->tearDownDatabase();
     }
 
-    public function testIndexAuthenticatedUserNotFoundShowsError(): void
-    {
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('999999');
-        $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $controller = $this->createController();
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->method('render')->willReturn($response);
-
-        $result = $controller->index();
-
-        $this->assertSame($response, $result);
-    }
-
     public function testIndexFlagsCurrentDevice(): void
     {
         $user = $this->createUser(username: 'sessionuser', email: 'sessionuser@example.com');
@@ -102,18 +85,6 @@ final class SessionControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    public function testIndexNotAuthenticatedRedirectsToLogin(): void
-    {
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-
-        $controller = $this->createController();
-        $response = $this->mockRedirectResponse($this->responseFactory, '//voyti/session-login');
-
-        $result = $controller->index();
-
-        $this->assertSame($response, $result);
-    }
-
     public function testTerminateCurrentSessionLogsOutAndRedirectsToLogin(): void
     {
         $user = $this->createUser(username: 'sessionuser', email: 'sessionuser@example.com');
@@ -133,18 +104,6 @@ final class SessionControllerTest extends TestCase
         $this->assertSame($response, $result);
         $event = $this->harness->getEventDispatcher()->getEvent(SessionEvent::class);
         $this->assertInstanceOf(SessionEvent::class, $event);
-    }
-
-    public function testTerminateNotAuthenticatedRedirectsToLogin(): void
-    {
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-
-        $controller = $this->createController();
-        $response = $this->mockRedirectResponse($this->responseFactory, '//voyti/session-login');
-
-        $result = $controller->terminate('anything');
-
-        $this->assertSame($response, $result);
     }
 
     public function testTerminateOtherSessionRevokesItAndRedirects(): void
@@ -182,9 +141,7 @@ final class SessionControllerTest extends TestCase
 
     private function authenticateAs(User $user): void
     {
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
     }
 
     private function createController(): SessionController

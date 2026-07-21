@@ -25,7 +25,6 @@ use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
-use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Validator\Result;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
@@ -85,9 +84,7 @@ final class AccountControllerTest extends TestCase
         $request = new ServerRequest('GET', '/');
 
         $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -110,9 +107,7 @@ final class AccountControllerTest extends TestCase
 
         $this->validator->method('validate')->willReturn(new Result());
         $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
@@ -141,9 +136,7 @@ final class AccountControllerTest extends TestCase
         );
         $this->validator->method('validate')->willReturn(new Result());
         $user = $this->createUser(email: 'old@example.com', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $this->emailChangeService->expects($this->once())
             ->method('initiate')
@@ -182,9 +175,7 @@ final class AccountControllerTest extends TestCase
         $this->validator->method('validate')->willReturn(new Result());
         $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $originalHash = $user->getPasswordHash();
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
@@ -222,9 +213,7 @@ final class AccountControllerTest extends TestCase
         );
         $this->validator->method('validate')->willReturn(new Result());
         $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -241,56 +230,6 @@ final class AccountControllerTest extends TestCase
         $this->assertSame('testuser', $updated->getUsername());
     }
 
-    public function testAccountWhenGuestRedirectsToLogin(): void
-    {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-
-        $response = $this->mockRedirectResponse($this->responseFactory, '//voyti/session-login');
-
-        $result = $controller->update($request);
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testAccountWhenUserNotFoundShowsError(): void
-    {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('999999');
-        $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturn($response);
-
-        $result = $controller->update($request);
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testConfirmWhenGuestRedirectsToLogin(): void
-    {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-
-        $response = $this->mockRedirectResponse($this->responseFactory, '//voyti/session-login');
-
-        $result = $controller->confirm($request, 'good-code');
-
-        $this->assertSame($response, $result);
-    }
-
     #[DataProvider('confirmProvider')]
     public function testConfirmWithCodeShowsMessage(string $code, bool $serviceResult, string $expectedTitle): void
     {
@@ -298,9 +237,7 @@ final class AccountControllerTest extends TestCase
         $request = new ServerRequest('GET', '/');
 
         $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $this->emailChangeService->expects($this->once())->method('run')->with(
             $code,

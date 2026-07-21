@@ -23,7 +23,7 @@ final readonly class UpdateViewData
     {
         return new self(
             menu: MenuViewData::forAccount($config, $url, $translator),
-            formSubmitUrl: $url->generate('voyti/account-update'),
+            formSubmitUrl: $url->generate('voyti/user-account'),
         );
     }
 }

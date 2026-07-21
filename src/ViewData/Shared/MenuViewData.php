@@ -24,18 +24,19 @@ final readonly class MenuViewData
     public static function forAccount(ModuleConfig $config, UrlGeneratorInterface $url, TranslatorInterface $translator): self
     {
         $items = [
-            new MenuLinkViewData($translator->translate('voyti.menu.userProfile'), $url->generate('voyti/profile-update')),
-            new MenuLinkViewData($translator->translate('voyti.menu.account'), $url->generate('voyti/account-update')),
-            new MenuLinkViewData($translator->translate('voyti.menu.networks'), $url->generate('voyti/social-network')),
-            new MenuLinkViewData($translator->translate('voyti.menu.sessions'), $url->generate('voyti/account-sessions')),
+            new MenuLinkViewData($translator->translate('voyti.menu.dashboard'), $url->generate('voyti/user')),
+            new MenuLinkViewData($translator->translate('voyti.menu.userProfile'), $url->generate('voyti/user-profile')),
+            new MenuLinkViewData($translator->translate('voyti.menu.account'), $url->generate('voyti/user-account')),
+            new MenuLinkViewData($translator->translate('voyti.menu.networks'), $url->generate('voyti/user-social-network')),
+            new MenuLinkViewData($translator->translate('voyti.menu.sessions'), $url->generate('voyti/user-account-sessions')),
         ];
 
         if ($config->enableTwoFactorAuthentication) {
-            $items[] = new MenuLinkViewData($translator->translate('voyti.menu.two_factor'), $url->generate('voyti/two-factor'));
+            $items[] = new MenuLinkViewData($translator->translate('voyti.menu.two_factor'), $url->generate('voyti/user-two-factor'));
         }
 
         if ($config->enableGdprCompliance || $config->allowAccountDelete) {
-            $items[] = new MenuLinkViewData($translator->translate('voyti.view.settings.privacy'), $url->generate('voyti/privacy'));
+            $items[] = new MenuLinkViewData($translator->translate('voyti.view.settings.privacy'), $url->generate('voyti/user-privacy'));
         }
 
         $items[] = new MenuLinkViewData($translator->translate('voyti.menu.logout'), $url->generate('voyti/session-logout'), alignEnd: true);

@@ -14,6 +14,6 @@ final class AnonymizeViewDataTest extends TestCase
     {
         $data = AnonymizeViewData::create(new FakeUrlGenerator());
 
-        self::assertSame('//voyti/privacy-anonymize', $data->formSubmitUrl);
+        self::assertSame('//voyti/user-privacy-anonymize', $data->formSubmitUrl);
     }
 }

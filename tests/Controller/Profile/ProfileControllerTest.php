@@ -207,9 +207,7 @@ final class ProfileControllerTest extends TestCase
 
         $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $this->createUserProfile((int) $user->getId());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $captured = [];
         $response = $this->createMock(ResponseInterface::class);
@@ -235,9 +233,7 @@ final class ProfileControllerTest extends TestCase
 
         $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $this->createUserProfile((int) $user->getId());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -262,9 +258,7 @@ final class ProfileControllerTest extends TestCase
 
         $user = $this->createUser(username: 'switcheduser', email: 'switched@example.com', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $this->createUserProfile((int) $user->getId());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $this->harness->getSession()->set('voyti_original_admin_user', (string) $originalUser->getId());
 
@@ -307,9 +301,7 @@ final class ProfileControllerTest extends TestCase
         $profile->setBirthday(new DateTimeImmutable('1990-05-15'));
         $profile->save();
 
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
@@ -340,9 +332,7 @@ final class ProfileControllerTest extends TestCase
         );
 
         $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
@@ -368,9 +358,7 @@ final class ProfileControllerTest extends TestCase
 
         $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $this->createUserProfile((int) $user->getId(), name: 'OldName');
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -402,9 +390,7 @@ final class ProfileControllerTest extends TestCase
 
         $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $this->createUserProfile((int) $user->getId(), name: 'OldName');
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -435,9 +421,7 @@ final class ProfileControllerTest extends TestCase
 
         $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $this->createUserProfile((int) $user->getId(), name: 'OldName');
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
@@ -448,42 +432,6 @@ final class ProfileControllerTest extends TestCase
         $this->assertNotNull($updatedProfile);
         $this->assertSame('John', $updatedProfile->getName());
         $this->assertSame('1990-05-15', $updatedProfile->getBirthday()?->format('Y-m-d'));
-    }
-
-    public function testUpdateWhenGuestRedirectsToLogin(): void
-    {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-
-        $response = $this->mockRedirectResponse($this->responseFactory, '//voyti/session-login');
-
-        $result = $controller->update($request);
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testUpdateWhenUserNotFoundShowsError(): void
-    {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('999999');
-        $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturn($response);
-
-        $result = $controller->update($request);
-
-        $this->assertSame($response, $result);
     }
 
     private function createController(): ProfileController

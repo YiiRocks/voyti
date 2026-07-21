@@ -30,7 +30,6 @@ return [
 
     // SettingsController
     'voyti.settings.not_authenticated' => 'Not authenticated',
-    'voyti.settings.user_not_found' => 'User not found',
     'voyti.settings.profile_updated' => 'Your profile has been updated',
     'voyti.settings.account_details_updated' => 'Your account details have been updated',
     'voyti.settings.personal_info_removed' => 'Your personal information has been removed',
@@ -120,6 +119,7 @@ return [
     'voyti.mail.your_twofactor_code' => 'Your two-factor authentication code is:',
 
     // Navigation / Menu
+    'voyti.menu.dashboard' => 'Dashboard',
     'voyti.menu.userProfile' => 'Profile',
     'voyti.menu.account' => 'Account',
     'voyti.menu.networks' => 'Networks',
@@ -187,6 +187,9 @@ return [
 
 
     // Settings views
+    'voyti.view.settings.dashboard_title' => 'Dashboard',
+    'voyti.view.settings.welcome' => 'Welcome, {name}!',
+    'voyti.view.settings.member_since' => 'Member since',
     'voyti.view.edit_profile.title' => 'Edit Profile',
     'voyti.view.userProfile.title' => 'Profile preview',
     'voyti.view.account.title' => 'Account settings',

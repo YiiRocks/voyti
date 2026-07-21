@@ -30,7 +30,6 @@ return [
 
     // SettingsController
     'voyti.settings.not_authenticated' => 'Niet geverifieerd',
-    'voyti.settings.user_not_found' => 'Gebruiker niet gevonden',
     'voyti.settings.profile_updated' => 'Uw profiel is bijgewerkt',
     'voyti.settings.account_details_updated' => 'Uw accountgegevens zijn bijgewerkt',
     'voyti.settings.personal_info_removed' => 'Uw persoonlijke gegevens zijn verwijderd',
@@ -120,6 +119,7 @@ return [
     'voyti.mail.your_twofactor_code' => 'Uw tweefactorauthenticatiecode is:',
 
     // Navigation / Menu
+    'voyti.menu.dashboard' => 'Dashboard',
     'voyti.menu.userProfile' => 'Profiel',
     'voyti.menu.account' => 'Account',
     'voyti.menu.networks' => 'Netwerken',
@@ -187,6 +187,9 @@ return [
 
 
     // Settings views
+    'voyti.view.settings.dashboard_title' => 'Dashboard',
+    'voyti.view.settings.welcome' => 'Welkom, {name}!',
+    'voyti.view.settings.member_since' => 'Lid sinds',
     'voyti.view.edit_profile.title' => 'Profiel bewerken',
     'voyti.view.userProfile.title' => 'Profielvoorbeeld',
     'voyti.view.account.title' => 'Accountinstellingen',

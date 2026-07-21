@@ -17,7 +17,6 @@ use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
-use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 /**
@@ -41,13 +40,9 @@ final readonly class SocialNetworkController
 
     public function delete(ServerRequestInterface $request, int $id): ResponseInterface
     {
-        $identity = $this->currentUser->getIdentity();
-        if ($identity instanceof GuestIdentityInterface) {
-            return $this->redirect($this->url->generate('voyti/session-login'));
-        }
-
+        $user = $this->currentUser->getIdentity();
         $account = null;
-        $accounts = UserSocialAccount::findByUserId((int) ($identity->getId() ?? 0));
+        $accounts = UserSocialAccount::findByUserId((int) $user->getId());
         foreach ($accounts as $candidate) {
             if ($candidate->getId() === $id) {
                 $account = $candidate;
@@ -58,7 +53,7 @@ final readonly class SocialNetworkController
         if ($account !== null) {
             $account->delete();
             return $this->redirectWithFlash(
-                $this->url->generate('voyti/social-network'),
+                $this->url->generate('voyti/user-social-network'),
                 'voyti.settings.network_disconnected',
             );
         }
@@ -68,12 +63,8 @@ final readonly class SocialNetworkController
 
     public function index(ServerRequestInterface $request): ResponseInterface
     {
-        $identity = $this->currentUser->getIdentity();
-        if ($identity instanceof GuestIdentityInterface) {
-            return $this->redirect($this->url->generate('voyti/session-login'));
-        }
-
-        $accounts = UserSocialAccount::findByUserId((int) ($identity->getId() ?? 0));
+        $user = $this->currentUser->getIdentity();
+        $accounts = UserSocialAccount::findByUserId((int) $user->getId());
         $connectedProviders = array_filter(array_map(
             static fn(UserSocialAccount $account): string => $account->getProvider(),
             $accounts,

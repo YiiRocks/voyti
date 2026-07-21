@@ -57,7 +57,7 @@ final readonly class TwoFactorAuthenticationEnforceMiddleware implements Middlew
         if (!empty(array_intersect($permissions, $userPermissionNames))) {
             if (!$user->isAuthTfEnabled()) {
                 $response = $this->responseFactory->createResponse(Status::FOUND);
-                return $response->withHeader(Header::LOCATION, $this->url->generate('voyti/account-update'));
+                return $response->withHeader(Header::LOCATION, $this->url->generate('voyti/user-account'));
             }
         }
 

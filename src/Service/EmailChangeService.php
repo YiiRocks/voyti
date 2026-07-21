@@ -118,7 +118,7 @@ final readonly class EmailChangeService
     private function initiateNew(User $user, SettingsForm $form): bool
     {
         $user->setUnconfirmedEmail($form->email);
-        $userToken = $this->tokenFactory->makeConfirmNewMailToken((int) ($user->getId() ?? 0));
+        $userToken = $this->tokenFactory->makeConfirmNewMailToken((int) $user->getId());
 
         if ($this->mailService->sendReconfirmation($user, $userToken)) {
             $user->save();

@@ -28,7 +28,6 @@ use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
-use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 #[AllowMockObjectsWithoutExpectations]
@@ -75,9 +74,7 @@ final class TwoFactorControllerTest extends TestCase
         $request = new ServerRequest('POST', '/');
 
         $user = $this->createUser(authTfEnabled: true, authTfType: 'email', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $this->twoFactorEmailCodeService->expects($this->once())->method('run')->with(
             $this->callback(static fn(User $u): bool => $u->getId() === $user->getId()),
@@ -105,9 +102,7 @@ final class TwoFactorControllerTest extends TestCase
         $request = new ServerRequest('POST', '/');
 
         $user = $this->createUser(authTfEnabled: true, authTfType: 'google', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
         $this->twoFactorEmailCodeService->expects($this->never())->method('run');
 
         $response = $this->mockRedirectResponse($this->responseFactory);
@@ -115,13 +110,6 @@ final class TwoFactorControllerTest extends TestCase
         $result = $controller->disableSendCode($request);
 
         $this->assertSame($response, $result);
-    }
-
-    public function testTwoFactorDisableSendCodeWhenGuestShowsError(): void
-    {
-        $this->assertGuestShowsError(
-            static fn(TwoFactorController $controller): ResponseInterface => $controller->disableSendCode(new ServerRequest('POST', '/')),
-        );
     }
 
     public function testTwoFactorDisableSendCodeWhenNotEnabledRedirects(): void
@@ -130,9 +118,7 @@ final class TwoFactorControllerTest extends TestCase
         $request = new ServerRequest('POST', '/');
 
         $user = $this->createUser(authTfEnabled: false, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
         $this->twoFactorEmailCodeService->expects($this->never())->method('run');
 
         $response = $this->mockRedirectResponse($this->responseFactory);
@@ -142,22 +128,13 @@ final class TwoFactorControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    public function testTwoFactorDisableWhenGuestShowsError(): void
-    {
-        $this->assertGuestShowsError(
-            static fn(TwoFactorController $controller): ResponseInterface => $controller->disable(new ServerRequest('POST', '/')),
-        );
-    }
-
     public function testTwoFactorDisableWithInvalidEmailCodeShowsFormWithCodeSent(): void
     {
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['code' => 'wrong']);
 
         $user = $this->createUser(authTfType: 'email', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -185,9 +162,7 @@ final class TwoFactorControllerTest extends TestCase
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['code' => 'wrong']);
 
         $user = $this->createUser(authTfType: 'google', authTfKey: null, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -219,9 +194,7 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController(backupCodeService: $backupCodeService);
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['code' => $codes[0]]);
 
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
@@ -241,9 +214,7 @@ final class TwoFactorControllerTest extends TestCase
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['code' => '123456']);
 
         $user = $this->createUser(authTfEnabled: true, authTfType: 'email', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
@@ -267,10 +238,8 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['code' => $code]);
 
-        $identity = $this->createMock(User::class);
         $user = $this->createUser(authTfEnabled: true, authTfType: 'google', authTfKey: $secret, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
@@ -290,9 +259,7 @@ final class TwoFactorControllerTest extends TestCase
         $request = (new ServerRequest('GET', '/'))->withHeader('X-Requested-With', 'XMLHttpRequest');
 
         $user = $this->createUser(authTfEnabled: false, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
         $this->twoFactorEmailCodeService->expects($this->never())->method('run');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -317,9 +284,7 @@ final class TwoFactorControllerTest extends TestCase
         $request = new ServerRequest('GET', '/');
 
         $user = $this->createUser(authTfEnabled: false, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -345,9 +310,7 @@ final class TwoFactorControllerTest extends TestCase
         $request = new ServerRequest('GET', '/');
 
         $user = $this->createUser(authTfEnabled: true, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
@@ -356,22 +319,13 @@ final class TwoFactorControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    public function testTwoFactorEmailWhenGuestShowsError(): void
-    {
-        $this->assertGuestShowsError(
-            static fn(TwoFactorController $controller): ResponseInterface => $controller->email(new ServerRequest('GET', '/')),
-        );
-    }
-
     public function testTwoFactorEnableWhenAlreadyEnabledRedirects(): void
     {
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['method' => 'google', 'code' => '123456']);
 
         $user = $this->createUser(authTfEnabled: true, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
@@ -383,24 +337,13 @@ final class TwoFactorControllerTest extends TestCase
         $this->assertTrue($updated->isAuthTfEnabled());
     }
 
-    public function testTwoFactorEnableWhenGuestShowsError(): void
-    {
-        $this->assertGuestShowsError(
-            static fn(TwoFactorController $controller): ResponseInterface => $controller->enable(
-                (new ServerRequest('POST', '/'))->withParsedBody(['method' => 'google', 'code' => '123456']),
-            ),
-        );
-    }
-
     public function testTwoFactorEnableWithEmailCode(): void
     {
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['method' => 'email', 'code' => '123456']);
 
         $user = $this->createUser(authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -426,9 +369,7 @@ final class TwoFactorControllerTest extends TestCase
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['method' => 'email', 'code' => 'wrong']);
 
         $user = $this->createUser(authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -455,9 +396,7 @@ final class TwoFactorControllerTest extends TestCase
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['method' => 'google', 'code' => 'wrong']);
 
         $user = $this->createUser(authTfType: 'google', authTfKey: null, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
         $this->twoFactorQrCodeService->method('generateQrCodeSvg')->willReturn('<svg></svg>');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -490,9 +429,7 @@ final class TwoFactorControllerTest extends TestCase
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['method' => 'google', 'code' => $code]);
 
         $user = $this->createUser(authTfType: 'google', authTfKey: $secret, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -518,9 +455,7 @@ final class TwoFactorControllerTest extends TestCase
         $request = (new ServerRequest('GET', '/'))->withHeader('X-Requested-With', 'XMLHttpRequest');
 
         $user = $this->createUser(authTfEnabled: false, authTfType: null, authTfKey: 'secret', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
         $this->twoFactorQrCodeService->method('generateQrCodeSvg')->willReturn('<svg></svg>');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -545,9 +480,7 @@ final class TwoFactorControllerTest extends TestCase
         $request = new ServerRequest('GET', '/');
 
         $user = $this->createUser(authTfEnabled: false, authTfType: null, authTfKey: null, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
         $this->twoFactorQrCodeService->method('generateQrCodeSvg')->willReturn('<svg></svg>');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -574,9 +507,7 @@ final class TwoFactorControllerTest extends TestCase
         $request = new ServerRequest('GET', '/');
 
         $user = $this->createUser(authTfEnabled: true, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
         $this->twoFactorQrCodeService->expects($this->never())->method('generateQrCodeSvg');
 
         $response = $this->mockRedirectResponse($this->responseFactory);
@@ -584,13 +515,6 @@ final class TwoFactorControllerTest extends TestCase
         $result = $controller->google($request);
 
         $this->assertSame($response, $result);
-    }
-
-    public function testTwoFactorGoogleWhenGuestShowsError(): void
-    {
-        $this->assertGuestShowsError(
-            static fn(TwoFactorController $controller): ResponseInterface => $controller->google(new ServerRequest('GET', '/')),
-        );
     }
 
     public function testTwoFactorIndexReportsHasBackupCodesWhenCodesExist(): void
@@ -601,9 +525,7 @@ final class TwoFactorControllerTest extends TestCase
         $backupCodeService->generate($user);
 
         $controller = $this->createController($backupCodeService);
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -624,9 +546,7 @@ final class TwoFactorControllerTest extends TestCase
         $user = $this->createUser(authTfEnabled: true, authTfType: 'google', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
 
         $controller = $this->createController();
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -642,44 +562,13 @@ final class TwoFactorControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    public function testTwoFactorIndexWhenUserNotFoundShowsError(): void
-    {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('999999');
-        $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturn($response);
-
-        $result = $controller->index($request);
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testTwoFactorRegenerateBackupCodesWhenGuestShowsError(): void
-    {
-        $this->assertGuestShowsError(
-            static fn(TwoFactorController $controller): ResponseInterface => $controller->regenerateBackupCodes(new ServerRequest('POST', '/')),
-        );
-    }
-
     public function testTwoFactorRegenerateBackupCodesWhenNotEnabledRedirects(): void
     {
         $controller = $this->createController();
         $request = new ServerRequest('POST', '/');
 
         $user = $this->createUser(authTfEnabled: false, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
@@ -694,9 +583,7 @@ final class TwoFactorControllerTest extends TestCase
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['code' => 'wrong']);
 
         $user = $this->createUser(authTfEnabled: true, authTfType: 'email', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -718,9 +605,7 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['code' => '123456']);
 
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -747,9 +632,7 @@ final class TwoFactorControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['code' => $code]);
 
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -771,9 +654,7 @@ final class TwoFactorControllerTest extends TestCase
         $request = new ServerRequest('POST', '/');
 
         $user = $this->createUser(authTfEnabled: false, authTfType: 'google', authTfKey: 'secret', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $this->twoFactorQrCodeService->method('isAvailable')->willReturn(true);
         $this->twoFactorQrCodeService->method('generateQrCodeSvg')->willReturn('<svg></svg>');
@@ -797,9 +678,7 @@ final class TwoFactorControllerTest extends TestCase
         $request = new ServerRequest('POST', '/');
 
         $user = $this->createUser(authTfEnabled: false, authTfType: 'email', authTfKey: 'new-secret', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $this->twoFactorQrCodeService->method('isAvailable')->willReturn(true);
         $this->twoFactorQrCodeService->expects($this->once())
@@ -833,9 +712,7 @@ final class TwoFactorControllerTest extends TestCase
         $request = new ServerRequest('POST', '/');
 
         $user = $this->createUser(authTfEnabled: true, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
         $this->twoFactorQrCodeService->expects($this->never())->method('regenerateQrCodeSvg');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -851,35 +728,13 @@ final class TwoFactorControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    public function testTwoFactorRenewWhenGuestReturnsError(): void
-    {
-        $controller = $this->createController();
-        $request = new ServerRequest('POST', '/');
-
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(401)
-            ->willReturn($response);
-        $response->method('withHeader')->willReturnSelf();
-        $response->method('getBody')->willReturn($this->createMock(StreamInterface::class));
-
-        $result = $controller->renew($request);
-
-        $this->assertSame($response, $result);
-    }
-
     public function testTwoFactorRenewWhenLibraryMissingReturnsError(): void
     {
         $controller = $this->createController();
         $request = new ServerRequest('POST', '/');
 
         $user = $this->createUser(authTfEnabled: false, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
         $this->twoFactorQrCodeService->method('isAvailable')->willReturn(false);
         $this->twoFactorQrCodeService->expects($this->never())->method('regenerateQrCodeSvg');
 
@@ -896,27 +751,6 @@ final class TwoFactorControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    public function testTwoFactorRenewWhenUserNotFoundReturnsError(): void
-    {
-        $controller = $this->createController();
-        $request = new ServerRequest('POST', '/');
-
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('999999');
-        $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(404)
-            ->willReturn($response);
-        $response->method('withHeader')->willReturnSelf();
-        $response->method('getBody')->willReturn($this->createMock(StreamInterface::class));
-
-        $result = $controller->renew($request);
-
-        $this->assertSame($response, $result);
-    }
 
     public function testTwoFactorSendEmailCodeDoesNotResetTypeWhenAlreadyEmail(): void
     {
@@ -924,9 +758,7 @@ final class TwoFactorControllerTest extends TestCase
         $request = new ServerRequest('POST', '/');
 
         $user = $this->createUser(authTfEnabled: false, authTfType: 'email', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
         $this->twoFactorEmailCodeService->expects($this->once())->method('run')->with(
             $this->callback(static fn(User $u): bool => $u->getId() === $user->getId()),
         );
@@ -949,9 +781,7 @@ final class TwoFactorControllerTest extends TestCase
         $request = new ServerRequest('POST', '/');
 
         $user = $this->createUser(authTfEnabled: false, authTfType: null, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
         $this->twoFactorEmailCodeService->expects($this->once())->method('run')->with(
             $this->callback(static fn(User $u): bool => $u->getId() === $user->getId()),
         );
@@ -981,9 +811,7 @@ final class TwoFactorControllerTest extends TestCase
         $request = new ServerRequest('POST', '/');
 
         $user = $this->createUser(authTfEnabled: true, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
         $this->twoFactorEmailCodeService->expects($this->never())->method('run');
 
         $response = $this->mockRedirectResponse($this->responseFactory);
@@ -993,22 +821,13 @@ final class TwoFactorControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    public function testTwoFactorSendEmailCodeWhenGuestShowsError(): void
-    {
-        $this->assertGuestShowsError(
-            static fn(TwoFactorController $controller): ResponseInterface => $controller->sendEmailCode(new ServerRequest('POST', '/')),
-        );
-    }
-
     public function testTwoFactorWhenAlreadyEnabledShowsSettings(): void
     {
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
         $user = $this->createUser(authTfEnabled: true, authTfType: 'google', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -1027,22 +846,13 @@ final class TwoFactorControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    public function testTwoFactorWhenGuestShowsError(): void
-    {
-        $this->assertGuestShowsError(
-            static fn(TwoFactorController $controller): ResponseInterface => $controller->index(new ServerRequest('GET', '/')),
-        );
-    }
-
     public function testTwoFactorWhenNotEnabledRendersShellWithoutPreloadingContent(): void
     {
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
         $user = $this->createUser(authTfEnabled: false, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->method('getIdentity')->willReturn($user);
         $this->twoFactorQrCodeService->expects($this->never())->method('generateQrCodeSvg');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -1059,19 +869,6 @@ final class TwoFactorControllerTest extends TestCase
             ->willReturn($response);
 
         $result = $controller->index($request);
-
-        $this->assertSame($response, $result);
-    }
-
-    private function assertGuestShowsError(callable $invoke): void
-    {
-        $controller = $this->createController();
-
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-
-        $response = $this->mockRedirectResponse($this->responseFactory, '//voyti/session-login');
-
-        $result = $invoke($controller);
 
         $this->assertSame($response, $result);
     }

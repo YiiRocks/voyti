@@ -9,7 +9,6 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
-use YiiRocks\Voyti\Controller\RequireUserTrait;
 use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Model\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Model\User;
@@ -36,7 +35,6 @@ final readonly class AccountController
     use InputDataTrait;
     use RedirectTrait;
     use RenderTrait;
-    use RequireUserTrait;
 
     public function __construct(
         private TranslatorInterface $translator,
@@ -54,10 +52,8 @@ final readonly class AccountController
 
     public function confirm(ServerRequestInterface $request, string $code): ResponseInterface
     {
-        $user = $this->requireUser();
-        if (!$user instanceof User) {
-            return $user;
-        }
+        /** @var User $user */
+        $user = $this->currentUser->getIdentity();
 
         if ($this->emailChangeService->run($code, $user)) {
             return $this->renderView('shared/message', [
@@ -73,10 +69,8 @@ final readonly class AccountController
 
     public function update(ServerRequestInterface $request): ResponseInterface
     {
-        $user = $this->requireUser();
-        if (!$user instanceof User) {
-            return $user;
-        }
+        /** @var User $user */
+        $user = $this->currentUser->getIdentity();
 
         $form = new SettingsForm($this->config, $this->translator);
         $form->username = $user->getUsername();
@@ -116,7 +110,7 @@ final readonly class AccountController
                 }
 
                 return $this->redirectWithFlash(
-                    $this->url->generate('voyti/account-update'),
+                    $this->url->generate('voyti/user-account'),
                     'voyti.settings.account_details_updated',
                 );
             }

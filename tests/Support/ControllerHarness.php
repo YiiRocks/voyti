@@ -20,6 +20,7 @@ use YiiRocks\Voyti\Controller\Privacy\PrivacyController;
 use YiiRocks\Voyti\Controller\Profile\ProfileController;
 use YiiRocks\Voyti\Controller\Registration\RegistrationController;
 use YiiRocks\Voyti\Controller\Session\SessionController;
+use YiiRocks\Voyti\Controller\Settings\SettingsController;
 use YiiRocks\Voyti\Controller\SocialNetwork\SocialNetworkController;
 use YiiRocks\Voyti\Controller\TwoFactor\TwoFactorController;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
@@ -476,6 +477,22 @@ final class ControllerHarness
             twoFactorEmailCodeService: $twoFactorEmailCodeService,
             flash: $flash,
             backupCodeService: $backupCodeService,
+        );
+    }
+
+    public function createSettingsController(
+        TranslatorInterface $translator,
+        WebViewRenderer $viewRenderer,
+        FlashInterface $flash,
+        CurrentUser $currentUser,
+    ): SettingsController {
+        return new SettingsController(
+            translator: $translator,
+            viewRenderer: $viewRenderer,
+            url: $this->url,
+            config: $this->config,
+            flash: $flash,
+            currentUser: $currentUser,
         );
     }
 

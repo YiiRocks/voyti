@@ -98,7 +98,7 @@ final readonly class MailService
             [
                 'username' => $user->getUsername(),
                 'confirmationUrl' => $this->url->generateAbsolute(
-                    'voyti/account-confirm',
+                    'voyti/user-account-confirm',
                     ['code' => $userToken->getCode()],
                 ),
                 'translator' => $this->translator,

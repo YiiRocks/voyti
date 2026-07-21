@@ -14,6 +14,6 @@ final class DeleteViewDataTest extends TestCase
     {
         $data = DeleteViewData::create(new FakeUrlGenerator());
 
-        self::assertSame('//voyti/privacy-delete', $data->formSubmitUrl);
+        self::assertSame('//voyti/user-privacy-delete', $data->formSubmitUrl);
     }
 }

@@ -9,7 +9,6 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
-use YiiRocks\Voyti\Controller\RequireUserTrait;
 use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Model\Form\Settings\TwoFactorCodeForm;
 use YiiRocks\Voyti\Model\User;
@@ -30,7 +29,6 @@ use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
-use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 /**
@@ -42,7 +40,6 @@ final readonly class TwoFactorController
     use InputDataTrait;
     use RedirectTrait;
     use RenderTrait;
-    use RequireUserTrait;
 
     public function __construct(
         private TranslatorInterface $translator,
@@ -59,10 +56,8 @@ final readonly class TwoFactorController
 
     public function disable(ServerRequestInterface $request): ResponseInterface
     {
-        $user = $this->requireUser();
-        if (!$user instanceof User) {
-            return $user;
-        }
+        /** @var User $user */
+        $user = $this->currentUser->getIdentity();
 
         $body = $this->parsedBody($request);
         $code = $this->stringValue($body, 'code');
@@ -99,20 +94,18 @@ final readonly class TwoFactorController
         $this->backupCodeService->clear($user);
 
         return $this->redirectWithFlash(
-            $this->url->generate('voyti/two-factor'),
+            $this->url->generate('voyti/user-two-factor'),
             'voyti.settings.two_factor_disabled',
         );
     }
 
     public function disableSendCode(ServerRequestInterface $request): ResponseInterface
     {
-        $user = $this->requireUser();
-        if (!$user instanceof User) {
-            return $user;
-        }
+        /** @var User $user */
+        $user = $this->currentUser->getIdentity();
 
         if (!$user->isAuthTfEnabled() || $user->getAuthTfType() !== 'email') {
-            return $this->redirect($this->url->generate('voyti/two-factor'));
+            return $this->redirect($this->url->generate('voyti/user-two-factor'));
         }
 
         $this->twoFactorEmailCodeService->run($user);
@@ -122,13 +115,11 @@ final readonly class TwoFactorController
 
     public function email(ServerRequestInterface $request): ResponseInterface
     {
-        $user = $this->requireUser();
-        if (!$user instanceof User) {
-            return $user;
-        }
+        /** @var User $user */
+        $user = $this->currentUser->getIdentity();
 
         if ($user->isAuthTfEnabled()) {
-            return $this->redirect($this->url->generate('voyti/two-factor'));
+            return $this->redirect($this->url->generate('voyti/user-two-factor'));
         }
 
         return $this->renderTwoFactorSetup($request, 'email', $user);
@@ -136,14 +127,12 @@ final readonly class TwoFactorController
 
     public function enable(ServerRequestInterface $request): ResponseInterface
     {
-        $user = $this->requireUser();
-        if (!$user instanceof User) {
-            return $user;
-        }
+        /** @var User $user */
+        $user = $this->currentUser->getIdentity();
 
         if ($user->isAuthTfEnabled()) {
             return $this->redirectWithFlash(
-                $this->url->generate('voyti/two-factor'),
+                $this->url->generate('voyti/user-two-factor'),
                 'voyti.settings.two_factor_enabled',
             );
         }
@@ -190,13 +179,11 @@ final readonly class TwoFactorController
 
     public function google(ServerRequestInterface $request): ResponseInterface
     {
-        $user = $this->requireUser();
-        if (!$user instanceof User) {
-            return $user;
-        }
+        /** @var User $user */
+        $user = $this->currentUser->getIdentity();
 
         if ($user->isAuthTfEnabled()) {
-            return $this->redirect($this->url->generate('voyti/two-factor'));
+            return $this->redirect($this->url->generate('voyti/user-two-factor'));
         }
 
         return $this->renderGoogleSetup($request, $user);
@@ -204,10 +191,8 @@ final readonly class TwoFactorController
 
     public function index(ServerRequestInterface $request): ResponseInterface
     {
-        $user = $this->requireUser();
-        if (!$user instanceof User) {
-            return $user;
-        }
+        /** @var User $user */
+        $user = $this->currentUser->getIdentity();
 
         if (!$user->isAuthTfEnabled()) {
             return $this->renderTwoFactorIndex($user, 'google', preloadContent: false);
@@ -218,13 +203,11 @@ final readonly class TwoFactorController
 
     public function regenerateBackupCodes(ServerRequestInterface $request): ResponseInterface
     {
-        $user = $this->requireUser();
-        if (!$user instanceof User) {
-            return $user;
-        }
+        /** @var User $user */
+        $user = $this->currentUser->getIdentity();
 
         if (!$user->isAuthTfEnabled()) {
-            return $this->redirect($this->url->generate('voyti/two-factor'));
+            return $this->redirect($this->url->generate('voyti/user-two-factor'));
         }
 
         $body = $this->parsedBody($request);
@@ -259,15 +242,8 @@ final readonly class TwoFactorController
 
     public function renew(ServerRequestInterface $request): ResponseInterface
     {
-        $identity = $this->currentUser->getIdentity();
-        if ($identity instanceof GuestIdentityInterface) {
-            return $this->jsonErrorResponse(Status::UNAUTHORIZED, 'voyti.settings.not_authenticated');
-        }
-
-        $user = User::findById((int) ($identity->getId() ?? 0));
-        if ($user === null) {
-            return $this->jsonErrorResponse(Status::NOT_FOUND, 'voyti.settings.user_not_found');
-        }
+        /** @var User $user */
+        $user = $this->currentUser->getIdentity();
 
         if ($user->isAuthTfEnabled()) {
             return $this->jsonErrorResponse(Status::FORBIDDEN, 'voyti.view.two_factor.already_enabled');
@@ -294,14 +270,12 @@ final readonly class TwoFactorController
 
     public function sendEmailCode(ServerRequestInterface $request): ResponseInterface
     {
-        $user = $this->requireUser();
-        if (!$user instanceof User) {
-            return $user;
-        }
+        /** @var User $user */
+        $user = $this->currentUser->getIdentity();
 
         if ($user->isAuthTfEnabled()) {
             return $this->redirectWithFlash(
-                $this->url->generate('voyti/two-factor'),
+                $this->url->generate('voyti/user-two-factor'),
                 'voyti.settings.two_factor_enabled',
             );
         }

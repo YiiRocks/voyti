@@ -10,7 +10,6 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
-use YiiRocks\Voyti\Controller\RequireUserTrait;
 use YiiRocks\Voyti\Enum\ProfileVisibility;
 use YiiRocks\Voyti\Event\User\UserProfileEvent;
 use YiiRocks\Voyti\Helper\AuthHelper;
@@ -41,7 +40,6 @@ final readonly class ProfileController
     use InputDataTrait;
     use RedirectTrait;
     use RenderTrait;
-    use RequireUserTrait;
 
     public function __construct(
         private TranslatorInterface $translator,
@@ -93,10 +91,8 @@ final readonly class ProfileController
 
     public function update(ServerRequestInterface $request): ResponseInterface
     {
-        $user = $this->requireUser();
-        if (!$user instanceof User) {
-            return $user;
-        }
+        /** @var User $user */
+        $user = $this->currentUser->getIdentity();
 
         $userProfile = $user->getProfile();
         if ($userProfile === null) {
@@ -116,7 +112,7 @@ final readonly class ProfileController
                 $userProfile->save();
                 $this->eventDispatcher->dispatch(new UserProfileEvent($userProfile));
                 return $this->redirectWithFlash(
-                    $this->url->generate('voyti/profile-update'),
+                    $this->url->generate('voyti/user-profile'),
                     'voyti.settings.profile_updated',
                 );
             }

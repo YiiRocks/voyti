@@ -30,7 +30,7 @@ final readonly class SessionRow
         return new self(
             session: SharedSessionRow::create($session, $timezone, $locale),
             isCurrentSession: $session->getSessionId() === $currentSessionId,
-            formSubmitUrl: $url->generate('voyti/account-sessions-terminate', ['sessionId' => $session->getSessionId()]),
+            formSubmitUrl: $url->generate('voyti/user-account-sessions-terminate', ['sessionId' => $session->getSessionId()]),
         );
     }
 }

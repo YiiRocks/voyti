@@ -45,6 +45,6 @@ final class GdprConsentViewDataTest extends TestCase
 
         self::assertFalse($data->isLocked);
         self::assertNull($data->consentDateDisplay);
-        self::assertSame('//voyti/privacy-gdpr-consent', $data->formSubmitUrl);
+        self::assertSame('//voyti/user-privacy-gdpr-consent', $data->formSubmitUrl);
     }
 }

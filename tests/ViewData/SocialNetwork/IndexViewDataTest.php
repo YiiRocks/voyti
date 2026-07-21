@@ -32,12 +32,13 @@ final class IndexViewDataTest extends TestCase
         $account->setClientId('123');
         (new \ReflectionProperty(UserSocialAccount::class, 'id'))->setValue($account, 999999);
 
-        $accountWithoutId = new UserSocialAccount();
-        $accountWithoutId->setProvider('google');
-        $accountWithoutId->setClientId('456');
+        $secondAccount = new UserSocialAccount();
+        $secondAccount->setProvider('google');
+        $secondAccount->setClientId('456');
+        (new \ReflectionProperty(UserSocialAccount::class, 'id'))->setValue($secondAccount, 42);
 
         $data = IndexViewData::create(
-            [$account, $accountWithoutId],
+            [$account, $secondAccount],
             new AuthClientRegistry($github, $google),
             ['github'],
             'voyti/session-auth',
@@ -48,8 +49,8 @@ final class IndexViewDataTest extends TestCase
 
         self::assertCount(2, $data->accounts);
         self::assertSame('GitHub', $data->accounts[0]->providerTitle);
-        self::assertSame('//voyti/social-network-delete?id=999999', $data->accounts[0]->formSubmitUrl);
-        self::assertSame('//voyti/social-network-delete?id=0', $data->accounts[1]->formSubmitUrl);
+        self::assertSame('//voyti/user-social-network-delete?id=999999', $data->accounts[0]->formSubmitUrl);
+        self::assertSame('//voyti/user-social-network-delete?id=42', $data->accounts[1]->formSubmitUrl);
         self::assertCount(1, $data->connect->providers);
         self::assertSame('Google', $data->connect->providers[0]->title);
         self::assertNotEmpty($data->menu->items);

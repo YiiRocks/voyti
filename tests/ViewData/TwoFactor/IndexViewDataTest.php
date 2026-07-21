@@ -37,7 +37,7 @@ final class IndexViewDataTest extends TestCase
         self::assertNull($data->emailSetup);
         self::assertNull($data->googleSetup);
         self::assertTrue($data->hasBackupCodes);
-        self::assertSame('//voyti/two-factor-disable', $data->disableUrl);
+        self::assertSame('//voyti/user-two-factor-disable', $data->disableUrl);
     }
 
     public function testCreateWhenNotEnabledAndNotPreloadingSetsAutoloadUrl(): void
@@ -60,7 +60,7 @@ final class IndexViewDataTest extends TestCase
 
         self::assertNull($data->emailSetup);
         self::assertNull($data->googleSetup);
-        self::assertSame('//voyti/two-factor-email', $data->autoloadUrl);
+        self::assertSame('//voyti/user-two-factor-email', $data->autoloadUrl);
     }
 
     public function testCreateWhenNotEnabledAndPreloadingEmail(): void
