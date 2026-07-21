@@ -18,7 +18,6 @@ use YiiRocks\Voyti\Http\Psr18Client;
 use YiiRocks\Voyti\Listener;
 use YiiRocks\Voyti\Middleware\PasswordAgeEnforceMiddleware;
 use YiiRocks\Voyti\Middleware\RememberMeMiddleware;
-use YiiRocks\Voyti\Middleware\RouteParametersResolver;
 use YiiRocks\Voyti\Middleware\SessionRevocationEnforceMiddleware;
 use YiiRocks\Voyti\Middleware\TwoFactorAuthenticationEnforceMiddleware;
 use YiiRocks\Voyti\Middleware\VoytiMiddleware;
@@ -55,7 +54,10 @@ use YiiRocks\Voyti\Validator\Rbac\ItemsValidator;
 use YiiRocks\Voyti\Validator\Rbac\RuleValidator;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Auth\IdentityWithTokenRepositoryInterface;
+use Yiisoft\Input\Http\HydratorAttributeParametersResolver;
+use Yiisoft\Input\Http\RequestInputParametersResolver;
 use Yiisoft\Mailer\MailerInterface;
+use Yiisoft\Middleware\Dispatcher\CompositeParametersResolver;
 use Yiisoft\Middleware\Dispatcher\ParametersResolverInterface;
 use Yiisoft\Rbac\AssignmentsStorageInterface;
 use Yiisoft\Rbac\Db\AssignmentsStorage;
@@ -81,7 +83,10 @@ return [
     ClockInterface::class => SystemClock::class,
 
     // Bridges satisfying vendor package contracts (yiisoft/auth, yiisoft/middleware-dispatcher).
-    ParametersResolverInterface::class => RouteParametersResolver::class,
+    ParametersResolverInterface::class => fn(
+        HydratorAttributeParametersResolver $hydratorResolver,
+        RequestInputParametersResolver $requestInputResolver,
+    ) => new CompositeParametersResolver($hydratorResolver, $requestInputResolver),
     IdentityRepositoryInterface::class => IdentityAdapter::class,
     IdentityWithTokenRepositoryInterface::class => IdentityAdapter::class,
 

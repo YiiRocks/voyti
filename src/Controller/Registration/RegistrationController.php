@@ -23,6 +23,7 @@ use YiiRocks\Voyti\ViewData\Registration\RegisterViewData;
 use YiiRocks\Voyti\ViewData\Registration\ResendViewData;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
+use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -54,7 +55,7 @@ final readonly class RegistrationController
         private AuthClientRegistry $authClientRegistry,
     ) {}
 
-    public function confirm(ServerRequestInterface $request, int $id, string $code): ResponseInterface
+    public function confirm(ServerRequestInterface $request, #[RouteArgument] int $id, #[RouteArgument] string $code): ResponseInterface
     {
         $user = User::findById($id);
 
@@ -73,7 +74,7 @@ final readonly class RegistrationController
         return $this->renderError('voyti.registration.confirmation_link_invalid');
     }
 
-    public function connect(ServerRequestInterface $request, string $code): ResponseInterface
+    public function connect(ServerRequestInterface $request, #[RouteArgument] string $code): ResponseInterface
     {
         $account = $this->pendingSocialAccountService->useCode($code);
         if ($account === null) {

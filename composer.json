@@ -46,6 +46,7 @@
         "yiisoft/form-model": "^1.1",
         "yiisoft/html": "^4.0",
         "yiisoft/http": "^1.2",
+        "yiisoft/input-http": "^1.0",
         "yiisoft/json": "^1.0",
         "yiisoft/mailer": "^6.1",
         "yiisoft/rbac-db": "dev-fix-101",

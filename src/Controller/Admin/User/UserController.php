@@ -46,6 +46,7 @@ use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Rbac\Assignment;
 use Yiisoft\Rbac\AssignmentsStorageInterface;
 use Yiisoft\Rbac\ItemsStorageInterface;
+use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -91,7 +92,7 @@ final readonly class UserController
         private AuditLogService $auditLogService,
     ) {}
 
-    public function assignments(ServerRequestInterface $request, int $id): ResponseInterface
+    public function assignments(ServerRequestInterface $request, #[RouteArgument] int $id): ResponseInterface
     {
         $user = $this->resolveUser($id);
         if (!$user instanceof User) {
@@ -116,7 +117,7 @@ final readonly class UserController
         ]);
     }
 
-    public function block(int $id): ResponseInterface
+    public function block(#[RouteArgument] int $id): ResponseInterface
     {
         $user = User::findById($id);
         if ($user !== null) {
@@ -131,7 +132,7 @@ final readonly class UserController
         return $this->redirectWithFlash($this->url->generate('voyti/admin-users'), 'voyti.admin.user_status_changed');
     }
 
-    public function confirm(int $id): ResponseInterface
+    public function confirm(#[RouteArgument] int $id): ResponseInterface
     {
         $user = User::findById($id);
         if ($user !== null && $this->userConfirmationService->run($user)) {
@@ -184,7 +185,7 @@ final readonly class UserController
         ]);
     }
 
-    public function delete(ServerRequestInterface $request, int $id): ResponseInterface
+    public function delete(ServerRequestInterface $request, #[RouteArgument] int $id): ResponseInterface
     {
         $identity = $this->currentUser->getIdentity();
         if ($id === (int) $identity->getId()) {
@@ -205,7 +206,7 @@ final readonly class UserController
         return $this->renderError('voyti.admin.user_not_found');
     }
 
-    public function forcePasswordChange(int $id): ResponseInterface
+    public function forcePasswordChange(#[RouteArgument] int $id): ResponseInterface
     {
         $user = User::findById($id);
         if ($user !== null && $this->passwordExpireService->run($user)) {
@@ -251,7 +252,7 @@ final readonly class UserController
         ]);
     }
 
-    public function passwordReset(int $id): ResponseInterface
+    public function passwordReset(#[RouteArgument] int $id): ResponseInterface
     {
         $user = User::findById($id);
         if ($user !== null) {
@@ -265,7 +266,7 @@ final readonly class UserController
         return $this->renderError('voyti.admin.user_not_found');
     }
 
-    public function sessions(int $id): ResponseInterface
+    public function sessions(#[RouteArgument] int $id): ResponseInterface
     {
         $user = $this->resolveUser($id);
         if (!$user instanceof User) {
@@ -281,7 +282,7 @@ final readonly class UserController
         ]);
     }
 
-    public function show(int $id): ResponseInterface
+    public function show(#[RouteArgument] int $id): ResponseInterface
     {
         $user = $this->resolveUser($id);
         if (!$user instanceof User) {
@@ -301,7 +302,7 @@ final readonly class UserController
         ]);
     }
 
-    public function switchIdentity(ServerRequestInterface $request, int $id): ResponseInterface
+    public function switchIdentity(ServerRequestInterface $request, #[RouteArgument] int $id): ResponseInterface
     {
         $result = $this->switchIdentityService->run($id, $request->getServerParams());
         if ($result->isSuccess()) {
@@ -332,7 +333,7 @@ final readonly class UserController
         return $this->renderError($result->getMessage() !== '' ? $result->getMessage() : 'voyti.admin.error_occurred');
     }
 
-    public function terminateSessions(int $id): ResponseInterface
+    public function terminateSessions(#[RouteArgument] int $id): ResponseInterface
     {
         $user = $this->resolveUser($id);
         if (!$user instanceof User) {
@@ -353,7 +354,7 @@ final readonly class UserController
         );
     }
 
-    public function update(ServerRequestInterface $request, int $id): ResponseInterface
+    public function update(ServerRequestInterface $request, #[RouteArgument] int $id): ResponseInterface
     {
         $user = $this->resolveUser($id);
         if (!$user instanceof User) {
@@ -424,7 +425,7 @@ final readonly class UserController
         ]);
     }
 
-    public function updateProfile(ServerRequestInterface $request, int $id): ResponseInterface
+    public function updateProfile(ServerRequestInterface $request, #[RouteArgument] int $id): ResponseInterface
     {
         $user = $this->resolveUser($id);
         if (!$user instanceof User) {

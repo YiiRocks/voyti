@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests;
 
+use Composer\InstalledVersions;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
@@ -55,6 +56,9 @@ final class ContainerWiringTest extends TestCase
         $definitions = (static function (array $params) use ($diPath): array {
             return require $diPath;
         })($params);
+
+        $hydratorDiPath = InstalledVersions::getInstallPath('yiisoft/hydrator') . '/config/di.php';
+        $definitions = array_merge(require $hydratorDiPath, $definitions);
 
         $psr17Factory = new Psr17Factory();
 

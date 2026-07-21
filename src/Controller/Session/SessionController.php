@@ -33,6 +33,7 @@ use YiiRocks\Voyti\ViewData\Session\ConfirmViewData;
 use YiiRocks\Voyti\ViewData\Session\LoginViewData;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
+use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Security\Random;
@@ -79,7 +80,7 @@ final readonly class SessionController
         private BackupCodeService $backupCodeService,
     ) {}
 
-    public function auth(ServerRequestInterface $request, string $provider): ResponseInterface
+    public function auth(ServerRequestInterface $request, #[RouteArgument] string $provider): ResponseInterface
     {
         /** @var array<string, mixed> $queryParams */
         $queryParams = $this->queryParams($request);

@@ -26,6 +26,7 @@ use Yiisoft\Rbac\ItemsStorageInterface;
 use Yiisoft\Rbac\ManagerInterface;
 use Yiisoft\Rbac\Permission;
 use Yiisoft\Rbac\Role;
+use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -62,7 +63,7 @@ final readonly class RbacController
         private CurrentUser $currentUser,
     ) {}
 
-    public function create(ServerRequestInterface $request, string $itemType, string $indexRouteName): ResponseInterface
+    public function create(ServerRequestInterface $request, #[RouteArgument] string $itemType, #[RouteArgument] string $indexRouteName): ResponseInterface
     {
         $form = $this->createForm($itemType);
         $availableChildren = $this->getAvailableChildren($itemType);
@@ -121,7 +122,7 @@ final readonly class RbacController
         ]);
     }
 
-    public function delete(string $name, string $itemType, string $indexRouteName): ResponseInterface
+    public function delete(#[RouteArgument] string $name, #[RouteArgument] string $itemType, #[RouteArgument] string $indexRouteName): ResponseInterface
     {
         $itemType === 'role'
             ? $this->managerInterface->removeRole($name)
@@ -139,7 +140,7 @@ final readonly class RbacController
         );
     }
 
-    public function index(ServerRequestInterface $request, string $itemType, string $indexRouteName): ResponseInterface
+    public function index(ServerRequestInterface $request, #[RouteArgument] string $itemType, #[RouteArgument] string $indexRouteName): ResponseInterface
     {
         $queryParams = $this->queryParams($request);
         $filterName = $this->stringValue($queryParams, 'name');
@@ -183,8 +184,11 @@ final readonly class RbacController
 
     public function update(
         ServerRequestInterface $request,
+        #[RouteArgument]
         string $name,
+        #[RouteArgument]
         string $itemType,
+        #[RouteArgument]
         string $indexRouteName,
     ): ResponseInterface {
         $form = $this->createForm($itemType);

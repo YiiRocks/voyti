@@ -20,6 +20,7 @@ use YiiRocks\Voyti\Service\Password\ResetService;
 use YiiRocks\Voyti\ViewData\PasswordReset\RequestViewData;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
+use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -50,7 +51,7 @@ final readonly class PasswordResetController
         private FlashInterface $flash,
     ) {}
 
-    public function confirm(ServerRequestInterface $request, int $id, string $code): ResponseInterface
+    public function confirm(ServerRequestInterface $request, #[RouteArgument] int $id, #[RouteArgument] string $code): ResponseInterface
     {
         if (!$this->config->allowPasswordRecovery && !$this->config->allowAdminPasswordRecovery) {
             return $this->renderError('voyti.recovery.reset_disabled');

@@ -14,6 +14,7 @@ use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\User\UserCreationHelper;
 use Yiisoft\DataResponse\ResponseFactory\DataResponseFactoryInterface;
 use Yiisoft\Http\Status;
+use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Translator\TranslatorInterface;
 
 /**
@@ -58,7 +59,7 @@ final readonly class UserController
         ], Status::CREATED);
     }
 
-    public function delete(int $id): ResponseInterface
+    public function delete(#[RouteArgument] int $id): ResponseInterface
     {
         $user = $this->resolveUser($id);
         if (!$user instanceof User) {
@@ -86,7 +87,7 @@ final readonly class UserController
         return $this->responseFactory->createResponse($data);
     }
 
-    public function update(ServerRequestInterface $request, int $id): ResponseInterface
+    public function update(ServerRequestInterface $request, #[RouteArgument] int $id): ResponseInterface
     {
         $user = $this->resolveUser($id);
         if (!$user instanceof User) {
@@ -124,7 +125,7 @@ final readonly class UserController
         ]);
     }
 
-    public function view(int $id): ResponseInterface
+    public function view(#[RouteArgument] int $id): ResponseInterface
     {
         $user = $this->resolveUser($id);
         if (!$user instanceof User) {

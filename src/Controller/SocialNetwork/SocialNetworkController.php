@@ -13,6 +13,7 @@ use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\ViewData\SocialNetwork\IndexViewData;
+use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -38,7 +39,7 @@ final readonly class SocialNetworkController
         private FlashInterface $flash,
     ) {}
 
-    public function delete(ServerRequestInterface $request, int $id): ResponseInterface
+    public function delete(ServerRequestInterface $request, #[RouteArgument] int $id): ResponseInterface
     {
         $user = $this->currentUser->getIdentity();
         $account = null;

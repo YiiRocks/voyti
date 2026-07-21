@@ -14,6 +14,7 @@ use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\ViewData\Account\SessionsViewData;
+use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Session\SessionInterface;
@@ -59,7 +60,7 @@ final readonly class SessionController
         ]);
     }
 
-    public function terminate(string $sessionId): ResponseInterface
+    public function terminate(#[RouteArgument] string $sessionId): ResponseInterface
     {
         /** @var User $user */
         $user = $this->currentUser->getIdentity();

@@ -19,6 +19,7 @@ use YiiRocks\Voyti\ViewData\Account\UpdateViewData;
 use YiiRocks\Voyti\ViewData\Shared\MessageViewData;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
+use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -50,7 +51,7 @@ final readonly class AccountController
         private PasswordHistoryService $passwordHistoryService,
     ) {}
 
-    public function confirm(ServerRequestInterface $request, string $code): ResponseInterface
+    public function confirm(ServerRequestInterface $request, #[RouteArgument] string $code): ResponseInterface
     {
         /** @var User $user */
         $user = $this->currentUser->getIdentity();

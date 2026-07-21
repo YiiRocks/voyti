@@ -20,6 +20,7 @@ use YiiRocks\Voyti\ViewData\Admin\Rbac\Rule\CreateViewData;
 use YiiRocks\Voyti\ViewData\Admin\Rbac\Rule\IndexViewData;
 use YiiRocks\Voyti\ViewData\Admin\Rbac\Rule\UpdateViewData;
 use Yiisoft\Http\Method;
+use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -84,7 +85,7 @@ final readonly class RuleController
         ]);
     }
 
-    public function delete(string $name): ResponseInterface
+    public function delete(#[RouteArgument] string $name): ResponseInterface
     {
         $this->authRuleEditionService->remove($name);
         $this->auditLogService->log($this->actorId(), 'rbac.rule.delete', targetName: $name);
@@ -101,7 +102,7 @@ final readonly class RuleController
         ]);
     }
 
-    public function update(ServerRequestInterface $request, string $name): ResponseInterface
+    public function update(ServerRequestInterface $request, #[RouteArgument] string $name): ResponseInterface
     {
         $form = new RuleForm($this->translator);
         $form->previousName = $name;

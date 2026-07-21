@@ -24,6 +24,7 @@ use YiiRocks\Voyti\ViewData\Shared\ProfileCardViewData;
 use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
+use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -56,7 +57,7 @@ final readonly class ProfileController
         private SwitchIdentityService $switchIdentityService,
     ) {}
 
-    public function show(ServerRequestInterface $request, int $id): ResponseInterface
+    public function show(ServerRequestInterface $request, #[RouteArgument] int $id): ResponseInterface
     {
         $identity = $this->currentUser->getIdentity();
         $userId = $identity instanceof IdentityInterface ? $identity->getId() : null;
