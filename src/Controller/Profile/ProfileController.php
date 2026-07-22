@@ -13,7 +13,6 @@ use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Enum\ProfileVisibility;
 use YiiRocks\Voyti\Event\User\UserProfileEvent;
 use YiiRocks\Voyti\Helper\AuthHelper;
-use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Model\Form\Settings\UserProfileForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserProfile;
@@ -24,6 +23,7 @@ use YiiRocks\Voyti\ViewData\Shared\ProfileCardViewData;
 use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
+use Yiisoft\Input\Http\Attribute\Parameter\Body;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -38,7 +38,6 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
  */
 final readonly class ProfileController
 {
-    use InputDataTrait;
     use RedirectTrait;
     use RenderTrait;
 
@@ -57,7 +56,7 @@ final readonly class ProfileController
         private SwitchIdentityService $switchIdentityService,
     ) {}
 
-    public function show(ServerRequestInterface $request, #[RouteArgument] int $id): ResponseInterface
+    public function show(#[RouteArgument] int $id): ResponseInterface
     {
         $identity = $this->currentUser->getIdentity();
         $userId = $identity instanceof IdentityInterface ? $identity->getId() : null;
@@ -90,8 +89,11 @@ final readonly class ProfileController
         ]);
     }
 
-    public function update(ServerRequestInterface $request): ResponseInterface
-    {
+    public function update(
+        ServerRequestInterface $request,
+        #[Body('userProfile')]
+        array $formData = [],
+    ): ResponseInterface {
         /** @var User $user */
         $user = $this->currentUser->getIdentity();
 
@@ -102,10 +104,9 @@ final readonly class ProfileController
         }
 
         $form = UserProfileForm::fromProfile($userProfile, $this->translator);
+        $this->hydrator->hydrate($form, $formData);
 
         if ($request->getMethod() === Method::POST) {
-            $body = $this->parsedBody($request);
-            $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
             $result = $this->validator->validate($form);
 
             if ($result->isValid()) {

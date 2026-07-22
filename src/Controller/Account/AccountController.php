@@ -9,7 +9,6 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
-use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Model\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
@@ -19,6 +18,7 @@ use YiiRocks\Voyti\ViewData\Account\UpdateViewData;
 use YiiRocks\Voyti\ViewData\Shared\MessageViewData;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
+use Yiisoft\Input\Http\Attribute\Parameter\Body;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -33,7 +33,6 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
  */
 final readonly class AccountController
 {
-    use InputDataTrait;
     use RedirectTrait;
     use RenderTrait;
 
@@ -51,7 +50,7 @@ final readonly class AccountController
         private PasswordHistoryService $passwordHistoryService,
     ) {}
 
-    public function confirm(ServerRequestInterface $request, #[RouteArgument] string $code): ResponseInterface
+    public function confirm(#[RouteArgument] string $code): ResponseInterface
     {
         /** @var User $user */
         $user = $this->currentUser->getIdentity();
@@ -68,18 +67,20 @@ final readonly class AccountController
         return $this->renderError('voyti.settings.email_change_failed');
     }
 
-    public function update(ServerRequestInterface $request): ResponseInterface
-    {
+    public function update(
+        ServerRequestInterface $request,
+        #[Body('settings')]
+        array $formData = [],
+    ): ResponseInterface {
         /** @var User $user */
         $user = $this->currentUser->getIdentity();
 
         $form = new SettingsForm($this->config, $this->translator);
         $form->username = $user->getUsername();
         $form->email = $user->getEmail();
+        $this->hydrator->hydrate($form, $formData);
 
         if ($request->getMethod() === Method::POST) {
-            $body = $this->parsedBody($request);
-            $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
             $result = $this->validator->validate($form);
 
             if (

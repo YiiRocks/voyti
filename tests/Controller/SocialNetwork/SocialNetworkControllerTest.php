@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Controller\SocialNetwork;
 
-use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseFactoryInterface;
@@ -62,7 +61,6 @@ final class SocialNetworkControllerTest extends TestCase
     public function testDeleteWithFoundAccountDeletesAndRedirects(): void
     {
         $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
 
         $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'));
         $identity = $this->createMock(User::class);
@@ -74,7 +72,7 @@ final class SocialNetworkControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->delete($request, $accountId);
+        $result = $controller->delete($accountId);
 
         $this->assertSame($response, $result);
         $this->assertSame([], UserSocialAccount::findByUserId((int) $user->getId()));
@@ -83,7 +81,6 @@ final class SocialNetworkControllerTest extends TestCase
     public function testDeleteWithNoAccountShowsNotFound(): void
     {
         $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
 
         $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'));
         $identity = $this->createMock(User::class);
@@ -98,7 +95,7 @@ final class SocialNetworkControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->delete($request, 999);
+        $result = $controller->delete(999);
 
         $this->assertSame($response, $result);
     }
@@ -106,7 +103,6 @@ final class SocialNetworkControllerTest extends TestCase
     public function testIndexShowsConnectedAccounts(): void
     {
         $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
 
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn('1');
@@ -121,7 +117,7 @@ final class SocialNetworkControllerTest extends TestCase
             ->with('social-network/index', $this->anything())
             ->willReturn($response);
 
-        $result = $controller->index($request);
+        $result = $controller->index();
 
         $this->assertSame($response, $result);
     }

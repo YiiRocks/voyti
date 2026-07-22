@@ -103,7 +103,6 @@ final class ProfileControllerTest extends TestCase
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
 
         $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -113,7 +112,7 @@ final class ProfileControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->show($request, 1);
+        $result = $controller->show(1);
 
         $this->assertSame($response, $result);
     }
@@ -128,7 +127,6 @@ final class ProfileControllerTest extends TestCase
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
         $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -138,7 +136,7 @@ final class ProfileControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->show($request, 1);
+        $result = $controller->show(1);
 
         $this->assertSame($response, $result);
     }
@@ -157,7 +155,6 @@ final class ProfileControllerTest extends TestCase
         $this->createUserWithProfile();
 
         $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -168,7 +165,7 @@ final class ProfileControllerTest extends TestCase
             ->with('profile/show', $this->anything())
             ->willReturn($response);
 
-        $result = $controller->show($request, 1);
+        $result = $controller->show(1);
 
         $this->assertSame($response, $result);
     }
@@ -185,7 +182,6 @@ final class ProfileControllerTest extends TestCase
         }
 
         $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -195,7 +191,7 @@ final class ProfileControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->show($request, 1);
+        $result = $controller->show(1);
 
         $this->assertSame($response, $result);
     }
@@ -305,7 +301,7 @@ final class ProfileControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->update($request);
+        $result = $controller->update($request, ['name' => '', 'publicEmail' => '', 'gravatarEmail' => '', 'location' => '', 'website' => '', 'timezone' => '', 'bio' => '', 'birthday' => '']);
 
         $this->assertSame($response, $result);
         $updatedProfile = UserProfile::findByUserId((int) $user->getId());
@@ -336,7 +332,7 @@ final class ProfileControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->update($request);
+        $result = $controller->update($request, ['name' => 'Jane']);
 
         $this->assertSame($response, $result);
         $savedProfile = UserProfile::findByUserId((int) $user->getId());
@@ -368,7 +364,7 @@ final class ProfileControllerTest extends TestCase
             ->willReturn($response);
         $this->responseFactory->expects($this->never())->method('createResponse');
 
-        $result = $controller->update($request);
+        $result = $controller->update($request, ['name' => 'John', 'publicEmail' => '', 'gravatarEmail' => '', 'location' => '', 'website' => '', 'timezone' => '', 'bio' => '<script>alert(1)</script>', 'birthday' => '']);
 
         $this->assertSame($response, $result);
         $updatedProfile = UserProfile::findByUserId((int) $user->getId());
@@ -400,7 +396,7 @@ final class ProfileControllerTest extends TestCase
             ->willReturn($response);
         $this->responseFactory->expects($this->never())->method('createResponse');
 
-        $result = $controller->update($request);
+        $result = $controller->update($request, ['name' => 'John', 'publicEmail' => '', 'gravatarEmail' => '', 'location' => '', 'website' => '', 'timezone' => '', 'bio' => '', 'birthday' => 'not-a-date']);
 
         $this->assertSame($response, $result);
         $updatedProfile = UserProfile::findByUserId((int) $user->getId());
@@ -425,7 +421,7 @@ final class ProfileControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->update($request);
+        $result = $controller->update($request, ['name' => 'John', 'publicEmail' => '', 'gravatarEmail' => '', 'location' => '', 'website' => '', 'timezone' => '', 'bio' => '', 'birthday' => '1990-05-15']);
 
         $this->assertSame($response, $result);
         $updatedProfile = UserProfile::findByUserId((int) $user->getId());

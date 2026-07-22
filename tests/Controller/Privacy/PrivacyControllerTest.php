@@ -128,7 +128,7 @@ final class PrivacyControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->anonymize($request);
+        $result = $controller->anonymize($request, ['password' => $password, 'consent' => '1']);
 
         $this->assertSame($response, $result);
         $updated = User::findById((int) $user->getId());
@@ -192,7 +192,7 @@ final class PrivacyControllerTest extends TestCase
             ->with('privacy/delete', $this->anything())
             ->willReturn($response);
 
-        $result = $controller->delete($request);
+        $result = $controller->delete($request, ['password' => 'wrongpassword', 'consent' => '1']);
 
         $this->assertSame($response, $result);
         $this->assertNotNull(User::findById((int) $user->getId()));
@@ -231,7 +231,7 @@ final class PrivacyControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->delete($request);
+        $result = $controller->delete($request, ['password' => $password, 'consent' => '1']);
 
         $this->assertSame($response, $result);
         $this->assertNull(User::findById($userId));
@@ -293,7 +293,7 @@ final class PrivacyControllerTest extends TestCase
             ));
         $response->method('getBody')->willReturn($body);
 
-        $result = $controller->export($request);
+        $result = $controller->export();
 
         $this->assertSame($response, $result);
     }
@@ -311,7 +311,6 @@ final class PrivacyControllerTest extends TestCase
         ]);
         $this->harness = new ControllerHarness($config);
         $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
 
         $user = $this->createUser(confirmedAt: time());
         $this->currentUser->method('getIdentity')->willReturn($user);
@@ -349,7 +348,7 @@ final class PrivacyControllerTest extends TestCase
             ));
         $response->method('getBody')->willReturn($body);
 
-        $result = $controller->export($request);
+        $result = $controller->export();
 
         $this->assertSame($response, $result);
     }
@@ -359,7 +358,6 @@ final class PrivacyControllerTest extends TestCase
         $config = new ModuleConfig(enableGdprCompliance: true, gdprExportProperties: ['email', 'username']);
         $this->harness = new ControllerHarness($config);
         $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
 
         $user = $this->createUser(confirmedAt: time());
         $this->currentUser->method('getIdentity')->willReturn($user);
@@ -381,7 +379,7 @@ final class PrivacyControllerTest extends TestCase
             ));
         $response->method('getBody')->willReturn($body);
 
-        $result = $controller->export($request);
+        $result = $controller->export();
 
         $this->assertSame($response, $result);
     }
@@ -472,7 +470,7 @@ final class PrivacyControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->gdprConsent($request);
+        $result = $controller->gdprConsent($request, ['consent' => '1']);
 
         $this->assertSame($response, $result);
         $updated = User::findById((int) $user->getId());
@@ -500,7 +498,7 @@ final class PrivacyControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->gdprConsent($request);
+        $result = $controller->gdprConsent($request, ['consent' => '0']);
 
         $this->assertSame($response, $result);
         $updated = User::findById((int) $user->getId());
@@ -528,7 +526,7 @@ final class PrivacyControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->gdprConsent($request);
+        $result = $controller->gdprConsent($request, ['consent' => '1']);
 
         $this->assertSame($response, $result);
         $updated = User::findById((int) $user->getId());

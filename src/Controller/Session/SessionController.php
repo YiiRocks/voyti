@@ -14,7 +14,6 @@ use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
 use YiiRocks\Voyti\Event\Session\SessionEvent;
-use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Helper\LoginMetadataHelper;
 use YiiRocks\Voyti\Model\Form\Auth\LoginForm;
 use YiiRocks\Voyti\Model\User;
@@ -33,6 +32,7 @@ use YiiRocks\Voyti\ViewData\Session\ConfirmViewData;
 use YiiRocks\Voyti\ViewData\Session\LoginViewData;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
+use Yiisoft\Input\Http\Attribute\Parameter\Body;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Security\PasswordHasher;
@@ -51,7 +51,6 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
  */
 final readonly class SessionController
 {
-    use InputDataTrait;
     use RedirectTrait;
     use RenderTrait;
 
@@ -83,7 +82,7 @@ final readonly class SessionController
     public function auth(ServerRequestInterface $request, #[RouteArgument] string $provider): ResponseInterface
     {
         /** @var array<string, mixed> $queryParams */
-        $queryParams = $this->queryParams($request);
+        $queryParams = $request->getQueryParams();
 
         try {
             if (!$this->socialAuthProviderService->hasCallbackParameters($queryParams)) {
@@ -153,9 +152,14 @@ final readonly class SessionController
         ]);
     }
 
-    public function confirm(ServerRequestInterface $request): ResponseInterface
-    {
-        $credentials = $this->sessionArray($this->session, self::SESSION_KEY_CREDENTIALS);
+    public function confirm(
+        ServerRequestInterface $request,
+        #[Body('login')]
+        array $formData = [],
+    ): ResponseInterface {
+        /** @var mixed $credentialsValue */
+        $credentialsValue = $this->session->get(self::SESSION_KEY_CREDENTIALS);
+        $credentials = is_array($credentialsValue) ? $credentialsValue : [];
         if ($credentials === []) {
             $form = new LoginForm($this->config, $this->translator);
 
@@ -166,13 +170,17 @@ final readonly class SessionController
         }
 
         $form = new LoginForm($this->config, $this->translator, requireTwoFactorAuthenticationCode: true);
-        $form->login = $this->stringValue($credentials, 'login');
-        $form->password = $this->stringValue($credentials, 'pwd');
+        /** @var mixed $loginValue */
+        $loginValue = $credentials['login'] ?? '';
+        $form->login = is_string($loginValue) ? $loginValue : '';
+        /** @var mixed $pwdValue */
+        $pwdValue = $credentials['pwd'] ?? '';
+        $form->password = is_string($pwdValue) ? $pwdValue : '';
         $method = User::findByUsernameOrEmail($form->login)?->getAuthTfType() ?? 'google';
 
+        $this->hydrator->hydrate($form, $formData);
+
         if ($request->getMethod() === Method::POST) {
-            $body = $this->parsedBody($request);
-            $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
             $form->processValidationResult($this->validator->validate($form));
 
             $user = User::findByUsernameOrEmail($form->login);
@@ -236,17 +244,19 @@ final readonly class SessionController
         return $this->renderView('session/confirm', ['form' => $form, 'data' => ConfirmViewData::create($method, $this->url)]);
     }
 
-    public function login(ServerRequestInterface $request): ResponseInterface
-    {
+    public function login(
+        ServerRequestInterface $request,
+        #[Body('login')]
+        array $formData = [],
+    ): ResponseInterface {
         if (!$this->currentUser->getIdentity() instanceof GuestIdentityInterface) {
             return $this->homeRedirectResponse();
         }
 
         $form = new LoginForm($this->config, $this->translator);
+        $this->hydrator->hydrate($form, $formData);
 
         if ($request->getMethod() === Method::POST) {
-            $body = $this->parsedBody($request);
-            $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
             $result = $this->validator->validate($form);
             $form->processValidationResult($result);
 

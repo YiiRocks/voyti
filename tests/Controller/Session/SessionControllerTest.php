@@ -95,9 +95,6 @@ final class SessionControllerTest extends TestCase
 
     public function testAuthBeginForAuthenticatedUserRedirectsToProvider(): void
     {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/auth/github');
-
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn('1');
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -107,6 +104,9 @@ final class SessionControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory, 'https://github.com/authorize');
 
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/auth/github');
+
         $result = $controller->auth($request, 'github');
 
         $this->assertSame($response, $result);
@@ -114,13 +114,13 @@ final class SessionControllerTest extends TestCase
 
     public function testAuthBeginRedirectsToProvider(): void
     {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/auth/github');
-
         $this->socialAuthProviderService->method('hasCallbackParameters')->willReturn(false);
         $this->socialAuthProviderService->expects($this->once())->method('begin')->with('github', 'voyti/session-auth')->willReturn('https://github.com/authorize');
 
         $response = $this->mockRedirectResponse($this->responseFactory, 'https://github.com/authorize');
+
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/auth/github');
 
         $result = $controller->auth($request, 'github');
 
@@ -129,9 +129,6 @@ final class SessionControllerTest extends TestCase
 
     public function testAuthCallbackForAuthenticatedUserWithFailure(): void
     {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/auth/github');
-
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn('1');
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -149,6 +146,9 @@ final class SessionControllerTest extends TestCase
             ))
             ->willReturn($response);
 
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/auth/github');
+
         $result = $controller->auth($request, 'github');
 
         $this->assertSame($response, $result);
@@ -156,9 +156,6 @@ final class SessionControllerTest extends TestCase
 
     public function testAuthCallbackForAuthenticatedUserWithRuntimeException(): void
     {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/auth/github');
-
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn('1');
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -175,6 +172,9 @@ final class SessionControllerTest extends TestCase
             ))
             ->willReturn($response);
 
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/auth/github');
+
         $result = $controller->auth($request, 'github');
 
         $this->assertSame($response, $result);
@@ -182,9 +182,6 @@ final class SessionControllerTest extends TestCase
 
     public function testAuthCallbackForAuthenticatedUserWithSuccess(): void
     {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/auth/github');
-
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn('1');
         $this->currentUser->method('getIdentity')->willReturn($identity);
@@ -195,6 +192,9 @@ final class SessionControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory, '//voyti/user-social-network');
 
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/auth/github');
+
         $result = $controller->auth($request, 'github');
 
         $this->assertSame($response, $result);
@@ -202,9 +202,6 @@ final class SessionControllerTest extends TestCase
 
     public function testAuthCatchesRuntimeExceptionShowsMessage(): void
     {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/auth/github');
-
         $this->socialAuthProviderService->method('hasCallbackParameters')->willReturn(true);
         $this->socialAuthProviderService->method('complete')->willThrowException(new RuntimeException('state mismatch'));
 
@@ -217,6 +214,9 @@ final class SessionControllerTest extends TestCase
             ))
             ->willReturn($response);
 
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/auth/github');
+
         $result = $controller->auth($request, 'github');
 
         $this->assertSame($response, $result);
@@ -224,9 +224,6 @@ final class SessionControllerTest extends TestCase
 
     public function testAuthFailureShowsMessage(): void
     {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/auth/github');
-
         $this->socialAuthProviderService->method('hasCallbackParameters')->willReturn(true);
         $this->socialAuthProviderService->method('complete')->willReturn(['id' => 'client123']);
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
@@ -241,6 +238,9 @@ final class SessionControllerTest extends TestCase
             ))
             ->willReturn($response);
 
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/auth/github');
+
         $result = $controller->auth($request, 'github');
 
         $this->assertSame($response, $result);
@@ -248,9 +248,6 @@ final class SessionControllerTest extends TestCase
 
     public function testAuthSuccessRedirectsToHomeRoute(): void
     {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/auth/github');
-
         $this->socialAuthProviderService->method('hasCallbackParameters')->willReturn(true);
         $this->socialAuthProviderService->method('complete')->willReturn(['id' => 'client123']);
         $this->socialNetworkAuthenticateService->method('run')->willReturn(ServiceResult::success());
@@ -263,6 +260,9 @@ final class SessionControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory, '//home');
 
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/auth/github');
+
         $result = $controller->auth($request, 'github');
 
         $this->assertSame($response, $result);
@@ -270,9 +270,6 @@ final class SessionControllerTest extends TestCase
 
     public function testAuthWithoutCurrentUserIdentityShowsAuthenticatedMessage(): void
     {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/auth/github');
-
         $this->socialAuthProviderService->method('hasCallbackParameters')->willReturn(true);
         $this->socialAuthProviderService->method('complete')->willReturn(['id' => 'client123']);
         $this->socialNetworkAuthenticateService->method('run')->willReturn(ServiceResult::success());
@@ -288,6 +285,9 @@ final class SessionControllerTest extends TestCase
             ))
             ->willReturn($response);
 
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/auth/github');
+
         $result = $controller->auth($request, 'github');
 
         $this->assertSame($response, $result);
@@ -295,9 +295,6 @@ final class SessionControllerTest extends TestCase
 
     public function testAuthWithPendingAccountRedirectsToConnect(): void
     {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/auth/github');
-
         $this->socialAuthProviderService->method('hasCallbackParameters')->willReturn(true);
         $this->socialAuthProviderService->method('complete')->willReturn(['id' => 'client123']);
         $this->socialNetworkAuthenticateService->method('run')->willReturn(ServiceResult::success());
@@ -309,6 +306,9 @@ final class SessionControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory, '//voyti/registration-connect?code=pending-code');
 
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/auth/github');
+
         $result = $controller->auth($request, 'github');
 
         $this->assertSame($response, $result);
@@ -316,15 +316,15 @@ final class SessionControllerTest extends TestCase
 
     public function testConfirmGetWithNoCredentialsShowsLoginForm(): void
     {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('session/login', $this->anything())
             ->willReturn($response);
+
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
 
         $result = $controller->confirm($request);
 
@@ -333,15 +333,11 @@ final class SessionControllerTest extends TestCase
 
     public function testConfirmPostConstructsFormRequiringTwoFactorCode(): void
     {
-        $controller = $this->createController();
-
         $this->harness->getSession()->set('credentials', [
             'login' => 'jdoe',
             'pwd' => 'secret',
             'rememberMe' => false,
         ]);
-
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['twoFactorAuthenticationCode' => '']]);
 
         $capturedForm = null;
         $this->validator->method('validate')->willReturnCallback(
@@ -355,7 +351,10 @@ final class SessionControllerTest extends TestCase
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
         $this->viewRenderer->method('render')->willReturn($response);
 
-        $result = $controller->confirm($request);
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['twoFactorAuthenticationCode' => '']]);
+
+        $result = $controller->confirm($request, ['twoFactorAuthenticationCode' => '']);
 
         $this->assertSame($response, $result);
         $this->assertInstanceOf(LoginForm::class, $capturedForm);
@@ -366,15 +365,12 @@ final class SessionControllerTest extends TestCase
     {
         $config = new ModuleConfig(homeRoute: 'app/dashboard');
         $this->harness = new ControllerHarness($config);
-        $controller = $this->createController();
 
         $this->harness->getSession()->set('credentials', [
             'login' => 'jdoe',
             'pwd' => 'secret',
             'rememberMe' => false,
         ]);
-
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['twoFactorAuthenticationCode' => '123456']]);
 
         $this->createUser(
             username: 'jdoe',
@@ -388,22 +384,21 @@ final class SessionControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory, '//app/dashboard');
 
-        $result = $controller->confirm($request);
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['twoFactorAuthenticationCode' => '123456']]);
+
+        $result = $controller->confirm($request, ['twoFactorAuthenticationCode' => '123456']);
 
         $this->assertSame($response, $result);
     }
 
     public function testConfirmPostSuccessWithRememberMeAddsCookie(): void
     {
-        $controller = $this->createController();
-
         $this->harness->getSession()->set('credentials', [
             'login' => 'jdoe',
             'pwd' => 'secret',
             'rememberMe' => true,
         ]);
-
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['twoFactorAuthenticationCode' => '123456']]);
 
         $this->createUser(
             username: 'jdoe',
@@ -421,22 +416,21 @@ final class SessionControllerTest extends TestCase
         $this->responseFactory->method('createResponse')->willReturn($response);
         $response->method('withHeader')->willReturnSelf();
 
-        $result = $controller->confirm($request);
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['twoFactorAuthenticationCode' => '123456']]);
+
+        $result = $controller->confirm($request, ['twoFactorAuthenticationCode' => '123456']);
 
         $this->assertSame($response, $result);
     }
 
     public function testConfirmPostWithGoogleMethodAndInvalidCodeShowsError(): void
     {
-        $controller = $this->createController();
-
         $this->harness->getSession()->set('credentials', [
             'login' => 'jdoe',
             'pwd' => 'secret',
             'rememberMe' => false,
         ]);
-
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['twoFactorAuthenticationCode' => 'wrong']]);
 
         $this->createUser(
             username: 'jdoe',
@@ -456,16 +450,17 @@ final class SessionControllerTest extends TestCase
             ))
             ->willReturn($response);
 
-        $result = $controller->confirm($request);
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['twoFactorAuthenticationCode' => 'wrong']]);
+
+        $result = $controller->confirm($request, ['twoFactorAuthenticationCode' => 'wrong']);
 
         $this->assertSame($response, $result);
     }
 
     public function testLoginGetShowsForm(): void
     {
-        $controller = $this->createController();
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-        $request = new ServerRequest('GET', '/');
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -476,6 +471,9 @@ final class SessionControllerTest extends TestCase
             ->with('session/login', $this->arrayHasKey('form'))
             ->willReturn($response);
 
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
         $result = $controller->login($request);
 
         $this->assertSame($response, $result);
@@ -485,10 +483,8 @@ final class SessionControllerTest extends TestCase
     {
         $config = new ModuleConfig(homeRoute: 'app/dashboard');
         $this->harness = new ControllerHarness($config);
-        $controller = $this->createController();
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
 
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
+        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
 
         $this->createUser(
             username: 'jdoe',
@@ -500,16 +496,17 @@ final class SessionControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory, '//app/dashboard');
 
-        $result = $controller->login($request);
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
+
+        $result = $controller->login($request, ['login' => 'jdoe', 'password' => 'secret']);
 
         $this->assertSame($response, $result);
     }
 
     public function testLoginPostSuccessRedirectsToHomeRouteByDefault(): void
     {
-        $controller = $this->createController();
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
         $this->createUser(
             username: 'jdoe',
@@ -521,7 +518,10 @@ final class SessionControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory, '//home');
 
-        $result = $controller->login($request);
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
+
+        $result = $controller->login($request, ['login' => 'jdoe', 'password' => 'secret']);
 
         $this->assertSame($response, $result);
     }
@@ -531,10 +531,8 @@ final class SessionControllerTest extends TestCase
         $config = new ModuleConfig(homeRoute: 'nonexistent');
         $this->harness = new ControllerHarness($config);
         $this->harness->getUrlGenerator()->setMissingRoute('nonexistent');
-        $controller = $this->createController();
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
 
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
+        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
 
         $this->createUser(
             username: 'jdoe',
@@ -544,17 +542,18 @@ final class SessionControllerTest extends TestCase
         );
         $this->validator->method('validate')->willReturn(new Result());
 
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
+
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('"homeRoute" is set to "nonexistent", but no such route is registered.');
 
-        $controller->login($request);
+        $controller->login($request, ['login' => 'jdoe', 'password' => 'secret']);
     }
 
     public function testLoginPostSuccessWithRememberMeAddsCookie(): void
     {
-        $controller = $this->createController();
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret', 'rememberMe' => true]]);
 
         $this->createUser(
             username: 'jdoe',
@@ -570,16 +569,17 @@ final class SessionControllerTest extends TestCase
         $this->responseFactory->method('createResponse')->willReturn($response);
         $response->method('withHeader')->willReturnSelf();
 
-        $result = $controller->login($request);
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret', 'rememberMe' => true]]);
+
+        $result = $controller->login($request, ['login' => 'jdoe', 'password' => 'secret', 'rememberMe' => true]);
 
         $this->assertSame($response, $result);
     }
 
     public function testLoginPostWithBlockedUserShowsError(): void
     {
-        $controller = $this->createController();
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
         $this->createUser(
             username: 'jdoe',
@@ -597,16 +597,17 @@ final class SessionControllerTest extends TestCase
             ->with('session/login', $this->anything())
             ->willReturn($response);
 
-        $result = $controller->login($request);
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
+
+        $result = $controller->login($request, ['login' => 'jdoe', 'password' => 'secret']);
 
         $this->assertSame($response, $result);
     }
 
     public function testLoginPostWithInvalidCredentialsShowsError(): void
     {
-        $controller = $this->createController();
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'wrong']]);
 
         $this->validator->method('validate')->willReturn(new Result());
 
@@ -617,7 +618,10 @@ final class SessionControllerTest extends TestCase
             ->with('session/login', $this->anything())
             ->willReturn($response);
 
-        $result = $controller->login($request);
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'wrong']]);
+
+        $result = $controller->login($request, ['login' => 'jdoe', 'password' => 'wrong']);
 
         $this->assertSame($response, $result);
     }
@@ -626,9 +630,8 @@ final class SessionControllerTest extends TestCase
     {
         $config = new ModuleConfig(enableTwoFactorAuthentication: true);
         $this->harness = new ControllerHarness($config);
-        $controller = $this->createController();
+
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
         $user = $this->createUser(
             username: 'jdoe',
@@ -653,7 +656,10 @@ final class SessionControllerTest extends TestCase
             ))
             ->willReturn($response);
 
-        $result = $controller->login($request);
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
+
+        $result = $controller->login($request, ['login' => 'jdoe', 'password' => 'secret']);
 
         $this->assertSame($response, $result);
     }
@@ -662,9 +668,8 @@ final class SessionControllerTest extends TestCase
     {
         $config = new ModuleConfig(enableTwoFactorAuthentication: true);
         $this->harness = new ControllerHarness($config);
-        $controller = $this->createController();
+
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
         $this->createUser(
             username: 'jdoe',
@@ -687,16 +692,17 @@ final class SessionControllerTest extends TestCase
             ))
             ->willReturn($response);
 
-        $result = $controller->login($request);
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
+
+        $result = $controller->login($request, ['login' => 'jdoe', 'password' => 'secret']);
 
         $this->assertSame($response, $result);
     }
 
     public function testLoginPostWithUnconfirmedEmailShowsError(): void
     {
-        $controller = $this->createController();
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
         $this->createUser(
             username: 'jdoe',
@@ -712,21 +718,25 @@ final class SessionControllerTest extends TestCase
             ->with('session/login', $this->anything())
             ->willReturn($response);
 
-        $result = $controller->login($request);
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
+
+        $result = $controller->login($request, ['login' => 'jdoe', 'password' => 'secret']);
 
         $this->assertSame($response, $result);
     }
 
     public function testLoginWhenAlreadyAuthenticatedRedirectsToHome(): void
     {
-        $controller = $this->createController();
         $identity = $this->createMock(User::class);
         $this->currentUser->method('getIdentity')->willReturn($identity);
-        $request = new ServerRequest('GET', '/');
 
         $response = $this->mockRedirectResponse($this->responseFactory, '//home');
 
         $this->viewRenderer->expects($this->never())->method('render');
+
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
 
         $result = $controller->login($request);
 
@@ -735,13 +745,13 @@ final class SessionControllerTest extends TestCase
 
     public function testLogoutRedirectsToHomeRouteByDefault(): void
     {
-        $controller = $this->createController();
-
         $this->currentUser->method('logout')->willReturn(false);
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
         $this->rememberMeCookieService->method('expireCookie')->willReturnArgument(0);
 
         $response = $this->mockRedirectResponse($this->responseFactory, '//home');
+
+        $controller = $this->createController();
 
         $result = $controller->logout();
 
@@ -790,8 +800,6 @@ final class SessionControllerTest extends TestCase
 
     public function testLogoutWhenLoggedInRotatesAuthKeyAndSaves(): void
     {
-        $controller = $this->createController();
-
         $identity = $this->createMock(User::class);
         $identity->expects($this->once())->method('setAuthKey');
         $identity->expects($this->once())->method('setUpdatedAt');
@@ -804,6 +812,8 @@ final class SessionControllerTest extends TestCase
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->method('createResponse')->willReturn($response);
         $response->method('withHeader')->willReturnSelf();
+
+        $controller = $this->createController();
 
         $result = $controller->logout();
 

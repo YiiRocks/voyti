@@ -11,7 +11,6 @@ use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Helper\FlashType;
-use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Model\Form\Auth\RecoveryForm;
 use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\ModuleConfig;
@@ -20,6 +19,7 @@ use YiiRocks\Voyti\Service\Password\ResetService;
 use YiiRocks\Voyti\ViewData\PasswordReset\RequestViewData;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
+use Yiisoft\Input\Http\Attribute\Parameter\Body;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -33,7 +33,6 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
  */
 final readonly class PasswordResetController
 {
-    use InputDataTrait;
     use RedirectTrait;
     use RenderTrait;
 
@@ -51,8 +50,15 @@ final readonly class PasswordResetController
         private FlashInterface $flash,
     ) {}
 
-    public function confirm(ServerRequestInterface $request, #[RouteArgument] int $id, #[RouteArgument] string $code): ResponseInterface
-    {
+    public function confirm(
+        ServerRequestInterface $request,
+        #[RouteArgument]
+        int $id,
+        #[RouteArgument]
+        string $code,
+        #[Body('recovery')]
+        array $formData = [],
+    ): ResponseInterface {
         if (!$this->config->allowPasswordRecovery && !$this->config->allowAdminPasswordRecovery) {
             return $this->renderError('voyti.recovery.reset_disabled');
         }
@@ -74,10 +80,9 @@ final readonly class PasswordResetController
         // @codeCoverageIgnoreEnd
 
         $form = new RecoveryForm($this->config, $this->translator, RecoveryForm::SCENARIO_RESET);
+        $this->hydrator->hydrate($form, $formData);
 
         if ($request->getMethod() === Method::POST) {
-            $body = $this->parsedBody($request);
-            $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
             $result = $this->validator->validate($form);
             $form->processValidationResult($result);
 
@@ -99,17 +104,19 @@ final readonly class PasswordResetController
         return $this->renderView('password-reset/confirm', ['form' => $form]);
     }
 
-    public function request(ServerRequestInterface $request): ResponseInterface
-    {
+    public function request(
+        ServerRequestInterface $request,
+        #[Body('recovery')]
+        array $formData = [],
+    ): ResponseInterface {
         if (!$this->config->allowPasswordRecovery) {
             return $this->renderError('voyti.recovery.disabled');
         }
 
         $form = new RecoveryForm($this->config, $this->translator, RecoveryForm::SCENARIO_REQUEST);
+        $this->hydrator->hydrate($form, $formData);
 
         if ($request->getMethod() === Method::POST) {
-            $body = $this->parsedBody($request);
-            $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
             $result = $this->validator->validate($form);
             $form->processValidationResult($result);
 

@@ -6,7 +6,6 @@ namespace YiiRocks\Voyti\Controller\SocialNetwork;
 
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
@@ -39,7 +38,7 @@ final readonly class SocialNetworkController
         private FlashInterface $flash,
     ) {}
 
-    public function delete(ServerRequestInterface $request, #[RouteArgument] int $id): ResponseInterface
+    public function delete(#[RouteArgument] int $id): ResponseInterface
     {
         $user = $this->currentUser->getIdentity();
         $account = null;
@@ -62,7 +61,7 @@ final readonly class SocialNetworkController
         return $this->renderError('voyti.settings.network_not_found');
     }
 
-    public function index(ServerRequestInterface $request): ResponseInterface
+    public function index(): ResponseInterface
     {
         $user = $this->currentUser->getIdentity();
         $accounts = UserSocialAccount::findByUserId((int) $user->getId());

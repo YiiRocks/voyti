@@ -9,7 +9,6 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
-use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Model\Form\Settings\TwoFactorCodeForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
@@ -24,6 +23,7 @@ use YiiRocks\Voyti\ViewData\TwoFactor\GoogleSetupViewData;
 use YiiRocks\Voyti\ViewData\TwoFactor\IndexViewData;
 use Yiisoft\Http\Header;
 use Yiisoft\Http\Status;
+use Yiisoft\Input\Http\Attribute\Parameter\Body;
 use Yiisoft\Json\Json;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -37,7 +37,6 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
  */
 final readonly class TwoFactorController
 {
-    use InputDataTrait;
     use RedirectTrait;
     use RenderTrait;
 
@@ -54,13 +53,11 @@ final readonly class TwoFactorController
         private BackupCodeService $backupCodeService,
     ) {}
 
-    public function disable(ServerRequestInterface $request): ResponseInterface
+    public function disable(#[Body('code')] string $code = ''): ResponseInterface
     {
         /** @var User $user */
         $user = $this->currentUser->getIdentity();
 
-        $body = $this->parsedBody($request);
-        $code = $this->stringValue($body, 'code');
         $method = $user->getAuthTfType() ?? 'google';
 
         if ($method === 'email') {
@@ -99,7 +96,7 @@ final readonly class TwoFactorController
         );
     }
 
-    public function disableSendCode(ServerRequestInterface $request): ResponseInterface
+    public function disableSendCode(): ResponseInterface
     {
         /** @var User $user */
         $user = $this->currentUser->getIdentity();
@@ -125,8 +122,12 @@ final readonly class TwoFactorController
         return $this->renderTwoFactorSetup($request, 'email', $user);
     }
 
-    public function enable(ServerRequestInterface $request): ResponseInterface
-    {
+    public function enable(
+        #[Body('method')]
+        string $method = 'google',
+        #[Body('code')]
+        string $code = '',
+    ): ResponseInterface {
         /** @var User $user */
         $user = $this->currentUser->getIdentity();
 
@@ -137,9 +138,7 @@ final readonly class TwoFactorController
             );
         }
 
-        $body = $this->parsedBody($request);
-        $method = $this->stringValue($body, 'method', 'google') === 'email' ? 'email' : 'google';
-        $code = $this->stringValue($body, 'code');
+        $method = $method === 'email' ? 'email' : 'google';
 
         if ($method === 'email') {
             $emailValidator = new EmailValidator($user, $code);
@@ -189,7 +188,7 @@ final readonly class TwoFactorController
         return $this->renderGoogleSetup($request, $user);
     }
 
-    public function index(ServerRequestInterface $request): ResponseInterface
+    public function index(): ResponseInterface
     {
         /** @var User $user */
         $user = $this->currentUser->getIdentity();
@@ -201,7 +200,7 @@ final readonly class TwoFactorController
         return $this->renderTwoFactorIndex($user, $user->getAuthTfType() ?? 'google');
     }
 
-    public function regenerateBackupCodes(ServerRequestInterface $request): ResponseInterface
+    public function regenerateBackupCodes(#[Body('code')] string $code = ''): ResponseInterface
     {
         /** @var User $user */
         $user = $this->currentUser->getIdentity();
@@ -210,8 +209,6 @@ final readonly class TwoFactorController
             return $this->redirect($this->url->generate('voyti/user-two-factor'));
         }
 
-        $body = $this->parsedBody($request);
-        $code = $this->stringValue($body, 'code');
         $method = $user->getAuthTfType() ?? 'google';
 
         if ($method === 'email') {
@@ -240,7 +237,7 @@ final readonly class TwoFactorController
         return $this->renderBackupCodes($this->backupCodeService->generate($user));
     }
 
-    public function renew(ServerRequestInterface $request): ResponseInterface
+    public function renew(): ResponseInterface
     {
         /** @var User $user */
         $user = $this->currentUser->getIdentity();
@@ -268,7 +265,7 @@ final readonly class TwoFactorController
         return $response;
     }
 
-    public function sendEmailCode(ServerRequestInterface $request): ResponseInterface
+    public function sendEmailCode(): ResponseInterface
     {
         /** @var User $user */
         $user = $this->currentUser->getIdentity();

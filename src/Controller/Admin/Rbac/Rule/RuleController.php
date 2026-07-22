@@ -11,7 +11,6 @@ use YiiRocks\Voyti\Controller\ActorIdTrait;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Helper\AuthHelper;
-use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Model\Form\Rbac\RuleForm;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\AuditLogService;
@@ -20,6 +19,7 @@ use YiiRocks\Voyti\ViewData\Admin\Rbac\Rule\CreateViewData;
 use YiiRocks\Voyti\ViewData\Admin\Rbac\Rule\IndexViewData;
 use YiiRocks\Voyti\ViewData\Admin\Rbac\Rule\UpdateViewData;
 use Yiisoft\Http\Method;
+use Yiisoft\Input\Http\Attribute\Parameter\Body;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -36,7 +36,6 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 final readonly class RuleController
 {
     use ActorIdTrait;
-    use InputDataTrait;
     use RedirectTrait;
     use RenderTrait;
 
@@ -54,19 +53,21 @@ final readonly class RuleController
         private CurrentUser $currentUser,
     ) {}
 
-    public function create(ServerRequestInterface $request): ResponseInterface
-    {
+    public function create(
+        ServerRequestInterface $request,
+        #[Body('name')]
+        string $ruleName = '',
+        #[Body('class')]
+        string $ruleClass = '',
+    ): ResponseInterface {
         $form = new RuleForm($this->translator);
         $errors = [];
 
         if ($request->getMethod() === Method::POST) {
-            $body = $this->parsedBody($request);
-            $data = $this->formData($body, $form->getFormName());
-            $form->name = $this->stringValue($data, 'name');
-            $form->class = $this->stringValue($data, 'class');
+            $form->name = $ruleName;
+            $form->class = $ruleClass;
 
             $result = $this->validator->validate($form);
-
             if ($result->isValid()) {
                 if ($this->authRuleEditionService->create($form)) {
                     $this->auditLogService->log($this->actorId(), 'rbac.rule.create', targetName: $form->name);
@@ -102,23 +103,26 @@ final readonly class RuleController
         ]);
     }
 
-    public function update(ServerRequestInterface $request, #[RouteArgument] string $name): ResponseInterface
-    {
+    public function update(
+        ServerRequestInterface $request,
+        #[RouteArgument]
+        string $name,
+        #[Body('name')]
+        string $ruleName = '',
+        #[Body('class')]
+        string $ruleClass = '',
+    ): ResponseInterface {
         $form = new RuleForm($this->translator);
         $form->previousName = $name;
         $form->name = $name;
         $form->class = $name;
-
         $errors = [];
 
         if ($request->getMethod() === Method::POST) {
-            $body = $this->parsedBody($request);
-            $data = $this->formData($body, $form->getFormName());
-            $form->name = $this->stringValue($data, 'name', $form->name);
-            $form->class = $this->stringValue($data, 'class', $form->class);
+            $form->name = $ruleName;
+            $form->class = $ruleClass;
 
             $result = $this->validator->validate($form);
-
             if ($result->isValid()) {
                 if ($this->authRuleEditionService->update($form)) {
                     $this->auditLogService->log(

@@ -137,7 +137,7 @@ final class UserControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->assignments($request, $userId);
+        $result = $controller->assignments($request, $userId, ['admin', 'editor']);
 
         $this->assertSame($response, $result);
     }
@@ -242,7 +242,7 @@ final class UserControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->create($request);
+        $result = $controller->create($request, ['username' => 'newuser', 'email' => 'new@example.com', 'password' => '', 'passwordRepeat' => '']);
 
         $this->assertSame($response, $result);
     }
@@ -275,7 +275,7 @@ final class UserControllerTest extends TestCase
         $this->responseFactory->method('createResponse')->willReturn($response);
         $response->method('withHeader')->willReturnSelf();
 
-        $result = $controller->create($request);
+        $result = $controller->create($request, ['username' => 'newuser', 'email' => 'new@example.com', 'password' => 'password123', 'passwordRepeat' => 'password123'], ['admin']);
 
         $this->assertSame($response, $result);
     }
@@ -297,7 +297,7 @@ final class UserControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->create($request);
+        $result = $controller->create($request, ['username' => 'existing', 'email' => 'existing@example.com', 'password' => 'password123', 'passwordRepeat' => 'password123']);
 
         $this->assertSame($response, $result);
     }
@@ -312,11 +312,10 @@ final class UserControllerTest extends TestCase
         $userId = (int) $user->getId();
 
         $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->delete($request, $userId);
+        $result = $controller->delete($userId);
 
         $this->assertSame($response, $result);
         $this->assertNull(User::findById($userId));
@@ -325,7 +324,6 @@ final class UserControllerTest extends TestCase
     public function testDeleteNonExistentUserShowsError(): void
     {
         $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
 
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn('1');
@@ -339,7 +337,7 @@ final class UserControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->delete($request, 999999);
+        $result = $controller->delete(999999);
 
         $this->assertSame($response, $result);
     }
@@ -347,7 +345,6 @@ final class UserControllerTest extends TestCase
     public function testDeleteOwnUserShowsError(): void
     {
         $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
 
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn('1');
@@ -361,7 +358,7 @@ final class UserControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->delete($request, 1);
+        $result = $controller->delete(1);
 
         $this->assertSame($response, $result);
     }
@@ -390,7 +387,6 @@ final class UserControllerTest extends TestCase
     public function testIndexPassesPaginatorWithNoResults(): void
     {
         $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
 
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn('1');
@@ -408,7 +404,7 @@ final class UserControllerTest extends TestCase
                 return $response;
             });
 
-        $controller->index($request);
+        $controller->index();
 
         $this->assertArrayHasKey('data', $captured);
         $paginator = $captured['data']->paginator;
@@ -420,7 +416,6 @@ final class UserControllerTest extends TestCase
     public function testIndexShowsUserList(): void
     {
         $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
 
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn('1');
@@ -435,7 +430,7 @@ final class UserControllerTest extends TestCase
             ->with('admin/user/index', $this->anything())
             ->willReturn($response);
 
-        $result = $controller->index($request);
+        $result = $controller->index();
 
         $this->assertSame($response, $result);
     }
@@ -736,7 +731,7 @@ final class UserControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->update($request, $userId);
+        $result = $controller->update($request, $userId, '', 'updated', 'updated@example.com', []);
 
         $this->assertSame($response, $result);
         $updated = User::findById($userId);
@@ -757,7 +752,7 @@ final class UserControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->update($request, $userId);
+        $result = $controller->update($request, $userId, 'newpass', 'updated', 'updated@example.com', []);
 
         $this->assertSame($response, $result);
         $updated = User::findById($userId);
@@ -793,7 +788,7 @@ final class UserControllerTest extends TestCase
             ))
             ->willReturn($response);
 
-        $result = $controller->update($request, $userId);
+        $result = $controller->update($request, $userId, 'originalpass', 'updated', 'updated@example.com', []);
 
         $this->assertSame($response, $result);
         $updated = User::findById($userId);
@@ -862,7 +857,7 @@ final class UserControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->updateProfile($request, $userId);
+        $result = $controller->updateProfile($request, $userId, ['name' => 'Updated', 'publicEmail' => '', 'gravatarEmail' => '', 'location' => '', 'website' => '', 'timezone' => '', 'bio' => '', 'birthday' => '1990-05-15']);
 
         $this->assertSame($response, $result);
         $updated = UserProfile::findByUserId($userId);

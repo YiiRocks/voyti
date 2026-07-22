@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Controller\api\v1\User;
 
 use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
-use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
@@ -14,6 +12,7 @@ use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\User\UserCreationHelper;
 use Yiisoft\DataResponse\ResponseFactory\DataResponseFactoryInterface;
 use Yiisoft\Http\Status;
+use Yiisoft\Input\Http\Attribute\Parameter\Body;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Translator\TranslatorInterface;
 
@@ -23,8 +22,6 @@ use Yiisoft\Translator\TranslatorInterface;
  */
 final readonly class UserController
 {
-    use InputDataTrait;
-
     public function __construct(
         private TranslatorInterface $translator,
         private ModuleConfig $config,
@@ -34,12 +31,15 @@ final readonly class UserController
         private UserCreationHelper $userCreationHelper,
     ) {}
 
-    public function create(ServerRequestInterface $request): ResponseInterface
-    {
-        $body = $this->parsedBody($request);
-        $email = $this->stringValue($body, 'email');
-        $username = $this->stringValue($body, 'username');
-        $password = $this->stringValue($body, 'password', $this->passwordGenerator->generate(12));
+    public function create(
+        #[Body('email')]
+        string $email = '',
+        #[Body('username')]
+        string $username = '',
+        #[Body('password')]
+        string $password = '',
+    ): ResponseInterface {
+        $password = $password !== '' ? $password : $this->passwordGenerator->generate(12);
 
         $conflict = $this->userCreationHelper->findUniquenessConflict($email, $username);
         if ($conflict !== null) {
@@ -87,15 +87,20 @@ final readonly class UserController
         return $this->responseFactory->createResponse($data);
     }
 
-    public function update(ServerRequestInterface $request, #[RouteArgument] int $id): ResponseInterface
-    {
+    public function update(
+        #[RouteArgument]
+        int $id,
+        #[Body('password')]
+        string $password = '',
+        #[Body('username')]
+        ?string $username = null,
+        #[Body('email')]
+        ?string $email = null,
+    ): ResponseInterface {
         $user = $this->resolveUser($id);
         if (!$user instanceof User) {
             return $user;
         }
-
-        $body = $this->parsedBody($request);
-        $password = isset($body['password']) && is_string($body['password']) ? $body['password'] : '';
 
         if ($password !== '' && $this->passwordHistoryService->wasUsedRecently($user, $password)) {
             return $this->responseFactory->createResponse(
@@ -104,11 +109,11 @@ final readonly class UserController
             );
         }
 
-        if (isset($body['username']) && is_string($body['username'])) {
-            $user->setUsername($body['username']);
+        if ($username !== null) {
+            $user->setUsername($username);
         }
-        if (isset($body['email']) && is_string($body['email'])) {
-            $user->setEmail($body['email']);
+        if ($email !== null) {
+            $user->setEmail($email);
         }
         if ($password !== '') {
             $this->passwordHistoryService->applyPasswordChange($user, $password);

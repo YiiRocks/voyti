@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Controller\api\v1\User;
 
 use Nyholm\Psr7\Factory\Psr17Factory;
-use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseInterface;
@@ -75,30 +74,26 @@ final class UserControllerTest extends TestCase
     {
         $this->createUser('existinguser', 'existing@example.com');
 
-        $controller = $this->createController();
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['email' => 'existing@example.com', 'username' => 'newuser', 'password' => 'secret123']);
-
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
             ->method('createResponse')
             ->with(['error' => 'Email already exists'], 400)
             ->willReturn($response);
 
-        $result = $controller->create($request);
+        $controller = $this->createController();
+        $result = $controller->create(email: 'existing@example.com', username: 'newuser', password: 'secret123');
 
         $this->assertSame($response, $result);
     }
 
     public function testCreateRecordsPasswordHistory(): void
     {
-        $config = new ModuleConfig(enablePasswordExpiration: true);
-        $controller = $this->createController($config);
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['email' => 'history@example.com', 'username' => 'historyuser', 'password' => 'secret123']);
-
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->method('createResponse')->willReturn($response);
 
-        $controller->create($request);
+        $config = new ModuleConfig(enablePasswordExpiration: true);
+        $controller = $this->createController($config);
+        $controller->create(email: 'history@example.com', username: 'historyuser', password: 'secret123');
 
         $created = User::findByEmail('history@example.com');
         $this->assertNotNull($created);
@@ -116,10 +111,7 @@ final class UserControllerTest extends TestCase
             userCreationHelper: $this->userCreationHelper,
         );
 
-        $request = (new ServerRequest('POST', '/'))
-            ->withParsedBody(['email' => 'real@example.com', 'username' => 'realuser', 'password' => 'secret123']);
-
-        $response = $controller->create($request);
+        $response = $controller->create(email: 'real@example.com', username: 'realuser', password: 'secret123');
 
         $handler = new class ($response) implements RequestHandlerInterface {
             public function __construct(private readonly ResponseInterface $response) {}
@@ -147,9 +139,6 @@ final class UserControllerTest extends TestCase
 
     public function testCreateSuccess(): void
     {
-        $controller = $this->createController();
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['email' => 'new@example.com', 'username' => 'newuser', 'password' => 'secret123']);
-
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
             ->method('createResponse')
@@ -161,7 +150,8 @@ final class UserControllerTest extends TestCase
             }), 201)
             ->willReturn($response);
 
-        $result = $controller->create($request);
+        $controller = $this->createController();
+        $result = $controller->create(email: 'new@example.com', username: 'newuser', password: 'secret123');
 
         $this->assertSame($response, $result);
         $created = User::findByEmail('new@example.com');
@@ -177,16 +167,14 @@ final class UserControllerTest extends TestCase
     {
         $this->createUser('existinguser', 'other@example.com');
 
-        $controller = $this->createController();
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['email' => 'new@example.com', 'username' => 'existinguser', 'password' => 'secret123']);
-
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
             ->method('createResponse')
             ->with(['error' => 'Username already exists'], 400)
             ->willReturn($response);
 
-        $result = $controller->create($request);
+        $controller = $this->createController();
+        $result = $controller->create(email: 'new@example.com', username: 'existinguser', password: 'secret123');
 
         $this->assertSame($response, $result);
     }
@@ -196,13 +184,11 @@ final class UserControllerTest extends TestCase
         $this->passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
         $this->passwordGenerator->expects($this->once())->method('generate')->with(12)->willReturn('generated-secret');
 
-        $controller = $this->createController();
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['email' => 'generated@example.com', 'username' => 'generateduser']);
-
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->method('createResponse')->willReturn($response);
 
-        $result = $controller->create($request);
+        $controller = $this->createController();
+        $result = $controller->create(email: 'generated@example.com', username: 'generateduser');
 
         $this->assertSame($response, $result);
         $created = User::findByEmail('generated@example.com');
@@ -212,14 +198,13 @@ final class UserControllerTest extends TestCase
 
     public function testDeleteNotFound(): void
     {
-        $controller = $this->createController();
-
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
             ->method('createResponse')
             ->with(['error' => 'Not found'], 404)
             ->willReturn($response);
 
+        $controller = $this->createController();
         $result = $controller->delete(999999);
 
         $this->assertSame($response, $result);
@@ -230,14 +215,13 @@ final class UserControllerTest extends TestCase
         $user = $this->createUser('deleteuser', 'delete@example.com');
         $userId = (int) $user->getId();
 
-        $controller = $this->createController();
-
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
             ->method('createResponse')
             ->with(['message' => 'User deleted'])
             ->willReturn($response);
 
+        $controller = $this->createController();
         $result = $controller->delete($userId);
 
         $this->assertSame($response, $result);
@@ -247,8 +231,6 @@ final class UserControllerTest extends TestCase
     public function testIndexReturnsUsers(): void
     {
         $user = $this->createUser('testuser', 'test@example.com');
-
-        $controller = $this->createController();
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
@@ -264,6 +246,7 @@ final class UserControllerTest extends TestCase
             }))
             ->willReturn($response);
 
+        $controller = $this->createController();
         $result = $controller->index();
 
         $this->assertSame($response, $result);
@@ -271,16 +254,14 @@ final class UserControllerTest extends TestCase
 
     public function testUpdateNotFound(): void
     {
-        $controller = $this->createController();
-        $request = new ServerRequest('PATCH', '/');
-
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
             ->method('createResponse')
             ->with(['error' => 'Not found'], 404)
             ->willReturn($response);
 
-        $result = $controller->update($request, 999999);
+        $controller = $this->createController();
+        $result = $controller->update(id: 999999);
 
         $this->assertSame($response, $result);
     }
@@ -292,9 +273,6 @@ final class UserControllerTest extends TestCase
         $user->setUpdatedAt(1000);
         $user->save();
 
-        $controller = $this->createController();
-        $request = (new ServerRequest('PATCH', '/'))->withParsedBody(['username' => 'updated', 'email' => 'updated@example.com']);
-
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
             ->method('createResponse')
@@ -306,7 +284,8 @@ final class UserControllerTest extends TestCase
             }))
             ->willReturn($response);
 
-        $result = $controller->update($request, $userId);
+        $controller = $this->createController();
+        $result = $controller->update(username: 'updated', email: 'updated@example.com', id: $userId);
 
         $this->assertSame($response, $result);
         $updated = User::findById($userId);
@@ -316,39 +295,17 @@ final class UserControllerTest extends TestCase
         $this->assertGreaterThan(1000, $updated->getUpdatedAt());
     }
 
-    public function testUpdateWithNonStringUsernameAndEmailIgnoresThem(): void
-    {
-        $user = $this->createUser('testuser', 'test@example.com');
-        $userId = (int) $user->getId();
-
-        $controller = $this->createController();
-        $request = (new ServerRequest('PATCH', '/'))->withParsedBody(['username' => ['nested'], 'email' => 12345]);
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->method('createResponse')->willReturn($response);
-
-        $result = $controller->update($request, $userId);
-
-        $this->assertSame($response, $result);
-        $updated = User::findById($userId);
-        $this->assertNotNull($updated);
-        $this->assertSame('testuser', $updated->getUsername());
-        $this->assertSame('test@example.com', $updated->getEmail());
-    }
-
     public function testUpdateWithoutPasswordDoesNotRecordPasswordHistory(): void
     {
         $config = new ModuleConfig(enablePasswordExpiration: true);
         $user = $this->createUser('testuser', 'test@example.com');
         $userId = (int) $user->getId();
 
-        $controller = $this->createController($config);
-        $request = (new ServerRequest('PATCH', '/'))->withParsedBody(['username' => 'updated']);
-
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->method('createResponse')->willReturn($response);
 
-        $controller->update($request, $userId);
+        $controller = $this->createController($config);
+        $controller->update(username: 'updated', id: $userId);
 
         self::assertCount(0, UserPasswordHistory::findByUserId($userId));
     }
@@ -359,9 +316,6 @@ final class UserControllerTest extends TestCase
         $userId = (int) $user->getId();
         $originalHash = $user->getPasswordHash();
 
-        $controller = $this->createController();
-        $request = (new ServerRequest('PATCH', '/'))->withParsedBody(['username' => 'updated', 'email' => 'updated@example.com', 'password' => 'newpass']);
-
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
             ->method('createResponse')
@@ -373,7 +327,8 @@ final class UserControllerTest extends TestCase
             }))
             ->willReturn($response);
 
-        $result = $controller->update($request, $userId);
+        $controller = $this->createController();
+        $result = $controller->update(password: 'newpass', username: 'updated', email: 'updated@example.com', id: $userId);
 
         $this->assertSame($response, $result);
         $updated = User::findById($userId);
@@ -389,13 +344,11 @@ final class UserControllerTest extends TestCase
         $user = $this->createUser('testuser', 'test@example.com');
         $userId = (int) $user->getId();
 
-        $controller = $this->createController($config);
-        $request = (new ServerRequest('PATCH', '/'))->withParsedBody(['password' => 'newpass']);
-
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->method('createResponse')->willReturn($response);
 
-        $controller->update($request, $userId);
+        $controller = $this->createController($config);
+        $controller->update(password: 'newpass', id: $userId);
 
         self::assertCount(1, UserPasswordHistory::findByUserId($userId));
     }
@@ -410,16 +363,14 @@ final class UserControllerTest extends TestCase
         $user->save();
         (new PasswordHistoryService($passwordHasher, $config))->record($user);
 
-        $controller = $this->createController($config);
-        $request = (new ServerRequest('PATCH', '/'))->withParsedBody(['password' => 'originalpass']);
-
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
             ->method('createResponse')
             ->with(['error' => 'This password has been used recently. Please choose a different one.'], 400)
             ->willReturn($response);
 
-        $result = $controller->update($request, $userId);
+        $controller = $this->createController($config);
+        $result = $controller->update(password: 'originalpass', id: $userId);
 
         $this->assertSame($response, $result);
     }
@@ -428,8 +379,6 @@ final class UserControllerTest extends TestCase
     {
         $user = $this->createUser('testuser', 'test@example.com');
         $userId = (int) $user->getId();
-
-        $controller = $this->createController();
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
@@ -442,6 +391,7 @@ final class UserControllerTest extends TestCase
             }))
             ->willReturn($response);
 
+        $controller = $this->createController();
         $result = $controller->view($userId);
 
         $this->assertSame($response, $result);
@@ -449,14 +399,13 @@ final class UserControllerTest extends TestCase
 
     public function testViewNotFound(): void
     {
-        $controller = $this->createController();
-
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
             ->method('createResponse')
             ->with(['error' => 'Not found'], 404)
             ->willReturn($response);
 
+        $controller = $this->createController();
         $result = $controller->view(999999);
 
         $this->assertSame($response, $result);

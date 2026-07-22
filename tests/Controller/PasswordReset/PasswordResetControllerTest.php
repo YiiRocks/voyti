@@ -103,7 +103,7 @@ final class PasswordResetControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->request($request);
+        $result = $controller->request($request, ['email' => 'test@example.com']);
 
         $this->assertSame($response, $result);
     }
@@ -170,7 +170,7 @@ final class PasswordResetControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->confirm($request, (int) $user->getId(), 'valid');
+        $result = $controller->confirm($request, (int) $user->getId(), 'valid', ['password' => 'newpass123', 'passwordRepeat' => 'newpass123']);
 
         $this->assertSame($response, $result);
     }
@@ -199,7 +199,7 @@ final class PasswordResetControllerTest extends TestCase
             }))
             ->willReturn($response);
 
-        $result2 = $controller->confirm($request, (int) $user->getId(), 'valid');
+        $result2 = $controller->confirm($request, (int) $user->getId(), 'valid', ['password' => '', 'passwordRepeat' => '']);
 
         $this->assertSame($response, $result2);
         $this->assertFalse($captured['form']->isValid());
@@ -231,7 +231,7 @@ final class PasswordResetControllerTest extends TestCase
             }))
             ->willReturn($response);
 
-        $result = $controller->confirm($request, (int) $user->getId(), 'valid');
+        $result = $controller->confirm($request, (int) $user->getId(), 'valid', ['password' => 'newpass123', 'passwordRepeat' => 'newpass123']);
 
         $this->assertSame($response, $result);
         $this->assertFalse($captured['form']->isValid());

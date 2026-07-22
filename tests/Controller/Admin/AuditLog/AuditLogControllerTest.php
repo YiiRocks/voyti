@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Controller\Admin\AuditLog;
 
-use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseFactoryInterface;
@@ -59,9 +58,6 @@ final class AuditLogControllerTest extends TestCase
         $this->createLog(1, 2, 'user.create');
         $this->createLog(1, 2, 'user.delete');
 
-        $controller = $this->createController();
-        $request = (new ServerRequest('GET', '/'))->withQueryParams(['action' => 'create']);
-
         $captured = [];
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -72,7 +68,8 @@ final class AuditLogControllerTest extends TestCase
             },
         );
 
-        $controller->index($request);
+        $controller = $this->createController();
+        $controller->index(filterAction: 'create');
 
         $this->assertCount(1, $captured['data']->logs);
     }
@@ -94,9 +91,6 @@ final class AuditLogControllerTest extends TestCase
         $viewer->method('getProfile')->willReturn($viewerProfile);
         $this->currentUser->method('getIdentity')->willReturn($viewer);
 
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
         $captured = [];
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -107,7 +101,8 @@ final class AuditLogControllerTest extends TestCase
             },
         );
 
-        $controller->index($request);
+        $controller = $this->createController();
+        $controller->index();
 
         self::assertSame(
             [
@@ -132,9 +127,6 @@ final class AuditLogControllerTest extends TestCase
         $log->setCreatedAt(1700000000);
         $log->save();
 
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
         $captured = [];
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -145,7 +137,8 @@ final class AuditLogControllerTest extends TestCase
             },
         );
 
-        $controller->index($request);
+        $controller = $this->createController();
+        $controller->index();
 
         self::assertSame('', $captured['data']->logs[0]['actorUserId']);
         self::assertSame('', $captured['data']->logs[0]['targetLabel']);
@@ -156,9 +149,6 @@ final class AuditLogControllerTest extends TestCase
     {
         $this->createLog(1, 2, 'user.create');
 
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
             ->method('withViewPath')
@@ -168,16 +158,14 @@ final class AuditLogControllerTest extends TestCase
             ->with('admin/audit-log/index', $this->anything())
             ->willReturn($response);
 
-        $result = $controller->index($request);
+        $controller = $this->createController();
+        $result = $controller->index();
 
         $this->assertSame($response, $result);
     }
 
     public function testIndexWithNoResultsPaginatorHasNoPages(): void
     {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
         $captured = [];
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -188,7 +176,8 @@ final class AuditLogControllerTest extends TestCase
             },
         );
 
-        $controller->index($request);
+        $controller = $this->createController();
+        $controller->index();
 
         $this->assertInstanceOf(OffsetPaginator::class, $captured['data']->paginator);
         $this->assertSame(0, $captured['data']->paginator->getTotalPages());

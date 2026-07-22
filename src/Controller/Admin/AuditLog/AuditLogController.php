@@ -6,10 +6,8 @@ namespace YiiRocks\Voyti\Controller\Admin\AuditLog;
 
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
-use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserAuditLog;
@@ -17,6 +15,7 @@ use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\ViewData\Admin\AuditLog\IndexViewData;
 use Yiisoft\Data\Db\QueryDataReader;
 use Yiisoft\Data\Paginator\OffsetPaginator;
+use Yiisoft\Input\Http\Attribute\Parameter\Query;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -28,7 +27,6 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
  */
 final readonly class AuditLogController
 {
-    use InputDataTrait;
     use RedirectTrait;
     use RenderTrait;
 
@@ -42,18 +40,25 @@ final readonly class AuditLogController
         private CurrentUser $currentUser,
     ) {}
 
-    public function index(ServerRequestInterface $request): ResponseInterface
-    {
-        $queryParams = $this->queryParams($request);
+    public function index(
+        #[Query('actorUserId')]
+        string $filterActorUserId = '',
+        #[Query('targetUserId')]
+        string $filterTargetUserId = '',
+        #[Query('action')]
+        string $filterAction = '',
+        #[Query('page')]
+        int $page = 1,
+    ): ResponseInterface {
         $filters = [
-            'actor_user_id' => $this->stringValue($queryParams, 'actorUserId'),
-            'target_user_id' => $this->stringValue($queryParams, 'targetUserId'),
-            'action' => $this->stringValue($queryParams, 'action'),
+            'actor_user_id' => $filterActorUserId,
+            'target_user_id' => $filterTargetUserId,
+            'action' => $filterAction,
         ];
 
         $reader = new QueryDataReader(UserAuditLog::search($filters));
         $paginator = (new OffsetPaginator($reader))->withPageSize(50);
-        $requestedPage = max(1, (int) ($queryParams['page'] ?? 1));
+        $requestedPage = max(1, $page);
         $paginator = $paginator->withCurrentPage(min($requestedPage, max(1, $paginator->getTotalPages())));
 
         /** @var list<UserAuditLog> $logs */

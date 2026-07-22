@@ -13,7 +13,6 @@ use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Helper\FlashType;
-use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Model\Form\Auth\RegistrationForm;
 use YiiRocks\Voyti\Model\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Model\Form\Settings\UserProfileForm;
@@ -43,6 +42,8 @@ use Yiisoft\Data\Db\QueryDataReader;
 use Yiisoft\Data\Paginator\OffsetPaginator;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
+use Yiisoft\Input\Http\Attribute\Parameter\Body;
+use Yiisoft\Input\Http\Attribute\Parameter\Query;
 use Yiisoft\Rbac\Assignment;
 use Yiisoft\Rbac\AssignmentsStorageInterface;
 use Yiisoft\Rbac\ItemsStorageInterface;
@@ -62,7 +63,6 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 final readonly class UserController
 {
     use ActorIdTrait;
-    use InputDataTrait;
     use RedirectTrait;
     use RenderTrait;
 
@@ -92,18 +92,19 @@ final readonly class UserController
         private AuditLogService $auditLogService,
     ) {}
 
-    public function assignments(ServerRequestInterface $request, #[RouteArgument] int $id): ResponseInterface
-    {
+    public function assignments(
+        ServerRequestInterface $request,
+        #[RouteArgument]
+        int $id,
+        #[Body('items')]
+        array $items = [],
+    ): ResponseInterface {
         $user = $this->resolveUser($id);
         if (!$user instanceof User) {
             return $user;
         }
 
         if ($request->getMethod() === Method::POST) {
-            $body = $this->parsedBody($request);
-            /** @var mixed $rawItems */
-            $rawItems = $body['items'] ?? null;
-            $items = is_array($rawItems) ? $rawItems : [];
             $this->updateAuthAssignmentsService->run($id, $items);
             $this->auditLogService->log($this->actorId(), 'user.assignments_update', targetUserId: $id);
         }
@@ -143,14 +144,18 @@ final readonly class UserController
         return $this->renderError('voyti.admin.unable_to_confirm');
     }
 
-    public function create(ServerRequestInterface $request): ResponseInterface
-    {
+    public function create(
+        ServerRequestInterface $request,
+        #[Body('register')]
+        array $formData = [],
+        #[Body('assignedItems')]
+        array $assignedItems = [],
+    ): ResponseInterface {
         $errors = [];
         $form = new RegistrationForm($this->config, $this->translator);
+        $this->hydrator->hydrate($form, $formData);
 
         if ($request->getMethod() === Method::POST) {
-            $body = $this->parsedBody($request);
-            $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
             $email = $form->email;
             $username = $form->username;
             $password = $form->password !== '' ? $form->password : $this->passwordGenerator->generate(12);
@@ -159,11 +164,8 @@ final readonly class UserController
             if ($result->isSuccess()) {
                 $createdUser = User::findByUsername($username);
 
-                /** @var mixed $rawAssignedItems */
-                $rawAssignedItems = $body['assignedItems'] ?? null;
-                $items = is_array($rawAssignedItems) ? $rawAssignedItems : [];
-                if ($items !== [] && $createdUser !== null) {
-                    $this->updateAuthAssignmentsService->run((int) $createdUser->getId(), $items);
+                if ($assignedItems !== [] && $createdUser !== null) {
+                    $this->updateAuthAssignmentsService->run((int) $createdUser->getId(), $assignedItems);
                 }
 
                 $this->auditLogService->log(
@@ -185,7 +187,7 @@ final readonly class UserController
         ]);
     }
 
-    public function delete(ServerRequestInterface $request, #[RouteArgument] int $id): ResponseInterface
+    public function delete(#[RouteArgument] int $id): ResponseInterface
     {
         $identity = $this->currentUser->getIdentity();
         if ($id === (int) $identity->getId()) {
@@ -220,19 +222,25 @@ final readonly class UserController
         return $this->renderError('voyti.admin.error_occurred');
     }
 
-    public function index(ServerRequestInterface $request): ResponseInterface
-    {
-        $queryParams = $this->queryParams($request);
+    public function index(
+        #[Query('username')]
+        string $username = '',
+        #[Query('email')]
+        string $email = '',
+        #[Query('status')]
+        string $status = '',
+        #[Query('page')]
+        int $page = 1,
+    ): ResponseInterface {
         $filters = [
-            'username' => $this->stringValue($queryParams, 'username'),
-            'email' => $this->stringValue($queryParams, 'email'),
-            'status' => $this->stringValue($queryParams, 'status'),
+            'username' => $username,
+            'email' => $email,
+            'status' => $status,
         ];
 
         $reader = new QueryDataReader(User::searchQuery($filters));
         $paginator = (new OffsetPaginator($reader))->withPageSize(50);
-        $requestedPage = max(1, (int) ($queryParams['page'] ?? 1));
-        $paginator = $paginator->withCurrentPage(min($requestedPage, max(1, $paginator->getTotalPages())));
+        $paginator = $paginator->withCurrentPage(min(max(1, $page), max(1, $paginator->getTotalPages())));
 
         /** @var list<User> $users */
         $users = iterator_to_array($paginator->read(), false);
@@ -354,8 +362,19 @@ final readonly class UserController
         );
     }
 
-    public function update(ServerRequestInterface $request, #[RouteArgument] int $id): ResponseInterface
-    {
+    public function update(
+        ServerRequestInterface $request,
+        #[RouteArgument]
+        int $id,
+        #[Body('user/password')]
+        string $password = '',
+        #[Body('user/username')]
+        ?string $username = null,
+        #[Body('user/email')]
+        ?string $email = null,
+        #[Body('assignedItems')]
+        array $assignedItems = [],
+    ): ResponseInterface {
         $user = $this->resolveUser($id);
         if (!$user instanceof User) {
             return $user;
@@ -367,12 +386,6 @@ final readonly class UserController
         $errors = [];
 
         if ($request->getMethod() === Method::POST) {
-            $body = $this->parsedBody($request);
-            /** @var mixed $rawUserData */
-            $rawUserData = $body['user'] ?? null;
-            $userData = is_array($rawUserData) ? $rawUserData : [];
-            $password = $this->stringValue($userData, 'password');
-
             if ($password !== '' && $this->passwordHistoryService->wasUsedRecently($user, $password)) {
                 $errors = [
                     'password' => [
@@ -380,8 +393,8 @@ final readonly class UserController
                     ],
                 ];
             } else {
-                $user->setUsername($this->stringValue($userData, 'username', $user->getUsername()));
-                $user->setEmail($this->stringValue($userData, 'email', $user->getEmail()));
+                $user->setUsername($username ?? $user->getUsername());
+                $user->setEmail($email ?? $user->getEmail());
                 if ($password !== '') {
                     $this->passwordHistoryService->applyPasswordChange($user, $password);
                 } else {
@@ -389,10 +402,7 @@ final readonly class UserController
                     $user->save();
                 }
 
-                /** @var mixed $rawAssignedItems */
-                $rawAssignedItems = $body['assignedItems'] ?? null;
-                $items = is_array($rawAssignedItems) ? $rawAssignedItems : [];
-                $this->updateAuthAssignmentsService->run($id, $items);
+                $this->updateAuthAssignmentsService->run($id, $assignedItems);
 
                 $this->auditLogService->log(
                     $this->actorId(),
@@ -425,8 +435,13 @@ final readonly class UserController
         ]);
     }
 
-    public function updateProfile(ServerRequestInterface $request, #[RouteArgument] int $id): ResponseInterface
-    {
+    public function updateProfile(
+        ServerRequestInterface $request,
+        #[RouteArgument]
+        int $id,
+        #[Body('userProfile')]
+        array $formData = [],
+    ): ResponseInterface {
         $user = $this->resolveUser($id);
         if (!$user instanceof User) {
             return $user;
@@ -439,10 +454,9 @@ final readonly class UserController
         }
 
         $form = UserProfileForm::fromProfile($userProfile, $this->translator);
+        $this->hydrator->hydrate($form, $formData);
 
         if ($request->getMethod() === Method::POST) {
-            $body = $this->parsedBody($request);
-            $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
             $result = $this->validator->validate($form);
             $form->processValidationResult($result);
             if ($result->isValid()) {

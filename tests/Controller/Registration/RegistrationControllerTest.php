@@ -81,12 +81,12 @@ final class RegistrationControllerTest extends TestCase
         $user->setConfirmedAt(time());
         $user->save();
 
+        $response = $this->mockRedirectResponse($this->responseFactory);
+
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $response = $this->mockRedirectResponse($this->responseFactory);
-
-        $result = $controller->confirm($request, (int) $user->getId(), 'code123');
+        $result = $controller->confirm((int) $user->getId(), 'code123');
 
         $this->assertSame($response, $result);
     }
@@ -95,16 +95,15 @@ final class RegistrationControllerTest extends TestCase
     {
         $user = $this->createUser('unconfirmeduser', 'unconfirmed@example.com');
 
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
         $this->confirmationService->expects($this->once())
             ->method('confirmWithCode')
             ->willReturn(true);
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->confirm($request, (int) $user->getId(), 'code123');
+        $controller = $this->createController();
+
+        $result = $controller->confirm((int) $user->getId(), 'code123');
 
         $this->assertSame($response, $result);
     }
@@ -112,9 +111,6 @@ final class RegistrationControllerTest extends TestCase
     public function testConfirmWithInvalidCodeShowsError(): void
     {
         $user = $this->createUser('unconfirmeduser2', 'unconfirmed2@example.com');
-
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
 
         $this->confirmationService->expects($this->once())
             ->method('confirmWithCode')
@@ -128,7 +124,9 @@ final class RegistrationControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->confirm($request, (int) $user->getId(), 'code123');
+        $controller = $this->createController();
+
+        $result = $controller->confirm((int) $user->getId(), 'code123');
 
         $this->assertSame($response, $result);
     }
@@ -137,8 +135,6 @@ final class RegistrationControllerTest extends TestCase
     {
         $config = new ModuleConfig(enableEmailConfirmation: false);
         $this->harness = new ControllerHarness($config);
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -148,16 +144,15 @@ final class RegistrationControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->confirm($request, 999999, 'code123');
+        $controller = $this->createController();
+
+        $result = $controller->confirm(999999, 'code123');
 
         $this->assertSame($response, $result);
     }
 
     public function testConnectWithInvalidCodeShowsError(): void
     {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
         $this->pendingSocialAccountService->expects($this->once())
             ->method('useCode')
             ->willReturn(null);
@@ -170,16 +165,15 @@ final class RegistrationControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->connect($request, 'code123');
+        $controller = $this->createController();
+
+        $result = $controller->connect('code123');
 
         $this->assertSame($response, $result);
     }
 
     public function testConnectWithValidCodeShowsForm(): void
     {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
         $account = $this->createMock(UserSocialAccount::class);
         $this->pendingSocialAccountService->expects($this->once())
             ->method('useCode')
@@ -194,16 +188,15 @@ final class RegistrationControllerTest extends TestCase
             ->with('registration/connect', $this->anything())
             ->willReturn($response);
 
-        $result = $controller->connect($request, 'code123');
+        $controller = $this->createController();
+
+        $result = $controller->connect('code123');
 
         $this->assertSame($response, $result);
     }
 
     public function testRegisterGetShowsForm(): void
     {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
             ->method('withViewPath')
@@ -213,6 +206,9 @@ final class RegistrationControllerTest extends TestCase
             ->with('registration/register', $this->arrayHasKey('form'))
             ->willReturn($response);
 
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
+
         $result = $controller->register($request);
 
         $this->assertSame($response, $result);
@@ -220,31 +216,28 @@ final class RegistrationControllerTest extends TestCase
 
     public function testRegisterPostSuccessful(): void
     {
-        $controller = $this->createController();
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['register' => ['username' => 'testuser', 'email' => 'test@example.com', 'password' => 'password123', 'passwordRepeat' => 'password123']]);
+        $user = $this->createUser('testuser', 'test@example.com');
 
         $this->validator->method('validate')->willReturn(new Result());
         $this->registerService->expects($this->once())
             ->method('run')
             ->willReturn(ServiceResult::success('voyti.registration.account_created_check_email'));
-
-        $user = $this->createUser('testuser', 'test@example.com');
         $this->pendingSocialAccountService->expects($this->once())
             ->method('connect')
             ->with($this->callback(static fn(User $u): bool => $u->getId() === $user->getId()));
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->register($request);
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['register' => ['username' => 'testuser', 'email' => 'test@example.com', 'password' => 'password123', 'passwordRepeat' => 'password123']]);
+
+        $result = $controller->register($request, ['username' => 'testuser', 'email' => 'test@example.com', 'password' => 'password123', 'passwordRepeat' => 'password123']);
 
         $this->assertSame($response, $result);
     }
 
     public function testRegisterPostWithServiceFailure(): void
     {
-        $controller = $this->createController();
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['register' => ['username' => 'existing', 'email' => 'existing@example.com', 'password' => 'password123', 'passwordRepeat' => 'password123']]);
-
         $this->validator->method('validate')->willReturn(new Result());
         $this->registerService->expects($this->once())
             ->method('run')
@@ -258,16 +251,16 @@ final class RegistrationControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->register($request);
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['register' => ['username' => 'existing', 'email' => 'existing@example.com', 'password' => 'password123', 'passwordRepeat' => 'password123']]);
+
+        $result = $controller->register($request, ['username' => 'existing', 'email' => 'existing@example.com', 'password' => 'password123', 'passwordRepeat' => 'password123']);
 
         $this->assertSame($response, $result);
     }
 
     public function testRegisterPostWithValidationErrors(): void
     {
-        $controller = $this->createController();
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['register' => ['username' => '', 'email' => '', 'password' => '', 'passwordRepeat' => '']]);
-
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
             ->method('withViewPath')
@@ -276,7 +269,10 @@ final class RegistrationControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->register($request);
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['register' => ['username' => '', 'email' => '', 'password' => '', 'passwordRepeat' => '']]);
+
+        $result = $controller->register($request, ['username' => '', 'email' => '', 'password' => '', 'passwordRepeat' => '']);
 
         $this->assertSame($response, $result);
     }
@@ -285,8 +281,6 @@ final class RegistrationControllerTest extends TestCase
     {
         $config = new ModuleConfig(enableRegistration: false);
         $this->harness = new ControllerHarness($config);
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -295,6 +289,9 @@ final class RegistrationControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->willReturn($response);
+
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
 
         $result = $controller->register($request);
 
@@ -303,9 +300,6 @@ final class RegistrationControllerTest extends TestCase
 
     public function testResendGetShowsForm(): void
     {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
             ->method('withViewPath')
@@ -314,6 +308,9 @@ final class RegistrationControllerTest extends TestCase
             ->method('render')
             ->with('registration/resend', $this->anything())
             ->willReturn($response);
+
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
 
         $result = $controller->resend($request);
 
@@ -324,9 +321,6 @@ final class RegistrationControllerTest extends TestCase
     {
         $this->createUser('resenduser', 'test@example.com');
 
-        $controller = $this->createController();
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['resend' => ['email' => 'test@example.com']]);
-
         $this->validator->method('validate')->willReturn(new Result());
         $this->confirmationService->expects($this->once())
             ->method('resend')
@@ -334,16 +328,16 @@ final class RegistrationControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->resend($request);
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['resend' => ['email' => 'test@example.com']]);
+
+        $result = $controller->resend($request, ['email' => 'test@example.com']);
 
         $this->assertSame($response, $result);
     }
 
     public function testResendPostUserNotFound(): void
     {
-        $controller = $this->createController();
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['resend' => ['email' => 'nonexistent@example.com']]);
-
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
             ->method('withViewPath')
@@ -352,7 +346,10 @@ final class RegistrationControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->resend($request);
+        $controller = $this->createController();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['resend' => ['email' => 'nonexistent@example.com']]);
+
+        $result = $controller->resend($request, ['email' => 'nonexistent@example.com']);
 
         $this->assertSame($response, $result);
     }
@@ -361,8 +358,6 @@ final class RegistrationControllerTest extends TestCase
     {
         $config = new ModuleConfig(enableEmailConfirmation: false);
         $this->harness = new ControllerHarness($config);
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -371,6 +366,9 @@ final class RegistrationControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->willReturn($response);
+
+        $controller = $this->createController();
+        $request = new ServerRequest('GET', '/');
 
         $result = $controller->resend($request);
 

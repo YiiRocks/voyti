@@ -55,9 +55,6 @@ final class RuleControllerTest extends TestCase
 
     public function testCreateGetShowsForm(): void
     {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
             ->method('withViewPath')
@@ -67,16 +64,14 @@ final class RuleControllerTest extends TestCase
             ->with('admin/rbac/rule/create', $this->anything())
             ->willReturn($response);
 
-        $result = $controller->create($request);
+        $controller = $this->createController();
+        $result = $controller->create(request: new ServerRequest('GET', '/'));
 
         $this->assertSame($response, $result);
     }
 
     public function testCreatePostServiceFailsShowsError(): void
     {
-        $controller = $this->createController();
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['rule' => ['name' => 'myRule', 'class' => 'Invalid\\Class']]);
-
         $this->validator->method('validate')->willReturn(new Result());
         $this->ruleEditionService->expects($this->once())
             ->method('create')
@@ -90,16 +85,14 @@ final class RuleControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->create($request);
+        $controller = $this->createController();
+        $result = $controller->create(request: new ServerRequest('POST', '/'), ruleName: 'myRule', ruleClass: 'Invalid\\Class');
 
         $this->assertSame($response, $result);
     }
 
     public function testCreatePostSuccessful(): void
     {
-        $controller = $this->createController();
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['rule' => ['name' => 'myRule', 'class' => 'App\\Rule\\MyRule']]);
-
         $this->validator->method('validate')->willReturn(new Result());
         $this->ruleEditionService->expects($this->once())
             ->method('create')
@@ -107,19 +100,17 @@ final class RuleControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->create($request);
+        $controller = $this->createController();
+        $result = $controller->create(request: new ServerRequest('POST', '/'), ruleName: 'myRule', ruleClass: 'App\\Rule\\MyRule');
 
         $this->assertSame($response, $result);
     }
 
     public function testCreatePostWithInvalidDataShowsErrors(): void
     {
-        $controller = $this->createController();
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['rule' => ['name' => '', 'class' => '']]);
-
-        $result = new Result();
-        $result->addError('Name is required.');
-        $this->validator->method('validate')->willReturn($result);
+        $validationResult = new Result();
+        $validationResult->addError('Name is required.');
+        $this->validator->method('validate')->willReturn($validationResult);
         $this->ruleEditionService->expects($this->never())->method('create');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -131,19 +122,19 @@ final class RuleControllerTest extends TestCase
             ))
             ->willReturn($response);
 
-        $result2 = $controller->create($request);
+        $controller = $this->createController();
+        $result = $controller->create(request: new ServerRequest('POST', '/'), ruleName: '', ruleClass: '');
 
-        $this->assertSame($response, $result2);
+        $this->assertSame($response, $result);
     }
 
     public function testDeleteRemovesRule(): void
     {
-        $controller = $this->createController();
-
         $this->ruleEditionService->expects($this->once())->method('remove')->with('myRule');
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
+        $controller = $this->createController();
         $result = $controller->delete('myRule');
 
         $this->assertSame($response, $result);
@@ -151,8 +142,6 @@ final class RuleControllerTest extends TestCase
 
     public function testIndexShowsRules(): void
     {
-        $controller = $this->createController();
-
         $this->authHelper->method('getRuleNames')->willReturn([]);
 
         $response = $this->createMock(ResponseInterface::class);
@@ -164,6 +153,7 @@ final class RuleControllerTest extends TestCase
             ->with('admin/rbac/rule/index', $this->anything())
             ->willReturn($response);
 
+        $controller = $this->createController();
         $result = $controller->index();
 
         $this->assertSame($response, $result);
@@ -171,9 +161,6 @@ final class RuleControllerTest extends TestCase
 
     public function testUpdateGetShowsForm(): void
     {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
             ->method('withViewPath')
@@ -183,16 +170,14 @@ final class RuleControllerTest extends TestCase
             ->with('admin/rbac/rule/update', $this->anything())
             ->willReturn($response);
 
-        $result = $controller->update($request, 'existingRule');
+        $controller = $this->createController();
+        $result = $controller->update(request: new ServerRequest('GET', '/'), name: 'existingRule');
 
         $this->assertSame($response, $result);
     }
 
     public function testUpdatePostServiceFailsShowsError(): void
     {
-        $controller = $this->createController();
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['rule' => ['name' => 'updatedRule', 'class' => 'Invalid\\Class']]);
-
         $this->validator->method('validate')->willReturn(new Result());
         $this->ruleEditionService->expects($this->once())
             ->method('update')
@@ -206,16 +191,14 @@ final class RuleControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->update($request, 'oldRule');
+        $controller = $this->createController();
+        $result = $controller->update(request: new ServerRequest('POST', '/'), name: 'oldRule', ruleName: 'updatedRule', ruleClass: 'Invalid\\Class');
 
         $this->assertSame($response, $result);
     }
 
     public function testUpdatePostSuccessful(): void
     {
-        $controller = $this->createController();
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['rule' => ['name' => 'updatedRule', 'class' => 'App\\Rule\\UpdatedRule']]);
-
         $this->validator->method('validate')->willReturn(new Result());
         $this->ruleEditionService->expects($this->once())
             ->method('update')
@@ -223,19 +206,17 @@ final class RuleControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->update($request, 'oldRule');
+        $controller = $this->createController();
+        $result = $controller->update(request: new ServerRequest('POST', '/'), name: 'oldRule', ruleName: 'updatedRule', ruleClass: 'App\\Rule\\UpdatedRule');
 
         $this->assertSame($response, $result);
     }
 
     public function testUpdatePostWithInvalidDataShowsErrors(): void
     {
-        $controller = $this->createController();
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['rule' => ['name' => '', 'class' => '']]);
-
-        $result = new Result();
-        $result->addError('Name is required.');
-        $this->validator->method('validate')->willReturn($result);
+        $validationResult = new Result();
+        $validationResult->addError('Name is required.');
+        $this->validator->method('validate')->willReturn($validationResult);
         $this->ruleEditionService->expects($this->never())->method('update');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -247,9 +228,10 @@ final class RuleControllerTest extends TestCase
             ))
             ->willReturn($response);
 
-        $result2 = $controller->update($request, 'oldRule');
+        $controller = $this->createController();
+        $result = $controller->update(request: new ServerRequest('POST', '/'), name: 'oldRule', ruleName: '', ruleClass: '');
 
-        $this->assertSame($response, $result2);
+        $this->assertSame($response, $result);
     }
 
     private function createController(): RuleController

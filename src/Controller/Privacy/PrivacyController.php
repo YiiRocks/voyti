@@ -12,7 +12,6 @@ use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Event\Gdpr\GdprEvent;
 use YiiRocks\Voyti\Event\User\UserEvent;
-use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Model\Form\Settings\ConsentForm;
 use YiiRocks\Voyti\Model\Form\Settings\GdprConsentForm;
 use YiiRocks\Voyti\Model\User;
@@ -29,6 +28,7 @@ use Yiisoft\Http\Header;
 use Yiisoft\Http\Method;
 use Yiisoft\Http\Status;
 use Yiisoft\Hydrator\HydratorInterface;
+use Yiisoft\Input\Http\Attribute\Parameter\Body;
 use Yiisoft\Json\Json;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Security\PasswordHasher;
@@ -45,7 +45,6 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
  */
 final readonly class PrivacyController
 {
-    use InputDataTrait;
     use RedirectTrait;
     use RenderTrait;
 
@@ -64,13 +63,15 @@ final readonly class PrivacyController
         private FlashInterface $flash,
     ) {}
 
-    public function anonymize(ServerRequestInterface $request): ResponseInterface
-    {
+    public function anonymize(
+        ServerRequestInterface $request,
+        #[Body('anonymize')]
+        array $formData = [],
+    ): ResponseInterface {
         $form = new ConsentForm($this->translator, 'anonymize', 'voyti.view.anonymize.confirm_label');
+        $this->hydrator->hydrate($form, $formData);
 
         if ($request->getMethod() === Method::POST) {
-            $body = $this->parsedBody($request);
-            $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
             $result = $this->validator->validate($form);
 
             /** @var User $user */
@@ -98,13 +99,15 @@ final readonly class PrivacyController
         return $this->renderView('privacy/anonymize', ['form' => $form, 'data' => AnonymizeViewData::create($this->url)]);
     }
 
-    public function delete(ServerRequestInterface $request): ResponseInterface
-    {
+    public function delete(
+        ServerRequestInterface $request,
+        #[Body('delete-account')]
+        array $formData = [],
+    ): ResponseInterface {
         $form = new ConsentForm($this->translator, 'delete-account', 'voyti.view.delete_account.confirm_label');
+        $this->hydrator->hydrate($form, $formData);
 
         if ($request->getMethod() === Method::POST) {
-            $body = $this->parsedBody($request);
-            $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
             $result = $this->validator->validate($form);
 
             /** @var User $user */
@@ -127,7 +130,7 @@ final readonly class PrivacyController
         return $this->renderView('privacy/delete', ['form' => $form, 'data' => DeleteViewData::create($this->url)]);
     }
 
-    public function export(ServerRequestInterface $request): ResponseInterface
+    public function export(): ResponseInterface
     {
         /** @var User $user */
         $user = $this->currentUser->getIdentity();
@@ -155,16 +158,18 @@ final readonly class PrivacyController
         return $response;
     }
 
-    public function gdprConsent(ServerRequestInterface $request): ResponseInterface
-    {
+    public function gdprConsent(
+        ServerRequestInterface $request,
+        #[Body('gdpr-consent')]
+        array $formData = [],
+    ): ResponseInterface {
         /** @var User $user */
         $user = $this->currentUser->getIdentity();
 
         $form = new GdprConsentForm($this->translator);
+        $this->hydrator->hydrate($form, $formData);
 
         if ($request->getMethod() === Method::POST) {
-            $body = $this->parsedBody($request);
-            $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
             if ($form->consent && !$user->isGdprConsent()) {
                 $user->setGdprConsent(true);
                 $user->setGdprConsentDate(time());

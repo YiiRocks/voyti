@@ -111,7 +111,7 @@ final class AccountControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->update($request);
+        $result = $controller->update($request, ['username' => 'testuser', 'email' => 'test@example.com', 'password' => '', 'passwordRepeat' => '']);
 
         $this->assertSame($response, $result);
         $updated = User::findById((int) $user->getId());
@@ -146,7 +146,7 @@ final class AccountControllerTest extends TestCase
         $this->responseFactory->method('createResponse')->willReturn($response);
         $response->method('withHeader')->willReturnSelf();
 
-        $result = $controller->update($request);
+        $result = $controller->update($request, ['username' => 'testuser', 'email' => 'new@example.com', 'password' => '', 'passwordRepeat' => '']);
 
         $this->assertSame($response, $result);
     }
@@ -179,7 +179,7 @@ final class AccountControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->update($request);
+        $result = $controller->update($request, ['username' => 'testuser', 'email' => 'test@example.com', 'password' => 'newpassword', 'passwordRepeat' => 'newpassword']);
 
         $this->assertSame($response, $result);
         $updated = User::findById((int) $user->getId());
@@ -222,7 +222,7 @@ final class AccountControllerTest extends TestCase
             ->with('account/update', $this->anything())
             ->willReturn($response);
 
-        $result = $controller->update($request);
+        $result = $controller->update($request, ['username' => 'testuser', 'email' => 'test@example.com', 'password' => 'secret', 'passwordRepeat' => 'secret']);
 
         $this->assertSame($response, $result);
         $updated = User::findById((int) $user->getId());
@@ -234,7 +234,6 @@ final class AccountControllerTest extends TestCase
     public function testConfirmWithCodeShowsMessage(string $code, bool $serviceResult, string $expectedTitle): void
     {
         $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
 
         $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $this->currentUser->method('getIdentity')->willReturn($user);
@@ -253,7 +252,7 @@ final class AccountControllerTest extends TestCase
             ))
             ->willReturn($response);
 
-        $result = $controller->confirm($request, $code);
+        $result = $controller->confirm($code);
 
         $this->assertSame($response, $result);
     }

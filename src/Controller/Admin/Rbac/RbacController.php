@@ -11,7 +11,6 @@ use RuntimeException;
 use YiiRocks\Voyti\Controller\ActorIdTrait;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
-use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Model\Form\Rbac\AuthItemForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
@@ -20,6 +19,8 @@ use YiiRocks\Voyti\ViewData\Admin\Rbac\CreateViewData;
 use YiiRocks\Voyti\ViewData\Admin\Rbac\IndexViewData;
 use YiiRocks\Voyti\ViewData\Admin\Rbac\UpdateViewData;
 use Yiisoft\Http\Method;
+use Yiisoft\Input\Http\Attribute\Parameter\Body;
+use Yiisoft\Input\Http\Attribute\Parameter\Query;
 use Yiisoft\Rbac\AssignmentsStorageInterface;
 use Yiisoft\Rbac\Item;
 use Yiisoft\Rbac\ItemsStorageInterface;
@@ -44,7 +45,6 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 final readonly class RbacController
 {
     use ActorIdTrait;
-    use InputDataTrait;
     use RedirectTrait;
     use RenderTrait;
 
@@ -63,17 +63,29 @@ final readonly class RbacController
         private CurrentUser $currentUser,
     ) {}
 
-    public function create(ServerRequestInterface $request, #[RouteArgument] string $itemType, #[RouteArgument] string $indexRouteName): ResponseInterface
-    {
+    public function create(
+        ServerRequestInterface $request,
+        #[Body('name')]
+        string $name = '',
+        #[Body('description')]
+        string $description = '',
+        #[Body('rule')]
+        string $rule = '',
+        #[Body('children')]
+        ?array $children = null,
+        #[RouteArgument]
+        string $itemType = '',
+        #[RouteArgument]
+        string $indexRouteName = '',
+    ): ResponseInterface {
         $form = $this->createForm($itemType);
         $availableChildren = $this->getAvailableChildren($itemType);
         $errors = [];
 
         if ($request->getMethod() === Method::POST) {
-            $body = $this->parsedBody($request);
-            $this->loadForm($form, $body);
-            $result = $this->validator->validate($form);
+            $this->loadForm($form, $name, $description, $rule, $children);
 
+            $result = $this->validator->validate($form);
             if ($result->isValid()) {
                 $item = $itemType === 'role' ? new Role($form->name) : new Permission($form->name);
                 $item = $item->withDescription($form->description);
@@ -87,9 +99,9 @@ final readonly class RbacController
                 }
 
                 try {
-                    /** @var list<string> $children */
-                    $children = $form->children;
-                    foreach ($children as $childName) {
+                    /** @var list<string> $childNames */
+                    $childNames = $form->children;
+                    foreach ($childNames as $childName) {
                         if ($childName !== '') {
                             $this->managerInterface->addChild($form->name, $childName);
                         }
@@ -140,12 +152,16 @@ final readonly class RbacController
         );
     }
 
-    public function index(ServerRequestInterface $request, #[RouteArgument] string $itemType, #[RouteArgument] string $indexRouteName): ResponseInterface
-    {
-        $queryParams = $this->queryParams($request);
-        $filterName = $this->stringValue($queryParams, 'name');
-        $filterDescription = $this->stringValue($queryParams, 'description');
-
+    public function index(
+        #[Query('name')]
+        string $filterName = '',
+        #[Query('description')]
+        string $filterDescription = '',
+        #[RouteArgument]
+        string $itemType = '',
+        #[RouteArgument]
+        string $indexRouteName = '',
+    ): ResponseInterface {
         /** @var array<string, Item> $items */
         $items = $itemType === 'role'
             ? $this->itemsStorage->getRoles()
@@ -186,10 +202,20 @@ final readonly class RbacController
         ServerRequestInterface $request,
         #[RouteArgument]
         string $name,
+        #[Body('name')]
+        string $formName = '',
+        #[Body('description')]
+        string $description = '',
+        #[Body('rule')]
+        string $rule = '',
+        #[Body('children')]
+        ?array $children = null,
+        #[Body('assignedUsers')]
+        ?array $assignedUsers = null,
         #[RouteArgument]
-        string $itemType,
+        string $itemType = '',
         #[RouteArgument]
-        string $indexRouteName,
+        string $indexRouteName = '',
     ): ResponseInterface {
         $form = $this->createForm($itemType);
         $item = $itemType === 'role'
@@ -212,8 +238,7 @@ final readonly class RbacController
         $errors = [];
 
         if ($request->getMethod() === Method::POST) {
-            $body = $this->parsedBody($request);
-            $this->loadForm($form, $body);
+            $this->loadForm($form, $formName, $description, $rule, $children);
             $result = $this->validator->validate($form);
 
             if ($result->isValid()) {
@@ -238,9 +263,9 @@ final readonly class RbacController
 
                 try {
                     $this->managerInterface->removeChildren($form->name);
-                    /** @var list<string> $children */
-                    $children = $form->children;
-                    foreach ($children as $childName) {
+                    /** @var list<string> $childNames */
+                    $childNames = $form->children;
+                    foreach ($childNames as $childName) {
                         if ($childName !== '') {
                             $this->managerInterface->addChild($form->name, $childName);
                         }
@@ -251,7 +276,7 @@ final readonly class RbacController
                 }
 
                 if ($errors === []) {
-                    $this->processUserAssignments($body, $form->name);
+                    $this->processUserAssignments($assignedUsers ?? [], $form->name);
 
                     $this->auditLogService->log(
                         $this->actorId(),
@@ -309,38 +334,26 @@ final readonly class RbacController
         return $candidates;
     }
 
-    private function loadForm(AuthItemForm $form, array $body): void
+    private function loadForm(AuthItemForm $form, string $name, string $description, string $rule, ?array $children): void
     {
-        $prefix = $form->getFormName();
-        $data = $this->formData($body, $prefix);
-        $form->name = $this->stringValue($data, 'name', $form->name);
-        $form->description = $this->stringValue($data, 'description', $form->description);
-        $form->rule = $this->nullableStringValue($data, 'rule') ?? $form->rule;
+        $form->name = $name;
+        $form->description = $description;
+        $form->rule = $rule !== '' ? $rule : $form->rule;
 
-        /** @var mixed $children */
-        $children = $data['children'] ?? null;
-        $form->children = is_array($children)
-            ? array_values(array_filter($children, 'is_string'))
-            : $form->children;
+        if (is_array($children)) {
+            $form->children = array_values(array_filter($children, 'is_string'));
+        }
     }
 
-    /**
-     * @param array<array-key, mixed> $body
-     */
-    private function processUserAssignments(array $body, string $itemName): void
+    private function processUserAssignments(array $assignedUserIds, string $itemName): void
     {
         $submittedIds = [];
-        /** @var mixed $rawAssignedUsers */
-        $rawAssignedUsers = $body['assignedUsers'] ?? [];
-        $assignedUsers = (array) $rawAssignedUsers;
-        array_walk(
-            $assignedUsers,
-            function (mixed $id) use (&$submittedIds): void {
-                if (is_string($id) && $id !== '') {
-                    $submittedIds[$id] = $id;
-                }
-            },
-        );
+        /** @psalm-suppress MixedAssignment */
+        foreach ($assignedUserIds as $id) {
+            if (is_string($id) && $id !== '') {
+                $submittedIds[$id] = $id;
+            }
+        }
 
         $currentAssignments = $this->assignmentsStorage->getByItemNames([$itemName]);
         foreach ($currentAssignments as $assignment) {

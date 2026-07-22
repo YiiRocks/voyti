@@ -10,7 +10,6 @@ use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
-use YiiRocks\Voyti\Helper\InputDataTrait;
 use YiiRocks\Voyti\Model\Form\Auth\RegistrationForm;
 use YiiRocks\Voyti\Model\Form\Auth\ResendForm;
 use YiiRocks\Voyti\Model\User;
@@ -23,6 +22,7 @@ use YiiRocks\Voyti\ViewData\Registration\RegisterViewData;
 use YiiRocks\Voyti\ViewData\Registration\ResendViewData;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
+use Yiisoft\Input\Http\Attribute\Parameter\Body;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -36,7 +36,6 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
  */
 final readonly class RegistrationController
 {
-    use InputDataTrait;
     use RedirectTrait;
     use RenderTrait;
 
@@ -55,7 +54,7 @@ final readonly class RegistrationController
         private AuthClientRegistry $authClientRegistry,
     ) {}
 
-    public function confirm(ServerRequestInterface $request, #[RouteArgument] int $id, #[RouteArgument] string $code): ResponseInterface
+    public function confirm(#[RouteArgument] int $id, #[RouteArgument] string $code): ResponseInterface
     {
         $user = User::findById($id);
 
@@ -74,7 +73,7 @@ final readonly class RegistrationController
         return $this->renderError('voyti.registration.confirmation_link_invalid');
     }
 
-    public function connect(ServerRequestInterface $request, #[RouteArgument] string $code): ResponseInterface
+    public function connect(#[RouteArgument] string $code): ResponseInterface
     {
         $account = $this->pendingSocialAccountService->useCode($code);
         if ($account === null) {
@@ -86,17 +85,19 @@ final readonly class RegistrationController
         ]);
     }
 
-    public function register(ServerRequestInterface $request): ResponseInterface
-    {
+    public function register(
+        ServerRequestInterface $request,
+        #[Body('register')]
+        array $formData = [],
+    ): ResponseInterface {
         if (!$this->config->enableRegistration) {
             return $this->renderError('voyti.registration.disabled');
         }
 
         $form = new RegistrationForm($this->config, $this->translator);
+        $this->hydrator->hydrate($form, $formData);
 
         if ($request->getMethod() === Method::POST) {
-            $body = $this->parsedBody($request);
-            $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
             $result = $this->validator->validate($form);
             $form->processValidationResult($result);
 
@@ -140,17 +141,19 @@ final readonly class RegistrationController
         ]);
     }
 
-    public function resend(ServerRequestInterface $request): ResponseInterface
-    {
+    public function resend(
+        ServerRequestInterface $request,
+        #[Body('resend')]
+        array $formData = [],
+    ): ResponseInterface {
         if (!$this->config->enableEmailConfirmation) {
             return $this->renderError('voyti.registration.email_confirmation_disabled');
         }
 
         $form = new ResendForm($this->config, $this->translator);
+        $this->hydrator->hydrate($form, $formData);
 
         if ($request->getMethod() === Method::POST) {
-            $body = $this->parsedBody($request);
-            $this->hydrator->hydrate($form, $this->formData($body, $form->getFormName()));
             $result = $this->validator->validate($form);
 
             if ($result->isValid()) {
