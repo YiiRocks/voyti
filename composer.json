@@ -38,6 +38,7 @@
         "symfony/console": "^5.4 || ^6.0 || ^7.0 || ^8.0",
         "yiisoft/active-record": "^1.0",
         "yiisoft/auth": "^3.2",
+        "yiisoft/cookies": "^1.2",
         "yiisoft/csrf": "^2.0",
         "yiisoft/data": "^2.0",
         "yiisoft/data-db": "^1.0",

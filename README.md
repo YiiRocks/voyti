@@ -173,6 +173,12 @@ return [
         'appName' => 'My Project',
         'recaptchaVersion' => RecaptchaVersion::V3,
     ],
+
+    // Required to encrypt the remember-me cookie - generate a strong, random string.
+    // Leaving it unset throws a LogicException!
+    'yiisoft/cookies' => [
+        'secretKey' => $_ENV['COOKIES_SECRET'],
+    ],
 ];
 ```
 

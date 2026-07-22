@@ -14,6 +14,8 @@ use Psr\Http\Client\ClientInterface as PsrClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Throwable;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
@@ -23,6 +25,8 @@ use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
 use YiiRocks\Voyti\tests\Support\MailCapture;
 use YiiRocks\Voyti\tests\Support\SimpleAssignmentsStorage;
 use YiiRocks\Voyti\tests\Support\SimpleItemsStorage;
+use Yiisoft\Cookies\CookieEncryptor;
+use Yiisoft\Cookies\CookieSigner;
 use Yiisoft\Di\Container;
 use Yiisoft\Di\ContainerConfig;
 use Yiisoft\Mailer\MailerInterface;
@@ -64,9 +68,12 @@ final class ContainerWiringTest extends TestCase
 
         $definitions = array_merge($definitions, [
             AssignmentsStorageInterface::class => new SimpleAssignmentsStorage(),
+            CookieEncryptor::class => new CookieEncryptor('test-secret-key-0123456789abcdef'),
+            CookieSigner::class => new CookieSigner('test-secret-key-0123456789abcdef'),
             CurrentRoute::class => new CurrentRoute(),
             EventDispatcherInterface::class => new EventCaptureDispatcher(),
             ItemsStorageInterface::class => new SimpleItemsStorage(),
+            LoggerInterface::class => new NullLogger(),
             MailerInterface::class => new MailCapture(),
             ManagerInterface::class => Manager::class,
             PsrClientInterface::class => $this->createMock(PsrClientInterface::class),

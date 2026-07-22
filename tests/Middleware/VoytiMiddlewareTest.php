@@ -24,6 +24,7 @@ use YiiRocks\Voyti\tests\Support\FakeSession;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Auth\IdentityRepositoryInterface;
+use Yiisoft\Cookies\CookieMiddleware;
 use Yiisoft\Http\Status;
 use Yiisoft\Rbac\ManagerInterface;
 use Yiisoft\Router\CurrentRoute;
@@ -61,7 +62,13 @@ final class VoytiMiddlewareTest extends TestCase
         $second = $this->createPassThroughMiddleware();
         $third = $this->createPassThroughMiddleware();
 
-        $middleware = new VoytiMiddleware($rememberMe, $first, $second, $third);
+        $middleware = new VoytiMiddleware(
+            $rememberMe,
+            $first,
+            $second,
+            $third,
+            $this->createPassThroughCookieMiddleware(),
+        );
         $result = $middleware->process($request, $handler);
 
         self::assertSame($response, $result);
@@ -81,7 +88,13 @@ final class VoytiMiddlewareTest extends TestCase
         $handler = $this->createMock(RequestHandlerInterface::class);
         $handler->expects(self::never())->method('handle');
 
-        $middleware = new VoytiMiddleware($rememberMe, $first, $second, $third);
+        $middleware = new VoytiMiddleware(
+            $rememberMe,
+            $first,
+            $second,
+            $third,
+            $this->createPassThroughCookieMiddleware(),
+        );
         $result = $middleware->process($request, $handler);
 
         self::assertSame($redirectResponse, $result);
@@ -101,7 +114,13 @@ final class VoytiMiddlewareTest extends TestCase
         $handler = $this->createMock(RequestHandlerInterface::class);
         $handler->expects(self::never())->method('handle');
 
-        $middleware = new VoytiMiddleware($rememberMe, $first, $second, $third);
+        $middleware = new VoytiMiddleware(
+            $rememberMe,
+            $first,
+            $second,
+            $third,
+            $this->createPassThroughCookieMiddleware(),
+        );
         $result = $middleware->process($request, $handler);
 
         self::assertSame($redirectResponse, $result);
@@ -121,7 +140,13 @@ final class VoytiMiddlewareTest extends TestCase
         $handler = $this->createMock(RequestHandlerInterface::class);
         $handler->expects(self::never())->method('handle');
 
-        $middleware = new VoytiMiddleware($rememberMe, $first, $second, $third);
+        $middleware = new VoytiMiddleware(
+            $rememberMe,
+            $first,
+            $second,
+            $third,
+            $this->createPassThroughCookieMiddleware(),
+        );
         $result = $middleware->process($request, $handler);
 
         self::assertSame($redirectResponse, $result);
@@ -141,7 +166,13 @@ final class VoytiMiddlewareTest extends TestCase
         $handler = $this->createMock(RequestHandlerInterface::class);
         $handler->expects(self::never())->method('handle');
 
-        $middleware = new VoytiMiddleware($rememberMe, $first, $second, $third);
+        $middleware = new VoytiMiddleware(
+            $rememberMe,
+            $first,
+            $second,
+            $third,
+            $this->createPassThroughCookieMiddleware(),
+        );
         $result = $middleware->process($request, $handler);
 
         self::assertSame($redirectResponse, $result);
@@ -215,6 +246,15 @@ final class VoytiMiddlewareTest extends TestCase
         return $session;
     }
 
+    private function createPassThroughCookieMiddleware(): CookieMiddleware
+    {
+        $cookieMiddleware = $this->createMock(CookieMiddleware::class);
+        $cookieMiddleware->method('process')->willReturnCallback(
+            static fn(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface => $handler->handle($request),
+        );
+        return $cookieMiddleware;
+    }
+
     private function createPassThroughMiddleware(): MiddlewareInterface
     {
         $middleware = $this->createMock(MiddlewareInterface::class);
@@ -229,6 +269,7 @@ final class VoytiMiddlewareTest extends TestCase
         ?PasswordAgeEnforceMiddleware $passwordAge = null,
         ?SessionRevocationEnforceMiddleware $sessionRevocation = null,
         ?TwoFactorAuthenticationEnforceMiddleware $twoFactorAuth = null,
+        ?CookieMiddleware $cookieMiddleware = null,
         ?ModuleConfig $config = null,
         ?CurrentUser $currentUser = null,
         ?CurrentRoute $currentRoute = null,
@@ -249,12 +290,14 @@ final class VoytiMiddlewareTest extends TestCase
         $translator ??= $this->createTranslator();
         $authManager ??= $this->createMock(ManagerInterface::class);
         $identityRepository ??= $this->createMock(IdentityRepositoryInterface::class);
+        $cookieMiddleware ??= $this->createPassThroughCookieMiddleware();
 
         $rememberMe ??= new RememberMeMiddleware(
             $currentUser,
             new RememberMeCookieService(2592000, new SystemClock()),
             $identityRepository,
             $session,
+            $cookieMiddleware,
         );
 
         $passwordAge ??= new PasswordAgeEnforceMiddleware(
@@ -282,7 +325,7 @@ final class VoytiMiddlewareTest extends TestCase
             $url,
         );
 
-        return new VoytiMiddleware($rememberMe, $passwordAge, $sessionRevocation, $twoFactorAuth);
+        return new VoytiMiddleware($rememberMe, $passwordAge, $sessionRevocation, $twoFactorAuth, $cookieMiddleware);
     }
 
     private function createRedirectMiddleware(ResponseInterface $response): MiddlewareInterface

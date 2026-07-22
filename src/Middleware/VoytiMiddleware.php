@@ -10,6 +10,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use YiiRocks\Voyti\ModuleConfig;
+use Yiisoft\Cookies\CookieMiddleware;
 
 /**
  * Convenience wrapper that chains voyti's remember-me and enforcement middleware in the recommended order.
@@ -26,6 +27,7 @@ final readonly class VoytiMiddleware implements MiddlewareInterface
         private MiddlewareInterface $passwordAge,
         private MiddlewareInterface $sessionRevocation,
         private MiddlewareInterface $twoFactorAuth,
+        private CookieMiddleware $cookieMiddleware,
     ) {}
 
     #[Override]
@@ -33,6 +35,7 @@ final readonly class VoytiMiddleware implements MiddlewareInterface
     {
         $middlewares = [
             $this->rememberMe,
+            $this->cookieMiddleware,
             $this->sessionRevocation,
             $this->passwordAge,
             $this->twoFactorAuth,

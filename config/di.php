@@ -7,6 +7,7 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Client\ClientInterface as PsrClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
+use Psr\Log\LoggerInterface;
 use YiiRocks\Voyti\Adapter\IdentityAdapter;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistryFactory;
@@ -54,6 +55,9 @@ use YiiRocks\Voyti\Validator\Rbac\ItemsValidator;
 use YiiRocks\Voyti\Validator\Rbac\RuleValidator;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Auth\IdentityWithTokenRepositoryInterface;
+use Yiisoft\Cookies\CookieEncryptor;
+use Yiisoft\Cookies\CookieMiddleware;
+use Yiisoft\Cookies\CookieSigner;
 use Yiisoft\Input\Http\HydratorAttributeParametersResolver;
 use Yiisoft\Input\Http\RequestInputParametersResolver;
 use Yiisoft\Mailer\MailerInterface;
@@ -74,6 +78,22 @@ use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 
 /** @var array $params */
+
+/**
+ * @throws LogicException if the "yiisoft/cookies" secretKey param is missing or empty.
+ */
+$cookieSecretKey = static function () use ($params): string {
+    $secretKey = $params['yiisoft/cookies']['secretKey'] ?? null;
+    if (!is_string($secretKey) || $secretKey === '') {
+        throw new LogicException(
+            'Missing "secretKey" in the "yiisoft/cookies" params. Configure '
+            . '$params[\'yiisoft/cookies\'][\'secretKey\'] with a securely generated random string '
+            . 'to encrypt the remember-me cookie.',
+        );
+    }
+
+    return $secretKey;
+};
 
 return [
     // Module configuration, built once from the host's `yiirocks/voyti` params array.
@@ -96,7 +116,24 @@ return [
         PasswordAgeEnforceMiddleware $passwordAge,
         SessionRevocationEnforceMiddleware $sessionRevocation,
         TwoFactorAuthenticationEnforceMiddleware $twoFactorAuth,
-    ) => new VoytiMiddleware($rememberMe, $passwordAge, $sessionRevocation, $twoFactorAuth),
+        CookieMiddleware $cookie,
+    ) => new VoytiMiddleware($rememberMe, $passwordAge, $sessionRevocation, $twoFactorAuth, $cookie),
+
+    // Cookie encryption middleware for remember-me cookies
+    CookieEncryptor::class => static fn() => new CookieEncryptor($cookieSecretKey()),
+    CookieSigner::class => static fn() => new CookieSigner($cookieSecretKey()),
+    CookieMiddleware::class => fn(
+        LoggerInterface $logger,
+        CookieEncryptor $encryptor,
+        CookieSigner $signer,
+    ) => new CookieMiddleware(
+        $logger,
+        $encryptor,
+        $signer,
+        [
+            'autoLogin' => CookieMiddleware::ENCRYPT,
+        ],
+    ),
 
     // Auditing.
     AuditLogService::class => AuditLogService::class,

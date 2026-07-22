@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service;
 
-use DateTimeImmutable;
+use DateInterval;
 use JsonException;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
@@ -49,17 +49,14 @@ final class RememberMeCookieService
         ResponseInterface $response,
         string $sessionId,
     ): ResponseInterface {
-        $expiresAt = $this->duration > 0 ? $this->clock->now()->getTimestamp() + $this->duration : null;
-        $expires = $expiresAt !== null ? (new DateTimeImmutable())->setTimestamp($expiresAt) : null;
+        $value = $this->buildPayload($identity, $sessionId);
 
-        $value = Json::encode([
-            $identity->getId(),
-            $identity->getCookieLoginKey(),
-            $expiresAt ?? 0,
-            $sessionId,
-        ]);
+        if ($this->duration > 0) {
+            $interval = new DateInterval('PT' . $this->duration . 'S');
+            return (new Cookie($this->cookieName, $value))->withMaxAge($interval)->addToResponse($response);
+        }
 
-        return (new Cookie($this->cookieName, $value, $expires))->addToResponse($response);
+        return (new Cookie($this->cookieName, $value))->addToResponse($response);
     }
 
     public function expireCookie(ResponseInterface $response): ResponseInterface
@@ -189,6 +186,20 @@ final class RememberMeCookieService
         }
 
         return $this->addCookie($identity, $response, (string) $data[3]);
+    }
+
+    private function buildPayload(
+        CookieLoginIdentityInterface $identity,
+        string $sessionId,
+    ): string {
+        $expiresAt = $this->duration > 0 ? $this->clock->now()->getTimestamp() + $this->duration : 0;
+
+        return Json::encode([
+            $identity->getId(),
+            $identity->getCookieLoginKey(),
+            $expiresAt,
+            $sessionId,
+        ]);
     }
 
     private function decodeCookie(string $raw): ?array
