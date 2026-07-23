@@ -78,11 +78,8 @@ final readonly class ProfileController
             return $this->renderError('voyti.userProfile.not_found');
         }
 
+        /** @var User $user */
         $user = User::findById($id);
-        // zend.assertions=-1 strips this statement at compile time, so it can never register as executed.
-        // @codeCoverageIgnoreStart
-        assert($user !== null);
-        // @codeCoverageIgnoreEnd
 
         return $this->renderView('profile/show', [
             'profile' => ProfileCardViewData::create($user, $userProfile, $this->translator()),

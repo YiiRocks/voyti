@@ -5,6 +5,7 @@
 /.github export-ignore
 /.gitignore export-ignore
 /.php-cs-fixer.php export-ignore
+/docs export-ignore
 /infection.json export-ignore
 /phpunit.xml.dist export-ignore
 /psalm.xml export-ignore

@@ -12,6 +12,7 @@ use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Helper\FlashType;
 use YiiRocks\Voyti\Model\Form\Auth\RecoveryForm;
+use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
@@ -73,12 +74,6 @@ final readonly class PasswordResetController
             return $this->renderError('voyti.recovery.link_invalid');
         }
 
-        $user = $userToken->getUser();
-        // zend.assertions=-1 strips this statement at compile time, so it can never register as executed.
-        // @codeCoverageIgnoreStart
-        assert($user !== null);
-        // @codeCoverageIgnoreEnd
-
         $form = new RecoveryForm($this->config, $this->translator, RecoveryForm::SCENARIO_RESET);
         $this->hydrator->hydrate($form, $formData);
 
@@ -87,6 +82,9 @@ final readonly class PasswordResetController
             $form->processValidationResult($result);
 
             if ($result->isValid()) {
+                /** @var User $user */
+                $user = $userToken->getUser();
+
                 if ($this->resetPasswordService->run($form->password, $user, $userToken)) {
                     return $this->redirectWithFlash(
                         $this->url->generate('voyti/session-login'),
