@@ -80,7 +80,7 @@ final readonly class UserSocialAuthenticateService
 
             $previousSessionId = $this->session->getId();
             $this->currentUser->login($user);
-            LoginMetadataHelper::recordLogin($user, $serverParams, $this->config);
+            LoginMetadataHelper::recordLogin($user, $serverParams);
             $this->eventDispatcher->dispatch(
                 new AfterLoginEvent($user, previousSessionId: $previousSessionId, serverParams: $serverParams),
             );
@@ -162,9 +162,7 @@ final readonly class UserSocialAuthenticateService
         $password = Random::string(24);
 
         $user = $this->userCreationHelper->buildUser($email, $username, $password);
-        $user->setRegistrationIp(
-            $this->config->disableIpLogging ? '127.0.0.1' : LoginMetadataHelper::remoteAddr($serverParams),
-        );
+        $user->setRegistrationIp(LoginMetadataHelper::remoteAddr($serverParams));
 
         $this->userCreationHelper->persistAndNotifySkippingConfirmation($user, $password);
 

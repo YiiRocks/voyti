@@ -6,18 +6,19 @@ namespace YiiRocks\Voyti\tests\ViewData\Shared;
 
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
-use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserProfile;
 use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\ViewData\Shared\ProfileCardViewData;
 
 final class ProfileCardViewDataTest extends TestCase
 {
     use TranslatorMockTrait;
+    use UserFactoryTrait;
     public function testCreateFormatsRegisteredDisplayInViewerTimezoneNotProfileTimezone(): void
     {
         $createdAt = time();
-        $user = $this->createUser();
+        $user = $this->buildUser();
         $user->setCreatedAt($createdAt);
         $profile = $this->createProfile();
         $profile->setTimezone('America/New_York');
@@ -49,7 +50,7 @@ final class ProfileCardViewDataTest extends TestCase
         $profile->setGravatarEmail('test@example.com');
 
         $data = ProfileCardViewData::create(
-            $this->createUser(),
+            $this->buildUser(),
             $profile,
             $this->createTranslator(),
             profilePreviewClass: 'list-group list-group-flush',
@@ -66,7 +67,7 @@ final class ProfileCardViewDataTest extends TestCase
 
     public function testCreateUsesProfileNameWhenSet(): void
     {
-        $user = $this->createUser(username: 'janedoe');
+        $user = $this->buildUser(username: 'janedoe');
         $profile = $this->createProfile();
         $profile->setName('Jane Doe');
 
@@ -77,7 +78,7 @@ final class ProfileCardViewDataTest extends TestCase
 
     public function testCreateUsesUsernameWhenProfileNameIsNull(): void
     {
-        $user = $this->createUser(username: 'janedoe');
+        $user = $this->buildUser(username: 'janedoe');
         $profile = $this->createProfile();
 
         $data = ProfileCardViewData::create($user, $profile, $this->createTranslator());
@@ -87,7 +88,7 @@ final class ProfileCardViewDataTest extends TestCase
 
     public function testCreateWithAdminFieldsResolvesBlockedStatus(): void
     {
-        $user = $this->createUser();
+        $user = $this->buildUser();
         $user->setBlockedAt(time());
 
         $data = ProfileCardViewData::create($user, $this->createProfile(), $this->createTranslator(), showAdminFields: true);
@@ -101,7 +102,7 @@ final class ProfileCardViewDataTest extends TestCase
 
     public function testCreateWithAdminFieldsResolvesConfirmedStatus(): void
     {
-        $user = $this->createUser();
+        $user = $this->buildUser();
         $user->setConfirmedAt(time());
 
         $data = ProfileCardViewData::create($user, $this->createProfile(), $this->createTranslator(), showAdminFields: true);
@@ -112,7 +113,7 @@ final class ProfileCardViewDataTest extends TestCase
 
     public function testCreateWithAdminFieldsResolvesPendingStatus(): void
     {
-        $user = $this->createUser();
+        $user = $this->buildUser();
 
         $data = ProfileCardViewData::create($user, $this->createProfile(), $this->createTranslator(), showAdminFields: true);
 
@@ -122,7 +123,7 @@ final class ProfileCardViewDataTest extends TestCase
 
     public function testCreateWithoutAdminFieldsLeavesAdminOnlyFieldsNull(): void
     {
-        $user = $this->createUser();
+        $user = $this->buildUser();
         $profile = $this->createProfile();
 
         $data = ProfileCardViewData::create($user, $profile, $this->createTranslator());
@@ -139,22 +140,5 @@ final class ProfileCardViewDataTest extends TestCase
     {
         return new UserProfile();
     }
-
-    private function createUser(string $username = 'testuser', string $email = 'test@example.com'): User
-    {
-        $user = new User();
-        $user->setUsername($username);
-        $user->setEmail($email);
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->setAuthTfEnabled(false);
-        $user->setAuthTfType(null);
-        $user->setAuthTfKey(null);
-
-        return $user;
-    }
-
 
 }

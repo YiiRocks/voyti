@@ -15,12 +15,12 @@ use Psr\Http\Server\RequestHandlerInterface;
 use YiiRocks\Voyti\Clock\SystemClock;
 use YiiRocks\Voyti\Middleware\RememberMeMiddleware;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 use YiiRocks\Voyti\tests\Support\FakeSession;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\Support\UserSessionFactoryTrait;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Cookies\CookieMiddleware;
 use Yiisoft\User\CurrentUser;
@@ -30,6 +30,7 @@ final class RememberMeMiddlewareTest extends TestCase
 {
     use DatabaseSetupTrait;
     use UserFactoryTrait;
+    use UserSessionFactoryTrait;
 
     protected function setUp(): void
     {
@@ -295,16 +296,4 @@ final class RememberMeMiddlewareTest extends TestCase
         return $handler;
     }
 
-    private function createUserSession(int $userId, string $sessionId): UserSessions
-    {
-        $sh = new UserSessions();
-        $sh->setUserId($userId);
-        $sh->setSessionId($sessionId);
-        $sh->setIp('127.0.0.1');
-        $sh->setCreatedAt(time());
-        $sh->setUpdatedAt(time());
-        $sh->save();
-
-        return $sh;
-    }
 }

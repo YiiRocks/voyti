@@ -210,7 +210,7 @@ final readonly class SessionController
                         ? $this->currentUser->withAuthTimeout($this->config->rememberLoginLifespan)
                         : $this->currentUser;
                     $currentUser->login($user);
-                    LoginMetadataHelper::recordLogin($user, $request->getServerParams(), $this->config);
+                    LoginMetadataHelper::recordLogin($user, $request->getServerParams());
                     $this->pendingSocialAccountService->connect($user);
                     $this->eventDispatcher->dispatch(
                         new AfterLoginEvent(
@@ -301,7 +301,7 @@ final readonly class SessionController
                         $userToLogin = $userToLogin->withAuthTimeout($this->config->rememberLoginLifespan);
                     }
                     $userToLogin->login($user);
-                    LoginMetadataHelper::recordLogin($user, $request->getServerParams(), $this->config);
+                    LoginMetadataHelper::recordLogin($user, $request->getServerParams());
                     $this->pendingSocialAccountService->connect($user);
 
                     $this->eventDispatcher->dispatch(

@@ -13,7 +13,7 @@ use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
 #[AllowMockObjectsWithoutExpectations]
 final class QrCodeUriGeneratorServiceTest extends TestCase
 {
-    public function testGenerateQrCodeSvgReturnEmptyForEmptyUri(): void
+    public function testGenerateQrCodeSvgReturnsSvgForExistingSecret(): void
     {
         $config = new ModuleConfig(appName: '');
         $service = new QrCodeUriGeneratorService($config);
@@ -26,29 +26,14 @@ final class QrCodeUriGeneratorServiceTest extends TestCase
         self::assertNotSame('', $uri);
 
         $svg = $service->generateQrCodeSvg($user);
-        if (class_exists('chillerlan\\QRCode\\QRCode')) {
-            self::assertStringContainsString('<svg', $svg);
-        } else {
-            self::assertSame('', $svg);
-        }
+        self::assertStringContainsString('<svg', $svg);
     }
 
-    public function testGenerateQrCodeSvgWithNonEmptyUriButNoQRCodeClassReturnsEmpty(): void
+    public function testIsAvailableReturnsTrueWhenBothLibrariesAreInstalled(): void
     {
-        $config = new ModuleConfig(appName: 'TestApp');
-        $service = new QrCodeUriGeneratorService($config);
+        $service = new QrCodeUriGeneratorService(new ModuleConfig());
 
-        $user = $this->createMock(User::class);
-        $user->method('getAuthTfKey')->willReturn('testsecret');
-        $user->method('getEmail')->willReturn('user@example.com');
-
-        $result = $service->generateQrCodeSvg($user);
-
-        if (class_exists('chillerlan\\QRCode\\QRCode')) {
-            self::assertStringContainsString('<svg', $result);
-        } else {
-            self::assertSame('', $result);
-        }
+        self::assertTrue($service->isAvailable());
     }
 
     public function testRegenerateIgnoresExistingSecret(): void
@@ -85,11 +70,7 @@ final class QrCodeUriGeneratorServiceTest extends TestCase
 
         $result = $service->regenerateQrCodeSvg($user);
 
-        if (class_exists('chillerlan\\QRCode\\QRCode')) {
-            self::assertStringContainsString('<svg', $result);
-        } else {
-            self::assertSame('', $result);
-        }
+        self::assertStringContainsString('<svg', $result);
     }
 
     public function testRunEncodesSpecialCharacters(): void

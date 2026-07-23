@@ -37,7 +37,6 @@ final class ModuleConfigTest extends TestCase
             administratorPermissionName: 'superadmin',
             profileVisibility: ProfileVisibility::ADMIN,
             maxPasswordAge: 90,
-            disableIpLogging: true,
             enableRestApi: true,
             adminRestPrefix: 'custom-api',
             apiTokenLifespan: 3600,
@@ -64,7 +63,6 @@ final class ModuleConfigTest extends TestCase
         self::assertSame('superadmin', $config->administratorPermissionName);
         self::assertSame(ProfileVisibility::ADMIN, $config->profileVisibility);
         self::assertSame(90, $config->maxPasswordAge);
-        self::assertTrue($config->disableIpLogging);
         self::assertTrue($config->enableRestApi);
         self::assertSame('custom-api', $config->adminRestPrefix);
         self::assertSame(3600, $config->apiTokenLifespan);
@@ -88,10 +86,9 @@ final class ModuleConfigTest extends TestCase
         self::assertSame(2592000, $config->rememberLoginLifespan);
         self::assertSame(86400, $config->tokenConfirmationLifespan);
         self::assertSame(21600, $config->tokenRecoveryLifespan);
-        self::assertSame('voyti-admin-dashboard', $config->administratorPermissionName);
+        self::assertSame('voyti-admin', $config->administratorPermissionName);
         self::assertSame(ProfileVisibility::USERS, $config->profileVisibility);
         self::assertNull($config->maxPasswordAge);
-        self::assertFalse($config->disableIpLogging);
         self::assertFalse($config->enableRestApi);
         self::assertSame('api', $config->adminRestPrefix);
         self::assertNull($config->apiTokenLifespan);
@@ -127,7 +124,6 @@ final class ModuleConfigTest extends TestCase
             'administratorPermissionName',
             'profileVisibility',
             'maxPasswordAge',
-            'disableIpLogging',
             'viewPath',
             'mailPath',
             'enableRestApi',
@@ -186,10 +182,9 @@ final class ModuleConfigTest extends TestCase
         self::assertSame(2592000, $config->rememberLoginLifespan);
         self::assertSame(86400, $config->tokenConfirmationLifespan);
         self::assertSame(21600, $config->tokenRecoveryLifespan);
-        self::assertSame('voyti-admin-dashboard', $config->administratorPermissionName);
+        self::assertSame('voyti-admin', $config->administratorPermissionName);
         self::assertSame(ProfileVisibility::USERS, $config->profileVisibility);
         self::assertNull($config->maxPasswordAge);
-        self::assertFalse($config->disableIpLogging);
         self::assertFalse($config->enableRestApi);
         self::assertSame('api', $config->adminRestPrefix);
         self::assertNull($config->apiTokenLifespan);

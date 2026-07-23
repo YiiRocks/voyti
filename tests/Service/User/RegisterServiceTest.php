@@ -82,24 +82,6 @@ final class RegisterServiceTest extends TestCase
         self::assertSame('Username already exists', $result->getMessage());
     }
 
-    public function testRunWithDisabledIpLogging(): void
-    {
-        $mailService = $this->createMock(MailService::class);
-        $mailService->method('sendConfirmation')->willReturn(true);
-        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $passwordHasher = TestPasswordHasherFactory::create();
-        $config = new ModuleConfig(enableEmailConfirmation: true, disableIpLogging: true);
-        $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
-        $passwordGenerator->method('generate')->willReturn('genpwd');
-
-        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
-        $service = new RegisterService($userCreationHelper, $config, $passwordGenerator);
-
-        $result = $service->run(['email' => 'ipdisabled@example.com', 'username' => 'ipdisableduser', 'password' => 'mypassword']);
-
-        self::assertTrue($result->isSuccess());
-    }
-
     public function testRunWithGdprConsentEnabledAndConsentGiven(): void
     {
         $mailService = $this->createMock(MailService::class);

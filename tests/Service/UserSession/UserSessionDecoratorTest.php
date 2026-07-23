@@ -15,12 +15,14 @@ use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 use YiiRocks\Voyti\tests\Support\FakeSession;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\Support\UserSessionFactoryTrait;
 
 #[AllowMockObjectsWithoutExpectations]
 final class UserSessionDecoratorTest extends TestCase
 {
     use DatabaseSetupTrait;
     use UserFactoryTrait;
+    use UserSessionFactoryTrait;
 
     protected function setUp(): void
     {
@@ -43,7 +45,7 @@ final class UserSessionDecoratorTest extends TestCase
         $userA = $this->createUser('usera', 'usera@example.com');
         $userIdA = (int) $userA->getId();
 
-        $this->createUserSession($userIdA, 'a_expired', $config->rememberLoginLifespan + 1);
+        $this->createUserSession($userIdA, 'a_expired', createdAt: time() - ($config->rememberLoginLifespan + 1));
 
         $userB = $this->createUser('userb', 'userb@example.com');
 
@@ -57,7 +59,7 @@ final class UserSessionDecoratorTest extends TestCase
     public function testRegisterLoginFallsBackToLocalhostWhenNoRemoteAddr(): void
     {
         $eventDispatcher = new EventCaptureDispatcher();
-        $config = new ModuleConfig(disableIpLogging: false);
+        $config = new ModuleConfig();
 
         $session = $this->createOpenSession('sessfallback');
         $decorator = new UserSessionDecorator($eventDispatcher, $config, $session);
@@ -85,8 +87,8 @@ final class UserSessionDecoratorTest extends TestCase
 
         $lifespan = $config->rememberLoginLifespan;
 
-        $this->createUserSession($userId, 'old_expired', $lifespan + 1);
-        $this->createUserSession($userId, 'old_fresh', $lifespan - 1);
+        $this->createUserSession($userId, 'old_expired', createdAt: time() - ($lifespan + 1));
+        $this->createUserSession($userId, 'old_fresh', createdAt: time() - ($lifespan - 1));
 
         $decorator->registerLogin($user, serverParams: ['REMOTE_ADDR' => '192.168.1.1', 'HTTP_USER_AGENT' => 'TestAgent']);
 
@@ -132,7 +134,7 @@ final class UserSessionDecoratorTest extends TestCase
         $user = $this->createUser('replacetest', 'replacetest@example.com');
         $userId = (int) $user->getId();
 
-        $this->createUserSession($userId, 'stale-session-id', 100);
+        $this->createUserSession($userId, 'stale-session-id', createdAt: time() - 100);
 
         $session = $this->createOpenSession('fresh-session-id');
         $decorator = new UserSessionDecorator($eventDispatcher, $config, $session);
@@ -180,23 +182,6 @@ final class UserSessionDecoratorTest extends TestCase
             static fn(object $event): bool => $event instanceof SessionEvent && $event->getData() === ['type' => SessionEvent::SESSION_TERMINATED],
         );
         self::assertCount(0, $events);
-    }
-
-    public function testRegisterLoginWithDisableIpLogging(): void
-    {
-        $eventDispatcher = new EventCaptureDispatcher();
-        $config = new ModuleConfig(disableIpLogging: true);
-
-        $session = $this->createOpenSession('sess456');
-        $decorator = new UserSessionDecorator($eventDispatcher, $config, $session);
-
-        $user = $this->createUser('test2', 'test2@example.com');
-
-        $decorator->registerLogin($user, serverParams: ['REMOTE_ADDR' => '203.0.113.9', 'HTTP_USER_AGENT' => 'TestAgent']);
-
-        $sessions = UserSessions::query()->where(['user_id' => (int) $user->getId()])->all();
-        self::assertCount(1, $sessions);
-        self::assertSame('127.0.0.1', $sessions[0]->getIp());
     }
 
     public function testRegisterLoginWithEmptyPreviousSessionIdSkipsReplace(): void
@@ -276,16 +261,4 @@ final class UserSessionDecoratorTest extends TestCase
         return $session;
     }
 
-    private function createUserSession(int $userId, string $sessionId, int $ageOffset): UserSessions
-    {
-        $sh = new UserSessions();
-        $sh->setUserId($userId);
-        $sh->setSessionId($sessionId);
-        $sh->setIp('127.0.0.1');
-        $sh->setCreatedAt(time() - $ageOffset);
-        $sh->setUpdatedAt(time() - $ageOffset);
-        $sh->save();
-
-        return $sh;
-    }
 }

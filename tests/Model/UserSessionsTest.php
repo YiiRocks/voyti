@@ -6,12 +6,15 @@ namespace YiiRocks\Voyti\tests\Model;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use YiiRocks\Voyti\Model\UserSessions;
+use YiiRocks\Voyti\tests\Support\UserSessionFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Db\Connection\ConnectionInterface;
 use Yiisoft\Db\Connection\ConnectionProvider;
 
 final class UserSessionsTest extends TestCase
 {
+    use UserSessionFactoryTrait;
+
     private ?ConnectionInterface $connection = null;
 
     protected function setUp(): void
@@ -70,16 +73,16 @@ final class UserSessionsTest extends TestCase
 
     public function testFindAllSessionsReturnsAll(): void
     {
-        $this->createSession(1, 'sess-1', '203.0.113.1');
-        $this->createSession(2, 'sess-2', '203.0.113.2');
+        $this->createUserSession(1, 'sess-1', '203.0.113.1');
+        $this->createUserSession(2, 'sess-2', '203.0.113.2');
 
         self::assertCount(2, UserSessions::findAllSessions());
     }
 
     public function testFindByUserIdAndSessionIdFiltersByBoth(): void
     {
-        $this->createSession(1, 'sess-1', '203.0.113.1');
-        $this->createSession(2, 'sess-2', '203.0.113.2');
+        $this->createUserSession(1, 'sess-1', '203.0.113.1');
+        $this->createUserSession(2, 'sess-2', '203.0.113.2');
 
         $found = UserSessions::findByUserIdAndSessionId(1, 'sess-1');
         self::assertNotNull($found);
@@ -92,9 +95,9 @@ final class UserSessionsTest extends TestCase
 
     public function testFindByUserIdFiltersByUserId(): void
     {
-        $this->createSession(1, 'sess-1', '203.0.113.1');
-        $this->createSession(1, 'sess-1b', '203.0.113.3');
-        $this->createSession(2, 'sess-2', '203.0.113.2');
+        $this->createUserSession(1, 'sess-1', '203.0.113.1');
+        $this->createUserSession(1, 'sess-1b', '203.0.113.3');
+        $this->createUserSession(2, 'sess-2', '203.0.113.2');
 
         $sessions = UserSessions::findByUserId(1);
 
@@ -126,8 +129,8 @@ final class UserSessionsTest extends TestCase
 
     public function testSearchWithIpFilter(): void
     {
-        $this->createSession(1, 'sess-1', '203.0.113.1');
-        $this->createSession(1, 'sess-2', '198.51.100.1');
+        $this->createUserSession(1, 'sess-1', '203.0.113.1');
+        $this->createUserSession(1, 'sess-2', '198.51.100.1');
 
         $sessions = UserSessions::search(['ip' => '203.0.113']);
 
@@ -136,34 +139,21 @@ final class UserSessionsTest extends TestCase
 
     public function testSearchWithNoFiltersReturnsAll(): void
     {
-        $this->createSession(1, 'sess-1', '203.0.113.1');
-        $this->createSession(2, 'sess-2', '203.0.113.2');
+        $this->createUserSession(1, 'sess-1', '203.0.113.1');
+        $this->createUserSession(2, 'sess-2', '203.0.113.2');
 
         self::assertCount(2, UserSessions::search());
     }
 
     public function testSearchWithUserIdFilter(): void
     {
-        $this->createSession(1, 'sess-1', '203.0.113.1');
-        $this->createSession(2, 'sess-2', '203.0.113.2');
+        $this->createUserSession(1, 'sess-1', '203.0.113.1');
+        $this->createUserSession(2, 'sess-2', '203.0.113.2');
 
         $sessions = UserSessions::search(['user_id' => 1]);
 
         self::assertCount(1, $sessions);
         self::assertSame('sess-1', $sessions[0]->getSessionId());
-    }
-
-    private function createSession(int $userId, string $sessionId, string $ip): UserSessions
-    {
-        $session = new UserSessions();
-        $session->setUserId($userId);
-        $session->setSessionId($sessionId);
-        $session->setIp($ip);
-        $session->setCreatedAt(time());
-        $session->setUpdatedAt(time());
-        $session->save();
-
-        return $session;
     }
 
 }

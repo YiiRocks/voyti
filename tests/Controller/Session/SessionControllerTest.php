@@ -26,6 +26,7 @@ use YiiRocks\Voyti\Service\ServiceResult;
 use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\HydrateObjectTrait;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
@@ -43,6 +44,7 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 final class SessionControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
+    use HydrateObjectTrait;
     use RedirectResponseMockTrait;
     use UserFactoryTrait;
 
@@ -852,14 +854,5 @@ final class SessionControllerTest extends TestCase
         $user->save();
 
         return $user;
-    }
-
-    private function hydrateObject(object $object, array $data): void
-    {
-        foreach ($data as $key => $value) {
-            if (property_exists($object, $key)) {
-                $object->$key = $value;
-            }
-        }
     }
 }

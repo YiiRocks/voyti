@@ -140,6 +140,10 @@ final readonly class TwoFactorController
 
         $method = $method === 'email' ? 'email' : 'google';
 
+        if ($method === 'google' && !$this->twoFactorQrCodeService->isAvailable()) {
+            return $this->redirect($this->url->generate('voyti/user-two-factor'));
+        }
+
         if ($method === 'email') {
             $emailValidator = new EmailValidator($user, $code);
             if (!$emailValidator->validate()) {
@@ -178,6 +182,10 @@ final readonly class TwoFactorController
 
     public function google(ServerRequestInterface $request): ResponseInterface
     {
+        if (!$this->twoFactorQrCodeService->isAvailable()) {
+            return $this->redirect($this->url->generate('voyti/user-two-factor'));
+        }
+
         /** @var User $user */
         $user = $this->currentUser->getIdentity();
 
@@ -194,7 +202,8 @@ final readonly class TwoFactorController
         $user = $this->currentUser->getIdentity();
 
         if (!$user->isAuthTfEnabled()) {
-            return $this->renderTwoFactorIndex($user, 'google', preloadContent: false);
+            $defaultMethod = $this->twoFactorQrCodeService->isAvailable() ? 'google' : 'email';
+            return $this->renderTwoFactorIndex($user, $defaultMethod, preloadContent: false);
         }
 
         return $this->renderTwoFactorIndex($user, $user->getAuthTfType() ?? 'google');
@@ -362,6 +371,7 @@ final readonly class TwoFactorController
                 $emailCodeSent,
                 $this->backupCodeService->hasUnused($user),
                 $preloadContent,
+                $this->twoFactorQrCodeService->isAvailable(),
                 $this->config,
                 $this->url,
                 $this->translator(),

@@ -9,6 +9,7 @@ return [
     'voyti.security.need_email_confirmation' => 'Вам необходимо подтвердить ваш email-адрес',
     'voyti.security.logged_out' => 'Вы вышли из системы',
     'voyti.security.password_expired' => 'Срок действия вашего пароля истёк. Пожалуйста, установите новый.',
+    'voyti.security.two_factor_required' => 'Для вашей учётной записи требуется двухфакторная аутентификация. Пожалуйста, включите её, чтобы продолжить.',
     'voyti.security.authenticated' => 'Аутентифицирован',
 
     // RegistrationController
@@ -147,7 +148,6 @@ return [
     'voyti.view.two_factor.disable_send_code' => 'Отправить код для отключения',
     'voyti.view.two_factor.scan_qr' => 'Сканируйте этот QR-код с помощью приложения-аутентификатора',
     'voyti.view.two_factor.manual_entry' => 'Или введите этот ключ вручную:',
-    'voyti.view.two_factor.qr_unavailable' => 'QR-код недоступен',
     'voyti.view.two_factor.enter_code' => 'Введите проверочный код',
     'voyti.view.two_factor.enable' => 'Включить',
     'voyti.view.two_factor.renew' => 'Обновить',

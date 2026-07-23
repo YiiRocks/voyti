@@ -41,9 +41,7 @@ final readonly class RegisterService
         }
 
         $user = $this->userCreationHelper->buildUser($email, $username, $password);
-        $user->setRegistrationIp(
-            $this->config->disableIpLogging ? '127.0.0.1' : LoginMetadataHelper::remoteAddr($serverParams),
-        );
+        $user->setRegistrationIp(LoginMetadataHelper::remoteAddr($serverParams));
         $user->setGdprConsent($this->config->enableGdprCompliance ? $gdprConsent : false);
         if ($this->config->enableGdprCompliance && $gdprConsent) {
             $user->setGdprConsentDate(time());

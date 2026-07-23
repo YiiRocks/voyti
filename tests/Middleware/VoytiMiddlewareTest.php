@@ -67,7 +67,6 @@ final class VoytiMiddlewareTest extends TestCase
             $first,
             $second,
             $third,
-            $this->createPassThroughCookieMiddleware(),
         );
         $result = $middleware->process($request, $handler);
 
@@ -93,7 +92,6 @@ final class VoytiMiddlewareTest extends TestCase
             $first,
             $second,
             $third,
-            $this->createPassThroughCookieMiddleware(),
         );
         $result = $middleware->process($request, $handler);
 
@@ -119,7 +117,6 @@ final class VoytiMiddlewareTest extends TestCase
             $first,
             $second,
             $third,
-            $this->createPassThroughCookieMiddleware(),
         );
         $result = $middleware->process($request, $handler);
 
@@ -145,7 +142,6 @@ final class VoytiMiddlewareTest extends TestCase
             $first,
             $second,
             $third,
-            $this->createPassThroughCookieMiddleware(),
         );
         $result = $middleware->process($request, $handler);
 
@@ -171,7 +167,6 @@ final class VoytiMiddlewareTest extends TestCase
             $first,
             $second,
             $third,
-            $this->createPassThroughCookieMiddleware(),
         );
         $result = $middleware->process($request, $handler);
 
@@ -192,6 +187,33 @@ final class VoytiMiddlewareTest extends TestCase
         $handler->expects(self::once())->method('handle')->with($request)->willReturn($response);
 
         $middleware = $this->createRealMiddleware(config: $config);
+        $result = $middleware->process($request, $handler);
+
+        self::assertSame($response, $result);
+    }
+
+    public function testProcessWithRealMiddlewaresRunsCookieMiddlewareExactlyOnce(): void
+    {
+        // CookieMiddleware is only ever wrapped by RememberMeMiddleware itself, not chained a
+        // second time by VoytiMiddleware - otherwise the second pass would try to decrypt an
+        // already-decrypted cookie and fail. See VoytiMiddleware's class docblock.
+        $config = new ModuleConfig(
+            enablePasswordExpiration: false,
+            enableTwoFactorAuthentication: false,
+        );
+
+        $request = $this->createMock(ServerRequestInterface::class);
+        $response = $this->createMock(ResponseInterface::class);
+
+        $handler = $this->createMock(RequestHandlerInterface::class);
+        $handler->expects(self::once())->method('handle')->with($request)->willReturn($response);
+
+        $cookieMiddleware = $this->createMock(CookieMiddleware::class);
+        $cookieMiddleware->expects(self::once())->method('process')->willReturnCallback(
+            static fn(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface => $handler->handle($request),
+        );
+
+        $middleware = $this->createRealMiddleware(config: $config, cookieMiddleware: $cookieMiddleware);
         $result = $middleware->process($request, $handler);
 
         self::assertSame($response, $result);
@@ -321,11 +343,13 @@ final class VoytiMiddlewareTest extends TestCase
             $currentUser,
             $config,
             $authManager,
+            $currentRoute,
             $responseFactory,
+            $translator,
             $url,
         );
 
-        return new VoytiMiddleware($rememberMe, $passwordAge, $sessionRevocation, $twoFactorAuth, $cookieMiddleware);
+        return new VoytiMiddleware($rememberMe, $passwordAge, $sessionRevocation, $twoFactorAuth);
     }
 
     private function createRedirectMiddleware(ResponseInterface $response): MiddlewareInterface

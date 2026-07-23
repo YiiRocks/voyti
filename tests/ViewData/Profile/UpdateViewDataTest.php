@@ -4,18 +4,20 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\ViewData\Profile;
 
-use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserProfile;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use YiiRocks\Voyti\ViewData\Profile\UpdateViewData;
 
 final class UpdateViewDataTest extends TestCase
 {
+    use UserFactoryTrait;
+
     public function testCreateWithoutSwitchedIdentity(): void
     {
-        $user = $this->createUser();
+        $user = $this->buildUser();
 
         $data = UpdateViewData::create(
             $user,
@@ -35,10 +37,10 @@ final class UpdateViewDataTest extends TestCase
 
     public function testCreateWithSwitchedIdentityIncludesOriginalUsername(): void
     {
-        $originalUser = $this->createUser(username: 'admin');
+        $originalUser = $this->buildUser(username: 'admin');
 
         $data = UpdateViewData::create(
-            $this->createUser(username: 'switcheduser'),
+            $this->buildUser(username: 'switcheduser'),
             new UserProfile(),
             new ModuleConfig(),
             new FakeUrlGenerator(),
@@ -50,19 +52,5 @@ final class UpdateViewDataTest extends TestCase
         self::assertNotNull($data->switchedBannerMessage);
         self::assertStringContainsString('admin', $data->switchedBannerMessage);
     }
-
-    private function createUser(string $username = 'testuser'): User
-    {
-        $user = new User();
-        $user->setUsername($username);
-        $user->setEmail($username . '@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-
-        return $user;
-    }
-
 
 }

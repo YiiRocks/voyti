@@ -51,7 +51,7 @@ final class UserModuleMigrationTest extends TestCase
 
         self::assertNotNull($this->fetchOne('SELECT * FROM {{%user_profile}} WHERE user_id = :id', ['id' => $user['id']]));
 
-        $permission = $this->fetchOne("SELECT * FROM {{%yii_rbac_item}} WHERE name = 'voyti-admin-dashboard'");
+        $permission = $this->fetchOne("SELECT * FROM {{%yii_rbac_item}} WHERE name = 'voyti-admin'");
         self::assertNotNull($permission);
         self::assertSame('permission', $permission['type']);
 
@@ -60,7 +60,7 @@ final class UserModuleMigrationTest extends TestCase
         self::assertSame('role', $role['type']);
 
         self::assertNotNull(
-            $this->fetchOne("SELECT * FROM {{%yii_rbac_item_child}} WHERE parent = 'administrator' AND child = 'voyti-admin-dashboard'"),
+            $this->fetchOne("SELECT * FROM {{%yii_rbac_item_child}} WHERE parent = 'administrator' AND child = 'voyti-admin'"),
         );
 
         $assignment = $this->fetchOne("SELECT * FROM {{%yii_rbac_assignment}} WHERE item_name = 'administrator'");
@@ -85,31 +85,31 @@ final class UserModuleMigrationTest extends TestCase
 
     public function testSeedDefaultAdminReusesExistingChildLink(): void
     {
-        $this->insertRbacItem('voyti-admin-dashboard', 'permission');
+        $this->insertRbacItem('voyti-admin', 'permission');
         $this->insertRbacItem('administrator', 'role');
         $this->connection->createCommand()->insert('{{%yii_rbac_item_child}}', [
             'parent' => 'administrator',
-            'child' => 'voyti-admin-dashboard',
+            'child' => 'voyti-admin',
         ])->execute();
 
         $this->runMigration();
 
         self::assertSame(1, $this->userCount());
         $childCount = (int) $this->connection->createCommand(
-            "SELECT COUNT(*) FROM {{%yii_rbac_item_child}} WHERE parent = 'administrator' AND child = 'voyti-admin-dashboard'",
+            "SELECT COUNT(*) FROM {{%yii_rbac_item_child}} WHERE parent = 'administrator' AND child = 'voyti-admin'",
         )->queryScalar();
         self::assertSame(1, $childCount);
     }
 
     public function testSeedDefaultAdminReusesExistingPermissionItem(): void
     {
-        $this->insertRbacItem('voyti-admin-dashboard', 'permission');
+        $this->insertRbacItem('voyti-admin', 'permission');
 
         $this->runMigration();
 
         self::assertSame(1, $this->userCount());
         $permissionCount = (int) $this->connection->createCommand(
-            "SELECT COUNT(*) FROM {{%yii_rbac_item}} WHERE name = 'voyti-admin-dashboard'",
+            "SELECT COUNT(*) FROM {{%yii_rbac_item}} WHERE name = 'voyti-admin'",
         )->queryScalar();
         self::assertSame(1, $permissionCount);
         self::assertNotNull($this->fetchOne("SELECT * FROM {{%yii_rbac_assignment}} WHERE item_name = 'administrator'"));

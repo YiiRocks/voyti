@@ -17,6 +17,7 @@ use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\SimpleAssignmentsStorage;
 use YiiRocks\Voyti\tests\Support\SimpleItemsStorage;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\Support\UserSessionFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Rbac\Manager;
@@ -29,6 +30,7 @@ final class DashboardServiceTest extends TestCase
 {
     use DatabaseSetupTrait;
     use UserFactoryTrait;
+    use UserSessionFactoryTrait;
 
     private SimpleItemsStorage $itemsStorage;
 
@@ -53,7 +55,7 @@ final class DashboardServiceTest extends TestCase
             (new UserSessions())->deleteAll(['user_id' => $userId]);
             $now = time();
             foreach ($this->trendBoundaryOffsets($lifespan) as $label => $offset) {
-                $this->createUserSession($userId, $label, $now + $offset);
+                $this->createUserSession($userId, $label, createdAt: $now + $offset);
             }
             $stats = $this->createService()->getStats();
         } while (time() !== $now);
@@ -95,7 +97,7 @@ final class DashboardServiceTest extends TestCase
         $user = $this->createUser('revoked-sessions-user', 'revoked-sessions-user@example.com', confirmedAt: time());
         $userId = (int) $user->getId();
 
-        $session = $this->createUserSession($userId, 'revoked-recent', time());
+        $session = $this->createUserSession($userId, 'revoked-recent', createdAt: time());
         $session->setRevokedAt(time());
         $session->save();
 
@@ -268,18 +270,6 @@ final class DashboardServiceTest extends TestCase
         return new DashboardService($authHelper, $config, $this->itemsStorage, $translator);
     }
 
-    private function createUserSession(int $userId, string $sessionId, int $createdAt): UserSessions
-    {
-        $session = new UserSessions();
-        $session->setUserId($userId);
-        $session->setSessionId($sessionId);
-        $session->setIp('127.0.0.1');
-        $session->setCreatedAt($createdAt);
-        $session->setUpdatedAt($createdAt);
-        $session->save();
-
-        return $session;
-    }
 
     /**
      * @return array<string, int> offset in seconds relative to "now", keyed by fixture label

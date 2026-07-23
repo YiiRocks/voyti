@@ -17,6 +17,7 @@ use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\Support\UserSessionFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -29,6 +30,7 @@ final class SessionControllerTest extends TestCase
     use DatabaseSetupTrait;
     use RedirectResponseMockTrait;
     use UserFactoryTrait;
+    use UserSessionFactoryTrait;
 
     private ModuleConfig $config;
     private CurrentUser&MockObject $currentUser;
@@ -60,8 +62,8 @@ final class SessionControllerTest extends TestCase
         $user = $this->createUser(username: 'sessionuser', email: 'sessionuser@example.com');
         $this->authenticateAs($user);
 
-        $this->createSession($user, 'current-session', '203.0.113.1');
-        $this->createSession($user, 'other-session', '203.0.113.2');
+        $this->createUserSession($user->getIdOrZero(), 'current-session', '203.0.113.1');
+        $this->createUserSession($user->getIdOrZero(), 'other-session', '203.0.113.2');
 
         $this->harness->getSession()->open();
         $this->harness->getSession()->setId('current-session');
@@ -89,7 +91,7 @@ final class SessionControllerTest extends TestCase
     {
         $user = $this->createUser(username: 'sessionuser', email: 'sessionuser@example.com');
         $this->authenticateAs($user);
-        $this->createSession($user, 'current-session', '203.0.113.1');
+        $this->createUserSession($user->getIdOrZero(), 'current-session', '203.0.113.1');
 
         $this->harness->getSession()->open();
         $this->harness->getSession()->setId('current-session');
@@ -110,7 +112,7 @@ final class SessionControllerTest extends TestCase
     {
         $user = $this->createUser(username: 'sessionuser', email: 'sessionuser@example.com');
         $this->authenticateAs($user);
-        $this->createSession($user, 'other-session', '203.0.113.1');
+        $this->createUserSession($user->getIdOrZero(), 'other-session', '203.0.113.1');
 
         $controller = $this->createController();
 
@@ -153,19 +155,6 @@ final class SessionControllerTest extends TestCase
             responseFactory: $this->responseFactory,
             flash: $this->flash,
         );
-    }
-
-    private function createSession(User $user, string $sessionId, string $ip): UserSessions
-    {
-        $session = new UserSessions();
-        $session->setUserId($user->getIdOrZero());
-        $session->setSessionId($sessionId);
-        $session->setIp($ip);
-        $session->setCreatedAt(time());
-        $session->setUpdatedAt(time());
-        $session->save();
-
-        return $session;
     }
 
 }

@@ -340,6 +340,23 @@ final class TwoFactorControllerTest extends TestCase
         $this->assertSame('email', $updated->getAuthTfType());
     }
 
+    public function testTwoFactorEnableWithGoogleMethodRedirectsWhenLibraryUnavailable(): void
+    {
+        $user = $this->createUser(authTfEnabled: false, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $this->currentUser->method('getIdentity')->willReturn($user);
+        $this->twoFactorQrCodeService->method('isAvailable')->willReturn(false);
+
+        $response = $this->mockRedirectResponse($this->responseFactory);
+
+        $controller = $this->createController();
+        $result = $controller->enable(method: 'google', code: '123456');
+
+        $this->assertSame($response, $result);
+        $updated = User::findById((int) $user->getId());
+        $this->assertNotNull($updated);
+        $this->assertFalse($updated->isAuthTfEnabled());
+    }
+
     public function testTwoFactorEnableWithInvalidEmailCodeShowsFormWithCodeSent(): void
     {
         $user = $this->createUser(authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
@@ -369,6 +386,7 @@ final class TwoFactorControllerTest extends TestCase
     {
         $user = $this->createUser(authTfType: 'google', authTfKey: null, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $this->currentUser->method('getIdentity')->willReturn($user);
+        $this->twoFactorQrCodeService->method('isAvailable')->willReturn(true);
         $this->twoFactorQrCodeService->method('generateQrCodeSvg')->willReturn('<svg></svg>');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -400,6 +418,7 @@ final class TwoFactorControllerTest extends TestCase
 
         $user = $this->createUser(authTfType: 'google', authTfKey: $secret, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $this->currentUser->method('getIdentity')->willReturn($user);
+        $this->twoFactorQrCodeService->method('isAvailable')->willReturn(true);
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -420,10 +439,27 @@ final class TwoFactorControllerTest extends TestCase
         $this->assertSame('google', $updated->getAuthTfType());
     }
 
+    public function testTwoFactorGoogleRedirectsWhenLibraryUnavailable(): void
+    {
+        $user = $this->createUser(authTfEnabled: false, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $this->currentUser->method('getIdentity')->willReturn($user);
+        $this->twoFactorQrCodeService->method('isAvailable')->willReturn(false);
+        $this->twoFactorQrCodeService->expects($this->never())->method('generateQrCodeSvg');
+
+        $response = $this->mockRedirectResponse($this->responseFactory);
+
+        $request = new ServerRequest('GET', '/');
+        $controller = $this->createController();
+        $result = $controller->google($request);
+
+        $this->assertSame($response, $result);
+    }
+
     public function testTwoFactorGoogleRendersFragmentWithFragmentHeader(): void
     {
         $user = $this->createUser(authTfEnabled: false, authTfType: null, authTfKey: 'secret', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $this->currentUser->method('getIdentity')->willReturn($user);
+        $this->twoFactorQrCodeService->method('isAvailable')->willReturn(true);
         $this->twoFactorQrCodeService->method('generateQrCodeSvg')->willReturn('<svg></svg>');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -448,6 +484,7 @@ final class TwoFactorControllerTest extends TestCase
     {
         $user = $this->createUser(authTfEnabled: false, authTfType: null, authTfKey: null, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $this->currentUser->method('getIdentity')->willReturn($user);
+        $this->twoFactorQrCodeService->method('isAvailable')->willReturn(true);
         $this->twoFactorQrCodeService->method('generateQrCodeSvg')->willReturn('<svg></svg>');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -474,6 +511,7 @@ final class TwoFactorControllerTest extends TestCase
     {
         $user = $this->createUser(authTfEnabled: true, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $this->currentUser->method('getIdentity')->willReturn($user);
+        $this->twoFactorQrCodeService->method('isAvailable')->willReturn(true);
         $this->twoFactorQrCodeService->expects($this->never())->method('generateQrCodeSvg');
 
         $response = $this->mockRedirectResponse($this->responseFactory);
@@ -481,6 +519,28 @@ final class TwoFactorControllerTest extends TestCase
         $request = new ServerRequest('GET', '/');
         $controller = $this->createController();
         $result = $controller->google($request);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testTwoFactorIndexDefaultsToEmailWhenGoogleUnavailable(): void
+    {
+        $user = $this->createUser(authTfEnabled: false, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $this->currentUser->method('getIdentity')->willReturn($user);
+        $this->twoFactorQrCodeService->method('isAvailable')->willReturn(false);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->expects($this->once())
+            ->method('render')
+            ->with('two-factor/index', $this->callback(
+                static fn(array $params): bool => $params['data']->method === 'email'
+                    && $params['data']->googleUrl === null,
+            ))
+            ->willReturn($response);
+
+        $controller = $this->createController();
+        $result = $controller->index();
 
         $this->assertSame($response, $result);
     }
@@ -795,6 +855,7 @@ final class TwoFactorControllerTest extends TestCase
     {
         $user = $this->createUser(authTfEnabled: false, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $this->currentUser->method('getIdentity')->willReturn($user);
+        $this->twoFactorQrCodeService->method('isAvailable')->willReturn(true);
         $this->twoFactorQrCodeService->expects($this->never())->method('generateQrCodeSvg');
 
         $response = $this->createMock(ResponseInterface::class);

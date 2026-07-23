@@ -116,8 +116,7 @@ return [
         PasswordAgeEnforceMiddleware $passwordAge,
         SessionRevocationEnforceMiddleware $sessionRevocation,
         TwoFactorAuthenticationEnforceMiddleware $twoFactorAuth,
-        CookieMiddleware $cookie,
-    ) => new VoytiMiddleware($rememberMe, $passwordAge, $sessionRevocation, $twoFactorAuth, $cookie),
+    ) => new VoytiMiddleware($rememberMe, $passwordAge, $sessionRevocation, $twoFactorAuth),
 
     // Cookie encryption middleware for remember-me cookies
     CookieEncryptor::class => static fn() => new CookieEncryptor($cookieSecretKey()),

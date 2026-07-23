@@ -29,14 +29,16 @@ final readonly class IndexViewData
      * @param string $disableUrl POST target that actually disables 2FA, given a code or backup code
      * @param bool $hasBackupCodes whether the user currently has unused backup codes
      * @param string $regenerateBackupCodesUrl POST target to regenerate backup codes
-     * @param string $googleUrl a link (GET) for the "Google/TOTP" method-switch button; also used as
-     *        a JS fetch target to lazy-load that method's setup fragment
+     * @param string|null $googleUrl a link (GET) for the "Google/TOTP" method-switch button; also
+     *        used as a JS fetch target to lazy-load that method's setup fragment; null when the
+     *        Google/TOTP method is unavailable (see {@see self::create()}'s $googleAvailable), in
+     *        which case the button must not be rendered at all
      * @param string $emailUrl a link (GET) for the "Email" method-switch button; also used as a JS
      *        fetch target to lazy-load that method's setup fragment
      * @param bool $preloadContent whether $emailSetup/$googleSetup (matching $method) is already
      *        populated for inline rendering, vs. left for the page's own JS to lazy-load via $autoloadUrl
-     * @param string $renewUrl fetch(POST) target the page's own JS calls to regenerate the QR
-     *        code/secret without a full reload
+     * @param string|null $renewUrl fetch(POST) target the page's own JS calls to regenerate the QR
+     *        code/secret without a full reload; null when the Google/TOTP method is unavailable
      * @param string $renewErrorMessage already-translated, used only by the page's own JS on a failed
      *        $renewUrl call
      * @param string|null $autoloadUrl JS fetch target for the page to load on page-load when
@@ -55,10 +57,10 @@ final readonly class IndexViewData
         public string $disableUrl,
         public bool $hasBackupCodes,
         public string $regenerateBackupCodesUrl,
-        public string $googleUrl,
+        public ?string $googleUrl,
         public string $emailUrl,
         public bool $preloadContent,
-        public string $renewUrl,
+        public ?string $renewUrl,
         public string $renewErrorMessage,
         public ?string $autoloadUrl,
         public ?EmailSetupViewData $emailSetup,
@@ -67,6 +69,9 @@ final readonly class IndexViewData
 
     /**
      * @param array<string, list<string>> $errors
+     * @param bool $googleAvailable whether the optional `chillerlan/php-authenticator`/
+     *        `chillerlan/php-qrcode` packages are both installed; when false, $googleUrl and
+     *        $renewUrl are left null since their routes aren't registered
      */
     public static function create(
         User $user,
@@ -77,6 +82,7 @@ final readonly class IndexViewData
         bool $emailCodeSent,
         bool $hasBackupCodes,
         bool $preloadContent,
+        bool $googleAvailable,
         ModuleConfig $config,
         UrlGeneratorInterface $url,
         TranslatorInterface $translator,
@@ -94,7 +100,7 @@ final readonly class IndexViewData
             }
         }
 
-        $googleUrl = $url->generate('voyti/user-two-factor-google');
+        $googleUrl = $googleAvailable ? $url->generate('voyti/user-two-factor-google') : null;
         $emailUrl = $url->generate('voyti/user-two-factor-email');
 
         return new self(
@@ -111,7 +117,7 @@ final readonly class IndexViewData
             googleUrl: $googleUrl,
             emailUrl: $emailUrl,
             preloadContent: $preloadContent,
-            renewUrl: $url->generate('voyti/user-two-factor-renew'),
+            renewUrl: $googleAvailable ? $url->generate('voyti/user-two-factor-google-renew') : null,
             renewErrorMessage: $translator->translate('voyti.view.two_factor.renew_error'),
             autoloadUrl: $preloadContent ? null : ($method === 'email' ? $emailUrl : $googleUrl),
             emailSetup: $emailSetup,

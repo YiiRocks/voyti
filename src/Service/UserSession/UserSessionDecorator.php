@@ -40,9 +40,7 @@ final readonly class UserSessionDecorator
         $userSession = new UserSessions();
         $userSession->setUserId($userId);
         $userSession->setSessionId($sessionId);
-        $userSession->setIp(
-            $this->config->disableIpLogging ? '127.0.0.1' : LoginMetadataHelper::remoteAddr($serverParams),
-        );
+        $userSession->setIp(LoginMetadataHelper::remoteAddr($serverParams));
         $userSession->setUserAgent(LoginMetadataHelper::userAgent($serverParams));
         $userSession->setCreatedAt(time());
         $userSession->setUpdatedAt(time());

@@ -5,18 +5,19 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\ViewData\TwoFactor;
 
 use PHPUnit\Framework\TestCase;
-use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
 use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\ViewData\TwoFactor\IndexViewData;
 
 final class IndexViewDataTest extends TestCase
 {
     use TranslatorMockTrait;
+    use UserFactoryTrait;
     public function testCreateWhenEnabled(): void
     {
-        $user = $this->createUser(authTfEnabled: true);
+        $user = $this->buildUser(authTfEnabled: true);
 
         $data = IndexViewData::create(
             $user,
@@ -25,6 +26,7 @@ final class IndexViewDataTest extends TestCase
             '',
             null,
             false,
+            true,
             true,
             true,
             new ModuleConfig(),
@@ -40,9 +42,9 @@ final class IndexViewDataTest extends TestCase
         self::assertSame('//voyti/user-two-factor-disable', $data->disableUrl);
     }
 
-    public function testCreateWhenNotEnabledAndNotPreloadingSetsAutoloadUrl(): void
+    public function testCreateWhenGoogleUnavailableOmitsGoogleAndRenewUrls(): void
     {
-        $user = $this->createUser(authTfEnabled: false);
+        $user = $this->buildUser(authTfEnabled: false);
 
         $data = IndexViewData::create(
             $user,
@@ -53,6 +55,31 @@ final class IndexViewDataTest extends TestCase
             false,
             false,
             false,
+            false,
+            new ModuleConfig(),
+            new FakeUrlGenerator(),
+            $this->createTranslator(),
+        );
+
+        self::assertNull($data->googleUrl);
+        self::assertNull($data->renewUrl);
+        self::assertSame('//voyti/user-two-factor-email', $data->emailUrl);
+    }
+
+    public function testCreateWhenNotEnabledAndNotPreloadingSetsAutoloadUrl(): void
+    {
+        $user = $this->buildUser(authTfEnabled: false);
+
+        $data = IndexViewData::create(
+            $user,
+            'email',
+            [],
+            '',
+            null,
+            false,
+            false,
+            false,
+            true,
             new ModuleConfig(),
             new FakeUrlGenerator(),
             $this->createTranslator(),
@@ -65,7 +92,7 @@ final class IndexViewDataTest extends TestCase
 
     public function testCreateWhenNotEnabledAndPreloadingEmail(): void
     {
-        $user = $this->createUser(authTfEnabled: false);
+        $user = $this->buildUser(authTfEnabled: false);
 
         $data = IndexViewData::create(
             $user,
@@ -75,6 +102,7 @@ final class IndexViewDataTest extends TestCase
             null,
             true,
             false,
+            true,
             true,
             new ModuleConfig(),
             new FakeUrlGenerator(),
@@ -90,7 +118,7 @@ final class IndexViewDataTest extends TestCase
 
     public function testCreateWhenNotEnabledAndPreloadingGoogle(): void
     {
-        $user = $this->createUser(authTfEnabled: false);
+        $user = $this->buildUser(authTfEnabled: false);
 
         $data = IndexViewData::create(
             $user,
@@ -101,6 +129,7 @@ final class IndexViewDataTest extends TestCase
             false,
             false,
             true,
+            true,
             new ModuleConfig(),
             new FakeUrlGenerator(),
             $this->createTranslator(),
@@ -110,20 +139,5 @@ final class IndexViewDataTest extends TestCase
         self::assertNull($data->emailSetup);
         self::assertSame('<svg></svg>', $data->googleSetup->qrCodeUri);
     }
-
-    private function createUser(bool $authTfEnabled): User
-    {
-        $user = new User();
-        $user->setUsername('jane');
-        $user->setEmail('jane@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->setAuthTfEnabled($authTfEnabled);
-
-        return $user;
-    }
-
 
 }

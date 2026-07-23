@@ -30,6 +30,7 @@ use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\Support\UserSessionFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Data\Paginator\OffsetPaginator;
 use Yiisoft\Hydrator\HydratorInterface;
@@ -47,6 +48,7 @@ final class UserControllerTest extends TestCase
     use DatabaseSetupTrait;
     use RedirectResponseMockTrait;
     use UserFactoryTrait;
+    use UserSessionFactoryTrait;
 
     private AuthHelper&MockObject $authHelper;
     private BlockService&MockObject $blockService;
@@ -662,7 +664,7 @@ final class UserControllerTest extends TestCase
     {
         $user = $this->createUser(email: 'testuser2@example.com');
         $userId = (int) $user->getId();
-        $session = $this->createSession($userId, 'sess-1');
+        $session = $this->createUserSession($userId, 'sess-1');
         $session->setRevokedAt(1000);
         $session->save();
         $controller = $this->createController();
@@ -680,7 +682,7 @@ final class UserControllerTest extends TestCase
     {
         $user = $this->createUser(email: 'testuser@example.com');
         $userId = (int) $user->getId();
-        $this->createSession($userId, 'sess-1');
+        $this->createUserSession($userId, 'sess-1');
         $controller = $this->createController();
 
         $response = $this->mockRedirectResponse($this->responseFactory);
@@ -919,18 +921,6 @@ final class UserControllerTest extends TestCase
         );
     }
 
-    private function createSession(int $userId, string $sessionId): UserSessions
-    {
-        $session = new UserSessions();
-        $session->setUserId($userId);
-        $session->setSessionId($sessionId);
-        $session->setIp('203.0.113.1');
-        $session->setCreatedAt(time());
-        $session->setUpdatedAt(time());
-        $session->save();
-
-        return $session;
-    }
 
     private function createUserWithProfile(string $name = 'John'): User
     {

@@ -9,6 +9,7 @@ return [
     'voyti.security.need_email_confirmation' => 'U moet uw e-mailadres bevestigen',
     'voyti.security.logged_out' => 'Uitgelogd',
     'voyti.security.password_expired' => 'Uw wachtwoord is verlopen. Stel een nieuw wachtwoord in.',
+    'voyti.security.two_factor_required' => 'Tweefactorauthenticatie is verplicht voor uw account. Schakel deze in om door te gaan.',
     'voyti.security.authenticated' => 'Geverifieerd',
 
     // RegistrationController
@@ -147,7 +148,6 @@ return [
     'voyti.view.two_factor.disable_send_code' => 'Code versturen om uit te schakelen',
     'voyti.view.two_factor.scan_qr' => 'Scan deze QR-code met uw authenticator-app',
     'voyti.view.two_factor.manual_entry' => 'Of voer deze sleutel handmatig in:',
-    'voyti.view.two_factor.qr_unavailable' => 'QR-code is niet beschikbaar',
     'voyti.view.two_factor.enter_code' => 'Voer de verificatiecode in',
     'voyti.view.two_factor.enable' => 'Inschakelen',
     'voyti.view.two_factor.renew' => 'Vernieuwen',

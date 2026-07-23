@@ -269,26 +269,6 @@ final class UserSocialAuthenticateServiceTest extends TestCase
         self::assertSame('192.168.1.50', $updated->getLastLoginIp());
     }
 
-    public function testRunWithValidConnectedUserAndDisabledIpLogging(): void
-    {
-        $currentUser = $this->createMock(CurrentUser::class);
-        $currentUser->expects($this->once())->method('login');
-        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $eventDispatcher->expects($this->once())->method('dispatch');
-
-        $user = $this->createUser('active2', 'active2@example.com', lastLoginIp: '1.2.3.4');
-        $this->createConnectedAccount('active_client2', (int) $user->getId());
-
-        $config = new ModuleConfig(enableSocialNetworkRegistration: true, disableIpLogging: true);
-        $result = $this->createService($config, $currentUser, $eventDispatcher)
-            ->run('github', 'active_client2', ['email' => 'test@example.com']);
-
-        self::assertTrue($result->isSuccess());
-
-        $updatedUser = User::findByEmail('active2@example.com');
-        self::assertSame('127.0.0.1', $updatedUser->getLastLoginIp());
-    }
-
     public function testRunWithValidConnectedUserLogsIn(): void
     {
         $currentUser = $this->createMock(CurrentUser::class);

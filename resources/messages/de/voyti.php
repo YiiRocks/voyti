@@ -9,6 +9,7 @@ return [
     'voyti.security.need_email_confirmation' => 'Sie müssen Ihre E-Mail-Adresse bestätigen',
     'voyti.security.logged_out' => 'Abgemeldet',
     'voyti.security.password_expired' => 'Ihr Passwort ist abgelaufen. Bitte legen Sie ein neues fest.',
+    'voyti.security.two_factor_required' => 'Zwei-Faktor-Authentifizierung ist für Ihr Konto erforderlich. Bitte aktivieren Sie sie, um fortzufahren.',
     'voyti.security.authenticated' => 'Authentifiziert',
 
     // RegistrationController
@@ -147,7 +148,6 @@ return [
     'voyti.view.two_factor.disable_send_code' => 'Code zum Deaktivieren senden',
     'voyti.view.two_factor.scan_qr' => 'Scannen Sie diesen QR-Code mit Ihrer Authenticator-App',
     'voyti.view.two_factor.manual_entry' => 'Oder geben Sie diesen Schlüssel manuell ein:',
-    'voyti.view.two_factor.qr_unavailable' => 'QR-Code ist nicht verfügbar',
     'voyti.view.two_factor.enter_code' => 'Geben Sie den Verifizierungscode ein',
     'voyti.view.two_factor.enable' => 'Aktivieren',
     'voyti.view.two_factor.renew' => 'Erneuern',

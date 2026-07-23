@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Controller\Admin\Dashboard\DashboardController;
 use YiiRocks\Voyti\Middleware\AccessRuleMiddleware;
 use YiiRocks\Voyti\Middleware\ApiTokenAuthenticationMiddleware;
+use YiiRocks\Voyti\Middleware\TwoFactorAuthenticationEnforceMiddleware;
 use Yiisoft\DataResponse\Middleware\JsonDataResponseMiddleware;
 use Yiisoft\Router\Route;
 use Yiisoft\Router\RouteCollection;
@@ -17,6 +18,13 @@ use Yiisoft\Session\SessionMiddleware;
 
 final class RoutesTest extends TestCase
 {
+    public function testAdminIndexRouteEnforcesTwoFactorAuthenticationWhenEnabled(): void
+    {
+        $route = $this->getRoute('voyti/admin', ['enableTwoFactorAuthentication' => true]);
+
+        self::assertContains(TwoFactorAuthenticationEnforceMiddleware::class, $route->getData('enabledMiddlewares'));
+    }
+
     public function testAdminIndexRouteRendersDashboard(): void
     {
         $route = $this->getRoute('voyti/admin', []);
@@ -24,6 +32,26 @@ final class RoutesTest extends TestCase
 
         self::assertSame('admin/', $route->getData('pattern'));
         self::assertSame([DashboardController::class, 'index'], end($middlewares));
+    }
+
+    public function testAdminIndexRouteSkipsTwoFactorEnforcementWhenDisabled(): void
+    {
+        $route = $this->getRoute('voyti/admin', ['enableTwoFactorAuthentication' => false]);
+
+        self::assertNotContains(TwoFactorAuthenticationEnforceMiddleware::class, $route->getData('enabledMiddlewares'));
+    }
+
+    public function testGoogleTwoFactorRoutesAreRegisteredWhenLibraryIsAvailable(): void
+    {
+        // chillerlan/php-authenticator and chillerlan/php-qrcode are dev dependencies of this
+        // package, so they're always installed here; the "either package missing" branch that
+        // omits these two routes can't be exercised from this test (see
+        // QrCodeUriGeneratorService::isAvailable()).
+        $route = $this->getRoute('voyti/user-two-factor-google', ['enableTwoFactorAuthentication' => true]);
+        self::assertSame('settings/two-factor/google/', $route->getData('pattern'));
+
+        $renewRoute = $this->getRoute('voyti/user-two-factor-google-renew', ['enableTwoFactorAuthentication' => true]);
+        self::assertSame('settings/two-factor/google/renew', $renewRoute->getData('pattern'));
     }
 
     public function testOpenApiRouteIsPublic(): void

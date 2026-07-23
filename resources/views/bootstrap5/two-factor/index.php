@@ -108,9 +108,11 @@ if ($data->isEnabled) {
 } else {
     echo Html::div()->class('d-flex justify-content-center mb-3')->open();
     echo Html::div()->class('btn-group')->open();
-    echo Html::a($translator->translate('voyti.view.two_factor_google.button_label'), $data->googleUrl)
-        ->class('btn', $data->method === 'google' ? 'btn-primary' : 'btn-outline-primary')
-        ->attribute('data-voyti-2fa-method', 'google');
+    if ($data->googleUrl !== null) {
+        echo Html::a($translator->translate('voyti.view.two_factor_google.button_label'), $data->googleUrl)
+            ->class('btn', $data->method === 'google' ? 'btn-primary' : 'btn-outline-primary')
+            ->attribute('data-voyti-2fa-method', 'google');
+    }
     echo Html::a($translator->translate('voyti.view.two_factor_email.button_label'), $data->emailUrl)
         ->class('btn', $data->method === 'email' ? 'btn-primary' : 'btn-outline-primary')
         ->attribute('data-voyti-2fa-method', 'email');

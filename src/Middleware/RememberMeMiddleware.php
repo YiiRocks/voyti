@@ -21,9 +21,6 @@ use Yiisoft\User\Login\Cookie\CookieLoginIdentityInterface;
  * response - either the immediate reissue after a session rotation, or the periodic sliding-expiration
  * refresh. {@see RememberMeCookieService::loginByCookie()} only authenticates the identity; it can't
  * write the cookie itself since it runs with no PSR-7 response available. This middleware is what does.
- *
- * Works with CookieMiddleware by running after it, reading the decrypted cookie parameters,
- * and the cookie is automatically re-encrypted in the response pipeline.
  */
 final readonly class RememberMeMiddleware implements MiddlewareInterface
 {
@@ -35,36 +32,55 @@ final readonly class RememberMeMiddleware implements MiddlewareInterface
         private CookieMiddleware $cookieMiddleware,
     ) {}
 
+    /**
+     * Public so the {@see RequestHandlerInterface} adapter in {@see process()} can call it.
+     */
+    public function loginAndRefreshCookie(
+        ServerRequestInterface $request,
+        RequestHandlerInterface $handler,
+    ): ResponseInterface {
+        $cookies = $request->getCookieParams();
+
+        $rotated = $this->currentUser->isGuest()
+            && $this->rememberMeCookieService->loginByCookie(
+                $cookies,
+                $this->currentUser,
+                $this->identityRepository,
+                $this->session,
+                $request->getServerParams(),
+            );
+
+        $response = $handler->handle($request);
+
+        if ($rotated) {
+            $identity = $this->currentUser->getIdentity();
+            if ($identity instanceof CookieLoginIdentityInterface) {
+                return $this->rememberMeCookieService->addCookie($identity, $response, $this->session->getId() ?? '');
+            }
+
+            return $response;
+        }
+
+        return $this->rememberMeCookieService->refreshCookie($this->currentUser, $cookies, $response);
+    }
+
     #[Override]
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         return $this->cookieMiddleware->process(
             $request,
-            new CallableRequestHandler(function (ServerRequestInterface $req) use ($handler) {
-                $cookies = $req->getCookieParams();
+            new class ($this, $handler) implements RequestHandlerInterface {
+                public function __construct(
+                    private RememberMeMiddleware $middleware,
+                    private RequestHandlerInterface $next,
+                ) {}
 
-                $rotated = $this->currentUser->isGuest()
-                    && $this->rememberMeCookieService->loginByCookie(
-                        $cookies,
-                        $this->currentUser,
-                        $this->identityRepository,
-                        $this->session,
-                        $req->getServerParams(),
-                    );
-
-                $response = $handler->handle($req);
-
-                if ($rotated) {
-                    $identity = $this->currentUser->getIdentity();
-                    if ($identity instanceof CookieLoginIdentityInterface) {
-                        return $this->rememberMeCookieService->addCookie($identity, $response, $this->session->getId() ?? '');
-                    }
-
-                    return $response;
+                #[Override]
+                public function handle(ServerRequestInterface $request): ResponseInterface
+                {
+                    return $this->middleware->loginAndRefreshCookie($request, $this->next);
                 }
-
-                return $this->rememberMeCookieService->refreshCookie($this->currentUser, $cookies, $response);
-            }),
+            },
         );
     }
 }

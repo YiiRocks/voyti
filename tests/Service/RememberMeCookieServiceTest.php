@@ -14,13 +14,13 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Clock\SystemClock;
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 use YiiRocks\Voyti\tests\Support\FakeSession;
 use YiiRocks\Voyti\tests\Support\FixedClock;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\Support\UserSessionFactoryTrait;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Login\Cookie\CookieLoginIdentityInterface;
@@ -30,6 +30,7 @@ final class RememberMeCookieServiceTest extends TestCase
 {
     use DatabaseSetupTrait;
     use UserFactoryTrait;
+    use UserSessionFactoryTrait;
 
     protected function setUp(): void
     {
@@ -729,19 +730,6 @@ final class RememberMeCookieServiceTest extends TestCase
             $this->createMock(IdentityRepositoryInterface::class),
             $eventDispatcher,
         );
-    }
-
-    private function createUserSession(int $userId, string $sessionId): UserSessions
-    {
-        $sh = new UserSessions();
-        $sh->setUserId($userId);
-        $sh->setSessionId($sessionId);
-        $sh->setIp('127.0.0.1');
-        $sh->setCreatedAt(time());
-        $sh->setUpdatedAt(time());
-        $sh->save();
-
-        return $sh;
     }
 
     private function fixedClock(int $now): ClockInterface

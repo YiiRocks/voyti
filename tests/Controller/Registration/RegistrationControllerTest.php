@@ -19,6 +19,7 @@ use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\RegisterService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\HydrateObjectTrait;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
@@ -33,6 +34,7 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 final class RegistrationControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
+    use HydrateObjectTrait;
     use RedirectResponseMockTrait;
     use UserFactoryTrait;
 
@@ -388,13 +390,5 @@ final class RegistrationControllerTest extends TestCase
             confirmationService: $this->confirmationService,
             pendingSocialAccountService: $this->pendingSocialAccountService,
         );
-    }
-    private function hydrateObject(object $object, array $data): void
-    {
-        foreach ($data as $key => $value) {
-            if (property_exists($object, $key)) {
-                $object->$key = $value;
-            }
-        }
     }
 }

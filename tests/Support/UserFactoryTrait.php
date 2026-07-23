@@ -8,6 +8,31 @@ use YiiRocks\Voyti\Model\User;
 
 trait UserFactoryTrait
 {
+    /**
+     * Builds an in-memory `User`, without persisting it - for ViewData/unit tests that receive a
+     * `User` as a plain argument and never look it up from the database.
+     */
+    private function buildUser(
+        string $username = 'testuser',
+        ?string $email = null,
+        bool $authTfEnabled = false,
+        ?string $authTfType = null,
+        ?string $authTfKey = null,
+    ): User {
+        $user = new User();
+        $user->setUsername($username);
+        $user->setEmail($email ?? $username . '@example.com');
+        $user->setPasswordHash('hash');
+        $user->setAuthKey('key');
+        $user->setCreatedAt(time());
+        $user->setUpdatedAt(time());
+        $user->setAuthTfEnabled($authTfEnabled);
+        $user->setAuthTfType($authTfType);
+        $user->setAuthTfKey($authTfKey);
+
+        return $user;
+    }
+
     private function createUser(
         string $username = 'testuser',
         string $email = 'test@example.com',

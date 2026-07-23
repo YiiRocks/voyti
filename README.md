@@ -94,8 +94,8 @@ enabled in your console app, run:
 
 One migration creates the `user`, `user_profile`, `user_social_account`,
 `user_token`, `user_sessions`, `user_backup_code`, `user_password_history`,
-and `audit_log` tables with all columns (2FA, GDPR, password expiration, last
-login IP, etc.) included. `config/params-console.php` also registers
+and `user_audit_log` tables with all columns (2FA, GDPR, password expiration,
+last login IP, etc.) included. `config/params-console.php` also registers
 `yiisoft/rbac-db`'s own item/assignment migrations, so `./yii migrate:up`
 creates the RBAC tables too — no separate step needed.
 
@@ -104,7 +104,7 @@ admin account is seeded automatically: username `admin`, email
 `admin@example.com`, and a random 20-character password printed to the
 console — copy it immediately, it isn't stored anywhere else. The account is
 assigned the `administrator` role, which is granted the `administratorPermissionName`
-permission (`voyti-admin-dashboard` by default) needed to reach the admin
+permission (`voyti-admin` by default) needed to reach the admin
 dashboard. **Change this password immediately after first login.** If the
 `user` table already has rows (e.g. re-running migrations on an existing
 database), seeding is skipped entirely.
@@ -217,13 +217,6 @@ Below are all top-level `yiirocks/voyti` options, followed by the nested `social
 | `enableTwoFactorAuthentication` | `bool` | `false` | Enable 2FA |
 | `twoFactorAuthenticationForcedPermissions` | `array` | `[]` | Permissions that require 2FA |
 
-```php
-'yiirocks/voyti' => [
-    'enableTwoFactorAuthentication' => true,
-    'twoFactorAuthenticationForcedPermissions' => ['admin'],
-],
-```
-
 ### GDPR
 
 | Option | Type | Default | Description |
@@ -232,25 +225,17 @@ Below are all top-level `yiirocks/voyti` options, followed by the nested `social
 | `gdprAnonymizePrefix` | `string` | `'GDPR'` | Prefix for anonymized usernames |
 | `gdprExportProperties` | `array` | `['email', 'username', 'userProfile.public_email', 'userProfile.name', 'userProfile.gravatar_email', 'userProfile.location', 'userProfile.website', 'userProfile.bio', 'userProfile.birthday', 'userSessions', 'userSocialAccount']` | Properties included in the data export (JSON). `userSessions` exports each login's `ip`, `user_agent`, `created_at`, `updated_at` (the internal `session_id` is excluded); `userSocialAccount` exports each linked account's `provider`, `username`, `email`, `created_at`, and `data` (the decoded provider profile payload). The OAuth `code` field is excluded — it's a one-time linking secret, not user data |
 
-```php
-'yiirocks/voyti' => [
-    'enableGdprCompliance' => true,
-    'gdprAnonymizePrefix' => 'ANON-',
-],
-```
-
 ### Session & Security
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `disableIpLogging` | `bool` | `false` | Disable IP address logging |
 | `enablePasswordExpiration` | `bool` | `false` | Enable password expiration |
 | `maxPasswordAge` | `?int` | `null` | Max password age in days |
 | `enablePasswordComplexity` | `bool` | `false` | Require passwords to contain an uppercase letter, a lowercase letter, a digit, and a special character |
 | `passwordHistoryLimit` | `int` | `10` | Number of previous passwords remembered per user to prevent reuse. Only enforced when `enablePasswordExpiration` is `true` |
-| `administratorPermissionName` | `string` | `'voyti-admin-dashboard'` | Permission name granting admin access |
+| `administratorPermissionName` | `string` | `'voyti-admin'` | Permission name granting admin access |
 | `profileVisibility` | `ProfileVisibility` | `ProfileVisibility::USERS` | Profile visibility: `OWNER` = owner only, `ADMIN` = owner + admins, `USERS` = any authenticated user, `PUBLIC` = public |
-| `enableAuditLog` | `bool` | `true` | Record admin actions (RBAC and user management changes) to the `audit_log` table, viewable at `admin/audit-log/` |
+| `enableAuditLog` | `bool` | `true` | Record admin actions (RBAC and user management changes) to the `user_audit_log` table, viewable at `admin/audit-log/` |
 
 ### Views & Mail
 
@@ -371,12 +356,12 @@ The extension ships eight PSR-15 middleware classes for session handling and acc
 | Middleware | Description | Auto-registered on the extension's own routes? |
 |-----------|-------------|-----------|
 | `AccessRuleMiddleware` | Redirects guests to the login page (`voyti/session-login`); checks `administratorPermissionName` for admin access | Yes — on `admin/*` (users and RBAC management) and the REST API group |
-| `RequireLoginMiddleware` | Redirects guests to the login page (`voyti/session-login`); unlike `AccessRuleMiddleware`, only requires an authenticated user, not an admin permission. Returns a JSON `401` instead of a redirect for the one AJAX-only route, `voyti/user-two-factor-renew` | Yes — on `settings/*` (profile, account, social networks, sessions, privacy, two-factor) |
+| `RequireLoginMiddleware` | Redirects guests to the login page (`voyti/session-login`); unlike `AccessRuleMiddleware`, only requires an authenticated user, not an admin permission. Returns a JSON `401` instead of a redirect when the request's `Accept` header includes `application/json` (e.g. AJAX calls like `voyti/user-two-factor-google-renew`) | Yes — on `settings/*` (profile, account, social networks, sessions, privacy, two-factor) |
 | `ApiTokenAuthenticationMiddleware` | Resolves the `Authorization: Bearer <token>` header to a user for that request only (no session); returns `401` if missing/invalid | Yes — on the REST API group, ahead of `AccessRuleMiddleware`, in place of the session cookie |
 | `RememberMeMiddleware` | Logs a guest back in from the `autoLogin` remember-me cookie, then writes the cookie back onto the response — either the immediate reissue after a session rotation or the periodic sliding-expiration refresh. Must run after session middleware and before the enforcement middleware below, since those need `CurrentUser` already resolved | Yes |
 | `SessionRevocationEnforceMiddleware` | Logs out and redirects to the login page (`voyti/session-login`) when the current session's `user_sessions` row is gone — i.e. it was terminated from the sessions list (self-service or admin) on another request. Without this, terminating a session only removed the row; the browser that owned it stayed logged in until its PHP session expired on its own. Otherwise touches the row's `updated_at` on every request, so the sessions list can show "last seen" activity per device. | Yes |
 | `PasswordAgeEnforceMiddleware` | Redirects to the account settings page (`voyti/user-account`) when `maxPasswordAge` is exceeded | Yes, when `enablePasswordExpiration` is `true` — on the extension's whole web route group |
-| `TwoFactorAuthenticationEnforceMiddleware` | Redirects to the account settings page (`voyti/user-account`) when required permissions are assigned but 2FA isn't enabled | No |
+| `TwoFactorAuthenticationEnforceMiddleware` | Redirects to the two-factor settings page (`voyti/user-two-factor`), with an explanatory flash message, when required permissions are assigned but 2FA isn't enabled. Two-factor routes and the logout route stay reachable so the user can actually complete setup | Yes, when `enableTwoFactorAuthentication` is `true` — on the extension's whole web route group |
 | `VoytiMiddleware` | Convenience wrapper that chains `RememberMeMiddleware`, `SessionRevocationEnforceMiddleware`, `PasswordAgeEnforceMiddleware`, and `TwoFactorAuthenticationEnforceMiddleware` in a single middleware entry — add this to your app's route group instead of the four individual ones (see [Site-wide enforcement](#site-wide-enforcement)) | No |
 
 ### Site-wide enforcement
@@ -397,8 +382,6 @@ Built on [`yiisoft/rbac`](https://github.com/yiisoft/rbac). The extension provid
 ## Routes
 
 The library does not provide a menu model or navigation contract. It only exposes named routes that the host application can use in its own menu, sidebar, or access rules.
-
-Every `settings/*` route below requires an authenticated user — `RequireLoginMiddleware` redirects a guest to `voyti/session-login` (or returns a JSON `401` for the AJAX-only `voyti/user-two-factor-renew`) before the request reaches the controller; see [Middleware](#middleware).
 
 | Route name | Method | Path | Purpose |
 |------------|--------|------|---------|
@@ -427,13 +410,13 @@ Every `settings/*` route below requires an authenticated user — `RequireLoginM
 | `voyti/user-privacy-anonymize` | `GET`, `POST` | `settings/privacy/anonymize` | Anonymize account (blanks email/username, blocks login; row is kept). Only registered when `enableGdprCompliance` is `true` |
 | `voyti/user-privacy-delete` | `GET`, `POST` | `settings/privacy/delete` | Account deletion (hard delete). Only registered when `allowAccountDelete` is `true` |
 | `voyti/user-two-factor` | `GET`, `POST` | `settings/two-factor/` | Two-factor status/entry point. Only registered when `enableTwoFactorAuthentication` is `true` |
-| `voyti/user-two-factor-google` | `GET` | `settings/two-factor/google/` | Google Authenticator setup page (method-selector buttons + QR/secret). Only registered when `enableTwoFactorAuthentication` is `true` |
-| `voyti/user-two-factor-email` | `GET` | `settings/two-factor/email/` | Email 2FA setup page (method-selector buttons + confirm/send screen). Only registered when `enableTwoFactorAuthentication` is `true` |
 | `voyti/user-two-factor-enable` | `POST` | `settings/two-factor/enable` | Enable 2FA - shared by both the Google Authenticator and email code-entry forms. Only registered when `enableTwoFactorAuthentication` is `true` |
 | `voyti/user-two-factor-disable` | `POST` | `settings/two-factor/disable/` | Disable 2FA. Only registered when `enableTwoFactorAuthentication` is `true` |
 | `voyti/user-two-factor-disable-send-code` | `POST` | `settings/two-factor/disable/send-code` | Send the disable-2FA one-time code. Only registered when `enableTwoFactorAuthentication` is `true` |
-| `voyti/user-two-factor-renew` | `POST` | `settings/two-factor/google/renew` | Regenerate the Google Authenticator secret/QR code via AJAX. Only registered when `enableTwoFactorAuthentication` is `true` |
-| `voyti/user-two-factor-send-email-code` | `POST` | `settings/two-factor/email/send-code` | Send the email 2FA one-time code after explicit confirmation. Only registered when `enableTwoFactorAuthentication` is `true` |
+| `voyti/user-two-factor-email` | `GET` | `settings/two-factor/email/` | Email 2FA setup page (method-selector buttons + confirm/send screen). Only registered when `enableTwoFactorAuthentication` is `true` |
+| `voyti/user-two-factor-email-send-code` | `POST` | `settings/two-factor/email/send-code` | Send the email 2FA one-time code after explicit confirmation. Only registered when `enableTwoFactorAuthentication` is `true` |
+| `voyti/user-two-factor-google` | `GET` | `settings/two-factor/google/` | Google Authenticator setup page (method-selector buttons + QR/secret). Only registered when `enableTwoFactorAuthentication` is `true` and both optional `chillerlan/php-authenticator`/`chillerlan/php-qrcode` packages are installed |
+| `voyti/user-two-factor-google-renew` | `POST` | `settings/two-factor/google/renew` | Regenerate the Google Authenticator secret/QR code via AJAX. Only registered when `enableTwoFactorAuthentication` is `true` and both optional `chillerlan/php-authenticator`/`chillerlan/php-qrcode` packages are installed |
 | `voyti/user-two-factor-regenerate-backup-codes` | `POST` | `settings/two-factor/backup-codes/regenerate` | Invalidate existing backup codes and generate a fresh set (requires re-verifying the current 2FA method). Only registered when `enableTwoFactorAuthentication` is `true` |
 | `voyti/admin` | `GET` | `admin/` | Admin dashboard |
 | `voyti/admin-users` | `GET` | `admin/users/` | Users |

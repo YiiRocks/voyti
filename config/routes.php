@@ -9,7 +9,9 @@ use YiiRocks\Voyti\Middleware\PasswordAgeEnforceMiddleware;
 use YiiRocks\Voyti\Middleware\RememberMeMiddleware;
 use YiiRocks\Voyti\Middleware\RequireLoginMiddleware;
 use YiiRocks\Voyti\Middleware\SessionRevocationEnforceMiddleware;
+use YiiRocks\Voyti\Middleware\TwoFactorAuthenticationEnforceMiddleware;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
 use Yiisoft\Csrf\CsrfMiddleware;
 use Yiisoft\DataResponse\Middleware\JsonDataResponseMiddleware;
 use Yiisoft\Router\Group;
@@ -121,13 +123,15 @@ if ($moduleConfig->allowAccountDelete) {
 
 if ($moduleConfig->enableTwoFactorAuthentication) {
     $settingsRoutes[] = Route::methods(['GET', 'POST'], 'two-factor/')->name('voyti/user-two-factor')->action([Controller\TwoFactor\TwoFactorController::class, 'index']);
-    $settingsRoutes[] = Route::get('two-factor/google/')->name('voyti/user-two-factor-google')->action([Controller\TwoFactor\TwoFactorController::class, 'google']);
-    $settingsRoutes[] = Route::get('two-factor/email/')->name('voyti/user-two-factor-email')->action([Controller\TwoFactor\TwoFactorController::class, 'email']);
     $settingsRoutes[] = Route::post('two-factor/enable')->name('voyti/user-two-factor-enable')->action([Controller\TwoFactor\TwoFactorController::class, 'enable']);
     $settingsRoutes[] = Route::post('two-factor/disable/')->name('voyti/user-two-factor-disable')->action([Controller\TwoFactor\TwoFactorController::class, 'disable']);
     $settingsRoutes[] = Route::post('two-factor/disable/send-code')->name('voyti/user-two-factor-disable-send-code')->action([Controller\TwoFactor\TwoFactorController::class, 'disableSendCode']);
-    $settingsRoutes[] = Route::post('two-factor/google/renew')->name('voyti/user-two-factor-renew')->action([Controller\TwoFactor\TwoFactorController::class, 'renew']);
-    $settingsRoutes[] = Route::post('two-factor/email/send-code')->name('voyti/user-two-factor-send-email-code')->action([Controller\TwoFactor\TwoFactorController::class, 'sendEmailCode']);
+    $settingsRoutes[] = Route::get('two-factor/email/')->name('voyti/user-two-factor-email')->action([Controller\TwoFactor\TwoFactorController::class, 'email']);
+    $settingsRoutes[] = Route::post('two-factor/email/send-code')->name('voyti/user-two-factor-email-send-code')->action([Controller\TwoFactor\TwoFactorController::class, 'sendEmailCode']);
+    if ((new QrCodeUriGeneratorService($moduleConfig))->isAvailable()) {
+        $settingsRoutes[] = Route::get('two-factor/google/')->name('voyti/user-two-factor-google')->action([Controller\TwoFactor\TwoFactorController::class, 'google']);
+        $settingsRoutes[] = Route::post('two-factor/google/renew')->name('voyti/user-two-factor-google-renew')->action([Controller\TwoFactor\TwoFactorController::class, 'renew']);
+    }
     $settingsRoutes[] = Route::post('two-factor/backup-codes/regenerate')->name('voyti/user-two-factor-regenerate-backup-codes')->action([Controller\TwoFactor\TwoFactorController::class, 'regenerateBackupCodes']);
 }
 
@@ -168,6 +172,9 @@ if ($moduleConfig->enableSwitchIdentities) {
 $webMiddlewares = [SessionMiddleware::class, RememberMeMiddleware::class, CsrfMiddleware::class, SessionRevocationEnforceMiddleware::class];
 if ($moduleConfig->enablePasswordExpiration) {
     $webMiddlewares[] = PasswordAgeEnforceMiddleware::class;
+}
+if ($moduleConfig->enableTwoFactorAuthentication) {
+    $webMiddlewares[] = TwoFactorAuthenticationEnforceMiddleware::class;
 }
 
 $result = [

@@ -24,7 +24,7 @@ final readonly class EmailSetupViewData
         return new self(
             emailCodeSent: $emailCodeSent,
             userEmail: $user->getEmail(),
-            sendCodeUrl: $url->generate('voyti/user-two-factor-send-email-code'),
+            sendCodeUrl: $url->generate('voyti/user-two-factor-email-send-code'),
             enableUrl: $url->generate('voyti/user-two-factor-enable'),
         );
     }
