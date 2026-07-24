@@ -6,7 +6,7 @@ namespace YiiRocks\Voyti\tests\Validator;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\DataProvider;
-use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
 use YiiRocks\Voyti\Validator\PasswordComplexityRule;
 use Yiisoft\Validator\Rule\Regex;
@@ -30,7 +30,7 @@ final class PasswordComplexityRuleTest extends TestCase
     #[DataProvider('passwordProvider')]
     public function testRegexValidatesComplexity(string $password, bool $expectedValid): void
     {
-        $config = new ModuleConfig(enablePasswordComplexity: true);
+        $config = ModuleConfigFactory::create(enablePasswordComplexity: true);
         $rule = PasswordComplexityRule::rules($config, $this->createTranslator())[0];
 
         $validator = new Validator();
@@ -41,14 +41,14 @@ final class PasswordComplexityRuleTest extends TestCase
 
     public function testRulesReturnsEmptyArrayWhenDisabled(): void
     {
-        $config = new ModuleConfig(enablePasswordComplexity: false);
+        $config = ModuleConfigFactory::create(enablePasswordComplexity: false);
         $rules = PasswordComplexityRule::rules($config, $this->createTranslator());
         $this->assertSame([], $rules);
     }
 
     public function testRulesReturnsRegexRuleWhenEnabled(): void
     {
-        $config = new ModuleConfig(enablePasswordComplexity: true);
+        $config = ModuleConfigFactory::create(enablePasswordComplexity: true);
         $rules = PasswordComplexityRule::rules($config, $this->createTranslator());
         $this->assertCount(1, $rules);
         $this->assertInstanceOf(Regex::class, $rules[0]);

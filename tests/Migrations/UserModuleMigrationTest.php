@@ -8,7 +8,7 @@ use M240118192500CreateAssignmentsTable;
 use M240118192500CreateItemsTables;
 use M260621101843_create_user_module_tables;
 use ReflectionMethod;
-use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Db\Connection\ConnectionInterface;
@@ -70,7 +70,7 @@ final class UserModuleMigrationTest extends TestCase
 
     public function testSeedDefaultAdminIsIdempotent(): void
     {
-        $migration = new M260621101843_create_user_module_tables(new ModuleConfig(), TestPasswordHasherFactory::create());
+        $migration = new M260621101843_create_user_module_tables(ModuleConfigFactory::create(), TestPasswordHasherFactory::create());
         ob_start();
         $migration->up($this->builder);
         ob_get_clean();
@@ -150,7 +150,7 @@ final class UserModuleMigrationTest extends TestCase
 
     private function runMigration(?PasswordHasher $hasher = null): string
     {
-        $migration = new M260621101843_create_user_module_tables(new ModuleConfig(), $hasher ?? TestPasswordHasherFactory::create());
+        $migration = new M260621101843_create_user_module_tables(ModuleConfigFactory::create(), $hasher ?? TestPasswordHasherFactory::create());
         ob_start();
         $migration->up($this->builder);
         return (string) ob_get_clean();

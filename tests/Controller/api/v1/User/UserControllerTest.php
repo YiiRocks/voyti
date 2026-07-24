@@ -22,6 +22,7 @@ use YiiRocks\Voyti\Service\User\UserCreationHelper;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 use YiiRocks\Voyti\tests\Support\MailCapture;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
@@ -46,7 +47,7 @@ final class UserControllerTest extends TestCase
     protected function setUp(): void
     {
         $this->setUpDatabase();
-        $this->config = new ModuleConfig();
+        $this->config = ModuleConfigFactory::create();
         $this->translator = $this->createTranslator();
         $passwordHasher = TestPasswordHasherFactory::create();
         $passwordHistoryService = new PasswordHistoryService($passwordHasher, $this->config);
@@ -91,7 +92,7 @@ final class UserControllerTest extends TestCase
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->method('createResponse')->willReturn($response);
 
-        $config = new ModuleConfig(enablePasswordExpiration: true);
+        $config = ModuleConfigFactory::create(enablePasswordExpiration: true);
         $controller = $this->createController($config);
         $controller->create(email: 'history@example.com', username: 'historyuser', password: 'secret123');
 
@@ -297,7 +298,7 @@ final class UserControllerTest extends TestCase
 
     public function testUpdateWithoutPasswordDoesNotRecordPasswordHistory(): void
     {
-        $config = new ModuleConfig(enablePasswordExpiration: true);
+        $config = ModuleConfigFactory::create(enablePasswordExpiration: true);
         $user = $this->createUser('testuser', 'test@example.com');
         $userId = (int) $user->getId();
 
@@ -340,7 +341,7 @@ final class UserControllerTest extends TestCase
 
     public function testUpdateWithPasswordRecordsPasswordHistory(): void
     {
-        $config = new ModuleConfig(enablePasswordExpiration: true);
+        $config = ModuleConfigFactory::create(enablePasswordExpiration: true);
         $user = $this->createUser('testuser', 'test@example.com');
         $userId = (int) $user->getId();
 
@@ -355,7 +356,7 @@ final class UserControllerTest extends TestCase
 
     public function testUpdateWithPreviouslyUsedPasswordReturnsBadRequest(): void
     {
-        $config = new ModuleConfig(enablePasswordExpiration: true);
+        $config = ModuleConfigFactory::create(enablePasswordExpiration: true);
         $user = $this->createUser('testuser', 'test@example.com');
         $userId = (int) $user->getId();
         $passwordHasher = TestPasswordHasherFactory::create();

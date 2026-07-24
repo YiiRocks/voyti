@@ -9,8 +9,8 @@ use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
 use YiiRocks\Voyti\Helper\FlashType;
 use YiiRocks\Voyti\Listener\PasswordExpirationListener;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\ExpireService;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Session\Flash\FlashInterface;
 
@@ -19,7 +19,7 @@ final class PasswordExpirationListenerTest extends TestCase
 {
     public function testOnAfterLoginDoesNotFlashWhenPasswordNotExpired(): void
     {
-        $config = new ModuleConfig(enablePasswordExpiration: true);
+        $config = ModuleConfigFactory::create(enablePasswordExpiration: true);
 
         $expireService = $this->createMock(ExpireService::class);
         $expireService->expects(self::once())->method('checkPasswordExpiration')->willReturn(false);
@@ -38,7 +38,7 @@ final class PasswordExpirationListenerTest extends TestCase
 
     public function testOnAfterLoginDoesNothingWhenDisabled(): void
     {
-        $config = new ModuleConfig(enablePasswordExpiration: false);
+        $config = ModuleConfigFactory::create(enablePasswordExpiration: false);
 
         $expireService = $this->createMock(ExpireService::class);
         $expireService->expects(self::never())->method('checkPasswordExpiration');
@@ -57,7 +57,7 @@ final class PasswordExpirationListenerTest extends TestCase
 
     public function testOnAfterLoginFlashesWarningWhenPasswordExpired(): void
     {
-        $config = new ModuleConfig(enablePasswordExpiration: true);
+        $config = ModuleConfigFactory::create(enablePasswordExpiration: true);
 
         $expireService = $this->createMock(ExpireService::class);
         $expireService->expects(self::once())->method('checkPasswordExpiration')->with(
@@ -80,7 +80,7 @@ final class PasswordExpirationListenerTest extends TestCase
     }
     public function testOnAfterLoginWorksWithoutFlashService(): void
     {
-        $config = new ModuleConfig(enablePasswordExpiration: true);
+        $config = ModuleConfigFactory::create(enablePasswordExpiration: true);
 
         $expireService = $this->createMock(ExpireService::class);
         $expireService->expects(self::once())->method('checkPasswordExpiration')->willReturn(true);

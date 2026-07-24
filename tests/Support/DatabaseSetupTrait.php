@@ -33,7 +33,7 @@ trait DatabaseSetupTrait
         (new M240118192500CreateItemsTables())->up($builder);
         (new M240118192500CreateAssignmentsTable())->up($builder);
 
-        $config = new ModuleConfig();
+        $config = ModuleConfigFactory::create();
         $migration = new M260621101843_create_user_module_tables($config, TestPasswordHasherFactory::create());
         ob_start();
         $migration->up($builder);

@@ -19,6 +19,7 @@ use YiiRocks\Voyti\Service\ServiceResult;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\HydrateObjectTrait;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
@@ -51,10 +52,11 @@ final class PasswordResetControllerTest extends TestCase
     protected function setUp(): void
     {
         $this->setUpDatabase();
-        $this->config = new ModuleConfig();
+        $this->config = ModuleConfigFactory::create();
         $this->harness = new ControllerHarness($this->config);
         $this->translator = $this->createTranslator();
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
+        $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
         $this->validator = $this->createMock(ValidatorInterface::class);
         $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
         $this->hydrator = $this->createMock(HydratorInterface::class);
@@ -112,7 +114,7 @@ final class PasswordResetControllerTest extends TestCase
 
     public function testRequestWhenDisabledShowsError(): void
     {
-        $config = new ModuleConfig(allowPasswordRecovery: false);
+        $config = ModuleConfigFactory::create(allowPasswordRecovery: false);
         $this->harness = new ControllerHarness($config);
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
@@ -245,7 +247,7 @@ final class PasswordResetControllerTest extends TestCase
 
     public function testResetWithDisabledConfigShowsMessage(): void
     {
-        $config = new ModuleConfig(allowPasswordRecovery: false, allowAdminPasswordRecovery: false);
+        $config = ModuleConfigFactory::create(allowPasswordRecovery: false, allowAdminPasswordRecovery: false);
         $this->harness = new ControllerHarness($config);
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');

@@ -20,6 +20,7 @@ use YiiRocks\Voyti\Service\User\RegisterService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\HydrateObjectTrait;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
@@ -53,10 +54,11 @@ final class RegistrationControllerTest extends TestCase
     protected function setUp(): void
     {
         $this->setUpDatabase();
-        $this->config = new ModuleConfig();
+        $this->config = ModuleConfigFactory::create();
         $this->harness = new ControllerHarness($this->config);
         $this->translator = $this->createTranslator();
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
+        $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
         $this->validator = $this->createMock(ValidatorInterface::class);
         $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
         $this->hydrator = $this->createMock(HydratorInterface::class);
@@ -135,7 +137,7 @@ final class RegistrationControllerTest extends TestCase
 
     public function testConfirmWithInvalidUserOrDisabledConfig(): void
     {
-        $config = new ModuleConfig(enableEmailConfirmation: false);
+        $config = ModuleConfigFactory::create(enableEmailConfirmation: false);
         $this->harness = new ControllerHarness($config);
 
         $response = $this->createMock(ResponseInterface::class);
@@ -281,7 +283,7 @@ final class RegistrationControllerTest extends TestCase
 
     public function testRegisterWhenDisabledShowsError(): void
     {
-        $config = new ModuleConfig(enableRegistration: false);
+        $config = ModuleConfigFactory::create(enableRegistration: false);
         $this->harness = new ControllerHarness($config);
 
         $response = $this->createMock(ResponseInterface::class);
@@ -358,7 +360,7 @@ final class RegistrationControllerTest extends TestCase
 
     public function testResendWhenDisabledShowsError(): void
     {
-        $config = new ModuleConfig(enableEmailConfirmation: false);
+        $config = ModuleConfigFactory::create(enableEmailConfirmation: false);
         $this->harness = new ControllerHarness($config);
 
         $response = $this->createMock(ResponseInterface::class);

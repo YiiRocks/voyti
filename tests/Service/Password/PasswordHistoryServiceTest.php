@@ -6,9 +6,9 @@ namespace YiiRocks\Voyti\tests\Service\Password;
 
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\UserPasswordHistory;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 
@@ -29,7 +29,7 @@ final class PasswordHistoryServiceTest extends TestCase
 
     public function testRecordDoesNothingWhenDisabled(): void
     {
-        $config = new ModuleConfig(enablePasswordExpiration: false);
+        $config = ModuleConfigFactory::create(enablePasswordExpiration: false);
         $passwordHasher = TestPasswordHasherFactory::create();
         $user = $this->createUser(
             username: 'historyuser',
@@ -45,7 +45,7 @@ final class PasswordHistoryServiceTest extends TestCase
 
     public function testRecordPrunesBeyondLimit(): void
     {
-        $config = new ModuleConfig(enablePasswordExpiration: true, passwordHistoryLimit: 2);
+        $config = ModuleConfigFactory::create(enablePasswordExpiration: true, passwordHistoryLimit: 2);
         $passwordHasher = TestPasswordHasherFactory::create();
         $user = $this->createUser(
             username: 'historyuser',
@@ -69,7 +69,7 @@ final class PasswordHistoryServiceTest extends TestCase
 
     public function testRecordStoresCurrentHash(): void
     {
-        $config = new ModuleConfig(enablePasswordExpiration: true);
+        $config = ModuleConfigFactory::create(enablePasswordExpiration: true);
         $passwordHasher = TestPasswordHasherFactory::create();
         $user = $this->createUser(
             username: 'historyuser',
@@ -89,7 +89,7 @@ final class PasswordHistoryServiceTest extends TestCase
 
     public function testWasUsedRecentlyChecksHistoryEntries(): void
     {
-        $config = new ModuleConfig(enablePasswordExpiration: true);
+        $config = ModuleConfigFactory::create(enablePasswordExpiration: true);
         $passwordHasher = TestPasswordHasherFactory::create();
         $user = $this->createUser(
             username: 'historyuser',
@@ -110,7 +110,7 @@ final class PasswordHistoryServiceTest extends TestCase
 
     public function testWasUsedRecentlyIsFalseWhenDisabled(): void
     {
-        $config = new ModuleConfig(enablePasswordExpiration: false);
+        $config = ModuleConfigFactory::create(enablePasswordExpiration: false);
         $passwordHasher = TestPasswordHasherFactory::create();
         $user = $this->createUser(
             username: 'historyuser',
@@ -124,7 +124,7 @@ final class PasswordHistoryServiceTest extends TestCase
 
     public function testWasUsedRecentlyMatchesCurrentHash(): void
     {
-        $config = new ModuleConfig(enablePasswordExpiration: true);
+        $config = ModuleConfigFactory::create(enablePasswordExpiration: true);
         $passwordHasher = TestPasswordHasherFactory::create();
         $user = $this->createUser(
             username: 'historyuser',

@@ -11,6 +11,7 @@ use YiiRocks\Voyti\Controller\Settings\SettingsController;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -34,10 +35,11 @@ final class SettingsControllerTest extends TestCase
     protected function setUp(): void
     {
         $this->setUpDatabase();
-        $this->config = new ModuleConfig();
+        $this->config = ModuleConfigFactory::create();
         $this->harness = new ControllerHarness($this->config);
         $this->translator = $this->createTranslator();
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
+        $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
         $this->currentUser = $this->createMock(CurrentUser::class);
         $this->flash = $this->createMock(FlashInterface::class);
     }

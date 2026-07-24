@@ -9,11 +9,11 @@ use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Event\Session\SessionEvent;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\UserSession\UserSessionDecorator;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 use YiiRocks\Voyti\tests\Support\FakeSession;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\Support\UserSessionFactoryTrait;
 
@@ -37,7 +37,7 @@ final class UserSessionDecoratorTest extends TestCase
     public function testAgePruneDoesNotDeleteExpiredSessionsOfOtherUsers(): void
     {
         $eventDispatcher = new EventCaptureDispatcher();
-        $config = new ModuleConfig();
+        $config = ModuleConfigFactory::create();
 
         $session = $this->createOpenSession('sessageb');
         $decorator = new UserSessionDecorator($eventDispatcher, $config, $session);
@@ -59,7 +59,7 @@ final class UserSessionDecoratorTest extends TestCase
     public function testRegisterLoginFallsBackToLocalhostWhenNoRemoteAddr(): void
     {
         $eventDispatcher = new EventCaptureDispatcher();
-        $config = new ModuleConfig();
+        $config = ModuleConfigFactory::create();
 
         $session = $this->createOpenSession('sessfallback');
         $decorator = new UserSessionDecorator($eventDispatcher, $config, $session);
@@ -77,7 +77,7 @@ final class UserSessionDecoratorTest extends TestCase
     public function testRegisterLoginPrunesSessionsOlderThanRememberLoginLifespan(): void
     {
         $eventDispatcher = new EventCaptureDispatcher();
-        $config = new ModuleConfig();
+        $config = ModuleConfigFactory::create();
 
         $session = $this->createOpenSession('sessage');
         $decorator = new UserSessionDecorator($eventDispatcher, $config, $session);
@@ -103,7 +103,7 @@ final class UserSessionDecoratorTest extends TestCase
     public function testRegisterLoginRecordsSession(): void
     {
         $eventDispatcher = new EventCaptureDispatcher();
-        $config = new ModuleConfig();
+        $config = ModuleConfigFactory::create();
 
         $session = $this->createOpenSession('sess123');
         $decorator = new UserSessionDecorator($eventDispatcher, $config, $session);
@@ -129,7 +129,7 @@ final class UserSessionDecoratorTest extends TestCase
     public function testRegisterLoginReplacesStalePreviousSessionForSameUser(): void
     {
         $eventDispatcher = new EventCaptureDispatcher();
-        $config = new ModuleConfig();
+        $config = ModuleConfigFactory::create();
 
         $user = $this->createUser('replacetest', 'replacetest@example.com');
         $userId = (int) $user->getId();
@@ -164,7 +164,7 @@ final class UserSessionDecoratorTest extends TestCase
     public function testRegisterLoginWithDifferentPreviousSessionIdButNoMatchingRowIsNoop(): void
     {
         $eventDispatcher = new EventCaptureDispatcher();
-        $config = new ModuleConfig();
+        $config = ModuleConfigFactory::create();
 
         $session = $this->createOpenSession('sessreplacemiss');
         $decorator = new UserSessionDecorator($eventDispatcher, $config, $session);
@@ -187,7 +187,7 @@ final class UserSessionDecoratorTest extends TestCase
     public function testRegisterLoginWithEmptyPreviousSessionIdSkipsReplace(): void
     {
         $eventDispatcher = new EventCaptureDispatcher();
-        $config = new ModuleConfig();
+        $config = ModuleConfigFactory::create();
 
         $session = $this->createOpenSession('sessemptyprev');
         $decorator = new UserSessionDecorator($eventDispatcher, $config, $session);
@@ -203,7 +203,7 @@ final class UserSessionDecoratorTest extends TestCase
     public function testRegisterLoginWithNullUserIdRecordsZero(): void
     {
         $eventDispatcher = new EventCaptureDispatcher();
-        $config = new ModuleConfig();
+        $config = ModuleConfigFactory::create();
 
         $decorator = new UserSessionDecorator($eventDispatcher, $config);
 
@@ -223,7 +223,7 @@ final class UserSessionDecoratorTest extends TestCase
     public function testRegisterLoginWithPreviousSessionIdEqualToCurrentSkipsReplace(): void
     {
         $eventDispatcher = new EventCaptureDispatcher();
-        $config = new ModuleConfig();
+        $config = ModuleConfigFactory::create();
 
         $session = $this->createOpenSession('sesssame');
         $decorator = new UserSessionDecorator($eventDispatcher, $config, $session);
@@ -239,7 +239,7 @@ final class UserSessionDecoratorTest extends TestCase
     public function testRegisterLoginWithSessionNullId(): void
     {
         $eventDispatcher = new EventCaptureDispatcher();
-        $config = new ModuleConfig();
+        $config = ModuleConfigFactory::create();
 
         $decorator = new UserSessionDecorator($eventDispatcher, $config);
 

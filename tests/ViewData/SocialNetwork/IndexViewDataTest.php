@@ -9,8 +9,8 @@ use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\AuthClient\AuthClientInterface;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use YiiRocks\Voyti\Model\UserSocialAccount;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\ViewData\SocialNetwork\IndexViewData;
 use Yiisoft\Translator\Translator;
 
@@ -42,7 +42,7 @@ final class IndexViewDataTest extends TestCase
             new AuthClientRegistry($github, $google),
             ['github'],
             'voyti/session-auth',
-            new ModuleConfig(),
+            ModuleConfigFactory::create(),
             new FakeUrlGenerator(),
             new Translator('en', null, 'voyti'),
         );

@@ -6,9 +6,9 @@ namespace YiiRocks\Voyti\tests\Service;
 
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\UserAuditLog;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\AuditLogService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 
 final class AuditLogServiceTest extends TestCase
 {
@@ -26,7 +26,7 @@ final class AuditLogServiceTest extends TestCase
 
     public function testLogDoesNothingWhenDisabled(): void
     {
-        $service = new AuditLogService(new ModuleConfig(enableAuditLog: false));
+        $service = new AuditLogService(ModuleConfigFactory::create(enableAuditLog: false));
 
         $service->log(1, 'user.create');
 
@@ -35,7 +35,7 @@ final class AuditLogServiceTest extends TestCase
 
     public function testLogPersistsMinimalEntry(): void
     {
-        $service = new AuditLogService(new ModuleConfig(enableAuditLog: true));
+        $service = new AuditLogService(ModuleConfigFactory::create(enableAuditLog: true));
 
         $service->log(1, 'user.create');
 
@@ -51,7 +51,7 @@ final class AuditLogServiceTest extends TestCase
 
     public function testLogPersistsNullActorForSystemActions(): void
     {
-        $service = new AuditLogService(new ModuleConfig(enableAuditLog: true));
+        $service = new AuditLogService(ModuleConfigFactory::create(enableAuditLog: true));
 
         $service->log(null, 'user.create', targetUserId: 5);
 
@@ -63,7 +63,7 @@ final class AuditLogServiceTest extends TestCase
 
     public function testLogPersistsTargetAndContext(): void
     {
-        $service = new AuditLogService(new ModuleConfig(enableAuditLog: true));
+        $service = new AuditLogService(ModuleConfigFactory::create(enableAuditLog: true));
 
         $service->log(1, 'rbac.role.update', targetUserId: null, targetName: 'editor', context: ['previousName' => 'old-editor']);
 

@@ -6,8 +6,8 @@ namespace YiiRocks\Voyti\tests\ViewData\Account;
 
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\UserSessions;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\ViewData\Account\SessionsViewData;
 use Yiisoft\Translator\Translator;
 
@@ -34,7 +34,7 @@ final class SessionsViewDataTest extends TestCase
             [$revoked, $active],
             'active',
             'UTC',
-            new ModuleConfig(),
+            ModuleConfigFactory::create(),
             new FakeUrlGenerator(),
             $translator,
         );
@@ -58,7 +58,7 @@ final class SessionsViewDataTest extends TestCase
             [$session],
             'abc',
             'UTC',
-            new ModuleConfig(),
+            ModuleConfigFactory::create(),
             new FakeUrlGenerator(),
             $translator,
         );

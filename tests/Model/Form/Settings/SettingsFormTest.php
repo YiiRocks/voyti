@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
 use Yiisoft\Validator\Rule\Regex;
 
@@ -19,7 +19,7 @@ final class SettingsFormTest extends TestCase
 
     public function testConstruct(): void
     {
-        $form = new SettingsForm(new ModuleConfig(), $this->createTranslator());
+        $form = new SettingsForm(ModuleConfigFactory::create(), $this->createTranslator());
         $this->assertSame('', $form->email);
         $this->assertSame('', $form->username);
         $this->assertSame('', $form->password);
@@ -29,13 +29,13 @@ final class SettingsFormTest extends TestCase
 
     public function testGetFormName(): void
     {
-        $form = new SettingsForm(new ModuleConfig(), $this->createTranslator());
+        $form = new SettingsForm(ModuleConfigFactory::create(), $this->createTranslator());
         $this->assertSame('settings', $form->getFormName());
     }
 
     public function testGetPropertyLabels(): void
     {
-        $form = new SettingsForm(new ModuleConfig(), $this->createTranslator());
+        $form = new SettingsForm(ModuleConfigFactory::create(), $this->createTranslator());
         $labels = $form->getPropertyLabels();
         $this->assertArrayHasKey('username', $labels);
         $this->assertArrayHasKey('email', $labels);
@@ -50,14 +50,14 @@ final class SettingsFormTest extends TestCase
 
     public function testGetRulesWithPasswordComplexityDisabled(): void
     {
-        $form = new SettingsForm(new ModuleConfig(), $this->createTranslator());
+        $form = new SettingsForm(ModuleConfigFactory::create(), $this->createTranslator());
         $rules = $form->getRules();
         $this->assertCount(1, $rules['password']);
     }
 
     public function testGetRulesWithPasswordComplexityEnabled(): void
     {
-        $config = new ModuleConfig(enablePasswordComplexity: true);
+        $config = ModuleConfigFactory::create(enablePasswordComplexity: true);
         $form = new SettingsForm($config, $this->createTranslator());
         $rules = $form->getRules();
         $this->assertCount(2, $rules['password']);
@@ -66,19 +66,19 @@ final class SettingsFormTest extends TestCase
 
     public function testGetUserReturnsNullByDefault(): void
     {
-        $form = new SettingsForm(new ModuleConfig(), $this->createTranslator());
+        $form = new SettingsForm(ModuleConfigFactory::create(), $this->createTranslator());
         $this->assertNull($form->getUser());
     }
 
     public function testGetValidationPropertyLabels(): void
     {
-        $form = new SettingsForm(new ModuleConfig(), $this->createTranslator());
+        $form = new SettingsForm(ModuleConfigFactory::create(), $this->createTranslator());
         $this->assertSame($form->getPropertyLabels(), $form->getValidationPropertyLabels());
     }
 
     public function testSetAndGetUser(): void
     {
-        $form = new SettingsForm(new ModuleConfig(), $this->createTranslator());
+        $form = new SettingsForm(ModuleConfigFactory::create(), $this->createTranslator());
         $user = new User();
         $form->setUser($user);
         $this->assertSame($user, $form->getUser());
@@ -86,7 +86,7 @@ final class SettingsFormTest extends TestCase
 
     public function testSetProperties(): void
     {
-        $form = new SettingsForm(new ModuleConfig(), $this->createTranslator());
+        $form = new SettingsForm(ModuleConfigFactory::create(), $this->createTranslator());
         $form->email = 'new@example.com';
         $form->username = 'newuser';
         $form->password = 'newpass123';

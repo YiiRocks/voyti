@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\ViewData\Profile;
 
 use YiiRocks\Voyti\Model\UserProfile;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use YiiRocks\Voyti\ViewData\Profile\UpdateViewData;
@@ -22,7 +22,7 @@ final class UpdateViewDataTest extends TestCase
         $data = UpdateViewData::create(
             $user,
             new UserProfile(),
-            new ModuleConfig(),
+            ModuleConfigFactory::create(),
             new FakeUrlGenerator(),
             $this->createTranslator(),
             isSwitched: false,
@@ -42,7 +42,7 @@ final class UpdateViewDataTest extends TestCase
         $data = UpdateViewData::create(
             $this->buildUser(username: 'switcheduser'),
             new UserProfile(),
-            new ModuleConfig(),
+            ModuleConfigFactory::create(),
             new FakeUrlGenerator(),
             $this->createTranslator(),
             isSwitched: true,

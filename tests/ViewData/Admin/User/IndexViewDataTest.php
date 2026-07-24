@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\ViewData\Admin\User;
 
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use YiiRocks\Voyti\ViewData\Admin\User\IndexViewData;
@@ -27,7 +27,7 @@ final class IndexViewDataTest extends TestCase
             [$user],
             $paginator,
             ['username' => 'jane'],
-            new ModuleConfig(),
+            ModuleConfigFactory::create(),
             new FakeUrlGenerator(),
             $translator,
             false,
@@ -52,7 +52,7 @@ final class IndexViewDataTest extends TestCase
             [],
             $paginator,
             [],
-            new ModuleConfig(),
+            ModuleConfigFactory::create(),
             new FakeUrlGenerator(),
             $translator,
             true,

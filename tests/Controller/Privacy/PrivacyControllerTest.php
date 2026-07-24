@@ -22,6 +22,7 @@ use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\UserSession\TerminateUserSessionsService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
@@ -57,10 +58,11 @@ final class PrivacyControllerTest extends TestCase
     protected function setUp(): void
     {
         $this->setUpDatabase();
-        $this->config = new ModuleConfig();
+        $this->config = ModuleConfigFactory::create();
         $this->harness = new ControllerHarness($this->config);
         $this->translator = $this->createTranslator();
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
+        $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
         $this->validator = $this->createMock(ValidatorInterface::class);
         $this->currentUser = $this->createMock(CurrentUser::class);
         $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
@@ -77,7 +79,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testAnonymizeGetShowsForm(): void
     {
-        $config = new ModuleConfig(enableGdprCompliance: true);
+        $config = ModuleConfigFactory::create(enableGdprCompliance: true);
         $this->harness = new ControllerHarness($config);
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
@@ -98,7 +100,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testAnonymizePostWithValidPasswordAnonymizesUser(): void
     {
-        $config = new ModuleConfig(enableGdprCompliance: true);
+        $config = ModuleConfigFactory::create(enableGdprCompliance: true);
         $this->harness = new ControllerHarness($config);
         $controller = $this->createController();
 
@@ -142,7 +144,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testDeleteGetShowsForm(): void
     {
-        $config = new ModuleConfig(allowAccountDelete: true);
+        $config = ModuleConfigFactory::create(allowAccountDelete: true);
         $this->harness = new ControllerHarness($config);
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
@@ -163,7 +165,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testDeletePostWithInvalidPasswordShowsForm(): void
     {
-        $config = new ModuleConfig(allowAccountDelete: true);
+        $config = ModuleConfigFactory::create(allowAccountDelete: true);
         $this->harness = new ControllerHarness($config);
         $controller = $this->createController();
 
@@ -200,7 +202,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testDeletePostWithValidPasswordDeletesUser(): void
     {
-        $config = new ModuleConfig(allowAccountDelete: true);
+        $config = ModuleConfigFactory::create(allowAccountDelete: true);
         $this->harness = new ControllerHarness($config);
         $controller = $this->createController();
 
@@ -242,7 +244,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testExportIncludesSessionsAndSocialAccounts(): void
     {
-        $config = new ModuleConfig(enableGdprCompliance: true, gdprExportProperties: ['userSessions', 'userSocialAccount']);
+        $config = ModuleConfigFactory::create(enableGdprCompliance: true, gdprExportProperties: ['userSessions', 'userSocialAccount']);
         $this->harness = new ControllerHarness($config);
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
@@ -300,7 +302,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testExportIncludesUserProfileFields(): void
     {
-        $config = new ModuleConfig(enableGdprCompliance: true, gdprExportProperties: [
+        $config = ModuleConfigFactory::create(enableGdprCompliance: true, gdprExportProperties: [
             'userProfile.public_email',
             'userProfile.name',
             'userProfile.gravatar_email',
@@ -355,7 +357,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testExportReturnsData(): void
     {
-        $config = new ModuleConfig(enableGdprCompliance: true, gdprExportProperties: ['email', 'username']);
+        $config = ModuleConfigFactory::create(enableGdprCompliance: true, gdprExportProperties: ['email', 'username']);
         $this->harness = new ControllerHarness($config);
         $controller = $this->createController();
 
@@ -386,7 +388,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testGdprConsentGetShowsConsentDateWhenAlreadyConsented(): void
     {
-        $config = new ModuleConfig(enableGdprCompliance: true);
+        $config = ModuleConfigFactory::create(enableGdprCompliance: true);
         $this->harness = new ControllerHarness($config);
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
@@ -422,7 +424,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testGdprConsentGetShowsForm(): void
     {
-        $config = new ModuleConfig(enableGdprCompliance: true);
+        $config = ModuleConfigFactory::create(enableGdprCompliance: true);
         $this->harness = new ControllerHarness($config);
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
@@ -451,7 +453,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testGdprConsentPostAlreadyConsentedResubmitIsNoop(): void
     {
-        $config = new ModuleConfig(enableGdprCompliance: true);
+        $config = ModuleConfigFactory::create(enableGdprCompliance: true);
         $this->harness = new ControllerHarness($config);
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['gdpr-consent' => ['consent' => '1']]);
@@ -480,7 +482,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testGdprConsentPostCannotRevokeConsent(): void
     {
-        $config = new ModuleConfig(enableGdprCompliance: true);
+        $config = ModuleConfigFactory::create(enableGdprCompliance: true);
         $this->harness = new ControllerHarness($config);
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['gdpr-consent' => ['consent' => '0']]);
@@ -508,7 +510,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testGdprConsentPostSavesAndRedirects(): void
     {
-        $config = new ModuleConfig(enableGdprCompliance: true);
+        $config = ModuleConfigFactory::create(enableGdprCompliance: true);
         $this->harness = new ControllerHarness($config);
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['gdpr-consent' => ['consent' => '1']]);

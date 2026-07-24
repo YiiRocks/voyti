@@ -27,6 +27,7 @@ use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\CreateService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
@@ -73,10 +74,11 @@ final class UserControllerTest extends TestCase
     protected function setUp(): void
     {
         $this->setUpDatabase();
-        $this->config = new ModuleConfig();
+        $this->config = ModuleConfigFactory::create();
         $this->harness = new ControllerHarness($this->config);
         $this->translator = $this->createTranslator();
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
+        $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
         $this->validator = $this->createMock(ValidatorInterface::class);
         $this->currentUser = $this->createMock(CurrentUser::class);
         $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
@@ -765,7 +767,7 @@ final class UserControllerTest extends TestCase
 
     public function testUpdatePostWithPreviouslyUsedPasswordShowsError(): void
     {
-        $this->config = new ModuleConfig(enablePasswordExpiration: true);
+        $this->config = ModuleConfigFactory::create(enablePasswordExpiration: true);
         $this->harness = new ControllerHarness($this->config);
 
         $user = new User();

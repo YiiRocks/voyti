@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\SimpleAssignmentsStorage;
 use YiiRocks\Voyti\tests\Support\SimpleItemsStorage;
 use Yiisoft\Auth\IdentityInterface;
@@ -204,7 +205,7 @@ final class AuthHelperTest extends TestCase
     #[DataProvider('isAdminWithGivenUserIdProvider')]
     public function testIsAdminWithGivenUserId(int $userId, array $userItems, bool $expected): void
     {
-        $config = new ModuleConfig(administratorPermissionName: 'admin');
+        $config = ModuleConfigFactory::create(administratorPermissionName: 'admin');
 
         $authManager = $this->createMock(ManagerInterface::class);
         $authManager->expects(self::once())->method('getPermissionsByUserId')->with($userId)->willReturn($userItems);
@@ -226,7 +227,7 @@ final class AuthHelperTest extends TestCase
         $currentUser = new CurrentUser($identityRepository, $eventDispatcher);
         $currentUser->overrideIdentity($identity);
 
-        $config = new ModuleConfig(administratorPermissionName: 'admin');
+        $config = ModuleConfigFactory::create(administratorPermissionName: 'admin');
 
         $authManager = $this->createMock(ManagerInterface::class);
         $authManager->expects(self::once())->method('getPermissionsByUserId')->with(1)->willReturn([
@@ -268,7 +269,7 @@ final class AuthHelperTest extends TestCase
             $authManager ?? $this->createMock(ManagerInterface::class),
             $itemsStorage ?? $this->createMock(ItemsStorageInterface::class),
             $assignmentsStorage ?? $this->createMock(AssignmentsStorageInterface::class),
-            $config ?? new ModuleConfig(),
+            $config ?? ModuleConfigFactory::create(),
             $currentUser,
         );
     }
@@ -281,7 +282,7 @@ final class AuthHelperTest extends TestCase
             authManager: new Manager($itemsStorage, $assignmentsStorage),
             itemsStorage: $itemsStorage,
             assignmentsStorage: $assignmentsStorage,
-            config: new ModuleConfig(administratorPermissionName: 'admin'),
+            config: ModuleConfigFactory::create(administratorPermissionName: 'admin'),
         );
     }
 }

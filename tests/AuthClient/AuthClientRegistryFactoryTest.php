@@ -13,7 +13,7 @@ use YiiRocks\Voyti\AuthClient\GitHub;
 use YiiRocks\Voyti\AuthClient\Twitter;
 use YiiRocks\Voyti\AuthClient\VKontakte;
 use YiiRocks\Voyti\AuthClient\Yandex;
-use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 
 final class AuthClientRegistryFactoryTest extends TestCase
 {
@@ -73,7 +73,7 @@ final class AuthClientRegistryFactoryTest extends TestCase
 
     public function testCreateWithDisabledAmongEnabled(): void
     {
-        $config = new ModuleConfig(socialNetworkClients: [
+        $config = ModuleConfigFactory::create(socialNetworkClients: [
             'github' => [
                 'enabled' => true,
                 'clientId' => 'gh-id',
@@ -94,7 +94,7 @@ final class AuthClientRegistryFactoryTest extends TestCase
 
     public function testCreateWithDisabledFacebook(): void
     {
-        $config = new ModuleConfig(socialNetworkClients: [
+        $config = ModuleConfigFactory::create(socialNetworkClients: [
             'facebook' => [
                 'enabled' => false,
                 'clientId' => 'fb-id',
@@ -113,7 +113,7 @@ final class AuthClientRegistryFactoryTest extends TestCase
     #[DataProvider('dedicatedClientProvider')]
     public function testCreateWithEnabledDedicatedClient(string $providerKey, string $expectedClass, string $expectedName): void
     {
-        $config = new ModuleConfig(socialNetworkClients: [
+        $config = ModuleConfigFactory::create(socialNetworkClients: [
             $providerKey => [
                 'enabled' => true,
                 'clientId' => 'id',
@@ -132,7 +132,7 @@ final class AuthClientRegistryFactoryTest extends TestCase
     #[DataProvider('genericClientProvider')]
     public function testCreateWithGenericClient(string $providerKey, string $expectedName, string $expectedTitle): void
     {
-        $config = new ModuleConfig(socialNetworkClients: [
+        $config = ModuleConfigFactory::create(socialNetworkClients: [
             $providerKey => [
                 'enabled' => true,
                 'clientId' => 'id',
@@ -151,7 +151,7 @@ final class AuthClientRegistryFactoryTest extends TestCase
 
     public function testCreateWithKeycloak(): void
     {
-        $config = new ModuleConfig(socialNetworkClients: [
+        $config = ModuleConfigFactory::create(socialNetworkClients: [
             'keycloak' => [
                 'enabled' => true,
                 'baseUrl' => 'https://auth.example.com',
@@ -188,7 +188,7 @@ final class AuthClientRegistryFactoryTest extends TestCase
             $keycloakConfig['realm'] = $realm;
         }
 
-        $config = new ModuleConfig(socialNetworkClients: ['keycloak' => $keycloakConfig]);
+        $config = ModuleConfigFactory::create(socialNetworkClients: ['keycloak' => $keycloakConfig]);
         $factory = new AuthClientRegistryFactory($config);
         $registry = $factory->create();
 
@@ -205,7 +205,7 @@ final class AuthClientRegistryFactoryTest extends TestCase
     #[DataProvider('keycloakNonStringConfigProvider')]
     public function testCreateWithKeycloakNonStringConfig(array $keycloakOverrides, string $expectedUrlFragment): void
     {
-        $config = new ModuleConfig(socialNetworkClients: [
+        $config = ModuleConfigFactory::create(socialNetworkClients: [
             'keycloak' => array_merge(
                 ['enabled' => true, 'clientId' => 'id', 'clientSecret' => 'secret'],
                 $keycloakOverrides,
@@ -221,7 +221,7 @@ final class AuthClientRegistryFactoryTest extends TestCase
 
     public function testCreateWithMultipleClients(): void
     {
-        $config = new ModuleConfig(socialNetworkClients: [
+        $config = ModuleConfigFactory::create(socialNetworkClients: [
             'github' => [
                 'enabled' => true,
                 'clientId' => 'gh-id',
@@ -240,7 +240,7 @@ final class AuthClientRegistryFactoryTest extends TestCase
     }
     public function testCreateWithNoClients(): void
     {
-        $config = new ModuleConfig(socialNetworkClients: []);
+        $config = ModuleConfigFactory::create(socialNetworkClients: []);
         $factory = new AuthClientRegistryFactory($config);
         $registry = $factory->create();
 
@@ -249,7 +249,7 @@ final class AuthClientRegistryFactoryTest extends TestCase
 
     public function testCreateWithUnknownProviderReturnsNull(): void
     {
-        $config = new ModuleConfig(socialNetworkClients: [
+        $config = ModuleConfigFactory::create(socialNetworkClients: [
             'unknown_provider' => [
                 'enabled' => true,
                 'clientId' => 'id',

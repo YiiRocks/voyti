@@ -14,6 +14,7 @@ use YiiRocks\Voyti\Model\UserProfile;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Admin\DashboardService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -34,10 +35,11 @@ final class DashboardControllerTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->config = new ModuleConfig();
+        $this->config = ModuleConfigFactory::create();
         $this->harness = new ControllerHarness($this->config);
         $this->translator = $this->createTranslator();
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
+        $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
         $this->flash = $this->createMock(FlashInterface::class);
         $this->dashboardService = $this->createMock(DashboardService::class);
         $this->currentUser = new CurrentUser(

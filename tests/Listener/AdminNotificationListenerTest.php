@@ -9,15 +9,15 @@ use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Event\Auth\AfterRegisterEvent;
 use YiiRocks\Voyti\Listener\AdminNotificationListener;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\MailService;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 
 #[AllowMockObjectsWithoutExpectations]
 final class AdminNotificationListenerTest extends TestCase
 {
     public function testOnAfterRegisterDoesNotSendEmailWhenNull(): void
     {
-        $config = new ModuleConfig(mailAdminOnRegister: null);
+        $config = ModuleConfigFactory::create(mailAdminOnRegister: null);
 
         $mailService = $this->createMock(MailService::class);
         $mailService->expects(self::never())->method('sendAdminNotification');
@@ -30,7 +30,7 @@ final class AdminNotificationListenerTest extends TestCase
     }
     public function testOnAfterRegisterSendsEmailWhenConfigured(): void
     {
-        $config = new ModuleConfig(mailAdminOnRegister: 'admin@example.com');
+        $config = ModuleConfigFactory::create(mailAdminOnRegister: 'admin@example.com');
 
         $mailService = $this->createMock(MailService::class);
         $mailService->expects(self::once())->method('sendAdminNotification')->with(
@@ -47,7 +47,7 @@ final class AdminNotificationListenerTest extends TestCase
 
     public function testOnAfterRegisterWithEmptyStringDoesNotSend(): void
     {
-        $config = new ModuleConfig(mailAdminOnRegister: '');
+        $config = ModuleConfigFactory::create(mailAdminOnRegister: '');
 
         $mailService = $this->createMock(MailService::class);
         $mailService->expects(self::once())->method('sendAdminNotification');

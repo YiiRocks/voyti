@@ -16,6 +16,7 @@ use YiiRocks\Voyti\Model\UserProfile;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Data\Paginator\OffsetPaginator;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -39,10 +40,11 @@ final class AuditLogControllerTest extends TestCase
     protected function setUp(): void
     {
         $this->setUpDatabase();
-        $this->config = new ModuleConfig();
+        $this->config = ModuleConfigFactory::create();
         $this->harness = new ControllerHarness($this->config);
         $this->translator = $this->createTranslator();
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
+        $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
         $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
         $this->flash = $this->createMock(FlashInterface::class);
         $this->currentUser = $this->createMock(CurrentUser::class);

@@ -9,6 +9,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\api\OpenApiController;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\DataResponse\ResponseFactory\DataResponseFactoryInterface;
 
@@ -274,7 +275,7 @@ final class OpenApiControllerTest extends TestCase
     {
         return new OpenApiController(
             responseFactory: $this->responseFactory,
-            config: $config ?? new ModuleConfig(),
+            config: $config ?? ModuleConfigFactory::create(),
         );
     }
 }

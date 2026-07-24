@@ -9,6 +9,7 @@ use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\ViewData\Shared\FlashViewData;
 use YiiRocks\Voyti\ViewData\Shared\MessageViewData;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\Yii\View\Renderer\CsrfViewInjection;
 
 /**
  * Adds view-rendering helpers to a controller, injecting common view params (a `voyti`-category-bound
@@ -61,6 +62,7 @@ trait RenderTrait
     private function renderFragment(string $view, array $params = []): ResponseInterface
     {
         return $this->viewRenderer
+            ->withAddedInjections(CsrfViewInjection::class)
             ->withViewPath($this->resolveViewPath($view))
             ->renderPartial($view, $this->withDefaultViewParams($params));
     }
@@ -71,6 +73,7 @@ trait RenderTrait
     private function renderView(string $view, array $params = []): ResponseInterface
     {
         return $this->viewRenderer
+            ->withAddedInjections(CsrfViewInjection::class)
             ->withViewPath($this->resolveViewPath($view))
             ->render($view, $this->withDefaultViewParams($params));
     }

@@ -15,6 +15,7 @@ use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\AuditLogService;
 use YiiRocks\Voyti\Service\Rbac\RuleEditionService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -41,10 +42,11 @@ final class RuleControllerTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->config = new ModuleConfig();
+        $this->config = ModuleConfigFactory::create();
         $this->harness = new ControllerHarness($this->config);
         $this->translator = $this->createTranslator();
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
+        $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
         $this->validator = $this->createMock(ValidatorInterface::class);
         $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
         $this->flash = $this->createMock(FlashInterface::class);

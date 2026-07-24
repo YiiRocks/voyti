@@ -21,6 +21,7 @@ use YiiRocks\Voyti\Service\Password\ExpireService;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\FakeSession;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Auth\IdentityRepositoryInterface;
@@ -175,7 +176,7 @@ final class VoytiMiddlewareTest extends TestCase
 
     public function testProcessWithRealMiddlewaresAllFeaturesDisabled(): void
     {
-        $config = new ModuleConfig(
+        $config = ModuleConfigFactory::create(
             enablePasswordExpiration: false,
             enableTwoFactorAuthentication: false,
         );
@@ -197,7 +198,7 @@ final class VoytiMiddlewareTest extends TestCase
         // CookieMiddleware is only ever wrapped by RememberMeMiddleware itself, not chained a
         // second time by VoytiMiddleware - otherwise the second pass would try to decrypt an
         // already-decrypted cookie and fail. See VoytiMiddleware's class docblock.
-        $config = new ModuleConfig(
+        $config = ModuleConfigFactory::create(
             enablePasswordExpiration: false,
             enableTwoFactorAuthentication: false,
         );
@@ -221,7 +222,7 @@ final class VoytiMiddlewareTest extends TestCase
 
     public function testProcessWithRealMiddlewaresSessionRevocationShortCircuits(): void
     {
-        $config = new ModuleConfig();
+        $config = ModuleConfigFactory::create();
 
         $user = $this->createUser(username: 'voytiuser', email: 'voytiuser@example.com');
 
@@ -302,7 +303,7 @@ final class VoytiMiddlewareTest extends TestCase
         ?ManagerInterface $authManager = null,
         ?IdentityRepositoryInterface $identityRepository = null,
     ): VoytiMiddleware {
-        $config ??= new ModuleConfig();
+        $config ??= ModuleConfigFactory::create();
 
         $currentUser ??= $this->createMock(CurrentUser::class);
         $currentRoute ??= $this->createMock(CurrentRoute::class);

@@ -7,9 +7,9 @@ namespace YiiRocks\Voyti\tests\Service\Password;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\ExpireService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 
 final class ExpireServiceTest extends TestCase
 {
@@ -46,7 +46,7 @@ final class ExpireServiceTest extends TestCase
 
     public function testCheckPasswordExpirationDisabledIgnoresExpiredUser(): void
     {
-        $config = new ModuleConfig(enablePasswordExpiration: false, maxPasswordAge: 30);
+        $config = ModuleConfigFactory::create(enablePasswordExpiration: false, maxPasswordAge: 30);
         $service = new ExpireService($config);
         $user = $this->createUser();
         $user->setPasswordChangedAt(time() - 100 * 86400);
@@ -56,7 +56,7 @@ final class ExpireServiceTest extends TestCase
 
     public function testCheckPasswordExpirationDisabledReturnsFalse(): void
     {
-        $config = new ModuleConfig(enablePasswordExpiration: false);
+        $config = ModuleConfigFactory::create(enablePasswordExpiration: false);
         $service = new ExpireService($config);
         $user = $this->createUser();
 
@@ -66,7 +66,7 @@ final class ExpireServiceTest extends TestCase
     #[DataProvider('checkPasswordExpirationAgeProvider')]
     public function testCheckPasswordExpirationEnabled(int $ageDays, bool $expected): void
     {
-        $config = new ModuleConfig(enablePasswordExpiration: true, maxPasswordAge: 30);
+        $config = ModuleConfigFactory::create(enablePasswordExpiration: true, maxPasswordAge: 30);
         $service = new ExpireService($config);
         $user = $this->createUser();
         $user->setPasswordChangedAt(time() - $ageDays * 86400);
@@ -77,7 +77,7 @@ final class ExpireServiceTest extends TestCase
     #[DataProvider('isExpiredAgeProvider')]
     public function testIsExpiredWithAge(int $ageDays, bool $expected): void
     {
-        $config = new ModuleConfig(maxPasswordAge: 90);
+        $config = ModuleConfigFactory::create(maxPasswordAge: 90);
         $service = new ExpireService($config);
         $user = $this->createUser();
         $user->setPasswordChangedAt(time() - $ageDays * 86400);
@@ -87,7 +87,7 @@ final class ExpireServiceTest extends TestCase
 
     public function testIsExpiredWithNullMaxAgeReturnsFalse(): void
     {
-        $config = new ModuleConfig(maxPasswordAge: null);
+        $config = ModuleConfigFactory::create(maxPasswordAge: null);
         $service = new ExpireService($config);
         $user = $this->createUser();
 
@@ -96,7 +96,7 @@ final class ExpireServiceTest extends TestCase
 
     public function testIsExpiredWithPasswordAge9999WhenNeverChanged(): void
     {
-        $config = new ModuleConfig(maxPasswordAge: 90);
+        $config = ModuleConfigFactory::create(maxPasswordAge: 90);
         $service = new ExpireService($config);
         $user = $this->createUser();
         $user->setPasswordChangedAt(null);
@@ -106,7 +106,7 @@ final class ExpireServiceTest extends TestCase
 
     public function testRun(): void
     {
-        $config = new ModuleConfig();
+        $config = ModuleConfigFactory::create();
         $service = new ExpireService($config);
         $user = $this->createUser();
         $user->setPasswordChangedAt(time() - 100 * 86400);

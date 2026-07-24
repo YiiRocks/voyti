@@ -16,6 +16,7 @@ use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\Password\RandomPasswordGenerator;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use Yiisoft\Yii\Console\ExitCode;
@@ -99,7 +100,7 @@ final class PasswordCommandTest extends TestCase
 
         $output = $this->createMock(OutputInterface::class);
 
-        $config = new ModuleConfig(enablePasswordExpiration: true);
+        $config = ModuleConfigFactory::create(enablePasswordExpiration: true);
         $command = $this->createCommand(config: $config);
         $result = $command->run($input, $output);
 
@@ -202,7 +203,7 @@ final class PasswordCommandTest extends TestCase
 
         return new PasswordCommand(
             $passwordGenerator ?? new RandomPasswordGenerator(),
-            new PasswordHistoryService($passwordHasher, $config ?? new ModuleConfig()),
+            new PasswordHistoryService($passwordHasher, $config ?? ModuleConfigFactory::create()),
         );
     }
 }

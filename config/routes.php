@@ -18,7 +18,7 @@ use Yiisoft\Router\Group;
 use Yiisoft\Router\Route;
 use Yiisoft\Session\SessionMiddleware;
 
-$moduleConfig = ModuleConfig::fromArray($params['yiirocks/voyti'] ?? []);
+$moduleConfig = new ModuleConfig(...($params['yiirocks/voyti'] ?? []));
 
 $userRoutes = [
     Route::get('')->name('voyti/admin-users')->action([Controller\Admin\User\UserController::class, 'index']),

@@ -127,7 +127,8 @@ final class RoutesTest extends TestCase
      */
     private function getRoute(string $name, array $voytiParams): Route
     {
-        $params = ['yiirocks/voyti' => $voytiParams];
+        $defaults = require dirname(__DIR__) . '/config/params.php';
+        $params = ['yiirocks/voyti' => [...$defaults['yiirocks/voyti'], ...$voytiParams]];
         $routes = require dirname(__DIR__) . '/config/routes.php';
 
         $collector = new RouteCollector();

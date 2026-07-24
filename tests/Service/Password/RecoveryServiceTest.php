@@ -8,10 +8,10 @@ use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
 
 #[AllowMockObjectsWithoutExpectations]
@@ -43,7 +43,7 @@ final class RecoveryServiceTest extends TestCase
 
         $userTokenFactory = new UserTokenFactory();
         $mailService = $this->createMock(MailService::class);
-        $config = new ModuleConfig();
+        $config = ModuleConfigFactory::create();
         $translator = $this->createTranslator();
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 
@@ -63,7 +63,7 @@ final class RecoveryServiceTest extends TestCase
     {
         $userTokenFactory = new UserTokenFactory();
         $mailService = $this->createMock(MailService::class);
-        $config = new ModuleConfig();
+        $config = ModuleConfigFactory::create();
         $translator = $this->createTranslator();
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 
@@ -94,7 +94,7 @@ final class RecoveryServiceTest extends TestCase
         $userTokenFactory = new UserTokenFactory();
         $mailService = $this->createMock(MailService::class);
         $mailService->method('sendRecovery')->willReturn(true);
-        $config = new ModuleConfig();
+        $config = ModuleConfigFactory::create();
         $translator = $this->createTranslator();
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 

@@ -9,7 +9,6 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\User\CreateService;
@@ -18,6 +17,7 @@ use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
 use YiiRocks\Voyti\tests\Support\MailCapture;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\TestCase;
 
@@ -50,7 +50,7 @@ final class CreateServiceTest extends TestCase
         $mailService = $this->createMailService(new MailCapture());
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $passwordHasher = TestPasswordHasherFactory::create();
-        $config = new ModuleConfig();
+        $config = ModuleConfigFactory::create();
 
         $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
         $service = new CreateService($userCreationHelper);
@@ -74,7 +74,7 @@ final class CreateServiceTest extends TestCase
         $mailService = $this->createMailService(new MailCapture());
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $passwordHasher = TestPasswordHasherFactory::create();
-        $config = new ModuleConfig();
+        $config = ModuleConfigFactory::create();
 
         $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
         $service = new CreateService($userCreationHelper);
@@ -90,7 +90,7 @@ final class CreateServiceTest extends TestCase
         $mailService = $this->createMailService($mailCapture);
         $eventDispatcher = new EventCaptureDispatcher();
         $passwordHasher = TestPasswordHasherFactory::create();
-        $config = new ModuleConfig(enableEmailConfirmation: false);
+        $config = ModuleConfigFactory::create(enableEmailConfirmation: false);
 
         $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
         $service = new CreateService($userCreationHelper);
@@ -120,7 +120,7 @@ final class CreateServiceTest extends TestCase
         $mailService = $this->createMailService($mailCapture);
         $eventDispatcher = new EventCaptureDispatcher();
         $passwordHasher = TestPasswordHasherFactory::create();
-        $config = new ModuleConfig(enableEmailConfirmation: true);
+        $config = ModuleConfigFactory::create(enableEmailConfirmation: true);
 
         $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
         $service = new CreateService($userCreationHelper);

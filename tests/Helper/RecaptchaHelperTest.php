@@ -16,7 +16,7 @@ use YiiRocks\Recaptcha\RecaptchaConfig;
 use YiiRocks\Recaptcha\RecaptchaRegistry;
 use YiiRocks\Voyti\Enum\RecaptchaVersion;
 use YiiRocks\Voyti\Helper\RecaptchaHelper;
-use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\FormModel\FormModelInterface;
 
@@ -54,7 +54,7 @@ final class RecaptchaHelperTest extends TestCase
 
     public function testRenderReturnsEmptyStringWhenRecaptchaVersionIsNull(): void
     {
-        $config = new ModuleConfig(recaptchaVersion: null);
+        $config = ModuleConfigFactory::create(recaptchaVersion: null);
         $form = $this->createMock(FormModelInterface::class);
 
         self::assertSame('', RecaptchaHelper::render($form, $config));
@@ -65,7 +65,7 @@ final class RecaptchaHelperTest extends TestCase
         $client = $this->buildClient('v2-site-key', 'v3-site-key');
         RecaptchaRegistry::configure($client);
 
-        $config = new ModuleConfig(recaptchaVersion: RecaptchaVersion::V2);
+        $config = ModuleConfigFactory::create(recaptchaVersion: RecaptchaVersion::V2);
         $form = new RecaptchaTestForm();
 
         $html = RecaptchaHelper::render($form, $config);
@@ -79,7 +79,7 @@ final class RecaptchaHelperTest extends TestCase
         $client = $this->buildClient('v2-site-key', 'v3-site-key');
         RecaptchaRegistry::configure($client);
 
-        $config = new ModuleConfig(recaptchaVersion: RecaptchaVersion::V3);
+        $config = ModuleConfigFactory::create(recaptchaVersion: RecaptchaVersion::V3);
         $form = new RecaptchaTestForm();
 
         $html = RecaptchaHelper::render($form, $config);
@@ -92,7 +92,7 @@ final class RecaptchaHelperTest extends TestCase
     #[DataProvider('renderWithMissingSiteKeyProvider')]
     public function testRenderWithMissingSiteKeyThrowsMissingSiteKeyException(RecaptchaVersion $version): void
     {
-        $config = new ModuleConfig(recaptchaVersion: $version);
+        $config = ModuleConfigFactory::create(recaptchaVersion: $version);
         $form = $this->createMock(FormModelInterface::class);
         $form->method('getFormName')->willReturn('registerForm');
 

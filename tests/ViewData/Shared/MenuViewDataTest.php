@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\ViewData\Shared;
 
 use PHPUnit\Framework\TestCase;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
 use YiiRocks\Voyti\ViewData\Shared\MenuViewData;
 
@@ -15,7 +15,7 @@ final class MenuViewDataTest extends TestCase
     use TranslatorMockTrait;
     public function testForAccountIncludesPrivacyWhenAccountDeleteAllowedWithoutGdpr(): void
     {
-        $config = new ModuleConfig(enableGdprCompliance: false, allowAccountDelete: true);
+        $config = ModuleConfigFactory::create(enableGdprCompliance: false, allowAccountDelete: true);
 
         $menu = MenuViewData::forAccount($config, new FakeUrlGenerator(), $this->createTranslator());
 
@@ -26,7 +26,7 @@ final class MenuViewDataTest extends TestCase
 
     public function testForAccountIncludesTwoFactorAndPrivacyWhenEnabled(): void
     {
-        $config = new ModuleConfig(enableTwoFactorAuthentication: true, enableGdprCompliance: true);
+        $config = ModuleConfigFactory::create(enableTwoFactorAuthentication: true, enableGdprCompliance: true);
 
         $menu = MenuViewData::forAccount($config, new FakeUrlGenerator(), $this->createTranslator());
 
@@ -38,7 +38,7 @@ final class MenuViewDataTest extends TestCase
 
     public function testForAccountOmitsOptionalItemsWhenDisabled(): void
     {
-        $menu = MenuViewData::forAccount(new ModuleConfig(), new FakeUrlGenerator(), $this->createTranslator());
+        $menu = MenuViewData::forAccount(ModuleConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator());
 
         $labels = array_map(static fn($item) => $item->label, $menu->items);
 

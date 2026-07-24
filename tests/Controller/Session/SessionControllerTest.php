@@ -27,6 +27,7 @@ use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\HydrateObjectTrait;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
@@ -67,9 +68,10 @@ final class SessionControllerTest extends TestCase
     protected function setUp(): void
     {
         $this->setUpDatabase();
-        $this->config = new ModuleConfig();
+        $this->config = ModuleConfigFactory::create();
         $this->harness = new ControllerHarness($this->config);
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
+        $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
         $this->validator = $this->createMock(ValidatorInterface::class);
         $this->currentUser = $this->createMock(CurrentUser::class);
         $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
@@ -365,7 +367,7 @@ final class SessionControllerTest extends TestCase
 
     public function testConfirmPostSuccessRedirectsToConfiguredRoute(): void
     {
-        $config = new ModuleConfig(homeRoute: 'app/dashboard');
+        $config = ModuleConfigFactory::create(homeRoute: 'app/dashboard');
         $this->harness = new ControllerHarness($config);
 
         $this->harness->getSession()->set('credentials', [
@@ -483,7 +485,7 @@ final class SessionControllerTest extends TestCase
 
     public function testLoginPostSuccessRedirectsToConfiguredRoute(): void
     {
-        $config = new ModuleConfig(homeRoute: 'app/dashboard');
+        $config = ModuleConfigFactory::create(homeRoute: 'app/dashboard');
         $this->harness = new ControllerHarness($config);
 
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
@@ -530,7 +532,7 @@ final class SessionControllerTest extends TestCase
 
     public function testLoginPostSuccessThrowsWhenHomeRouteIsNotRegistered(): void
     {
-        $config = new ModuleConfig(homeRoute: 'nonexistent');
+        $config = ModuleConfigFactory::create(homeRoute: 'nonexistent');
         $this->harness = new ControllerHarness($config);
         $this->harness->getUrlGenerator()->setMissingRoute('nonexistent');
 
@@ -630,7 +632,7 @@ final class SessionControllerTest extends TestCase
 
     public function testLoginPostWithTwoFactorEmailMethodSendsCodeAndShowsConfirm(): void
     {
-        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $config = ModuleConfigFactory::create(enableTwoFactorAuthentication: true);
         $this->harness = new ControllerHarness($config);
 
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
@@ -668,7 +670,7 @@ final class SessionControllerTest extends TestCase
 
     public function testLoginPostWithTwoFactorGoogleMethodShowsConfirmWithoutSendingCode(): void
     {
-        $config = new ModuleConfig(enableTwoFactorAuthentication: true);
+        $config = ModuleConfigFactory::create(enableTwoFactorAuthentication: true);
         $this->harness = new ControllerHarness($config);
 
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));

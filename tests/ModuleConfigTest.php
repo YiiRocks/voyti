@@ -12,23 +12,28 @@ use YiiRocks\Voyti\ModuleConfig;
 
 final class ModuleConfigTest extends TestCase
 {
-    public function testConstructorCustomValues(): void
+    public function testConstructorAssignsAllProperties(): void
     {
         $config = new ModuleConfig(
             appName: 'Custom',
             recaptchaVersion: RecaptchaVersion::V3,
             enableGdprCompliance: true,
+            gdprExportProperties: ['email'],
+            gdprAnonymizePrefix: 'ANON',
             enableTwoFactorAuthentication: true,
+            twoFactorAuthenticationForcedPermissions: ['admin'],
             enableRegistration: false,
             enableSocialNetworkRegistration: false,
+            socialNetworkClients: ['github' => ['enabled' => true]],
             enableEmailConfirmation: false,
             enableSwitchIdentities: false,
             homeRoute: 'custom/home',
             mailAdminOnRegister: 'admin@example.com',
             enablePasswordExpiration: true,
             enablePasswordComplexity: true,
+            passwordHistoryLimit: 5,
             allowPasswordRecovery: false,
-            allowAdminPasswordRecovery: false,
+            allowAdminPasswordRecovery: true,
             allowAccountDelete: true,
             emailChangeConfirmation: EmailChangeConfirmation::BOTH,
             rememberLoginLifespan: 3600,
@@ -37,24 +42,33 @@ final class ModuleConfigTest extends TestCase
             administratorPermissionName: 'superadmin',
             profileVisibility: ProfileVisibility::ADMIN,
             maxPasswordAge: 90,
+            viewPath: '/custom/view',
+            mailPath: '/custom/mail',
             enableRestApi: true,
             adminRestPrefix: 'custom-api',
             apiTokenLifespan: 3600,
+            enableAuditLog: false,
         );
+
         self::assertSame('Custom', $config->appName);
         self::assertSame(RecaptchaVersion::V3, $config->recaptchaVersion);
         self::assertTrue($config->enableGdprCompliance);
+        self::assertSame(['email'], $config->gdprExportProperties);
+        self::assertSame('ANON', $config->gdprAnonymizePrefix);
         self::assertTrue($config->enableTwoFactorAuthentication);
+        self::assertSame(['admin'], $config->twoFactorAuthenticationForcedPermissions);
         self::assertFalse($config->enableRegistration);
         self::assertFalse($config->enableSocialNetworkRegistration);
+        self::assertSame(['github' => ['enabled' => true]], $config->socialNetworkClients);
         self::assertFalse($config->enableEmailConfirmation);
         self::assertFalse($config->enableSwitchIdentities);
         self::assertSame('custom/home', $config->homeRoute);
         self::assertSame('admin@example.com', $config->mailAdminOnRegister);
         self::assertTrue($config->enablePasswordExpiration);
         self::assertTrue($config->enablePasswordComplexity);
+        self::assertSame(5, $config->passwordHistoryLimit);
         self::assertFalse($config->allowPasswordRecovery);
-        self::assertFalse($config->allowAdminPasswordRecovery);
+        self::assertTrue($config->allowAdminPasswordRecovery);
         self::assertTrue($config->allowAccountDelete);
         self::assertSame(EmailChangeConfirmation::BOTH, $config->emailChangeConfirmation);
         self::assertSame(3600, $config->rememberLoginLifespan);
@@ -63,171 +77,21 @@ final class ModuleConfigTest extends TestCase
         self::assertSame('superadmin', $config->administratorPermissionName);
         self::assertSame(ProfileVisibility::ADMIN, $config->profileVisibility);
         self::assertSame(90, $config->maxPasswordAge);
+        self::assertSame('/custom/view', $config->viewPath);
+        self::assertSame('/custom/mail', $config->mailPath);
         self::assertTrue($config->enableRestApi);
         self::assertSame('custom-api', $config->adminRestPrefix);
         self::assertSame(3600, $config->apiTokenLifespan);
+        self::assertFalse($config->enableAuditLog);
     }
 
-    public function testConstructorDefaults(): void
+    public function testDefaultViewPathIsRelativeToPackageRoot(): void
     {
-        $config = new ModuleConfig();
-        self::assertSame('Voyti', $config->appName);
-        self::assertNull($config->recaptchaVersion);
-        self::assertIsArray($config->gdprExportProperties);
-        self::assertCount(11, $config->gdprExportProperties);
-        self::assertSame('GDPR', $config->gdprAnonymizePrefix);
-        self::assertFalse($config->enableTwoFactorAuthentication);
-        self::assertSame([], $config->twoFactorAuthenticationForcedPermissions);
-        self::assertSame([], $config->socialNetworkClients);
-        self::assertSame('home', $config->homeRoute);
-        self::assertFalse($config->enablePasswordExpiration);
-        self::assertFalse($config->enablePasswordComplexity);
-        self::assertSame(EmailChangeConfirmation::NEW, $config->emailChangeConfirmation);
-        self::assertSame(2592000, $config->rememberLoginLifespan);
-        self::assertSame(86400, $config->tokenConfirmationLifespan);
-        self::assertSame(21600, $config->tokenRecoveryLifespan);
-        self::assertSame('voyti-admin', $config->administratorPermissionName);
-        self::assertSame(ProfileVisibility::USERS, $config->profileVisibility);
-        self::assertNull($config->maxPasswordAge);
-        self::assertFalse($config->enableRestApi);
-        self::assertSame('api', $config->adminRestPrefix);
-        self::assertNull($config->apiTokenLifespan);
-    }
-    public function testDefaultsReturnsAllPropertyKeys(): void
-    {
-        $defaults = ModuleConfig::defaults();
-        $expectedKeys = [
-            'appName',
-            'recaptchaVersion',
-            'enableGdprCompliance',
-            'gdprExportProperties',
-            'gdprAnonymizePrefix',
-            'enableTwoFactorAuthentication',
-            'twoFactorAuthenticationForcedPermissions',
-            'enableRegistration',
-            'enableSocialNetworkRegistration',
-            'socialNetworkClients',
-            'enableEmailConfirmation',
-            'enableSwitchIdentities',
-            'homeRoute',
-            'mailAdminOnRegister',
-            'enablePasswordExpiration',
-            'enablePasswordComplexity',
-            'passwordHistoryLimit',
-            'allowPasswordRecovery',
-            'allowAdminPasswordRecovery',
-            'allowAccountDelete',
-            'emailChangeConfirmation',
-            'rememberLoginLifespan',
-            'tokenConfirmationLifespan',
-            'tokenRecoveryLifespan',
-            'administratorPermissionName',
-            'profileVisibility',
-            'maxPasswordAge',
-            'viewPath',
-            'mailPath',
-            'enableRestApi',
-            'adminRestPrefix',
-            'apiTokenLifespan',
-            'enableAuditLog',
-        ];
-        foreach ($expectedKeys as $key) {
-            self::assertArrayHasKey($key, $defaults);
-        }
-        self::assertCount(count($expectedKeys), $defaults);
-    }
-
-    public function testFromArrayIgnoresInvalidKeys(): void
-    {
-        $config = ModuleConfig::fromArray([
-            'nonexistentKey' => 'value',
-            'anotherInvalid' => true,
-        ]);
-        self::assertSame('Voyti', $config->appName);
-        self::assertTrue($config->enableRegistration);
-    }
-
-    public function testFromArrayMergesCustomValues(): void
-    {
-        $config = ModuleConfig::fromArray([
-            'appName' => 'MyApp',
-            'enableRegistration' => false,
-            'enableGdprCompliance' => true,
-        ]);
-        self::assertSame('MyApp', $config->appName);
-        self::assertFalse($config->enableRegistration);
-        self::assertTrue($config->enableGdprCompliance);
-        self::assertNull($config->recaptchaVersion);
-    }
-
-    public function testFromArrayWithEmptyReturnsDefaults(): void
-    {
-        $config = ModuleConfig::fromArray([]);
-        self::assertSame('Voyti', $config->appName);
-        self::assertNull($config->recaptchaVersion);
-        self::assertFalse($config->enableGdprCompliance);
-        self::assertFalse($config->enableTwoFactorAuthentication);
-        self::assertTrue($config->enableRegistration);
-        self::assertTrue($config->enableSocialNetworkRegistration);
-        self::assertTrue($config->enableEmailConfirmation);
-        self::assertTrue($config->enableSwitchIdentities);
-        self::assertSame('home', $config->homeRoute);
-        self::assertNull($config->mailAdminOnRegister);
-        self::assertFalse($config->enablePasswordExpiration);
-        self::assertFalse($config->enablePasswordComplexity);
-        self::assertTrue($config->allowPasswordRecovery);
-        self::assertFalse($config->allowAdminPasswordRecovery);
-        self::assertFalse($config->allowAccountDelete);
-        self::assertSame(EmailChangeConfirmation::NEW, $config->emailChangeConfirmation);
-        self::assertSame(2592000, $config->rememberLoginLifespan);
-        self::assertSame(86400, $config->tokenConfirmationLifespan);
-        self::assertSame(21600, $config->tokenRecoveryLifespan);
-        self::assertSame('voyti-admin', $config->administratorPermissionName);
-        self::assertSame(ProfileVisibility::USERS, $config->profileVisibility);
-        self::assertNull($config->maxPasswordAge);
-        self::assertFalse($config->enableRestApi);
-        self::assertSame('api', $config->adminRestPrefix);
-        self::assertNull($config->apiTokenLifespan);
-    }
-
-    public function testGettersReturnExpectedValues(): void
-    {
-        $config = new ModuleConfig(
-            gdprExportProperties: ['email'],
-            twoFactorAuthenticationForcedPermissions: ['admin'],
-            socialNetworkClients: ['github' => ['enabled' => true]],
-            mailPath: '/custom/mail',
+        self::assertStringContainsString(
+            '/src/../resources/views/bootstrap5',
+            str_replace('\\', '/', ModuleConfig::DEFAULT_VIEW_PATH),
         );
-        self::assertSame(['email'], $config->gdprExportProperties);
-        self::assertSame(['admin'], $config->twoFactorAuthenticationForcedPermissions);
-        self::assertSame(['github' => ['enabled' => true]], $config->socialNetworkClients);
-        self::assertSame('/custom/mail', $config->mailPath);
-        self::assertStringContainsString('resources/views/bootstrap5', $config->viewPath);
+        self::assertNotSame('/resources/views/bootstrap5', ModuleConfig::DEFAULT_VIEW_PATH);
     }
 
-    public function testMailPathConcatOrder(): void
-    {
-        $config = new ModuleConfig();
-        self::assertStringContainsString('/src/../resources/mail', str_replace('\\', '/', $config->mailPath));
-    }
-
-    public function testMailPathNotBareConstant(): void
-    {
-        $config = new ModuleConfig();
-        $bare = '/resources/mail';
-        self::assertNotSame($bare, $config->mailPath);
-    }
-
-    public function testViewPathConcatOrder(): void
-    {
-        $config = new ModuleConfig();
-        self::assertStringContainsString('/src/../resources/views/bootstrap5', str_replace('\\', '/', $config->viewPath));
-    }
-
-    public function testViewPathNotBareConstant(): void
-    {
-        $config = new ModuleConfig();
-        $bare = '/resources/views/bootstrap5';
-        self::assertNotSame($bare, $config->viewPath);
-    }
 }

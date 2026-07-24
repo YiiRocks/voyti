@@ -13,6 +13,7 @@ use YiiRocks\Voyti\Middleware\PasswordAgeEnforceMiddleware;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\ExpireService;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\Router\CurrentRoute;
@@ -26,7 +27,7 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
 {
     public function testProcessPassesThroughForExemptAccountSettingsRoute(): void
     {
-        $config = new ModuleConfig(
+        $config = ModuleConfigFactory::create(
             enablePasswordExpiration: true,
             maxPasswordAge: 90,
         );
@@ -53,7 +54,7 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
     }
     public function testProcessPassesThroughForExemptLogoutRoute(): void
     {
-        $config = new ModuleConfig(enablePasswordExpiration: true, maxPasswordAge: 90);
+        $config = ModuleConfigFactory::create(enablePasswordExpiration: true, maxPasswordAge: 90);
 
         $user = new User();
         $user->setPasswordChangedAt(time() - 91 * 86400);
@@ -78,7 +79,7 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
 
     public function testProcessPassesThroughForGuestUser(): void
     {
-        $config = new ModuleConfig(enablePasswordExpiration: true, maxPasswordAge: 90);
+        $config = ModuleConfigFactory::create(enablePasswordExpiration: true, maxPasswordAge: 90);
 
         $request = $this->createMock(ServerRequestInterface::class);
         $response = $this->createMock(ResponseInterface::class);
@@ -99,7 +100,7 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
 
     public function testProcessPassesThroughForNonUserIdentity(): void
     {
-        $config = new ModuleConfig(enablePasswordExpiration: true, maxPasswordAge: 90);
+        $config = ModuleConfigFactory::create(enablePasswordExpiration: true, maxPasswordAge: 90);
 
         $request = $this->createMock(ServerRequestInterface::class);
         $response = $this->createMock(ResponseInterface::class);
@@ -120,7 +121,7 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
 
     public function testProcessPassesThroughWhenExpirationDisabledEvenIfPasswordVeryOld(): void
     {
-        $config = new ModuleConfig(enablePasswordExpiration: false, maxPasswordAge: 90);
+        $config = ModuleConfigFactory::create(enablePasswordExpiration: false, maxPasswordAge: 90);
 
         $user = new User();
         $user->setPasswordChangedAt(time() - 9999 * 86400);
@@ -142,7 +143,7 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
 
     public function testProcessPassesThroughWhenMaxPasswordAgeIsNull(): void
     {
-        $config = new ModuleConfig(enablePasswordExpiration: true, maxPasswordAge: null);
+        $config = ModuleConfigFactory::create(enablePasswordExpiration: true, maxPasswordAge: null);
 
         $user = new User();
         $user->setPasswordChangedAt(time() - 9999 * 86400);
@@ -164,7 +165,7 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
 
     public function testProcessPassesThroughWhenPasswordNotExpired(): void
     {
-        $config = new ModuleConfig(enablePasswordExpiration: true, maxPasswordAge: 90);
+        $config = ModuleConfigFactory::create(enablePasswordExpiration: true, maxPasswordAge: 90);
 
         $user = new User();
         $user->setPasswordChangedAt(time());
@@ -186,7 +187,7 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
 
     public function testProcessRedirectsWhenPasswordExpired(): void
     {
-        $config = new ModuleConfig(
+        $config = ModuleConfigFactory::create(
             enablePasswordExpiration: true,
             maxPasswordAge: 90,
         );
@@ -222,7 +223,7 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
 
     public function testProcessRedirectsWhenPasswordNeverChanged(): void
     {
-        $config = new ModuleConfig(
+        $config = ModuleConfigFactory::create(
             enablePasswordExpiration: true,
             maxPasswordAge: 90,
         );
@@ -262,7 +263,7 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
         ?ResponseFactoryInterface $responseFactory = null,
         ?UrlGeneratorInterface $url = null,
     ): PasswordAgeEnforceMiddleware {
-        $config ??= new ModuleConfig();
+        $config ??= ModuleConfigFactory::create();
 
         return new PasswordAgeEnforceMiddleware(
             $currentUser ?? $this->createMock(CurrentUser::class),

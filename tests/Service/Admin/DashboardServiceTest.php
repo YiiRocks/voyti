@@ -14,6 +14,7 @@ use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Admin\DashboardService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\SimpleAssignmentsStorage;
 use YiiRocks\Voyti\tests\Support\SimpleItemsStorage;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
@@ -47,7 +48,7 @@ final class DashboardServiceTest extends TestCase
 
     public function testGetStatsActiveSessionsTrendCountsSessionsWithinEachWindowBoundaryInclusive(): void
     {
-        $lifespan = (new ModuleConfig())->rememberLoginLifespan;
+        $lifespan = (ModuleConfigFactory::create())->rememberLoginLifespan;
         $user = $this->createUser('sessions-user', 'sessions-user@example.com', confirmedAt: time());
         $userId = (int) $user->getId();
 
@@ -67,7 +68,7 @@ final class DashboardServiceTest extends TestCase
 
     public function testGetStatsActiveSessionsTrendFiltersByUpdatedAtNotCreatedAt(): void
     {
-        $lifespan = (new ModuleConfig())->rememberLoginLifespan;
+        $lifespan = (ModuleConfigFactory::create())->rememberLoginLifespan;
         $user = $this->createUser('updated-at-user', 'updated-at-user@example.com', confirmedAt: time());
         $userId = (int) $user->getId();
 
@@ -136,7 +137,7 @@ final class DashboardServiceTest extends TestCase
 
     public function testGetStatsNewRegistrationsTrendCountsUsersWithinEachWindowBoundaryInclusive(): void
     {
-        $lifespan = (new ModuleConfig())->rememberLoginLifespan;
+        $lifespan = (ModuleConfigFactory::create())->rememberLoginLifespan;
         $offsets = $this->trendBoundaryOffsets($lifespan);
         $emails = array_map(static fn(string $label): string => $label . '@example.com', array_keys($offsets));
 
@@ -222,7 +223,7 @@ final class DashboardServiceTest extends TestCase
 
     public function testGetStatsRememberLifespanDaysRoundsDownBelowHalfADay(): void
     {
-        $config = new ModuleConfig(rememberLoginLifespan: 100000);
+        $config = ModuleConfigFactory::create(rememberLoginLifespan: 100000);
 
         $stats = $this->createService($config)->getStats();
 
@@ -231,7 +232,7 @@ final class DashboardServiceTest extends TestCase
 
     public function testGetStatsRememberLifespanDaysRoundsUpAboveHalfADay(): void
     {
-        $config = new ModuleConfig(rememberLoginLifespan: 130000);
+        $config = ModuleConfigFactory::create(rememberLoginLifespan: 130000);
 
         $stats = $this->createService($config)->getStats();
 
@@ -242,7 +243,7 @@ final class DashboardServiceTest extends TestCase
     {
         $this->createUser('unconfirmed', 'unconfirmed@example.com');
 
-        $stats = $this->createService(new ModuleConfig(enableEmailConfirmation: false))->getStats();
+        $stats = $this->createService(ModuleConfigFactory::create(enableEmailConfirmation: false))->getStats();
 
         self::assertNull($stats['userUnconfirmed']);
     }
@@ -257,7 +258,7 @@ final class DashboardServiceTest extends TestCase
 
     private function createService(?ModuleConfig $config = null, string $locale = 'en'): DashboardService
     {
-        $config ??= new ModuleConfig();
+        $config ??= ModuleConfigFactory::create();
         $assignmentsStorage = new SimpleAssignmentsStorage();
         $manager = new Manager($this->itemsStorage, $assignmentsStorage);
         $currentUser = new CurrentUser(

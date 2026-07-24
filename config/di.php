@@ -97,7 +97,7 @@ $cookieSecretKey = static function () use ($params): string {
 
 return [
     // Module configuration, built once from the host's `yiirocks/voyti` params array.
-    ModuleConfig::class => static fn() => ModuleConfig::fromArray($params['yiirocks/voyti'] ?? []),
+    ModuleConfig::class => static fn() => new ModuleConfig(...($params['yiirocks/voyti'] ?? [])),
 
     // Default now() source; hosts with their own PSR-20 clock package can override this binding.
     ClockInterface::class => SystemClock::class,

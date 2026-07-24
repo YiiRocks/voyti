@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\ViewData\TwoFactor;
 
 use PHPUnit\Framework\TestCase;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\ViewData\TwoFactor\IndexViewData;
@@ -29,7 +29,7 @@ final class IndexViewDataTest extends TestCase
             true,
             true,
             true,
-            new ModuleConfig(),
+            ModuleConfigFactory::create(),
             new FakeUrlGenerator(),
             $this->createTranslator(),
         );
@@ -56,7 +56,7 @@ final class IndexViewDataTest extends TestCase
             false,
             false,
             false,
-            new ModuleConfig(),
+            ModuleConfigFactory::create(),
             new FakeUrlGenerator(),
             $this->createTranslator(),
         );
@@ -80,7 +80,7 @@ final class IndexViewDataTest extends TestCase
             false,
             false,
             true,
-            new ModuleConfig(),
+            ModuleConfigFactory::create(),
             new FakeUrlGenerator(),
             $this->createTranslator(),
         );
@@ -104,7 +104,7 @@ final class IndexViewDataTest extends TestCase
             false,
             true,
             true,
-            new ModuleConfig(),
+            ModuleConfigFactory::create(),
             new FakeUrlGenerator(),
             $this->createTranslator(),
         );
@@ -130,7 +130,7 @@ final class IndexViewDataTest extends TestCase
             false,
             true,
             true,
-            new ModuleConfig(),
+            ModuleConfigFactory::create(),
             new FakeUrlGenerator(),
             $this->createTranslator(),
         );

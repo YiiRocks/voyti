@@ -16,6 +16,7 @@ use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\Password\ResetService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
+use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 
@@ -50,7 +51,7 @@ final class ResetServiceTest extends TestCase
 
     public function testRunRecordsPasswordHistoryWhenEnabled(): void
     {
-        $config = new ModuleConfig(enablePasswordExpiration: true);
+        $config = ModuleConfigFactory::create(enablePasswordExpiration: true);
         $user = $this->createUser(username: 'historyuser', email: 'history@example.com', passwordHash: 'oldhash');
 
         $this->createService(config: $config)->run('newpassword', $user, null);
@@ -64,7 +65,7 @@ final class ResetServiceTest extends TestCase
 
     public function testRunRejectsRecentlyUsedPassword(): void
     {
-        $config = new ModuleConfig(enablePasswordExpiration: true);
+        $config = ModuleConfigFactory::create(enablePasswordExpiration: true);
         $user = $this->createUser(username: 'reuseuser', email: 'reuse@example.com', passwordHash: 'oldhash');
 
         $this->createService(config: $config)->run('newpassword', $user, null);
@@ -141,7 +142,7 @@ final class ResetServiceTest extends TestCase
     private function createService(?EventDispatcherInterface $eventDispatcher = null, ?ModuleConfig $config = null): ResetService
     {
         $eventDispatcher ??= $this->createMock(EventDispatcherInterface::class);
-        $config ??= new ModuleConfig();
+        $config ??= ModuleConfigFactory::create();
         $passwordHasher = TestPasswordHasherFactory::create();
 
         return new ResetService($config, $eventDispatcher, new PasswordHistoryService($passwordHasher, $config));
