@@ -6,7 +6,6 @@ namespace YiiRocks\Voyti\tests\Console;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Console\PasswordCommand;
@@ -19,6 +18,7 @@ use YiiRocks\Voyti\Service\Password\RandomPasswordGenerator;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use Yiisoft\Yii\Console\ExitCode;
 
 #[AllowMockObjectsWithoutExpectations]
 final class PasswordCommandTest extends TestCase
@@ -72,7 +72,7 @@ final class PasswordCommandTest extends TestCase
         $command = $this->createCommand(passwordGenerator: $passwordGenerator);
         $result = $command->run($input, $output);
 
-        self::assertSame(Command::SUCCESS, $result);
+        self::assertSame(ExitCode::OK, $result);
 
         $reloaded = User::findById((int) $user->getId());
         self::assertNotNull($reloaded);
@@ -103,7 +103,7 @@ final class PasswordCommandTest extends TestCase
         $command = $this->createCommand(config: $config);
         $result = $command->run($input, $output);
 
-        self::assertSame(Command::SUCCESS, $result);
+        self::assertSame(ExitCode::OK, $result);
         $history = UserPasswordHistory::findByUserId((int) $user->getId());
         self::assertCount(1, $history);
     }
@@ -130,7 +130,7 @@ final class PasswordCommandTest extends TestCase
         $command = $this->createCommand();
         $result = $command->run($input, $output);
 
-        self::assertSame(Command::SUCCESS, $result);
+        self::assertSame(ExitCode::OK, $result);
     }
 
     public function testExecuteByUsername(): void
@@ -155,7 +155,7 @@ final class PasswordCommandTest extends TestCase
         $command = $this->createCommand();
         $result = $command->run($input, $output);
 
-        self::assertSame(Command::SUCCESS, $result);
+        self::assertSame(ExitCode::OK, $result);
     }
 
     public function testExecuteWithNonExistentUser(): void
@@ -173,7 +173,7 @@ final class PasswordCommandTest extends TestCase
         $command = $this->createCommand();
         $result = $command->run($input, $output);
 
-        self::assertSame(Command::FAILURE, $result);
+        self::assertSame(ExitCode::NOUSER, $result);
     }
 
     public function testExecuteWithNoOptions(): void
@@ -191,7 +191,7 @@ final class PasswordCommandTest extends TestCase
         $command = $this->createCommand();
         $result = $command->run($input, $output);
 
-        self::assertSame(Command::FAILURE, $result);
+        self::assertSame(ExitCode::USAGE, $result);
     }
 
     private function createCommand(

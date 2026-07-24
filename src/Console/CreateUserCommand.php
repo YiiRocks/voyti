@@ -14,6 +14,7 @@ use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\User\CreateService;
 use Yiisoft\Rbac\ManagerInterface;
+use Yiisoft\Yii\Console\ExitCode;
 
 /**
  * Console command (`voyti:create`) that creates a new user account from the CLI, auto-generating a
@@ -44,7 +45,7 @@ final class CreateUserCommand extends Command
     /**
      * @return int
      *
-     * @psalm-return 0|1|2
+     * @psalm-return 0|1|64
      */
     #[Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -65,7 +66,7 @@ final class CreateUserCommand extends Command
             $output->writeln('Options:');
             $output->writeln('  -p, --password   Password (auto-generated if omitted)');
             $output->writeln('  -r, --role       Role to assign');
-            return Command::INVALID;
+            return ExitCode::USAGE;
         }
 
         /** @var mixed $optionPassword */
@@ -90,10 +91,10 @@ final class CreateUserCommand extends Command
                 }
             }
 
-            return Command::SUCCESS;
+            return ExitCode::OK;
         }
 
         $output->writeln("<error>{$result->getMessage()}</error>");
-        return Command::FAILURE;
+        return ExitCode::UNSPECIFIED_ERROR;
     }
 }

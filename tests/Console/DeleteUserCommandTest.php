@@ -6,13 +6,13 @@ namespace YiiRocks\Voyti\tests\Console;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Console\DeleteUserCommand;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use Yiisoft\Yii\Console\ExitCode;
 
 #[AllowMockObjectsWithoutExpectations]
 final class DeleteUserCommandTest extends TestCase
@@ -58,7 +58,7 @@ final class DeleteUserCommandTest extends TestCase
         $command = $this->createCommand();
         $result = $command->run($input, $output);
 
-        self::assertSame(Command::SUCCESS, $result);
+        self::assertSame(ExitCode::OK, $result);
         self::assertNull(User::findByEmail('del@example.com'));
     }
 
@@ -79,7 +79,7 @@ final class DeleteUserCommandTest extends TestCase
         $command = $this->createCommand();
         $result = $command->run($input, $output);
 
-        self::assertSame(Command::SUCCESS, $result);
+        self::assertSame(ExitCode::OK, $result);
         self::assertNull(User::findByUsername('testuser'));
     }
 
@@ -100,7 +100,7 @@ final class DeleteUserCommandTest extends TestCase
         $command = $this->createCommand();
         $result = $command->run($input, $output);
 
-        self::assertSame(Command::SUCCESS, $result);
+        self::assertSame(ExitCode::OK, $result);
         self::assertNull(User::findByUsername('delete_me'));
     }
 
@@ -119,7 +119,7 @@ final class DeleteUserCommandTest extends TestCase
         $command = $this->createCommand();
         $result = $command->run($input, $output);
 
-        self::assertSame(Command::FAILURE, $result);
+        self::assertSame(ExitCode::NOUSER, $result);
     }
 
     public function testExecuteWithNoOptions(): void
@@ -137,7 +137,7 @@ final class DeleteUserCommandTest extends TestCase
         $command = $this->createCommand();
         $result = $command->run($input, $output);
 
-        self::assertSame(Command::FAILURE, $result);
+        self::assertSame(ExitCode::USAGE, $result);
     }
 
     private function createCommand(): DeleteUserCommand

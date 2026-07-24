@@ -9,6 +9,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Service\User\ApiTokenService;
+use Yiisoft\Yii\Console\ExitCode;
 
 /**
  * Console command (`voyti:api-token:generate`) that generates an API access token for a user, looked
@@ -37,14 +38,14 @@ final class GenerateApiTokenCommand extends Command
     /**
      * @return int
      *
-     * @psalm-return 0|1
+     * @psalm-return 0|64|67
      */
     #[Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $user = $this->findUserFromInput($input, $output, 'voyti:api-token:generate');
         if ($user === null) {
-            return Command::FAILURE;
+            return $this->getLookupFailureExitCode();
         }
 
         $token = $this->apiTokenService->generate($user);
@@ -52,6 +53,6 @@ final class GenerateApiTokenCommand extends Command
         $output->writeln('<info>API token generated.</info>');
         $output->writeln("<comment>Token: {$token}</comment>");
         $output->writeln('<comment>This token will not be shown again — store it securely.</comment>');
-        return Command::SUCCESS;
+        return ExitCode::OK;
     }
 }

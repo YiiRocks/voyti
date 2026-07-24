@@ -6,13 +6,13 @@ namespace YiiRocks\Voyti\tests\Console;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Console\ConfirmUserCommand;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use Yiisoft\Yii\Console\ExitCode;
 
 #[AllowMockObjectsWithoutExpectations]
 final class ConfirmUserCommandTest extends TestCase
@@ -50,7 +50,7 @@ final class ConfirmUserCommandTest extends TestCase
         $command = $this->createCommand($confirmationService);
         $result = $command->run($input, $output);
 
-        self::assertSame(Command::SUCCESS, $result);
+        self::assertSame(ExitCode::OK, $result);
     }
 
     public function testExecuteById(): void
@@ -73,7 +73,7 @@ final class ConfirmUserCommandTest extends TestCase
         $command = $this->createCommand($confirmationService);
         $result = $command->run($input, $output);
 
-        self::assertSame(Command::SUCCESS, $result);
+        self::assertSame(ExitCode::OK, $result);
     }
 
     public function testExecuteByUsername(): void
@@ -96,7 +96,7 @@ final class ConfirmUserCommandTest extends TestCase
         $command = $this->createCommand($confirmationService);
         $result = $command->run($input, $output);
 
-        self::assertSame(Command::SUCCESS, $result);
+        self::assertSame(ExitCode::OK, $result);
     }
 
     public function testExecuteConfirmationFails(): void
@@ -119,7 +119,7 @@ final class ConfirmUserCommandTest extends TestCase
         $command = $this->createCommand($confirmationService);
         $result = $command->run($input, $output);
 
-        self::assertSame(Command::FAILURE, $result);
+        self::assertSame(ExitCode::UNSPECIFIED_ERROR, $result);
     }
 
     public function testExecuteWithNonExistentUser(): void
@@ -137,7 +137,7 @@ final class ConfirmUserCommandTest extends TestCase
         $command = $this->createCommand();
         $result = $command->run($input, $output);
 
-        self::assertSame(Command::FAILURE, $result);
+        self::assertSame(ExitCode::NOUSER, $result);
     }
 
     public function testExecuteWithNoOptions(): void
@@ -155,7 +155,7 @@ final class ConfirmUserCommandTest extends TestCase
         $command = $this->createCommand();
         $result = $command->run($input, $output);
 
-        self::assertSame(Command::FAILURE, $result);
+        self::assertSame(ExitCode::USAGE, $result);
     }
 
     private function createCommand(?ConfirmationService $confirmationService = null): ConfirmUserCommand

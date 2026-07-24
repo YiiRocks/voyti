@@ -6,13 +6,13 @@ namespace YiiRocks\Voyti\tests\Console;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Console\RevokeApiTokenCommand;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\User\ApiTokenService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use Yiisoft\Yii\Console\ExitCode;
 
 #[AllowMockObjectsWithoutExpectations]
 final class RevokeApiTokenCommandTest extends TestCase
@@ -56,7 +56,7 @@ final class RevokeApiTokenCommandTest extends TestCase
         $command = $this->createCommand($apiTokenService);
         $result = $command->run($input, $output);
 
-        self::assertSame(Command::SUCCESS, $result);
+        self::assertSame(ExitCode::OK, $result);
     }
 
     public function testExecuteWithNonExistentUserFails(): void
@@ -77,7 +77,7 @@ final class RevokeApiTokenCommandTest extends TestCase
         $command = $this->createCommand($apiTokenService);
         $result = $command->run($input, $output);
 
-        self::assertSame(Command::FAILURE, $result);
+        self::assertSame(ExitCode::NOUSER, $result);
     }
 
     public function testExecuteWithNoOptionsFails(): void
@@ -98,7 +98,7 @@ final class RevokeApiTokenCommandTest extends TestCase
         $command = $this->createCommand($apiTokenService);
         $result = $command->run($input, $output);
 
-        self::assertSame(Command::FAILURE, $result);
+        self::assertSame(ExitCode::USAGE, $result);
     }
 
     private function createCommand(?ApiTokenService $apiTokenService = null): RevokeApiTokenCommand

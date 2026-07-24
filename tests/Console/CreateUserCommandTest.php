@@ -6,7 +6,6 @@ namespace YiiRocks\Voyti\tests\Console;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Console\CreateUserCommand;
@@ -17,6 +16,7 @@ use YiiRocks\Voyti\Service\ServiceResult;
 use YiiRocks\Voyti\Service\User\CreateService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use Yiisoft\Rbac\ManagerInterface;
+use Yiisoft\Yii\Console\ExitCode;
 
 #[AllowMockObjectsWithoutExpectations]
 final class CreateUserCommandTest extends TestCase
@@ -54,7 +54,7 @@ final class CreateUserCommandTest extends TestCase
         $command = $this->createCommand();
         $result = $command->run($input, $output);
 
-        self::assertSame(Command::INVALID, $result);
+        self::assertSame(ExitCode::USAGE, $result);
     }
 
     public function testExecuteWithFailure(): void
@@ -85,7 +85,7 @@ final class CreateUserCommandTest extends TestCase
         $command = $this->createCommand(userCreateService: $createService);
         $result = $command->run($input, $output);
 
-        self::assertSame(Command::FAILURE, $result);
+        self::assertSame(ExitCode::UNSPECIFIED_ERROR, $result);
     }
 
     public function testExecuteWithMissingArguments(): void
@@ -102,7 +102,7 @@ final class CreateUserCommandTest extends TestCase
         $command = $this->createCommand();
         $result = $command->run($input, $output);
 
-        self::assertSame(Command::INVALID, $result);
+        self::assertSame(ExitCode::USAGE, $result);
     }
 
     public function testExecuteWithRoleAssignment(): void
@@ -158,7 +158,7 @@ final class CreateUserCommandTest extends TestCase
         );
         $result = $command->run($input, $output);
 
-        self::assertSame(Command::SUCCESS, $result);
+        self::assertSame(ExitCode::OK, $result);
     }
 
     public function testExecuteWithSpecifiedPassword(): void
@@ -192,7 +192,7 @@ final class CreateUserCommandTest extends TestCase
         $command = $this->createCommand(userCreateService: $createService);
         $result = $command->run($input, $output);
 
-        self::assertSame(Command::SUCCESS, $result);
+        self::assertSame(ExitCode::OK, $result);
     }
 
     public function testExecuteWithSuccess(): void
@@ -226,7 +226,7 @@ final class CreateUserCommandTest extends TestCase
         $command = $this->createCommand(userCreateService: $createService);
         $result = $command->run($input, $output);
 
-        self::assertSame(Command::SUCCESS, $result);
+        self::assertSame(ExitCode::OK, $result);
     }
     private function createCommand(
         ?CreateService $userCreateService = null,

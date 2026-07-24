@@ -8,6 +8,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Model\User;
+use Yiisoft\Yii\Console\ExitCode;
 
 /**
  * Trait shared by user-targeting console commands: adds `--id`/`--email`/`--username` options and
@@ -15,6 +16,8 @@ use YiiRocks\Voyti\Model\User;
  */
 trait UserLookupTrait
 {
+    private bool $hasIdentifyingOption = false;
+
     private function configureUserOptions(): void
     {
         $this
@@ -32,6 +35,8 @@ trait UserLookupTrait
         /** @var mixed $rawUsername */
         $rawUsername = $input->getOption('username');
 
+        $this->hasIdentifyingOption = $rawId !== null || $rawEmail !== null || $rawUsername !== null;
+
         $user = null;
         if (is_string($rawId) && $rawId !== '') {
             $user = User::findById((int) $rawId);
@@ -42,7 +47,7 @@ trait UserLookupTrait
         }
 
         if ($user === null) {
-            if ($rawId === null && $rawEmail === null && $rawUsername === null) {
+            if (!$this->hasIdentifyingOption) {
                 $output->writeln('<error>No identifying option provided.</error>');
                 $output->writeln('');
                 $output->writeln("Usage: {$commandName} [options]");
@@ -57,5 +62,16 @@ trait UserLookupTrait
         }
 
         return $user;
+    }
+
+    /**
+     * Exit code for a {@see findUserFromInput} lookup that returned `null`: distinguishes a usage
+     * error (no identifying option given) from a genuine not-found (option given, no matching user).
+     *
+     * @psalm-return 64|67
+     */
+    private function getLookupFailureExitCode(): int
+    {
+        return $this->hasIdentifyingOption ? ExitCode::NOUSER : ExitCode::USAGE;
     }
 }

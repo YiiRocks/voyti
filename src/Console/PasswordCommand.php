@@ -10,6 +10,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
+use Yiisoft\Yii\Console\ExitCode;
 
 /**
  * Console command (`voyti:password`) that resets a user's password to a freshly generated one, looked
@@ -38,14 +39,14 @@ final class PasswordCommand extends Command
     /**
      * @return int
      *
-     * @psalm-return 0|1
+     * @psalm-return 0|64|67
      */
     #[Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $user = $this->findUserFromInput($input, $output, 'voyti:password');
         if ($user === null) {
-            return Command::FAILURE;
+            return $this->getLookupFailureExitCode();
         }
 
         $password = $this->passwordGenerator->generate(16);
@@ -53,6 +54,6 @@ final class PasswordCommand extends Command
 
         $output->writeln('<info>Password reset.</info>');
         $output->writeln("<comment>New password: {$password}</comment>");
-        return Command::SUCCESS;
+        return ExitCode::OK;
     }
 }

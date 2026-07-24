@@ -8,6 +8,7 @@ use Override;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Yiisoft\Yii\Console\ExitCode;
 
 /**
  * Console command (`voyti:delete`) that deletes a user account, looked up via {@see UserLookupTrait}.
@@ -28,18 +29,18 @@ final class DeleteUserCommand extends Command
     /**
      * @return int
      *
-     * @psalm-return 0|1
+     * @psalm-return 0|64|67
      */
     #[Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $user = $this->findUserFromInput($input, $output, 'voyti:delete');
         if ($user === null) {
-            return Command::FAILURE;
+            return $this->getLookupFailureExitCode();
         }
 
         $user->delete();
         $output->writeln('<info>User deleted.</info>');
-        return Command::SUCCESS;
+        return ExitCode::OK;
     }
 }

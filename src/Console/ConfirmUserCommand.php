@@ -9,6 +9,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
+use Yiisoft\Yii\Console\ExitCode;
 
 /**
  * Console command (`voyti:confirm`) that marks a user account as confirmed, looked up via
@@ -36,22 +37,22 @@ final class ConfirmUserCommand extends Command
     /**
      * @return int
      *
-     * @psalm-return 0|1
+     * @psalm-return 0|1|64|67
      */
     #[Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $user = $this->findUserFromInput($input, $output, 'voyti:confirm');
         if ($user === null) {
-            return Command::FAILURE;
+            return $this->getLookupFailureExitCode();
         }
 
         if ($this->userConfirmationService->run($user)) {
             $output->writeln('<info>User confirmed.</info>');
-            return Command::SUCCESS;
+            return ExitCode::OK;
         }
 
         $output->writeln('<error>Unable to confirm user.</error>');
-        return Command::FAILURE;
+        return ExitCode::UNSPECIFIED_ERROR;
     }
 }

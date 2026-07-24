@@ -9,6 +9,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Service\User\ApiTokenService;
+use Yiisoft\Yii\Console\ExitCode;
 
 /**
  * Console command (`voyti:api-token:revoke`) that revokes all API access tokens for a user, looked up
@@ -36,19 +37,19 @@ final class RevokeApiTokenCommand extends Command
     /**
      * @return int
      *
-     * @psalm-return 0|1
+     * @psalm-return 0|64|67
      */
     #[Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $user = $this->findUserFromInput($input, $output, 'voyti:api-token:revoke');
         if ($user === null) {
-            return Command::FAILURE;
+            return $this->getLookupFailureExitCode();
         }
 
         $count = $this->apiTokenService->revokeAll($user);
 
         $output->writeln("<info>Revoked {$count} API token(s).</info>");
-        return Command::SUCCESS;
+        return ExitCode::OK;
     }
 }

@@ -78,7 +78,3 @@ composer php-cs-fixer
 ```
 
 See [docs/internals.md](docs/internals.md) for details on the testing/QA tooling.
-
-## License
-
-[BSD-3-Clause](LICENSE.md)
