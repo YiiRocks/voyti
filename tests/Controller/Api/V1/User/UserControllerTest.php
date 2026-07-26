@@ -230,9 +230,59 @@ final class UserControllerTest extends TestCase
         $this->assertNull(User::findById($userId));
     }
 
+    public function testIndexClampsPerPageAboveMaximum(): void
+    {
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(self::callback(static fn(array $data): bool => $data['pageSize'] === 100))
+            ->willReturn($response);
+
+        $controller = $this->createController();
+        $result = $controller->index(perPage: 500);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testIndexClampsPerPageBelowMinimum(): void
+    {
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(self::callback(static fn(array $data): bool => $data['pageSize'] === 1))
+            ->willReturn($response);
+
+        $controller = $this->createController();
+        $result = $controller->index(perPage: 0);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testIndexCustomPerPage(): void
+    {
+        $this->createUser('user0', 'user0@example.com');
+        $this->createUser('user1', 'user1@example.com');
+        $this->createUser('user2', 'user2@example.com');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(self::callback(static function (array $data): bool {
+                return $data['pageSize'] === 2
+                    && $data['totalPages'] === 2
+                    && count($data['items']) === 2;
+            }))
+            ->willReturn($response);
+
+        $controller = $this->createController();
+        $result = $controller->index(perPage: 2);
+
+        $this->assertSame($response, $result);
+    }
+
     public function testIndexDefaultPageWithMultipleUsers(): void
     {
-        for ($i = 0; $i < 51; $i++) {
+        for ($i = 0; $i < 26; $i++) {
             $this->createUser("user$i", "$i@example.com");
         }
 
@@ -241,8 +291,8 @@ final class UserControllerTest extends TestCase
             ->method('createResponse')
             ->with(self::callback(static function (array $data): bool {
                 return $data['currentPage'] === 1
-                    && count($data['items']) === 50
-                    && $data['totalCount'] === 51
+                    && count($data['items']) === 25
+                    && $data['totalCount'] === 26
                     && $data['totalPages'] === 2;
             }))
             ->willReturn($response);
@@ -333,7 +383,7 @@ final class UserControllerTest extends TestCase
 
     public function testIndexPageTwoWithMultiplePages(): void
     {
-        for ($i = 0; $i < 51; $i++) {
+        for ($i = 0; $i < 26; $i++) {
             $this->createUser("user$i", "$i@example.com");
         }
 
@@ -343,7 +393,7 @@ final class UserControllerTest extends TestCase
             ->with(self::callback(static function (array $data): bool {
                 return $data['currentPage'] === 2
                     && count($data['items']) === 1
-                    && $data['totalCount'] === 51
+                    && $data['totalCount'] === 26
                     && $data['totalPages'] === 2;
             }))
             ->willReturn($response);
@@ -390,7 +440,7 @@ final class UserControllerTest extends TestCase
                     && $data['items'][0]['blockedAt'] === $user->getBlockedAt()
                     && $data['totalCount'] === 1
                     && $data['currentPage'] === 1
-                    && $data['pageSize'] === 50
+                    && $data['pageSize'] === 25
                     && $data['totalPages'] === 1;
             }))
             ->willReturn($response);

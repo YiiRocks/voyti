@@ -25,6 +25,8 @@ use Yiisoft\Translator\TranslatorInterface;
  */
 final readonly class UserController
 {
+    private const int MAX_PER_PAGE = 100;
+
     public function __construct(
         private TranslatorInterface $translator,
         private ModuleConfig $config,
@@ -88,14 +90,19 @@ final readonly class UserController
          */
         #[Query('page')]
         int $page = 1,
+        #[Query('perPage')]
+        int $perPage = 25,
     ): ResponseInterface {
         $reader = new QueryDataReader(User::searchQuery([
             'username' => $username,
             'email' => $email,
             'status' => $status,
         ]));
-        $paginator = (new OffsetPaginator($reader))->withPageSize(50);
-        $paginator = $paginator->withCurrentPage(min(max(1, $page), max(1, $paginator->getTotalPages())));
+
+        $pageSize = min(max(1, $perPage), self::MAX_PER_PAGE);
+        $sizedPaginator = (new OffsetPaginator($reader))->withPageSize($pageSize);
+        $currentPage = min(max(1, $page), max(1, $sizedPaginator->getTotalPages()));
+        $paginator = $sizedPaginator->withCurrentPage($currentPage);
 
         /** @infection-ignore-all — iterator keys are already 0-indexed, preserve_keys has no effect */
         /** @var list<User> $users */

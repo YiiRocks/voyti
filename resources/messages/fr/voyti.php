@@ -292,6 +292,7 @@ return [
 
     // Pagination
     'voyti.view.filter_button' => 'Filtrer',
+    'voyti.view.per_page_label' => 'Par page',
     'voyti.view.pagination_navigation' => 'Navigation des pages',
     'voyti.view.previous' => 'Précédent',
     'voyti.view.next' => 'Suivant',

@@ -291,6 +291,7 @@ return [
 
     // Pagination
     'voyti.view.filter_button' => 'Фильтр',
+    'voyti.view.per_page_label' => 'На странице',
     'voyti.view.pagination_navigation' => 'Навигация по страницам',
     'voyti.view.previous' => 'Предыдущая',
     'voyti.view.next' => 'Следующая',

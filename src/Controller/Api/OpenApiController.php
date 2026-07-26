@@ -42,6 +42,11 @@ final readonly class OpenApiController
                             ['name' => 'email', 'in' => 'query', 'schema' => ['type' => 'string']],
                             ['name' => 'status', 'in' => 'query', 'schema' => ['type' => 'string']],
                             ['name' => 'page', 'in' => 'query', 'schema' => ['type' => 'integer', 'default' => 1]],
+                            [
+                                'name' => 'perPage',
+                                'in' => 'query',
+                                'schema' => ['type' => 'integer', 'default' => 25, 'maximum' => 100],
+                            ],
                         ],
                         'responses' => [
                             '200' => [

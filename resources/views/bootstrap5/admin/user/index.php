@@ -63,6 +63,20 @@ echo Html::select('status')
 echo Html::div()->close();
 
 echo Html::div()->class('col-auto')->open();
+echo Html::select('perPage')
+    ->class('form-select')
+    ->optionsData([
+        '10' => '10',
+        '25' => '25',
+        '50' => '50',
+        '100' => '100',
+    ])
+    ->value((string) $data->perPage)
+    ->attribute('aria-label', $translator->translate('voyti.view.per_page_label'))
+    ->attribute('tabindex', ++$tabindex);
+echo Html::div()->close();
+
+echo Html::div()->class('col-auto')->open();
 echo Field::buttonGroup()
     ->containerClass('btn-group')
     ->buttons(

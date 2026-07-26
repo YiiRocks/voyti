@@ -27,6 +27,7 @@ final class IndexViewDataTest extends TestCase
             [$user],
             $paginator,
             ['username' => 'jane'],
+            25,
             ModuleConfigFactory::create(),
             new FakeUrlGenerator(),
             $translator,
@@ -40,6 +41,9 @@ final class IndexViewDataTest extends TestCase
         self::assertNull($data->switchedBannerMessage);
         self::assertSame(['username' => 'jane', 'email' => '', 'status' => ''], $data->filters);
         self::assertSame('//voyti/admin-users-create', $data->createUserUrl);
+        self::assertSame(25, $data->perPage);
+        self::assertStringContainsString('perPage=25', $data->pageUrlPattern);
+        self::assertStringContainsString('perPage=25', $data->firstPageUrl);
     }
 
     public function testCreateWithSwitchedIdentity(): void
@@ -52,6 +56,7 @@ final class IndexViewDataTest extends TestCase
             [],
             $paginator,
             [],
+            25,
             ModuleConfigFactory::create(),
             new FakeUrlGenerator(),
             $translator,

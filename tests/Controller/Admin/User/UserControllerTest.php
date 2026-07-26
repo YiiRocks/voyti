@@ -388,6 +388,104 @@ final class UserControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
+    public function testIndexClampsPerPageAboveMaximum(): void
+    {
+        $controller = $this->createController();
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $captured = [];
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->method('render')
+            ->willReturnCallback(function (string $view, array $params) use (&$captured, $response): ResponseInterface {
+                $captured = $params;
+                return $response;
+            });
+
+        $controller->index(perPage: 500);
+
+        $this->assertSame(100, $captured['data']->perPage);
+        $this->assertSame(100, $captured['data']->paginator->getPageSize());
+    }
+
+    public function testIndexClampsPerPageBelowMinimum(): void
+    {
+        $controller = $this->createController();
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $captured = [];
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->method('render')
+            ->willReturnCallback(function (string $view, array $params) use (&$captured, $response): ResponseInterface {
+                $captured = $params;
+                return $response;
+            });
+
+        $controller->index(perPage: 0);
+
+        $this->assertSame(1, $captured['data']->perPage);
+        $this->assertSame(1, $captured['data']->paginator->getPageSize());
+    }
+
+    public function testIndexCustomPerPage(): void
+    {
+        $this->createUser(username: 'user0', email: 'user0@example.com');
+        $this->createUser(username: 'user1', email: 'user1@example.com');
+        $this->createUser(username: 'user2', email: 'user2@example.com');
+
+        $controller = $this->createController();
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $captured = [];
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->method('render')
+            ->willReturnCallback(function (string $view, array $params) use (&$captured, $response): ResponseInterface {
+                $captured = $params;
+                return $response;
+            });
+
+        $controller->index(perPage: 2);
+
+        $this->assertSame(2, $captured['data']->perPage);
+        $this->assertSame(2, $captured['data']->paginator->getPageSize());
+        $this->assertSame(2, $captured['data']->paginator->getTotalPages());
+        $this->assertCount(2, $captured['data']->users);
+    }
+
+    public function testIndexDefaultPerPage(): void
+    {
+        $controller = $this->createController();
+
+        $identity = $this->createMock(User::class);
+        $identity->method('getId')->willReturn('1');
+        $this->currentUser->method('getIdentity')->willReturn($identity);
+
+        $captured = [];
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->method('render')
+            ->willReturnCallback(function (string $view, array $params) use (&$captured, $response): ResponseInterface {
+                $captured = $params;
+                return $response;
+            });
+
+        $controller->index();
+
+        $this->assertSame(25, $captured['data']->perPage);
+        $this->assertSame(25, $captured['data']->paginator->getPageSize());
+    }
+
     public function testIndexPassesPaginatorWithNoResults(): void
     {
         $controller = $this->createController();

@@ -66,6 +66,8 @@ final readonly class UserController
     use RedirectTrait;
     use RenderTrait;
 
+    private const int MAX_PER_PAGE = 100;
+
     public function __construct(
         private TranslatorInterface $translator,
         private WebViewRenderer $viewRenderer,
@@ -229,8 +231,14 @@ final readonly class UserController
         string $email = '',
         #[Query('status')]
         string $status = '',
+        /**
+         * @infection-ignore-all Mutating this default to 0 is behaviorally identical to 1: both are
+         * floored to 1 by max(1, $page) below, so no test can observe the difference.
+         */
         #[Query('page')]
         int $page = 1,
+        #[Query('perPage')]
+        int $perPage = 25,
     ): ResponseInterface {
         $filters = [
             'username' => $username,
@@ -239,9 +247,13 @@ final readonly class UserController
         ];
 
         $reader = new QueryDataReader(User::searchQuery($filters));
-        $paginator = (new OffsetPaginator($reader))->withPageSize(50);
-        $paginator = $paginator->withCurrentPage(min(max(1, $page), max(1, $paginator->getTotalPages())));
 
+        $pageSize = min(max(1, $perPage), self::MAX_PER_PAGE);
+        $sizedPaginator = (new OffsetPaginator($reader))->withPageSize($pageSize);
+        $currentPage = min(max(1, $page), max(1, $sizedPaginator->getTotalPages()));
+        $paginator = $sizedPaginator->withCurrentPage($currentPage);
+
+        /** @infection-ignore-all — iterator keys are already 0-indexed, preserve_keys has no effect */
         /** @var list<User> $users */
         $users = iterator_to_array($paginator->read(), false);
 
@@ -250,6 +262,7 @@ final readonly class UserController
                 $users,
                 $paginator,
                 $filters,
+                $pageSize,
                 $this->config,
                 $this->url,
                 $this->translator(),

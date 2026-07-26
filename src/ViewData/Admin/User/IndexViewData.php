@@ -20,6 +20,8 @@ final readonly class IndexViewData
     /**
      * @param list<UserRow> $users
      * @param array{username: string, email: string, status: string} $filters
+     * @param int $perPage the effective (already clamped) page size, echoed back so the view can
+     *        preselect it in the per-page dropdown and pagination links can preserve it
      * @param string $createUserUrl a link (GET) to the create-user screen, not a form target
      * @param string $filterActionUrl the filter form's GET target
      * @param string|null $switchedBannerMessage set only when an admin is currently impersonating
@@ -37,6 +39,7 @@ final readonly class IndexViewData
         public string $createUserUrl,
         public string $filterActionUrl,
         public array $filters,
+        public int $perPage,
         public ?string $switchedBannerMessage,
         public string $formSubmitUrl,
         public array $users,
@@ -53,6 +56,7 @@ final readonly class IndexViewData
         array $users,
         OffsetPaginator $paginator,
         array $filters,
+        int $perPage,
         ModuleConfig $config,
         UrlGeneratorInterface $url,
         TranslatorInterface $translator,
@@ -65,12 +69,14 @@ final readonly class IndexViewData
             'email' => $filters['email'] ?? '',
             'status' => $filters['status'] ?? '',
         ];
+        $preservedQuery = [...$normalizedFilters, 'perPage' => (string) $perPage];
 
         return new self(
             menu: MenuViewData::forAdmin($url, $translator),
             createUserUrl: $url->generate('voyti/admin-users-create'),
             filterActionUrl: $url->generate('voyti/admin-users'),
             filters: $normalizedFilters,
+            perPage: $perPage,
             switchedBannerMessage: $isSwitched && $originalUser !== null
                 ? $translator->translate('voyti.view.admin.switched_banner', ['username' => $originalUser->getUsername()])
                 : null,
@@ -80,8 +86,8 @@ final readonly class IndexViewData
                 $users,
             ),
             paginator: $paginator,
-            pageUrlPattern: $url->generate('voyti/admin-users', [], [...$normalizedFilters, 'page' => PaginationContext::URL_PLACEHOLDER]),
-            firstPageUrl: $url->generate('voyti/admin-users', [], [...$normalizedFilters, 'page' => '1']),
+            pageUrlPattern: $url->generate('voyti/admin-users', [], [...$preservedQuery, 'page' => PaginationContext::URL_PLACEHOLDER]),
+            firstPageUrl: $url->generate('voyti/admin-users', [], [...$preservedQuery, 'page' => '1']),
         );
     }
 }

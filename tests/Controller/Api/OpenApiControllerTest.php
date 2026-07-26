@@ -228,6 +228,10 @@ final class OpenApiControllerTest extends TestCase
         self::assertSame('page', $get['parameters'][3]['name']);
         self::assertSame('integer', $get['parameters'][3]['schema']['type']);
         self::assertSame(1, $get['parameters'][3]['schema']['default']);
+        self::assertSame('perPage', $get['parameters'][4]['name']);
+        self::assertSame('integer', $get['parameters'][4]['schema']['type']);
+        self::assertSame(25, $get['parameters'][4]['schema']['default']);
+        self::assertSame(100, $get['parameters'][4]['schema']['maximum']);
         self::assertSame('Paginated list of users', $get['responses']['200']['description']);
         self::assertSame('application/json', array_key_first($get['responses']['200']['content']));
         self::assertSame('#/components/schemas/PaginatedUsers', $get['responses']['200']['content']['application/json']['schema']['$ref']);
