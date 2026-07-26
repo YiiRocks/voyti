@@ -230,6 +230,149 @@ final class UserControllerTest extends TestCase
         $this->assertNull(User::findById($userId));
     }
 
+    public function testIndexDefaultPageWithMultipleUsers(): void
+    {
+        for ($i = 0; $i < 51; $i++) {
+            $this->createUser("user$i", "$i@example.com");
+        }
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(self::callback(static function (array $data): bool {
+                return $data['currentPage'] === 1
+                    && count($data['items']) === 50
+                    && $data['totalCount'] === 51
+                    && $data['totalPages'] === 2;
+            }))
+            ->willReturn($response);
+
+        $controller = $this->createController();
+        $result = $controller->index();
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testIndexEmptyDatabaseReturnsPageOne(): void
+    {
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(self::callback(static function (array $data): bool {
+                return $data['items'] === []
+                    && $data['totalCount'] === 0
+                    && $data['currentPage'] === 1
+                    && $data['totalPages'] === 0;
+            }))
+            ->willReturn($response);
+
+        $controller = $this->createController();
+        $result = $controller->index();
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testIndexFiltersByStatus(): void
+    {
+        $this->createUser('blocked', 'blocked@example.com', blockedAt: time());
+        $this->createUser('active', 'active@example.com');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(self::callback(static function (array $data): bool {
+                return count($data['items']) === 1
+                    && $data['items'][0]['username'] === 'blocked';
+            }))
+            ->willReturn($response);
+
+        $controller = $this->createController();
+        $result = $controller->index(status: 'blocked');
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testIndexFiltersByUsername(): void
+    {
+        $this->createUser('alice', 'alice@example.com');
+        $this->createUser('bob', 'bob@example.com');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(self::callback(static function (array $data): bool {
+                return count($data['items']) === 1
+                    && $data['items'][0]['username'] === 'alice';
+            }))
+            ->willReturn($response);
+
+        $controller = $this->createController();
+        $result = $controller->index(username: 'alice');
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testIndexPageBeyondTotalClampsToLast(): void
+    {
+        $this->createUser('testuser', 'test@example.com');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(self::callback(static function (array $data): bool {
+                return $data['currentPage'] === 1
+                    && count($data['items']) === 1;
+            }))
+            ->willReturn($response);
+
+        $controller = $this->createController();
+        $result = $controller->index(page: 999);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testIndexPageTwoWithMultiplePages(): void
+    {
+        for ($i = 0; $i < 51; $i++) {
+            $this->createUser("user$i", "$i@example.com");
+        }
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(self::callback(static function (array $data): bool {
+                return $data['currentPage'] === 2
+                    && count($data['items']) === 1
+                    && $data['totalCount'] === 51
+                    && $data['totalPages'] === 2;
+            }))
+            ->willReturn($response);
+
+        $controller = $this->createController();
+        $result = $controller->index(page: 2);
+
+        $this->assertSame($response, $result);
+    }
+
+    public function testIndexPageZeroClampsToOne(): void
+    {
+        $this->createUser('testuser', 'test@example.com');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(self::callback(static function (array $data): bool {
+                return $data['currentPage'] === 1
+                    && count($data['items']) === 1;
+            }))
+            ->willReturn($response);
+
+        $controller = $this->createController();
+        $result = $controller->index(page: 0);
+
+        $this->assertSame($response, $result);
+    }
+
     public function testIndexReturnsUsers(): void
     {
         $user = $this->createUser('testuser', 'test@example.com');
@@ -238,13 +381,17 @@ final class UserControllerTest extends TestCase
         $this->responseFactory->expects($this->once())
             ->method('createResponse')
             ->with(self::callback(static function (array $data) use ($user): bool {
-                return count($data) === 1
-                    && $data[0]['id'] === $user->getId()
-                    && $data[0]['username'] === 'testuser'
-                    && $data[0]['email'] === 'test@example.com'
-                    && $data[0]['createdAt'] === $user->getCreatedAt()
-                    && $data[0]['confirmedAt'] === $user->getConfirmedAt()
-                    && $data[0]['blockedAt'] === $user->getBlockedAt();
+                return count($data['items']) === 1
+                    && $data['items'][0]['id'] === $user->getId()
+                    && $data['items'][0]['username'] === 'testuser'
+                    && $data['items'][0]['email'] === 'test@example.com'
+                    && $data['items'][0]['createdAt'] === $user->getCreatedAt()
+                    && $data['items'][0]['confirmedAt'] === $user->getConfirmedAt()
+                    && $data['items'][0]['blockedAt'] === $user->getBlockedAt()
+                    && $data['totalCount'] === 1
+                    && $data['currentPage'] === 1
+                    && $data['pageSize'] === 50
+                    && $data['totalPages'] === 1;
             }))
             ->willReturn($response);
 

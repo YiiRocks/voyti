@@ -10,9 +10,12 @@ use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\User\UserCreationHelper;
+use Yiisoft\Data\Db\QueryDataReader;
+use Yiisoft\Data\Paginator\OffsetPaginator;
 use Yiisoft\DataResponse\ResponseFactory\DataResponseFactoryInterface;
 use Yiisoft\Http\Status;
 use Yiisoft\Input\Http\Attribute\Parameter\Body;
+use Yiisoft\Input\Http\Attribute\Parameter\Query;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Translator\TranslatorInterface;
 
@@ -72,10 +75,32 @@ final readonly class UserController
         ]);
     }
 
-    public function index(): ResponseInterface
-    {
-        $users = User::findAllUsers();
-        $data = array_map(fn($u) => [
+    public function index(
+        #[Query('username')]
+        string $username = '',
+        #[Query('email')]
+        string $email = '',
+        #[Query('status')]
+        string $status = '',
+        /**
+         * @infection-ignore-all Mutating this default to 0 is behaviorally identical to 1: both are
+         * floored to 1 by max(1, $page) below, so no test can observe the difference.
+         */
+        #[Query('page')]
+        int $page = 1,
+    ): ResponseInterface {
+        $reader = new QueryDataReader(User::searchQuery([
+            'username' => $username,
+            'email' => $email,
+            'status' => $status,
+        ]));
+        $paginator = (new OffsetPaginator($reader))->withPageSize(50);
+        $paginator = $paginator->withCurrentPage(min(max(1, $page), max(1, $paginator->getTotalPages())));
+
+        /** @infection-ignore-all — iterator keys are already 0-indexed, preserve_keys has no effect */
+        /** @var list<User> $users */
+        $users = iterator_to_array($paginator->read(), false);
+        $items = array_map(fn(User $u) => [
             'id' => $u->getId(),
             'username' => $u->getUsername(),
             'email' => $u->getEmail(),
@@ -84,7 +109,13 @@ final readonly class UserController
             'blockedAt' => $u->getBlockedAt(),
         ], $users);
 
-        return $this->responseFactory->createResponse($data);
+        return $this->responseFactory->createResponse([
+            'items' => $items,
+            'totalCount' => $paginator->getTotalItems(),
+            'currentPage' => $paginator->getCurrentPage(),
+            'pageSize' => $paginator->getPageSize(),
+            'totalPages' => $paginator->getTotalPages(),
+        ]);
     }
 
     public function update(
