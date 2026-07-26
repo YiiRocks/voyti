@@ -17,6 +17,7 @@ use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
 use YiiRocks\Voyti\tests\Support\MailCapture;
 use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\View\View;
 
 final class EmailChangeServiceTest extends TestCase
 {
@@ -460,6 +461,7 @@ final class EmailChangeServiceTest extends TestCase
         return new MailService(
             $mailCapture,
             __DIR__ . '/../../resources/mail',
+            new View(),
             $this->createTranslator(),
             new FakeUrlGenerator(),
             'App',

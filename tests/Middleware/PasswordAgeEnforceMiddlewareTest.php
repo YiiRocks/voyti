@@ -28,7 +28,6 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
     public function testProcessPassesThroughForExemptAccountSettingsRoute(): void
     {
         $config = ModuleConfigFactory::create(
-            enablePasswordExpiration: true,
             maxPasswordAge: 90,
         );
 
@@ -54,7 +53,7 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
     }
     public function testProcessPassesThroughForExemptLogoutRoute(): void
     {
-        $config = ModuleConfigFactory::create(enablePasswordExpiration: true, maxPasswordAge: 90);
+        $config = ModuleConfigFactory::create(maxPasswordAge: 90);
 
         $user = new User();
         $user->setPasswordChangedAt(time() - 91 * 86400);
@@ -79,7 +78,7 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
 
     public function testProcessPassesThroughForGuestUser(): void
     {
-        $config = ModuleConfigFactory::create(enablePasswordExpiration: true, maxPasswordAge: 90);
+        $config = ModuleConfigFactory::create(maxPasswordAge: 90);
 
         $request = $this->createMock(ServerRequestInterface::class);
         $response = $this->createMock(ResponseInterface::class);
@@ -100,7 +99,7 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
 
     public function testProcessPassesThroughForNonUserIdentity(): void
     {
-        $config = ModuleConfigFactory::create(enablePasswordExpiration: true, maxPasswordAge: 90);
+        $config = ModuleConfigFactory::create(maxPasswordAge: 90);
 
         $request = $this->createMock(ServerRequestInterface::class);
         $response = $this->createMock(ResponseInterface::class);
@@ -119,31 +118,9 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
         self::assertSame($response, $result);
     }
 
-    public function testProcessPassesThroughWhenExpirationDisabledEvenIfPasswordVeryOld(): void
+    public function testProcessPassesThroughWhenMaxPasswordAgeIsZeroEvenIfPasswordVeryOld(): void
     {
-        $config = ModuleConfigFactory::create(enablePasswordExpiration: false, maxPasswordAge: 90);
-
-        $user = new User();
-        $user->setPasswordChangedAt(time() - 9999 * 86400);
-
-        $currentUser = $this->createMock(CurrentUser::class);
-        $currentUser->expects(self::once())->method('getIdentity')->willReturn($user);
-
-        $request = $this->createMock(ServerRequestInterface::class);
-        $response = $this->createMock(ResponseInterface::class);
-
-        $handler = $this->createMock(RequestHandlerInterface::class);
-        $handler->expects(self::once())->method('handle')->with($request)->willReturn($response);
-
-        $middleware = $this->createMiddleware(currentUser: $currentUser, config: $config);
-        $result = $middleware->process($request, $handler);
-
-        self::assertSame($response, $result);
-    }
-
-    public function testProcessPassesThroughWhenMaxPasswordAgeIsNull(): void
-    {
-        $config = ModuleConfigFactory::create(enablePasswordExpiration: true, maxPasswordAge: null);
+        $config = ModuleConfigFactory::create(maxPasswordAge: 0);
 
         $user = new User();
         $user->setPasswordChangedAt(time() - 9999 * 86400);
@@ -165,7 +142,7 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
 
     public function testProcessPassesThroughWhenPasswordNotExpired(): void
     {
-        $config = ModuleConfigFactory::create(enablePasswordExpiration: true, maxPasswordAge: 90);
+        $config = ModuleConfigFactory::create(maxPasswordAge: 90);
 
         $user = new User();
         $user->setPasswordChangedAt(time());
@@ -188,7 +165,6 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
     public function testProcessRedirectsWhenPasswordExpired(): void
     {
         $config = ModuleConfigFactory::create(
-            enablePasswordExpiration: true,
             maxPasswordAge: 90,
         );
 
@@ -224,7 +200,6 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
     public function testProcessRedirectsWhenPasswordNeverChanged(): void
     {
         $config = ModuleConfigFactory::create(
-            enablePasswordExpiration: true,
             maxPasswordAge: 90,
         );
 

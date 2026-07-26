@@ -12,16 +12,17 @@ use Yiisoft\Router\RouteNotFoundException;
 use Yiisoft\Router\UrlGeneratorInterface;
 
 /**
- * Single source of truth for all module settings: an immutable value object built from the
- * host's `yiirocks/voyti` params array and injected into services instead of raw params.
+ * Single source of truth for all module settings: an immutable value object injected into
+ * services instead of raw params.
  */
 final readonly class ModuleConfig
 {
+    public const DEFAULT_MAIL_PATH = __DIR__ . '/../resources/mail';
     public const DEFAULT_VIEW_PATH = __DIR__ . '/../resources/views/bootstrap5';
 
     public function __construct(
         public string $appName,
-        public ?RecaptchaVersion $recaptchaVersion,
+        public RecaptchaVersion $recaptchaVersion,
         public bool $enableGdprCompliance,
         /** @psalm-var list<string> */
         public array $gdprExportProperties,
@@ -37,7 +38,6 @@ final readonly class ModuleConfig
         public bool $enableSwitchIdentities,
         public string $homeRoute,
         public ?string $mailAdminOnRegister,
-        public bool $enablePasswordExpiration,
         public bool $enablePasswordComplexity,
         public int $passwordHistoryLimit,
         public bool $allowPasswordRecovery,
@@ -49,7 +49,7 @@ final readonly class ModuleConfig
         public int $tokenRecoveryLifespan,
         public string $administratorPermissionName,
         public ProfileVisibility $profileVisibility,
-        public ?int $maxPasswordAge,
+        public int $maxPasswordAge,
         public string $viewPath,
         public string $mailPath,
         public bool $enableRestApi,

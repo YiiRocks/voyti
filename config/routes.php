@@ -10,15 +10,13 @@ use YiiRocks\Voyti\Middleware\RememberMeMiddleware;
 use YiiRocks\Voyti\Middleware\RequireLoginMiddleware;
 use YiiRocks\Voyti\Middleware\SessionRevocationEnforceMiddleware;
 use YiiRocks\Voyti\Middleware\TwoFactorAuthenticationEnforceMiddleware;
-use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
 use Yiisoft\Csrf\CsrfMiddleware;
 use Yiisoft\DataResponse\Middleware\JsonDataResponseMiddleware;
 use Yiisoft\Router\Group;
 use Yiisoft\Router\Route;
 use Yiisoft\Session\SessionMiddleware;
 
-$moduleConfig = new ModuleConfig(...($params['yiirocks/voyti'] ?? []));
+$voytiParams = $params['yiirocks/voyti'] ?? [];
 
 $userRoutes = [
     Route::get('')->name('voyti/admin-users')->action([Controller\Admin\User\UserController::class, 'index']),
@@ -36,7 +34,7 @@ $userRoutes = [
     Route::post('terminate-sessions/{id:\d+}')->name('voyti/admin-users-terminate-sessions')->action([Controller\Admin\User\UserController::class, 'terminateSessions']),
 ];
 
-if ($moduleConfig->enableSwitchIdentities) {
+if ($voytiParams['enableSwitchIdentities'] ?? true) {
     $userRoutes[] = Route::post('switch-identity/{id:\d+}')->name('voyti/admin-users-switch-identity')->action([Controller\Admin\User\UserController::class, 'switchIdentity']);
 }
 
@@ -107,28 +105,28 @@ $settingsRoutes = [
     Route::post('sessions/terminate/{sessionId}')->name('voyti/user-account-sessions-terminate')->action([Controller\Account\SessionController::class, 'terminate']),
 ];
 
-if ($moduleConfig->enableGdprCompliance || $moduleConfig->allowAccountDelete) {
+if (($voytiParams['enableGdprCompliance'] ?? false) || ($voytiParams['allowAccountDelete'] ?? false)) {
     $settingsRoutes[] = Route::get('privacy/')->name('voyti/user-privacy')->action([Controller\Privacy\PrivacyController::class, 'index']);
 }
 
-if ($moduleConfig->enableGdprCompliance) {
+if ($voytiParams['enableGdprCompliance'] ?? false) {
     $settingsRoutes[] = Route::methods(['GET', 'POST'], 'privacy/gdpr-consent')->name('voyti/user-privacy-gdpr-consent')->action([Controller\Privacy\PrivacyController::class, 'gdprConsent']);
     $settingsRoutes[] = Route::get('privacy/export')->name('voyti/user-privacy-export')->action([Controller\Privacy\PrivacyController::class, 'export']);
     $settingsRoutes[] = Route::methods(['GET', 'POST'], 'privacy/anonymize')->name('voyti/user-privacy-anonymize')->action([Controller\Privacy\PrivacyController::class, 'anonymize']);
 }
 
-if ($moduleConfig->allowAccountDelete) {
+if ($voytiParams['allowAccountDelete'] ?? false) {
     $settingsRoutes[] = Route::methods(['GET', 'POST'], 'privacy/delete')->name('voyti/user-privacy-delete')->action([Controller\Privacy\PrivacyController::class, 'delete']);
 }
 
-if ($moduleConfig->enableTwoFactorAuthentication) {
+if ($voytiParams['enableTwoFactorAuthentication'] ?? false) {
     $settingsRoutes[] = Route::methods(['GET', 'POST'], 'two-factor/')->name('voyti/user-two-factor')->action([Controller\TwoFactor\TwoFactorController::class, 'index']);
     $settingsRoutes[] = Route::post('two-factor/enable')->name('voyti/user-two-factor-enable')->action([Controller\TwoFactor\TwoFactorController::class, 'enable']);
     $settingsRoutes[] = Route::post('two-factor/disable/')->name('voyti/user-two-factor-disable')->action([Controller\TwoFactor\TwoFactorController::class, 'disable']);
     $settingsRoutes[] = Route::post('two-factor/disable/send-code')->name('voyti/user-two-factor-disable-send-code')->action([Controller\TwoFactor\TwoFactorController::class, 'disableSendCode']);
     $settingsRoutes[] = Route::get('two-factor/email/')->name('voyti/user-two-factor-email')->action([Controller\TwoFactor\TwoFactorController::class, 'email']);
     $settingsRoutes[] = Route::post('two-factor/email/send-code')->name('voyti/user-two-factor-email-send-code')->action([Controller\TwoFactor\TwoFactorController::class, 'sendEmailCode']);
-    if ((new QrCodeUriGeneratorService($moduleConfig))->isAvailable()) {
+    if (class_exists('chillerlan\Authenticator\Authenticator') && class_exists('chillerlan\QRCode\QRCode')) {
         $settingsRoutes[] = Route::get('two-factor/google/')->name('voyti/user-two-factor-google')->action([Controller\TwoFactor\TwoFactorController::class, 'google']);
         $settingsRoutes[] = Route::post('two-factor/google/renew')->name('voyti/user-two-factor-google-renew')->action([Controller\TwoFactor\TwoFactorController::class, 'renew']);
     }
@@ -164,16 +162,16 @@ $routes = [
         ),
 ];
 
-if ($moduleConfig->enableSwitchIdentities) {
+if ($voytiParams['enableSwitchIdentities'] ?? true) {
     // Not admin-gated: restoring must remain reachable while impersonating a non-admin user.
     $routes[] = Route::post('admin/users/switch-identity/restore')->name('voyti/admin-users-switch-identity-restore')->action([Controller\Admin\User\UserController::class, 'switchIdentityRestore']);
 }
 
 $webMiddlewares = [SessionMiddleware::class, RememberMeMiddleware::class, CsrfMiddleware::class, SessionRevocationEnforceMiddleware::class];
-if ($moduleConfig->enablePasswordExpiration) {
+if (($voytiParams['maxPasswordAge'] ?? 0) > 0) {
     $webMiddlewares[] = PasswordAgeEnforceMiddleware::class;
 }
-if ($moduleConfig->enableTwoFactorAuthentication) {
+if ($voytiParams['enableTwoFactorAuthentication'] ?? false) {
     $webMiddlewares[] = TwoFactorAuthenticationEnforceMiddleware::class;
 }
 
@@ -183,19 +181,19 @@ $result = [
         ->routes(...$routes),
 ];
 
-if ($moduleConfig->enableRestApi) {
-    $result[] = Group::create($moduleConfig->adminRestPrefix . '/')
+if ($voytiParams['enableRestApi'] ?? false) {
+    $result[] = Group::create(($voytiParams['adminRestPrefix'] ?? 'api') . '/')
         ->middleware(JsonDataResponseMiddleware::class)
         ->routes(
-            Route::get('openapi.json')->name('voyti/api-openapi')->action([Controller\api\OpenApiController::class, 'index']),
+            Route::get('openapi.json')->name('voyti/api-openapi')->action([Controller\Api\OpenApiController::class, 'index']),
             Group::create('v1/')
                 ->middleware(ApiTokenAuthenticationMiddleware::class, AccessRuleMiddleware::class)
                 ->routes(
-                    Route::get('users')->name('voyti/api-v1-users-index')->action([Controller\api\v1\User\UserController::class, 'index']),
-                    Route::get('users/{id:\d+}')->name('voyti/api-v1-users-view')->action([Controller\api\v1\User\UserController::class, 'view']),
-                    Route::post('users')->name('voyti/api-v1-users-create')->action([Controller\api\v1\User\UserController::class, 'create']),
-                    Route::patch('users/{id:\d+}')->name('voyti/api-v1-users-update')->action([Controller\api\v1\User\UserController::class, 'update']),
-                    Route::delete('users/{id:\d+}')->name('voyti/api-v1-users-delete')->action([Controller\api\v1\User\UserController::class, 'delete']),
+                    Route::get('users')->name('voyti/api-v1-users-index')->action([Controller\Api\V1\User\UserController::class, 'index']),
+                    Route::get('users/{id:\d+}')->name('voyti/api-v1-users-view')->action([Controller\Api\V1\User\UserController::class, 'view']),
+                    Route::post('users')->name('voyti/api-v1-users-create')->action([Controller\Api\V1\User\UserController::class, 'create']),
+                    Route::patch('users/{id:\d+}')->name('voyti/api-v1-users-update')->action([Controller\Api\V1\User\UserController::class, 'update']),
+                    Route::delete('users/{id:\d+}')->name('voyti/api-v1-users-delete')->action([Controller\Api\V1\User\UserController::class, 'delete']),
                 ),
         );
 }

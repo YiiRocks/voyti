@@ -5,12 +5,13 @@ declare(strict_types=1);
 use YiiRocks\Voyti\Console;
 use YiiRocks\Voyti\Enum\EmailChangeConfirmation;
 use YiiRocks\Voyti\Enum\ProfileVisibility;
+use YiiRocks\Voyti\Enum\RecaptchaVersion;
 use YiiRocks\Voyti\ModuleConfig;
 
 return [
     'yiirocks/voyti' => [
         'appName' => 'Voyti',
-        'recaptchaVersion' => null,
+        'recaptchaVersion' => RecaptchaVersion::V3,
         'enableGdprCompliance' => false,
         'gdprExportProperties' => [
             'email',
@@ -35,7 +36,6 @@ return [
         'enableSwitchIdentities' => true,
         'homeRoute' => 'home',
         'mailAdminOnRegister' => null,
-        'enablePasswordExpiration' => false,
         'enablePasswordComplexity' => false,
         'passwordHistoryLimit' => 10,
         'allowPasswordRecovery' => true,
@@ -47,9 +47,9 @@ return [
         'tokenRecoveryLifespan' => 21600,
         'administratorPermissionName' => 'voyti-admin',
         'profileVisibility' => ProfileVisibility::USERS,
-        'maxPasswordAge' => null,
+        'maxPasswordAge' => 0,
         'viewPath' => ModuleConfig::DEFAULT_VIEW_PATH,
-        'mailPath' => __DIR__ . '/../resources/mail',
+        'mailPath' => ModuleConfig::DEFAULT_MAIL_PATH,
         'enableRestApi' => false,
         'adminRestPrefix' => 'api',
         'apiTokenLifespan' => null,

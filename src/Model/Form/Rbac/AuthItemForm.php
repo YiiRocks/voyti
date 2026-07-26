@@ -31,8 +31,8 @@ final class AuthItemForm extends FormModel implements LabelsProviderInterface, R
     public ?string $rule = null;
 
     public function __construct(
-        private TranslatorInterface $translator,
-        private string $type,
+        private readonly TranslatorInterface $translator,
+        private readonly string $type,
     ) {}
 
     #[Override]

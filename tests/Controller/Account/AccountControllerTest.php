@@ -192,7 +192,7 @@ final class AccountControllerTest extends TestCase
 
     public function testAccountPostWithPreviouslyUsedPasswordShowsError(): void
     {
-        $this->config = ModuleConfigFactory::create(enablePasswordExpiration: true);
+        $this->config = ModuleConfigFactory::create(maxPasswordAge: 90);
         $this->harness = new ControllerHarness($this->config);
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['settings' => ['username' => 'testuser', 'email' => 'test@example.com', 'password' => 'secret', 'passwordRepeat' => 'secret']]);

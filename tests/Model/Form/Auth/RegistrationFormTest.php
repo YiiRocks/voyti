@@ -6,11 +6,13 @@ namespace YiiRocks\Voyti\tests\Model\Form\Auth;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
+use YiiRocks\Recaptcha\RecaptchaRegistry;
 use YiiRocks\Recaptcha\RecaptchaV2Rule;
 use YiiRocks\Recaptcha\RecaptchaV3Rule;
 use YiiRocks\Voyti\Enum\RecaptchaVersion;
 use YiiRocks\Voyti\Model\Form\Auth\RegistrationForm;
 use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
+use YiiRocks\Voyti\tests\Support\RecaptchaRegistryTrait;
 use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
 use Yiisoft\Validator\Rule\Regex;
 use Yiisoft\Validator\Rule\TrueValue;
@@ -18,7 +20,13 @@ use Yiisoft\Validator\Rule\TrueValue;
 #[AllowMockObjectsWithoutExpectations]
 final class RegistrationFormTest extends TestCase
 {
+    use RecaptchaRegistryTrait;
     use TranslatorMockTrait;
+
+    protected function tearDown(): void
+    {
+        RecaptchaRegistry::reset();
+    }
 
     public function testConstruct(): void
     {
@@ -76,14 +84,6 @@ final class RegistrationFormTest extends TestCase
         $this->assertTrue($rule->getTrueValue());
     }
 
-    public function testGetRulesWithoutRecaptcha(): void
-    {
-        $config = ModuleConfigFactory::create(recaptchaVersion: null);
-        $form = new RegistrationForm($config, $this->createTranslator());
-        $rules = $form->getRules();
-        $this->assertArrayNotHasKey('gRecaptchaResponse', $rules);
-    }
-
     public function testGetRulesWithPasswordComplexityDisabled(): void
     {
         $config = ModuleConfigFactory::create(enablePasswordComplexity: false);
@@ -103,6 +103,7 @@ final class RegistrationFormTest extends TestCase
 
     public function testGetRulesWithRecaptchaV2(): void
     {
+        $this->configureRecaptchaRegistry();
         $config = ModuleConfigFactory::create(recaptchaVersion: RecaptchaVersion::V2);
         $form = new RegistrationForm($config, $this->createTranslator());
         $rules = $form->getRules();
@@ -112,6 +113,7 @@ final class RegistrationFormTest extends TestCase
 
     public function testGetRulesWithRecaptchaV3(): void
     {
+        $this->configureRecaptchaRegistry();
         $config = ModuleConfigFactory::create(recaptchaVersion: RecaptchaVersion::V3);
         $form = new RegistrationForm($config, $this->createTranslator());
         $rules = $form->getRules();

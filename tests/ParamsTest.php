@@ -13,7 +13,7 @@ final class ParamsTest extends TestCase
     {
         $mailPath = $this->voytiDefaults()['mailPath'];
 
-        self::assertStringContainsString('/config/../resources/mail', str_replace('\\', '/', $mailPath));
+        self::assertStringContainsString('/resources/mail', str_replace('\\', '/', $mailPath));
         self::assertNotSame('/resources/mail', $mailPath);
     }
 

@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace YiiRocks\Voyti\Controller\api;
+namespace YiiRocks\Voyti\Controller\Api;
 
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\DataResponse\ResponseFactory\DataResponseFactoryInterface;
 
 /**
- * Serves a hand-written OpenAPI 3.1 document describing the `enableRestApi` user endpoints
- * (`Controller/api/v1/User/UserController`), for API consumers/tooling.
+ * Serves an OpenAPI 3.1 document describing the `enableRestApi` user endpoints
+ * (`Controller/Api/V1/User/UserController`), for API consumers/tooling.
  */
 final readonly class OpenApiController
 {

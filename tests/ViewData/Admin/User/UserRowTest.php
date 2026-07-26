@@ -57,7 +57,7 @@ final class UserRowTest extends TestCase
 
     public function testCreateHidesForcePasswordChangeWhenDisabled(): void
     {
-        $config = ModuleConfigFactory::create(enablePasswordExpiration: false);
+        $config = ModuleConfigFactory::create();
 
         $row = UserRow::create($this->buildUser(), $config, new FakeUrlGenerator(), $this->createTranslator(), false, 999999);
 
@@ -106,7 +106,7 @@ final class UserRowTest extends TestCase
 
     public function testCreateShowsForcePasswordChangeWhenEnabled(): void
     {
-        $config = ModuleConfigFactory::create(enablePasswordExpiration: true);
+        $config = ModuleConfigFactory::create(maxPasswordAge: 90);
 
         $row = UserRow::create($this->buildUser(), $config, new FakeUrlGenerator(), $this->createTranslator(), false, 999999);
 

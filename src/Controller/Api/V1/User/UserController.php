@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace YiiRocks\Voyti\Controller\api\v1\User;
+namespace YiiRocks\Voyti\Controller\Api\V1\User;
 
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Model\User;

@@ -11,6 +11,7 @@ use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
 use YiiRocks\Voyti\tests\Support\MailCapture;
 use YiiRocks\Voyti\tests\TestCase;
+use Yiisoft\View\View;
 
 #[AllowMockObjectsWithoutExpectations]
 final class MailServiceTest extends TestCase
@@ -27,10 +28,36 @@ final class MailServiceTest extends TestCase
         $this->service = new MailService(
             $this->mailer,
             __DIR__ . '/../../resources/mail',
+            new View(),
             $this->createTranslator(),
             $this->url,
             'Voyti',
         );
+    }
+
+    public function testFallbackToDefaultMailPathWhenTemplateMissingFromMailPath(): void
+    {
+        $emptyMailPath = sys_get_temp_dir() . '/voyti-mail-test-' . uniqid('', true);
+        @mkdir($emptyMailPath, 0777, true);
+
+        try {
+            $service = new MailService(
+                $this->mailer,
+                $emptyMailPath,
+                new View(),
+                $this->createTranslator(),
+                $this->url,
+            );
+
+            $result = $service->send('test@example.com', 'Test', 'welcome', ['username' => 'testuser', 'translator' => $this->createTranslator()]);
+            self::assertTrue($result);
+            $message = $this->mailer->getLastMessage();
+            self::assertNotNull($message);
+            self::assertNotNull($message->getHtmlBody());
+            self::assertNotNull($message->getTextBody());
+        } finally {
+            @rmdir($emptyMailPath);
+        }
     }
 
     public function testMailSubjectContainsAppName(): void

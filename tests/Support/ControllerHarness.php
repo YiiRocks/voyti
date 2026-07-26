@@ -65,6 +65,7 @@ use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\Validator\ValidatorInterface;
+use Yiisoft\View\View;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 final class ControllerHarness
@@ -112,6 +113,7 @@ final class ControllerHarness
             new MailService(
                 $this->mailer,
                 $this->config->mailPath,
+                new View(),
                 $translator,
                 $this->url,
                 $this->config->appName,
@@ -338,6 +340,7 @@ final class ControllerHarness
         $mailService = new MailService(
             $this->mailer,
             $this->config->mailPath,
+            new View(),
             $translator,
             $this->url,
             $this->config->appName,
@@ -433,6 +436,7 @@ final class ControllerHarness
                 new MailService(
                     $this->mailer,
                     $this->config->mailPath,
+                    new View(),
                     $translator,
                     $this->url,
                     $this->config->appName,
@@ -449,6 +453,7 @@ final class ControllerHarness
             new MailService(
                 $this->mailer,
                 $this->config->mailPath,
+                new View(),
                 $translator,
                 $this->url,
                 $this->config->appName,
@@ -530,6 +535,7 @@ final class ControllerHarness
             new MailService(
                 $this->mailer,
                 $this->config->mailPath,
+                new View(),
                 $translator,
                 $this->url,
                 $this->config->appName,
@@ -584,6 +590,7 @@ final class ControllerHarness
             new MailService(
                 $this->mailer,
                 $this->config->mailPath,
+                new View(),
                 $translator,
                 $this->url,
                 $this->config->appName,

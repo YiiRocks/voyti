@@ -177,7 +177,6 @@ final class VoytiMiddlewareTest extends TestCase
     public function testProcessWithRealMiddlewaresAllFeaturesDisabled(): void
     {
         $config = ModuleConfigFactory::create(
-            enablePasswordExpiration: false,
             enableTwoFactorAuthentication: false,
         );
 
@@ -199,7 +198,6 @@ final class VoytiMiddlewareTest extends TestCase
         // second time by VoytiMiddleware - otherwise the second pass would try to decrypt an
         // already-decrypted cookie and fail. See VoytiMiddleware's class docblock.
         $config = ModuleConfigFactory::create(
-            enablePasswordExpiration: false,
             enableTwoFactorAuthentication: false,
         );
 

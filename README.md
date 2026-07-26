@@ -6,9 +6,9 @@
 >
 > "to enter" or "to log in"
 
-Highly customizable and extensible user management, authentication, and authorization extension for Yii3.
+Highly customizable and extensible user management, authentication, and authorization extension for [Yii Framework 3](https://www.yiiframework.com/).
 
-Ported from [2amigos/yii2-usuario](https://github.com/2amigos/yii2-usuario) and rebuilt for Yii3 with PSR-15 middleware, PSR-11 DI, ActiveRecord models, FormModel forms, and RBAC.
+Originally ported from [Usuario](https://github.com/2amigos/yii2-usuario), Voyti has since been rebuilt around modern PSR standards and Yiisoft components. It has been extensively redesigned to provide a flexible, modular foundation that adapts to a wide range of authentication and authorization requirements.
 
 [![Packagist Version](https://img.shields.io/packagist/v/yiirocks/voyti.svg)](https://packagist.org/packages/yiirocks/voyti)
 [![PHP from Packagist](https://img.shields.io/packagist/php-v/yiirocks/voyti.svg)](https://php.net/)
@@ -59,7 +59,7 @@ composer require yiirocks/voyti
 ## Documentation
 
 Installation steps, the full configuration reference, routes, middleware, social auth setup, RBAC, console
-commands, and events are all covered at [Yii.rocks](https://www.yii.rocks/voyti/).
+commands, and events are all covered at [Yii.Rocks](https://www.yii.rocks/voyti/).
 
 ## Testing
 

@@ -12,6 +12,9 @@ use YiiRocks\Voyti\Adapter\IdentityAdapter;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use YiiRocks\Voyti\AuthClient\AuthClientRegistryFactory;
 use YiiRocks\Voyti\Clock\SystemClock;
+use YiiRocks\Voyti\Enum\EmailChangeConfirmation;
+use YiiRocks\Voyti\Enum\ProfileVisibility;
+use YiiRocks\Voyti\Enum\RecaptchaVersion;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Http\ClientInterface;
@@ -76,6 +79,7 @@ use Yiisoft\Translator\Message\Php\MessageSource;
 use Yiisoft\Translator\SimpleMessageFormatter;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
+use Yiisoft\View\View;
 
 /** @var array $params */
 
@@ -97,7 +101,40 @@ $cookieSecretKey = static function () use ($params): string {
 
 return [
     // Module configuration, built once from the host's `yiirocks/voyti` params array.
-    ModuleConfig::class => static fn() => new ModuleConfig(...($params['yiirocks/voyti'] ?? [])),
+    ModuleConfig::class => static fn() => new ModuleConfig(
+        appName: $params['yiirocks/voyti']['appName'] ?? 'Voyti',
+        recaptchaVersion: $params['yiirocks/voyti']['recaptchaVersion'] ?? RecaptchaVersion::V3,
+        enableGdprCompliance: $params['yiirocks/voyti']['enableGdprCompliance'] ?? false,
+        gdprExportProperties: $params['yiirocks/voyti']['gdprExportProperties'] ?? [],
+        gdprAnonymizePrefix: $params['yiirocks/voyti']['gdprAnonymizePrefix'] ?? 'GDPR',
+        enableTwoFactorAuthentication: $params['yiirocks/voyti']['enableTwoFactorAuthentication'] ?? false,
+        twoFactorAuthenticationForcedPermissions: $params['yiirocks/voyti']['twoFactorAuthenticationForcedPermissions'] ?? [],
+        enableRegistration: $params['yiirocks/voyti']['enableRegistration'] ?? true,
+        enableSocialNetworkRegistration: $params['yiirocks/voyti']['enableSocialNetworkRegistration'] ?? true,
+        socialNetworkClients: $params['yiirocks/voyti']['socialNetworkClients'] ?? [],
+        enableEmailConfirmation: $params['yiirocks/voyti']['enableEmailConfirmation'] ?? true,
+        enableSwitchIdentities: $params['yiirocks/voyti']['enableSwitchIdentities'] ?? true,
+        homeRoute: $params['yiirocks/voyti']['homeRoute'] ?? 'home',
+        mailAdminOnRegister: $params['yiirocks/voyti']['mailAdminOnRegister'] ?? null,
+        enablePasswordComplexity: $params['yiirocks/voyti']['enablePasswordComplexity'] ?? false,
+        passwordHistoryLimit: $params['yiirocks/voyti']['passwordHistoryLimit'] ?? 10,
+        allowPasswordRecovery: $params['yiirocks/voyti']['allowPasswordRecovery'] ?? true,
+        allowAdminPasswordRecovery: $params['yiirocks/voyti']['allowAdminPasswordRecovery'] ?? false,
+        allowAccountDelete: $params['yiirocks/voyti']['allowAccountDelete'] ?? false,
+        emailChangeConfirmation: $params['yiirocks/voyti']['emailChangeConfirmation'] ?? EmailChangeConfirmation::NEW,
+        rememberLoginLifespan: $params['yiirocks/voyti']['rememberLoginLifespan'] ?? 2592000,
+        tokenConfirmationLifespan: $params['yiirocks/voyti']['tokenConfirmationLifespan'] ?? 86400,
+        tokenRecoveryLifespan: $params['yiirocks/voyti']['tokenRecoveryLifespan'] ?? 21600,
+        administratorPermissionName: $params['yiirocks/voyti']['administratorPermissionName'] ?? 'voyti-admin',
+        profileVisibility: $params['yiirocks/voyti']['profileVisibility'] ?? ProfileVisibility::USERS,
+        maxPasswordAge: $params['yiirocks/voyti']['maxPasswordAge'] ?? 0,
+        viewPath: $params['yiirocks/voyti']['viewPath'] ?? ModuleConfig::DEFAULT_VIEW_PATH,
+        mailPath: $params['yiirocks/voyti']['mailPath'] ?? ModuleConfig::DEFAULT_MAIL_PATH,
+        enableRestApi: $params['yiirocks/voyti']['enableRestApi'] ?? false,
+        adminRestPrefix: $params['yiirocks/voyti']['adminRestPrefix'] ?? 'api',
+        apiTokenLifespan: $params['yiirocks/voyti']['apiTokenLifespan'] ?? null,
+        enableAuditLog: $params['yiirocks/voyti']['enableAuditLog'] ?? true,
+    ),
 
     // Default now() source; hosts with their own PSR-20 clock package can override this binding.
     ClockInterface::class => SystemClock::class,
@@ -185,7 +222,8 @@ return [
         ModuleConfig $config,
         TranslatorInterface $translator,
         UrlGeneratorInterface $url,
-    ) => new MailService($mailer, $config->mailPath, $translator, $url, $config->appName),
+        View $view,
+    ) => new MailService($mailer, $config->mailPath, $view, $translator, $url, $config->appName),
     UserTokenFactory::class => UserTokenFactory::class,
     UserCreationHelper::class => UserCreationHelper::class,
     CreateService::class => CreateService::class,

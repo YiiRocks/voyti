@@ -20,8 +20,8 @@ final readonly class UserRow
      * @param bool $showConfirmAction whether to render the "confirm" action ($confirmUrl) - false
      *        once the user is already confirmed
      * @param bool $showForcePasswordChangeAction whether the force-password-change feature is
-     *        enabled at all (`ModuleConfig::$enablePasswordExpiration`); unrelated to this user's
-     *        own state
+     *        enabled at all (`ModuleConfig::$maxPasswordAge` > 0); unrelated to this user's own
+     *        state
      * @param bool $showSwitchIdentityAction whether switch-identity is enabled and the viewing
      *        admin isn't already impersonating someone
      * @param bool $switchIdentityDisabled true when $showSwitchIdentityAction is true but this
@@ -85,7 +85,7 @@ final readonly class UserRow
             statusLabel: $statusLabel,
             statusBadgeClass: $statusBadgeClass,
             showConfirmAction: !$user->isConfirmed(),
-            showForcePasswordChangeAction: $config->enablePasswordExpiration,
+            showForcePasswordChangeAction: $config->maxPasswordAge > 0,
             showSwitchIdentityAction: $config->enableSwitchIdentities && !$isSwitched,
             switchIdentityDisabled: $user->isSwitchDisabledFor($currentUserId),
             showUrl: $url->generate('voyti/admin-users-show', ['id' => $id]),

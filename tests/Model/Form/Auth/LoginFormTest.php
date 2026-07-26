@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Model\Form\Auth;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use YiiRocks\Recaptcha\RecaptchaRegistry;
 use YiiRocks\Recaptcha\RecaptchaV3Rule;
 use YiiRocks\Voyti\Enum\RecaptchaVersion;
 use YiiRocks\Voyti\Model\Form\Auth\LoginForm;
 use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
+use YiiRocks\Voyti\tests\Support\RecaptchaRegistryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Validator\Rule\Required;
 use Yiisoft\Validator\Validator;
@@ -16,6 +18,13 @@ use Yiisoft\Validator\Validator;
 #[AllowMockObjectsWithoutExpectations]
 final class LoginFormTest extends TestCase
 {
+    use RecaptchaRegistryTrait;
+
+    protected function tearDown(): void
+    {
+        RecaptchaRegistry::reset();
+    }
+
     public function testConstruct(): void
     {
         $config = ModuleConfigFactory::create();
@@ -56,6 +65,7 @@ final class LoginFormTest extends TestCase
 
     public function testGetRulesWithRecaptchaV2(): void
     {
+        $this->configureRecaptchaRegistry();
         $config = ModuleConfigFactory::create(recaptchaVersion: RecaptchaVersion::V2);
         $form = new LoginForm($config, $this->createTranslator());
         $rules = $form->getRules();
@@ -65,6 +75,7 @@ final class LoginFormTest extends TestCase
 
     public function testGetRulesWithRecaptchaV3(): void
     {
+        $this->configureRecaptchaRegistry();
         $config = ModuleConfigFactory::create(recaptchaVersion: RecaptchaVersion::V3);
         $form = new LoginForm($config, $this->createTranslator());
         $rules = $form->getRules();

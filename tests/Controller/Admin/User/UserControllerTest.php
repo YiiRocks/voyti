@@ -767,7 +767,7 @@ final class UserControllerTest extends TestCase
 
     public function testUpdatePostWithPreviouslyUsedPasswordShowsError(): void
     {
-        $this->config = ModuleConfigFactory::create(enablePasswordExpiration: true);
+        $this->config = ModuleConfigFactory::create(maxPasswordAge: 90);
         $this->harness = new ControllerHarness($this->config);
 
         $user = new User();

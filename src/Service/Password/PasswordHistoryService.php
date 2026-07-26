@@ -11,7 +11,7 @@ use Yiisoft\Security\PasswordHasher;
 
 /**
  * Reuse prevention only matters if passwords are ever forced to change, so this piggybacks on
- * enablePasswordExpiration rather than exposing a separate toggle - there is no config to
+ * `ModuleConfig::$maxPasswordAge` rather than exposing a separate toggle - there is no config to
  * "disallow reusing your password" without also enforcing periodic changes.
  */
 final readonly class PasswordHistoryService
@@ -36,7 +36,7 @@ final readonly class PasswordHistoryService
      */
     public function record(User $user): void
     {
-        if (!$this->config->enablePasswordExpiration) {
+        if ($this->config->maxPasswordAge <= 0) {
             return;
         }
 
@@ -53,7 +53,7 @@ final readonly class PasswordHistoryService
 
     public function wasUsedRecently(User $user, string $plainPassword): bool
     {
-        if (!$this->config->enablePasswordExpiration) {
+        if ($this->config->maxPasswordAge <= 0) {
             return false;
         }
 

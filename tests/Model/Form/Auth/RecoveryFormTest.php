@@ -7,9 +7,11 @@ namespace YiiRocks\Voyti\tests\Model\Form\Auth;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use YiiRocks\Recaptcha\RecaptchaRegistry;
 use YiiRocks\Voyti\Enum\RecaptchaVersion;
 use YiiRocks\Voyti\Model\Form\Auth\RecoveryForm;
 use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
+use YiiRocks\Voyti\tests\Support\RecaptchaRegistryTrait;
 use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
 use Yiisoft\Validator\Rule\CompareType;
 use Yiisoft\Validator\Rule\Email;
@@ -21,7 +23,13 @@ use Yiisoft\Validator\Rule\Required;
 #[AllowMockObjectsWithoutExpectations]
 final class RecoveryFormTest extends TestCase
 {
+    use RecaptchaRegistryTrait;
     use TranslatorMockTrait;
+
+    protected function tearDown(): void
+    {
+        RecaptchaRegistry::reset();
+    }
 
     /**
      * @return iterable<string, array{string}>
@@ -123,6 +131,7 @@ final class RecoveryFormTest extends TestCase
 
     public function testGetRulesWithRecaptchaV2OnRequest(): void
     {
+        $this->configureRecaptchaRegistry();
         $config = ModuleConfigFactory::create(recaptchaVersion: RecaptchaVersion::V2);
         $form = new RecoveryForm($config, $this->createTranslator(), RecoveryForm::SCENARIO_REQUEST);
         $rules = $form->getRules();
@@ -131,6 +140,7 @@ final class RecoveryFormTest extends TestCase
 
     public function testGetRulesWithRecaptchaV3OnRequest(): void
     {
+        $this->configureRecaptchaRegistry();
         $config = ModuleConfigFactory::create(recaptchaVersion: RecaptchaVersion::V3);
         $form = new RecoveryForm($config, $this->createTranslator(), RecoveryForm::SCENARIO_REQUEST);
         $rules = $form->getRules();

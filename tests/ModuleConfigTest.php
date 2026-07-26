@@ -29,7 +29,6 @@ final class ModuleConfigTest extends TestCase
             enableSwitchIdentities: false,
             homeRoute: 'custom/home',
             mailAdminOnRegister: 'admin@example.com',
-            enablePasswordExpiration: true,
             enablePasswordComplexity: true,
             passwordHistoryLimit: 5,
             allowPasswordRecovery: false,
@@ -64,7 +63,6 @@ final class ModuleConfigTest extends TestCase
         self::assertFalse($config->enableSwitchIdentities);
         self::assertSame('custom/home', $config->homeRoute);
         self::assertSame('admin@example.com', $config->mailAdminOnRegister);
-        self::assertTrue($config->enablePasswordExpiration);
         self::assertTrue($config->enablePasswordComplexity);
         self::assertSame(5, $config->passwordHistoryLimit);
         self::assertFalse($config->allowPasswordRecovery);

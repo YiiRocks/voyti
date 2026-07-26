@@ -17,17 +17,9 @@ final readonly class ExpireService
         private ModuleConfig $config,
     ) {}
 
-    public function checkPasswordExpiration(User $user): bool
-    {
-        if (!$this->config->enablePasswordExpiration) {
-            return false;
-        }
-        return $this->isExpired($user);
-    }
-
     public function isExpired(User $user): bool
     {
-        if ($this->config->maxPasswordAge === null) {
+        if ($this->config->maxPasswordAge <= 0) {
             return false;
         }
         return $user->getPasswordAge() >= $this->config->maxPasswordAge;

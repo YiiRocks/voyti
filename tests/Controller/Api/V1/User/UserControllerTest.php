@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace YiiRocks\Voyti\tests\Controller\api\v1\User;
+namespace YiiRocks\Voyti\tests\Controller\Api\V1\User;
 
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
@@ -10,7 +10,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use YiiRocks\Voyti\Controller\api\v1\User\UserController;
+use YiiRocks\Voyti\Controller\Api\V1\User\UserController;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserPasswordHistory;
 use YiiRocks\Voyti\ModuleConfig;
@@ -31,6 +31,7 @@ use Yiisoft\DataResponse\ResponseFactory\DataResponseFactory;
 use Yiisoft\DataResponse\ResponseFactory\DataResponseFactoryInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\View\View;
 
 #[AllowMockObjectsWithoutExpectations]
 final class UserControllerTest extends TestCase
@@ -53,7 +54,7 @@ final class UserControllerTest extends TestCase
         $passwordHistoryService = new PasswordHistoryService($passwordHasher, $this->config);
         $mailer = new MailCapture();
         $url = $this->createMock(UrlGeneratorInterface::class);
-        $mailService = new MailService($mailer, '/tmp', $this->translator, $url, 'Test');
+        $mailService = new MailService($mailer, '/tmp', new View(), $this->translator, $url, 'Test');
         $this->userCreationHelper = new UserCreationHelper(
             $mailService,
             new EventCaptureDispatcher(),
@@ -92,7 +93,7 @@ final class UserControllerTest extends TestCase
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->method('createResponse')->willReturn($response);
 
-        $config = ModuleConfigFactory::create(enablePasswordExpiration: true);
+        $config = ModuleConfigFactory::create(maxPasswordAge: 90);
         $controller = $this->createController($config);
         $controller->create(email: 'history@example.com', username: 'historyuser', password: 'secret123');
 
@@ -298,7 +299,7 @@ final class UserControllerTest extends TestCase
 
     public function testUpdateWithoutPasswordDoesNotRecordPasswordHistory(): void
     {
-        $config = ModuleConfigFactory::create(enablePasswordExpiration: true);
+        $config = ModuleConfigFactory::create(maxPasswordAge: 90);
         $user = $this->createUser('testuser', 'test@example.com');
         $userId = (int) $user->getId();
 
@@ -341,7 +342,7 @@ final class UserControllerTest extends TestCase
 
     public function testUpdateWithPasswordRecordsPasswordHistory(): void
     {
-        $config = ModuleConfigFactory::create(enablePasswordExpiration: true);
+        $config = ModuleConfigFactory::create(maxPasswordAge: 90);
         $user = $this->createUser('testuser', 'test@example.com');
         $userId = (int) $user->getId();
 
@@ -356,7 +357,7 @@ final class UserControllerTest extends TestCase
 
     public function testUpdateWithPreviouslyUsedPasswordReturnsBadRequest(): void
     {
-        $config = ModuleConfigFactory::create(enablePasswordExpiration: true);
+        $config = ModuleConfigFactory::create(maxPasswordAge: 90);
         $user = $this->createUser('testuser', 'test@example.com');
         $userId = (int) $user->getId();
         $passwordHasher = TestPasswordHasherFactory::create();

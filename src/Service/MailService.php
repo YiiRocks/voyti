@@ -6,10 +6,12 @@ namespace YiiRocks\Voyti\Service;
 
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
+use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Mailer\MailerInterface;
 use Yiisoft\Mailer\Message;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\View\View;
 
 /**
  * Sends the module's transactional emails (confirmation, recovery, welcome, two-factor code, etc.)
@@ -22,6 +24,7 @@ final readonly class MailService
     public function __construct(
         private MailerInterface $mailer,
         private string $mailPath,
+        private View $view,
         TranslatorInterface $translator,
         private UrlGeneratorInterface $url,
         private string $appName = 'Voyti',
@@ -39,15 +42,9 @@ final readonly class MailService
             subject: $subject,
         );
 
-        $htmlBody = $this->renderView("html/{$view}.php", $params);
-        $textBody = $this->renderView("text/{$view}.php", $params);
-
-        if ($htmlBody !== null) {
-            $message = $message->withHtmlBody($htmlBody);
-        }
-        if ($textBody !== null) {
-            $message = $message->withTextBody($textBody);
-        }
+        $message = $message
+            ->withHtmlBody($this->renderView("html/{$view}.php", $params))
+            ->withTextBody($this->renderView("text/{$view}.php", $params));
 
         $this->mailer->send($message);
         return true;
@@ -160,20 +157,11 @@ final readonly class MailService
         );
     }
 
-    /**
-     * @return null|string
-     */
-    private function renderView(string $view, array $params): ?string
+    private function renderView(string $view, array $params): string
     {
         $file = $this->mailPath . '/' . $view;
-        if (!file_exists($file)) {
-            return null;
-        }
-        extract($params, EXTR_OVERWRITE);
-        ob_start();
-        require $file;
-        $content = ob_get_contents();
-        ob_end_clean();
-        return $content !== false ? $content : '';
+        $basePath = is_file($file) ? $this->mailPath : ModuleConfig::DEFAULT_MAIL_PATH;
+
+        return $this->view->withBasePath($basePath)->render($view, $params);
     }
 }

@@ -29,7 +29,7 @@ final class PasswordHistoryServiceTest extends TestCase
 
     public function testRecordDoesNothingWhenDisabled(): void
     {
-        $config = ModuleConfigFactory::create(enablePasswordExpiration: false);
+        $config = ModuleConfigFactory::create();
         $passwordHasher = TestPasswordHasherFactory::create();
         $user = $this->createUser(
             username: 'historyuser',
@@ -45,7 +45,7 @@ final class PasswordHistoryServiceTest extends TestCase
 
     public function testRecordPrunesBeyondLimit(): void
     {
-        $config = ModuleConfigFactory::create(enablePasswordExpiration: true, passwordHistoryLimit: 2);
+        $config = ModuleConfigFactory::create(maxPasswordAge: 90, passwordHistoryLimit: 2);
         $passwordHasher = TestPasswordHasherFactory::create();
         $user = $this->createUser(
             username: 'historyuser',
@@ -69,7 +69,7 @@ final class PasswordHistoryServiceTest extends TestCase
 
     public function testRecordStoresCurrentHash(): void
     {
-        $config = ModuleConfigFactory::create(enablePasswordExpiration: true);
+        $config = ModuleConfigFactory::create(maxPasswordAge: 90);
         $passwordHasher = TestPasswordHasherFactory::create();
         $user = $this->createUser(
             username: 'historyuser',
@@ -89,7 +89,7 @@ final class PasswordHistoryServiceTest extends TestCase
 
     public function testWasUsedRecentlyChecksHistoryEntries(): void
     {
-        $config = ModuleConfigFactory::create(enablePasswordExpiration: true);
+        $config = ModuleConfigFactory::create(maxPasswordAge: 90);
         $passwordHasher = TestPasswordHasherFactory::create();
         $user = $this->createUser(
             username: 'historyuser',
@@ -110,7 +110,7 @@ final class PasswordHistoryServiceTest extends TestCase
 
     public function testWasUsedRecentlyIsFalseWhenDisabled(): void
     {
-        $config = ModuleConfigFactory::create(enablePasswordExpiration: false);
+        $config = ModuleConfigFactory::create();
         $passwordHasher = TestPasswordHasherFactory::create();
         $user = $this->createUser(
             username: 'historyuser',
@@ -124,7 +124,7 @@ final class PasswordHistoryServiceTest extends TestCase
 
     public function testWasUsedRecentlyMatchesCurrentHash(): void
     {
-        $config = ModuleConfigFactory::create(enablePasswordExpiration: true);
+        $config = ModuleConfigFactory::create(maxPasswordAge: 90);
         $passwordHasher = TestPasswordHasherFactory::create();
         $user = $this->createUser(
             username: 'historyuser',

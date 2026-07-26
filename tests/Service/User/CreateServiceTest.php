@@ -20,6 +20,7 @@ use YiiRocks\Voyti\tests\Support\MailCapture;
 use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\TestCase;
+use Yiisoft\View\View;
 
 #[AllowMockObjectsWithoutExpectations]
 final class CreateServiceTest extends TestCase
@@ -155,6 +156,7 @@ final class CreateServiceTest extends TestCase
         return new MailService(
             $mailCapture,
             '',
+            new View(),
             $this->createTranslator(),
             new FakeUrlGenerator(),
         );

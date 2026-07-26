@@ -56,7 +56,7 @@ final readonly class PasswordAgeEnforceMiddleware implements MiddlewareInterface
             return $handler->handle($request);
         }
 
-        if ($this->passwordExpireService->checkPasswordExpiration($user)) {
+        if ($this->passwordExpireService->isExpired($user)) {
             $response = $this->responseFactory->createResponse(Status::FOUND);
             return $response->withHeader(Header::LOCATION, $this->url->generate(self::ACCOUNT_SETTINGS_ROUTE));
         }

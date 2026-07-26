@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service;
 
-use YiiRocks\Voyti\Enum\ServiceResultStatus;
-
 /**
  * Immutable success/failure outcome returned by service `run()` methods, carrying an optional
  * message and validation errors.
@@ -13,7 +11,7 @@ use YiiRocks\Voyti\Enum\ServiceResultStatus;
 final readonly class ServiceResult
 {
     public function __construct(
-        private ServiceResultStatus $status,
+        private string $status,
         private string $message = '',
         private array $errors = [],
     ) {}

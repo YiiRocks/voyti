@@ -100,7 +100,7 @@ final class PasswordCommandTest extends TestCase
 
         $output = $this->createMock(OutputInterface::class);
 
-        $config = ModuleConfigFactory::create(enablePasswordExpiration: true);
+        $config = ModuleConfigFactory::create(maxPasswordAge: 90);
         $command = $this->createCommand(config: $config);
         $result = $command->run($input, $output);
 

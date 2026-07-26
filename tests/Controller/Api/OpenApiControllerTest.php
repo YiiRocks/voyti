@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace YiiRocks\Voyti\tests\Controller\api;
+namespace YiiRocks\Voyti\tests\Controller\Api;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseInterface;
-use YiiRocks\Voyti\Controller\api\OpenApiController;
+use YiiRocks\Voyti\Controller\Api\OpenApiController;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;

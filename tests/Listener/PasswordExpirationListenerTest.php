@@ -10,7 +10,6 @@ use YiiRocks\Voyti\Helper\FlashType;
 use YiiRocks\Voyti\Listener\PasswordExpirationListener;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\Password\ExpireService;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Session\Flash\FlashInterface;
 
@@ -19,36 +18,15 @@ final class PasswordExpirationListenerTest extends TestCase
 {
     public function testOnAfterLoginDoesNotFlashWhenPasswordNotExpired(): void
     {
-        $config = ModuleConfigFactory::create(enablePasswordExpiration: true);
-
         $expireService = $this->createMock(ExpireService::class);
-        $expireService->expects(self::once())->method('checkPasswordExpiration')->willReturn(false);
+        $expireService->expects(self::once())->method('isExpired')->willReturn(false);
 
         $flash = $this->createMock(FlashInterface::class);
         $flash->expects(self::never())->method('set');
 
         $translator = $this->createTranslator();
 
-        $listener = new PasswordExpirationListener($expireService, $config, $translator, $flash);
-        $user = new User();
-        $event = new AfterLoginEvent($user);
-
-        $listener->onAfterLogin($event);
-    }
-
-    public function testOnAfterLoginDoesNothingWhenDisabled(): void
-    {
-        $config = ModuleConfigFactory::create(enablePasswordExpiration: false);
-
-        $expireService = $this->createMock(ExpireService::class);
-        $expireService->expects(self::never())->method('checkPasswordExpiration');
-
-        $flash = $this->createMock(FlashInterface::class);
-        $flash->expects(self::never())->method('set');
-
-        $translator = $this->createTranslator();
-
-        $listener = new PasswordExpirationListener($expireService, $config, $translator, $flash);
+        $listener = new PasswordExpirationListener($expireService, $translator, $flash);
         $user = new User();
         $event = new AfterLoginEvent($user);
 
@@ -57,10 +35,8 @@ final class PasswordExpirationListenerTest extends TestCase
 
     public function testOnAfterLoginFlashesWarningWhenPasswordExpired(): void
     {
-        $config = ModuleConfigFactory::create(enablePasswordExpiration: true);
-
         $expireService = $this->createMock(ExpireService::class);
-        $expireService->expects(self::once())->method('checkPasswordExpiration')->with(
+        $expireService->expects(self::once())->method('isExpired')->with(
             self::isInstanceOf(User::class),
         )->willReturn(true);
 
@@ -72,22 +48,21 @@ final class PasswordExpirationListenerTest extends TestCase
             'Your password has expired. Please set a new one.',
         );
 
-        $listener = new PasswordExpirationListener($expireService, $config, $translator, $flash);
+        $listener = new PasswordExpirationListener($expireService, $translator, $flash);
         $user = new User();
         $event = new AfterLoginEvent($user);
 
         $listener->onAfterLogin($event);
     }
+
     public function testOnAfterLoginWorksWithoutFlashService(): void
     {
-        $config = ModuleConfigFactory::create(enablePasswordExpiration: true);
-
         $expireService = $this->createMock(ExpireService::class);
-        $expireService->expects(self::once())->method('checkPasswordExpiration')->willReturn(true);
+        $expireService->expects(self::once())->method('isExpired')->willReturn(true);
 
         $translator = $this->createTranslator();
 
-        $listener = new PasswordExpirationListener($expireService, $config, $translator);
+        $listener = new PasswordExpirationListener($expireService, $translator);
         $user = new User();
         $event = new AfterLoginEvent($user);
 

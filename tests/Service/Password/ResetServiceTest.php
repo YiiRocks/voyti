@@ -51,7 +51,7 @@ final class ResetServiceTest extends TestCase
 
     public function testRunRecordsPasswordHistoryWhenEnabled(): void
     {
-        $config = ModuleConfigFactory::create(enablePasswordExpiration: true);
+        $config = ModuleConfigFactory::create(maxPasswordAge: 90);
         $user = $this->createUser(username: 'historyuser', email: 'history@example.com', passwordHash: 'oldhash');
 
         $this->createService(config: $config)->run('newpassword', $user, null);
@@ -65,7 +65,7 @@ final class ResetServiceTest extends TestCase
 
     public function testRunRejectsRecentlyUsedPassword(): void
     {
-        $config = ModuleConfigFactory::create(enablePasswordExpiration: true);
+        $config = ModuleConfigFactory::create(maxPasswordAge: 90);
         $user = $this->createUser(username: 'reuseuser', email: 'reuse@example.com', passwordHash: 'oldhash');
 
         $this->createService(config: $config)->run('newpassword', $user, null);
