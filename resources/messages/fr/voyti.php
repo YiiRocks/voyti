@@ -11,6 +11,7 @@ return [
     'voyti.security.password_expired' => 'Votre mot de passe a expiré. Veuillez en définir un nouveau.',
     'voyti.security.two_factor_required' => "L'authentification à deux facteurs est obligatoire pour votre compte. Veuillez l'activer pour continuer.",
     'voyti.security.authenticated' => 'Authentifié',
+    'voyti.security.social_auth_cancelled' => 'La connexion sociale a été annulée.',
 
     // RegistrationController
     'voyti.registration.disabled' => "L'inscription est désactivée",

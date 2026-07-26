@@ -24,7 +24,6 @@ final class ModuleConfigTest extends TestCase
             twoFactorAuthenticationForcedPermissions: ['admin'],
             enableRegistration: false,
             enableSocialNetworkRegistration: false,
-            socialNetworkClients: ['github' => ['enabled' => true]],
             enableEmailConfirmation: false,
             enableSwitchIdentities: false,
             homeRoute: 'custom/home',
@@ -58,7 +57,6 @@ final class ModuleConfigTest extends TestCase
         self::assertSame(['admin'], $config->twoFactorAuthenticationForcedPermissions);
         self::assertFalse($config->enableRegistration);
         self::assertFalse($config->enableSocialNetworkRegistration);
-        self::assertSame(['github' => ['enabled' => true]], $config->socialNetworkClients);
         self::assertFalse($config->enableEmailConfirmation);
         self::assertFalse($config->enableSwitchIdentities);
         self::assertSame('custom/home', $config->homeRoute);

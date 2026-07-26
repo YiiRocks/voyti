@@ -36,6 +36,8 @@ use Yiisoft\Rbac\Manager;
 use Yiisoft\Rbac\ManagerInterface;
 use Yiisoft\Router\CurrentRoute;
 use Yiisoft\Router\UrlGeneratorInterface;
+use Yiisoft\Session\Flash\Flash;
+use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\Translator\CategorySource;
 use Yiisoft\Translator\Message\Php\MessageSource;
@@ -64,7 +66,20 @@ final class ContainerWiringTest extends TestCase
         $hydratorDiPath = InstalledVersions::getInstallPath('yiisoft/hydrator') . '/config/di.php';
         $definitions = array_merge(require $hydratorDiPath, $definitions);
 
+        // Voyti binds no Collection/StateStorageInterface of its own - those come from
+        // yii-auth-client's own config/di.php, which yiisoft/config auto-merges in for any host
+        // that installs the (optional) package. Replicate that merge here so AuthAction's
+        // dependency chain resolves the same way it would in a real application.
+        $authClientInstallPath = InstalledVersions::getInstallPath('yiisoft/yii-auth-client');
+        $authClientParams = require $authClientInstallPath . '/config/params.php';
+        $authClientDiPath = $authClientInstallPath . '/config/di.php';
+        $authClientDefinitions = (static function (array $params) use ($authClientDiPath): array {
+            return require $authClientDiPath;
+        })($authClientParams);
+        $definitions = array_merge($authClientDefinitions, $definitions);
+
         $psr17Factory = new Psr17Factory();
+        $session = new FakeSession();
 
         $definitions = array_merge($definitions, [
             AssignmentsStorageInterface::class => new SimpleAssignmentsStorage(),
@@ -72,6 +87,7 @@ final class ContainerWiringTest extends TestCase
             CookieSigner::class => new CookieSigner('test-secret-key-0123456789abcdef'),
             CurrentRoute::class => new CurrentRoute(),
             EventDispatcherInterface::class => new EventCaptureDispatcher(),
+            FlashInterface::class => new Flash($session),
             ItemsStorageInterface::class => new SimpleItemsStorage(),
             LoggerInterface::class => new NullLogger(),
             MailerInterface::class => new MailCapture(),
@@ -79,7 +95,7 @@ final class ContainerWiringTest extends TestCase
             PsrClientInterface::class => $this->createMock(PsrClientInterface::class),
             RequestFactoryInterface::class => $psr17Factory,
             ResponseFactoryInterface::class => $psr17Factory,
-            SessionInterface::class => new FakeSession(),
+            SessionInterface::class => $session,
             StreamFactoryInterface::class => $psr17Factory,
             TranslatorInterface::class => $this->createTranslator(),
             UrlGeneratorInterface::class => new FakeUrlGenerator(),

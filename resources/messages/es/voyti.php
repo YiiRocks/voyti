@@ -11,6 +11,7 @@ return [
     'voyti.security.password_expired' => 'Su contraseña ha caducado. Por favor, establezca una nueva.',
     'voyti.security.two_factor_required' => 'La autenticación de dos factores es obligatoria para su cuenta. Por favor, actívela para continuar.',
     'voyti.security.authenticated' => 'Autenticado',
+    'voyti.security.social_auth_cancelled' => 'El inicio de sesión social fue cancelado.',
 
     // RegistrationController
     'voyti.registration.disabled' => 'El registro está deshabilitado',

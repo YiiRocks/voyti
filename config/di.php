@@ -4,21 +4,15 @@ declare(strict_types=1);
 
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
-use Psr\Http\Client\ClientInterface as PsrClientInterface;
-use Psr\Http\Message\RequestFactoryInterface;
-use Psr\Http\Message\StreamFactoryInterface;
+use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Log\LoggerInterface;
 use YiiRocks\Voyti\Adapter\IdentityAdapter;
-use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
-use YiiRocks\Voyti\AuthClient\AuthClientRegistryFactory;
 use YiiRocks\Voyti\Clock\SystemClock;
 use YiiRocks\Voyti\Enum\EmailChangeConfirmation;
 use YiiRocks\Voyti\Enum\ProfileVisibility;
 use YiiRocks\Voyti\Enum\RecaptchaVersion;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Helper\AuthHelper;
-use YiiRocks\Voyti\Http\ClientInterface;
-use YiiRocks\Voyti\Http\Psr18Client;
 use YiiRocks\Voyti\Listener;
 use YiiRocks\Voyti\Middleware\PasswordAgeEnforceMiddleware;
 use YiiRocks\Voyti\Middleware\RememberMeMiddleware;
@@ -29,7 +23,9 @@ use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Admin\DashboardService;
 use YiiRocks\Voyti\Service\AuditLogService;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
-use YiiRocks\Voyti\Service\Auth\SocialAuthProviderService;
+use YiiRocks\Voyti\Service\Auth\SocialAuthCallbackService;
+use YiiRocks\Voyti\Service\Auth\SocialAuthClientReturnUrlConfigurator;
+use YiiRocks\Voyti\Service\Auth\SocialUserAttributesNormalizer;
 use YiiRocks\Voyti\Service\Auth\UserSocialAuthenticateService;
 use YiiRocks\Voyti\Service\EmailChangeService;
 use YiiRocks\Voyti\Service\MailService;
@@ -56,6 +52,7 @@ use YiiRocks\Voyti\Service\UserSession\TerminateUserSessionsService;
 use YiiRocks\Voyti\Service\UserSession\UserSessionDecorator;
 use YiiRocks\Voyti\Validator\Rbac\ItemsValidator;
 use YiiRocks\Voyti\Validator\Rbac\RuleValidator;
+use Yiisoft\Aliases\Aliases;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Auth\IdentityWithTokenRepositoryInterface;
 use Yiisoft\Cookies\CookieEncryptor;
@@ -71,6 +68,7 @@ use Yiisoft\Rbac\Db\AssignmentsStorage;
 use Yiisoft\Rbac\Db\ItemsStorage;
 use Yiisoft\Rbac\ItemsStorageInterface;
 use Yiisoft\Rbac\ManagerInterface;
+use Yiisoft\Router\CurrentRoute;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Session\SessionInterface;
@@ -80,6 +78,9 @@ use Yiisoft\Translator\SimpleMessageFormatter;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\View\View;
+use Yiisoft\View\WebView;
+use Yiisoft\Yii\AuthClient\AuthAction;
+use Yiisoft\Yii\AuthClient\Collection;
 
 /** @var array $params */
 
@@ -111,7 +112,6 @@ return [
         twoFactorAuthenticationForcedPermissions: $params['yiirocks/voyti']['twoFactorAuthenticationForcedPermissions'] ?? [],
         enableRegistration: $params['yiirocks/voyti']['enableRegistration'] ?? true,
         enableSocialNetworkRegistration: $params['yiirocks/voyti']['enableSocialNetworkRegistration'] ?? true,
-        socialNetworkClients: $params['yiirocks/voyti']['socialNetworkClients'] ?? [],
         enableEmailConfirmation: $params['yiirocks/voyti']['enableEmailConfirmation'] ?? true,
         enableSwitchIdentities: $params['yiirocks/voyti']['enableSwitchIdentities'] ?? true,
         homeRoute: $params['yiirocks/voyti']['homeRoute'] ?? 'home',
@@ -278,16 +278,29 @@ return [
         new PasswordHasher(PASSWORD_BCRYPT, ['cost' => 6]),
     ),
 
-    // Social auth: OAuth client registry and account linking/authentication.
-    ClientInterface::class => static fn(
-        PsrClientInterface $httpClient,
-        RequestFactoryInterface $requestFactory,
-        StreamFactoryInterface $streamFactory,
-    ) => new Psr18Client($httpClient, $requestFactory, $streamFactory),
-    AuthClientRegistryFactory::class => AuthClientRegistryFactory::class,
-    AuthClientRegistry::class => fn(AuthClientRegistryFactory $factory) => $factory->create(),
+    ...(class_exists(Collection::class) ? [
+        AuthAction::class => static fn(
+            Collection $clientCollection,
+            Aliases $aliases,
+            WebView $view,
+            ResponseFactoryInterface $responseFactory,
+            CurrentRoute $currentRoute,
+            SocialAuthClientReturnUrlConfigurator $returnUrlConfigurator,
+            SocialAuthCallbackService $callback,
+        ) => (new AuthAction(
+            $returnUrlConfigurator->configure($clientCollection),
+            $aliases,
+            $view,
+            $responseFactory,
+            $currentRoute,
+        ))
+            ->withSuccessCallback($callback->handleSuccess(...))
+            ->withCancelCallback($callback->handleCancel(...)),
+    ] : []),
+
+    SocialUserAttributesNormalizer::class => SocialUserAttributesNormalizer::class,
     PendingSocialAccountService::class => PendingSocialAccountService::class,
-    SocialAuthProviderService::class => SocialAuthProviderService::class,
+    SocialAuthCallbackService::class => SocialAuthCallbackService::class,
     UserSocialAuthenticateService::class => fn(
         ModuleConfig $config,
         CurrentUser $currentUser,

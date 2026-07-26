@@ -11,6 +11,7 @@ return [
     'voyti.security.password_expired' => 'Ihr Passwort ist abgelaufen. Bitte legen Sie ein neues fest.',
     'voyti.security.two_factor_required' => 'Zwei-Faktor-Authentifizierung ist für Ihr Konto erforderlich. Bitte aktivieren Sie sie, um fortzufahren.',
     'voyti.security.authenticated' => 'Authentifiziert',
+    'voyti.security.social_auth_cancelled' => 'Die Anmeldung über den sozialen Anbieter wurde abgebrochen.',
 
     // RegistrationController
     'voyti.registration.disabled' => 'Die Registrierung ist deaktiviert',

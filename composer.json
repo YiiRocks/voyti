@@ -31,7 +31,6 @@
         "ext-intl": "*",
         "psr/clock": "^1.0",
         "psr/event-dispatcher": "^1.0",
-        "psr/http-client": "^1.0",
         "psr/http-factory": "^1.0",
         "psr/http-message": "^1.0 || ^2.0",
         "psr/http-server-middleware": "^1.0",
@@ -63,6 +62,7 @@
     "suggest": {
         "chillerlan/php-authenticator": "Needed to enable Time-based One-Time Password (TOTP) 2 Factor Authentication",
         "chillerlan/php-qrcode": "Needed to generate QR codes for 2FA setup with an authenticator app",
+        "yiisoft/yii-auth-client": "Needed to enable social/OAuth2 login (google, github, linkedin, microsoft365, facebook, vkontakte, x, yandex)",
         "yiisoft/yii-runner-console": "Allows to run console application",
         "yiisoft/yii-runner-http": "Allows to run HTTP application",
         "yiirocks/recaptcha": "Google reCAPTCHA v2 and v3 field + server-side validator for Yii3"
@@ -81,7 +81,8 @@
         "yiisoft/config": "^1.6",
         "yiisoft/db-sqlite": "^2.0",
         "yiisoft/di": "*",
-        "yiisoft/router-fastroute": "^4.0"
+        "yiisoft/router-fastroute": "^4.0",
+        "yiisoft/yii-auth-client": "dev-fix/access-token-not-persisted-after-fetch"
     },
     "autoload": {
         "psr-4": {
@@ -97,6 +98,10 @@
         {
             "type": "composer",
             "url": "https://asset-packagist.org"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/va108/yii-auth-client"
         }
     ],
     "scripts": {

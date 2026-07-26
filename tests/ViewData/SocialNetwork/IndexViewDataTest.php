@@ -6,25 +6,23 @@ namespace YiiRocks\Voyti\tests\ViewData\SocialNetwork;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
-use YiiRocks\Voyti\AuthClient\AuthClientInterface;
-use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
 use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\ViewData\SocialNetwork\IndexViewData;
 use Yiisoft\Translator\Translator;
+use Yiisoft\Yii\AuthClient\Collection;
+use Yiisoft\Yii\AuthClient\OAuth2;
 
 #[AllowMockObjectsWithoutExpectations]
 final class IndexViewDataTest extends TestCase
 {
     public function testCreateBuildsRowsAndConnectList(): void
     {
-        $github = $this->createMock(AuthClientInterface::class);
-        $github->method('getName')->willReturn('github');
+        $github = $this->createMock(OAuth2::class);
         $github->method('getTitle')->willReturn('GitHub');
 
-        $google = $this->createMock(AuthClientInterface::class);
-        $google->method('getName')->willReturn('google');
+        $google = $this->createMock(OAuth2::class);
         $google->method('getTitle')->willReturn('Google');
 
         $account = new UserSocialAccount();
@@ -39,7 +37,7 @@ final class IndexViewDataTest extends TestCase
 
         $data = IndexViewData::create(
             [$account, $secondAccount],
-            new AuthClientRegistry($github, $google),
+            new Collection(['github' => $github, 'google' => $google]),
             ['github'],
             'voyti/session-auth',
             ModuleConfigFactory::create(),
@@ -54,5 +52,26 @@ final class IndexViewDataTest extends TestCase
         self::assertCount(1, $data->connect->providers);
         self::assertSame('Google', $data->connect->providers[0]->title);
         self::assertNotEmpty($data->menu->items);
+    }
+
+    public function testCreateFallsBackToProviderKeyAndEmptyConnectListWhenClientCollectionIsNull(): void
+    {
+        $account = new UserSocialAccount();
+        $account->setProvider('github');
+        $account->setClientId('123');
+        (new \ReflectionProperty(UserSocialAccount::class, 'id'))->setValue($account, 999999);
+
+        $data = IndexViewData::create(
+            [$account],
+            null,
+            [],
+            'voyti/session-auth',
+            ModuleConfigFactory::create(),
+            new FakeUrlGenerator(),
+            new Translator('en', null, 'voyti'),
+        );
+
+        self::assertSame('github', $data->accounts[0]->providerTitle);
+        self::assertSame([], $data->connect->providers);
     }
 }

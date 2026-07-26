@@ -27,17 +27,13 @@ final class UserSocialAccount extends ActiveRecord
     private ?int $user_id = null;
     private ?string $username = null;
 
-    /**
-     * @return true
-     */
-    public function connect(User $user): bool
+    public function connect(User $user): void
     {
         $this->setUserId($user->getIdOrZero());
         $this->setUsername(null);
         $this->setEmail(null);
         $this->setCode(null);
         $this->save();
-        return true;
     }
 
     public static function findByCode(string $code): ?UserSocialAccount
@@ -106,12 +102,6 @@ final class UserSocialAccount extends ActiveRecord
     public function getProvider(): string
     {
         return $this->provider;
-    }
-
-    public function getUser(): ?User
-    {
-        /** @var ?User */
-        return $this->hasOne(User::class, ['id' => 'user_id'])->one();
     }
 
     public function getUserId(): ?int

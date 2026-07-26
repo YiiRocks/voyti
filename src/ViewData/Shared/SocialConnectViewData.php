@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\ViewData\Shared;
 
-use YiiRocks\Voyti\AuthClient\AuthClientInterface;
-use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use Yiisoft\Router\UrlGeneratorInterface;
+use Yiisoft\Yii\AuthClient\Collection;
 
 /**
  * The list of "sign in/connect with X" buttons for configured, non-excluded social providers.
+ * Empty when `$clientCollection` is `null` - `yiisoft/yii-auth-client` (an optional dependency)
+ * isn't installed, see {@see \YiiRocks\Voyti\Service\Auth\SocialAuthClientCollectionFactory}.
  */
 final readonly class SocialConnectViewData
 {
@@ -24,19 +25,30 @@ final readonly class SocialConnectViewData
      * @param list<string> $excludedProviders
      */
     public static function create(
-        AuthClientRegistry $authClients,
+        ?Collection $clientCollection,
         UrlGeneratorInterface $url,
         array $excludedProviders = [],
         string $routeName = 'voyti/session-auth',
     ): self {
-        $providers = array_map(
-            static fn(AuthClientInterface $client): SocialProviderLink => new SocialProviderLink(
+        $providers = [];
+        foreach ($clientCollection?->getClients() ?? [] as $provider => $client) {
+            if (in_array($provider, $excludedProviders, true)) {
+                continue;
+            }
+
+            $providers[] = new SocialProviderLink(
                 $client->getTitle(),
-                $url->generate($routeName, ['provider' => $client->getName()]),
-            ),
-            $authClients->allExcept($excludedProviders),
-        );
+                $url->generate($routeName, ['authclient' => $provider]),
+            );
+        }
 
         return new self($providers);
+    }
+
+    public static function providerTitle(?Collection $clientCollection, string $provider): string
+    {
+        return $clientCollection?->hasClient($provider) === true
+            ? $clientCollection->getClient($provider)->getTitle()
+            : $provider;
     }
 }

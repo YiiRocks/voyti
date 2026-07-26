@@ -6,7 +6,6 @@ namespace YiiRocks\Voyti\tests\Support;
 
 use Psr\Http\Message\ResponseFactoryInterface;
 use YiiRocks\Voyti\Adapter\IdentityAdapter;
-use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use YiiRocks\Voyti\Clock\SystemClock;
 use YiiRocks\Voyti\Controller\Account\AccountController;
 use YiiRocks\Voyti\Controller\Account\SessionController as AccountSessionController;
@@ -29,7 +28,8 @@ use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Admin\DashboardService;
 use YiiRocks\Voyti\Service\AuditLogService;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
-use YiiRocks\Voyti\Service\Auth\SocialAuthProviderService;
+use YiiRocks\Voyti\Service\Auth\SocialAuthCallbackService;
+use YiiRocks\Voyti\Service\Auth\SocialUserAttributesNormalizer;
 use YiiRocks\Voyti\Service\Auth\UserSocialAccountConnectService;
 use YiiRocks\Voyti\Service\Auth\UserSocialAuthenticateService;
 use YiiRocks\Voyti\Service\EmailChangeService;
@@ -66,13 +66,14 @@ use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\View\View;
+use Yiisoft\Yii\AuthClient\Collection;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 final class ControllerHarness
 {
     private AssignmentsStorageInterface $assignmentsStorage;
-    private AuthClientRegistry $authClientRegistry;
     private ManagerInterface $authManager;
+    private Collection $clientCollection;
     private EventCaptureDispatcher $eventDispatcher;
     private ItemsStorageInterface $itemsStorage;
     private MailCapture $mailer;
@@ -91,7 +92,7 @@ final class ControllerHarness
         $this->session = new FakeSession();
         $this->url = new FakeUrlGenerator();
         $this->mailer = new MailCapture();
-        $this->authClientRegistry = new AuthClientRegistry();
+        $this->clientCollection = new Collection([]);
     }
 
     public function createAccountController(
@@ -335,6 +336,7 @@ final class ControllerHarness
         ?RegisterService $registerService = null,
         ?ConfirmationService $confirmationService = null,
         ?PendingSocialAccountService $pendingSocialAccountService = null,
+        bool $withSocialAuthClient = true,
     ): RegistrationController {
         $registerService ??= new RegisterService();
         $mailService = new MailService(
@@ -350,7 +352,7 @@ final class ControllerHarness
             new UserTokenFactory(),
             $mailService,
         );
-        $pendingSocialAccountService ??= new PendingSocialAccountService();
+        $pendingSocialAccountService ??= new PendingSocialAccountService($this->session);
 
         return new RegistrationController(
             translator: $translator,
@@ -364,7 +366,7 @@ final class ControllerHarness
             hydrator: $hydrator,
             responseFactory: $responseFactory,
             flash: $flash,
-            authClientRegistry: $this->authClientRegistry,
+            clientCollection: $withSocialAuthClient ? $this->clientCollection : null,
         );
     }
 
@@ -412,12 +414,10 @@ final class ControllerHarness
         FlashInterface $flash,
         ?PasswordHasher $passwordHasher = null,
         ?RememberMeCookieService $rememberMeCookieService = null,
-        ?SocialAuthProviderService $socialAuthProviderService = null,
         ?PendingSocialAccountService $pendingSocialAccountService = null,
-        ?UserSocialAuthenticateService $socialNetworkAuthenticateService = null,
-        ?UserSocialAccountConnectService $socialNetworkAccountConnectService = null,
         ?EmailCodeGeneratorService $twoFactorEmailCodeService = null,
         ?BackupCodeService $backupCodeService = null,
+        bool $withSocialAuthClient = true,
     ): SessionController {
         $passwordHasher ??= TestPasswordHasherFactory::create();
         $rememberMeCookieService ??= new RememberMeCookieService(
@@ -425,30 +425,7 @@ final class ControllerHarness
             new SystemClock(),
             eventDispatcher: $this->eventDispatcher,
         );
-        $socialAuthProviderService ??= new SocialAuthProviderService();
         $pendingSocialAccountService ??= new PendingSocialAccountService($this->session);
-        $socialNetworkAuthenticateService ??= new UserSocialAuthenticateService(
-            $this->config,
-            $currentUser,
-            $this->session,
-            $this->eventDispatcher,
-            new UserCreationHelper(
-                new MailService(
-                    $this->mailer,
-                    $this->config->mailPath,
-                    new View(),
-                    $translator,
-                    $this->url,
-                    $this->config->appName,
-                ),
-                $this->eventDispatcher,
-                $passwordHasher,
-                $this->config,
-                new PasswordHistoryService($passwordHasher, $this->config),
-            ),
-            $pendingSocialAccountService,
-        );
-        $socialNetworkAccountConnectService ??= new UserSocialAccountConnectService();
         $twoFactorEmailCodeService ??= new EmailCodeGeneratorService(
             new MailService(
                 $this->mailer,
@@ -473,11 +450,8 @@ final class ControllerHarness
             session: $this->session,
             rememberMeCookieService: $rememberMeCookieService,
             config: $this->config,
-            authClientRegistry: $this->authClientRegistry,
-            socialAuthProviderService: $socialAuthProviderService,
+            clientCollection: $withSocialAuthClient ? $this->clientCollection : null,
             pendingSocialAccountService: $pendingSocialAccountService,
-            socialNetworkAuthenticateService: $socialNetworkAuthenticateService,
-            socialNetworkAccountConnectService: $socialNetworkAccountConnectService,
             hydrator: $hydrator,
             twoFactorEmailCodeService: $twoFactorEmailCodeService,
             flash: $flash,
@@ -501,19 +475,80 @@ final class ControllerHarness
         );
     }
 
+    public function createSocialAuthCallbackService(
+        TranslatorInterface $translator,
+        WebViewRenderer $viewRenderer,
+        ResponseFactoryInterface $responseFactory,
+        CurrentUser $currentUser,
+        FlashInterface $flash,
+        ?RememberMeCookieService $rememberMeCookieService = null,
+        ?PendingSocialAccountService $pendingSocialAccountService = null,
+        ?UserSocialAuthenticateService $socialAuthenticateService = null,
+        ?UserSocialAccountConnectService $socialAccountConnectService = null,
+        ?SocialUserAttributesNormalizer $normalizer = null,
+    ): SocialAuthCallbackService {
+        $passwordHasher = TestPasswordHasherFactory::create();
+        $rememberMeCookieService ??= new RememberMeCookieService(
+            $this->config->rememberLoginLifespan,
+            new SystemClock(),
+            eventDispatcher: $this->eventDispatcher,
+        );
+        $pendingSocialAccountService ??= new PendingSocialAccountService($this->session);
+        $socialAuthenticateService ??= new UserSocialAuthenticateService(
+            $this->config,
+            $currentUser,
+            $this->session,
+            $this->eventDispatcher,
+            new UserCreationHelper(
+                new MailService(
+                    $this->mailer,
+                    $this->config->mailPath,
+                    new View(),
+                    $translator,
+                    $this->url,
+                    $this->config->appName,
+                ),
+                $this->eventDispatcher,
+                $passwordHasher,
+                $this->config,
+                new PasswordHistoryService($passwordHasher, $this->config),
+            ),
+            $pendingSocialAccountService,
+        );
+        $socialAccountConnectService ??= new UserSocialAccountConnectService();
+        $normalizer ??= new SocialUserAttributesNormalizer();
+
+        return new SocialAuthCallbackService(
+            translator: $translator,
+            viewRenderer: $viewRenderer,
+            responseFactory: $responseFactory,
+            url: $this->url,
+            config: $this->config,
+            session: $this->session,
+            flash: $flash,
+            currentUser: $currentUser,
+            rememberMeCookieService: $rememberMeCookieService,
+            pendingSocialAccountService: $pendingSocialAccountService,
+            socialAuthenticateService: $socialAuthenticateService,
+            socialAccountConnectService: $socialAccountConnectService,
+            normalizer: $normalizer,
+        );
+    }
+
     public function createSocialNetworkController(
         TranslatorInterface $translator,
         WebViewRenderer $viewRenderer,
         CurrentUser $currentUser,
         ResponseFactoryInterface $responseFactory,
         FlashInterface $flash,
+        bool $withSocialAuthClient = true,
     ): SocialNetworkController {
         return new SocialNetworkController(
             translator: $translator,
             viewRenderer: $viewRenderer,
             url: $this->url,
             config: $this->config,
-            authClientRegistry: $this->authClientRegistry,
+            clientCollection: $withSocialAuthClient ? $this->clientCollection : null,
             currentUser: $currentUser,
             responseFactory: $responseFactory,
             flash: $flash,
@@ -641,14 +676,14 @@ final class ControllerHarness
         return $this->assignmentsStorage;
     }
 
-    public function getAuthClientRegistry(): AuthClientRegistry
-    {
-        return $this->authClientRegistry;
-    }
-
     public function getAuthManager(): ManagerInterface
     {
         return $this->authManager;
+    }
+
+    public function getClientCollection(): Collection
+    {
+        return $this->clientCollection;
     }
 
     public function getConfig(): ModuleConfig

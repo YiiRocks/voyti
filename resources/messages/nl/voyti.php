@@ -11,6 +11,7 @@ return [
     'voyti.security.password_expired' => 'Uw wachtwoord is verlopen. Stel een nieuw wachtwoord in.',
     'voyti.security.two_factor_required' => 'Tweefactorauthenticatie is verplicht voor uw account. Schakel deze in om door te gaan.',
     'voyti.security.authenticated' => 'Geverifieerd',
+    'voyti.security.social_auth_cancelled' => 'Sociale aanmelding is geannuleerd.',
 
     // RegistrationController
     'voyti.registration.disabled' => 'Registratie is uitgeschakeld',
