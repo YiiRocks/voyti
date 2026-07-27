@@ -60,16 +60,14 @@
         "yiisoft/yii-view-renderer": "^7.1"
     },
     "suggest": {
-        "chillerlan/php-authenticator": "Time-based One-Time Password (TOTP) 2 Factor Authentication",
-        "chillerlan/php-qrcode": "Generate QR codes for 2FA setup with an authenticator app",
+        "chillerlan/2fa-qrcode-bundle": "Time-based One-Time Password (TOTP) 2 Factor Authentication and QR code generator for authenticator app setup",
         "yiirocks/recaptcha": "Google reCAPTCHA v2 and v3 field + server-side validator for Yii3",
         "yiisoft/data-response": "Required for the REST API (voyti-routes-api): JSON response formatting for the user CRUD endpoints",
         "yiisoft/yii-runner-console": "Allows to run console application",
         "yiisoft/yii-runner-http": "Allows to run HTTP application"
     },
     "require-dev": {
-        "chillerlan/php-authenticator": "^5.4",
-        "chillerlan/php-qrcode": "^6.0",
+        "chillerlan/2fa-qrcode-bundle": "^2.0",
         "dg/bypass-finals": "^1.10",
         "friendsofphp/php-cs-fixer": "@stable",
         "infection/infection": "^0.34.0",

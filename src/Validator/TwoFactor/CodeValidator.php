@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Validator\TwoFactor;
 
-use chillerlan\Authenticator\Authenticator;
-use chillerlan\Authenticator\AuthenticatorOptions;
+use chillerlan\TwoFactorQRCode\TwoFactorQRCode;
+use chillerlan\TwoFactorQRCode\TwoFactorQRCodeOptions;
 use Throwable;
 use YiiRocks\Voyti\Model\User;
 use Yiisoft\Translator\TranslatorInterface;
 
 /**
  * Verifies a TOTP two-factor authentication code against the user's stored secret using
- * {@see Authenticator}, producing translated success/error messages for the login and settings flows.
+ * {@see TwoFactorQRCode}, producing translated success/error messages for the login and settings flows.
  */
 final class CodeValidator
 {
@@ -57,20 +57,20 @@ final class CodeValidator
             return false;
         }
 
-        if (!class_exists(Authenticator::class)) {
+        if (!class_exists(TwoFactorQRCode::class)) {
             // @codeCoverageIgnoreStart
-            // Only reachable when chillerlan/php-authenticator is missing; always installed in the test environment.
+            // Only reachable when chillerlan/2fa-qrcode-bundle is missing; always installed in the test environment.
             $this->error = $this->t('voyti.validator.two_factor_library_missing');
             return false;
             // @codeCoverageIgnoreEnd
         }
 
         try {
-            $options = new AuthenticatorOptions();
+            $options = new TwoFactorQRCodeOptions();
             $options->adjacent = $this->cycles;
-            $authenticator = new Authenticator($options);
-            $authenticator->setSecret($this->user->getAuthTfKey());
-            return $authenticator->verify($this->code);
+            $totp = new TwoFactorQRCode($options);
+            $totp->setSecret($this->user->getAuthTfKey());
+            return $totp->verifyOTP($this->code);
         } catch (Throwable) {
             $this->error = $this->t('voyti.validator.invalid_verification_code');
             return false;

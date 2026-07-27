@@ -69,9 +69,9 @@ final readonly class IndexViewData
 
     /**
      * @param array<string, list<string>> $errors
-     * @param bool $googleAvailable whether the optional `chillerlan/php-authenticator`/
-     *        `chillerlan/php-qrcode` packages are both installed; when false, $googleUrl and
-     *        $renewUrl are left null since their routes aren't registered
+     * @param bool $googleAvailable whether the optional `chillerlan/2fa-qrcode-bundle` package
+     *        is installed; when false, $googleUrl and $renewUrl are left null since their
+     *        routes aren't registered
      */
     public static function create(
         User $user,

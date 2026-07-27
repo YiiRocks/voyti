@@ -91,7 +91,7 @@ return [
 
     // TwoFactorCodeValidator
     'voyti.validator.two_factor_not_configured' => 'Tweefactorauthenticatie is niet geconfigureerd.',
-    'voyti.validator.two_factor_library_missing' => '2FA-bibliotheek (chillerlan/php-authenticator) is niet geïnstalleerd.',
+    'voyti.validator.two_factor_library_missing' => '2FA-bibliotheek (chillerlan/2fa-qrcode-bundle) is niet geïnstalleerd.',
     'voyti.validator.invalid_verification_code' => 'Ongeldige verificatiecode.',
     'voyti.validator.password_complexity' => 'Het wachtwoord moet minstens één hoofdletter, één kleine letter, één cijfer en één speciaal teken bevatten.',
     'voyti.validator.two_factor_enabled' => 'Tweefactorauthenticatie is ingeschakeld.',

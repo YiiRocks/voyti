@@ -14,11 +14,11 @@ final readonly class GoogleSetupViewData
 {
     /**
      * @param string $qrCodeUri despite the name, this is pre-rendered raw SVG markup (from
-     *        `chillerlan/php-qrcode`), not a URI - echo raw (not `Html::encode()`); empty string
-     *        when the optional `chillerlan/php-authenticator`/`chillerlan/php-qrcode` packages
-     *        aren't installed
+     *        `chillerlan/php-qrcode`, via the `chillerlan/2fa-qrcode-bundle` facade), not a URI -
+     *        echo raw (not `Html::encode()`); empty string when the optional
+     *        `chillerlan/2fa-qrcode-bundle` package isn't installed
      * @param string|null $secret the manually-enterable TOTP secret for "can't scan the code";
-     *        null when the user has no stored secret yet (e.g. `chillerlan/php-authenticator`
+     *        null when the user has no stored secret yet (e.g. `chillerlan/2fa-qrcode-bundle`
      *        wasn't available to generate one)
      * @param string $renewLabel already-translated button text
      * @param string $manualEntryLabel already-translated label text

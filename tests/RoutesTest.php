@@ -42,10 +42,9 @@ final class RoutesTest extends TestCase
 
     public function testGoogleTwoFactorRoutesAreRegisteredWhenLibraryIsAvailable(): void
     {
-        // chillerlan/php-authenticator and chillerlan/php-qrcode are dev dependencies of this
-        // package, so they're always installed here; the "either package missing" branch that
-        // omits these two routes can't be exercised from this test (see
-        // QrCodeUriGeneratorService::isAvailable()).
+        // chillerlan/2fa-qrcode-bundle is a dev dependency of this package, so it's always
+        // installed here; the "package missing" branch that omits these two routes can't be
+        // exercised from this test (see QrCodeUriGeneratorService::isAvailable()).
         $route = $this->getRoute('voyti/user-two-factor-google', ['enableTwoFactorAuthentication' => true]);
         self::assertSame('settings/two-factor/google/', $route->getData('pattern'));
 
