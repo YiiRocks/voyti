@@ -17,6 +17,7 @@ use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Data\Paginator\OffsetPaginator;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -28,6 +29,7 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 final class AuditLogControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
+    use UserFactoryTrait;
 
     private ModuleConfig $config;
     private CurrentUser&MockObject $currentUser;
@@ -76,10 +78,32 @@ final class AuditLogControllerTest extends TestCase
         $this->assertCount(1, $captured['data']->logs);
     }
 
+    public function testIndexPresentsActorLabelWithIdOnlyWhenUserNoLongerExists(): void
+    {
+        $this->createLog(999999, 2, 'user.delete');
+
+        $captured = [];
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->method('render')->willReturnCallback(
+            function (string $view, array $params) use (&$captured, $response): ResponseInterface {
+                $captured = $params;
+                return $response;
+            },
+        );
+
+        $controller = $this->createController();
+        $controller->index();
+
+        self::assertSame('#999999', $captured['data']->logs[0]['actorLabel']);
+    }
+
     public function testIndexPresentsLogFieldsFormattedForDisplay(): void
     {
+        $actor = $this->createUser(username: 'jane_admin');
+
         $log = new UserAuditLog();
-        $log->setActorUserId(1);
+        $log->setActorUserId($actor->getIdOrZero());
         $log->setAction('rbac.role.update');
         $log->setTargetName('editor');
         $log->setTargetUserId(7);
@@ -113,7 +137,7 @@ final class AuditLogControllerTest extends TestCase
                     $this->translator->getLocale(),
                     'Asia/Tokyo',
                 ),
-                'actorUserId' => '1',
+                'actorLabel' => 'jane_admin (#' . $actor->getIdOrZero() . ')',
                 'action' => 'rbac.role.update',
                 'targetLabel' => 'editor (#7)',
                 'context' => '{"previousName":"old-editor"}',
@@ -142,7 +166,7 @@ final class AuditLogControllerTest extends TestCase
         $controller = $this->createController();
         $controller->index();
 
-        self::assertSame('', $captured['data']->logs[0]['actorUserId']);
+        self::assertSame('', $captured['data']->logs[0]['actorLabel']);
         self::assertSame('', $captured['data']->logs[0]['targetLabel']);
         self::assertSame('', $captured['data']->logs[0]['context']);
     }

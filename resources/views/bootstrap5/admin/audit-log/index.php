@@ -71,7 +71,7 @@ echo Html::div()->close();
 foreach ($data->logs as $log) {
     echo Html::div()->class('row py-2 border-bottom align-items-center')->open();
     echo Html::div($log['createdAt'])->class('col-2');
-    echo Html::div($log['actorUserId'])->class('col-2');
+    echo Html::div($log['actorLabel'])->class('col-2');
     echo Html::div($log['action'])->class('col-2 text-break');
     echo Html::div($log['targetLabel'])->class('col-2 text-break');
     echo Html::div($log['context'])->class('col-4 text-break small');

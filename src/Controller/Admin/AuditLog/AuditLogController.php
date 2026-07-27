@@ -67,9 +67,11 @@ final readonly class AuditLogController
         $viewer = $this->currentUser->getIdentity();
         $viewerTimezone = $viewer instanceof User ? $viewer->getProfile()?->getTimezone() : null;
 
+        $actorUsernames = $this->actorUsernames($logs);
+
         return $this->renderView('admin/audit-log/index', [
             'data' => IndexViewData::create(
-                array_map(fn(UserAuditLog $log): array => $this->presentLog($log, $viewerTimezone), $logs),
+                array_map(fn(UserAuditLog $log): array => $this->presentLog($log, $viewerTimezone, $actorUsernames), $logs),
                 $paginator,
                 $filters,
                 $this->url,
@@ -79,9 +81,43 @@ final readonly class AuditLogController
     }
 
     /**
-     * @return array{createdAt: string, actorUserId: string, action: string, targetLabel: string, context: string}
+     * @param array<int, string> $actorUsernames
      */
-    private function presentLog(UserAuditLog $log, ?string $viewerTimezone): array
+    private function actorLabel(UserAuditLog $log, array $actorUsernames): string
+    {
+        $userId = $log->getActorUserId();
+        if ($userId === null) {
+            return '';
+        }
+
+        return array_key_exists($userId, $actorUsernames) ? $actorUsernames[$userId] . ' (#' . $userId . ')' : '#' . $userId;
+    }
+
+    /**
+     * @param list<UserAuditLog> $logs
+     *
+     * @return array<int, string> actor user id => username
+     */
+    private function actorUsernames(array $logs): array
+    {
+        $actorIds = array_values(array_unique(array_filter(array_map(
+            static fn(UserAuditLog $log): ?int => $log->getActorUserId(),
+            $logs,
+        ))));
+
+        $usernames = [];
+        foreach (User::findByIds($actorIds) as $user) {
+            $usernames[$user->getIdOrZero()] = $user->getUsername();
+        }
+        return $usernames;
+    }
+
+    /**
+     * @param array<int, string> $actorUsernames
+     *
+     * @return array{createdAt: string, actorLabel: string, action: string, targetLabel: string, context: string}
+     */
+    private function presentLog(UserAuditLog $log, ?string $viewerTimezone, array $actorUsernames): array
     {
         return [
             'createdAt' => TimezoneHelper::formatLocalized(
@@ -89,7 +125,7 @@ final readonly class AuditLogController
                 $this->translator->getLocale(),
                 $viewerTimezone,
             ),
-            'actorUserId' => (string) ($log->getActorUserId() ?? ''),
+            'actorLabel' => $this->actorLabel($log, $actorUsernames),
             'action' => $log->getAction(),
             'targetLabel' => $this->targetLabel($log),
             'context' => $log->getContext() ?? '',
