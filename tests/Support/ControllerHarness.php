@@ -105,6 +105,7 @@ final class ControllerHarness
         ?PasswordHasher $passwordHasher = null,
         ?EmailChangeService $emailChangeService = null,
         ?PasswordHistoryService $passwordHistoryService = null,
+        ?SwitchIdentityService $switchIdentityService = null,
     ): AccountController {
         $passwordHasher ??= TestPasswordHasherFactory::create();
         $emailChangeService ??= new EmailChangeService(
@@ -120,6 +121,12 @@ final class ControllerHarness
             ),
         );
         $passwordHistoryService ??= new PasswordHistoryService($passwordHasher, $this->config);
+        $switchIdentityService ??= new SwitchIdentityService(
+            $this->config,
+            $currentUser,
+            $this->session,
+            $this->eventDispatcher,
+        );
 
         return new AccountController(
             translator: $translator,
@@ -133,6 +140,7 @@ final class ControllerHarness
             responseFactory: $responseFactory,
             flash: $flash,
             passwordHistoryService: $passwordHistoryService,
+            switchIdentityService: $switchIdentityService,
         );
     }
 
@@ -142,7 +150,15 @@ final class ControllerHarness
         CurrentUser $currentUser,
         ResponseFactoryInterface $responseFactory,
         FlashInterface $flash,
+        ?SwitchIdentityService $switchIdentityService = null,
     ): AccountSessionController {
+        $switchIdentityService ??= new SwitchIdentityService(
+            $this->config,
+            $currentUser,
+            $this->session,
+            $this->eventDispatcher,
+        );
+
         return new AccountSessionController(
             translator: $translator,
             viewRenderer: $viewRenderer,
@@ -153,6 +169,7 @@ final class ControllerHarness
             config: $this->config,
             eventDispatcher: $this->eventDispatcher,
             flash: $flash,
+            switchIdentityService: $switchIdentityService,
         );
     }
 
@@ -242,9 +259,16 @@ final class ControllerHarness
         FlashInterface $flash,
         ?PasswordHasher $passwordHasher = null,
         ?TerminateUserSessionsService $terminateUserSessionsService = null,
+        ?SwitchIdentityService $switchIdentityService = null,
     ): PrivacyController {
         $passwordHasher ??= TestPasswordHasherFactory::create();
         $terminateUserSessionsService ??= $this->createTerminateUserSessionsService();
+        $switchIdentityService ??= new SwitchIdentityService(
+            $this->config,
+            $currentUser,
+            $this->session,
+            $this->eventDispatcher,
+        );
 
         return new PrivacyController(
             translator: $translator,
@@ -259,6 +283,7 @@ final class ControllerHarness
             responseFactory: $responseFactory,
             terminateUserSessionsService: $terminateUserSessionsService,
             flash: $flash,
+            switchIdentityService: $switchIdentityService,
         );
     }
 
@@ -490,7 +515,15 @@ final class ControllerHarness
         WebViewRenderer $viewRenderer,
         FlashInterface $flash,
         CurrentUser $currentUser,
+        ?SwitchIdentityService $switchIdentityService = null,
     ): SettingsController {
+        $switchIdentityService ??= new SwitchIdentityService(
+            $this->config,
+            $currentUser,
+            $this->session,
+            $this->eventDispatcher,
+        );
+
         return new SettingsController(
             translator: $translator,
             viewRenderer: $viewRenderer,
@@ -498,6 +531,7 @@ final class ControllerHarness
             config: $this->config,
             flash: $flash,
             currentUser: $currentUser,
+            switchIdentityService: $switchIdentityService,
         );
     }
 
@@ -507,7 +541,15 @@ final class ControllerHarness
         CurrentUser $currentUser,
         ResponseFactoryInterface $responseFactory,
         FlashInterface $flash,
+        ?SwitchIdentityService $switchIdentityService = null,
     ): SocialNetworkController {
+        $switchIdentityService ??= new SwitchIdentityService(
+            $this->config,
+            $currentUser,
+            $this->session,
+            $this->eventDispatcher,
+        );
+
         return new SocialNetworkController(
             translator: $translator,
             viewRenderer: $viewRenderer,
@@ -517,6 +559,7 @@ final class ControllerHarness
             currentUser: $currentUser,
             responseFactory: $responseFactory,
             flash: $flash,
+            switchIdentityService: $switchIdentityService,
         );
     }
 
@@ -529,6 +572,7 @@ final class ControllerHarness
         ?QrCodeUriGeneratorService $twoFactorQrCodeService = null,
         ?EmailCodeGeneratorService $twoFactorEmailCodeService = null,
         ?BackupCodeService $backupCodeService = null,
+        ?SwitchIdentityService $switchIdentityService = null,
     ): TwoFactorController {
         $twoFactorQrCodeService ??= new QrCodeUriGeneratorService($this->config);
         $twoFactorEmailCodeService ??= new EmailCodeGeneratorService(
@@ -542,6 +586,12 @@ final class ControllerHarness
             ),
         );
         $backupCodeService ??= new BackupCodeService(TestPasswordHasherFactory::create());
+        $switchIdentityService ??= new SwitchIdentityService(
+            $this->config,
+            $currentUser,
+            $this->session,
+            $this->eventDispatcher,
+        );
 
         return new TwoFactorController(
             translator: $translator,
@@ -554,6 +604,7 @@ final class ControllerHarness
             twoFactorEmailCodeService: $twoFactorEmailCodeService,
             flash: $flash,
             backupCodeService: $backupCodeService,
+            switchIdentityService: $switchIdentityService,
         );
     }
 

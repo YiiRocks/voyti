@@ -28,11 +28,13 @@ final readonly class IndexViewData
         UrlGeneratorInterface $url,
         TranslatorInterface $translator,
         User $user,
+        bool $isSwitched,
+        ?User $originalUser,
     ): self {
         $profile = $user->getProfile();
 
         return new self(
-            menu: MenuViewData::forAccount($config, $url, $translator),
+            menu: MenuViewData::forAccount($config, $url, $translator, $isSwitched, $originalUser),
             displayName: $profile?->getName() ?? $user->getUsername(),
             email: $user->getEmail(),
             memberSinceDisplay: TimezoneHelper::formatLocalized(

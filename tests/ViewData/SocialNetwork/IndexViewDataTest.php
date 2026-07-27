@@ -45,6 +45,8 @@ final class IndexViewDataTest extends TestCase
             ModuleConfigFactory::create(),
             new FakeUrlGenerator(),
             new Translator('en', null, 'voyti'),
+            false,
+            null,
         );
 
         self::assertCount(2, $data->accounts);

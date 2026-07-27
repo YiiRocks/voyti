@@ -16,7 +16,7 @@ final class BackupCodesViewDataTest extends TestCase
     {
         $translator = new Translator('en', null, 'voyti');
 
-        $data = BackupCodesViewData::create(['aaa', 'bbb'], ModuleConfigFactory::create(), new FakeUrlGenerator(), $translator);
+        $data = BackupCodesViewData::create(['aaa', 'bbb'], ModuleConfigFactory::create(), new FakeUrlGenerator(), $translator, false, null);
 
         self::assertSame(['aaa', 'bbb'], $data->codes);
         self::assertSame('//voyti/user-two-factor', $data->continueUrl);

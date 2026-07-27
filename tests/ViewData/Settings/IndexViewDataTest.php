@@ -31,7 +31,7 @@ final class IndexViewDataTest extends TestCase
     {
         $user = $this->createUser();
 
-        $data = IndexViewData::create(ModuleConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), $user);
+        $data = IndexViewData::create(ModuleConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), $user, false, null);
 
         self::assertNotEmpty($data->menu->items);
     }
@@ -40,10 +40,28 @@ final class IndexViewDataTest extends TestCase
     {
         $user = $this->createUser(email: 'jane@example.com', createdAt: 1700000000);
 
-        $data = IndexViewData::create(ModuleConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), $user);
+        $data = IndexViewData::create(ModuleConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), $user, false, null);
 
         self::assertSame('jane@example.com', $data->email);
         self::assertNotSame('', $data->memberSinceDisplay);
+    }
+
+    public function testCreateShowsSwitchedBannerOnDashboard(): void
+    {
+        $originalUser = $this->createUser(username: 'original-admin', email: 'original-admin@example.com');
+        $user = $this->createUser(username: 'switcheduser', email: 'switcheduser@example.com');
+
+        $data = IndexViewData::create(
+            ModuleConfigFactory::create(),
+            new FakeUrlGenerator(),
+            $this->createTranslator(),
+            $user,
+            true,
+            $originalUser,
+        );
+
+        self::assertNotNull($data->menu->switchedBannerMessage);
+        self::assertStringContainsString('original-admin', $data->menu->switchedBannerMessage);
     }
 
     public function testCreateUsesProfileNameAsDisplayNameWhenProfileExists(): void
@@ -51,7 +69,7 @@ final class IndexViewDataTest extends TestCase
         $user = $this->createUser(username: 'hasprofileuser');
         $this->createUserProfile((int) $user->getId(), 'Jane Doe');
 
-        $data = IndexViewData::create(ModuleConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), $user);
+        $data = IndexViewData::create(ModuleConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), $user, false, null);
 
         self::assertSame('Jane Doe', $data->displayName);
     }
@@ -60,7 +78,7 @@ final class IndexViewDataTest extends TestCase
     {
         $user = $this->createUser(username: 'noprofileuser');
 
-        $data = IndexViewData::create(ModuleConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), $user);
+        $data = IndexViewData::create(ModuleConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), $user, false, null);
 
         self::assertSame('noprofileuser', $data->displayName);
     }

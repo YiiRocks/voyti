@@ -28,20 +28,6 @@ echo $this->render('../shared/_menu', ['menu' => $data->menu]);
 /** @psalm-suppress InvalidScope */
 echo $this->render('../shared/_flash', ['flash' => $flash]);
 
-if ($data->switchedBannerMessage !== null) {
-    echo Html::div()->class('alert alert-warning d-flex justify-content-between align-items-center')->open();
-    echo Html::span($data->switchedBannerMessage);
-    echo Html::form()
-        ->post($data->switchIdentityRestoreUrl)
-        ->csrf($csrf)
-        ->open();
-    echo Html::submitButton(
-        $translator->translate('voyti.view.admin.restore_button'),
-    )->class('btn', 'btn-warning', 'btn-sm');
-    echo Html::form()->close();
-    echo Html::div()->close();
-}
-
 echo Html::H1($translator->translate('voyti.view.edit_profile.title'));
 echo Html::div()->class('card border-primary mb-4')->open();
 echo Html::div()->class('card-header bg-primary text-white')->open();

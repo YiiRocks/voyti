@@ -37,6 +37,8 @@ final class SessionsViewDataTest extends TestCase
             ModuleConfigFactory::create(),
             new FakeUrlGenerator(),
             $translator,
+            false,
+            null,
         );
 
         self::assertCount(1, $data->sessions);
@@ -61,6 +63,8 @@ final class SessionsViewDataTest extends TestCase
             ModuleConfigFactory::create(),
             new FakeUrlGenerator(),
             $translator,
+            false,
+            null,
         );
 
         self::assertCount(1, $data->sessions);

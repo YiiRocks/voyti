@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\ViewData\SocialNetwork;
 
 use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
+use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\ViewData\Shared\MenuViewData;
@@ -38,6 +39,8 @@ final readonly class IndexViewData
         ModuleConfig $config,
         UrlGeneratorInterface $url,
         TranslatorInterface $translator,
+        bool $isSwitched,
+        ?User $originalUser,
     ): self {
         $rows = array_map(
             static fn(UserSocialAccount $account): SocialAccountRow => new SocialAccountRow(
@@ -48,7 +51,7 @@ final readonly class IndexViewData
         );
 
         return new self(
-            menu: MenuViewData::forAccount($config, $url, $translator),
+            menu: MenuViewData::forAccount($config, $url, $translator, $isSwitched, $originalUser),
             accounts: $rows,
             connect: SocialConnectViewData::create($authClients, $url, $excludedProviders, $connectRouteName),
         );

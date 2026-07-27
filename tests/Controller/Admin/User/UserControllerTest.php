@@ -753,7 +753,7 @@ final class UserControllerTest extends TestCase
             ->method('run')
             ->willReturn(ServiceResult::success());
 
-        $response = $this->mockRedirectResponse($this->responseFactory);
+        $response = $this->mockRedirectResponse($this->responseFactory, '//voyti/user');
 
         $result = $controller->switchIdentity(new ServerRequest('POST', '/'), 1);
 
