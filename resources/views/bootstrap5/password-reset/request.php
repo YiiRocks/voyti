@@ -37,10 +37,10 @@ echo Field::email($form, 'email')->tabIndex(++$tabindex);
 echo $data->recaptchaFieldHtml;
 
 echo Field::buttonGroup()
-    ->buttons(
-        Html::resetButton($translator->translate('voyti.view.reset_button'))->attribute('tabindex', $tabindex + 2),
-        Html::submitButton($translator->translate('voyti.view.recovery.send_link_button'))->attribute('tabindex', ++$tabindex),
-    );
+    ->buttonsData([
+        [$translator->translate('voyti.view.reset_button'), 'type' => 'reset', 'tabindex' => $tabindex + 2],
+        [$translator->translate('voyti.view.recovery.send_link_button'), 'type' => 'submit', 'tabindex' => ++$tabindex],
+    ]);
 
 echo Html::div()->class('mt-3')->open();
 echo Html::a($translator->translate('voyti.view.recovery.back_to_login'), $data->loginUrl);

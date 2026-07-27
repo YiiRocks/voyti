@@ -55,10 +55,10 @@ echo Html::div()->close();
 echo Html::div()->close();
 
 echo Field::buttonGroup()
-    ->buttons(
-        Html::resetButton($translator->translate('voyti.view.reset_button'))->attribute('tabindex', $tabindex + 2),
-        Html::submitButton($translator->translate('voyti.view.assignments.update'))->class('btn', 'btn-primary')->attribute('tabindex', ++$tabindex),
-    );
+    ->buttonsData([
+        [$translator->translate('voyti.view.reset_button'), 'type' => 'reset', 'tabindex' => $tabindex + 2],
+        [$translator->translate('voyti.view.assignments.update'), 'type' => 'submit', 'class' => 'btn btn-primary', 'tabindex' => ++$tabindex],
+    ]);
 
 echo Html::form()->close();
 echo Html::div()->close();

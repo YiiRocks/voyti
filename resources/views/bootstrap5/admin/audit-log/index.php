@@ -51,10 +51,10 @@ echo Html::div()->close();
 echo Html::div()->class('col-auto')->open();
 echo Field::buttonGroup()
     ->containerClass('btn-group')
-    ->buttons(
-        Html::resetButton($translator->translate('voyti.view.reset_button'))->class('btn', 'btn-outline-secondary')->attribute('tabindex', $tabindex + 2),
-        Html::submitButton($translator->translate('voyti.view.filter_button'))->class('btn', 'btn-outline-secondary')->attribute('tabindex', ++$tabindex),
-    );
+    ->buttonsData([
+        [$translator->translate('voyti.view.reset_button'), 'type' => 'reset', 'class' => 'btn btn-outline-secondary', 'tabindex' => $tabindex + 2],
+        [$translator->translate('voyti.view.filter_button'), 'type' => 'submit', 'class' => 'btn btn-outline-secondary', 'tabindex' => ++$tabindex],
+    ]);
 echo Html::div()->close();
 echo Html::div()->close();
 

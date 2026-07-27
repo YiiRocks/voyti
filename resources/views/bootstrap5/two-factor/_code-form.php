@@ -26,9 +26,9 @@ $tabindex = 0;
 echo Field::text($form, 'code')->addInputAttributes(['inputmode' => 'numeric'])->tabIndex(++$tabindex);
 
 echo Field::buttonGroup()
-    ->buttons(
-        Html::resetButton($translator->translate('voyti.view.reset_button'))->attribute('tabindex', $tabindex + 2),
-        Html::submitButton($translator->translate('voyti.view.two_factor.enable'))->attribute('tabindex', ++$tabindex),
-    );
+    ->buttonsData([
+        [$translator->translate('voyti.view.reset_button'), 'type' => 'reset', 'tabindex' => $tabindex + 2],
+        [$translator->translate('voyti.view.two_factor.enable'), 'type' => 'submit', 'tabindex' => ++$tabindex],
+    ]);
 
 echo Html::form()->close();

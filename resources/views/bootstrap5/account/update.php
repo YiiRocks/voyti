@@ -48,10 +48,10 @@ echo Field::password($form, 'password')->tabIndex(++$tabindex);
 echo Field::password($form, 'passwordRepeat')->tabIndex(++$tabindex);
 
 echo Field::buttonGroup()
-    ->buttons(
-        Html::resetButton($translator->translate('voyti.view.reset_button'))->attribute('tabindex', $tabindex + 2),
-        Html::submitButton($translator->translate('voyti.view.save_button'))->attribute('tabindex', ++$tabindex),
-    );
+    ->buttonsData([
+        [$translator->translate('voyti.view.reset_button'), 'type' => 'reset', 'tabindex' => $tabindex + 2],
+        [$translator->translate('voyti.view.save_button'), 'type' => 'submit', 'tabindex' => ++$tabindex],
+    ]);
 
 echo Html::form()->close();
 echo Html::div()->close();
