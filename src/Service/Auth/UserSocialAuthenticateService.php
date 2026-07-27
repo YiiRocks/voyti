@@ -160,7 +160,7 @@ final readonly class UserSocialAuthenticateService
         $user = $this->userCreationHelper->buildUser($email, $username, $password);
         $user->setRegistrationIp(LoginMetadataHelper::remoteAddr($serverParams));
 
-        $this->userCreationHelper->persistAndNotifySkippingConfirmation($user, $password);
+        $this->userCreationHelper->persistAndNotifySkippingConfirmation($user);
 
         return $user;
     }

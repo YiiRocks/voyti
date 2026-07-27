@@ -47,10 +47,10 @@ if ($data->showGdprConsent) {
 echo $data->recaptchaFieldHtml;
 
 echo Field::buttonGroup()
-    ->buttons(
-        Html::resetButton($translator->translate('voyti.view.reset_button'))->attribute('tabindex', $tabindex + 2),
-        Html::submitButton($translator->translate('voyti.view.registration.register_button'))->attribute('tabindex', ++$tabindex),
-    );
+    ->buttonsData([
+        [$translator->translate('voyti.view.reset_button'), 'type' => 'reset', 'tabindex' => $tabindex + 2],
+        [$translator->translate('voyti.view.registration.register_button'), 'type' => 'submit', 'tabindex' => ++$tabindex],
+    ]);
 
 echo Html::div()->class('mt-3')->open();
 echo Html::a($translator->translate('voyti.view.registration.already_have_account'), $data->loginUrl);

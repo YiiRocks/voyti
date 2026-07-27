@@ -42,8 +42,6 @@ final class ModuleConfigTest extends TestCase
             maxPasswordAge: 90,
             viewPath: '/custom/view',
             mailPath: '/custom/mail',
-            enableRestApi: true,
-            adminRestPrefix: 'custom-api',
             apiTokenLifespan: 3600,
             enableAuditLog: false,
         );
@@ -75,8 +73,6 @@ final class ModuleConfigTest extends TestCase
         self::assertSame(90, $config->maxPasswordAge);
         self::assertSame('/custom/view', $config->viewPath);
         self::assertSame('/custom/mail', $config->mailPath);
-        self::assertTrue($config->enableRestApi);
-        self::assertSame('custom-api', $config->adminRestPrefix);
         self::assertSame(3600, $config->apiTokenLifespan);
         self::assertFalse($config->enableAuditLog);
     }

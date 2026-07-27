@@ -36,6 +36,11 @@ final class UserSocialAccount extends ActiveRecord
         $this->save();
     }
 
+    public static function deleteAllByUserId(int $userId): void
+    {
+        (new self())->deleteAll(['user_id' => $userId]);
+    }
+
     public static function findByCode(string $code): ?UserSocialAccount
     {
         /** @var ?UserSocialAccount $account */

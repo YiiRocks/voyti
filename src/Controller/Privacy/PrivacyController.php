@@ -18,6 +18,7 @@ use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\Service\UserSession\TerminateUserSessionsService;
 use YiiRocks\Voyti\ViewData\Privacy\AnonymizeViewData;
 use YiiRocks\Voyti\ViewData\Privacy\DeleteViewData;
@@ -61,6 +62,7 @@ final readonly class PrivacyController
         private ResponseFactoryInterface $responseFactory,
         private TerminateUserSessionsService $terminateUserSessionsService,
         private FlashInterface $flash,
+        private SwitchIdentityService $switchIdentityService,
     ) {}
 
     public function anonymize(
@@ -194,7 +196,13 @@ final readonly class PrivacyController
     public function index(): ResponseInterface
     {
         return $this->renderView('privacy/index', [
-            'data' => IndexViewData::create($this->config, $this->url, $this->translator()),
+            'data' => IndexViewData::create(
+                $this->config,
+                $this->url,
+                $this->translator(),
+                $this->switchIdentityService->isSwitched(),
+                $this->switchIdentityService->getOriginalUser(),
+            ),
         ]);
     }
 

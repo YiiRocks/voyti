@@ -115,6 +115,7 @@ final readonly class RbacController
                     $this->auditLogService->log(
                         $this->actorId(),
                         'rbac.' . $itemType . '.create',
+                        $request->getServerParams(),
                         targetName: $form->name,
                     );
 
@@ -134,8 +135,15 @@ final readonly class RbacController
         ]);
     }
 
-    public function delete(#[RouteArgument] string $name, #[RouteArgument] string $itemType, #[RouteArgument] string $indexRouteName): ResponseInterface
-    {
+    public function delete(
+        ServerRequestInterface $request,
+        #[RouteArgument]
+        string $name,
+        #[RouteArgument]
+        string $itemType,
+        #[RouteArgument]
+        string $indexRouteName,
+    ): ResponseInterface {
         $itemType === 'role'
             ? $this->managerInterface->removeRole($name)
             : $this->managerInterface->removePermission($name);
@@ -143,6 +151,7 @@ final readonly class RbacController
         $this->auditLogService->log(
             $this->actorId(),
             'rbac.' . $itemType . '.delete',
+            $request->getServerParams(),
             targetName: $name,
         );
 
@@ -281,6 +290,7 @@ final readonly class RbacController
                     $this->auditLogService->log(
                         $this->actorId(),
                         'rbac.' . $itemType . '.update',
+                        $request->getServerParams(),
                         targetName: $form->name,
                         context: ['previousName' => $oldName],
                     );

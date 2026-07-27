@@ -137,7 +137,7 @@ final class RuleControllerTest extends TestCase
         $response = $this->mockRedirectResponse($this->responseFactory);
 
         $controller = $this->createController();
-        $result = $controller->delete('myRule');
+        $result = $controller->delete(new ServerRequest('POST', '/'), 'myRule');
 
         $this->assertSame($response, $result);
     }

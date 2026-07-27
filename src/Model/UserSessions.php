@@ -27,6 +27,11 @@ final class UserSessions extends ActiveRecord
     private ?string $user_agent = null;
     private int $user_id = 0;
 
+    public static function deleteAllByUserId(int $userId): void
+    {
+        (new self())->deleteAll(['user_id' => $userId]);
+    }
+
     /**
      * @return UserSessions[]
      *
@@ -116,10 +121,10 @@ final class UserSessions extends ActiveRecord
     {
         $query = self::query();
         if (!empty($filters['user_id'])) {
-            $query = $query->where(['user_id' => $filters['user_id']]);
+            $query = $query->andWhere(['user_id' => $filters['user_id']]);
         }
         if (!empty($filters['ip'])) {
-            $query = $query->where(['like', 'ip', $filters['ip']]);
+            $query = $query->andWhere(['like', 'ip', $filters['ip']]);
         }
         return $query->all();
     }

@@ -52,9 +52,9 @@ foreach ($data->sessions as $row) {
             ->csrf($csrf)
             ->open();
         echo Field::buttonGroup()
-            ->buttons(
-                Html::submitButton($translator->translate('voyti.view.sessions.revoke_button'))->class('btn', 'btn-sm', 'btn-danger'),
-            );
+            ->buttonsData([
+                [$translator->translate('voyti.view.sessions.revoke_button'), 'type' => 'submit', 'class' => 'btn btn-sm btn-danger'],
+            ]);
         echo Html::form()->close();
     }
     echo Html::div()->close();

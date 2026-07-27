@@ -20,16 +20,10 @@ final readonly class UpdateViewData
 {
     /**
      * @param array<string, string> $timezoneOptions
-     * @param string|null $switchedBannerMessage set only when an admin is currently impersonating
-     *        another user; pair with $switchIdentityRestoreUrl to offer a "restore my identity" action
-     * @param string $switchIdentityRestoreUrl POST target for a separate small form restoring the
-     *        admin's original identity - not the main profile-update form
      * @param string $updateUrl POST target for the main profile-update form
      */
     private function __construct(
         public MenuViewData $menu,
-        public ?string $switchedBannerMessage,
-        public string $switchIdentityRestoreUrl,
         public string $updateUrl,
         public ProfileCardViewData $profile,
         public array $timezoneOptions,
@@ -45,11 +39,7 @@ final readonly class UpdateViewData
         ?User $originalUser,
     ): self {
         return new self(
-            menu: MenuViewData::forAccount($config, $url, $translator),
-            switchedBannerMessage: $isSwitched && $originalUser !== null
-                ? $translator->translate('voyti.view.admin.switched_banner', ['username' => $originalUser->getUsername()])
-                : null,
-            switchIdentityRestoreUrl: $url->generate('voyti/admin-users-switch-identity-restore'),
+            menu: MenuViewData::forAccount($config, $url, $translator, $isSwitched, $originalUser),
             updateUrl: $url->generate('voyti/user-profile'),
             profile: ProfileCardViewData::create(
                 $user,

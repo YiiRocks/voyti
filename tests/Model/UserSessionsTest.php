@@ -71,6 +71,17 @@ final class UserSessionsTest extends TestCase
         self::assertFalse($entity->isRevoked());
     }
 
+    public function testDeleteAllByUserIdRemovesOnlyThatUsersSessions(): void
+    {
+        $this->createUserSession(1, 'sess-1', '203.0.113.1');
+        $this->createUserSession(2, 'sess-2', '203.0.113.2');
+
+        UserSessions::deleteAllByUserId(1);
+
+        self::assertCount(0, UserSessions::findByUserId(1));
+        self::assertCount(1, UserSessions::findByUserId(2));
+    }
+
     public function testFindAllSessionsReturnsAll(): void
     {
         $this->createUserSession(1, 'sess-1', '203.0.113.1');
@@ -143,6 +154,18 @@ final class UserSessionsTest extends TestCase
         $this->createUserSession(2, 'sess-2', '203.0.113.2');
 
         self::assertCount(2, UserSessions::search());
+    }
+
+    public function testSearchWithUserIdAndIpFiltersCombinesBoth(): void
+    {
+        $this->createUserSession(1, 'sess-1', '203.0.113.1');
+        $this->createUserSession(1, 'sess-2', '198.51.100.1');
+        $this->createUserSession(2, 'sess-3', '203.0.113.1');
+
+        $sessions = UserSessions::search(['user_id' => 1, 'ip' => '203.0.113']);
+
+        self::assertCount(1, $sessions);
+        self::assertSame('sess-1', $sessions[0]->getSessionId());
     }
 
     public function testSearchWithUserIdFilter(): void

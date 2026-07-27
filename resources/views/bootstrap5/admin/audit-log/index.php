@@ -51,10 +51,10 @@ echo Html::div()->close();
 echo Html::div()->class('col-auto')->open();
 echo Field::buttonGroup()
     ->containerClass('btn-group')
-    ->buttons(
-        Html::resetButton($translator->translate('voyti.view.reset_button'))->class('btn', 'btn-outline-secondary')->attribute('tabindex', $tabindex + 2),
-        Html::submitButton($translator->translate('voyti.view.filter_button'))->class('btn', 'btn-outline-secondary')->attribute('tabindex', ++$tabindex),
-    );
+    ->buttonsData([
+        [$translator->translate('voyti.view.reset_button'), 'type' => 'reset', 'class' => 'btn btn-outline-secondary', 'tabindex' => $tabindex + 2],
+        [$translator->translate('voyti.view.filter_button'), 'type' => 'submit', 'class' => 'btn btn-outline-secondary', 'tabindex' => ++$tabindex],
+    ]);
 echo Html::div()->close();
 echo Html::div()->close();
 
@@ -71,7 +71,7 @@ echo Html::div()->close();
 foreach ($data->logs as $log) {
     echo Html::div()->class('row py-2 border-bottom align-items-center')->open();
     echo Html::div($log['createdAt'])->class('col-2');
-    echo Html::div($log['actorUserId'])->class('col-2');
+    echo Html::div($log['actorLabel'])->class('col-2');
     echo Html::div($log['action'])->class('col-2 text-break');
     echo Html::div($log['targetLabel'])->class('col-2 text-break');
     echo Html::div($log['context'])->class('col-4 text-break small');

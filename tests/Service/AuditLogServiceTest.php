@@ -28,16 +28,40 @@ final class AuditLogServiceTest extends TestCase
     {
         $service = new AuditLogService(ModuleConfigFactory::create(enableAuditLog: false));
 
-        $service->log(1, 'user.create');
+        $service->log(1, 'user.create', []);
 
         self::assertCount(0, UserAuditLog::search()->all());
+    }
+
+    public function testLogPersistsActorIpAndUserAgent(): void
+    {
+        $service = new AuditLogService(ModuleConfigFactory::create(enableAuditLog: true));
+
+        $service->log(1, 'user.create', ['REMOTE_ADDR' => '203.0.113.5', 'HTTP_USER_AGENT' => 'curl/8.0']);
+
+        $logs = UserAuditLog::search()->all();
+        self::assertCount(1, $logs);
+        self::assertSame('203.0.113.5', $logs[0]->getActorIp());
+        self::assertSame('curl/8.0', $logs[0]->getActorUserAgent());
+    }
+
+    public function testLogPersistsFallbackIpAndNullUserAgentWhenMissing(): void
+    {
+        $service = new AuditLogService(ModuleConfigFactory::create(enableAuditLog: true));
+
+        $service->log(1, 'user.create', []);
+
+        $logs = UserAuditLog::search()->all();
+        self::assertCount(1, $logs);
+        self::assertSame('127.0.0.1', $logs[0]->getActorIp());
+        self::assertNull($logs[0]->getActorUserAgent());
     }
 
     public function testLogPersistsMinimalEntry(): void
     {
         $service = new AuditLogService(ModuleConfigFactory::create(enableAuditLog: true));
 
-        $service->log(1, 'user.create');
+        $service->log(1, 'user.create', []);
 
         $logs = UserAuditLog::search()->all();
         self::assertCount(1, $logs);
@@ -53,7 +77,7 @@ final class AuditLogServiceTest extends TestCase
     {
         $service = new AuditLogService(ModuleConfigFactory::create(enableAuditLog: true));
 
-        $service->log(null, 'user.create', targetUserId: 5);
+        $service->log(null, 'user.create', [], targetUserId: 5);
 
         $logs = UserAuditLog::search()->all();
         self::assertCount(1, $logs);
@@ -65,7 +89,7 @@ final class AuditLogServiceTest extends TestCase
     {
         $service = new AuditLogService(ModuleConfigFactory::create(enableAuditLog: true));
 
-        $service->log(1, 'rbac.role.update', targetUserId: null, targetName: 'editor', context: ['previousName' => 'old-editor']);
+        $service->log(1, 'rbac.role.update', [], targetUserId: null, targetName: 'editor', context: ['previousName' => 'old-editor']);
 
         $logs = UserAuditLog::search()->all();
         self::assertCount(1, $logs);

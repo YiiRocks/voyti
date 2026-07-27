@@ -130,9 +130,7 @@ return [
         maxPasswordAge: $params['yiirocks/voyti']['maxPasswordAge'] ?? 0,
         viewPath: $params['yiirocks/voyti']['viewPath'] ?? ModuleConfig::DEFAULT_VIEW_PATH,
         mailPath: $params['yiirocks/voyti']['mailPath'] ?? ModuleConfig::DEFAULT_MAIL_PATH,
-        enableRestApi: $params['yiirocks/voyti']['enableRestApi'] ?? false,
-        adminRestPrefix: $params['yiirocks/voyti']['adminRestPrefix'] ?? 'api',
-        apiTokenLifespan: $params['yiirocks/voyti']['apiTokenLifespan'] ?? null,
+        apiTokenLifespan: $params['yiirocks/voyti']['apiTokenLifespan'] ?? 0,
         enableAuditLog: $params['yiirocks/voyti']['enableAuditLog'] ?? true,
     ),
 
@@ -153,7 +151,7 @@ return [
         PasswordAgeEnforceMiddleware $passwordAge,
         SessionRevocationEnforceMiddleware $sessionRevocation,
         TwoFactorAuthenticationEnforceMiddleware $twoFactorAuth,
-    ) => new VoytiMiddleware($rememberMe, $passwordAge, $sessionRevocation, $twoFactorAuth),
+    ) => new VoytiMiddleware($rememberMe, $sessionRevocation, $passwordAge, $twoFactorAuth),
 
     // Cookie encryption middleware for remember-me cookies
     CookieEncryptor::class => static fn() => new CookieEncryptor($cookieSecretKey()),

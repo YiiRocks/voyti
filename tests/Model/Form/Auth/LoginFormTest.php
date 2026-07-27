@@ -94,6 +94,7 @@ final class LoginFormTest extends TestCase
         $this->assertArrayHasKey('twoFactorAuthenticationCode', $rules);
         $this->assertCount(1, $rules['twoFactorAuthenticationCode']);
         $this->assertInstanceOf(Required::class, $rules['twoFactorAuthenticationCode'][0]);
+        $this->assertArrayNotHasKey('password', $rules);
     }
 
     public function testGetValidationPropertyLabels(): void

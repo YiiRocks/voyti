@@ -33,8 +33,8 @@ if ($data->emailCodeSent) {
         ->csrf($csrf)
         ->open();
     echo Field::buttonGroup()
-        ->buttons(
-            Html::submitButton($translator->translate('voyti.view.two_factor_email.send_button'))->class('btn', 'btn-primary')->attribute('tabindex', 1),
-        );
+        ->buttonsData([
+            [$translator->translate('voyti.view.two_factor_email.send_button'), 'type' => 'submit', 'class' => 'btn btn-primary', 'tabindex' => 1],
+        ]);
     echo Html::form()->close();
 }

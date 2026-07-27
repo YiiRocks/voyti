@@ -13,7 +13,6 @@ use Yiisoft\DataResponse\Middleware\JsonDataResponseMiddleware;
 use Yiisoft\Router\Route;
 use Yiisoft\Router\RouteCollection;
 use Yiisoft\Router\RouteCollector;
-use Yiisoft\Router\RouteNotFoundException;
 use Yiisoft\Session\SessionMiddleware;
 
 final class RoutesTest extends TestCase
@@ -56,10 +55,9 @@ final class RoutesTest extends TestCase
 
     public function testOpenApiRouteIsPublic(): void
     {
-        $route = $this->getRoute('voyti/api-openapi', ['enableRestApi' => true]);
+        $route = $this->getApiRoute('voyti/api-openapi');
         $middlewares = $route->getData('enabledMiddlewares');
 
-        self::assertSame('api/openapi.json', $route->getData('pattern'));
         self::assertContains(
             JsonDataResponseMiddleware::class,
             $middlewares,
@@ -76,7 +74,7 @@ final class RoutesTest extends TestCase
 
     public function testRestApiRouteFormatsResponsesAsJson(): void
     {
-        $route = $this->getRoute('voyti/api-v1-users-index', ['enableRestApi' => true]);
+        $route = $this->getApiRoute('voyti/api-v1-users-index');
 
         self::assertContains(
             JsonDataResponseMiddleware::class,
@@ -87,30 +85,16 @@ final class RoutesTest extends TestCase
         );
     }
 
-    public function testRestApiRouteIsNotRegisteredWhenDisabled(): void
-    {
-        $this->expectException(RouteNotFoundException::class);
-
-        $this->getRoute('voyti/api-v1-users-index', ['enableRestApi' => false]);
-    }
-
     public function testRestApiRouteRequiresAdminAccess(): void
     {
-        $route = $this->getRoute('voyti/api-v1-users-index', ['enableRestApi' => true]);
+        $route = $this->getApiRoute('voyti/api-v1-users-index');
 
         self::assertContains(AccessRuleMiddleware::class, $route->getData('enabledMiddlewares'));
     }
 
-    public function testRestApiRouteUsesConfiguredPrefix(): void
-    {
-        $route = $this->getRoute('voyti/api-v1-users-index', ['enableRestApi' => true, 'adminRestPrefix' => 'custom/prefix']);
-
-        self::assertSame('custom/prefix/v1/users', $route->getData('pattern'));
-    }
-
     public function testRestApiRouteUsesTokenAuthenticationInsteadOfSession(): void
     {
-        $route = $this->getRoute('voyti/api-v1-users-index', ['enableRestApi' => true]);
+        $route = $this->getApiRoute('voyti/api-v1-users-index');
         $middlewares = $route->getData('enabledMiddlewares');
 
         self::assertContains(ApiTokenAuthenticationMiddleware::class, $middlewares);
@@ -120,6 +104,16 @@ final class RoutesTest extends TestCase
             'The REST API must not rely on cookie/session auth (CSRF-exposed for state-changing '
             . 'requests); it authenticates via Bearer token instead.',
         );
+    }
+
+    private function getApiRoute(string $name): Route
+    {
+        $routes = require dirname(__DIR__) . '/config/routes-api.php';
+
+        $collector = new RouteCollector();
+        $collector->addRoute(...$routes);
+
+        return (new RouteCollection($collector))->getRoute($name);
     }
 
     /**

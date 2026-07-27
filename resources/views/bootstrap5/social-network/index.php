@@ -41,11 +41,9 @@ if (empty($data->accounts)) {
             ->csrf($csrf)
             ->open()
             . Field::buttonGroup()
-                ->buttons(
-                    Html::submitButton($translator->translate('voyti.view.disconnect_button'))
-                        ->class('btn', 'btn-outline-danger', 'btn-sm')
-                        ->attribute('tabindex', 1),
-                )
+                ->buttonsData([
+                    [$translator->translate('voyti.view.disconnect_button'), 'type' => 'submit', 'class' => 'btn btn-outline-danger btn-sm', 'tabindex' => 1],
+                ])
                 ->render()
             . Html::form()->close();
 

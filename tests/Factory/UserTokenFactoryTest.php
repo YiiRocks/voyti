@@ -70,63 +70,76 @@ final class UserTokenFactoryTest extends TestCase
     public function testMakeConfirmationToken(): void
     {
         $factory = new UserTokenFactory();
-        $token = $factory->makeConfirmationToken(42);
+        $rawCode = $factory->makeConfirmationToken(42);
 
-        self::assertSame(42, $token->getUserId());
-        self::assertSame(UserToken::TYPE_CONFIRMATION, $token->getType());
-        self::assertNotEmpty($token->getCode());
-        self::assertSame(32, strlen($token->getCode()));
-        self::assertGreaterThan(0, $token->getCreatedAt());
+        self::assertNotEmpty($rawCode);
+        self::assertSame(32, strlen($rawCode));
 
-        $saved = (new ActiveQuery(new UserToken()))
-            ->where(['code' => $token->getCode()])
-            ->one();
+        $saved = UserToken::findByUserIdAndCodeAndType(42, $rawCode, UserToken::TYPE_CONFIRMATION);
         self::assertNotNull($saved);
+        self::assertSame(42, $saved->getUserId());
+        self::assertSame(UserToken::TYPE_CONFIRMATION, $saved->getType());
+        self::assertGreaterThan(0, $saved->getCreatedAt());
+        self::assertNotSame($rawCode, $saved->getCode());
+
+        $storedAsRaw = (new ActiveQuery(new UserToken()))
+            ->where(['code' => $rawCode])
+            ->one();
+        self::assertNull($storedAsRaw);
     }
 
     public function testMakeConfirmNewMailToken(): void
     {
         $factory = new UserTokenFactory();
-        $token = $factory->makeConfirmNewMailToken(7);
+        $rawCode = $factory->makeConfirmNewMailToken(7);
 
-        self::assertSame(7, $token->getUserId());
-        self::assertSame(UserToken::TYPE_CONFIRM_NEW_EMAIL, $token->getType());
-        self::assertNotEmpty($token->getCode());
-        self::assertSame(32, strlen($token->getCode()));
-        self::assertGreaterThan(0, $token->getCreatedAt());
+        self::assertNotEmpty($rawCode);
+        self::assertSame(32, strlen($rawCode));
+
+        $saved = UserToken::findByUserIdAndCodeAndType(7, $rawCode, UserToken::TYPE_CONFIRM_NEW_EMAIL);
+        self::assertNotNull($saved);
+        self::assertSame(7, $saved->getUserId());
+        self::assertSame(UserToken::TYPE_CONFIRM_NEW_EMAIL, $saved->getType());
+        self::assertGreaterThan(0, $saved->getCreatedAt());
     }
 
     public function testMakeConfirmOldMailToken(): void
     {
         $factory = new UserTokenFactory();
-        $token = $factory->makeConfirmOldMailToken(99);
+        $rawCode = $factory->makeConfirmOldMailToken(99);
 
-        self::assertSame(99, $token->getUserId());
-        self::assertSame(UserToken::TYPE_CONFIRM_OLD_EMAIL, $token->getType());
-        self::assertNotEmpty($token->getCode());
-        self::assertSame(32, strlen($token->getCode()));
-        self::assertGreaterThan(0, $token->getCreatedAt());
+        self::assertNotEmpty($rawCode);
+        self::assertSame(32, strlen($rawCode));
+
+        $saved = UserToken::findByUserIdAndCodeAndType(99, $rawCode, UserToken::TYPE_CONFIRM_OLD_EMAIL);
+        self::assertNotNull($saved);
+        self::assertSame(99, $saved->getUserId());
+        self::assertSame(UserToken::TYPE_CONFIRM_OLD_EMAIL, $saved->getType());
+        self::assertGreaterThan(0, $saved->getCreatedAt());
     }
 
     public function testMakeRecoveryToken(): void
     {
         $factory = new UserTokenFactory();
-        $token = $factory->makeRecoveryToken(1);
+        $rawCode = $factory->makeRecoveryToken(1);
 
-        self::assertSame(1, $token->getUserId());
-        self::assertSame(UserToken::TYPE_RECOVERY, $token->getType());
-        self::assertNotEmpty($token->getCode());
-        self::assertSame(32, strlen($token->getCode()));
-        self::assertGreaterThan(0, $token->getCreatedAt());
+        self::assertNotEmpty($rawCode);
+        self::assertSame(32, strlen($rawCode));
+
+        $saved = UserToken::findByUserIdAndCodeAndType(1, $rawCode, UserToken::TYPE_RECOVERY);
+        self::assertNotNull($saved);
+        self::assertSame(1, $saved->getUserId());
+        self::assertSame(UserToken::TYPE_RECOVERY, $saved->getType());
+        self::assertGreaterThan(0, $saved->getCreatedAt());
     }
 
     public function testMultipleTokensHaveDifferentCodes(): void
     {
         $factory = new UserTokenFactory();
-        $token1 = $factory->makeConfirmationToken(1);
-        $token2 = $factory->makeConfirmationToken(1);
+        $rawCode1 = $factory->makeConfirmationToken(1);
+        $rawCode2 = $factory->makeConfirmationToken(1);
 
-        self::assertNotSame($token1->getCode(), $token2->getCode());
+        self::assertNotSame($rawCode1, $rawCode2);
     }
 
 }

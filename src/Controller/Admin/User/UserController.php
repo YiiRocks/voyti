@@ -108,7 +108,7 @@ final readonly class UserController
 
         if ($request->getMethod() === Method::POST) {
             $this->updateAuthAssignmentsService->run($id, $items);
-            $this->auditLogService->log($this->actorId(), 'user.assignments_update', targetUserId: $id);
+            $this->auditLogService->log($this->actorId(), 'user.assignments_update', $request->getServerParams(), targetUserId: $id);
         }
 
         $assignments = $this->assignmentsStorage->getByUserId((string) $id);
@@ -120,7 +120,7 @@ final readonly class UserController
         ]);
     }
 
-    public function block(#[RouteArgument] int $id): ResponseInterface
+    public function block(ServerRequestInterface $request, #[RouteArgument] int $id): ResponseInterface
     {
         $user = User::findById($id);
         if ($user !== null) {
@@ -128,6 +128,7 @@ final readonly class UserController
             $this->auditLogService->log(
                 $this->actorId(),
                 $user->isBlocked() ? 'user.block' : 'user.unblock',
+                $request->getServerParams(),
                 targetUserId: $id,
             );
         }
@@ -135,11 +136,11 @@ final readonly class UserController
         return $this->redirectWithFlash($this->url->generate('voyti/admin-users'), 'voyti.admin.user_status_changed');
     }
 
-    public function confirm(#[RouteArgument] int $id): ResponseInterface
+    public function confirm(ServerRequestInterface $request, #[RouteArgument] int $id): ResponseInterface
     {
         $user = User::findById($id);
         if ($user !== null && $this->userConfirmationService->run($user)) {
-            $this->auditLogService->log($this->actorId(), 'user.confirm', targetUserId: $id);
+            $this->auditLogService->log($this->actorId(), 'user.confirm', $request->getServerParams(), targetUserId: $id);
 
             return $this->redirectWithFlash($this->url->generate('voyti/admin-users'), 'voyti.admin.user_confirmed');
         }
@@ -173,6 +174,7 @@ final readonly class UserController
                 $this->auditLogService->log(
                     $this->actorId(),
                     'user.create',
+                    $request->getServerParams(),
                     targetUserId: $createdUser?->getIdOrZero(),
                     targetName: $username,
                 );
@@ -189,7 +191,7 @@ final readonly class UserController
         ]);
     }
 
-    public function delete(#[RouteArgument] int $id): ResponseInterface
+    public function delete(ServerRequestInterface $request, #[RouteArgument] int $id): ResponseInterface
     {
         $identity = $this->currentUser->getIdentity();
         if ($id === (int) $identity->getId()) {
@@ -201,6 +203,7 @@ final readonly class UserController
             $this->auditLogService->log(
                 $this->actorId(),
                 'user.delete',
+                $request->getServerParams(),
                 targetUserId: $id,
                 targetName: $user->getUsername(),
             );
@@ -210,11 +213,11 @@ final readonly class UserController
         return $this->renderError('voyti.admin.user_not_found');
     }
 
-    public function forcePasswordChange(#[RouteArgument] int $id): ResponseInterface
+    public function forcePasswordChange(ServerRequestInterface $request, #[RouteArgument] int $id): ResponseInterface
     {
         $user = User::findById($id);
         if ($user !== null && $this->passwordExpireService->run($user)) {
-            $this->auditLogService->log($this->actorId(), 'user.force_password_change', targetUserId: $id);
+            $this->auditLogService->log($this->actorId(), 'user.force_password_change', $request->getServerParams(), targetUserId: $id);
 
             return $this->redirectWithFlash(
                 $this->url->generate('voyti/admin-users'),
@@ -247,7 +250,6 @@ final readonly class UserController
         ];
 
         $reader = new QueryDataReader(User::searchQuery($filters));
-
         $pageSize = min(max(1, $perPage), self::MAX_PER_PAGE);
         $sizedPaginator = (new OffsetPaginator($reader))->withPageSize($pageSize);
         $currentPage = min(max(1, $page), max(1, $sizedPaginator->getTotalPages()));
@@ -273,12 +275,12 @@ final readonly class UserController
         ]);
     }
 
-    public function passwordReset(#[RouteArgument] int $id): ResponseInterface
+    public function passwordReset(ServerRequestInterface $request, #[RouteArgument] int $id): ResponseInterface
     {
         $user = User::findById($id);
         if ($user !== null) {
             $result = $this->passwordRecoveryService->run($user->getEmail());
-            $this->auditLogService->log($this->actorId(), 'user.password_reset_triggered', targetUserId: $id);
+            $this->auditLogService->log($this->actorId(), 'user.password_reset_triggered', $request->getServerParams(), targetUserId: $id);
 
             return $this->renderView('shared/message', [
                 'data' => new MessageViewData(title: $result->getMessage(), homeUrl: $this->homeUrl()),
@@ -325,15 +327,16 @@ final readonly class UserController
 
     public function switchIdentity(ServerRequestInterface $request, #[RouteArgument] int $id): ResponseInterface
     {
+        $actorId = $this->actorId();
         $result = $this->switchIdentityService->run($id, $request->getServerParams());
         if ($result->isSuccess()) {
-            $this->auditLogService->log($this->actorId(), 'user.switch_identity', targetUserId: $id);
+            $this->auditLogService->log($actorId, 'user.switch_identity', $request->getServerParams(), targetUserId: $id);
             $this->flash->set(
                 FlashType::SUCCESS,
                 $this->translator->translate('voyti.admin.switch_identity_success', category: 'voyti'),
             );
 
-            return $this->redirect($this->url->generate('voyti/user-profile'));
+            return $this->redirect($this->url->generate('voyti/user'));
         }
 
         return $this->renderError($result->getMessage() !== '' ? $result->getMessage() : 'voyti.admin.error_occurred');
@@ -420,6 +423,7 @@ final readonly class UserController
                 $this->auditLogService->log(
                     $this->actorId(),
                     'user.update',
+                    $request->getServerParams(),
                     targetUserId: $id,
                     context: ['passwordChanged' => $password !== ''],
                 );

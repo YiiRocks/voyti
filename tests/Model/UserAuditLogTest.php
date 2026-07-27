@@ -28,6 +28,8 @@ final class UserAuditLogTest extends TestCase
                 "target_name" VARCHAR(255),
                 "action" VARCHAR(64) NOT NULL,
                 "context" TEXT,
+                "actor_ip" VARCHAR(45) NOT NULL,
+                "actor_user_agent" TEXT,
                 "created_at" INTEGER NOT NULL
             )
         ')->execute();
@@ -55,12 +57,28 @@ final class UserAuditLogTest extends TestCase
     {
         $entity = new UserAuditLog();
         self::assertSame('', $entity->getAction());
+        self::assertSame('', $entity->getActorIp());
+        self::assertNull($entity->getActorUserAgent());
         self::assertNull($entity->getActorUserId());
         self::assertNull($entity->getContext());
         self::assertSame(0, $entity->getCreatedAt());
         self::assertNull($entity->getId());
         self::assertNull($entity->getTargetName());
         self::assertNull($entity->getTargetUserId());
+    }
+
+    public function testGetSetActorIp(): void
+    {
+        $entity = new UserAuditLog();
+        $entity->setActorIp('203.0.113.5');
+        self::assertSame('203.0.113.5', $entity->getActorIp());
+    }
+
+    public function testGetSetActorUserAgent(): void
+    {
+        $entity = new UserAuditLog();
+        $entity->setActorUserAgent('curl/8.0');
+        self::assertSame('curl/8.0', $entity->getActorUserAgent());
     }
 
     public function testGetSetActorUserId(): void

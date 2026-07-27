@@ -134,6 +134,58 @@ final class UserBackupCodeTest extends TestCase
         self::assertSame(1234, $entity->getUsedAt());
     }
 
+    public function testMarkUsedFailsWhenAlreadyUsedConcurrently(): void
+    {
+        $code = new UserBackupCode();
+        $code->setUserId(1);
+        $code->setCodeHash('race-hash');
+        $code->setCreatedAt(time());
+        $code->save();
+
+        $first = UserBackupCode::findUnusedByUserId(1)[0];
+        $second = UserBackupCode::findUnusedByUserId(1)[0];
+
+        self::assertTrue($first->markUsed());
+        self::assertFalse($second->markUsed());
+    }
+
+    public function testMarkUsedScopesToOwningUser(): void
+    {
+        $ownCode = new UserBackupCode();
+        $ownCode->setUserId(1);
+        $ownCode->setCodeHash('shared-hash');
+        $ownCode->setCreatedAt(time());
+        $ownCode->save();
+
+        $otherUsersCode = new UserBackupCode();
+        $otherUsersCode->setUserId(2);
+        $otherUsersCode->setCodeHash('shared-hash');
+        $otherUsersCode->setCreatedAt(time());
+        $otherUsersCode->save();
+
+        self::assertTrue($ownCode->markUsed());
+
+        $stillUnused = UserBackupCode::query()->where(['user_id' => 2, 'code_hash' => 'shared-hash'])->one();
+        self::assertNotNull($stillUnused);
+        self::assertNull($stillUnused->getUsedAt());
+    }
+
+    public function testMarkUsedSucceedsAndPersistsUsedAt(): void
+    {
+        $code = new UserBackupCode();
+        $code->setUserId(1);
+        $code->setCodeHash('use-hash');
+        $code->setCreatedAt(time());
+        $code->save();
+
+        self::assertTrue($code->markUsed());
+        self::assertNotNull($code->getUsedAt());
+
+        $reloaded = UserBackupCode::query()->where(['user_id' => 1, 'code_hash' => 'use-hash'])->one();
+        self::assertNotNull($reloaded);
+        self::assertNotNull($reloaded->getUsedAt());
+    }
+
     public function testPrimaryKey(): void
     {
         $entity = new UserBackupCode();

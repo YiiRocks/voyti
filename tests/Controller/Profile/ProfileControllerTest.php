@@ -223,7 +223,7 @@ final class ProfileControllerTest extends TestCase
 
         $controller->update($request);
 
-        $this->assertNull($captured['data']->switchedBannerMessage);
+        $this->assertNull($captured['data']->menu->switchedBannerMessage);
     }
 
     public function testUpdateGetShowsFormWithExistingProfile(): void
@@ -276,7 +276,7 @@ final class ProfileControllerTest extends TestCase
 
         $controller->update($request);
 
-        $this->assertStringContainsString('original', (string) $captured['data']->switchedBannerMessage);
+        $this->assertStringContainsString('original', (string) $captured['data']->menu->switchedBannerMessage);
     }
 
     public function testUpdatePostClearingFieldsSetsThemToNullNotEmptyString(): void

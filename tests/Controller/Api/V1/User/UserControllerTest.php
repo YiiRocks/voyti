@@ -88,6 +88,46 @@ final class UserControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
+    public function testCreateHandlesRaceLostAfterUniquenessCheckPasses(): void
+    {
+        $this->createUser('existinguser', 'existing@example.com');
+
+        $passwordHasher = TestPasswordHasherFactory::create();
+        $mailer = new MailCapture();
+        $url = $this->createMock(UrlGeneratorInterface::class);
+        $mailService = new MailService($mailer, '/tmp', new View(), $this->translator, $url, 'Test');
+        $userCreationHelper = $this->getMockBuilder(UserCreationHelper::class)
+            ->setConstructorArgs([
+                $mailService,
+                new EventCaptureDispatcher(),
+                $passwordHasher,
+                $this->config,
+                new PasswordHistoryService($passwordHasher, $this->config),
+            ])
+            ->onlyMethods(['findUniquenessConflict'])
+            ->getMock();
+        $userCreationHelper->method('findUniquenessConflict')->willReturnOnConsecutiveCalls(null, 'Email already exists');
+
+        $response = $this->createMock(ResponseInterface::class);
+        $this->responseFactory->expects($this->once())
+            ->method('createResponse')
+            ->with(['error' => 'Email already exists'], 400)
+            ->willReturn($response);
+
+        $controller = new UserController(
+            translator: $this->translator,
+            config: $this->config,
+            responseFactory: $this->responseFactory,
+            passwordGenerator: $this->passwordGenerator,
+            passwordHistoryService: new PasswordHistoryService($passwordHasher, $this->config),
+            userCreationHelper: $userCreationHelper,
+        );
+
+        $result = $controller->create(email: 'existing@example.com', username: 'newuser2', password: 'secret123');
+
+        $this->assertSame($response, $result);
+    }
+
     public function testCreateRecordsPasswordHistory(): void
     {
         $response = $this->createMock(ResponseInterface::class);

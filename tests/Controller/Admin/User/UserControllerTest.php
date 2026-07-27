@@ -7,12 +7,14 @@ namespace YiiRocks\Voyti\tests\Controller\Admin\User;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\Admin\User\UserController;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\Model\UserAuditLog;
 use YiiRocks\Voyti\Model\UserProfile;
 use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\ModuleConfig;
@@ -33,6 +35,7 @@ use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\Support\UserSessionFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
+use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Data\Paginator\OffsetPaginator;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Security\PasswordHasher;
@@ -159,7 +162,7 @@ final class UserControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->block(999999);
+        $result = $controller->block(new ServerRequest('POST', '/'), 999999);
 
         $this->assertSame($response, $result);
     }
@@ -176,7 +179,7 @@ final class UserControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->block($userId);
+        $result = $controller->block(new ServerRequest('POST', '/'), $userId);
 
         $this->assertSame($response, $result);
     }
@@ -196,7 +199,7 @@ final class UserControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->confirm((int) $user->getId());
+        $result = $controller->confirm(new ServerRequest('POST', '/'), (int) $user->getId());
 
         $this->assertSame($response, $result);
     }
@@ -210,7 +213,7 @@ final class UserControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->confirm((int) $user->getId());
+        $result = $controller->confirm(new ServerRequest('POST', '/'), (int) $user->getId());
 
         $this->assertSame($response, $result);
     }
@@ -319,7 +322,7 @@ final class UserControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->delete($userId);
+        $result = $controller->delete(new ServerRequest('POST', '/'), $userId);
 
         $this->assertSame($response, $result);
         $this->assertNull(User::findById($userId));
@@ -341,7 +344,7 @@ final class UserControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->delete(999999);
+        $result = $controller->delete(new ServerRequest('POST', '/'), 999999);
 
         $this->assertSame($response, $result);
     }
@@ -362,7 +365,7 @@ final class UserControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->delete(1);
+        $result = $controller->delete(new ServerRequest('POST', '/'), 1);
 
         $this->assertSame($response, $result);
     }
@@ -370,7 +373,7 @@ final class UserControllerTest extends TestCase
     public function testForcePasswordChangeFailsShowsError(): void
     {
         $this->assertNotFoundRendersError(
-            static fn(UserController $controller): ResponseInterface => $controller->forcePasswordChange(999999),
+            static fn(UserController $controller): ResponseInterface => $controller->forcePasswordChange(new ServerRequest('POST', '/'), 999999),
         );
     }
 
@@ -383,7 +386,7 @@ final class UserControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->forcePasswordChange((int) $user->getId());
+        $result = $controller->forcePasswordChange(new ServerRequest('POST', '/'), (int) $user->getId());
 
         $this->assertSame($response, $result);
     }
@@ -622,7 +625,7 @@ final class UserControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->passwordReset((int) $user->getId());
+        $result = $controller->passwordReset(new ServerRequest('POST', '/'), (int) $user->getId());
 
         $this->assertSame($response, $result);
     }
@@ -630,7 +633,7 @@ final class UserControllerTest extends TestCase
     public function testPasswordResetUserNotFoundShowsError(): void
     {
         $this->assertNotFoundRendersError(
-            static fn(UserController $controller): ResponseInterface => $controller->passwordReset(999999),
+            static fn(UserController $controller): ResponseInterface => $controller->passwordReset(new ServerRequest('POST', '/'), 999999),
         );
     }
 
@@ -709,6 +712,44 @@ final class UserControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
+    public function testSwitchIdentityLogsOriginalActorNotTarget(): void
+    {
+        $admin = $this->createUser(username: 'realadmin', email: 'realadmin@example.com');
+        $targetUser = $this->createUser(username: 'targetuser', email: 'targetuser@example.com');
+
+        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
+        $eventDispatcher->method('dispatch')->willReturnArgument(0);
+        $currentUser = new CurrentUser($this->createMock(IdentityRepositoryInterface::class), $eventDispatcher);
+        $currentUser->login($admin);
+
+        $controller = $this->harness->createUserController(
+            translator: $this->translator,
+            viewRenderer: $this->viewRenderer,
+            validator: $this->validator,
+            currentUser: $currentUser,
+            responseFactory: $this->responseFactory,
+            hydrator: $this->hydrator,
+            flash: $this->flash,
+            passwordGenerator: $this->passwordGenerator,
+            createService: $this->createService,
+            blockService: $this->blockService,
+            confirmationService: $this->confirmationService,
+            recoveryService: $this->recoveryService,
+            expireService: $this->expireService,
+            updateAssignmentsService: $this->updateAssignmentsService,
+            authHelper: $this->authHelper,
+        );
+
+        $this->mockRedirectResponse($this->responseFactory);
+
+        $controller->switchIdentity(new ServerRequest('POST', '/'), (int) $targetUser->getId());
+
+        $logs = UserAuditLog::search(['action' => 'user.switch_identity'])->all();
+        self::assertCount(1, $logs);
+        self::assertSame((int) $admin->getId(), $logs[0]->getActorUserId());
+        self::assertSame((int) $targetUser->getId(), $logs[0]->getTargetUserId());
+    }
+
     public function testSwitchIdentityRestoreFailureShowsError(): void
     {
         $controller = $this->createController();
@@ -753,7 +794,7 @@ final class UserControllerTest extends TestCase
             ->method('run')
             ->willReturn(ServiceResult::success());
 
-        $response = $this->mockRedirectResponse($this->responseFactory);
+        $response = $this->mockRedirectResponse($this->responseFactory, '//voyti/user');
 
         $result = $controller->switchIdentity(new ServerRequest('POST', '/'), 1);
 

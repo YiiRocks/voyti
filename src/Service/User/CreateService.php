@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service\User;
 
+use RuntimeException;
 use YiiRocks\Voyti\Service\ServiceResult;
 
 /**
@@ -24,7 +25,11 @@ final readonly class CreateService
         }
 
         $user = $this->userCreationHelper->buildUser($email, $username, $password);
-        $this->userCreationHelper->persistAndNotify($user, $password);
+        try {
+            $this->userCreationHelper->persistAndNotify($user);
+        } catch (RuntimeException $exception) {
+            return ServiceResult::failure($exception->getMessage());
+        }
 
         return ServiceResult::success('User has been created');
     }

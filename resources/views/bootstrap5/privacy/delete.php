@@ -41,10 +41,10 @@ echo Field::password($form, 'password')->tabIndex(++$tabindex);
 echo Field::checkbox($form, 'consent')->tabIndex(++$tabindex);
 
 echo Field::buttonGroup()
-    ->buttons(
-        Html::resetButton($translator->translate('voyti.view.reset_button'))->attribute('tabindex', $tabindex + 2),
-        Html::submitButton($translator->translate('voyti.view.delete_account.button'))->class('btn', 'btn-danger')->attribute('tabindex', ++$tabindex),
-    );
+    ->buttonsData([
+        [$translator->translate('voyti.view.reset_button'), 'type' => 'reset', 'tabindex' => $tabindex + 2],
+        [$translator->translate('voyti.view.delete_account.button'), 'type' => 'submit', 'class' => 'btn btn-danger', 'tabindex' => ++$tabindex],
+    ]);
 
 echo Html::form()->close();
 echo Html::div()->close();

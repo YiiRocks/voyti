@@ -13,6 +13,7 @@ use YiiRocks\Voyti\Service\User\UserCreationHelper;
 use Yiisoft\Data\Db\QueryDataReader;
 use Yiisoft\Data\Paginator\OffsetPaginator;
 use Yiisoft\DataResponse\ResponseFactory\DataResponseFactoryInterface;
+use Yiisoft\Db\Exception\IntegrityException;
 use Yiisoft\Http\Status;
 use Yiisoft\Input\Http\Attribute\Parameter\Body;
 use Yiisoft\Input\Http\Attribute\Parameter\Query;
@@ -20,7 +21,7 @@ use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Translator\TranslatorInterface;
 
 /**
- * REST CRUD endpoints for users under the `enableRestApi` route group, authenticated via
+ * REST CRUD endpoints for users under the `voyti-routes-api` route group, authenticated via
  * {@see ApiTokenAuthenticationMiddleware}. Returns JSON only, no view rendering.
  */
 final readonly class UserController
@@ -53,7 +54,19 @@ final readonly class UserController
 
         $user = $this->userCreationHelper->buildUser($email, $username, $password);
         $user->setConfirmedAt(time());
-        $user->save();
+        try {
+            $user->save();
+        } catch (IntegrityException) {
+            $raceConflict = $this->userCreationHelper->findUniquenessConflict($email, $username);
+            if ($raceConflict === null) {
+                // @codeCoverageIgnoreStart
+                // The `user` table's only UNIQUE constraints are on email and username, so an
+                // IntegrityException on this save always means findUniquenessConflict() finds one.
+                $raceConflict = 'A user with this email or username already exists.';
+                // @codeCoverageIgnoreEnd
+            }
+            return $this->responseFactory->createResponse(['error' => $raceConflict], Status::BAD_REQUEST);
+        }
         $this->passwordHistoryService->record($user);
 
         return $this->responseFactory->createResponse([

@@ -18,7 +18,7 @@ final class IndexViewDataTest extends TestCase
     {
         $config = ModuleConfigFactory::create(enableGdprCompliance: false, allowAccountDelete: true);
 
-        $data = IndexViewData::create($config, new FakeUrlGenerator(), $this->createTranslator());
+        $data = IndexViewData::create($config, new FakeUrlGenerator(), $this->createTranslator(), false, null);
 
         self::assertFalse($data->showGdprLinks);
         self::assertTrue($data->showDeleteLink);
@@ -32,7 +32,7 @@ final class IndexViewDataTest extends TestCase
     {
         $config = ModuleConfigFactory::create(enableGdprCompliance: false, allowAccountDelete: false);
 
-        $data = IndexViewData::create($config, new FakeUrlGenerator(), $this->createTranslator());
+        $data = IndexViewData::create($config, new FakeUrlGenerator(), $this->createTranslator(), false, null);
 
         self::assertFalse($data->showGdprLinks);
         self::assertFalse($data->showDeleteLink);
@@ -42,7 +42,7 @@ final class IndexViewDataTest extends TestCase
     {
         $config = ModuleConfigFactory::create(enableGdprCompliance: true, allowAccountDelete: true);
 
-        $data = IndexViewData::create($config, new FakeUrlGenerator(), $this->createTranslator());
+        $data = IndexViewData::create($config, new FakeUrlGenerator(), $this->createTranslator(), false, null);
 
         self::assertTrue($data->showGdprLinks);
         self::assertTrue($data->showDeleteLink);
@@ -57,7 +57,7 @@ final class IndexViewDataTest extends TestCase
     {
         $config = ModuleConfigFactory::create(enableGdprCompliance: true, allowAccountDelete: false);
 
-        $data = IndexViewData::create($config, new FakeUrlGenerator(), $this->createTranslator());
+        $data = IndexViewData::create($config, new FakeUrlGenerator(), $this->createTranslator(), false, null);
 
         self::assertTrue($data->showGdprLinks);
         self::assertFalse($data->showDeleteLink);

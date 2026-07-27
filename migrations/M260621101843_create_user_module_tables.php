@@ -129,6 +129,8 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
             'target_name' => ColumnBuilder::string(255),
             'action' => ColumnBuilder::string(64)->notNull(),
             'context' => ColumnBuilder::text(),
+            'actor_ip' => ColumnBuilder::string(45)->notNull(),
+            'actor_user_agent' => ColumnBuilder::text(),
             'created_at' => ColumnBuilder::integer()->notNull(),
         ]);
 

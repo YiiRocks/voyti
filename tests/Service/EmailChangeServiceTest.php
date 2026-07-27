@@ -48,6 +48,21 @@ final class EmailChangeServiceTest extends TestCase
         self::assertFalse($service->initiate(EmailChangeConfirmation::BOTH, $form));
     }
 
+    public function testInitiateBothReturnsFalseWhenOldFails(): void
+    {
+        $config = ModuleConfigFactory::create();
+        $mailService = $this->createStub(MailService::class);
+        $mailService->method('sendReconfirmation')->willReturnOnConsecutiveCalls(true, false);
+        $service = new EmailChangeService($config, new UserTokenFactory(), $mailService);
+
+        $user = $this->createSavedUser();
+        $form = new SettingsForm($config, $this->createStub(TranslatorInterface::class));
+        $form->setUser($user);
+        $form->email = 'new@example.com';
+
+        self::assertFalse($service->initiate(EmailChangeConfirmation::BOTH, $form));
+    }
+
     public function testInitiateBothSendsTwoConfirmationEmails(): void
     {
         $config = ModuleConfigFactory::create();
@@ -418,7 +433,7 @@ final class EmailChangeServiceTest extends TestCase
 
         $token = new UserToken();
         $token->setUserId(0);
-        $token->setCode('zerocode');
+        $token->setCode(hash('sha256', 'zerocode'));
         $token->setType(UserToken::TYPE_CONFIRM_NEW_EMAIL);
         $token->setCreatedAt(time());
         $token->save();
@@ -447,7 +462,7 @@ final class EmailChangeServiceTest extends TestCase
 
         $token = new UserToken();
         $token->setUserId(1);
-        $token->setCode('onecode');
+        $token->setCode(hash('sha256', 'onecode'));
         $token->setType(UserToken::TYPE_CONFIRM_NEW_EMAIL);
         $token->setCreatedAt(time());
         $token->save();
@@ -472,7 +487,7 @@ final class EmailChangeServiceTest extends TestCase
     {
         $token = new UserToken();
         $token->setUserId($userId);
-        $token->setCode('testcode_' . $type);
+        $token->setCode(hash('sha256', 'testcode_' . $type));
         $token->setType($type);
         $token->setCreatedAt($createdAt !== 0 ? $createdAt : time());
         $token->save();

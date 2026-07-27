@@ -50,9 +50,7 @@ final readonly class ModuleConfig
         public int $maxPasswordAge,
         public string $viewPath,
         public string $mailPath,
-        public bool $enableRestApi,
-        public string $adminRestPrefix,
-        public ?int $apiTokenLifespan,
+        public int $apiTokenLifespan,
         public bool $enableAuditLog,
     ) {}
 

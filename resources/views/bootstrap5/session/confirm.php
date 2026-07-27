@@ -41,10 +41,10 @@ $tabindex = 0;
 echo Field::text($form, 'twoFactorAuthenticationCode')->addInputAttributes(['autocomplete' => 'one-time-code'])->tabIndex(++$tabindex);
 
 echo Field::buttonGroup()
-    ->buttons(
-        Html::resetButton($translator->translate('voyti.view.reset_button'))->attribute('tabindex', $tabindex + 2),
-        Html::submitButton($translator->translate('voyti.view.two_factor.verify_button'))->attribute('tabindex', ++$tabindex),
-    );
+    ->buttonsData([
+        [$translator->translate('voyti.view.reset_button'), 'type' => 'reset', 'tabindex' => $tabindex + 2],
+        [$translator->translate('voyti.view.two_factor.verify_button'), 'type' => 'submit', 'tabindex' => ++$tabindex],
+    ]);
 
 echo Html::form()->close();
 echo Html::div()->close();

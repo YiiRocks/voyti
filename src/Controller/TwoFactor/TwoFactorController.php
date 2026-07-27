@@ -12,6 +12,7 @@ use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Model\Form\Settings\TwoFactorCodeForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\Service\TwoFactor\BackupCodeService;
 use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
 use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
@@ -51,6 +52,7 @@ final readonly class TwoFactorController
         private EmailCodeGeneratorService $twoFactorEmailCodeService,
         private FlashInterface $flash,
         private BackupCodeService $backupCodeService,
+        private SwitchIdentityService $switchIdentityService,
     ) {}
 
     public function disable(#[Body('code')] string $code = ''): ResponseInterface
@@ -336,7 +338,14 @@ final readonly class TwoFactorController
     private function renderBackupCodes(array $codes): ResponseInterface
     {
         return $this->renderView('two-factor/backup-codes', [
-            'data' => BackupCodesViewData::create($codes, $this->config, $this->url, $this->translator()),
+            'data' => BackupCodesViewData::create(
+                $codes,
+                $this->config,
+                $this->url,
+                $this->translator(),
+                $this->switchIdentityService->isSwitched(),
+                $this->switchIdentityService->getOriginalUser(),
+            ),
         ]);
     }
 
@@ -375,6 +384,8 @@ final readonly class TwoFactorController
                 $this->config,
                 $this->url,
                 $this->translator(),
+                $this->switchIdentityService->isSwitched(),
+                $this->switchIdentityService->getOriginalUser(),
             ),
         ]);
     }

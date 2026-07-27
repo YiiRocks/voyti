@@ -21,7 +21,7 @@ final readonly class AdminNotificationListener
 
     public function onAfterRegister(AfterRegisterEvent $event): void
     {
-        if ($this->config->mailAdminOnRegister === null) {
+        if ($this->config->mailAdminOnRegister === null || $this->config->mailAdminOnRegister === '') {
             return;
         }
         $this->mailService->sendAdminNotification(

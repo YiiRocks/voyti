@@ -16,7 +16,7 @@ use Yiisoft\Yii\DataView\Pagination\PaginationContext;
 final readonly class IndexViewData
 {
     /**
-     * @param list<array{createdAt: string, actorUserId: string, action: string, targetLabel: string, context: string}> $logs
+     * @param list<array{createdAt: string, actorLabel: string, action: string, targetLabel: string, context: string}> $logs
      * @param array{actorUserId: string, targetUserId: string, action: string} $filters
      * @param string $filterActionUrl the filter form's GET target
      * @param string $pageUrlPattern a URL template containing the literal placeholder
@@ -35,7 +35,7 @@ final readonly class IndexViewData
     ) {}
 
     /**
-     * @param list<array{createdAt: string, actorUserId: string, action: string, targetLabel: string, context: string}> $logs
+     * @param list<array{createdAt: string, actorLabel: string, action: string, targetLabel: string, context: string}> $logs
      * @param array<string, string> $filters keyed by 'actor_user_id'|'target_user_id'|'action'
      */
     public static function create(

@@ -86,6 +86,8 @@ final readonly class IndexViewData
         ModuleConfig $config,
         UrlGeneratorInterface $url,
         TranslatorInterface $translator,
+        bool $isSwitched,
+        ?User $originalUser,
     ): self {
         $isEnabled = $user->isAuthTfEnabled();
         $methodName = $translator->translate($method === 'email' ? 'voyti.view.two_factor_email.method_name' : 'voyti.view.two_factor_google.button_label');
@@ -104,7 +106,7 @@ final readonly class IndexViewData
         $emailUrl = $url->generate('voyti/user-two-factor-email');
 
         return new self(
-            menu: MenuViewData::forAccount($config, $url, $translator),
+            menu: MenuViewData::forAccount($config, $url, $translator, $isSwitched, $originalUser),
             errors: $errors,
             isEnabled: $isEnabled,
             method: $method,

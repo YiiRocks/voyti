@@ -29,7 +29,7 @@ final class UpdateViewDataTest extends TestCase
             originalUser: null,
         );
 
-        self::assertNull($data->switchedBannerMessage);
+        self::assertNull($data->menu->switchedBannerMessage);
         self::assertSame('//voyti/user-profile', $data->updateUrl);
         self::assertNotEmpty($data->timezoneOptions);
         self::assertSame('list-group list-group-flush', $data->profile->profilePreviewClass);
@@ -49,8 +49,8 @@ final class UpdateViewDataTest extends TestCase
             originalUser: $originalUser,
         );
 
-        self::assertNotNull($data->switchedBannerMessage);
-        self::assertStringContainsString('admin', $data->switchedBannerMessage);
+        self::assertNotNull($data->menu->switchedBannerMessage);
+        self::assertStringContainsString('admin', $data->menu->switchedBannerMessage);
     }
 
 }

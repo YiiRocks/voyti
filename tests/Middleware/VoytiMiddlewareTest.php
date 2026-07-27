@@ -348,7 +348,7 @@ final class VoytiMiddlewareTest extends TestCase
             $url,
         );
 
-        return new VoytiMiddleware($rememberMe, $passwordAge, $sessionRevocation, $twoFactorAuth);
+        return new VoytiMiddleware($rememberMe, $sessionRevocation, $passwordAge, $twoFactorAuth);
     }
 
     private function createRedirectMiddleware(ResponseInterface $response): MiddlewareInterface

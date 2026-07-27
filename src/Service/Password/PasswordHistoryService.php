@@ -77,8 +77,10 @@ final readonly class PasswordHistoryService
 
         /** @var list<UserPasswordHistory> $toDelete */
         $toDelete = array_slice($history, $limit);
-        foreach ($toDelete as $entry) {
-            $entry->delete();
-        }
+        $hashesToDelete = array_map(
+            static fn(UserPasswordHistory $entry): string => $entry->getPasswordHash(),
+            $toDelete,
+        );
+        (new UserPasswordHistory())->deleteAll(['user_id' => $userId, 'password_hash' => $hashesToDelete]);
     }
 }

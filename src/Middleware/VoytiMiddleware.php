@@ -23,8 +23,8 @@ final readonly class VoytiMiddleware implements MiddlewareInterface
 {
     public function __construct(
         private MiddlewareInterface $rememberMe,
-        private MiddlewareInterface $passwordAge,
         private MiddlewareInterface $sessionRevocation,
+        private MiddlewareInterface $passwordAge,
         private MiddlewareInterface $twoFactorAuth,
     ) {}
 

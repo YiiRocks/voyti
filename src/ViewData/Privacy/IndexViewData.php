@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\ViewData\Privacy;
 
+use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\ViewData\Shared\MenuViewData;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -28,10 +29,15 @@ final readonly class IndexViewData
         public string $deleteUrl,
     ) {}
 
-    public static function create(ModuleConfig $config, UrlGeneratorInterface $url, TranslatorInterface $translator): self
-    {
+    public static function create(
+        ModuleConfig $config,
+        UrlGeneratorInterface $url,
+        TranslatorInterface $translator,
+        bool $isSwitched,
+        ?User $originalUser,
+    ): self {
         return new self(
-            menu: MenuViewData::forAccount($config, $url, $translator),
+            menu: MenuViewData::forAccount($config, $url, $translator, $isSwitched, $originalUser),
             showGdprLinks: $config->enableGdprCompliance,
             gdprConsentUrl: $config->enableGdprCompliance ? $url->generate('voyti/user-privacy-gdpr-consent') : '',
             exportUrl: $config->enableGdprCompliance ? $url->generate('voyti/user-privacy-export') : '',

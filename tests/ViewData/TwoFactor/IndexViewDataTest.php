@@ -32,6 +32,8 @@ final class IndexViewDataTest extends TestCase
             ModuleConfigFactory::create(),
             new FakeUrlGenerator(),
             $this->createTranslator(),
+            false,
+            null,
         );
 
         self::assertTrue($data->isEnabled);
@@ -59,6 +61,8 @@ final class IndexViewDataTest extends TestCase
             ModuleConfigFactory::create(),
             new FakeUrlGenerator(),
             $this->createTranslator(),
+            false,
+            null,
         );
 
         self::assertNull($data->googleUrl);
@@ -83,6 +87,8 @@ final class IndexViewDataTest extends TestCase
             ModuleConfigFactory::create(),
             new FakeUrlGenerator(),
             $this->createTranslator(),
+            false,
+            null,
         );
 
         self::assertNull($data->emailSetup);
@@ -107,6 +113,8 @@ final class IndexViewDataTest extends TestCase
             ModuleConfigFactory::create(),
             new FakeUrlGenerator(),
             $this->createTranslator(),
+            false,
+            null,
         );
 
         self::assertFalse($data->isEnabled);
@@ -133,6 +141,8 @@ final class IndexViewDataTest extends TestCase
             ModuleConfigFactory::create(),
             new FakeUrlGenerator(),
             $this->createTranslator(),
+            false,
+            null,
         );
 
         self::assertNotNull($data->googleSetup);

@@ -138,6 +138,22 @@ final class UserSocialAccountTest extends TestCase
         self::assertSame(0, $entity->getCreatedAt());
     }
 
+    public function testDeleteAllByUserIdRemovesOnlyThatUsersAccounts(): void
+    {
+        $account1 = $this->createAccount('github', 'client-1', 'code-a');
+        $account1->setUserId(1);
+        $account1->save();
+
+        $account2 = $this->createAccount('gitlab', 'client-2', 'code-b');
+        $account2->setUserId(2);
+        $account2->save();
+
+        UserSocialAccount::deleteAllByUserId(1);
+
+        self::assertCount(0, UserSocialAccount::findByUserId(1));
+        self::assertCount(1, UserSocialAccount::findByUserId(2));
+    }
+
     public function testFindByCodeReturnsMatch(): void
     {
         $this->createAccount('github', 'client-1', 'code-a');

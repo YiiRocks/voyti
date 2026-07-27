@@ -94,9 +94,6 @@ final readonly class SessionController
         /** @var mixed $loginValue */
         $loginValue = $credentials['login'] ?? '';
         $form->login = is_string($loginValue) ? $loginValue : '';
-        /** @var mixed $pwdValue */
-        $pwdValue = $credentials['pwd'] ?? '';
-        $form->password = is_string($pwdValue) ? $pwdValue : '';
         $method = User::findByUsernameOrEmail($form->login)?->getAuthTfType() ?? 'google';
 
         $this->hydrator->hydrate($form, $formData);
@@ -106,7 +103,7 @@ final readonly class SessionController
 
             $user = User::findByUsernameOrEmail($form->login);
 
-            if ($user !== null && $this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
+            if ($user !== null) {
                 $code = $form->twoFactorAuthenticationCode ?? '';
 
                 if ($method === 'email') {
@@ -207,7 +204,6 @@ final readonly class SessionController
 
                         $this->session->set(self::SESSION_KEY_CREDENTIALS, [
                             'login' => $form->login,
-                            'pwd' => $form->password,
                             'rememberMe' => $form->rememberMe,
                         ]);
                         return $this->renderView('session/confirm', [

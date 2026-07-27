@@ -8,6 +8,7 @@ use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\ViewData\Settings\IndexViewData;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -30,6 +31,7 @@ final readonly class SettingsController
         private ModuleConfig $config,
         private FlashInterface $flash,
         private CurrentUser $currentUser,
+        private SwitchIdentityService $switchIdentityService,
     ) {}
 
     public function index(): ResponseInterface
@@ -38,7 +40,14 @@ final readonly class SettingsController
         $user = $this->currentUser->getIdentity();
 
         return $this->renderView('settings/index', [
-            'data' => IndexViewData::create($this->config, $this->url, $this->translator(), $user),
+            'data' => IndexViewData::create(
+                $this->config,
+                $this->url,
+                $this->translator(),
+                $user,
+                $this->switchIdentityService->isSwitched(),
+                $this->switchIdentityService->getOriginalUser(),
+            ),
         ]);
     }
 }

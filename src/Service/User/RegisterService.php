@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service\User;
 
+use RuntimeException;
 use YiiRocks\Voyti\Helper\LoginMetadataHelper;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
@@ -47,7 +48,11 @@ final readonly class RegisterService
             $user->setGdprConsentDate(time());
         }
 
-        $emailConfirmationRequired = $this->userCreationHelper->persistAndNotify($user, $password);
+        try {
+            $emailConfirmationRequired = $this->userCreationHelper->persistAndNotify($user);
+        } catch (RuntimeException $exception) {
+            return ServiceResult::failure($exception->getMessage(), [$exception->getMessage()]);
+        }
 
         return $emailConfirmationRequired
             ? ServiceResult::success('voyti.registration.account_created_check_email')

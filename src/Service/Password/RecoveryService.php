@@ -36,9 +36,10 @@ final readonly class RecoveryService
             );
         }
 
-        $userToken = $this->userTokenFactory->makeRecoveryToken((int) $user->getId());
+        $userId = (int) $user->getId();
+        $code = $this->userTokenFactory->makeRecoveryToken($userId);
 
-        $this->mailService->sendRecovery($user->getUsername(), $email, $userToken);
+        $this->mailService->sendRecovery($user->getUsername(), $email, $userId, $code);
 
         return ServiceResult::success($this->translator->translate('voyti.recovery.message_sent', category: 'voyti'));
     }

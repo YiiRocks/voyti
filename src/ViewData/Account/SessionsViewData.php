@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\ViewData\Account;
 
+use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\ViewData\Shared\MenuViewData;
@@ -33,6 +34,8 @@ final readonly class SessionsViewData
         ModuleConfig $config,
         UrlGeneratorInterface $url,
         TranslatorInterface $translator,
+        bool $isSwitched,
+        ?User $originalUser,
     ): self {
         $locale = $translator->getLocale();
         $rows = array_map(
@@ -41,7 +44,7 @@ final readonly class SessionsViewData
         );
 
         return new self(
-            menu: MenuViewData::forAccount($config, $url, $translator),
+            menu: MenuViewData::forAccount($config, $url, $translator, $isSwitched, $originalUser),
             sessions: $rows,
         );
     }

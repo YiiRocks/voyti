@@ -55,9 +55,9 @@ if ($data->isEnabled) {
             ->open();
 
         echo Field::buttonGroup()
-            ->buttons(
-                Html::submitButton($translator->translate('voyti.view.two_factor.disable_send_code'))->class('btn', 'btn-danger')->attribute('tabindex', 1),
-            );
+            ->buttonsData([
+                [$translator->translate('voyti.view.two_factor.disable_send_code'), 'type' => 'submit', 'class' => 'btn btn-danger', 'tabindex' => 1],
+            ]);
 
         echo Html::form()->close();
     } else {
@@ -77,9 +77,9 @@ if ($data->isEnabled) {
         echo Field::text($form, 'code')->tabIndex(1);
 
         echo Field::buttonGroup()
-            ->buttons(
-                Html::submitButton($translator->translate('voyti.view.two_factor.disable'))->class('btn', 'btn-danger')->attribute('tabindex', 2),
-            );
+            ->buttonsData([
+                [$translator->translate('voyti.view.two_factor.disable'), 'type' => 'submit', 'class' => 'btn btn-danger', 'tabindex' => 2],
+            ]);
 
         echo Html::form()->close();
 
@@ -99,9 +99,9 @@ if ($data->isEnabled) {
         echo Field::text($form, 'code')->tabIndex(3);
 
         echo Field::buttonGroup()
-            ->buttons(
-                Html::submitButton($translator->translate('voyti.view.two_factor.regenerate_backup_codes'))->class('btn', 'btn-secondary')->attribute('tabindex', 4),
-            );
+            ->buttonsData([
+                [$translator->translate('voyti.view.two_factor.regenerate_backup_codes'), 'type' => 'submit', 'class' => 'btn btn-secondary', 'tabindex' => 4],
+            ]);
 
         echo Html::form()->close();
     }

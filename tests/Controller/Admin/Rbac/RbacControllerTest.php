@@ -273,7 +273,7 @@ final class RbacControllerTest extends TestCase
         $response = $this->mockRedirectResponse($this->responseFactory);
 
         $controller = $this->createController();
-        $result = $controller->delete($itemName, $itemType, $indexRouteName);
+        $result = $controller->delete(new ServerRequest('POST', '/'), $itemName, $itemType, $indexRouteName);
 
         $this->assertSame($response, $result);
         $this->assertNull($this->getItem($itemType, $itemName));

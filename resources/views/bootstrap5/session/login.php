@@ -46,10 +46,10 @@ echo Field::checkbox($form, 'rememberMe')->tabIndex(++$tabindex);
 echo $data->recaptchaFieldHtml;
 
 echo Field::buttonGroup()
-    ->buttons(
-        Html::resetButton($translator->translate('voyti.view.reset_button'))->attribute('tabindex', $tabindex + 2),
-        Html::submitButton($translator->translate('voyti.view.login.sign_in_button'))->attribute('tabindex', ++$tabindex),
-    );
+    ->buttonsData([
+        [$translator->translate('voyti.view.reset_button'), 'type' => 'reset', 'tabindex' => $tabindex + 2],
+        [$translator->translate('voyti.view.login.sign_in_button'), 'type' => 'submit', 'tabindex' => ++$tabindex],
+    ]);
 
 echo Html::form()->close();
 

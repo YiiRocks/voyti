@@ -168,7 +168,7 @@ final class PasswordResetControllerTest extends TestCase
             ->with(
                 'newpass123',
                 $this->callback(static fn(User $u): bool => $u->getId() === $user->getId()),
-                $this->callback(static fn(UserToken $t): bool => $t->getCode() === 'valid'),
+                $this->callback(static fn(UserToken $t): bool => $t->getCode() === hash('sha256', 'valid')),
             )
             ->willReturn(true);
 
@@ -323,7 +323,7 @@ final class PasswordResetControllerTest extends TestCase
         $userToken = new UserToken();
         $userToken->setUserId($userId);
         $userToken->setType(UserToken::TYPE_RECOVERY);
-        $userToken->setCode($code);
+        $userToken->setCode(hash('sha256', $code));
         $userToken->setCreatedAt($createdAt);
         $userToken->save();
 

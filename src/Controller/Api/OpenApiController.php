@@ -7,9 +7,10 @@ namespace YiiRocks\Voyti\Controller\Api;
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\DataResponse\ResponseFactory\DataResponseFactoryInterface;
+use Yiisoft\Router\UrlGeneratorInterface;
 
 /**
- * Serves an OpenAPI 3.1 document describing the `enableRestApi` user endpoints
+ * Serves an OpenAPI 3.1 document describing the `voyti-routes-api` user endpoints
  * (`Controller/Api/V1/User/UserController`), for API consumers/tooling.
  */
 final readonly class OpenApiController
@@ -17,10 +18,13 @@ final readonly class OpenApiController
     public function __construct(
         private DataResponseFactoryInterface $responseFactory,
         private ModuleConfig $config,
+        private UrlGeneratorInterface $url,
     ) {}
 
     public function index(): ResponseInterface
     {
+        $serverUrl = dirname($this->url->generate('voyti/api-v1-users-index'));
+
         return $this->responseFactory->createResponse([
             'openapi' => '3.1.0',
             'info' => [
@@ -29,7 +33,7 @@ final readonly class OpenApiController
                 'description' => 'User management, authentication, and authorization REST API.',
             ],
             'servers' => [
-                ['url' => '/' . $this->config->adminRestPrefix . '/v1', 'description' => 'REST API'],
+                ['url' => $serverUrl, 'description' => 'REST API'],
             ],
             'paths' => [
                 '/users' => [

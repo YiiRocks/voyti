@@ -6,7 +6,10 @@ namespace YiiRocks\Voyti\tests\Model;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\Model\UserBackupCode;
+use YiiRocks\Voyti\Model\UserPasswordHistory;
 use YiiRocks\Voyti\Model\UserProfile;
+use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
@@ -100,11 +103,30 @@ final class UserTest extends TestCase
                 "updated_at" INTEGER NOT NULL
             )
         ')->execute();
+
+        $this->connection->createCommand('
+            CREATE TABLE "user_backup_code" (
+                "user_id" INTEGER NOT NULL,
+                "code_hash" VARCHAR(255) NOT NULL,
+                "used_at" INTEGER,
+                "created_at" INTEGER NOT NULL
+            )
+        ')->execute();
+
+        $this->connection->createCommand('
+            CREATE TABLE "user_password_history" (
+                "user_id" INTEGER NOT NULL,
+                "password_hash" VARCHAR(255) NOT NULL,
+                "created_at" INTEGER NOT NULL
+            )
+        ')->execute();
     }
 
     protected function tearDown(): void
     {
         if ($this->connection !== null) {
+            $this->connection->createCommand('DROP TABLE IF EXISTS "user_password_history"')->execute();
+            $this->connection->createCommand('DROP TABLE IF EXISTS "user_backup_code"')->execute();
             $this->connection->createCommand('DROP TABLE IF EXISTS "user_sessions"')->execute();
             $this->connection->createCommand('DROP TABLE IF EXISTS "user_token"')->execute();
             $this->connection->createCommand('DROP TABLE IF EXISTS "user_social_account"')->execute();
@@ -173,6 +195,39 @@ final class UserTest extends TestCase
         self::assertFalse($entity->isGdprConsent());
         self::assertFalse($entity->isAnonymized());
         self::assertNull($entity->getGdprConsentDate());
+    }
+
+    public function testDeleteCascadesRelatedRows(): void
+    {
+        $user = $this->createUser('alice', 'alice@example.com', createdAt: time());
+        $userId = (int) $user->getId();
+
+        $this->createRelatedRows($userId);
+
+        $user->delete();
+
+        self::assertCount(0, UserSocialAccount::findByUserId($userId));
+        self::assertCount(0, UserToken::findByUserId($userId));
+        self::assertCount(0, UserSessions::findByUserId($userId));
+        self::assertCount(0, UserBackupCode::findUnusedByUserId($userId));
+        self::assertCount(0, UserPasswordHistory::findByUserId($userId));
+    }
+
+    public function testDeleteOnlyCascadesRelatedRowsForThatUser(): void
+    {
+        $user = $this->createUser('alice', 'alice@example.com', createdAt: time());
+        $otherUser = $this->createUser('bob', 'bob@example.com', createdAt: time());
+        $otherUserId = (int) $otherUser->getId();
+
+        $this->createRelatedRows($otherUserId);
+
+        $user->delete();
+
+        self::assertCount(1, UserSocialAccount::findByUserId($otherUserId));
+        self::assertCount(1, UserToken::findByUserId($otherUserId));
+        self::assertCount(1, UserSessions::findByUserId($otherUserId));
+        self::assertCount(1, UserBackupCode::findUnusedByUserId($otherUserId));
+        self::assertCount(1, UserPasswordHistory::findByUserId($otherUserId));
     }
 
     public function testDeleteRemovesUserAndProfile(): void
@@ -652,5 +707,40 @@ final class UserTest extends TestCase
         self::assertTrue($entity->validateCookieLoginKey('cookie_key_val'));
     }
 
+    private function createRelatedRows(int $userId): void
+    {
+        $socialAccount = new UserSocialAccount();
+        $socialAccount->setUserId($userId);
+        $socialAccount->setProvider('github');
+        $socialAccount->setClientId('client-' . $userId);
+        $socialAccount->setCreatedAt(time());
+        $socialAccount->save();
 
+        $token = new UserToken();
+        $token->setUserId($userId);
+        $token->setCode('code-' . $userId);
+        $token->setType(UserToken::TYPE_CONFIRMATION);
+        $token->setCreatedAt(time());
+        $token->save();
+
+        $session = new UserSessions();
+        $session->setUserId($userId);
+        $session->setSessionId('session-' . $userId);
+        $session->setIp('203.0.113.1');
+        $session->setCreatedAt(time());
+        $session->setUpdatedAt(time());
+        $session->save();
+
+        $backupCode = new UserBackupCode();
+        $backupCode->setUserId($userId);
+        $backupCode->setCodeHash('hash-' . $userId);
+        $backupCode->setCreatedAt(time());
+        $backupCode->save();
+
+        $passwordHistory = new UserPasswordHistory();
+        $passwordHistory->setUserId($userId);
+        $passwordHistory->setPasswordHash('hash-' . $userId);
+        $passwordHistory->setCreatedAt(time());
+        $passwordHistory->save();
+    }
 }
