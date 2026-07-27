@@ -9,6 +9,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\Api\OpenApiController;
 use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
 use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\DataResponse\ResponseFactory\DataResponseFactoryInterface;
@@ -17,10 +18,13 @@ use Yiisoft\DataResponse\ResponseFactory\DataResponseFactoryInterface;
 final class OpenApiControllerTest extends TestCase
 {
     private DataResponseFactoryInterface&MockObject $responseFactory;
+    private FakeUrlGenerator $url;
 
     protected function setUp(): void
     {
         $this->responseFactory = $this->createMock(DataResponseFactoryInterface::class);
+        $this->url = new FakeUrlGenerator();
+        $this->url->setUrl('voyti/api-v1-users-index', '/api/v1/users');
     }
 
     public function testIndexDefinesErrorResponseSchema(): void
@@ -280,6 +284,7 @@ final class OpenApiControllerTest extends TestCase
         return new OpenApiController(
             responseFactory: $this->responseFactory,
             config: $config ?? ModuleConfigFactory::create(),
+            url: $this->url,
         );
     }
 }

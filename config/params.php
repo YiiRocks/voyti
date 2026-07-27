@@ -50,8 +50,6 @@ return [
         'maxPasswordAge' => 0,
         'viewPath' => ModuleConfig::DEFAULT_VIEW_PATH,
         'mailPath' => ModuleConfig::DEFAULT_MAIL_PATH,
-        'enableRestApi' => false,
-        'adminRestPrefix' => 'api',
         'apiTokenLifespan' => null,
         'enableAuditLog' => true,
     ],

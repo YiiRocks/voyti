@@ -130,8 +130,6 @@ return [
         maxPasswordAge: $params['yiirocks/voyti']['maxPasswordAge'] ?? 0,
         viewPath: $params['yiirocks/voyti']['viewPath'] ?? ModuleConfig::DEFAULT_VIEW_PATH,
         mailPath: $params['yiirocks/voyti']['mailPath'] ?? ModuleConfig::DEFAULT_MAIL_PATH,
-        enableRestApi: $params['yiirocks/voyti']['enableRestApi'] ?? false,
-        adminRestPrefix: $params['yiirocks/voyti']['adminRestPrefix'] ?? 'api',
         apiTokenLifespan: $params['yiirocks/voyti']['apiTokenLifespan'] ?? null,
         enableAuditLog: $params['yiirocks/voyti']['enableAuditLog'] ?? true,
     ),

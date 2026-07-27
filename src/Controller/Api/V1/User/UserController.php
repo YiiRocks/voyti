@@ -20,7 +20,7 @@ use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Translator\TranslatorInterface;
 
 /**
- * REST CRUD endpoints for users under the `enableRestApi` route group, authenticated via
+ * REST CRUD endpoints for users under the `voyti-routes-api` route group, authenticated via
  * {@see ApiTokenAuthenticationMiddleware}. Returns JSON only, no view rendering.
  */
 final readonly class UserController

@@ -41,7 +41,6 @@
         "yiisoft/csrf": "^2.0",
         "yiisoft/data": "^2.0",
         "yiisoft/data-db": "^1.0",
-        "yiisoft/data-response": "^2.2",
         "yiisoft/db-migration": "^2.0",
         "yiisoft/form-model": "^1.1",
         "yiisoft/html": "^4.0",
@@ -61,11 +60,12 @@
         "yiisoft/yii-view-renderer": "^7.1"
     },
     "suggest": {
-        "chillerlan/php-authenticator": "Needed to enable Time-based One-Time Password (TOTP) 2 Factor Authentication",
-        "chillerlan/php-qrcode": "Needed to generate QR codes for 2FA setup with an authenticator app",
+        "chillerlan/php-authenticator": "Time-based One-Time Password (TOTP) 2 Factor Authentication",
+        "chillerlan/php-qrcode": "Generate QR codes for 2FA setup with an authenticator app",
+        "yiirocks/recaptcha": "Google reCAPTCHA v2 and v3 field + server-side validator for Yii3",
+        "yiisoft/data-response": "Required for the REST API (voyti-routes-api): JSON response formatting for the user CRUD endpoints",
         "yiisoft/yii-runner-console": "Allows to run console application",
-        "yiisoft/yii-runner-http": "Allows to run HTTP application",
-        "yiirocks/recaptcha": "Google reCAPTCHA v2 and v3 field + server-side validator for Yii3"
+        "yiisoft/yii-runner-http": "Allows to run HTTP application"
     },
     "require-dev": {
         "chillerlan/php-authenticator": "^5.4",
@@ -79,6 +79,7 @@
         "vimeo/psalm": "^6.0",
         "yiirocks/recaptcha": "^1.0",
         "yiisoft/config": "^1.6",
+        "yiisoft/data-response": "^2.2",
         "yiisoft/db-sqlite": "^2.0",
         "yiisoft/di": "*",
         "yiisoft/router-fastroute": "^4.0"
@@ -124,6 +125,7 @@
             "events": "events.php",
             "di": "di.php",
             "voyti-routes": "routes.php",
+            "voyti-routes-api": "routes-api.php",
             "bootstrap": "bootstrap.php"
         }
     },

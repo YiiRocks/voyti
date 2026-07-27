@@ -247,7 +247,6 @@ final readonly class UserController
         ];
 
         $reader = new QueryDataReader(User::searchQuery($filters));
-
         $pageSize = min(max(1, $perPage), self::MAX_PER_PAGE);
         $sizedPaginator = (new OffsetPaginator($reader))->withPageSize($pageSize);
         $currentPage = min(max(1, $page), max(1, $sizedPaginator->getTotalPages()));
