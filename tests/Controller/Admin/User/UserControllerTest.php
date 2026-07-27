@@ -7,12 +7,14 @@ namespace YiiRocks\Voyti\tests\Controller\Admin\User;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\Admin\User\UserController;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\Model\UserAuditLog;
 use YiiRocks\Voyti\Model\UserProfile;
 use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\ModuleConfig;
@@ -33,6 +35,7 @@ use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\Support\UserSessionFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
+use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Data\Paginator\OffsetPaginator;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Security\PasswordHasher;
@@ -707,6 +710,44 @@ final class UserControllerTest extends TestCase
         $result = $controller->switchIdentity(new ServerRequest('POST', '/'), 1);
 
         $this->assertSame($response, $result);
+    }
+
+    public function testSwitchIdentityLogsOriginalActorNotTarget(): void
+    {
+        $admin = $this->createUser(username: 'realadmin', email: 'realadmin@example.com');
+        $targetUser = $this->createUser(username: 'targetuser', email: 'targetuser@example.com');
+
+        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
+        $eventDispatcher->method('dispatch')->willReturnArgument(0);
+        $currentUser = new CurrentUser($this->createMock(IdentityRepositoryInterface::class), $eventDispatcher);
+        $currentUser->login($admin);
+
+        $controller = $this->harness->createUserController(
+            translator: $this->translator,
+            viewRenderer: $this->viewRenderer,
+            validator: $this->validator,
+            currentUser: $currentUser,
+            responseFactory: $this->responseFactory,
+            hydrator: $this->hydrator,
+            flash: $this->flash,
+            passwordGenerator: $this->passwordGenerator,
+            createService: $this->createService,
+            blockService: $this->blockService,
+            confirmationService: $this->confirmationService,
+            recoveryService: $this->recoveryService,
+            expireService: $this->expireService,
+            updateAssignmentsService: $this->updateAssignmentsService,
+            authHelper: $this->authHelper,
+        );
+
+        $this->mockRedirectResponse($this->responseFactory);
+
+        $controller->switchIdentity(new ServerRequest('POST', '/'), (int) $targetUser->getId());
+
+        $logs = UserAuditLog::search(['action' => 'user.switch_identity'])->all();
+        self::assertCount(1, $logs);
+        self::assertSame((int) $admin->getId(), $logs[0]->getActorUserId());
+        self::assertSame((int) $targetUser->getId(), $logs[0]->getTargetUserId());
     }
 
     public function testSwitchIdentityRestoreFailureShowsError(): void

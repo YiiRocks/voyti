@@ -171,6 +171,53 @@ final class AuditLogControllerTest extends TestCase
         self::assertSame('', $captured['data']->logs[0]['context']);
     }
 
+    public function testIndexPresentsTargetLabelWithIdOnlyWhenUserNoLongerExists(): void
+    {
+        $this->createLog(1, 999999, 'user.switch_identity');
+
+        $captured = [];
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->method('render')->willReturnCallback(
+            function (string $view, array $params) use (&$captured, $response): ResponseInterface {
+                $captured = $params;
+                return $response;
+            },
+        );
+
+        $controller = $this->createController();
+        $controller->index();
+
+        self::assertSame('#999999', $captured['data']->logs[0]['targetLabel']);
+    }
+
+    public function testIndexResolvesTargetUsernameWhenTargetNameWasNotCaptured(): void
+    {
+        $target = $this->createUser(username: 'switcheduser');
+
+        $log = new UserAuditLog();
+        $log->setActorUserId(1);
+        $log->setTargetUserId($target->getIdOrZero());
+        $log->setAction('user.switch_identity');
+        $log->setCreatedAt(time());
+        $log->save();
+
+        $captured = [];
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->method('withViewPath')->willReturnSelf();
+        $this->viewRenderer->method('render')->willReturnCallback(
+            function (string $view, array $params) use (&$captured, $response): ResponseInterface {
+                $captured = $params;
+                return $response;
+            },
+        );
+
+        $controller = $this->createController();
+        $controller->index();
+
+        self::assertSame('switcheduser (#' . $target->getIdOrZero() . ')', $captured['data']->logs[0]['targetLabel']);
+    }
+
     public function testIndexShowsLogs(): void
     {
         $this->createLog(1, 2, 'user.create');

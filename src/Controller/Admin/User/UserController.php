@@ -327,9 +327,10 @@ final readonly class UserController
 
     public function switchIdentity(ServerRequestInterface $request, #[RouteArgument] int $id): ResponseInterface
     {
+        $actorId = $this->actorId();
         $result = $this->switchIdentityService->run($id, $request->getServerParams());
         if ($result->isSuccess()) {
-            $this->auditLogService->log($this->actorId(), 'user.switch_identity', $request->getServerParams(), targetUserId: $id);
+            $this->auditLogService->log($actorId, 'user.switch_identity', $request->getServerParams(), targetUserId: $id);
             $this->flash->set(
                 FlashType::SUCCESS,
                 $this->translator->translate('voyti.admin.switch_identity_success', category: 'voyti'),

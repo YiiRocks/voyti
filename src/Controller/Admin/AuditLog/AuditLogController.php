@@ -67,11 +67,11 @@ final readonly class AuditLogController
         $viewer = $this->currentUser->getIdentity();
         $viewerTimezone = $viewer instanceof User ? $viewer->getProfile()?->getTimezone() : null;
 
-        $actorUsernames = $this->actorUsernames($logs);
+        $usernames = $this->resolveUsernames($logs);
 
         return $this->renderView('admin/audit-log/index', [
             'data' => IndexViewData::create(
-                array_map(fn(UserAuditLog $log): array => $this->presentLog($log, $viewerTimezone, $actorUsernames), $logs),
+                array_map(fn(UserAuditLog $log): array => $this->presentLog($log, $viewerTimezone, $usernames), $logs),
                 $paginator,
                 $filters,
                 $this->url,
@@ -81,43 +81,24 @@ final readonly class AuditLogController
     }
 
     /**
-     * @param array<int, string> $actorUsernames
+     * @param array<int, string> $usernames
      */
-    private function actorLabel(UserAuditLog $log, array $actorUsernames): string
+    private function actorLabel(UserAuditLog $log, array $usernames): string
     {
         $userId = $log->getActorUserId();
         if ($userId === null) {
             return '';
         }
 
-        return array_key_exists($userId, $actorUsernames) ? $actorUsernames[$userId] . ' (#' . $userId . ')' : '#' . $userId;
+        return array_key_exists($userId, $usernames) ? $usernames[$userId] . ' (#' . $userId . ')' : '#' . $userId;
     }
 
     /**
-     * @param list<UserAuditLog> $logs
-     *
-     * @return array<int, string> actor user id => username
-     */
-    private function actorUsernames(array $logs): array
-    {
-        $actorIds = array_values(array_unique(array_filter(array_map(
-            static fn(UserAuditLog $log): ?int => $log->getActorUserId(),
-            $logs,
-        ))));
-
-        $usernames = [];
-        foreach (User::findByIds($actorIds) as $user) {
-            $usernames[$user->getIdOrZero()] = $user->getUsername();
-        }
-        return $usernames;
-    }
-
-    /**
-     * @param array<int, string> $actorUsernames
+     * @param array<int, string> $usernames
      *
      * @return array{createdAt: string, actorLabel: string, action: string, targetLabel: string, context: string}
      */
-    private function presentLog(UserAuditLog $log, ?string $viewerTimezone, array $actorUsernames): array
+    private function presentLog(UserAuditLog $log, ?string $viewerTimezone, array $usernames): array
     {
         return [
             'createdAt' => TimezoneHelper::formatLocalized(
@@ -125,19 +106,47 @@ final readonly class AuditLogController
                 $this->translator->getLocale(),
                 $viewerTimezone,
             ),
-            'actorLabel' => $this->actorLabel($log, $actorUsernames),
+            'actorLabel' => $this->actorLabel($log, $usernames),
             'action' => $log->getAction(),
-            'targetLabel' => $this->targetLabel($log),
+            'targetLabel' => $this->targetLabel($log, $usernames),
             'context' => $log->getContext() ?? '',
         ];
     }
 
-    private function targetLabel(UserAuditLog $log): string
+    /**
+     * @param list<UserAuditLog> $logs
+     *
+     * @return array<int, string> user id => username, covering both actors and user targets
+     */
+    private function resolveUsernames(array $logs): array
     {
-        $name = $log->getTargetName() ?? '';
-        $userId = $log->getTargetUserId();
+        $ids = [
+            ...array_map(static fn(UserAuditLog $log): ?int => $log->getActorUserId(), $logs),
+            ...array_map(static fn(UserAuditLog $log): ?int => $log->getTargetUserId(), $logs),
+        ];
+        $ids = array_values(array_unique(array_filter($ids)));
 
-        return $userId !== null ? $name . ' (#' . $userId . ')' : $name;
+        $usernames = [];
+        foreach (User::findByIds($ids) as $user) {
+            $usernames[$user->getIdOrZero()] = $user->getUsername();
+        }
+        return $usernames;
+    }
+
+    /**
+     * @param array<int, string> $usernames
+     */
+    private function targetLabel(UserAuditLog $log, array $usernames): string
+    {
+        $userId = $log->getTargetUserId();
+        if ($userId === null) {
+            return $log->getTargetName() ?? '';
+        }
+
+        $name = $log->getTargetName();
+        $name = $name !== null && $name !== '' ? $name : ($usernames[$userId] ?? null);
+
+        return $name !== null ? $name . ' (#' . $userId . ')' : '#' . $userId;
     }
 
 }
