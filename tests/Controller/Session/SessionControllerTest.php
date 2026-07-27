@@ -146,7 +146,7 @@ final class SessionControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('shared/message', $this->callback(
-                static fn(array $params): bool => $params['title'] === 'already connected',
+                static fn(array $params): bool => $params['data']->title === 'already connected',
             ))
             ->willReturn($response);
 
@@ -172,7 +172,7 @@ final class SessionControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('shared/message', $this->callback(
-                static fn(array $params): bool => $params['title'] === 'state mismatch',
+                static fn(array $params): bool => $params['data']->title === 'state mismatch',
             ))
             ->willReturn($response);
 
@@ -214,7 +214,7 @@ final class SessionControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('shared/message', $this->callback(
-                static fn(array $params): bool => $params['title'] === 'state mismatch',
+                static fn(array $params): bool => $params['data']->title === 'state mismatch',
             ))
             ->willReturn($response);
 
@@ -238,7 +238,7 @@ final class SessionControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('shared/message', $this->callback(
-                static fn(array $params): bool => $params['title'] === 'could not authenticate',
+                static fn(array $params): bool => $params['data']->title === 'could not authenticate',
             ))
             ->willReturn($response);
 
@@ -285,7 +285,7 @@ final class SessionControllerTest extends TestCase
         $this->viewRenderer->expects($this->once())
             ->method('render')
             ->with('shared/message', $this->callback(
-                static fn(array $params): bool => $params['title'] === 'Authenticated',
+                static fn(array $params): bool => $params['data']->title === 'Authenticated',
             ))
             ->willReturn($response);
 

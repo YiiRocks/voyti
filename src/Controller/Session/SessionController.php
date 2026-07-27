@@ -30,6 +30,7 @@ use YiiRocks\Voyti\Validator\TwoFactor\CodeValidator;
 use YiiRocks\Voyti\Validator\TwoFactor\EmailValidator;
 use YiiRocks\Voyti\ViewData\Session\ConfirmViewData;
 use YiiRocks\Voyti\ViewData\Session\LoginViewData;
+use YiiRocks\Voyti\ViewData\Shared\MessageViewData;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Input\Http\Attribute\Parameter\Body;
@@ -114,15 +115,13 @@ final readonly class SessionController
             }
         } catch (RuntimeException $exception) {
             return $this->renderView('shared/message', [
-                'title' => $exception->getMessage(),
-                'translator' => $this->translator(),
+                'data' => new MessageViewData(title: $exception->getMessage(), homeUrl: $this->homeUrl()),
             ]);
         }
 
         if ($result->isFailure()) {
             return $this->renderView('shared/message', [
-                'title' => $result->getMessage(),
-                'translator' => $this->translator(),
+                'data' => new MessageViewData(title: $result->getMessage(), homeUrl: $this->homeUrl()),
             ]);
         }
 
@@ -147,8 +146,10 @@ final readonly class SessionController
         }
 
         return $this->renderView('shared/message', [
-            'title' => $this->translator->translate('voyti.security.authenticated', category: 'voyti'),
-            'translator' => $this->translator(),
+            'data' => new MessageViewData(
+                title: $this->translator->translate('voyti.security.authenticated', category: 'voyti'),
+                homeUrl: $this->homeUrl(),
+            ),
         ]);
     }
 
