@@ -159,7 +159,7 @@ final class UserControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->block(999999);
+        $result = $controller->block(new ServerRequest('POST', '/'), 999999);
 
         $this->assertSame($response, $result);
     }
@@ -176,7 +176,7 @@ final class UserControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->block($userId);
+        $result = $controller->block(new ServerRequest('POST', '/'), $userId);
 
         $this->assertSame($response, $result);
     }
@@ -196,7 +196,7 @@ final class UserControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->confirm((int) $user->getId());
+        $result = $controller->confirm(new ServerRequest('POST', '/'), (int) $user->getId());
 
         $this->assertSame($response, $result);
     }
@@ -210,7 +210,7 @@ final class UserControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->confirm((int) $user->getId());
+        $result = $controller->confirm(new ServerRequest('POST', '/'), (int) $user->getId());
 
         $this->assertSame($response, $result);
     }
@@ -319,7 +319,7 @@ final class UserControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->delete($userId);
+        $result = $controller->delete(new ServerRequest('POST', '/'), $userId);
 
         $this->assertSame($response, $result);
         $this->assertNull(User::findById($userId));
@@ -341,7 +341,7 @@ final class UserControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->delete(999999);
+        $result = $controller->delete(new ServerRequest('POST', '/'), 999999);
 
         $this->assertSame($response, $result);
     }
@@ -362,7 +362,7 @@ final class UserControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->delete(1);
+        $result = $controller->delete(new ServerRequest('POST', '/'), 1);
 
         $this->assertSame($response, $result);
     }
@@ -370,7 +370,7 @@ final class UserControllerTest extends TestCase
     public function testForcePasswordChangeFailsShowsError(): void
     {
         $this->assertNotFoundRendersError(
-            static fn(UserController $controller): ResponseInterface => $controller->forcePasswordChange(999999),
+            static fn(UserController $controller): ResponseInterface => $controller->forcePasswordChange(new ServerRequest('POST', '/'), 999999),
         );
     }
 
@@ -383,7 +383,7 @@ final class UserControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->forcePasswordChange((int) $user->getId());
+        $result = $controller->forcePasswordChange(new ServerRequest('POST', '/'), (int) $user->getId());
 
         $this->assertSame($response, $result);
     }
@@ -622,7 +622,7 @@ final class UserControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->passwordReset((int) $user->getId());
+        $result = $controller->passwordReset(new ServerRequest('POST', '/'), (int) $user->getId());
 
         $this->assertSame($response, $result);
     }
@@ -630,7 +630,7 @@ final class UserControllerTest extends TestCase
     public function testPasswordResetUserNotFoundShowsError(): void
     {
         $this->assertNotFoundRendersError(
-            static fn(UserController $controller): ResponseInterface => $controller->passwordReset(999999),
+            static fn(UserController $controller): ResponseInterface => $controller->passwordReset(new ServerRequest('POST', '/'), 999999),
         );
     }
 

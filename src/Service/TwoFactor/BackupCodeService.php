@@ -32,9 +32,7 @@ final readonly class BackupCodeService
 
         foreach (UserBackupCode::findUnusedByUserId($user->getIdOrZero()) as $backupCode) {
             if ($this->passwordHasher->validate($code, $backupCode->getCodeHash())) {
-                $backupCode->setUsedAt(time());
-                $backupCode->save();
-                return true;
+                return $backupCode->markUsed();
             }
         }
 

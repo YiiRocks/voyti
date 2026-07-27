@@ -57,6 +57,27 @@ final class UserBackupCode extends ActiveRecord
     }
 
     /**
+     * Atomically marks this backup code as used, conditioned on it still being unused at the time
+     * of the write. Returns `false` instead of consuming it again if a concurrent request already
+     * used it between the caller's read and this call.
+     */
+    public function markUsed(): bool
+    {
+        $usedAt = time();
+        $affected = $this->updateAll(
+            ['used_at' => $usedAt],
+            ['user_id' => $this->user_id, 'code_hash' => $this->code_hash, 'used_at' => null],
+        );
+
+        if ($affected !== 1) {
+            return false;
+        }
+
+        $this->used_at = $usedAt;
+        return true;
+    }
+
+    /**
      * @psalm-return list{'user_id', 'code_hash'}
      */
     #[Override]

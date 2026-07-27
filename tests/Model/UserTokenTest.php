@@ -172,35 +172,35 @@ final class UserTokenTest extends TestCase
     {
         $token1 = new UserToken();
         $token1->setUserId(1);
-        $token1->setCode('codeB');
+        $token1->setCode(hash('sha256', 'codeB'));
         $token1->setType(UserToken::TYPE_CONFIRM_NEW_EMAIL);
         $token1->setCreatedAt(time());
         $token1->save();
 
         $token2 = new UserToken();
         $token2->setUserId(1);
-        $token2->setCode('codeA');
+        $token2->setCode(hash('sha256', 'codeA'));
         $token2->setType(UserToken::TYPE_CONFIRM_NEW_EMAIL);
         $token2->setCreatedAt(time());
         $token2->save();
 
         $found = UserToken::findByCodeAndType('codeA', UserToken::TYPE_CONFIRM_NEW_EMAIL);
         self::assertNotNull($found);
-        self::assertSame('codeA', $found->getCode());
+        self::assertSame(hash('sha256', 'codeA'), $found->getCode());
     }
 
     public function testFindByUserIdAndCodeAndTypeReturnsMatch(): void
     {
         $token = new UserToken();
         $token->setUserId(1);
-        $token->setCode('codeA');
+        $token->setCode(hash('sha256', 'codeA'));
         $token->setType(UserToken::TYPE_CONFIRM_NEW_EMAIL);
         $token->setCreatedAt(time());
         $token->save();
 
         $found = UserToken::findByUserIdAndCodeAndType(1, 'codeA', UserToken::TYPE_CONFIRM_NEW_EMAIL);
         self::assertNotNull($found);
-        self::assertSame('codeA', $found->getCode());
+        self::assertSame(hash('sha256', 'codeA'), $found->getCode());
 
         self::assertNull(UserToken::findByUserIdAndCodeAndType(1, 'codeA', UserToken::TYPE_RECOVERY));
     }
@@ -209,14 +209,14 @@ final class UserTokenTest extends TestCase
     {
         $token = new UserToken();
         $token->setUserId(1);
-        $token->setCode('codeA');
+        $token->setCode(hash('sha256', 'codeA'));
         $token->setType(UserToken::TYPE_CONFIRM_NEW_EMAIL);
         $token->setCreatedAt(time());
         $token->save();
 
         $found = UserToken::findByUserIdAndCode(1, 'codeA');
         self::assertNotNull($found);
-        self::assertSame('codeA', $found->getCode());
+        self::assertSame(hash('sha256', 'codeA'), $found->getCode());
 
         self::assertNull(UserToken::findByUserIdAndCode(2, 'codeA'));
     }

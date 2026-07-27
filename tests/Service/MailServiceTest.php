@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Service;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use RuntimeException;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
 use YiiRocks\Voyti\tests\Support\MailCapture;
 use YiiRocks\Voyti\tests\TestCase;
+use Yiisoft\Mailer\MailerInterface;
 use Yiisoft\View\View;
 
 #[AllowMockObjectsWithoutExpectations]
@@ -66,7 +67,7 @@ final class MailServiceTest extends TestCase
         $user->setEmail('test@example.com');
         $user->setUsername('testuser');
 
-        $result = $this->service->sendWelcome($user, 'password123');
+        $result = $this->service->sendWelcome($user);
         self::assertTrue($result);
         $message = $this->mailer->getLastMessage();
         self::assertNotNull($message);
@@ -90,10 +91,7 @@ final class MailServiceTest extends TestCase
         $ref = new \ReflectionProperty(User::class, 'id');
         $ref->setValue($user, 42);
 
-        $userToken = new UserToken();
-        $userToken->setCode('abcdef123');
-
-        $result = $this->service->sendConfirmation($user, $userToken);
+        $result = $this->service->sendConfirmation($user, 'abcdef123');
         self::assertTrue($result);
         $message = $this->mailer->getLastMessage();
         self::assertNotNull($message);
@@ -105,9 +103,8 @@ final class MailServiceTest extends TestCase
     public function testSendConfirmationWithNullUserIdReturnsFalse(): void
     {
         $user = new User();
-        $userToken = new UserToken();
 
-        $result = $this->service->sendConfirmation($user, $userToken);
+        $result = $this->service->sendConfirmation($user, 'abcdef123');
         self::assertFalse($result);
     }
 
@@ -116,10 +113,8 @@ final class MailServiceTest extends TestCase
         $user = new User();
         $user->setEmail('test@example.com');
         $user->setUsername('testuser');
-        $userToken = new UserToken();
-        $userToken->setCode('code123');
 
-        $result = $this->service->sendReconfirmation($user, $userToken);
+        $result = $this->service->sendReconfirmation($user, 'code123');
         self::assertTrue($result);
         $message = $this->mailer->getLastMessage();
         self::assertNotNull($message);
@@ -129,12 +124,7 @@ final class MailServiceTest extends TestCase
 
     public function testSendRecovery(): void
     {
-        $userToken = new UserToken();
-        $userToken->setCode('recoverycode');
-        $ref = new \ReflectionProperty(UserToken::class, 'user_id');
-        $ref->setValue($userToken, 1);
-
-        $result = $this->service->sendRecovery('testuser', 'test@example.com', $userToken);
+        $result = $this->service->sendRecovery('testuser', 'test@example.com', 1, 'recoverycode');
         self::assertTrue($result);
         $message = $this->mailer->getLastMessage();
         self::assertNotNull($message);
@@ -143,19 +133,28 @@ final class MailServiceTest extends TestCase
         self::assertStringContainsString('code=recoverycode', $body);
     }
 
+    public function testSendReturnsFalseWhenMailerThrows(): void
+    {
+        $mailer = $this->createMock(MailerInterface::class);
+        $mailer->method('send')->willThrowException(new RuntimeException('SMTP failure'));
+
+        $service = new MailService(
+            $mailer,
+            __DIR__ . '/../../resources/mail',
+            new View(),
+            $this->createTranslator(),
+            $this->url,
+            'Voyti',
+        );
+
+        $result = $service->send('test@example.com', 'Test', 'welcome', ['username' => 'testuser', 'translator' => $this->createTranslator()]);
+
+        self::assertFalse($result);
+    }
+
     public function testSendTwoFactorCode(): void
     {
         $result = $this->service->sendTwoFactorCode('test@example.com', '123456');
-        self::assertTrue($result);
-    }
-
-    public function testSendWelcome(): void
-    {
-        $user = new User();
-        $user->setEmail('test@example.com');
-        $user->setUsername('testuser');
-
-        $result = $this->service->sendWelcome($user, 'password123');
         self::assertTrue($result);
     }
 

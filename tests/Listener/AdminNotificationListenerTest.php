@@ -50,7 +50,7 @@ final class AdminNotificationListenerTest extends TestCase
         $config = ModuleConfigFactory::create(mailAdminOnRegister: '');
 
         $mailService = $this->createMock(MailService::class);
-        $mailService->expects(self::once())->method('sendAdminNotification');
+        $mailService->expects(self::never())->method('sendAdminNotification');
 
         $listener = new AdminNotificationListener($mailService, $config);
         $user = new User();

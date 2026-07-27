@@ -16,7 +16,12 @@ use Yiisoft\User\Login\Cookie\CookieLoginIdentityInterface;
  * ActiveRecord for the `user` table and the module's identity implementation, consumed by
  * `yiisoft/auth` ({@see IdentityInterface}) and remember-me cookie login
  * ({@see CookieLoginIdentityInterface}). {@see self::delete()} overrides the inherited method to
- * cascade-delete the associated {@see UserProfile}.
+ * cascade-delete the associated {@see UserProfile} and related rows explicitly at the application
+ * level, rather than relying solely on the migration's `ON DELETE CASCADE` foreign keys — those are
+ * enforced by MySQL/PostgreSQL by default, but a host running on SQLite without
+ * `PRAGMA foreign_keys=ON` (a per-connection setting only the host, not this library, can set) would
+ * otherwise get orphaned rows. `UserAuditLog` is deliberately excluded: it has no FK to `user` and
+ * should outlive the deleted user as a historical record.
  */
 final class User extends ActiveRecord implements IdentityInterface, CookieLoginIdentityInterface
 {
@@ -51,7 +56,15 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
     #[Override]
     public function delete(): int
     {
+        $userId = $this->getIdOrZero();
+
         $this->getProfile()?->delete();
+        UserSocialAccount::deleteAllByUserId($userId);
+        UserToken::deleteAllByUserId($userId);
+        UserSessions::deleteAllByUserId($userId);
+        UserBackupCode::deleteAllByUserId($userId);
+        UserPasswordHistory::deleteAllByUserId($userId);
+
         return parent::delete();
     }
 
@@ -415,7 +428,7 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
 
     public function validateAuthKey(string $authKey): bool
     {
-        return $this->auth_key === $authKey;
+        return hash_equals($this->auth_key, $authKey);
     }
 
     #[Override]

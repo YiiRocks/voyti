@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Service\User;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
+use RuntimeException;
 use YiiRocks\Voyti\Event\Auth\AfterRegisterEvent;
 use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Model\User;
@@ -13,6 +14,7 @@ use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
+use Yiisoft\Db\Exception\IntegrityException;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Security\Random;
 
@@ -22,6 +24,10 @@ use Yiisoft\Security\Random;
  * email confirmation (sending a confirmation token) when {@see ModuleConfig::$enableEmailConfirmation}
  * is on; `persistAndNotifySkippingConfirmation()` always persists as already-confirmed and sends a
  * welcome email instead (e.g. when the identity was already verified by a social provider).
+ * `findUniquenessConflict()` then persisting isn't atomic, so a concurrent request can still slip
+ * past it; `persist()` catches the resulting DB-level unique-constraint violation and rethrows it as
+ * a {@see RuntimeException} carrying the same conflict message, instead of letting the race surface
+ * as an uncaught 500.
  */
 final readonly class UserCreationHelper
 {
@@ -64,9 +70,9 @@ final readonly class UserCreationHelper
      *
      * @return bool Whether email confirmation is required before the account can be used.
      */
-    public function persistAndNotify(User $user, string $password): bool
+    public function persistAndNotify(User $user): bool
     {
-        return $this->persist($user, $password, skipConfirmation: false);
+        return $this->persist($user, skipConfirmation: false);
     }
 
     /**
@@ -75,23 +81,24 @@ final readonly class UserCreationHelper
      *
      * @return bool Whether email confirmation is required before the account can be used.
      */
-    public function persistAndNotifySkippingConfirmation(User $user, string $password): bool
+    public function persistAndNotifySkippingConfirmation(User $user): bool
     {
-        return $this->persist($user, $password, skipConfirmation: true);
+        return $this->persist($user, skipConfirmation: true);
     }
 
-    private function persist(User $user, string $password, bool $skipConfirmation): bool
+    private function persist(User $user, bool $skipConfirmation): bool
     {
         $userProfile = new UserProfile();
 
         if ($this->config->enableEmailConfirmation && !$skipConfirmation) {
+            $rawCode = Random::string(32);
             $userToken = new UserToken();
             $userToken->setCreatedAt(time());
-            $userToken->setCode(Random::string(32));
+            $userToken->setCode(hash('sha256', $rawCode));
 
-            User::saveWithProfileAndToken($user, $userProfile, $userToken);
+            $this->saveOrThrowConflict($user, static fn(): mixed => User::saveWithProfileAndToken($user, $userProfile, $userToken));
             $this->passwordHistoryService->record($user);
-            $this->mailService->sendConfirmation($user, $userToken);
+            $this->mailService->sendConfirmation($user, $rawCode);
 
             $this->eventDispatcher->dispatch(new UserEvent($user, UserEvent::CREATE));
             $this->eventDispatcher->dispatch(new AfterRegisterEvent($user));
@@ -99,12 +106,33 @@ final readonly class UserCreationHelper
         }
 
         $user->setConfirmedAt(time());
-        User::saveWithProfile($user, $userProfile);
+        $this->saveOrThrowConflict($user, static fn(): mixed => User::saveWithProfile($user, $userProfile));
         $this->passwordHistoryService->record($user);
-        $this->mailService->sendWelcome($user, $password);
+        $this->mailService->sendWelcome($user);
 
         $this->eventDispatcher->dispatch(new UserEvent($user, UserEvent::CREATE));
         $this->eventDispatcher->dispatch(new AfterRegisterEvent($user));
         return false;
+    }
+
+    /**
+     * @throws RuntimeException carrying the same message {@see self::findUniquenessConflict()} would
+     * have returned, if a concurrent request won the race and inserted the same email/username first.
+     */
+    private function saveOrThrowConflict(User $user, callable $save): void
+    {
+        try {
+            $save();
+        } catch (IntegrityException) {
+            $conflict = $this->findUniquenessConflict($user->getEmail(), $user->getUsername());
+            if ($conflict === null) {
+                // @codeCoverageIgnoreStart
+                // The `user` table's only UNIQUE constraints are on email and username, so an
+                // IntegrityException on this save always means findUniquenessConflict() finds one.
+                $conflict = 'A user with this email or username already exists.';
+                // @codeCoverageIgnoreEnd
+            }
+            throw new RuntimeException($conflict);
+        }
     }
 }

@@ -11,13 +11,15 @@ use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
 
 /**
  * ActiveRecord for the `user_audit_log` table: records an admin/system action with its actor,
- * optional target user, and free-form JSON context.
+ * optional target user, actor IP/user-agent, and free-form JSON context.
  */
 final class UserAuditLog extends ActiveRecord
 {
     use PrivatePropertiesTrait;
 
     private string $action = '';
+    private string $actor_ip = '';
+    private ?string $actor_user_agent = null;
     private ?int $actor_user_id = null;
     private ?string $context = null;
     private int $created_at = 0;
@@ -28,6 +30,16 @@ final class UserAuditLog extends ActiveRecord
     public function getAction(): string
     {
         return $this->action;
+    }
+
+    public function getActorIp(): string
+    {
+        return $this->actor_ip;
+    }
+
+    public function getActorUserAgent(): ?string
+    {
+        return $this->actor_user_agent;
     }
 
     public function getActorUserId(): ?int
@@ -90,6 +102,16 @@ final class UserAuditLog extends ActiveRecord
     public function setAction(string $action): void
     {
         $this->action = $action;
+    }
+
+    public function setActorIp(string $actorIp): void
+    {
+        $this->actor_ip = $actorIp;
+    }
+
+    public function setActorUserAgent(?string $actorUserAgent): void
+    {
+        $this->actor_user_agent = $actorUserAgent;
     }
 
     public function setActorUserId(?int $actorUserId): void

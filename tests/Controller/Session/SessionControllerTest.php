@@ -339,7 +339,6 @@ final class SessionControllerTest extends TestCase
     {
         $this->harness->getSession()->set('credentials', [
             'login' => 'jdoe',
-            'pwd' => 'secret',
             'rememberMe' => false,
         ]);
 
@@ -372,7 +371,6 @@ final class SessionControllerTest extends TestCase
 
         $this->harness->getSession()->set('credentials', [
             'login' => 'jdoe',
-            'pwd' => 'secret',
             'rememberMe' => false,
         ]);
 
@@ -400,7 +398,6 @@ final class SessionControllerTest extends TestCase
     {
         $this->harness->getSession()->set('credentials', [
             'login' => 'jdoe',
-            'pwd' => 'secret',
             'rememberMe' => true,
         ]);
 
@@ -432,7 +429,6 @@ final class SessionControllerTest extends TestCase
     {
         $this->harness->getSession()->set('credentials', [
             'login' => 'jdoe',
-            'pwd' => 'secret',
             'rememberMe' => false,
         ]);
 

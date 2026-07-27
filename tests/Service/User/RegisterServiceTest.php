@@ -7,6 +7,7 @@ namespace YiiRocks\Voyti\tests\Service\User;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
+use RuntimeException;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
@@ -55,6 +56,24 @@ final class RegisterServiceTest extends TestCase
 
         self::assertTrue($result->isFailure());
         self::assertSame('Email already exists', $result->getMessage());
+    }
+
+    public function testRunHandlesRaceLostAfterUniquenessCheckPasses(): void
+    {
+        $userCreationHelper = $this->createMock(UserCreationHelper::class);
+        $userCreationHelper->method('findUniquenessConflict')->willReturn(null);
+        $userCreationHelper->method('buildUser')->willReturn(new User());
+        $userCreationHelper->method('persistAndNotify')->willThrowException(new RuntimeException('Email already exists'));
+
+        $config = ModuleConfigFactory::create();
+        $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
+        $service = new RegisterService($userCreationHelper, $config, $passwordGenerator);
+
+        $result = $service->run(['email' => 'race@example.com', 'username' => 'raceuser', 'password' => 'secret123']);
+
+        self::assertTrue($result->isFailure());
+        self::assertSame('Email already exists', $result->getMessage());
+        self::assertSame(['Email already exists'], $result->getErrors());
     }
 
     public function testRunUsernameAlreadyExistsReturnsFailure(): void

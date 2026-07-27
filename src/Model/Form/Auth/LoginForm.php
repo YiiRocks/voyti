@@ -76,6 +76,9 @@ final class LoginForm extends FormModel implements LabelsProviderInterface, Rule
             // (SessionController::confirm() falls back to BackupCodeService::consume()),
             // so no format-specific rule can be enforced here beyond presence.
             $rules['twoFactorAuthenticationCode'] = [new Required()];
+            // The password was already verified during the initial login step; the 2FA step
+            // doesn't ask for it again, so its Required rule doesn't apply here.
+            unset($rules['password']);
         }
 
         $recaptchaRules = RecaptchaHelper::rules($this->config, $this->getFormName());

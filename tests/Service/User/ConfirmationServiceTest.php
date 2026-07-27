@@ -47,7 +47,7 @@ final class ConfirmationServiceTest extends TestCase
         $user = $this->createUser('fail', 'fail@example.com');
         $token = new UserToken();
         $token->setUserId((int) $user->getId());
-        $token->setCode('validcode');
+        $token->setCode(hash('sha256', 'validcode'));
         $token->setType(UserToken::TYPE_CONFIRMATION);
         $token->setCreatedAt(time());
         $token->save();
@@ -70,7 +70,7 @@ final class ConfirmationServiceTest extends TestCase
         $user = $this->createUser('success', 'success@example.com');
         $token = new UserToken();
         $token->setUserId((int) $user->getId());
-        $token->setCode('successcode');
+        $token->setCode(hash('sha256', 'successcode'));
         $token->setType(UserToken::TYPE_CONFIRMATION);
         $token->setCreatedAt(time());
         $token->save();
@@ -86,7 +86,7 @@ final class ConfirmationServiceTest extends TestCase
         $user = $this->createUser('expired', 'expired@example.com');
         $token = new UserToken();
         $token->setUserId((int) $user->getId());
-        $token->setCode('expiredcode');
+        $token->setCode(hash('sha256', 'expiredcode'));
         $token->setType(UserToken::TYPE_CONFIRMATION);
         $token->setCreatedAt(time() - 200000);
         $token->save();
@@ -116,6 +116,41 @@ final class ConfirmationServiceTest extends TestCase
         );
 
         self::assertFalse($service->resend($user));
+    }
+
+    public function testResendDeletesOnlyConfirmationTokens(): void
+    {
+        $user = $this->createUser('resend_delete_tokens', 'resend_delete_tokens@example.com');
+        $userId = (int) $user->getId();
+
+        $confirmationToken = new UserToken();
+        $confirmationToken->setUserId($userId);
+        $confirmationToken->setCode('old_confirm_token');
+        $confirmationToken->setType(UserToken::TYPE_CONFIRMATION);
+        $confirmationToken->setCreatedAt(time());
+        $confirmationToken->save();
+
+        $recoveryToken = new UserToken();
+        $recoveryToken->setUserId($userId);
+        $recoveryToken->setCode('recovery_token');
+        $recoveryToken->setType(UserToken::TYPE_RECOVERY);
+        $recoveryToken->setCreatedAt(time());
+        $recoveryToken->save();
+
+        $mailService = $this->createMock(MailService::class);
+        $mailService->method('sendConfirmation')->willReturn(true);
+        $service = new ConfirmationService(
+            $this->createMock(EventDispatcherInterface::class),
+            new UserTokenFactory(),
+            $mailService,
+        );
+
+        self::assertTrue($service->resend($user));
+
+        $remaining = UserToken::findByUserId($userId);
+        self::assertCount(2, $remaining);
+        $remainingTypes = array_map(static fn(UserToken $token): int => $token->getType(), $remaining);
+        self::assertContains(UserToken::TYPE_RECOVERY, $remainingTypes);
     }
 
     public function testResendSuccess(): void

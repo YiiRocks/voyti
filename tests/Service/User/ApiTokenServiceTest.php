@@ -9,6 +9,7 @@ use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\Service\User\ApiTokenService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use Yiisoft\ActiveRecord\ActiveQuery;
 
 final class ApiTokenServiceTest extends TestCase
 {
@@ -31,7 +32,9 @@ final class ApiTokenServiceTest extends TestCase
 
         $rawToken = $service->generate($user);
 
-        $storedAsRaw = UserToken::findByCodeAndType($rawToken, UserToken::TYPE_API_ACCESS);
+        $storedAsRaw = (new ActiveQuery(new UserToken()))
+            ->where(['code' => $rawToken])
+            ->one();
 
         self::assertNull($storedAsRaw);
     }
@@ -43,10 +46,7 @@ final class ApiTokenServiceTest extends TestCase
 
         $rawToken = $service->generate($user);
 
-        $stored = UserToken::findByCodeAndType(
-            hash('sha256', $rawToken),
-            UserToken::TYPE_API_ACCESS,
-        );
+        $stored = UserToken::findByCodeAndType($rawToken, UserToken::TYPE_API_ACCESS);
 
         self::assertSame(64, strlen($rawToken));
         self::assertNotNull($stored);

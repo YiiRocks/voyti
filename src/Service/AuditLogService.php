@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service;
 
+use YiiRocks\Voyti\Helper\LoginMetadataHelper;
 use YiiRocks\Voyti\Model\UserAuditLog;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Json\Json;
@@ -19,11 +20,13 @@ final readonly class AuditLogService
     ) {}
 
     /**
+     * @param array<array-key, mixed> $serverParams
      * @param array<string, mixed> $context
      */
     public function log(
         ?int $actorUserId,
         string $action,
+        array $serverParams,
         ?int $targetUserId = null,
         ?string $targetName = null,
         array $context = [],
@@ -38,6 +41,8 @@ final readonly class AuditLogService
         $log->setTargetUserId($targetUserId);
         $log->setTargetName($targetName);
         $log->setContext($context === [] ? null : Json::encode($context));
+        $log->setActorIp(LoginMetadataHelper::remoteAddr($serverParams));
+        $log->setActorUserAgent(LoginMetadataHelper::userAgent($serverParams));
         $log->setCreatedAt(time());
         $log->save();
     }

@@ -46,6 +46,6 @@ final class EmailValidator
             $this->error = 'Email 2FA is not configured.';
             return false;
         }
-        return $this->code === $storedCode;
+        return hash_equals($storedCode, $this->code);
     }
 }

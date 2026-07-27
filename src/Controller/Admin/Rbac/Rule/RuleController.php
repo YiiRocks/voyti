@@ -70,7 +70,7 @@ final readonly class RuleController
             $result = $this->validator->validate($form);
             if ($result->isValid()) {
                 if ($this->authRuleEditionService->create($form)) {
-                    $this->auditLogService->log($this->actorId(), 'rbac.rule.create', targetName: $form->name);
+                    $this->auditLogService->log($this->actorId(), 'rbac.rule.create', $request->getServerParams(), targetName: $form->name);
 
                     return $this->redirectWithFlash($this->url->generate('voyti/admin-rbac-rules'), 'voyti.rule.added');
                 }
@@ -86,10 +86,10 @@ final readonly class RuleController
         ]);
     }
 
-    public function delete(#[RouteArgument] string $name): ResponseInterface
+    public function delete(ServerRequestInterface $request, #[RouteArgument] string $name): ResponseInterface
     {
         $this->authRuleEditionService->remove($name);
-        $this->auditLogService->log($this->actorId(), 'rbac.rule.delete', targetName: $name);
+        $this->auditLogService->log($this->actorId(), 'rbac.rule.delete', $request->getServerParams(), targetName: $name);
 
         return $this->redirectWithFlash($this->url->generate('voyti/admin-rbac-rules'), 'voyti.rule.deleted');
     }
@@ -128,6 +128,7 @@ final readonly class RuleController
                     $this->auditLogService->log(
                         $this->actorId(),
                         'rbac.rule.update',
+                        $request->getServerParams(),
                         targetName: $form->name,
                         context: ['previousName' => $name],
                     );

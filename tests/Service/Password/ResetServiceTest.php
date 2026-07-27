@@ -42,11 +42,12 @@ final class ResetServiceTest extends TestCase
         $eventDispatcher->expects($this->exactly(2))->method('dispatch');
 
         $user = $this->createUser(username: 'tokenuser', email: 'token@example.com', passwordHash: 'oldhash');
-        $userToken = $this->createUserToken((int) $user->getId(), 'tokencode');
+        $userId = (int) $user->getId();
+        $userToken = $this->createUserToken($userId, 'tokencode');
 
         $this->createService($eventDispatcher)->run('newpassword', $user, $userToken);
 
-        self::assertNull(UserToken::findByCodeAndType('tokencode', UserToken::TYPE_RECOVERY));
+        self::assertCount(0, UserToken::findByUserId($userId));
     }
 
     public function testRunRecordsPasswordHistoryWhenEnabled(): void

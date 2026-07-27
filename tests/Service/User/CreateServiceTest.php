@@ -6,6 +6,7 @@ namespace YiiRocks\Voyti\tests\Service\User;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Psr\EventDispatcher\EventDispatcherInterface;
+use RuntimeException;
 use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
@@ -56,6 +57,20 @@ final class CreateServiceTest extends TestCase
         $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
         $service = new CreateService($userCreationHelper);
         $result = $service->run('existing@example.com', 'testuser', 'password123');
+
+        self::assertTrue($result->isFailure());
+        self::assertSame('Email already exists', $result->getMessage());
+    }
+
+    public function testRunHandlesRaceLostAfterUniquenessCheckPasses(): void
+    {
+        $userCreationHelper = $this->createMock(UserCreationHelper::class);
+        $userCreationHelper->method('findUniquenessConflict')->willReturn(null);
+        $userCreationHelper->method('buildUser')->willReturn(new User());
+        $userCreationHelper->method('persistAndNotify')->willThrowException(new RuntimeException('Email already exists'));
+
+        $service = new CreateService($userCreationHelper);
+        $result = $service->run('race@example.com', 'raceuser', 'password123');
 
         self::assertTrue($result->isFailure());
         self::assertSame('Email already exists', $result->getMessage());
@@ -143,7 +158,7 @@ final class CreateServiceTest extends TestCase
         self::assertCount(1, $tokens);
         $userToken = $tokens[0];
         self::assertGreaterThan(0, $userToken->getCreatedAt());
-        self::assertSame(32, strlen($userToken->getCode()));
+        self::assertSame(64, strlen($userToken->getCode()));
         self::assertNotEmpty($mailCapture->getSentMessages());
         self::assertCount(2, $eventDispatcher->getEvents());
         $userEvent = $eventDispatcher->getEvent(UserEvent::class);

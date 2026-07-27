@@ -11,7 +11,9 @@ use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
 /**
  * ActiveRecord for the `user_token` table: a one-time code used for email confirmation, password
  * recovery, email change confirmation, or API access, distinguished by the `TYPE_*` constants and
- * expiring per {@see self::isExpired()}.
+ * expiring per {@see self::isExpired()}. Only the SHA-256 hash of the code is ever persisted; the
+ * `findBy*Code*` finders take the raw code and hash it internally before querying, so a DB breach
+ * doesn't hand out usable confirmation/recovery/API links directly.
  */
 final class UserToken extends ActiveRecord
 {
@@ -39,7 +41,7 @@ final class UserToken extends ActiveRecord
     public static function findByCodeAndType(string $code, int $type): ?UserToken
     {
         /** @var ?UserToken $token */
-        $token = self::query()->where(['code' => $code, 'type' => $type])->one();
+        $token = self::query()->where(['code' => hash('sha256', $code), 'type' => $type])->one();
         return $token;
     }
 
@@ -56,14 +58,14 @@ final class UserToken extends ActiveRecord
     public static function findByUserIdAndCode(int $userId, string $code): ?UserToken
     {
         /** @var ?UserToken $token */
-        $token = self::query()->where(['user_id' => $userId, 'code' => $code])->one();
+        $token = self::query()->where(['user_id' => $userId, 'code' => hash('sha256', $code)])->one();
         return $token;
     }
 
     public static function findByUserIdAndCodeAndType(int $userId, string $code, int $type): ?UserToken
     {
         /** @var ?UserToken $token */
-        $token = self::query()->where(['user_id' => $userId, 'code' => $code, 'type' => $type])->one();
+        $token = self::query()->where(['user_id' => $userId, 'code' => hash('sha256', $code), 'type' => $type])->one();
         return $token;
     }
 

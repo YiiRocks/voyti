@@ -36,17 +36,14 @@ final readonly class IdentityAdapter implements IdentityRepositoryInterface, Ide
     #[Override]
     public function findIdentityByToken(string $token, ?string $type = null): ?IdentityInterface
     {
-        $userToken = UserToken::findByCodeAndType(
-            hash('sha256', $token),
-            UserToken::TYPE_API_ACCESS,
-        );
+        $userToken = UserToken::findByCodeAndType($token, UserToken::TYPE_API_ACCESS);
 
         if ($userToken === null) {
             return null;
         }
 
         if (
-            $this->config->apiTokenLifespan !== null
+            $this->config->apiTokenLifespan > 0
             && ($this->clock->now()->getTimestamp() - $userToken->getCreatedAt()) > $this->config->apiTokenLifespan
         ) {
             return null;

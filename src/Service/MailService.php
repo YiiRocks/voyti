@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service;
 
+use Throwable;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\ModuleConfig;
 use Yiisoft\Mailer\MailerInterface;
 use Yiisoft\Mailer\Message;
@@ -32,9 +32,6 @@ final readonly class MailService
         $this->translator = $translator->withDefaultCategory('voyti');
     }
 
-    /**
-     * @return true
-     */
     public function send(string $to, string $subject, string $view, array $params = []): bool
     {
         $message = new Message(
@@ -46,7 +43,12 @@ final readonly class MailService
             ->withHtmlBody($this->renderView("html/{$view}.php", $params))
             ->withTextBody($this->renderView("text/{$view}.php", $params));
 
-        $this->mailer->send($message);
+        try {
+            $this->mailer->send($message);
+        } catch (Throwable) {
+            return false;
+        }
+
         return true;
     }
 
@@ -63,7 +65,7 @@ final readonly class MailService
         );
     }
 
-    public function sendConfirmation(User $user, UserToken $userToken): bool
+    public function sendConfirmation(User $user, string $code): bool
     {
         $subject = $this->getMailSubject('confirmation_subject');
         $userId = $user->getId();
@@ -78,14 +80,14 @@ final readonly class MailService
                 'username' => $user->getUsername(),
                 'confirmationUrl' => $this->url->generateAbsolute(
                     'voyti/registration-confirm',
-                    ['id' => $userId, 'code' => $userToken->getCode()],
+                    ['id' => $userId, 'code' => $code],
                 ),
                 'translator' => $this->translator,
             ],
         );
     }
 
-    public function sendReconfirmation(User $user, UserToken $userToken): bool
+    public function sendReconfirmation(User $user, string $code): bool
     {
         $subject = $this->getMailSubject('reconfirmation_subject');
         return $this->send(
@@ -96,14 +98,14 @@ final readonly class MailService
                 'username' => $user->getUsername(),
                 'confirmationUrl' => $this->url->generateAbsolute(
                     'voyti/user-account-confirm',
-                    ['code' => $userToken->getCode()],
+                    ['code' => $code],
                 ),
                 'translator' => $this->translator,
             ],
         );
     }
 
-    public function sendRecovery(string $username, string $email, UserToken $userToken): bool
+    public function sendRecovery(string $username, string $email, int $userId, string $code): bool
     {
         $subject = $this->getMailSubject('recovery_subject');
         return $this->send(
@@ -114,7 +116,7 @@ final readonly class MailService
                 'username' => $username,
                 'recoveryUrl' => $this->url->generateAbsolute(
                     'voyti/password-reset-confirm',
-                    ['id' => $userToken->getUserId(), 'code' => $userToken->getCode()],
+                    ['id' => $userId, 'code' => $code],
                 ),
                 'translator' => $this->translator,
             ],
@@ -135,7 +137,7 @@ final readonly class MailService
         );
     }
 
-    public function sendWelcome(User $user, string $password): bool
+    public function sendWelcome(User $user): bool
     {
         $subject = $this->getMailSubject('welcome_subject');
         return $this->send(

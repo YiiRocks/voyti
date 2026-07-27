@@ -67,6 +67,42 @@ final class PasswordHistoryServiceTest extends TestCase
         self::assertCount(2, UserPasswordHistory::findByUserId($user->getIdOrZero()));
     }
 
+    public function testRecordPruneScopesDeletionToOwningUser(): void
+    {
+        $config = ModuleConfigFactory::create(maxPasswordAge: 90, passwordHistoryLimit: 2);
+        $passwordHasher = TestPasswordHasherFactory::create();
+        $user1 = $this->createUser(username: 'pruneuser1', email: 'prune1@example.com');
+        $user2 = $this->createUser(username: 'pruneuser2', email: 'prune2@example.com');
+        $service = new PasswordHistoryService($passwordHasher, $config);
+
+        // user2's only history entry shares its hash with what will become user1's oldest entry,
+        // so a prune that forgot to scope by user_id would delete this row too.
+        $user2History = new UserPasswordHistory();
+        $user2History->setUserId($user2->getIdOrZero());
+        $user2History->setPasswordHash('shared-hash');
+        $user2History->setCreatedAt(1000);
+        $user2History->save();
+
+        $user1OldestHistory = new UserPasswordHistory();
+        $user1OldestHistory->setUserId($user1->getIdOrZero());
+        $user1OldestHistory->setPasswordHash('shared-hash');
+        $user1OldestHistory->setCreatedAt(1000);
+        $user1OldestHistory->save();
+
+        $user1MiddleHistory = new UserPasswordHistory();
+        $user1MiddleHistory->setUserId($user1->getIdOrZero());
+        $user1MiddleHistory->setPasswordHash('user1-hash-2');
+        $user1MiddleHistory->setCreatedAt(2000);
+        $user1MiddleHistory->save();
+
+        $user1->setPasswordHash('user1-hash-3');
+        $user1->save();
+        $service->record($user1);
+
+        self::assertCount(2, UserPasswordHistory::findByUserId($user1->getIdOrZero()));
+        self::assertCount(1, UserPasswordHistory::findByUserId($user2->getIdOrZero()));
+    }
+
     public function testRecordStoresCurrentHash(): void
     {
         $config = ModuleConfigFactory::create(maxPasswordAge: 90);

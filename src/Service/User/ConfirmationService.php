@@ -49,11 +49,11 @@ final readonly class ConfirmationService
         }
 
         $userId = $user->getIdOrZero();
-        UserToken::deleteAllByUserId($userId);
+        UserToken::deleteAllByUserIdAndType($userId, UserToken::TYPE_CONFIRMATION);
 
-        $userToken = $this->userTokenFactory->makeConfirmationToken($userId);
+        $code = $this->userTokenFactory->makeConfirmationToken($userId);
 
-        $this->mailService->sendConfirmation($user, $userToken);
+        $this->mailService->sendConfirmation($user, $code);
 
         return true;
     }

@@ -101,11 +101,11 @@ final class IdentityAdapterTest extends TestCase
         self::assertNotNull($adapter->findIdentityByToken('raw-token'));
     }
 
-    public function testFindIdentityByTokenWithNullLifespanNeverExpires(): void
+    public function testFindIdentityByTokenWithZeroLifespanNeverExpires(): void
     {
         $user = $this->createUser();
         $this->createApiToken($user, 'raw-token', createdAt: time() - 1_000_000);
-        $adapter = $this->createAdapter(config: ModuleConfigFactory::create(apiTokenLifespan: null));
+        $adapter = $this->createAdapter(config: ModuleConfigFactory::create(apiTokenLifespan: 0));
 
         self::assertNotNull($adapter->findIdentityByToken('raw-token'));
     }

@@ -103,32 +103,26 @@ final readonly class EmailChangeService
             return false;
         }
 
-        $userToken = $this->tokenFactory->makeConfirmOldMailToken((int) $user->getId());
+        $code = $this->tokenFactory->makeConfirmOldMailToken((int) $user->getId());
 
-        if ($this->mailService->sendReconfirmation($user, $userToken)) {
+        if ($this->mailService->sendReconfirmation($user, $code)) {
             return true;
         }
 
-        // @codeCoverageIgnoreStart
-        // MailService::send() has no failure path in the current implementation; this guards the bool contract.
         return false;
-        // @codeCoverageIgnoreEnd
     }
 
     private function initiateNew(User $user, SettingsForm $form): bool
     {
         $user->setUnconfirmedEmail($form->email);
-        $userToken = $this->tokenFactory->makeConfirmNewMailToken((int) $user->getId());
+        $code = $this->tokenFactory->makeConfirmNewMailToken((int) $user->getId());
 
-        if ($this->mailService->sendReconfirmation($user, $userToken)) {
+        if ($this->mailService->sendReconfirmation($user, $code)) {
             $user->save();
             return true;
         }
 
-        // @codeCoverageIgnoreStart
-        // MailService::send() has no failure path in the current implementation; this guards the bool contract.
         return false;
-        // @codeCoverageIgnoreEnd
     }
 
     private function initiateNone(User $user, SettingsForm $form): bool
