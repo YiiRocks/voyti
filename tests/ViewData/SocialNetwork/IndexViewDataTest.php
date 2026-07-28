@@ -71,6 +71,8 @@ final class IndexViewDataTest extends TestCase
             ModuleConfigFactory::create(),
             new FakeUrlGenerator(),
             new Translator('en', null, 'voyti'),
+            false,
+            null,
         );
 
         self::assertSame('github', $data->accounts[0]->providerTitle);
