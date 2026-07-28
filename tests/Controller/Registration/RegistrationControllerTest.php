@@ -17,16 +17,15 @@ use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\ServiceResult;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\RegisterService;
-use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\HydrateObjectTrait;
 use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
+use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
-use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\Result;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
@@ -37,26 +36,21 @@ final class RegistrationControllerTest extends TestCase
     use DatabaseSetupTrait;
     use HydrateObjectTrait;
     use RedirectResponseMockTrait;
+    use TestContainerTrait;
     use UserFactoryTrait;
 
-    private ModuleConfig $config;
     private ConfirmationService&MockObject $confirmationService;
     private FlashInterface&MockObject $flash;
-    private ControllerHarness $harness;
     private HydratorInterface&MockObject $hydrator;
     private PendingSocialAccountService&MockObject $pendingSocialAccountService;
     private RegisterService&MockObject $registerService;
     private ResponseFactoryInterface&MockObject $responseFactory;
-    private TranslatorInterface $translator;
     private ValidatorInterface&MockObject $validator;
     private WebViewRenderer&MockObject $viewRenderer;
 
     protected function setUp(): void
     {
         $this->setUpDatabase();
-        $this->config = ModuleConfigFactory::create();
-        $this->harness = new ControllerHarness($this->config);
-        $this->translator = $this->createTranslator();
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
         $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
         $this->validator = $this->createMock(ValidatorInterface::class);
@@ -137,9 +131,6 @@ final class RegistrationControllerTest extends TestCase
 
     public function testConfirmWithInvalidUserOrDisabledConfig(): void
     {
-        $config = ModuleConfigFactory::create(enableEmailConfirmation: false);
-        $this->harness = new ControllerHarness($config);
-
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
             ->method('withViewPath')
@@ -148,7 +139,7 @@ final class RegistrationControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $controller = $this->createController();
+        $controller = $this->createController(ModuleConfigFactory::create(enableEmailConfirmation: false));
 
         $result = $controller->confirm(999999, 'code123');
 
@@ -283,9 +274,6 @@ final class RegistrationControllerTest extends TestCase
 
     public function testRegisterWhenDisabledShowsError(): void
     {
-        $config = ModuleConfigFactory::create(enableRegistration: false);
-        $this->harness = new ControllerHarness($config);
-
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
             ->method('withViewPath')
@@ -294,7 +282,7 @@ final class RegistrationControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $controller = $this->createController();
+        $controller = $this->createController(ModuleConfigFactory::create(enableRegistration: false));
         $request = new ServerRequest('GET', '/');
 
         $result = $controller->register($request);
@@ -360,9 +348,6 @@ final class RegistrationControllerTest extends TestCase
 
     public function testResendWhenDisabledShowsError(): void
     {
-        $config = ModuleConfigFactory::create(enableEmailConfirmation: false);
-        $this->harness = new ControllerHarness($config);
-
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
             ->method('withViewPath')
@@ -371,7 +356,7 @@ final class RegistrationControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $controller = $this->createController();
+        $controller = $this->createController(ModuleConfigFactory::create(enableEmailConfirmation: false));
         $request = new ServerRequest('GET', '/');
 
         $result = $controller->resend($request);
@@ -379,18 +364,23 @@ final class RegistrationControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    private function createController(): RegistrationController
+    private function createController(?ModuleConfig $config = null): RegistrationController
     {
-        return $this->harness->createRegistrationController(
-            translator: $this->translator,
-            viewRenderer: $this->viewRenderer,
-            validator: $this->validator,
-            responseFactory: $this->responseFactory,
-            hydrator: $this->hydrator,
-            flash: $this->flash,
-            registerService: $this->registerService,
-            confirmationService: $this->confirmationService,
-            pendingSocialAccountService: $this->pendingSocialAccountService,
-        );
+        $overrides = [
+            FlashInterface::class => $this->flash,
+            HydratorInterface::class => $this->hydrator,
+            PendingSocialAccountService::class => $this->pendingSocialAccountService,
+            ConfirmationService::class => $this->confirmationService,
+            RegisterService::class => $this->registerService,
+            ResponseFactoryInterface::class => $this->responseFactory,
+            ValidatorInterface::class => $this->validator,
+            WebViewRenderer::class => $this->viewRenderer,
+        ];
+
+        if ($config !== null) {
+            $overrides[ModuleConfig::class] = $config;
+        }
+
+        return $this->getTestContainer($overrides)->get(RegistrationController::class);
     }
 }

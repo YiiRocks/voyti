@@ -11,17 +11,14 @@ use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\SocialNetwork\SocialNetworkController;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSocialAccount;
-use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
+use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Session\Flash\FlashInterface;
-use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
@@ -30,23 +27,18 @@ final class SocialNetworkControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
     use RedirectResponseMockTrait;
+    use TestContainerTrait;
     use UserFactoryTrait;
 
-    private ModuleConfig $config;
     private CurrentUser&MockObject $currentUser;
     private FlashInterface&MockObject $flash;
-    private ControllerHarness $harness;
     private PasswordHasher $passwordHasher;
     private ResponseFactoryInterface&MockObject $responseFactory;
-    private TranslatorInterface $translator;
     private WebViewRenderer&MockObject $viewRenderer;
 
     protected function setUp(): void
     {
         $this->setUpDatabase();
-        $this->config = ModuleConfigFactory::create();
-        $this->harness = new ControllerHarness($this->config);
-        $this->translator = $this->createTranslator();
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
         $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
         $this->currentUser = $this->createMock(CurrentUser::class);
@@ -126,13 +118,12 @@ final class SocialNetworkControllerTest extends TestCase
 
     private function createController(): SocialNetworkController
     {
-        return $this->harness->createSocialNetworkController(
-            translator: $this->translator,
-            viewRenderer: $this->viewRenderer,
-            currentUser: $this->currentUser,
-            responseFactory: $this->responseFactory,
-            flash: $this->flash,
-        );
+        return $this->getTestContainer([
+            CurrentUser::class => $this->currentUser,
+            FlashInterface::class => $this->flash,
+            ResponseFactoryInterface::class => $this->responseFactory,
+            WebViewRenderer::class => $this->viewRenderer,
+        ])->get(SocialNetworkController::class);
     }
 
     private function createSocialAccount(int $userId, string $provider = 'github', string $username = 'octocat'): UserSocialAccount

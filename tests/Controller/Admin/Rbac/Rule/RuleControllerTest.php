@@ -11,15 +11,12 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\Admin\Rbac\Rule\RuleController;
 use YiiRocks\Voyti\Helper\AuthHelper;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\AuditLogService;
 use YiiRocks\Voyti\Service\Rbac\RuleEditionService;
-use YiiRocks\Voyti\tests\Support\ControllerHarness;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
+use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Session\Flash\FlashInterface;
-use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\Result;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
@@ -28,23 +25,18 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 final class RuleControllerTest extends TestCase
 {
     use RedirectResponseMockTrait;
+    use TestContainerTrait;
 
     private AuditLogService&MockObject $auditLogService;
     private AuthHelper&MockObject $authHelper;
-    private ModuleConfig $config;
     private FlashInterface&MockObject $flash;
-    private ControllerHarness $harness;
     private ResponseFactoryInterface&MockObject $responseFactory;
     private RuleEditionService&MockObject $ruleEditionService;
-    private TranslatorInterface $translator;
     private ValidatorInterface&MockObject $validator;
     private WebViewRenderer&MockObject $viewRenderer;
 
     protected function setUp(): void
     {
-        $this->config = ModuleConfigFactory::create();
-        $this->harness = new ControllerHarness($this->config);
-        $this->translator = $this->createTranslator();
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
         $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
         $this->validator = $this->createMock(ValidatorInterface::class);
@@ -238,15 +230,14 @@ final class RuleControllerTest extends TestCase
 
     private function createController(): RuleController
     {
-        return $this->harness->createRuleController(
-            translator: $this->translator,
-            viewRenderer: $this->viewRenderer,
-            validator: $this->validator,
-            responseFactory: $this->responseFactory,
-            flash: $this->flash,
-            authHelper: $this->authHelper,
-            ruleEditionService: $this->ruleEditionService,
-            auditLogService: $this->auditLogService,
-        );
+        return $this->getTestContainer([
+            AuthHelper::class => $this->authHelper,
+            AuditLogService::class => $this->auditLogService,
+            FlashInterface::class => $this->flash,
+            ResponseFactoryInterface::class => $this->responseFactory,
+            RuleEditionService::class => $this->ruleEditionService,
+            ValidatorInterface::class => $this->validator,
+            WebViewRenderer::class => $this->viewRenderer,
+        ])->get(RuleController::class);
     }
 }

@@ -16,16 +16,15 @@ use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
 use YiiRocks\Voyti\Service\Password\ResetService;
 use YiiRocks\Voyti\Service\ServiceResult;
-use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\HydrateObjectTrait;
 use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
+use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
-use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\Result;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
@@ -36,25 +35,20 @@ final class PasswordResetControllerTest extends TestCase
     use DatabaseSetupTrait;
     use HydrateObjectTrait;
     use RedirectResponseMockTrait;
+    use TestContainerTrait;
     use UserFactoryTrait;
 
-    private ModuleConfig $config;
     private FlashInterface&MockObject $flash;
-    private ControllerHarness $harness;
     private HydratorInterface&MockObject $hydrator;
     private RecoveryService&MockObject $recoveryService;
     private ResetService&MockObject $resetService;
     private ResponseFactoryInterface&MockObject $responseFactory;
-    private TranslatorInterface $translator;
     private ValidatorInterface&MockObject $validator;
     private WebViewRenderer&MockObject $viewRenderer;
 
     protected function setUp(): void
     {
         $this->setUpDatabase();
-        $this->config = ModuleConfigFactory::create();
-        $this->harness = new ControllerHarness($this->config);
-        $this->translator = $this->createTranslator();
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
         $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
         $this->validator = $this->createMock(ValidatorInterface::class);
@@ -115,8 +109,7 @@ final class PasswordResetControllerTest extends TestCase
     public function testRequestWhenDisabledShowsError(): void
     {
         $config = ModuleConfigFactory::create(allowPasswordRecovery: false);
-        $this->harness = new ControllerHarness($config);
-        $controller = $this->createController();
+        $controller = $this->createController([ModuleConfig::class => $config]);
         $request = new ServerRequest('GET', '/');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -248,8 +241,7 @@ final class PasswordResetControllerTest extends TestCase
     public function testResetWithDisabledConfigShowsMessage(): void
     {
         $config = ModuleConfigFactory::create(allowPasswordRecovery: false, allowAdminPasswordRecovery: false);
-        $this->harness = new ControllerHarness($config);
-        $controller = $this->createController();
+        $controller = $this->createController([ModuleConfig::class => $config]);
         $request = new ServerRequest('GET', '/');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -304,18 +296,18 @@ final class PasswordResetControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    private function createController(): PasswordResetController
+    private function createController(array $overrides = []): PasswordResetController
     {
-        return $this->harness->createPasswordResetController(
-            translator: $this->translator,
-            viewRenderer: $this->viewRenderer,
-            validator: $this->validator,
-            responseFactory: $this->responseFactory,
-            hydrator: $this->hydrator,
-            flash: $this->flash,
-            recoveryService: $this->recoveryService,
-            resetService: $this->resetService,
-        );
+        return $this->getTestContainer([
+            FlashInterface::class => $this->flash,
+            HydratorInterface::class => $this->hydrator,
+            RecoveryService::class => $this->recoveryService,
+            ResetService::class => $this->resetService,
+            ResponseFactoryInterface::class => $this->responseFactory,
+            ValidatorInterface::class => $this->validator,
+            WebViewRenderer::class => $this->viewRenderer,
+            ...$overrides,
+        ])->get(PasswordResetController::class);
     }
 
     private function createRecoveryToken(int $userId, string $code, int $createdAt): UserToken
