@@ -31,7 +31,6 @@ return [
         'twoFactorAuthenticationForcedPermissions' => [],
         'enableRegistration' => true,
         'enableSocialNetworkRegistration' => true,
-        'socialNetworkClients' => [],
         'enableEmailConfirmation' => true,
         'enableSwitchIdentities' => true,
         'homeRoute' => 'home',

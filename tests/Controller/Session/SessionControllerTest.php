@@ -10,19 +10,13 @@ use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
-use RuntimeException;
 use YiiRocks\Voyti\Controller\Session\SessionController;
 use YiiRocks\Voyti\Model\Form\Auth\LoginForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
-use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
-use YiiRocks\Voyti\Service\Auth\SocialAuthProviderService;
-use YiiRocks\Voyti\Service\Auth\UserSocialAccountConnectService;
-use YiiRocks\Voyti\Service\Auth\UserSocialAuthenticateService;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
-use YiiRocks\Voyti\Service\ServiceResult;
 use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
@@ -60,9 +54,6 @@ final class SessionControllerTest extends TestCase
     private PendingSocialAccountService&MockObject $pendingSocialAccountService;
     private RememberMeCookieService&MockObject $rememberMeCookieService;
     private ResponseFactoryInterface&MockObject $responseFactory;
-    private SocialAuthProviderService&MockObject $socialAuthProviderService;
-    private UserSocialAccountConnectService&MockObject $socialNetworkAccountConnectService;
-    private UserSocialAuthenticateService&MockObject $socialNetworkAuthenticateService;
     private EmailCodeGeneratorService&MockObject $twoFactorEmailCodeService;
     private ValidatorInterface&MockObject $validator;
     private WebViewRenderer&MockObject $viewRenderer;
@@ -79,10 +70,7 @@ final class SessionControllerTest extends TestCase
         $this->flash = $this->createMock(FlashInterface::class);
         $this->passwordHasher = TestPasswordHasherFactory::create();
         $this->rememberMeCookieService = $this->createMock(RememberMeCookieService::class);
-        $this->socialAuthProviderService = $this->createMock(SocialAuthProviderService::class);
         $this->pendingSocialAccountService = $this->createMock(PendingSocialAccountService::class);
-        $this->socialNetworkAuthenticateService = $this->createMock(UserSocialAuthenticateService::class);
-        $this->socialNetworkAccountConnectService = $this->createMock(UserSocialAccountConnectService::class);
         $this->twoFactorEmailCodeService = $this->createMock(EmailCodeGeneratorService::class);
 
         $this->hydrator->method('hydrate')->willReturnCallback(
@@ -95,227 +83,6 @@ final class SessionControllerTest extends TestCase
     protected function tearDown(): void
     {
         $this->tearDownDatabase();
-    }
-
-    public function testAuthBeginForAuthenticatedUserRedirectsToProvider(): void
-    {
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
-        $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $this->socialAuthProviderService->method('hasCallbackParameters')->willReturn(false);
-        $this->socialAuthProviderService->expects($this->once())->method('begin')->with('github', 'voyti/session-auth')->willReturn('https://github.com/authorize');
-
-        $response = $this->mockRedirectResponse($this->responseFactory, 'https://github.com/authorize');
-
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/auth/github');
-
-        $result = $controller->auth($request, 'github');
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testAuthBeginRedirectsToProvider(): void
-    {
-        $this->socialAuthProviderService->method('hasCallbackParameters')->willReturn(false);
-        $this->socialAuthProviderService->expects($this->once())->method('begin')->with('github', 'voyti/session-auth')->willReturn('https://github.com/authorize');
-
-        $response = $this->mockRedirectResponse($this->responseFactory, 'https://github.com/authorize');
-
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/auth/github');
-
-        $result = $controller->auth($request, 'github');
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testAuthCallbackForAuthenticatedUserWithFailure(): void
-    {
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
-        $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $this->socialAuthProviderService->method('hasCallbackParameters')->willReturn(true);
-        $this->socialAuthProviderService->method('complete')->willReturn(['id' => 'client123']);
-        $this->socialNetworkAccountConnectService->method('run')->willReturn(ServiceResult::failure('already connected'));
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('shared/message', $this->callback(
-                static fn(array $params): bool => $params['data']->title === 'already connected',
-            ))
-            ->willReturn($response);
-
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/auth/github');
-
-        $result = $controller->auth($request, 'github');
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testAuthCallbackForAuthenticatedUserWithRuntimeException(): void
-    {
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
-        $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $this->socialAuthProviderService->method('hasCallbackParameters')->willReturn(true);
-        $this->socialAuthProviderService->method('complete')->willThrowException(new RuntimeException('state mismatch'));
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('shared/message', $this->callback(
-                static fn(array $params): bool => $params['data']->title === 'state mismatch',
-            ))
-            ->willReturn($response);
-
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/auth/github');
-
-        $result = $controller->auth($request, 'github');
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testAuthCallbackForAuthenticatedUserWithSuccess(): void
-    {
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
-        $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $this->socialAuthProviderService->method('hasCallbackParameters')->willReturn(true);
-        $this->socialAuthProviderService->method('complete')->willReturn(['id' => 'client123']);
-        $this->socialNetworkAccountConnectService->method('run')->willReturn(ServiceResult::success());
-
-        $response = $this->mockRedirectResponse($this->responseFactory, '//voyti/user-social-network');
-
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/auth/github');
-
-        $result = $controller->auth($request, 'github');
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testAuthCatchesRuntimeExceptionShowsMessage(): void
-    {
-        $this->socialAuthProviderService->method('hasCallbackParameters')->willReturn(true);
-        $this->socialAuthProviderService->method('complete')->willThrowException(new RuntimeException('state mismatch'));
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('shared/message', $this->callback(
-                static fn(array $params): bool => $params['data']->title === 'state mismatch',
-            ))
-            ->willReturn($response);
-
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/auth/github');
-
-        $result = $controller->auth($request, 'github');
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testAuthFailureShowsMessage(): void
-    {
-        $this->socialAuthProviderService->method('hasCallbackParameters')->willReturn(true);
-        $this->socialAuthProviderService->method('complete')->willReturn(['id' => 'client123']);
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-        $this->socialNetworkAuthenticateService->method('run')->willReturn(ServiceResult::failure('could not authenticate'));
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('shared/message', $this->callback(
-                static fn(array $params): bool => $params['data']->title === 'could not authenticate',
-            ))
-            ->willReturn($response);
-
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/auth/github');
-
-        $result = $controller->auth($request, 'github');
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testAuthSuccessRedirectsToHomeRoute(): void
-    {
-        $this->socialAuthProviderService->method('hasCallbackParameters')->willReturn(true);
-        $this->socialAuthProviderService->method('complete')->willReturn(['id' => 'client123']);
-        $this->socialNetworkAuthenticateService->method('run')->willReturn(ServiceResult::success());
-        $this->pendingSocialAccountService->method('getPendingAccount')->willReturn(null);
-
-        $guestIdentity = $this->createMock(GuestIdentityInterface::class);
-        $user = $this->createMock(User::class);
-        $this->currentUser->method('getIdentity')->willReturnOnConsecutiveCalls($guestIdentity, $user);
-        $this->rememberMeCookieService->method('addCookie')->willReturnArgument(1);
-
-        $response = $this->mockRedirectResponse($this->responseFactory, '//home');
-
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/auth/github');
-
-        $result = $controller->auth($request, 'github');
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testAuthWithoutCurrentUserIdentityShowsAuthenticatedMessage(): void
-    {
-        $this->socialAuthProviderService->method('hasCallbackParameters')->willReturn(true);
-        $this->socialAuthProviderService->method('complete')->willReturn(['id' => 'client123']);
-        $this->socialNetworkAuthenticateService->method('run')->willReturn(ServiceResult::success());
-        $this->pendingSocialAccountService->method('getPendingAccount')->willReturn(null);
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('shared/message', $this->callback(
-                static fn(array $params): bool => $params['data']->title === 'Authenticated',
-            ))
-            ->willReturn($response);
-
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/auth/github');
-
-        $result = $controller->auth($request, 'github');
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testAuthWithPendingAccountRedirectsToConnect(): void
-    {
-        $this->socialAuthProviderService->method('hasCallbackParameters')->willReturn(true);
-        $this->socialAuthProviderService->method('complete')->willReturn(['id' => 'client123']);
-        $this->socialNetworkAuthenticateService->method('run')->willReturn(ServiceResult::success());
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-
-        $account = $this->createMock(UserSocialAccount::class);
-        $account->method('getCode')->willReturn('pending-code');
-        $this->pendingSocialAccountService->method('getPendingAccount')->willReturn($account);
-
-        $response = $this->mockRedirectResponse($this->responseFactory, '//voyti/registration-connect?code=pending-code');
-
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/auth/github');
-
-        $result = $controller->auth($request, 'github');
-
-        $this->assertSame($response, $result);
     }
 
     public function testConfirmGetWithNoCredentialsShowsLoginForm(): void
@@ -855,9 +622,6 @@ final class SessionControllerTest extends TestCase
             PendingSocialAccountService::class => $this->pendingSocialAccountService,
             RememberMeCookieService::class => $this->rememberMeCookieService,
             ResponseFactoryInterface::class => $this->responseFactory,
-            SocialAuthProviderService::class => $this->socialAuthProviderService,
-            UserSocialAccountConnectService::class => $this->socialNetworkAccountConnectService,
-            UserSocialAuthenticateService::class => $this->socialNetworkAuthenticateService,
             ValidatorInterface::class => $this->validator,
             WebViewRenderer::class => $this->viewRenderer,
         ];

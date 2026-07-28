@@ -131,7 +131,6 @@ final readonly class UserSocialAuthenticateService
         $email = $this->stringAttribute($attributes, 'email');
         $account->setUsername($username);
         $account->setEmail($email);
-        $account->setCode(Random::string(32));
         $account->setData(Json::encode($attributes));
         $account->setCreatedAt(time());
 
@@ -139,16 +138,13 @@ final readonly class UserSocialAuthenticateService
         if ($email !== null && $this->config->enableRegistration && User::findByEmail($email) === null) {
             $user = $this->registerUser($email, $account->getUsername(), $serverParams);
             $account->setUserId((int) $user->getId());
+            $account->setUsername(null);
+            $account->setEmail(null);
+        } else {
+            $account->setCode(Random::string(32));
         }
 
         $account->save();
-
-        if ($account->getUserId() !== null) {
-            $user = User::findById($account->getUserId());
-            if ($user !== null) {
-                $account->connect($user);
-            }
-        }
 
         return $account;
     }
@@ -189,6 +185,10 @@ final readonly class UserSocialAuthenticateService
     {
         /** @var mixed $value */
         $value = $attributes[$key] ?? null;
+
+        if (is_int($value) || is_float($value)) {
+            return (string) $value;
+        }
 
         return is_string($value) && $value !== '' ? $value : null;
     }

@@ -6,7 +6,6 @@ namespace YiiRocks\Voyti\Controller\SocialNetwork;
 
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
-use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Model\UserSocialAccount;
@@ -18,6 +17,7 @@ use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
+use Yiisoft\Yii\AuthClient\Collection;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 /**
@@ -33,7 +33,7 @@ final readonly class SocialNetworkController
         private WebViewRenderer $viewRenderer,
         private UrlGeneratorInterface $url,
         private ModuleConfig $config,
-        private AuthClientRegistry $authClientRegistry,
+        private ?Collection $clientCollection,
         private CurrentUser $currentUser,
         private ResponseFactoryInterface $responseFactory,
         private FlashInterface $flash,
@@ -43,16 +43,10 @@ final readonly class SocialNetworkController
     public function delete(#[RouteArgument] int $id): ResponseInterface
     {
         $user = $this->currentUser->getIdentity();
-        $account = null;
-        $accounts = UserSocialAccount::findByUserId((int) $user->getId());
-        foreach ($accounts as $candidate) {
-            if ($candidate->getId() === $id) {
-                $account = $candidate;
-                break;
-            }
-        }
+        /** @var ?UserSocialAccount $account */
+        $account = UserSocialAccount::query()->where(['id' => $id])->one();
 
-        if ($account !== null) {
+        if ($account !== null && $account->getUserId() === (int) $user->getId()) {
             $account->delete();
             return $this->redirectWithFlash(
                 $this->url->generate('voyti/user-social-network'),
@@ -75,7 +69,7 @@ final readonly class SocialNetworkController
         return $this->renderView('social-network/index', [
             'data' => IndexViewData::create(
                 $accounts,
-                $this->authClientRegistry,
+                $this->clientCollection,
                 array_values($connectedProviders),
                 'voyti/session-auth',
                 $this->config,

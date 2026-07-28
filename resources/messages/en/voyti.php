@@ -11,6 +11,7 @@ return [
     'voyti.security.password_expired' => 'Your password has expired. Please set a new one.',
     'voyti.security.two_factor_required' => 'Two-factor authentication is required for your account. Please enable it to continue.',
     'voyti.security.authenticated' => 'Authenticated',
+    'voyti.security.social_auth_cancelled' => 'Social sign-in was cancelled.',
 
     // RegistrationController
     'voyti.registration.disabled' => 'Registration is disabled',

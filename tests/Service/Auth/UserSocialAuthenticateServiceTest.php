@@ -98,6 +98,20 @@ final class UserSocialAuthenticateServiceTest extends TestCase
         self::assertFalse($this->session->has('oauth_client_data'));
     }
 
+    public function testRunCoercesNumericAttributesToString(): void
+    {
+        $this->createUser('existing', '42@example.com');
+
+        $result = $this->createService(ModuleConfigFactory::create(enableSocialNetworkRegistration: true))
+            ->run('github', 'numeric_client', ['username' => 42, 'email' => '42@example.com']);
+
+        self::assertTrue($result->isSuccess());
+
+        $saved = UserSocialAccount::findByProviderAndClientId('github', 'numeric_client');
+        self::assertNotNull($saved);
+        self::assertSame('42', $saved->getUsername());
+    }
+
     public function testRunCreatesNewAccountWhenNotFound(): void
     {
         $currentUser = $this->createMock(CurrentUser::class);

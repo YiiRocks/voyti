@@ -86,9 +86,8 @@ final class UserSocialAccountTest extends TestCase
         $account->setClientId('abc');
         $account->setCreatedAt(1000);
 
-        $result = $account->connect($user);
+        $account->connect($user);
 
-        self::assertTrue($result);
         self::assertSame(0, $account->getUserId());
         self::assertNull($account->getUsername());
         self::assertNull($account->getEmail());
@@ -117,9 +116,8 @@ final class UserSocialAccountTest extends TestCase
         $account->setEmail('old@test.com');
         $account->setCode('oldcode');
 
-        $result = $account->connect($loadedUser);
+        $account->connect($loadedUser);
 
-        self::assertTrue($result);
         self::assertSame((int) $loadedUser->getId(), $account->getUserId());
         self::assertNull($account->getUsername());
         self::assertNull($account->getEmail());
@@ -271,34 +269,6 @@ final class UserSocialAccountTest extends TestCase
         self::assertNull($entity->getEmail());
         self::assertNull($entity->getUsername());
         self::assertNull($entity->getData());
-    }
-
-    public function testGetUserReturnsNullWhenNoUser(): void
-    {
-        $account = new UserSocialAccount();
-        self::assertNull($account->getUser());
-    }
-
-    public function testGetUserReturnsUserWhenLinked(): void
-    {
-        $this->connection->createCommand()->insert('user', [
-            'username' => 'testuser2',
-            'email' => 'test2@example.com',
-            'password_hash' => 'hash',
-            'auth_key' => 'key',
-            'created_at' => 1000,
-            'updated_at' => 1000,
-        ])->execute();
-
-        $user = User::query()->where(['username' => 'testuser2'])->one();
-        self::assertNotNull($user);
-
-        $account = new UserSocialAccount();
-        $account->setUserId((int) $user->getId());
-
-        $found = $account->getUser();
-        self::assertNotNull($found);
-        self::assertSame($user->getId(), $found->getId());
     }
 
     public function testIsConnectedWithNullUserId(): void

@@ -32,8 +32,6 @@ final readonly class ModuleConfig
         public array $twoFactorAuthenticationForcedPermissions,
         public bool $enableRegistration,
         public bool $enableSocialNetworkRegistration,
-        /** @psalm-var array<string, array<string, mixed>> */
-        public array $socialNetworkClients,
         public bool $enableEmailConfirmation,
         public bool $enableSwitchIdentities,
         public string $homeRoute,

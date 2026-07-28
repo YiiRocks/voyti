@@ -8,8 +8,6 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use RuntimeException;
-use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
@@ -20,9 +18,6 @@ use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
-use YiiRocks\Voyti\Service\Auth\SocialAuthProviderService;
-use YiiRocks\Voyti\Service\Auth\UserSocialAccountConnectService;
-use YiiRocks\Voyti\Service\Auth\UserSocialAuthenticateService;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\Service\TwoFactor\BackupCodeService;
 use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
@@ -30,11 +25,9 @@ use YiiRocks\Voyti\Validator\TwoFactor\CodeValidator;
 use YiiRocks\Voyti\Validator\TwoFactor\EmailValidator;
 use YiiRocks\Voyti\ViewData\Session\ConfirmViewData;
 use YiiRocks\Voyti\ViewData\Session\LoginViewData;
-use YiiRocks\Voyti\ViewData\Shared\MessageViewData;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Input\Http\Attribute\Parameter\Body;
-use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Security\Random;
@@ -44,11 +37,14 @@ use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Validator\ValidatorInterface;
+use Yiisoft\Yii\AuthClient\Collection;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 /**
- * Handles login, logout, two-factor confirmation during login, and the social-auth callback
- * that either logs a guest in or connects a provider to the currently authenticated user.
+ * Handles login, logout, and two-factor confirmation during login. The social-auth redirect/callback
+ * flow itself is handled by {@see \Yiisoft\Yii\AuthClient\AuthAction} and
+ * {@see \YiiRocks\Voyti\Service\Auth\SocialAuthCallbackService}, wired directly as the
+ * `voyti/session-auth` route action.
  */
 final readonly class SessionController
 {
@@ -69,89 +65,13 @@ final readonly class SessionController
         private SessionInterface $session,
         private RememberMeCookieService $rememberMeCookieService,
         private ModuleConfig $config,
-        private AuthClientRegistry $authClientRegistry,
-        private SocialAuthProviderService $socialAuthProviderService,
+        private ?Collection $clientCollection,
         private PendingSocialAccountService $pendingSocialAccountService,
-        private UserSocialAuthenticateService $socialNetworkAuthenticateService,
-        private UserSocialAccountConnectService $socialNetworkAccountConnectService,
         private HydratorInterface $hydrator,
         private EmailCodeGeneratorService $twoFactorEmailCodeService,
         private FlashInterface $flash,
         private BackupCodeService $backupCodeService,
     ) {}
-
-    public function auth(ServerRequestInterface $request, #[RouteArgument] string $provider): ResponseInterface
-    {
-        /** @var array<string, mixed> $queryParams */
-        $queryParams = $request->getQueryParams();
-
-        try {
-            if (!$this->socialAuthProviderService->hasCallbackParameters($queryParams)) {
-                return $this->redirect($this->socialAuthProviderService->begin($provider, 'voyti/session-auth'));
-            }
-
-            $attributes = $this->socialAuthProviderService->complete($provider, 'voyti/session-auth', $queryParams);
-            /** @var mixed $clientId */
-            $clientId = $attributes['id'] ?? '';
-            $clientIdStr = is_string($clientId) ? $clientId : '';
-
-            $identity = $this->currentUser->getIdentity();
-            $isGuest = $identity instanceof GuestIdentityInterface;
-
-            if ($isGuest) {
-                $result = $this->socialNetworkAuthenticateService->run(
-                    $provider,
-                    $clientIdStr,
-                    $attributes,
-                    $request->getServerParams(),
-                );
-            } else {
-                $result = $this->socialNetworkAccountConnectService->run(
-                    $provider,
-                    $clientIdStr,
-                    $attributes,
-                    (int) $identity->getId(),
-                );
-            }
-        } catch (RuntimeException $exception) {
-            return $this->renderView('shared/message', [
-                'data' => new MessageViewData(title: $exception->getMessage(), homeUrl: $this->homeUrl()),
-            ]);
-        }
-
-        if ($result->isFailure()) {
-            return $this->renderView('shared/message', [
-                'data' => new MessageViewData(title: $result->getMessage(), homeUrl: $this->homeUrl()),
-            ]);
-        }
-
-        if (!$isGuest) {
-            return $this->redirect($this->url->generate('voyti/user-social-network'));
-        }
-
-        $account = $this->pendingSocialAccountService->getPendingAccount();
-        if ($account !== null) {
-            return $this->redirect(
-                $this->url->generate('voyti/registration-connect', ['code' => $account->getCode() ?? 'connect']),
-            );
-        }
-
-        $user = $this->currentUser->getIdentity();
-        if ($user instanceof User) {
-            return $this->rememberMeCookieService->addCookie(
-                $user,
-                $this->homeRedirectResponse(),
-                $this->session->getId() ?? '',
-            );
-        }
-
-        return $this->renderView('shared/message', [
-            'data' => new MessageViewData(
-                title: $this->translator->translate('voyti.security.authenticated', category: 'voyti'),
-                homeUrl: $this->homeUrl(),
-            ),
-        ]);
-    }
 
     public function confirm(
         ServerRequestInterface $request,
@@ -166,7 +86,7 @@ final readonly class SessionController
 
             return $this->renderView('session/login', [
                 'form' => $form,
-                'data' => LoginViewData::create($form, $this->config, $this->url, $this->authClientRegistry),
+                'data' => LoginViewData::create($form, $this->config, $this->url, $this->clientCollection),
             ]);
         }
 
@@ -325,7 +245,7 @@ final readonly class SessionController
 
         return $this->renderView('session/login', [
             'form' => $form,
-            'data' => LoginViewData::create($form, $this->config, $this->url, $this->authClientRegistry),
+            'data' => LoginViewData::create($form, $this->config, $this->url, $this->clientCollection),
         ]);
     }
 

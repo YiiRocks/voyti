@@ -11,6 +11,7 @@ return [
     'voyti.security.password_expired' => 'Срок действия вашего пароля истёк. Пожалуйста, установите новый.',
     'voyti.security.two_factor_required' => 'Для вашей учётной записи требуется двухфакторная аутентификация. Пожалуйста, включите её, чтобы продолжить.',
     'voyti.security.authenticated' => 'Аутентифицирован',
+    'voyti.security.social_auth_cancelled' => 'Вход через социальную сеть отменён.',
 
     // RegistrationController
     'voyti.registration.disabled' => 'Регистрация отключена',

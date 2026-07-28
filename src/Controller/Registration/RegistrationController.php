@@ -7,7 +7,6 @@ namespace YiiRocks\Voyti\Controller\Registration;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use YiiRocks\Voyti\AuthClient\AuthClientRegistry;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Model\Form\Auth\RegistrationForm;
@@ -28,6 +27,7 @@ use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\ValidatorInterface;
+use Yiisoft\Yii\AuthClient\Collection;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 /**
@@ -51,7 +51,7 @@ final readonly class RegistrationController
         private HydratorInterface $hydrator,
         private ResponseFactoryInterface $responseFactory,
         private FlashInterface $flash,
-        private AuthClientRegistry $authClientRegistry,
+        private ?Collection $clientCollection,
     ) {}
 
     public function confirm(#[RouteArgument] int $id, #[RouteArgument] string $code): ResponseInterface
@@ -81,7 +81,7 @@ final readonly class RegistrationController
         }
 
         return $this->renderView('registration/connect', [
-            'data' => ConnectViewData::create($account, $this->authClientRegistry, $this->url),
+            'data' => ConnectViewData::create($account, $this->clientCollection, $this->url),
         ]);
     }
 

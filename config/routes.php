@@ -13,6 +13,7 @@ use Yiisoft\Csrf\CsrfMiddleware;
 use Yiisoft\Router\Group;
 use Yiisoft\Router\Route;
 use Yiisoft\Session\SessionMiddleware;
+use Yiisoft\Yii\AuthClient\AuthAction;
 
 $voytiParams = $params['yiirocks/voyti'] ?? [];
 
@@ -77,8 +78,12 @@ $sessionRoutes = [
     Route::methods(['GET', 'POST'], 'login')->name('voyti/session-login')->action([Controller\Session\SessionController::class, 'login']),
     Route::methods(['GET', 'POST'], 'logout')->name('voyti/session-logout')->action([Controller\Session\SessionController::class, 'logout']),
     Route::methods(['GET', 'POST'], 'confirm')->name('voyti/session-confirm')->action([Controller\Session\SessionController::class, 'confirm']),
-    Route::get('auth/{provider}')->name('voyti/session-auth')->action([Controller\Session\SessionController::class, 'auth']),
 ];
+
+// only register the social-auth callback route when yiisoft/yii-auth-client is installed,
+if (class_exists(AuthAction::class)) {
+    $sessionRoutes[] = Route::get('auth/{authclient}')->name('voyti/session-auth')->action(AuthAction::class);
+}
 
 $registrationRoutes = [
     Route::methods(['GET', 'POST'], 'register')->name('voyti/registration-register')->action([Controller\Registration\RegistrationController::class, 'register']),
