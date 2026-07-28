@@ -92,7 +92,7 @@ return [
 
     // TwoFactorCodeValidator
     'voyti.validator.two_factor_not_configured' => 'Двухфакторная аутентификация не настроена.',
-    'voyti.validator.two_factor_library_missing' => 'Библиотека 2FA (chillerlan/php-authenticator) не установлена.',
+    'voyti.validator.two_factor_library_missing' => 'Библиотека 2FA (chillerlan/2fa-qrcode-bundle) не установлена.',
     'voyti.validator.invalid_verification_code' => 'Неверный проверочный код.',
     'voyti.validator.password_complexity' => 'Пароль должен содержать хотя бы одну заглавную букву, одну строчную букву, одну цифру и один специальный символ.',
     'voyti.validator.two_factor_enabled' => 'Двухфакторная аутентификация включена.',

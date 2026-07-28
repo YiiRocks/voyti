@@ -13,15 +13,13 @@ use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserAuditLog;
 use YiiRocks\Voyti\Model\UserProfile;
-use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
+use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\Support\ViewCaptureTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Data\Paginator\OffsetPaginator;
 use Yiisoft\Session\Flash\FlashInterface;
-use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
@@ -29,22 +27,18 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 final class AuditLogControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
+    use TestContainerTrait;
     use UserFactoryTrait;
+    use ViewCaptureTrait;
 
-    private ModuleConfig $config;
     private CurrentUser&MockObject $currentUser;
     private FlashInterface&MockObject $flash;
-    private ControllerHarness $harness;
     private ResponseFactoryInterface&MockObject $responseFactory;
-    private TranslatorInterface $translator;
     private WebViewRenderer&MockObject $viewRenderer;
 
     protected function setUp(): void
     {
         $this->setUpDatabase();
-        $this->config = ModuleConfigFactory::create();
-        $this->harness = new ControllerHarness($this->config);
-        $this->translator = $this->createTranslator();
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
         $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
         $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
@@ -62,40 +56,24 @@ final class AuditLogControllerTest extends TestCase
         $this->createLog(1, 2, 'user.create');
         $this->createLog(1, 2, 'user.delete');
 
-        $captured = [];
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->method('render')->willReturnCallback(
-            function (string $view, array $params) use (&$captured, $response): ResponseInterface {
-                $captured = $params;
-                return $response;
-            },
-        );
+        [$state, $response] = $this->captureRenderedView($this->viewRenderer);
 
         $controller = $this->createController();
         $controller->index(filterAction: 'create');
 
-        $this->assertCount(1, $captured['data']->logs);
+        $this->assertCount(1, $state->params['data']->logs);
     }
 
     public function testIndexPresentsActorLabelWithIdOnlyWhenUserNoLongerExists(): void
     {
         $this->createLog(999999, 2, 'user.delete');
 
-        $captured = [];
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->method('render')->willReturnCallback(
-            function (string $view, array $params) use (&$captured, $response): ResponseInterface {
-                $captured = $params;
-                return $response;
-            },
-        );
+        [$state, $response] = $this->captureRenderedView($this->viewRenderer);
 
         $controller = $this->createController();
         $controller->index();
 
-        self::assertSame('#999999', $captured['data']->logs[0]['actorLabel']);
+        self::assertSame('#999999', $state->params['data']->logs[0]['actorLabel']);
     }
 
     public function testIndexPresentsLogFieldsFormattedForDisplay(): void
@@ -117,15 +95,7 @@ final class AuditLogControllerTest extends TestCase
         $viewer->method('getProfile')->willReturn($viewerProfile);
         $this->currentUser->method('getIdentity')->willReturn($viewer);
 
-        $captured = [];
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->method('render')->willReturnCallback(
-            function (string $view, array $params) use (&$captured, $response): ResponseInterface {
-                $captured = $params;
-                return $response;
-            },
-        );
+        [$state, $response] = $this->captureRenderedView($this->viewRenderer);
 
         $controller = $this->createController();
         $controller->index();
@@ -134,7 +104,7 @@ final class AuditLogControllerTest extends TestCase
             [
                 'createdAt' => TimezoneHelper::formatLocalized(
                     1700000000,
-                    $this->translator->getLocale(),
+                    $this->createTranslator()->getLocale(),
                     'Asia/Tokyo',
                 ),
                 'actorLabel' => 'jane_admin (#' . $actor->getIdOrZero() . ')',
@@ -142,7 +112,7 @@ final class AuditLogControllerTest extends TestCase
                 'targetLabel' => 'editor (#7)',
                 'context' => '{"previousName":"old-editor"}',
             ],
-            $captured['data']->logs[0],
+            $state->params['data']->logs[0],
         );
     }
 
@@ -153,42 +123,26 @@ final class AuditLogControllerTest extends TestCase
         $log->setCreatedAt(1700000000);
         $log->save();
 
-        $captured = [];
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->method('render')->willReturnCallback(
-            function (string $view, array $params) use (&$captured, $response): ResponseInterface {
-                $captured = $params;
-                return $response;
-            },
-        );
+        [$state, $response] = $this->captureRenderedView($this->viewRenderer);
 
         $controller = $this->createController();
         $controller->index();
 
-        self::assertSame('', $captured['data']->logs[0]['actorLabel']);
-        self::assertSame('', $captured['data']->logs[0]['targetLabel']);
-        self::assertSame('', $captured['data']->logs[0]['context']);
+        self::assertSame('', $state->params['data']->logs[0]['actorLabel']);
+        self::assertSame('', $state->params['data']->logs[0]['targetLabel']);
+        self::assertSame('', $state->params['data']->logs[0]['context']);
     }
 
     public function testIndexPresentsTargetLabelWithIdOnlyWhenUserNoLongerExists(): void
     {
         $this->createLog(1, 999999, 'user.switch_identity');
 
-        $captured = [];
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->method('render')->willReturnCallback(
-            function (string $view, array $params) use (&$captured, $response): ResponseInterface {
-                $captured = $params;
-                return $response;
-            },
-        );
+        [$state, $response] = $this->captureRenderedView($this->viewRenderer);
 
         $controller = $this->createController();
         $controller->index();
 
-        self::assertSame('#999999', $captured['data']->logs[0]['targetLabel']);
+        self::assertSame('#999999', $state->params['data']->logs[0]['targetLabel']);
     }
 
     public function testIndexResolvesTargetUsernameWhenTargetNameWasNotCaptured(): void
@@ -202,20 +156,12 @@ final class AuditLogControllerTest extends TestCase
         $log->setCreatedAt(time());
         $log->save();
 
-        $captured = [];
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->method('render')->willReturnCallback(
-            function (string $view, array $params) use (&$captured, $response): ResponseInterface {
-                $captured = $params;
-                return $response;
-            },
-        );
+        [$state, $response] = $this->captureRenderedView($this->viewRenderer);
 
         $controller = $this->createController();
         $controller->index();
 
-        self::assertSame('switcheduser (#' . $target->getIdOrZero() . ')', $captured['data']->logs[0]['targetLabel']);
+        self::assertSame('switcheduser (#' . $target->getIdOrZero() . ')', $state->params['data']->logs[0]['targetLabel']);
     }
 
     public function testIndexShowsLogs(): void
@@ -239,32 +185,22 @@ final class AuditLogControllerTest extends TestCase
 
     public function testIndexWithNoResultsPaginatorHasNoPages(): void
     {
-        $captured = [];
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->method('render')->willReturnCallback(
-            function (string $view, array $params) use (&$captured, $response): ResponseInterface {
-                $captured = $params;
-                return $response;
-            },
-        );
+        [$state, $response] = $this->captureRenderedView($this->viewRenderer);
 
         $controller = $this->createController();
         $controller->index();
 
-        $this->assertInstanceOf(OffsetPaginator::class, $captured['data']->paginator);
-        $this->assertSame(0, $captured['data']->paginator->getTotalPages());
+        $this->assertInstanceOf(OffsetPaginator::class, $state->params['data']->paginator);
+        $this->assertSame(0, $state->params['data']->paginator->getTotalPages());
     }
 
     private function createController(): AuditLogController
     {
-        return $this->harness->createAuditLogController(
-            translator: $this->translator,
-            viewRenderer: $this->viewRenderer,
-            responseFactory: $this->responseFactory,
-            flash: $this->flash,
-            currentUser: $this->currentUser,
-        );
+        return $this->getTestContainer([
+            CurrentUser::class => $this->currentUser,
+            FlashInterface::class => $this->flash,
+            WebViewRenderer::class => $this->viewRenderer,
+        ])->get(AuditLogController::class);
     }
 
     private function createLog(int $actorUserId, int $targetUserId, string $action): void

@@ -129,7 +129,7 @@ if ($voytiParams['enableTwoFactorAuthentication'] ?? false) {
     $settingsRoutes[] = Route::post('two-factor/disable/send-code')->name('voyti/user-two-factor-disable-send-code')->action([Controller\TwoFactor\TwoFactorController::class, 'disableSendCode']);
     $settingsRoutes[] = Route::get('two-factor/email/')->name('voyti/user-two-factor-email')->action([Controller\TwoFactor\TwoFactorController::class, 'email']);
     $settingsRoutes[] = Route::post('two-factor/email/send-code')->name('voyti/user-two-factor-email-send-code')->action([Controller\TwoFactor\TwoFactorController::class, 'sendEmailCode']);
-    if (class_exists('chillerlan\Authenticator\Authenticator') && class_exists('chillerlan\QRCode\QRCode')) {
+    if (class_exists('chillerlan\TwoFactorQRCode\TwoFactorQRCode')) {
         $settingsRoutes[] = Route::get('two-factor/google/')->name('voyti/user-two-factor-google')->action([Controller\TwoFactor\TwoFactorController::class, 'google']);
         $settingsRoutes[] = Route::post('two-factor/google/renew')->name('voyti/user-two-factor-google-renew')->action([Controller\TwoFactor\TwoFactorController::class, 'renew']);
     }

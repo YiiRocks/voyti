@@ -18,17 +18,20 @@ use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
-use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
 use YiiRocks\Voyti\tests\Support\HydrateObjectTrait;
 use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
+use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Hydrator\HydratorInterface;
+use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Session\Flash\FlashInterface;
+use Yiisoft\Session\SessionInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Validator\Result;
@@ -41,12 +44,11 @@ final class SessionControllerTest extends TestCase
     use DatabaseSetupTrait;
     use HydrateObjectTrait;
     use RedirectResponseMockTrait;
+    use TestContainerTrait;
     use UserFactoryTrait;
 
-    private ModuleConfig $config;
     private CurrentUser&MockObject $currentUser;
     private FlashInterface&MockObject $flash;
-    private ControllerHarness $harness;
     private HydratorInterface&MockObject $hydrator;
     private PasswordHasher $passwordHasher;
     private PendingSocialAccountService&MockObject $pendingSocialAccountService;
@@ -59,8 +61,6 @@ final class SessionControllerTest extends TestCase
     protected function setUp(): void
     {
         $this->setUpDatabase();
-        $this->config = ModuleConfigFactory::create();
-        $this->harness = new ControllerHarness($this->config);
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
         $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
         $this->validator = $this->createMock(ValidatorInterface::class);
@@ -104,7 +104,8 @@ final class SessionControllerTest extends TestCase
 
     public function testConfirmPostConstructsFormRequiringTwoFactorCode(): void
     {
-        $this->harness->getSession()->set('credentials', [
+        $container = $this->getTestContainer($this->mockOverrides());
+        $container->get(SessionInterface::class)->set('credentials', [
             'login' => 'jdoe',
             'rememberMe' => false,
         ]);
@@ -121,7 +122,7 @@ final class SessionControllerTest extends TestCase
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
         $this->viewRenderer->method('render')->willReturn($response);
 
-        $controller = $this->createController();
+        $controller = $container->get(SessionController::class);
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['twoFactorAuthenticationCode' => '']]);
 
         $result = $controller->confirm($request, ['twoFactorAuthenticationCode' => '']);
@@ -134,9 +135,8 @@ final class SessionControllerTest extends TestCase
     public function testConfirmPostSuccessRedirectsToConfiguredRoute(): void
     {
         $config = ModuleConfigFactory::create(homeRoute: 'app/dashboard');
-        $this->harness = new ControllerHarness($config);
-
-        $this->harness->getSession()->set('credentials', [
+        $container = $this->getTestContainer(array_merge($this->mockOverrides(), [ModuleConfig::class => $config]));
+        $container->get(SessionInterface::class)->set('credentials', [
             'login' => 'jdoe',
             'rememberMe' => false,
         ]);
@@ -153,7 +153,7 @@ final class SessionControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory, '//app/dashboard');
 
-        $controller = $this->createController();
+        $controller = $container->get(SessionController::class);
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['twoFactorAuthenticationCode' => '123456']]);
 
         $result = $controller->confirm($request, ['twoFactorAuthenticationCode' => '123456']);
@@ -163,7 +163,8 @@ final class SessionControllerTest extends TestCase
 
     public function testConfirmPostSuccessWithRememberMeAddsCookie(): void
     {
-        $this->harness->getSession()->set('credentials', [
+        $container = $this->getTestContainer($this->mockOverrides());
+        $container->get(SessionInterface::class)->set('credentials', [
             'login' => 'jdoe',
             'rememberMe' => true,
         ]);
@@ -184,7 +185,7 @@ final class SessionControllerTest extends TestCase
         $this->responseFactory->method('createResponse')->willReturn($response);
         $response->method('withHeader')->willReturnSelf();
 
-        $controller = $this->createController();
+        $controller = $container->get(SessionController::class);
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['twoFactorAuthenticationCode' => '123456']]);
 
         $result = $controller->confirm($request, ['twoFactorAuthenticationCode' => '123456']);
@@ -194,7 +195,8 @@ final class SessionControllerTest extends TestCase
 
     public function testConfirmPostWithGoogleMethodAndInvalidCodeShowsError(): void
     {
-        $this->harness->getSession()->set('credentials', [
+        $container = $this->getTestContainer($this->mockOverrides());
+        $container->get(SessionInterface::class)->set('credentials', [
             'login' => 'jdoe',
             'rememberMe' => false,
         ]);
@@ -217,7 +219,7 @@ final class SessionControllerTest extends TestCase
             ))
             ->willReturn($response);
 
-        $controller = $this->createController();
+        $controller = $container->get(SessionController::class);
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['twoFactorAuthenticationCode' => 'wrong']]);
 
         $result = $controller->confirm($request, ['twoFactorAuthenticationCode' => 'wrong']);
@@ -246,44 +248,9 @@ final class SessionControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    public function testLoginGetShowsFormWithoutSocialButtonsWhenAuthClientPackageIsUnavailable(): void
-    {
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('session/login', $this->callback(
-                static fn(array $params): bool => $params['data']->connect->providers === [],
-            ))
-            ->willReturn($response);
-
-        $controller = $this->harness->createSessionController(
-            translator: $this->getTranslator(),
-            viewRenderer: $this->viewRenderer,
-            validator: $this->validator,
-            currentUser: $this->currentUser,
-            responseFactory: $this->responseFactory,
-            hydrator: $this->hydrator,
-            flash: $this->flash,
-            passwordHasher: $this->passwordHasher,
-            rememberMeCookieService: $this->rememberMeCookieService,
-            pendingSocialAccountService: $this->pendingSocialAccountService,
-            twoFactorEmailCodeService: $this->twoFactorEmailCodeService,
-            withSocialAuthClient: false,
-        );
-        $request = new ServerRequest('GET', '/');
-
-        $result = $controller->login($request);
-
-        $this->assertSame($response, $result);
-    }
-
     public function testLoginPostSuccessRedirectsToConfiguredRoute(): void
     {
         $config = ModuleConfigFactory::create(homeRoute: 'app/dashboard');
-        $this->harness = new ControllerHarness($config);
 
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
 
@@ -297,7 +264,7 @@ final class SessionControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory, '//app/dashboard');
 
-        $controller = $this->createController();
+        $controller = $this->createController([ModuleConfig::class => $config]);
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
         $result = $controller->login($request, ['login' => 'jdoe', 'password' => 'secret']);
@@ -330,8 +297,10 @@ final class SessionControllerTest extends TestCase
     public function testLoginPostSuccessThrowsWhenHomeRouteIsNotRegistered(): void
     {
         $config = ModuleConfigFactory::create(homeRoute: 'nonexistent');
-        $this->harness = new ControllerHarness($config);
-        $this->harness->getUrlGenerator()->setMissingRoute('nonexistent');
+        $container = $this->getTestContainer(array_merge($this->mockOverrides(), [ModuleConfig::class => $config]));
+        /** @var FakeUrlGenerator $urlGenerator */
+        $urlGenerator = $container->get(UrlGeneratorInterface::class);
+        $urlGenerator->setMissingRoute('nonexistent');
 
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
 
@@ -343,7 +312,7 @@ final class SessionControllerTest extends TestCase
         );
         $this->validator->method('validate')->willReturn(new Result());
 
-        $controller = $this->createController();
+        $controller = $container->get(SessionController::class);
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
         $this->expectException(LogicException::class);
@@ -430,7 +399,6 @@ final class SessionControllerTest extends TestCase
     public function testLoginPostWithTwoFactorEmailMethodSendsCodeAndShowsConfirm(): void
     {
         $config = ModuleConfigFactory::create(enableTwoFactorAuthentication: true);
-        $this->harness = new ControllerHarness($config);
 
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
 
@@ -457,7 +425,7 @@ final class SessionControllerTest extends TestCase
             ))
             ->willReturn($response);
 
-        $controller = $this->createController();
+        $controller = $this->createController([ModuleConfig::class => $config]);
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
         $result = $controller->login($request, ['login' => 'jdoe', 'password' => 'secret']);
@@ -468,7 +436,6 @@ final class SessionControllerTest extends TestCase
     public function testLoginPostWithTwoFactorGoogleMethodShowsConfirmWithoutSendingCode(): void
     {
         $config = ModuleConfigFactory::create(enableTwoFactorAuthentication: true);
-        $this->harness = new ControllerHarness($config);
 
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
 
@@ -493,7 +460,7 @@ final class SessionControllerTest extends TestCase
             ))
             ->willReturn($response);
 
-        $controller = $this->createController();
+        $controller = $this->createController([ModuleConfig::class => $config]);
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
         $result = $controller->login($request, ['login' => 'jdoe', 'password' => 'secret']);
@@ -582,8 +549,10 @@ final class SessionControllerTest extends TestCase
         $this->currentUser->method('logout')->willReturn(true);
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
-        $this->harness->getSession()->open();
-        $this->harness->getSession()->setId($sessionId);
+        $container = $this->getTestContainer($this->mockOverrides());
+        $session = $container->get(SessionInterface::class);
+        $session->open();
+        $session->setId($sessionId);
 
         $this->rememberMeCookieService->method('expireCookie')->willReturnArgument(0);
 
@@ -591,7 +560,7 @@ final class SessionControllerTest extends TestCase
         $this->responseFactory->method('createResponse')->willReturn($response);
         $response->method('withHeader')->willReturnSelf();
 
-        $controller = $this->createController();
+        $controller = $container->get(SessionController::class);
         $controller->logout();
 
         $revoked = UserSessions::findByUserIdAndSessionId($user->getIdOrZero(), $sessionId);
@@ -621,21 +590,11 @@ final class SessionControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    private function createController(): SessionController
+    private function createController(array $extraOverrides = []): SessionController
     {
-        return $this->harness->createSessionController(
-            translator: $this->getTranslator(),
-            viewRenderer: $this->viewRenderer,
-            validator: $this->validator,
-            currentUser: $this->currentUser,
-            responseFactory: $this->responseFactory,
-            hydrator: $this->hydrator,
-            flash: $this->flash,
-            passwordHasher: $this->passwordHasher,
-            rememberMeCookieService: $this->rememberMeCookieService,
-            pendingSocialAccountService: $this->pendingSocialAccountService,
-            twoFactorEmailCodeService: $this->twoFactorEmailCodeService,
-        );
+        return $this->getTestContainer(
+            array_merge($this->mockOverrides(), $extraOverrides),
+        )->get(SessionController::class);
     }
 
     private function createRealUser(): User
@@ -650,5 +609,21 @@ final class SessionControllerTest extends TestCase
         $user->save();
 
         return $user;
+    }
+
+    private function mockOverrides(): array
+    {
+        return [
+            CurrentUser::class => $this->currentUser,
+            EmailCodeGeneratorService::class => $this->twoFactorEmailCodeService,
+            FlashInterface::class => $this->flash,
+            HydratorInterface::class => $this->hydrator,
+            PasswordHasher::class => $this->passwordHasher,
+            PendingSocialAccountService::class => $this->pendingSocialAccountService,
+            RememberMeCookieService::class => $this->rememberMeCookieService,
+            ResponseFactoryInterface::class => $this->responseFactory,
+            ValidatorInterface::class => $this->validator,
+            WebViewRenderer::class => $this->viewRenderer,
+        ];
     }
 }

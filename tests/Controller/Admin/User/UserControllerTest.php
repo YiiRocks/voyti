@@ -27,20 +27,20 @@ use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\Service\User\BlockService;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\CreateService;
-use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
+use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\Support\UserSessionFactoryTrait;
+use YiiRocks\Voyti\tests\Support\ViewCaptureTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Data\Paginator\OffsetPaginator;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Session\Flash\FlashInterface;
-use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\Validator\Result;
 use Yiisoft\Validator\ValidatorInterface;
@@ -51,25 +51,24 @@ final class UserControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
     use RedirectResponseMockTrait;
+    use TestContainerTrait;
     use UserFactoryTrait;
     use UserSessionFactoryTrait;
+    use ViewCaptureTrait;
 
     private AuthHelper&MockObject $authHelper;
     private BlockService&MockObject $blockService;
-    private ModuleConfig $config;
     private ConfirmationService&MockObject $confirmationService;
     private CreateService&MockObject $createService;
     private CurrentUser&MockObject $currentUser;
     private ExpireService&MockObject $expireService;
     private FlashInterface&MockObject $flash;
-    private ControllerHarness $harness;
     private HydratorInterface&MockObject $hydrator;
     private PasswordGeneratorInterface&MockObject $passwordGenerator;
     private PasswordHasher $passwordHasher;
     private RecoveryService&MockObject $recoveryService;
     private ResponseFactoryInterface&MockObject $responseFactory;
     private SwitchIdentityService&MockObject $switchIdentityService;
-    private TranslatorInterface $translator;
     private UpdateAssignmentsService&MockObject $updateAssignmentsService;
     private ValidatorInterface&MockObject $validator;
     private WebViewRenderer&MockObject $viewRenderer;
@@ -77,9 +76,6 @@ final class UserControllerTest extends TestCase
     protected function setUp(): void
     {
         $this->setUpDatabase();
-        $this->config = ModuleConfigFactory::create();
-        $this->harness = new ControllerHarness($this->config);
-        $this->translator = $this->createTranslator();
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
         $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
         $this->validator = $this->createMock(ValidatorInterface::class);
@@ -399,19 +395,12 @@ final class UserControllerTest extends TestCase
         $identity->method('getId')->willReturn('1');
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
-        $captured = [];
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->method('render')
-            ->willReturnCallback(function (string $view, array $params) use (&$captured, $response): ResponseInterface {
-                $captured = $params;
-                return $response;
-            });
+        [$state, $response] = $this->captureRenderedView($this->viewRenderer);
 
         $controller->index(perPage: 500);
 
-        $this->assertSame(100, $captured['data']->perPage);
-        $this->assertSame(100, $captured['data']->paginator->getPageSize());
+        $this->assertSame(100, $state->params['data']->perPage);
+        $this->assertSame(100, $state->params['data']->paginator->getPageSize());
     }
 
     public function testIndexClampsPerPageBelowMinimum(): void
@@ -422,19 +411,12 @@ final class UserControllerTest extends TestCase
         $identity->method('getId')->willReturn('1');
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
-        $captured = [];
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->method('render')
-            ->willReturnCallback(function (string $view, array $params) use (&$captured, $response): ResponseInterface {
-                $captured = $params;
-                return $response;
-            });
+        [$state, $response] = $this->captureRenderedView($this->viewRenderer);
 
         $controller->index(perPage: 0);
 
-        $this->assertSame(1, $captured['data']->perPage);
-        $this->assertSame(1, $captured['data']->paginator->getPageSize());
+        $this->assertSame(1, $state->params['data']->perPage);
+        $this->assertSame(1, $state->params['data']->paginator->getPageSize());
     }
 
     public function testIndexCustomPerPage(): void
@@ -449,21 +431,14 @@ final class UserControllerTest extends TestCase
         $identity->method('getId')->willReturn('1');
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
-        $captured = [];
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->method('render')
-            ->willReturnCallback(function (string $view, array $params) use (&$captured, $response): ResponseInterface {
-                $captured = $params;
-                return $response;
-            });
+        [$state, $response] = $this->captureRenderedView($this->viewRenderer);
 
         $controller->index(perPage: 2);
 
-        $this->assertSame(2, $captured['data']->perPage);
-        $this->assertSame(2, $captured['data']->paginator->getPageSize());
-        $this->assertSame(2, $captured['data']->paginator->getTotalPages());
-        $this->assertCount(2, $captured['data']->users);
+        $this->assertSame(2, $state->params['data']->perPage);
+        $this->assertSame(2, $state->params['data']->paginator->getPageSize());
+        $this->assertSame(2, $state->params['data']->paginator->getTotalPages());
+        $this->assertCount(2, $state->params['data']->users);
     }
 
     public function testIndexDefaultPerPage(): void
@@ -474,19 +449,12 @@ final class UserControllerTest extends TestCase
         $identity->method('getId')->willReturn('1');
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
-        $captured = [];
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->method('render')
-            ->willReturnCallback(function (string $view, array $params) use (&$captured, $response): ResponseInterface {
-                $captured = $params;
-                return $response;
-            });
+        [$state, $response] = $this->captureRenderedView($this->viewRenderer);
 
         $controller->index();
 
-        $this->assertSame(25, $captured['data']->perPage);
-        $this->assertSame(25, $captured['data']->paginator->getPageSize());
+        $this->assertSame(25, $state->params['data']->perPage);
+        $this->assertSame(25, $state->params['data']->paginator->getPageSize());
     }
 
     public function testIndexPassesPaginatorWithNoResults(): void
@@ -497,22 +465,12 @@ final class UserControllerTest extends TestCase
         $identity->method('getId')->willReturn('1');
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
-        $captured = [];
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturnCallback(function (string $view, array $params) use (&$captured, $response): ResponseInterface {
-                $captured = $params;
-                return $response;
-            });
+        [$state, $response] = $this->captureRenderedView($this->viewRenderer);
 
         $controller->index();
 
-        $this->assertArrayHasKey('data', $captured);
-        $paginator = $captured['data']->paginator;
+        $this->assertArrayHasKey('data', $state->params);
+        $paginator = $state->params['data']->paginator;
         $this->assertInstanceOf(OffsetPaginator::class, $paginator);
         $this->assertSame(0, $paginator->getTotalPages());
         $this->assertSame(1, $paginator->getCurrentPage());
@@ -556,24 +514,14 @@ final class UserControllerTest extends TestCase
         $identity->method('getProfile')->willReturn($viewerProfile);
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
-        $captured = [];
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturnCallback(function (string $view, array $params) use (&$captured, $response): ResponseInterface {
-                $captured = $params;
-                return $response;
-            });
+        [$state, $response] = $this->captureRenderedView($this->viewRenderer);
 
         $result = $controller->show((int) $user->getId());
 
         $this->assertSame($response, $result);
         $this->assertSame(
-            TimezoneHelper::formatLocalized($user->getCreatedAt(), $this->translator->getLocale(), 'Asia/Tokyo'),
-            $captured['data']->profile->registeredDisplay,
+            TimezoneHelper::formatLocalized($user->getCreatedAt(), $this->createTranslator()->getLocale(), 'Asia/Tokyo'),
+            $state->params['data']->profile->registeredDisplay,
         );
     }
 
@@ -663,24 +611,14 @@ final class UserControllerTest extends TestCase
 
         $controller = $this->createController();
 
-        $captured = [];
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturnCallback(function (string $view, array $params) use (&$captured, $response): ResponseInterface {
-                $captured = $params;
-                return $response;
-            });
+        [$state, $response] = $this->captureRenderedView($this->viewRenderer);
 
         $result = $controller->sessions((int) $user->getId());
 
         $this->assertSame($response, $result);
         $this->assertSame(
-            TimezoneHelper::formatLocalized($updatedAt, $this->translator->getLocale(), 'Asia/Tokyo'),
-            $captured['data']->sessions[0]->lastSeenDisplay,
+            TimezoneHelper::formatLocalized($updatedAt, $this->createTranslator()->getLocale(), 'Asia/Tokyo'),
+            $state->params['data']->sessions[0]->lastSeenDisplay,
         );
     }
 
@@ -722,23 +660,22 @@ final class UserControllerTest extends TestCase
         $currentUser = new CurrentUser($this->createMock(IdentityRepositoryInterface::class), $eventDispatcher);
         $currentUser->login($admin);
 
-        $controller = $this->harness->createUserController(
-            translator: $this->translator,
-            viewRenderer: $this->viewRenderer,
-            validator: $this->validator,
-            currentUser: $currentUser,
-            responseFactory: $this->responseFactory,
-            hydrator: $this->hydrator,
-            flash: $this->flash,
-            passwordGenerator: $this->passwordGenerator,
-            createService: $this->createService,
-            blockService: $this->blockService,
-            confirmationService: $this->confirmationService,
-            recoveryService: $this->recoveryService,
-            expireService: $this->expireService,
-            updateAssignmentsService: $this->updateAssignmentsService,
-            authHelper: $this->authHelper,
-        );
+        $controller = $this->getTestContainer([
+            AuthHelper::class => $this->authHelper,
+            BlockService::class => $this->blockService,
+            ConfirmationService::class => $this->confirmationService,
+            CreateService::class => $this->createService,
+            CurrentUser::class => $currentUser,
+            ExpireService::class => $this->expireService,
+            FlashInterface::class => $this->flash,
+            HydratorInterface::class => $this->hydrator,
+            PasswordGeneratorInterface::class => $this->passwordGenerator,
+            RecoveryService::class => $this->recoveryService,
+            ResponseFactoryInterface::class => $this->responseFactory,
+            UpdateAssignmentsService::class => $this->updateAssignmentsService,
+            ValidatorInterface::class => $this->validator,
+            WebViewRenderer::class => $this->viewRenderer,
+        ])->get(UserController::class);
 
         $this->mockRedirectResponse($this->responseFactory);
 
@@ -906,9 +843,6 @@ final class UserControllerTest extends TestCase
 
     public function testUpdatePostWithPreviouslyUsedPasswordShowsError(): void
     {
-        $this->config = ModuleConfigFactory::create(maxPasswordAge: 90);
-        $this->harness = new ControllerHarness($this->config);
-
         $user = new User();
         $user->setUsername('testuser');
         $user->setEmail('testuser@example.com');
@@ -919,7 +853,7 @@ final class UserControllerTest extends TestCase
         $user->save();
         $userId = (int) $user->getId();
 
-        $controller = $this->createController();
+        $controller = $this->createController(ModuleConfigFactory::create(maxPasswordAge: 90));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['user' => ['username' => 'updated', 'email' => 'updated@example.com', 'password' => 'originalpass'], 'assignedItems' => []]);
 
         $response = $this->createMock(ResponseInterface::class);
@@ -945,19 +879,12 @@ final class UserControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $response = $this->createMock(ResponseInterface::class);
-        $captured = [];
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->method('render')
-            ->willReturnCallback(function (string $view, array $params) use (&$captured, $response): ResponseInterface {
-                $captured = $params;
-                return $response;
-            });
+        [$state, $response] = $this->captureRenderedView($this->viewRenderer);
 
         $result = $controller->updateProfile($request, (int) $user->getId());
 
         $this->assertSame($response, $result);
-        $this->assertSame('', $captured['form']->name);
+        $this->assertSame('', $state->params['form']->name);
     }
 
     public function testUpdateProfileGetShowsForm(): void
@@ -1040,26 +967,31 @@ final class UserControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    private function createController(): UserController
+    private function createController(?ModuleConfig $config = null): UserController
     {
-        return $this->harness->createUserController(
-            translator: $this->translator,
-            viewRenderer: $this->viewRenderer,
-            validator: $this->validator,
-            currentUser: $this->currentUser,
-            responseFactory: $this->responseFactory,
-            hydrator: $this->hydrator,
-            flash: $this->flash,
-            passwordGenerator: $this->passwordGenerator,
-            createService: $this->createService,
-            blockService: $this->blockService,
-            confirmationService: $this->confirmationService,
-            recoveryService: $this->recoveryService,
-            expireService: $this->expireService,
-            switchIdentityService: $this->switchIdentityService,
-            updateAssignmentsService: $this->updateAssignmentsService,
-            authHelper: $this->authHelper,
-        );
+        $overrides = [
+            AuthHelper::class => $this->authHelper,
+            BlockService::class => $this->blockService,
+            ConfirmationService::class => $this->confirmationService,
+            CreateService::class => $this->createService,
+            CurrentUser::class => $this->currentUser,
+            ExpireService::class => $this->expireService,
+            FlashInterface::class => $this->flash,
+            HydratorInterface::class => $this->hydrator,
+            PasswordGeneratorInterface::class => $this->passwordGenerator,
+            RecoveryService::class => $this->recoveryService,
+            ResponseFactoryInterface::class => $this->responseFactory,
+            SwitchIdentityService::class => $this->switchIdentityService,
+            UpdateAssignmentsService::class => $this->updateAssignmentsService,
+            ValidatorInterface::class => $this->validator,
+            WebViewRenderer::class => $this->viewRenderer,
+        ];
+
+        if ($config !== null) {
+            $overrides[ModuleConfig::class] = $config;
+        }
+
+        return $this->getTestContainer($overrides)->get(UserController::class);
     }
 
 

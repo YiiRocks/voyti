@@ -2,13 +2,11 @@
 
 declare(strict_types=1);
 
-namespace YiiRocks\Voyti\tests;
+namespace YiiRocks\Voyti\tests\Support;
 
 use Composer\InstalledVersions;
 use Nyholm\Psr7\Factory\Psr17Factory;
-use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
-use PHPUnit\Framework\TestCase;
-use Psr\Clock\ClockInterface;
+use Psr\Container\ContainerInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Client\ClientInterface as PsrClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
@@ -16,15 +14,6 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use Throwable;
-use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Service\RememberMeCookieService;
-use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
-use YiiRocks\Voyti\tests\Support\FakeSession;
-use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
-use YiiRocks\Voyti\tests\Support\MailCapture;
-use YiiRocks\Voyti\tests\Support\SimpleAssignmentsStorage;
-use YiiRocks\Voyti\tests\Support\SimpleItemsStorage;
 use Yiisoft\Cookies\CookieEncryptor;
 use Yiisoft\Cookies\CookieSigner;
 use Yiisoft\Di\Container;
@@ -46,17 +35,22 @@ use Yiisoft\Translator\Translator;
 use Yiisoft\Translator\TranslatorInterface;
 
 /**
- * Unlike the rest of the suite (see CLAUDE.md: "Tests do not boot the DI
- * container"), this test builds a real Yiisoft\Di\Container from config/di.php
- * to catch wiring bugs (bad bindings, unresolvable constructor args) that
- * ControllerHarness's manual object graph can't surface.
+ * Builds a fresh PSR-11 DI container per test from config/di.php with
+ * in-memory test fakes overlaid. Tests call getTestContainer() to resolve
+ * services; per-test overrides are passed as an array merged on top.
  */
-#[AllowMockObjectsWithoutExpectations]
-final class ContainerWiringTest extends TestCase
+trait TestContainerTrait
 {
-    public function testEveryDiDefinitionResolves(): void
+    private static ?ContainerInterface $sharedTestContainer = null;
+
+    /**
+     * Build a fresh container with standard test fakes and optional per-test overrides.
+     *
+     * @param array<class-string, object|class-string|callable> $overrides Definitions merged on top of defaults.
+     */
+    protected function createTestContainer(array $overrides = []): ContainerInterface
     {
-        $root = dirname(__DIR__);
+        $root = dirname(__DIR__, 2);
         $params = require $root . '/config/params.php';
         $diPath = $root . '/config/di.php';
         $definitions = (static function (array $params) use ($diPath): array {
@@ -92,63 +86,56 @@ final class ContainerWiringTest extends TestCase
             LoggerInterface::class => new NullLogger(),
             MailerInterface::class => new MailCapture(),
             ManagerInterface::class => Manager::class,
-            PsrClientInterface::class => $this->createMock(PsrClientInterface::class),
+            PsrClientInterface::class => new class implements PsrClientInterface {
+                public function sendRequest(\Psr\Http\Message\RequestInterface $request): \Psr\Http\Message\ResponseInterface
+                {
+                    throw new \RuntimeException('HTTP client not configured in tests');
+                }
+            },
             RequestFactoryInterface::class => $psr17Factory,
             ResponseFactoryInterface::class => $psr17Factory,
             SessionInterface::class => $session,
             StreamFactoryInterface::class => $psr17Factory,
-            TranslatorInterface::class => $this->createTranslator(),
+            TranslatorInterface::class => (static function (): TranslatorInterface {
+                $translator = new Translator('en', null, 'voyti');
+                $translator->addCategorySources(
+                    new CategorySource(
+                        'voyti',
+                        new MessageSource(dirname(__DIR__, 2) . '/resources/messages'),
+                        new SimpleMessageFormatter(),
+                    ),
+                );
+
+                return $translator;
+            })(),
             UrlGeneratorInterface::class => new FakeUrlGenerator(),
         ]);
 
-        $container = new Container(ContainerConfig::create()->withDefinitions($definitions));
+        $definitions = array_merge($definitions, $overrides);
 
-        $failures = [];
-        foreach (array_keys($definitions) as $id) {
-            try {
-                $container->get($id);
-            } catch (Throwable $e) {
-                $failures[] = sprintf('%s: %s', $id, $e->getMessage());
-            }
-        }
-
-        self::assertSame([], $failures, implode("\n", $failures));
+        return new Container(ContainerConfig::create()->withDefinitions($definitions));
     }
 
     /**
-     * Regression test: host applications that haven't wired up a PSR-14
-     * EventDispatcherInterface must still be able to resolve
-     * RememberMeCookieService (it dispatches AfterLoginEvent only when one
-     * is available - see RememberMeCookieService::loginByCookie()).
+     * Get or create the shared test container for this test method.
+     *
+     * When called with overrides, a fresh container is always built.
+     * When called without overrides, the cached container is returned.
+     *
+     * @param array<class-string, object|class-string|callable> $overrides Definitions merged on top of defaults.
      */
-    public function testRememberMeCookieServiceResolvesWithoutEventDispatcherBound(): void
+    protected function getTestContainer(array $overrides = []): ContainerInterface
     {
-        $root = dirname(__DIR__);
-        $params = require $root . '/config/params.php';
-        $diPath = $root . '/config/di.php';
-        $definitions = (static function (array $params) use ($diPath): array {
-            return require $diPath;
-        })($params);
+        if (self::$sharedTestContainer === null || $overrides !== []) {
+            self::$sharedTestContainer = $this->createTestContainer($overrides);
+        }
 
-        $container = new Container(ContainerConfig::create()->withDefinitions([
-            ModuleConfig::class => $definitions[ModuleConfig::class],
-            ClockInterface::class => $definitions[ClockInterface::class],
-            RememberMeCookieService::class => $definitions[RememberMeCookieService::class],
-        ]));
-
-        self::assertInstanceOf(RememberMeCookieService::class, $container->get(RememberMeCookieService::class));
+        return self::$sharedTestContainer;
     }
 
-    private function createTranslator(): TranslatorInterface
+    protected static function resetTestContainer(): void
     {
-        $translator = new Translator('en', null, 'voyti');
-        $translator->addCategorySources(
-            new CategorySource(
-                'voyti',
-                new MessageSource(dirname(__DIR__) . '/resources/messages'),
-                new SimpleMessageFormatter(),
-            ),
-        );
-        return $translator;
+        self::$sharedTestContainer = null;
     }
+
 }

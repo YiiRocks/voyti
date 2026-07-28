@@ -17,22 +17,22 @@ use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserProfile;
 use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\HydrateObjectTrait;
 use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
+use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\Support\ViewCaptureTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Hydrator\HydratorInterface;
-use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Session\Flash\FlashInterface;
-use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentity;
 use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Validator\Validator;
+use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 #[AllowMockObjectsWithoutExpectations]
@@ -41,26 +41,20 @@ final class ProfileControllerTest extends TestCase
     use DatabaseSetupTrait;
     use HydrateObjectTrait;
     use RedirectResponseMockTrait;
+    use TestContainerTrait;
     use UserFactoryTrait;
+    use ViewCaptureTrait;
 
     private AuthHelper&MockObject $authHelper;
-    private ModuleConfig $config;
     private CurrentUser&MockObject $currentUser;
     private FlashInterface&MockObject $flash;
-    private ControllerHarness $harness;
     private HydratorInterface&MockObject $hydrator;
-    private PasswordHasher $passwordHasher;
     private ResponseFactoryInterface&MockObject $responseFactory;
-    private TranslatorInterface $translator;
-    private Validator $validator;
     private WebViewRenderer&MockObject $viewRenderer;
 
     protected function setUp(): void
     {
         $this->setUpDatabase();
-        $this->config = ModuleConfigFactory::create();
-        $this->harness = new ControllerHarness($this->config);
-        $this->translator = $this->createTranslator();
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
         $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
         $this->currentUser = $this->createMock(CurrentUser::class);
@@ -68,8 +62,6 @@ final class ProfileControllerTest extends TestCase
         $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
         $this->hydrator = $this->createMock(HydratorInterface::class);
         $this->flash = $this->createMock(FlashInterface::class);
-        $this->passwordHasher = TestPasswordHasherFactory::create();
-        $this->validator = new Validator();
     }
 
     protected function tearDown(): void
@@ -101,12 +93,11 @@ final class ProfileControllerTest extends TestCase
 
     public function testIsAdminReturnsFalseForGuestIdentity(): void
     {
-        $config = ModuleConfigFactory::create(profileVisibility: ProfileVisibility::ADMIN);
-        $this->harness = new ControllerHarness($config);
-
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
 
-        $controller = $this->createController();
+        $controller = $this->createController(
+            ModuleConfigFactory::create(profileVisibility: ProfileVisibility::ADMIN),
+        );
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -123,14 +114,13 @@ final class ProfileControllerTest extends TestCase
 
     public function testIsAdminReturnsFalseForIdentityWithNullId(): void
     {
-        $config = ModuleConfigFactory::create(profileVisibility: ProfileVisibility::ADMIN);
-        $this->harness = new ControllerHarness($config);
-
         $identity = $this->createMock(User::class);
         $identity->method('getId')->willReturn(null);
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
-        $controller = $this->createController();
+        $controller = $this->createController(
+            ModuleConfigFactory::create(profileVisibility: ProfileVisibility::ADMIN),
+        );
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -148,8 +138,6 @@ final class ProfileControllerTest extends TestCase
     #[DataProvider('showProfileAllowedProvider')]
     public function testShowProfileAllowed(ProfileVisibility $visibility, ?string $identityId, ?bool $isAdminReturn): void
     {
-        $config = ModuleConfigFactory::create(profileVisibility: $visibility);
-        $this->harness = new ControllerHarness($config);
         $this->setUpIdentity($identityId);
 
         if ($isAdminReturn !== null) {
@@ -158,7 +146,9 @@ final class ProfileControllerTest extends TestCase
 
         $this->createUserWithProfile();
 
-        $controller = $this->createController();
+        $controller = $this->createController(
+            ModuleConfigFactory::create(profileVisibility: $visibility),
+        );
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -177,15 +167,15 @@ final class ProfileControllerTest extends TestCase
     #[DataProvider('showProfileForbiddenOrNotFoundProvider')]
     public function testShowProfileForbiddenOrNotFound(ProfileVisibility $visibility, ?string $identityId, ?bool $isAdminReturn): void
     {
-        $config = ModuleConfigFactory::create(profileVisibility: $visibility);
-        $this->harness = new ControllerHarness($config);
         $this->setUpIdentity($identityId);
 
         if ($isAdminReturn !== null) {
             $this->authHelper->method('isAdmin')->willReturn($isAdminReturn);
         }
 
-        $controller = $this->createController();
+        $controller = $this->createController(
+            ModuleConfigFactory::create(profileVisibility: $visibility),
+        );
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->expects($this->once())
@@ -205,25 +195,15 @@ final class ProfileControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $user = $this->createUser(passwordHash: TestPasswordHasherFactory::create()->hash('secret'), confirmedAt: time());
         $this->createUserProfile((int) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($user);
 
-        $captured = [];
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturnCallback(function (string $view, array $params) use (&$captured, $response): ResponseInterface {
-                $captured = $params;
-                return $response;
-            });
+        [$state, $response] = $this->captureRenderedView($this->viewRenderer);
 
         $controller->update($request);
 
-        $this->assertNull($captured['data']->menu->switchedBannerMessage);
+        $this->assertNull($state->params['data']->menu->switchedBannerMessage);
     }
 
     public function testUpdateGetShowsFormWithExistingProfile(): void
@@ -231,7 +211,7 @@ final class ProfileControllerTest extends TestCase
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $user = $this->createUser(passwordHash: TestPasswordHasherFactory::create()->hash('secret'), confirmedAt: time());
         $this->createUserProfile((int) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($user);
 
@@ -251,32 +231,22 @@ final class ProfileControllerTest extends TestCase
 
     public function testUpdateGetShowsSwitchedBanner(): void
     {
-        $originalUser = $this->createUser(username: 'original', email: 'original@example.com', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $originalUser = $this->createUser(username: 'original', email: 'original@example.com', passwordHash: TestPasswordHasherFactory::create()->hash('secret'), confirmedAt: time());
 
         $controller = $this->createController();
         $request = new ServerRequest('GET', '/');
 
-        $user = $this->createUser(username: 'switcheduser', email: 'switched@example.com', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $user = $this->createUser(username: 'switcheduser', email: 'switched@example.com', passwordHash: TestPasswordHasherFactory::create()->hash('secret'), confirmedAt: time());
         $this->createUserProfile((int) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($user);
 
-        $this->harness->getSession()->set('voyti_original_admin_user', (string) $originalUser->getId());
+        $this->getTestContainer()->get(\Yiisoft\Session\SessionInterface::class)->set('voyti_original_admin_user', (string) $originalUser->getId());
 
-        $captured = [];
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturnCallback(function (string $view, array $params) use (&$captured, $response): ResponseInterface {
-                $captured = $params;
-                return $response;
-            });
+        [$state, $response] = $this->captureRenderedView($this->viewRenderer);
 
         $controller->update($request);
 
-        $this->assertStringContainsString('original', (string) $captured['data']->menu->switchedBannerMessage);
+        $this->assertStringContainsString('original', (string) $state->params['data']->menu->switchedBannerMessage);
     }
 
     public function testUpdatePostClearingFieldsSetsThemToNullNotEmptyString(): void
@@ -290,7 +260,7 @@ final class ProfileControllerTest extends TestCase
             },
         );
 
-        $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $user = $this->createUser(passwordHash: TestPasswordHasherFactory::create()->hash('secret'), confirmedAt: time());
         $profile = $this->createUserProfile((int) $user->getId());
         $profile->setPublicEmail('public@example.com');
         $profile->setGravatarEmail('gravatar@example.com');
@@ -331,7 +301,7 @@ final class ProfileControllerTest extends TestCase
             },
         );
 
-        $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $user = $this->createUser(passwordHash: TestPasswordHasherFactory::create()->hash('secret'), confirmedAt: time());
         $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->mockRedirectResponse($this->responseFactory);
@@ -356,7 +326,7 @@ final class ProfileControllerTest extends TestCase
             },
         );
 
-        $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $user = $this->createUser(passwordHash: TestPasswordHasherFactory::create()->hash('secret'), confirmedAt: time());
         $this->createUserProfile((int) $user->getId(), name: 'OldName');
         $this->currentUser->method('getIdentity')->willReturn($user);
 
@@ -388,7 +358,7 @@ final class ProfileControllerTest extends TestCase
             },
         );
 
-        $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $user = $this->createUser(passwordHash: TestPasswordHasherFactory::create()->hash('secret'), confirmedAt: time());
         $this->createUserProfile((int) $user->getId(), name: 'OldName');
         $this->currentUser->method('getIdentity')->willReturn($user);
 
@@ -419,7 +389,7 @@ final class ProfileControllerTest extends TestCase
             },
         );
 
-        $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $user = $this->createUser(passwordHash: TestPasswordHasherFactory::create()->hash('secret'), confirmedAt: time());
         $this->createUserProfile((int) $user->getId(), name: 'OldName');
         $this->currentUser->method('getIdentity')->willReturn($user);
 
@@ -434,18 +404,23 @@ final class ProfileControllerTest extends TestCase
         $this->assertSame('1990-05-15', $updatedProfile->getBirthday()?->format('Y-m-d'));
     }
 
-    private function createController(): ProfileController
+    private function createController(?ModuleConfig $config = null): ProfileController
     {
-        return $this->harness->createProfileController(
-            translator: $this->translator,
-            viewRenderer: $this->viewRenderer,
-            validator: $this->validator,
-            currentUser: $this->currentUser,
-            responseFactory: $this->responseFactory,
-            hydrator: $this->hydrator,
-            flash: $this->flash,
-            authHelper: $this->authHelper,
-        );
+        $overrides = [
+            AuthHelper::class => $this->authHelper,
+            CurrentUser::class => $this->currentUser,
+            FlashInterface::class => $this->flash,
+            HydratorInterface::class => $this->hydrator,
+            ResponseFactoryInterface::class => $this->responseFactory,
+            ValidatorInterface::class => new Validator(),
+            WebViewRenderer::class => $this->viewRenderer,
+        ];
+
+        if ($config !== null) {
+            $overrides[ModuleConfig::class] = $config;
+        }
+
+        return $this->getTestContainer($overrides)->get(ProfileController::class);
     }
 
     private function createUserProfile(int $userId, string $name = 'John'): UserProfile

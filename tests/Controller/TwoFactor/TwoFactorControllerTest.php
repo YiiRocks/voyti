@@ -14,20 +14,17 @@ use Psr\Http\Message\StreamInterface;
 use YiiRocks\Voyti\Controller\TwoFactor\TwoFactorController;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserBackupCode;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\TwoFactor\BackupCodeService;
 use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
 use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
-use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
+use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Session\Flash\FlashInterface;
-use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
@@ -36,15 +33,13 @@ final class TwoFactorControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
     use RedirectResponseMockTrait;
+    use TestContainerTrait;
     use UserFactoryTrait;
 
-    private ModuleConfig $config;
     private CurrentUser&MockObject $currentUser;
     private FlashInterface&MockObject $flash;
-    private ControllerHarness $harness;
     private PasswordHasher $passwordHasher;
     private ResponseFactoryInterface&MockObject $responseFactory;
-    private TranslatorInterface $translator;
     private EmailCodeGeneratorService&MockObject $twoFactorEmailCodeService;
     private QrCodeUriGeneratorService&MockObject $twoFactorQrCodeService;
     private WebViewRenderer&MockObject $viewRenderer;
@@ -52,9 +47,6 @@ final class TwoFactorControllerTest extends TestCase
     protected function setUp(): void
     {
         $this->setUpDatabase();
-        $this->config = ModuleConfigFactory::create(enableTwoFactorAuthentication: true);
-        $this->harness = new ControllerHarness($this->config);
-        $this->translator = $this->createTranslator();
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
         $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
         $this->currentUser = $this->createMock(CurrentUser::class);
@@ -881,15 +873,19 @@ final class TwoFactorControllerTest extends TestCase
 
     private function createController(?BackupCodeService $backupCodeService = null): TwoFactorController
     {
-        return $this->harness->createTwoFactorController(
-            translator: $this->translator,
-            viewRenderer: $this->viewRenderer,
-            currentUser: $this->currentUser,
-            responseFactory: $this->responseFactory,
-            flash: $this->flash,
-            twoFactorQrCodeService: $this->twoFactorQrCodeService,
-            twoFactorEmailCodeService: $this->twoFactorEmailCodeService,
-            backupCodeService: $backupCodeService,
-        );
+        $overrides = [
+            CurrentUser::class => $this->currentUser,
+            EmailCodeGeneratorService::class => $this->twoFactorEmailCodeService,
+            FlashInterface::class => $this->flash,
+            QrCodeUriGeneratorService::class => $this->twoFactorQrCodeService,
+            ResponseFactoryInterface::class => $this->responseFactory,
+            WebViewRenderer::class => $this->viewRenderer,
+        ];
+
+        if ($backupCodeService !== null) {
+            $overrides[BackupCodeService::class] = $backupCodeService;
+        }
+
+        return $this->getTestContainer($overrides)->get(TwoFactorController::class);
     }
 }

@@ -92,7 +92,7 @@ return [
 
     // TwoFactorCodeValidator
     'voyti.validator.two_factor_not_configured' => "L'authentification à deux facteurs n'est pas configurée.",
-    'voyti.validator.two_factor_library_missing' => "La bibliothèque 2FA (chillerlan/php-authenticator) n'est pas installée.",
+    'voyti.validator.two_factor_library_missing' => "La bibliothèque 2FA (chillerlan/2fa-qrcode-bundle) n'est pas installée.",
     'voyti.validator.invalid_verification_code' => 'Code de vérification invalide.',
     'voyti.validator.password_complexity' => 'Le mot de passe doit contenir au moins une majuscule, une minuscule, un chiffre et un caractère spécial.',
     'voyti.validator.two_factor_enabled' => "L'authentification à deux facteurs a été activée.",

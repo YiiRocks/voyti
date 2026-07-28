@@ -14,17 +14,16 @@ use YiiRocks\Voyti\Controller\Account\AccountController;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\EmailChangeService;
-use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
+use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Session\Flash\FlashInterface;
-use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\Validator\Result;
 use Yiisoft\Validator\ValidatorInterface;
@@ -35,26 +34,21 @@ final class AccountControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
     use RedirectResponseMockTrait;
+    use TestContainerTrait;
     use UserFactoryTrait;
 
-    private ModuleConfig $config;
     private CurrentUser&MockObject $currentUser;
     private EmailChangeService&MockObject $emailChangeService;
     private FlashInterface&MockObject $flash;
-    private ControllerHarness $harness;
     private HydratorInterface&MockObject $hydrator;
     private PasswordHasher $passwordHasher;
     private ResponseFactoryInterface&MockObject $responseFactory;
-    private TranslatorInterface $translator;
     private ValidatorInterface&MockObject $validator;
     private WebViewRenderer&MockObject $viewRenderer;
 
     protected function setUp(): void
     {
         $this->setUpDatabase();
-        $this->config = ModuleConfigFactory::create();
-        $this->harness = new ControllerHarness($this->config);
-        $this->translator = $this->createTranslator();
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
         $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
         $this->validator = $this->createMock(ValidatorInterface::class);
@@ -192,9 +186,9 @@ final class AccountControllerTest extends TestCase
 
     public function testAccountPostWithPreviouslyUsedPasswordShowsError(): void
     {
-        $this->config = ModuleConfigFactory::create(maxPasswordAge: 90);
-        $this->harness = new ControllerHarness($this->config);
-        $controller = $this->createController();
+        $controller = $this->createController([
+            ModuleConfig::class => ModuleConfigFactory::create(maxPasswordAge: 90),
+        ]);
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['settings' => ['username' => 'testuser', 'email' => 'test@example.com', 'password' => 'secret', 'passwordRepeat' => 'secret']]);
 
         $this->hydrator->method('hydrate')->willReturnCallback(
@@ -259,19 +253,17 @@ final class AccountControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    private function createController(): AccountController
+    private function createController(array $overrides = []): AccountController
     {
-        return $this->harness->createAccountController(
-            translator: $this->translator,
-            viewRenderer: $this->viewRenderer,
-            validator: $this->validator,
-            currentUser: $this->currentUser,
-            responseFactory: $this->responseFactory,
-            hydrator: $this->hydrator,
-            flash: $this->flash,
-            passwordHasher: $this->passwordHasher,
-            emailChangeService: $this->emailChangeService,
-        );
+        return $this->getTestContainer(array_merge([
+            CurrentUser::class => $this->currentUser,
+            EmailChangeService::class => $this->emailChangeService,
+            FlashInterface::class => $this->flash,
+            HydratorInterface::class => $this->hydrator,
+            ResponseFactoryInterface::class => $this->responseFactory,
+            ValidatorInterface::class => $this->validator,
+            WebViewRenderer::class => $this->viewRenderer,
+        ], $overrides))->get(AccountController::class);
     }
 
 }

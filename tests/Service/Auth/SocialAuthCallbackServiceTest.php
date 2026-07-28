@@ -18,9 +18,8 @@ use YiiRocks\Voyti\Service\Auth\UserSocialAccountConnectService;
 use YiiRocks\Voyti\Service\Auth\UserSocialAuthenticateService;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\Service\ServiceResult;
-use YiiRocks\Voyti\tests\Support\ControllerHarness;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
+use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\User\CurrentUser;
@@ -32,10 +31,10 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 final class SocialAuthCallbackServiceTest extends TestCase
 {
     use RedirectResponseMockTrait;
+    use TestContainerTrait;
 
     private CurrentUser&MockObject $currentUser;
     private FlashInterface&MockObject $flash;
-    private ControllerHarness $harness;
     private SocialUserAttributesNormalizer&MockObject $normalizer;
     private PendingSocialAccountService&MockObject $pendingSocialAccountService;
     private RememberMeCookieService&MockObject $rememberMeCookieService;
@@ -46,7 +45,6 @@ final class SocialAuthCallbackServiceTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->harness = new ControllerHarness(ModuleConfigFactory::create());
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
         $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
         $this->currentUser = $this->createMock(CurrentUser::class);
@@ -209,18 +207,17 @@ final class SocialAuthCallbackServiceTest extends TestCase
 
     private function createService(): SocialAuthCallbackService
     {
-        return $this->harness->createSocialAuthCallbackService(
-            translator: $this->createTranslator(),
-            viewRenderer: $this->viewRenderer,
-            responseFactory: $this->responseFactory,
-            currentUser: $this->currentUser,
-            flash: $this->flash,
-            rememberMeCookieService: $this->rememberMeCookieService,
-            pendingSocialAccountService: $this->pendingSocialAccountService,
-            socialAuthenticateService: $this->socialAuthenticateService,
-            socialAccountConnectService: $this->socialAccountConnectService,
-            normalizer: $this->normalizer,
-        );
+        return $this->getTestContainer([
+            CurrentUser::class => $this->currentUser,
+            FlashInterface::class => $this->flash,
+            PendingSocialAccountService::class => $this->pendingSocialAccountService,
+            RememberMeCookieService::class => $this->rememberMeCookieService,
+            ResponseFactoryInterface::class => $this->responseFactory,
+            SocialUserAttributesNormalizer::class => $this->normalizer,
+            UserSocialAccountConnectService::class => $this->socialAccountConnectService,
+            UserSocialAuthenticateService::class => $this->socialAuthenticateService,
+            WebViewRenderer::class => $this->viewRenderer,
+        ])->get(SocialAuthCallbackService::class);
     }
 
     private function expectMessageRender(string $expectedTitle): ResponseInterface&MockObject

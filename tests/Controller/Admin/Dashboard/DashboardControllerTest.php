@@ -11,33 +11,26 @@ use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\Admin\Dashboard\DashboardController;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserProfile;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Admin\DashboardService;
-use YiiRocks\Voyti\tests\Support\ControllerHarness;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
+use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Session\Flash\FlashInterface;
-use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 #[AllowMockObjectsWithoutExpectations]
 final class DashboardControllerTest extends TestCase
 {
-    private ModuleConfig $config;
+    use TestContainerTrait;
+
     private CurrentUser $currentUser;
     private DashboardService&MockObject $dashboardService;
     private FlashInterface&MockObject $flash;
-    private ControllerHarness $harness;
-    private TranslatorInterface $translator;
     private WebViewRenderer&MockObject $viewRenderer;
 
     protected function setUp(): void
     {
-        $this->config = ModuleConfigFactory::create();
-        $this->harness = new ControllerHarness($this->config);
-        $this->translator = $this->createTranslator();
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
         $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
         $this->flash = $this->createMock(FlashInterface::class);
@@ -122,12 +115,11 @@ final class DashboardControllerTest extends TestCase
 
     private function createController(): DashboardController
     {
-        return $this->harness->createDashboardController(
-            translator: $this->translator,
-            viewRenderer: $this->viewRenderer,
-            currentUser: $this->currentUser,
-            flash: $this->flash,
-            dashboardService: $this->dashboardService,
-        );
+        return $this->getTestContainer([
+            CurrentUser::class => $this->currentUser,
+            DashboardService::class => $this->dashboardService,
+            FlashInterface::class => $this->flash,
+            WebViewRenderer::class => $this->viewRenderer,
+        ])->get(DashboardController::class);
     }
 }

@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
@@ -20,17 +21,17 @@ use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\UserSession\TerminateUserSessionsService;
-use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
+use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Session\Flash\FlashInterface;
-use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\Validator\Result;
 use Yiisoft\Validator\ValidatorInterface;
@@ -41,26 +42,22 @@ final class PrivacyControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
     use RedirectResponseMockTrait;
+    use TestContainerTrait;
     use UserFactoryTrait;
 
-    private ModuleConfig $config;
     private CurrentUser&MockObject $currentUser;
+    private EventCaptureDispatcher $eventDispatcher;
     private FlashInterface&MockObject $flash;
-    private ControllerHarness $harness;
     private HydratorInterface&MockObject $hydrator;
     private PasswordHasher $passwordHasher;
     private ResponseFactoryInterface&MockObject $responseFactory;
     private TerminateUserSessionsService&MockObject $terminateUserSessionsService;
-    private TranslatorInterface $translator;
     private ValidatorInterface&MockObject $validator;
     private WebViewRenderer&MockObject $viewRenderer;
 
     protected function setUp(): void
     {
         $this->setUpDatabase();
-        $this->config = ModuleConfigFactory::create();
-        $this->harness = new ControllerHarness($this->config);
-        $this->translator = $this->createTranslator();
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
         $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
         $this->validator = $this->createMock(ValidatorInterface::class);
@@ -70,6 +67,7 @@ final class PrivacyControllerTest extends TestCase
         $this->flash = $this->createMock(FlashInterface::class);
         $this->passwordHasher = TestPasswordHasherFactory::create();
         $this->terminateUserSessionsService = $this->createMock(TerminateUserSessionsService::class);
+        $this->eventDispatcher = new EventCaptureDispatcher();
     }
 
     protected function tearDown(): void
@@ -79,9 +77,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testAnonymizeGetShowsForm(): void
     {
-        $config = ModuleConfigFactory::create(enableGdprCompliance: true);
-        $this->harness = new ControllerHarness($config);
-        $controller = $this->createController();
+        $controller = $this->createController(ModuleConfigFactory::create(enableGdprCompliance: true));
         $request = new ServerRequest('GET', '/');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -100,9 +96,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testAnonymizePostWithValidPasswordAnonymizesUser(): void
     {
-        $config = ModuleConfigFactory::create(enableGdprCompliance: true);
-        $this->harness = new ControllerHarness($config);
-        $controller = $this->createController();
+        $controller = $this->createController(ModuleConfigFactory::create(enableGdprCompliance: true));
 
         $password = 'mypassword';
 
@@ -137,16 +131,14 @@ final class PrivacyControllerTest extends TestCase
         $this->assertNotNull($updated);
         $this->assertTrue($updated->isAnonymized());
         $this->assertTrue($updated->isBlocked());
-        $event = $this->harness->getEventDispatcher()->getEvent(GdprEvent::class);
+        $event = $this->eventDispatcher->getEvent(GdprEvent::class);
         $this->assertNotNull($event);
         $this->assertTrue($event->getUser()->isAnonymized());
     }
 
     public function testDeleteGetShowsForm(): void
     {
-        $config = ModuleConfigFactory::create(allowAccountDelete: true);
-        $this->harness = new ControllerHarness($config);
-        $controller = $this->createController();
+        $controller = $this->createController(ModuleConfigFactory::create(allowAccountDelete: true));
         $request = new ServerRequest('GET', '/');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -165,9 +157,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testDeletePostWithInvalidPasswordShowsForm(): void
     {
-        $config = ModuleConfigFactory::create(allowAccountDelete: true);
-        $this->harness = new ControllerHarness($config);
-        $controller = $this->createController();
+        $controller = $this->createController(ModuleConfigFactory::create(allowAccountDelete: true));
 
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['delete-account' => ['password' => 'wrongpassword', 'consent' => '1']]);
 
@@ -202,9 +192,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testDeletePostWithValidPasswordDeletesUser(): void
     {
-        $config = ModuleConfigFactory::create(allowAccountDelete: true);
-        $this->harness = new ControllerHarness($config);
-        $controller = $this->createController();
+        $controller = $this->createController(ModuleConfigFactory::create(allowAccountDelete: true));
 
         $password = 'mypassword';
 
@@ -237,16 +225,17 @@ final class PrivacyControllerTest extends TestCase
 
         $this->assertSame($response, $result);
         $this->assertNull(User::findById($userId));
-        $event = $this->harness->getEventDispatcher()->getEvent(UserEvent::class);
+        $event = $this->eventDispatcher->getEvent(UserEvent::class);
         $this->assertNotNull($event);
         $this->assertSame(UserEvent::DELETE, $event->getType());
     }
 
     public function testExportIncludesSessionsAndSocialAccounts(): void
     {
-        $config = ModuleConfigFactory::create(enableGdprCompliance: true, gdprExportProperties: ['userSessions', 'userSocialAccount']);
-        $this->harness = new ControllerHarness($config);
-        $controller = $this->createController();
+        $controller = $this->createController(ModuleConfigFactory::create(
+            enableGdprCompliance: true,
+            gdprExportProperties: ['userSessions', 'userSocialAccount'],
+        ));
         $request = new ServerRequest('GET', '/');
 
         $user = $this->createUser(confirmedAt: time());
@@ -302,17 +291,18 @@ final class PrivacyControllerTest extends TestCase
 
     public function testExportIncludesUserProfileFields(): void
     {
-        $config = ModuleConfigFactory::create(enableGdprCompliance: true, gdprExportProperties: [
-            'userProfile.public_email',
-            'userProfile.name',
-            'userProfile.gravatar_email',
-            'userProfile.location',
-            'userProfile.website',
-            'userProfile.bio',
-            'userProfile.birthday',
-        ]);
-        $this->harness = new ControllerHarness($config);
-        $controller = $this->createController();
+        $controller = $this->createController(ModuleConfigFactory::create(
+            enableGdprCompliance: true,
+            gdprExportProperties: [
+                'userProfile.public_email',
+                'userProfile.name',
+                'userProfile.gravatar_email',
+                'userProfile.location',
+                'userProfile.website',
+                'userProfile.bio',
+                'userProfile.birthday',
+            ],
+        ));
 
         $user = $this->createUser(confirmedAt: time());
         $this->currentUser->method('getIdentity')->willReturn($user);
@@ -357,9 +347,10 @@ final class PrivacyControllerTest extends TestCase
 
     public function testExportReturnsData(): void
     {
-        $config = ModuleConfigFactory::create(enableGdprCompliance: true, gdprExportProperties: ['email', 'username']);
-        $this->harness = new ControllerHarness($config);
-        $controller = $this->createController();
+        $controller = $this->createController(ModuleConfigFactory::create(
+            enableGdprCompliance: true,
+            gdprExportProperties: ['email', 'username'],
+        ));
 
         $user = $this->createUser(confirmedAt: time());
         $this->currentUser->method('getIdentity')->willReturn($user);
@@ -388,9 +379,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testGdprConsentGetShowsConsentDateWhenAlreadyConsented(): void
     {
-        $config = ModuleConfigFactory::create(enableGdprCompliance: true);
-        $this->harness = new ControllerHarness($config);
-        $controller = $this->createController();
+        $controller = $this->createController(ModuleConfigFactory::create(enableGdprCompliance: true));
         $request = new ServerRequest('GET', '/');
 
         $user = $this->createUser(gdprConsent: true, gdprConsentDate: 1700000000, confirmedAt: time());
@@ -424,9 +413,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testGdprConsentGetShowsForm(): void
     {
-        $config = ModuleConfigFactory::create(enableGdprCompliance: true);
-        $this->harness = new ControllerHarness($config);
-        $controller = $this->createController();
+        $controller = $this->createController(ModuleConfigFactory::create(enableGdprCompliance: true));
         $request = new ServerRequest('GET', '/');
 
         $user = $this->createUser(gdprConsent: false, confirmedAt: time());
@@ -453,9 +440,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testGdprConsentPostAlreadyConsentedResubmitIsNoop(): void
     {
-        $config = ModuleConfigFactory::create(enableGdprCompliance: true);
-        $this->harness = new ControllerHarness($config);
-        $controller = $this->createController();
+        $controller = $this->createController(ModuleConfigFactory::create(enableGdprCompliance: true));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['gdpr-consent' => ['consent' => '1']]);
 
         $this->hydrator->method('hydrate')->willReturnCallback(
@@ -482,9 +467,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testGdprConsentPostCannotRevokeConsent(): void
     {
-        $config = ModuleConfigFactory::create(enableGdprCompliance: true);
-        $this->harness = new ControllerHarness($config);
-        $controller = $this->createController();
+        $controller = $this->createController(ModuleConfigFactory::create(enableGdprCompliance: true));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['gdpr-consent' => ['consent' => '0']]);
 
         $this->hydrator->method('hydrate')->willReturnCallback(
@@ -510,9 +493,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testGdprConsentPostSavesAndRedirects(): void
     {
-        $config = ModuleConfigFactory::create(enableGdprCompliance: true);
-        $this->harness = new ControllerHarness($config);
-        $controller = $this->createController();
+        $controller = $this->createController(ModuleConfigFactory::create(enableGdprCompliance: true));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['gdpr-consent' => ['consent' => '1']]);
 
         $this->hydrator->method('hydrate')->willReturnCallback(
@@ -555,19 +536,24 @@ final class PrivacyControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    private function createController(): PrivacyController
+    private function createController(?ModuleConfig $config = null): PrivacyController
     {
-        return $this->harness->createPrivacyController(
-            translator: $this->translator,
-            viewRenderer: $this->viewRenderer,
-            validator: $this->validator,
-            currentUser: $this->currentUser,
-            responseFactory: $this->responseFactory,
-            hydrator: $this->hydrator,
-            flash: $this->flash,
-            passwordHasher: $this->passwordHasher,
-            terminateUserSessionsService: $this->terminateUserSessionsService,
-        );
+        $overrides = [
+            CurrentUser::class => $this->currentUser,
+            EventDispatcherInterface::class => $this->eventDispatcher,
+            FlashInterface::class => $this->flash,
+            HydratorInterface::class => $this->hydrator,
+            ResponseFactoryInterface::class => $this->responseFactory,
+            TerminateUserSessionsService::class => $this->terminateUserSessionsService,
+            ValidatorInterface::class => $this->validator,
+            WebViewRenderer::class => $this->viewRenderer,
+        ];
+
+        if ($config !== null) {
+            $overrides[ModuleConfig::class] = $config;
+        }
+
+        return $this->getTestContainer($overrides)->get(PrivacyController::class);
     }
 
     private function createSocialAccount(int $userId, string $provider = 'github', string $username = 'octocat'): UserSocialAccount

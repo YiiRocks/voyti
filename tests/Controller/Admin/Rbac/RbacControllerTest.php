@@ -8,21 +8,18 @@ use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
-use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use RuntimeException;
 use YiiRocks\Voyti\Controller\Admin\Rbac\RbacController;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\Service\AuditLogService;
-use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
+use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
+use YiiRocks\Voyti\tests\Support\SimpleAssignmentsStorage;
 use YiiRocks\Voyti\tests\Support\SimpleItemsStorage;
+use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\TestCase;
-use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Rbac\Assignment;
 use Yiisoft\Rbac\AssignmentsStorageInterface;
 use Yiisoft\Rbac\ItemsStorageInterface;
@@ -30,9 +27,8 @@ use Yiisoft\Rbac\Manager;
 use Yiisoft\Rbac\ManagerInterface;
 use Yiisoft\Rbac\Permission;
 use Yiisoft\Rbac\Role;
+use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
-use Yiisoft\Translator\TranslatorInterface;
-use Yiisoft\User\CurrentUser;
 use Yiisoft\Validator\Result;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
@@ -42,32 +38,27 @@ final class RbacControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
     use RedirectResponseMockTrait;
+    use TestContainerTrait;
 
     private AssignmentsStorageInterface $assignmentsStorage;
-    private ModuleConfig $config;
     private FlashInterface&MockObject $flash;
-    private ControllerHarness $harness;
     private ItemsStorageInterface $itemsStorage;
     private ManagerInterface $manager;
     private ResponseFactoryInterface&MockObject $responseFactory;
-    private TranslatorInterface $translator;
     private ValidatorInterface&MockObject $validator;
     private WebViewRenderer&MockObject $viewRenderer;
 
     protected function setUp(): void
     {
         $this->setUpDatabase();
-        $this->config = ModuleConfigFactory::create();
-        $this->harness = new ControllerHarness($this->config);
-        $this->translator = $this->createTranslator();
+        $this->itemsStorage = new SimpleItemsStorage();
+        $this->assignmentsStorage = new SimpleAssignmentsStorage();
+        $this->manager = new Manager($this->itemsStorage, $this->assignmentsStorage);
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
         $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
         $this->validator = $this->createMock(ValidatorInterface::class);
         $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
         $this->flash = $this->createMock(FlashInterface::class);
-        $this->itemsStorage = $this->harness->getItemsStorage();
-        $this->assignmentsStorage = $this->harness->getAssignmentsStorage();
-        $this->manager = $this->harness->getAuthManager();
     }
 
     protected function tearDown(): void
@@ -423,23 +414,16 @@ final class RbacControllerTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage(ucfirst($itemType) . " '$itemName' not found.");
 
-        $controller = new RbacController(
-            translator: $this->translator,
-            viewRenderer: $this->viewRenderer,
-            url: $this->harness->getUrlGenerator(),
-            validator: $this->validator,
-            responseFactory: $this->responseFactory,
-            itemsStorage: $this->itemsStorage,
-            managerInterface: $manager,
-            assignmentsStorage: $this->assignmentsStorage,
-            flash: $this->flash,
-            config: $this->config,
-            auditLogService: $this->createMock(AuditLogService::class),
-            currentUser: new CurrentUser(
-                $this->createMock(IdentityRepositoryInterface::class),
-                $this->createMock(EventDispatcherInterface::class),
-            ),
-        );
+        $controller = $this->getTestContainer([
+            ItemsStorageInterface::class => $this->itemsStorage,
+            ManagerInterface::class => $manager,
+            AssignmentsStorageInterface::class => $this->assignmentsStorage,
+            ValidatorInterface::class => $this->validator,
+            ResponseFactoryInterface::class => $this->responseFactory,
+            FlashInterface::class => $this->flash,
+            WebViewRenderer::class => $this->viewRenderer,
+            UrlGeneratorInterface::class => new FakeUrlGenerator(),
+        ])->get(RbacController::class);
         $controller->update(request: new ServerRequest('POST', '/'), name: $itemName, formName: $itemName, description: '', rule: '', children: [''], itemType: $itemType, indexRouteName: $indexRouteName);
     }
 
@@ -583,13 +567,15 @@ final class RbacControllerTest extends TestCase
 
     private function createController(): RbacController
     {
-        return $this->harness->createRbacController(
-            translator: $this->translator,
-            viewRenderer: $this->viewRenderer,
-            validator: $this->validator,
-            responseFactory: $this->responseFactory,
-            flash: $this->flash,
-        );
+        return $this->getTestContainer([
+            ItemsStorageInterface::class => $this->itemsStorage,
+            ManagerInterface::class => $this->manager,
+            AssignmentsStorageInterface::class => $this->assignmentsStorage,
+            ValidatorInterface::class => $this->validator,
+            ResponseFactoryInterface::class => $this->responseFactory,
+            FlashInterface::class => $this->flash,
+            WebViewRenderer::class => $this->viewRenderer,
+        ])->get(RbacController::class);
     }
 
     private function getItem(string $itemType, string $name): Role|Permission|null

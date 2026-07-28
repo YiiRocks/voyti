@@ -302,8 +302,8 @@ final readonly class TwoFactorController
      * The TOTP secret and the email one-time code share the same auth_tf_key column.
      * If an email code was last sent to the user, that column holds a 6-digit code
      * rather than a TOTP secret, so it must be cleared before a QR code is generated -
-     * otherwise QrCodeUriGeneratorService::run() would treat the leftover email code
-     * as a real TOTP secret and reuse it verbatim.
+     * otherwise QrCodeUriGeneratorService::generateQrCodeSvg() would treat the leftover email
+     * code as a real TOTP secret and reuse it verbatim.
      */
     private function ensureFreshGoogleAuthenticatorSecret(User $user): void
     {

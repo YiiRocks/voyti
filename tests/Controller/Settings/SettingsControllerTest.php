@@ -8,14 +8,11 @@ use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\Settings\SettingsController;
-use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\tests\Support\ControllerHarness;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
+use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Session\Flash\FlashInterface;
-use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
@@ -23,21 +20,16 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 final class SettingsControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
+    use TestContainerTrait;
     use UserFactoryTrait;
 
-    private ModuleConfig $config;
     private CurrentUser&MockObject $currentUser;
     private FlashInterface&MockObject $flash;
-    private ControllerHarness $harness;
-    private TranslatorInterface $translator;
     private WebViewRenderer&MockObject $viewRenderer;
 
     protected function setUp(): void
     {
         $this->setUpDatabase();
-        $this->config = ModuleConfigFactory::create();
-        $this->harness = new ControllerHarness($this->config);
-        $this->translator = $this->createTranslator();
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
         $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
         $this->currentUser = $this->createMock(CurrentUser::class);
@@ -71,11 +63,10 @@ final class SettingsControllerTest extends TestCase
 
     private function createController(): SettingsController
     {
-        return $this->harness->createSettingsController(
-            translator: $this->translator,
-            viewRenderer: $this->viewRenderer,
-            flash: $this->flash,
-            currentUser: $this->currentUser,
-        );
+        return $this->getTestContainer([
+            CurrentUser::class => $this->currentUser,
+            FlashInterface::class => $this->flash,
+            WebViewRenderer::class => $this->viewRenderer,
+        ])->get(SettingsController::class);
     }
 }
