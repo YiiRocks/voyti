@@ -137,6 +137,7 @@ return [
     'voyti.view.login.register_link' => 'Registreren',
     'voyti.view.login.password_label' => 'Wachtwoord',
     'voyti.view.login.remember_me_label' => 'Onthoud mij',
+    'voyti.view.login.social_divider' => 'Of aanmelden met',
 
     // Two-factor confirm view
     'voyti.view.two_factor.title' => 'Tweefactorauthenticatie',
@@ -185,7 +186,6 @@ return [
     'voyti.view.recovery.back_to_login' => 'Terug naar inloggen',
     'voyti.view.recovery.reset_title' => 'Wachtwoord resetten',
     'voyti.view.recovery.reset_button' => 'Wachtwoord resetten',
-
 
     // Settings views
     'voyti.view.settings.dashboard_title' => 'Dashboard',
@@ -346,7 +346,6 @@ return [
     'voyti.view.update_profile_link' => 'Profiel bijwerken',
     'voyti.view.send_button' => 'Verzenden',
     'voyti.view.disconnect_button' => 'Ontkoppelen',
-
 
     // Widgets
     'voyti.view.networks.no_networks' => 'Geen gekoppelde netwerken',

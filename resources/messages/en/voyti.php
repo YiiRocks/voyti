@@ -137,6 +137,7 @@ return [
     'voyti.view.login.register_link' => 'Register',
     'voyti.view.login.password_label' => 'Password',
     'voyti.view.login.remember_me_label' => 'Remember me',
+    'voyti.view.login.social_divider' => 'Or sign in with',
 
     // Two-factor confirm view
     'voyti.view.two_factor.title' => 'Two-Factor Authentication',
@@ -185,7 +186,6 @@ return [
     'voyti.view.recovery.back_to_login' => 'Back to login',
     'voyti.view.recovery.reset_title' => 'Reset password',
     'voyti.view.recovery.reset_button' => 'Reset password',
-
 
     // Settings views
     'voyti.view.settings.dashboard_title' => 'Dashboard',
@@ -347,7 +347,6 @@ return [
     'voyti.view.update_profile_link' => 'Update profile',
     'voyti.view.send_button' => 'Send',
     'voyti.view.disconnect_button' => 'Disconnect',
-
 
     // Widgets
     'voyti.view.networks.no_networks' => 'No connected networks',

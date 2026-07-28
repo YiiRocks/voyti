@@ -29,8 +29,8 @@ Stats for Nerds
 
 - **User Management** — Registration, email confirmation, login/logout with remember-me, password recovery, password expiration
 - **Profile Management** — User profiles with gravatar, timezone, bio, and a personal website link
-- **Social Authentication** — Various built-in auth clients
-- **Two-Factor Authentication** — TOTP (authenticator app) and email 2FA with enforced-per-permission support, plus one-time backup codes for account recovery
+- **Social Authentication** — OAuth2 login via Google, GitHub, Facebook, and more
+- **Two-Factor Authentication** — TOTP (authenticator app) with QR code provisioning and email 2FA, with enforced-per-permission support, plus one-time backup codes for account recovery
 - **RBAC Management** — Full admin UI for roles, permissions, and rules with parent-child hierarchy, assignment management, and filtering
 - **Identity Switching** — Admins can temporarily switch into another user's identity for support or debugging, then restore their own session with one click
 - **Session Management** — Session tracking and termination
@@ -38,7 +38,7 @@ Stats for Nerds
 - **Password Policies** — Minimum complexity requirements, max age enforcement via middleware
 - **Email Change Confirmation** — Three modes: immediate, confirm new address, confirm both old and new
 - **REST API** — Optional JSON API for user CRUD
-- **CAPTCHA** — Optional reCAPTCHA v2/v3 integration via `yiirocks/recaptcha`
+- **Bot Protection** — Google reCAPTCHA v2/v3 for registration and login forms
 - **i18n** — Built-in translations for multiple languages
 - **Themed Views** — Bootstrap 5 views shipped by default; mail templates separate and independently overridable
 

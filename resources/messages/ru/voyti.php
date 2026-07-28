@@ -137,6 +137,7 @@ return [
     'voyti.view.login.register_link' => 'Регистрация',
     'voyti.view.login.password_label' => 'Пароль',
     'voyti.view.login.remember_me_label' => 'Запомнить меня',
+    'voyti.view.login.social_divider' => 'Или войдите через',
 
     // Two-factor confirm view
     'voyti.view.two_factor.title' => 'Двухфакторная аутентификация',
@@ -185,7 +186,6 @@ return [
     'voyti.view.recovery.back_to_login' => 'Назад к входу',
     'voyti.view.recovery.reset_title' => 'Сброс пароля',
     'voyti.view.recovery.reset_button' => 'Сбросить пароль',
-
 
     // Settings views
     'voyti.view.settings.dashboard_title' => 'Панель управления',
@@ -346,7 +346,6 @@ return [
     'voyti.view.update_profile_link' => 'Редактировать профиль',
     'voyti.view.send_button' => 'Отправить',
     'voyti.view.disconnect_button' => 'Отключить',
-
 
     // Widgets
     'voyti.view.networks.no_networks' => 'Нет подключённых сетей',

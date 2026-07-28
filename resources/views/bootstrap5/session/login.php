@@ -53,13 +53,6 @@ echo Field::buttonGroup()
 
 echo Html::form()->close();
 
-if ($data->connect->providers !== []) {
-    echo Html::div()->class('mt-4 text-center')->open();
-    /** @psalm-suppress InvalidScope */
-    echo $this->render('../shared/_connect', ['connect' => $data->connect]);
-    echo Html::div()->close();
-}
-
 echo Html::div()->class('mt-3')->open();
 
 echo Html::a($translator->translate('voyti.view.login.forgot_password'), $data->forgotPasswordUrl);
@@ -69,5 +62,22 @@ if ($data->showRegisterLink) {
     echo Html::a($translator->translate('voyti.view.login.register_link'), $data->registerUrl);
 }
 echo Html::div()->close();
+
+if ($data->connect->providers !== []) {
+    echo Html::div()->class('mt-4')->open();
+
+    echo Html::div()->class('d-flex align-items-center mb-3')->open();
+    echo Html::hr()->class('flex-grow-1');
+    echo Html::span($translator->translate('voyti.view.login.social_divider'))->class('mx-2 text-muted small');
+    echo Html::hr()->class('flex-grow-1');
+    echo Html::div()->close();
+
+    echo Html::div()->class('text-center')->open();
+    /** @psalm-suppress InvalidScope */
+    echo $this->render('../shared/_connect', ['connect' => $data->connect]);
+    echo Html::div()->close();
+
+    echo Html::div()->close();
+}
 
 echo Html::div()->close();

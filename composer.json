@@ -59,10 +59,10 @@
         "yiisoft/yii-view-renderer": "^7.1"
     },
     "suggest": {
-        "chillerlan/2fa-qrcode-bundle": "Time-based One-Time Password (TOTP) 2 Factor Authentication and QR code generator for authenticator app setup",
+        "chillerlan/2fa-qrcode-bundle": "Time-based One-Time Password (TOTP) 2 Factor Authentication with QR code provisioning",
         "yiirocks/recaptcha": "Google reCAPTCHA v2 and v3 field + server-side validator for Yii3",
         "yiisoft/data-response": "Required for the REST API (voyti-routes-api): JSON response formatting for the user CRUD endpoints",
-        "yiisoft/yii-auth-client": "Social/OAuth2 login (google, github, linkedin, microsoft365, facebook, vkontakte, x, yandex)",
+        "yiisoft/yii-auth-client": "Social/OAuth2 login via Google, GitHub, Facebook, and more",
         "yiisoft/yii-runner-console": "Allows to run console application",
         "yiisoft/yii-runner-http": "Allows to run HTTP application"
     },
@@ -132,9 +132,8 @@
         "process-timeout": 600,
         "sort-packages": true,
         "allow-plugins": {
-            "yiisoft/config": true,
-            "yiisoft/factory": true,
-            "infection/extension-installer": true
+            "infection/extension-installer": true,
+            "yiisoft/config": true
         }
     },
     "funding": [
