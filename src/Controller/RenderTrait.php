@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Controller;
 
 use Psr\Http\Message\ResponseInterface;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\ViewData\Shared\FlashViewData;
 use YiiRocks\Voyti\ViewData\Shared\MessageViewData;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Yii\View\Renderer\CsrfViewInjection;
 
@@ -15,7 +15,7 @@ use Yiisoft\Yii\View\Renderer\CsrfViewInjection;
  * Adds view-rendering helpers to a controller, injecting common view params (a `voyti`-category-bound
  * translator and resolved flash messages) and providing an error-message view shortcut. Requires the
  * consumer to have `$viewRenderer`, `$config`, `$translator`, `$url`, and `$flash` properties.
- * Templates never receive `ModuleConfig` or `UrlGeneratorInterface` directly - every other value a
+ * Templates never receive `VoytiConfig` or `UrlGeneratorInterface` directly - every other value a
  * template needs travels through an explicit `ViewData` object built by the controller.
  */
 trait RenderTrait
@@ -53,6 +53,7 @@ trait RenderTrait
     {
         return $this->config->viewPath;
     }
+
     /**
      * Renders a view without the host application's layout - used for AJAX fragments that
      * get injected into an existing page rather than replacing it.
@@ -86,7 +87,7 @@ trait RenderTrait
     {
         $configuredPath = $this->viewPath();
 
-        return is_file($configuredPath . '/' . $view . '.php') ? $configuredPath : ModuleConfig::DEFAULT_VIEW_PATH;
+        return is_file($configuredPath . '/' . $view . '.php') ? $configuredPath : VoytiConfig::DEFAULT_VIEW_PATH;
     }
 
     /**

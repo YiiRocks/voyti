@@ -228,6 +228,7 @@ final class CreateUserCommandTest extends TestCase
 
         self::assertSame(ExitCode::OK, $result);
     }
+
     private function createCommand(
         ?CreateService $userCreateService = null,
         ?ManagerInterface $authManager = null,

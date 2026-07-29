@@ -16,7 +16,6 @@ use YiiRocks\Voyti\Helper\LoginMetadataHelper;
 use YiiRocks\Voyti\Model\Form\Auth\LoginForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\Service\TwoFactor\BackupCodeService;
@@ -25,6 +24,7 @@ use YiiRocks\Voyti\Validator\TwoFactor\CodeValidator;
 use YiiRocks\Voyti\Validator\TwoFactor\EmailValidator;
 use YiiRocks\Voyti\ViewData\Session\ConfirmViewData;
 use YiiRocks\Voyti\ViewData\Session\LoginViewData;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Input\Http\Attribute\Parameter\Body;
@@ -64,7 +64,7 @@ final readonly class SessionController
         private UrlGeneratorInterface $url,
         private SessionInterface $session,
         private RememberMeCookieService $rememberMeCookieService,
-        private ModuleConfig $config,
+        private VoytiConfig $config,
         private ?Collection $clientCollection,
         private PendingSocialAccountService $pendingSocialAccountService,
         private HydratorInterface $hydrator,

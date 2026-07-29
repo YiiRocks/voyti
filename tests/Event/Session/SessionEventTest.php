@@ -15,6 +15,7 @@ final class SessionEventTest extends TestCase
         self::assertSame('sessionTerminated', SessionEvent::SESSION_TERMINATED);
         self::assertSame('sessionUpdated', SessionEvent::SESSION_UPDATED);
     }
+
     public function testConstructorAndGetters(): void
     {
         $event = new SessionEvent(42, 'session-abc-123', ['key' => 'value']);

@@ -7,9 +7,9 @@ namespace YiiRocks\Voyti\ViewData\Profile;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserProfile;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\ViewData\Shared\MenuViewData;
 use YiiRocks\Voyti\ViewData\Shared\ProfileCardViewData;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 
@@ -32,7 +32,7 @@ final readonly class UpdateViewData
     public static function create(
         User $user,
         UserProfile $userProfile,
-        ModuleConfig $config,
+        VoytiConfig $config,
         UrlGeneratorInterface $url,
         TranslatorInterface $translator,
         bool $isSwitched,

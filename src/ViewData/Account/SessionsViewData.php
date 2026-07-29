@@ -6,8 +6,8 @@ namespace YiiRocks\Voyti\ViewData\Account;
 
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\ViewData\Shared\MenuViewData;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 
@@ -31,7 +31,7 @@ final readonly class SessionsViewData
         array $sessions,
         ?string $currentSessionId,
         ?string $timezone,
-        ModuleConfig $config,
+        VoytiConfig $config,
         UrlGeneratorInterface $url,
         TranslatorInterface $translator,
         bool $isSwitched,

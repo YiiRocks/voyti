@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Controller\Api;
 
 use Psr\Http\Message\ResponseInterface;
-use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\DataResponse\ResponseFactory\DataResponseFactoryInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
 
@@ -17,7 +17,7 @@ final readonly class OpenApiController
 {
     public function __construct(
         private DataResponseFactoryInterface $responseFactory,
-        private ModuleConfig $config,
+        private VoytiConfig $config,
         private UrlGeneratorInterface $url,
     ) {}
 

@@ -10,9 +10,9 @@ use PHPUnit\Framework\TestCase;
 use YiiRocks\Recaptcha\RecaptchaRegistry;
 use YiiRocks\Voyti\Enum\RecaptchaVersion;
 use YiiRocks\Voyti\Model\Form\Auth\RecoveryForm;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\RecaptchaRegistryTrait;
 use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use Yiisoft\Validator\Rule\CompareType;
 use Yiisoft\Validator\Rule\Email;
 use Yiisoft\Validator\Rule\Equal;
@@ -42,33 +42,33 @@ final class RecoveryFormTest extends TestCase
 
     public function testConstructDefaultScenario(): void
     {
-        $form = new RecoveryForm(ModuleConfigFactory::create(), $this->createTranslator());
+        $form = new RecoveryForm(VoytiConfigFactory::create(), $this->createTranslator());
         $this->assertSame(RecoveryForm::SCENARIO_REQUEST, $form->scenario);
     }
 
     #[DataProvider('constructScenarioProvider')]
     public function testConstructWithExplicitScenario(string $scenario): void
     {
-        $form = new RecoveryForm(ModuleConfigFactory::create(), $this->createTranslator(), $scenario);
+        $form = new RecoveryForm(VoytiConfigFactory::create(), $this->createTranslator(), $scenario);
         $this->assertSame($scenario, $form->scenario);
     }
 
     public function testEmailProperty(): void
     {
-        $form = new RecoveryForm(ModuleConfigFactory::create(), $this->createTranslator());
+        $form = new RecoveryForm(VoytiConfigFactory::create(), $this->createTranslator());
         $form->email = 'test@example.com';
         $this->assertSame('test@example.com', $form->email);
     }
 
     public function testGetFormName(): void
     {
-        $form = new RecoveryForm(ModuleConfigFactory::create(), $this->createTranslator());
+        $form = new RecoveryForm(VoytiConfigFactory::create(), $this->createTranslator());
         $this->assertSame('recovery', $form->getFormName());
     }
 
     public function testGetPropertyLabels(): void
     {
-        $form = new RecoveryForm(ModuleConfigFactory::create(), $this->createTranslator());
+        $form = new RecoveryForm(VoytiConfigFactory::create(), $this->createTranslator());
         $labels = $form->getPropertyLabels();
         $this->assertArrayHasKey('email', $labels);
         $this->assertArrayHasKey('password', $labels);
@@ -77,7 +77,7 @@ final class RecoveryFormTest extends TestCase
 
     public function testGetRulesForRequestScenario(): void
     {
-        $form = new RecoveryForm(ModuleConfigFactory::create(), $this->createTranslator(), RecoveryForm::SCENARIO_REQUEST);
+        $form = new RecoveryForm(VoytiConfigFactory::create(), $this->createTranslator(), RecoveryForm::SCENARIO_REQUEST);
         $rules = $form->getRules();
         $this->assertArrayHasKey('email', $rules);
         $this->assertCount(3, $rules['email']);
@@ -94,7 +94,7 @@ final class RecoveryFormTest extends TestCase
 
     public function testGetRulesForResetScenario(): void
     {
-        $form = new RecoveryForm(ModuleConfigFactory::create(), $this->createTranslator(), RecoveryForm::SCENARIO_RESET);
+        $form = new RecoveryForm(VoytiConfigFactory::create(), $this->createTranslator(), RecoveryForm::SCENARIO_RESET);
         $rules = $form->getRules();
         $this->assertArrayNotHasKey('email', $rules);
         $this->assertArrayHasKey('password', $rules);
@@ -114,7 +114,7 @@ final class RecoveryFormTest extends TestCase
 
     public function testGetRulesForResetScenarioWithPasswordComplexityEnabled(): void
     {
-        $config = ModuleConfigFactory::create(enablePasswordComplexity: true);
+        $config = VoytiConfigFactory::create(enablePasswordComplexity: true);
         $form = new RecoveryForm($config, $this->createTranslator(), RecoveryForm::SCENARIO_RESET);
         $rules = $form->getRules();
         $this->assertCount(3, $rules['password']);
@@ -123,7 +123,7 @@ final class RecoveryFormTest extends TestCase
 
     public function testGetRulesWithoutRecaptchaOnReset(): void
     {
-        $config = ModuleConfigFactory::create(recaptchaVersion: RecaptchaVersion::V3);
+        $config = VoytiConfigFactory::create(recaptchaVersion: RecaptchaVersion::V3);
         $form = new RecoveryForm($config, $this->createTranslator(), RecoveryForm::SCENARIO_RESET);
         $rules = $form->getRules();
         $this->assertArrayNotHasKey('gRecaptchaResponse', $rules);
@@ -132,7 +132,7 @@ final class RecoveryFormTest extends TestCase
     public function testGetRulesWithRecaptchaV2OnRequest(): void
     {
         $this->configureRecaptchaRegistry();
-        $config = ModuleConfigFactory::create(recaptchaVersion: RecaptchaVersion::V2);
+        $config = VoytiConfigFactory::create(recaptchaVersion: RecaptchaVersion::V2);
         $form = new RecoveryForm($config, $this->createTranslator(), RecoveryForm::SCENARIO_REQUEST);
         $rules = $form->getRules();
         $this->assertArrayHasKey('gRecaptchaResponse', $rules);
@@ -141,7 +141,7 @@ final class RecoveryFormTest extends TestCase
     public function testGetRulesWithRecaptchaV3OnRequest(): void
     {
         $this->configureRecaptchaRegistry();
-        $config = ModuleConfigFactory::create(recaptchaVersion: RecaptchaVersion::V3);
+        $config = VoytiConfigFactory::create(recaptchaVersion: RecaptchaVersion::V3);
         $form = new RecoveryForm($config, $this->createTranslator(), RecoveryForm::SCENARIO_REQUEST);
         $rules = $form->getRules();
         $this->assertArrayHasKey('gRecaptchaResponse', $rules);
@@ -152,13 +152,13 @@ final class RecoveryFormTest extends TestCase
 
     public function testGetValidationPropertyLabels(): void
     {
-        $form = new RecoveryForm(ModuleConfigFactory::create(), $this->createTranslator());
+        $form = new RecoveryForm(VoytiConfigFactory::create(), $this->createTranslator());
         $this->assertSame($form->getPropertyLabels(), $form->getValidationPropertyLabels());
     }
 
     public function testPasswordProperty(): void
     {
-        $form = new RecoveryForm(ModuleConfigFactory::create(), $this->createTranslator(), RecoveryForm::SCENARIO_RESET);
+        $form = new RecoveryForm(VoytiConfigFactory::create(), $this->createTranslator(), RecoveryForm::SCENARIO_RESET);
         $form->password = 'newpass';
         $form->passwordRepeat = 'newpass';
         $this->assertSame('newpass', $form->password);

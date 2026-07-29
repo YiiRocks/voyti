@@ -11,8 +11,8 @@ use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserAuditLog;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\ViewData\Admin\AuditLog\IndexViewData;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Data\Db\QueryDataReader;
 use Yiisoft\Data\Paginator\OffsetPaginator;
 use Yiisoft\Input\Http\Attribute\Parameter\Query;
@@ -35,7 +35,7 @@ final readonly class AuditLogController
         private WebViewRenderer $viewRenderer,
         private UrlGeneratorInterface $url,
         private ResponseFactoryInterface $responseFactory,
-        private ModuleConfig $config,
+        private VoytiConfig $config,
         private FlashInterface $flash,
         private CurrentUser $currentUser,
     ) {}
@@ -148,5 +148,4 @@ final readonly class AuditLogController
 
         return $name !== null ? $name . ' (#' . $userId . ')' : '#' . $userId;
     }
-
 }

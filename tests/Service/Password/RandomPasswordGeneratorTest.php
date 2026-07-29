@@ -17,6 +17,7 @@ final class RandomPasswordGeneratorTest extends TestCase
         $p2 = $generator->generate(12);
         self::assertNotSame($p1, $p2);
     }
+
     public function testGenerateReturnsStringOfExpectedLength(): void
     {
         $generator = new RandomPasswordGenerator();

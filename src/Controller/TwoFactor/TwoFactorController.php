@@ -11,7 +11,6 @@ use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Model\Form\Settings\TwoFactorCodeForm;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\Service\TwoFactor\BackupCodeService;
 use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
@@ -22,6 +21,7 @@ use YiiRocks\Voyti\ViewData\TwoFactor\BackupCodesViewData;
 use YiiRocks\Voyti\ViewData\TwoFactor\EmailSetupViewData;
 use YiiRocks\Voyti\ViewData\TwoFactor\GoogleSetupViewData;
 use YiiRocks\Voyti\ViewData\TwoFactor\IndexViewData;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Http\Header;
 use Yiisoft\Http\Status;
 use Yiisoft\Input\Http\Attribute\Parameter\Body;
@@ -45,7 +45,7 @@ final readonly class TwoFactorController
         private TranslatorInterface $translator,
         private WebViewRenderer $viewRenderer,
         private UrlGeneratorInterface $url,
-        private ModuleConfig $config,
+        private VoytiConfig $config,
         private CurrentUser $currentUser,
         private ResponseFactoryInterface $responseFactory,
         private QrCodeUriGeneratorService $twoFactorQrCodeService,

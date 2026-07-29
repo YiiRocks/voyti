@@ -178,5 +178,4 @@ final class UserSessionsTest extends TestCase
         self::assertCount(1, $sessions);
         self::assertSame('sess-1', $sessions[0]->getSessionId());
     }
-
 }

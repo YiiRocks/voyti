@@ -9,7 +9,7 @@ use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserAuditLog;
 use YiiRocks\Voyti\Model\UserSessions;
-use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Rbac\ItemsStorageInterface;
 use Yiisoft\Translator\TranslatorInterface;
 
@@ -24,7 +24,7 @@ final readonly class DashboardService
 
     public function __construct(
         private AuthHelper $authHelper,
-        private ModuleConfig $config,
+        private VoytiConfig $config,
         private ItemsStorageInterface $itemsStorage,
         private TranslatorInterface $translator,
     ) {}

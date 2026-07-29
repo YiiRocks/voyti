@@ -6,8 +6,8 @@ namespace YiiRocks\Voyti\Model\Form\Settings;
 
 use Override;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Validator\PasswordComplexityRule;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\Helper\ObjectParser;
@@ -43,7 +43,7 @@ final class SettingsForm extends FormModel implements LabelsProviderInterface, R
     private ?User $user = null;
 
     public function __construct(
-        private readonly ModuleConfig $config,
+        private readonly VoytiConfig $config,
         private readonly TranslatorInterface $translator,
     ) {}
 

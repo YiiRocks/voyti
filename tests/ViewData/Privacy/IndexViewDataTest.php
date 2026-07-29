@@ -6,8 +6,8 @@ namespace YiiRocks\Voyti\tests\ViewData\Privacy;
 
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\ViewData\Privacy\IndexViewData;
 
 final class IndexViewDataTest extends TestCase
@@ -16,7 +16,7 @@ final class IndexViewDataTest extends TestCase
 
     public function testCreateWithDeleteEnabledGdprDisabled(): void
     {
-        $config = ModuleConfigFactory::create(enableGdprCompliance: false, allowAccountDelete: true);
+        $config = VoytiConfigFactory::create(enableGdprCompliance: false, allowAccountDelete: true);
 
         $data = IndexViewData::create($config, new FakeUrlGenerator(), $this->createTranslator(), false, null);
 
@@ -30,7 +30,7 @@ final class IndexViewDataTest extends TestCase
 
     public function testCreateWithGdprAndDeleteDisabled(): void
     {
-        $config = ModuleConfigFactory::create(enableGdprCompliance: false, allowAccountDelete: false);
+        $config = VoytiConfigFactory::create(enableGdprCompliance: false, allowAccountDelete: false);
 
         $data = IndexViewData::create($config, new FakeUrlGenerator(), $this->createTranslator(), false, null);
 
@@ -40,7 +40,7 @@ final class IndexViewDataTest extends TestCase
 
     public function testCreateWithGdprAndDeleteEnabled(): void
     {
-        $config = ModuleConfigFactory::create(enableGdprCompliance: true, allowAccountDelete: true);
+        $config = VoytiConfigFactory::create(enableGdprCompliance: true, allowAccountDelete: true);
 
         $data = IndexViewData::create($config, new FakeUrlGenerator(), $this->createTranslator(), false, null);
 
@@ -55,7 +55,7 @@ final class IndexViewDataTest extends TestCase
 
     public function testCreateWithGdprEnabledDeleteDisabled(): void
     {
-        $config = ModuleConfigFactory::create(enableGdprCompliance: true, allowAccountDelete: false);
+        $config = VoytiConfigFactory::create(enableGdprCompliance: true, allowAccountDelete: false);
 
         $data = IndexViewData::create($config, new FakeUrlGenerator(), $this->createTranslator(), false, null);
 

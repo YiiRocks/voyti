@@ -11,14 +11,14 @@ use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserPasswordHistory;
 use YiiRocks\Voyti\Model\UserToken;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\Password\ResetService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
+use YiiRocks\Voyti\VoytiConfig;
 
 #[AllowMockObjectsWithoutExpectations]
 final class ResetServiceTest extends TestCase
@@ -52,7 +52,7 @@ final class ResetServiceTest extends TestCase
 
     public function testRunRecordsPasswordHistoryWhenEnabled(): void
     {
-        $config = ModuleConfigFactory::create(maxPasswordAge: 90);
+        $config = VoytiConfigFactory::create(maxPasswordAge: 90);
         $user = $this->createUser(username: 'historyuser', email: 'history@example.com', passwordHash: 'oldhash');
 
         $this->createService(config: $config)->run('newpassword', $user, null);
@@ -66,7 +66,7 @@ final class ResetServiceTest extends TestCase
 
     public function testRunRejectsRecentlyUsedPassword(): void
     {
-        $config = ModuleConfigFactory::create(maxPasswordAge: 90);
+        $config = VoytiConfigFactory::create(maxPasswordAge: 90);
         $user = $this->createUser(username: 'reuseuser', email: 'reuse@example.com', passwordHash: 'oldhash');
 
         $this->createService(config: $config)->run('newpassword', $user, null);
@@ -140,10 +140,10 @@ final class ResetServiceTest extends TestCase
         self::assertTrue($result);
     }
 
-    private function createService(?EventDispatcherInterface $eventDispatcher = null, ?ModuleConfig $config = null): ResetService
+    private function createService(?EventDispatcherInterface $eventDispatcher = null, ?VoytiConfig $config = null): ResetService
     {
         $eventDispatcher ??= $this->createMock(EventDispatcherInterface::class);
-        $config ??= ModuleConfigFactory::create();
+        $config ??= VoytiConfigFactory::create();
         $passwordHasher = TestPasswordHasherFactory::create();
 
         return new ResetService($config, $eventDispatcher, new PasswordHistoryService($passwordHasher, $config));

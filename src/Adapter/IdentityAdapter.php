@@ -8,19 +8,19 @@ use Override;
 use Psr\Clock\ClockInterface;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
-use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Auth\IdentityWithTokenRepositoryInterface;
 
 /**
  * Bridges `yiisoft/auth`'s identity-repository contracts to {@see User} and {@see UserToken}, resolving
- * identities by ID and by API token (honoring {@see ModuleConfig::$apiTokenLifespan} expiry).
+ * identities by ID and by API token (honoring {@see VoytiConfig::$apiTokenLifespan} expiry).
  */
 final readonly class IdentityAdapter implements IdentityRepositoryInterface, IdentityWithTokenRepositoryInterface
 {
     public function __construct(
-        private ModuleConfig $config,
+        private VoytiConfig $config,
         private ClockInterface $clock,
     ) {}
 

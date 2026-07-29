@@ -177,5 +177,4 @@ final class UserAuditLogTest extends TestCase
         $log->setCreatedAt($createdAt ?? time());
         $log->save();
     }
-
 }

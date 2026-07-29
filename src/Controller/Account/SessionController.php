@@ -12,9 +12,9 @@ use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Event\Session\SessionEvent;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\ViewData\Account\SessionsViewData;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -39,7 +39,7 @@ final readonly class SessionController
         private ResponseFactoryInterface $responseFactory,
         private UrlGeneratorInterface $url,
         private SessionInterface $session,
-        private ModuleConfig $config,
+        private VoytiConfig $config,
         private EventDispatcherInterface $eventDispatcher,
         private FlashInterface $flash,
         private SwitchIdentityService $switchIdentityService,
@@ -90,5 +90,4 @@ final readonly class SessionController
             'voyti.settings.session_terminated',
         );
     }
-
 }

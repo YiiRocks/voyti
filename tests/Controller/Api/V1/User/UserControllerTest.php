@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Controller\Api\V1\User;
 
 use Nyholm\Psr7\Factory\Psr17Factory;
+use Override;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseInterface;
@@ -13,7 +14,6 @@ use Psr\Http\Server\RequestHandlerInterface;
 use YiiRocks\Voyti\Controller\Api\V1\User\UserController;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserPasswordHistory;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
@@ -22,10 +22,11 @@ use YiiRocks\Voyti\Service\User\UserCreationHelper;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 use YiiRocks\Voyti\tests\Support\MailCapture;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\DataResponse\Middleware\JsonDataResponseMiddleware;
 use Yiisoft\DataResponse\ResponseFactory\DataResponseFactory;
 use Yiisoft\DataResponse\ResponseFactory\DataResponseFactoryInterface;
@@ -39,7 +40,7 @@ final class UserControllerTest extends TestCase
     use DatabaseSetupTrait;
     use UserFactoryTrait;
 
-    private ModuleConfig $config;
+    private VoytiConfig $config;
     private PasswordGeneratorInterface&MockObject $passwordGenerator;
     private DataResponseFactoryInterface&MockObject $responseFactory;
     private TranslatorInterface $translator;
@@ -48,7 +49,7 @@ final class UserControllerTest extends TestCase
     protected function setUp(): void
     {
         $this->setUpDatabase();
-        $this->config = ModuleConfigFactory::create();
+        $this->config = VoytiConfigFactory::create();
         $this->translator = $this->createTranslator();
         $passwordHasher = TestPasswordHasherFactory::create();
         $passwordHistoryService = new PasswordHistoryService($passwordHasher, $this->config);
@@ -133,7 +134,7 @@ final class UserControllerTest extends TestCase
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->method('createResponse')->willReturn($response);
 
-        $config = ModuleConfigFactory::create(maxPasswordAge: 90);
+        $config = VoytiConfigFactory::create(maxPasswordAge: 90);
         $controller = $this->createController($config);
         $controller->create(email: 'history@example.com', username: 'historyuser', password: 'secret123');
 
@@ -158,7 +159,7 @@ final class UserControllerTest extends TestCase
         $handler = new class ($response) implements RequestHandlerInterface {
             public function __construct(private readonly ResponseInterface $response) {}
 
-            #[\Override]
+            #[Override]
             public function handle(ServerRequestInterface $request): ResponseInterface
             {
                 return $this->response;
@@ -536,7 +537,7 @@ final class UserControllerTest extends TestCase
 
     public function testUpdateWithoutPasswordDoesNotRecordPasswordHistory(): void
     {
-        $config = ModuleConfigFactory::create(maxPasswordAge: 90);
+        $config = VoytiConfigFactory::create(maxPasswordAge: 90);
         $user = $this->createUser('testuser', 'test@example.com');
         $userId = (int) $user->getId();
 
@@ -579,7 +580,7 @@ final class UserControllerTest extends TestCase
 
     public function testUpdateWithPasswordRecordsPasswordHistory(): void
     {
-        $config = ModuleConfigFactory::create(maxPasswordAge: 90);
+        $config = VoytiConfigFactory::create(maxPasswordAge: 90);
         $user = $this->createUser('testuser', 'test@example.com');
         $userId = (int) $user->getId();
 
@@ -594,7 +595,7 @@ final class UserControllerTest extends TestCase
 
     public function testUpdateWithPreviouslyUsedPasswordReturnsBadRequest(): void
     {
-        $config = ModuleConfigFactory::create(maxPasswordAge: 90);
+        $config = VoytiConfigFactory::create(maxPasswordAge: 90);
         $user = $this->createUser('testuser', 'test@example.com');
         $userId = (int) $user->getId();
         $passwordHasher = TestPasswordHasherFactory::create();
@@ -650,7 +651,7 @@ final class UserControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    private function createController(?ModuleConfig $config = null): UserController
+    private function createController(?VoytiConfig $config = null): UserController
     {
         $config ??= $this->config;
 

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\ViewData\Admin\User;
 
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 
@@ -20,7 +20,7 @@ final readonly class UserRow
      * @param bool $showConfirmAction whether to render the "confirm" action ($confirmUrl) - false
      *        once the user is already confirmed
      * @param bool $showForcePasswordChangeAction whether the force-password-change feature is
-     *        enabled at all (`ModuleConfig::$maxPasswordAge` > 0); unrelated to this user's own
+     *        enabled at all (`VoytiConfig::$maxPasswordAge` > 0); unrelated to this user's own
      *        state
      * @param bool $showSwitchIdentityAction whether switch-identity is enabled and the viewing
      *        admin isn't already impersonating someone
@@ -65,7 +65,7 @@ final readonly class UserRow
 
     public static function create(
         User $user,
-        ModuleConfig $config,
+        VoytiConfig $config,
         UrlGeneratorInterface $url,
         TranslatorInterface $translator,
         bool $isSwitched,

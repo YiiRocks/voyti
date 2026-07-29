@@ -120,5 +120,4 @@ final class BackupCodeServiceTest extends TestCase
 
         self::assertTrue($service->hasUnused($user));
     }
-
 }

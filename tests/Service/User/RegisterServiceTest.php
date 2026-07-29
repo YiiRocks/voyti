@@ -15,8 +15,8 @@ use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\User\RegisterService;
 use YiiRocks\Voyti\Service\User\UserCreationHelper;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 
 #[AllowMockObjectsWithoutExpectations]
 final class RegisterServiceTest extends TestCase
@@ -47,7 +47,7 @@ final class RegisterServiceTest extends TestCase
         $mailService = $this->createMock(MailService::class);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $passwordHasher = TestPasswordHasherFactory::create();
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
 
         $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
@@ -65,7 +65,7 @@ final class RegisterServiceTest extends TestCase
         $userCreationHelper->method('buildUser')->willReturn(new User());
         $userCreationHelper->method('persistAndNotify')->willThrowException(new RuntimeException('Email already exists'));
 
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
         $service = new RegisterService($userCreationHelper, $config, $passwordGenerator);
 
@@ -90,7 +90,7 @@ final class RegisterServiceTest extends TestCase
         $mailService = $this->createMock(MailService::class);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $passwordHasher = TestPasswordHasherFactory::create();
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
 
         $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
@@ -107,7 +107,7 @@ final class RegisterServiceTest extends TestCase
         $mailService->method('sendConfirmation')->willReturn(true);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $passwordHasher = TestPasswordHasherFactory::create();
-        $config = ModuleConfigFactory::create(enableEmailConfirmation: true, enableGdprCompliance: true);
+        $config = VoytiConfigFactory::create(enableEmailConfirmation: true, enableGdprCompliance: true);
         $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
         $passwordGenerator->method('generate')->willReturn('genpwd');
 
@@ -134,7 +134,7 @@ final class RegisterServiceTest extends TestCase
         $mailService->method('sendConfirmation')->willReturn(true);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $passwordHasher = TestPasswordHasherFactory::create();
-        $config = ModuleConfigFactory::create(enableEmailConfirmation: true, enableGdprCompliance: true);
+        $config = VoytiConfigFactory::create(enableEmailConfirmation: true, enableGdprCompliance: true);
         $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
         $passwordGenerator->method('generate')->willReturn('genpwd');
 
@@ -161,7 +161,7 @@ final class RegisterServiceTest extends TestCase
         $mailService->method('sendConfirmation')->willReturn(true);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $passwordHasher = TestPasswordHasherFactory::create();
-        $config = ModuleConfigFactory::create(enableEmailConfirmation: true);
+        $config = VoytiConfigFactory::create(enableEmailConfirmation: true);
         $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
         $passwordGenerator->method('generate')->willReturn('auto-generated-pwd');
 
@@ -179,7 +179,7 @@ final class RegisterServiceTest extends TestCase
         $mailService = $this->createMock(MailService::class);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $passwordHasher = TestPasswordHasherFactory::create();
-        $config = ModuleConfigFactory::create(enableEmailConfirmation: true);
+        $config = VoytiConfigFactory::create(enableEmailConfirmation: true);
         $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
         $passwordGenerator->method('generate')->willReturn('genpwd');
 
@@ -198,7 +198,7 @@ final class RegisterServiceTest extends TestCase
         $mailService->method('sendWelcome')->willReturn(true);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $passwordHasher = TestPasswordHasherFactory::create();
-        $config = ModuleConfigFactory::create(enableEmailConfirmation: false);
+        $config = VoytiConfigFactory::create(enableEmailConfirmation: false);
         $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
         $passwordGenerator->method('generate')->willReturn('genpwd');
 
@@ -221,7 +221,7 @@ final class RegisterServiceTest extends TestCase
         $mailService->method('sendConfirmation')->willReturn(true);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $passwordHasher = TestPasswordHasherFactory::create();
-        $config = ModuleConfigFactory::create(enableEmailConfirmation: true);
+        $config = VoytiConfigFactory::create(enableEmailConfirmation: true);
         $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
         $passwordGenerator->expects($this->never())->method('generate');
 

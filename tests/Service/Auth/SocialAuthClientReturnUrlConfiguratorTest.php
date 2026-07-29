@@ -32,6 +32,7 @@ final class SocialAuthClientReturnUrlConfiguratorTest extends TestCase
 
         self::assertSame('https://host-configured.example.com/callback', $client->getOauth2ReturnUrl());
     }
+
     public function testConfigureFillsInReturnUrlUsingCollectionKey(): void
     {
         $client = $this->makeClient(GitHub::class);

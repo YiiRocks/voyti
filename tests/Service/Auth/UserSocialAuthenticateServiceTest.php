@@ -9,7 +9,6 @@ use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSocialAccount;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\Auth\UserSocialAuthenticateService;
 use YiiRocks\Voyti\Service\MailService;
@@ -17,9 +16,10 @@ use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\User\UserCreationHelper;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\FakeSession;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\User\CurrentUser;
 
 #[AllowMockObjectsWithoutExpectations]
@@ -46,7 +46,7 @@ final class UserSocialAuthenticateServiceTest extends TestCase
     {
         $this->createPendingAccount('empty_code_client', '');
 
-        $result = $this->createService(ModuleConfigFactory::create(enableSocialNetworkRegistration: true))
+        $result = $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true))
             ->run('github', 'empty_code_client', ['email' => 'test@example.com']);
 
         self::assertTrue($result->isFailure());
@@ -57,7 +57,7 @@ final class UserSocialAuthenticateServiceTest extends TestCase
     {
         $this->createPendingAccount('no_code_client', null);
 
-        $result = $this->createService(ModuleConfigFactory::create(enableSocialNetworkRegistration: true))
+        $result = $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true))
             ->run('github', 'no_code_client', ['email' => 'test@example.com']);
 
         self::assertTrue($result->isFailure());
@@ -68,7 +68,7 @@ final class UserSocialAuthenticateServiceTest extends TestCase
     {
         $this->createPendingAccount('pending_client', 'pending_code_123');
 
-        $result = $this->createService(ModuleConfigFactory::create(enableSocialNetworkRegistration: true))
+        $result = $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true))
             ->run('github', 'pending_client', ['email' => 'test@example.com']);
 
         self::assertTrue($result->isSuccess());
@@ -79,7 +79,7 @@ final class UserSocialAuthenticateServiceTest extends TestCase
     {
         $this->createConnectedAccount('orphan_client', 99999);
 
-        $result = $this->createService(ModuleConfigFactory::create(enableSocialNetworkRegistration: true))
+        $result = $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true))
             ->run('github', 'orphan_client', ['email' => 'test@example.com']);
 
         self::assertTrue($result->isFailure());
@@ -92,7 +92,7 @@ final class UserSocialAuthenticateServiceTest extends TestCase
         $this->createConnectedAccount('clear_oauth_client', (int) $user->getId());
         $this->session->set('oauth_client_data', ['some' => 'data']);
 
-        $this->createService(ModuleConfigFactory::create(enableSocialNetworkRegistration: true))
+        $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true))
             ->run('github', 'clear_oauth_client', ['email' => 'test@example.com']);
 
         self::assertFalse($this->session->has('oauth_client_data'));
@@ -102,7 +102,7 @@ final class UserSocialAuthenticateServiceTest extends TestCase
     {
         $this->createUser('existing', '42@example.com');
 
-        $result = $this->createService(ModuleConfigFactory::create(enableSocialNetworkRegistration: true))
+        $result = $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true))
             ->run('github', 'numeric_client', ['username' => 42, 'email' => '42@example.com']);
 
         self::assertTrue($result->isSuccess());
@@ -117,7 +117,7 @@ final class UserSocialAuthenticateServiceTest extends TestCase
         $currentUser = $this->createMock(CurrentUser::class);
         $currentUser->expects($this->once())->method('login');
 
-        $result = $this->createService(ModuleConfigFactory::create(enableSocialNetworkRegistration: true), $currentUser)
+        $result = $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true), $currentUser)
             ->run('github', 'new_account', ['username' => 'newuser', 'email' => 'new@example.com']);
 
         self::assertTrue($result->isSuccess());
@@ -141,7 +141,7 @@ final class UserSocialAuthenticateServiceTest extends TestCase
         $this->createUser('dupeuser', 'dupeuser@example.com');
         $this->createUser('dupeuser_2', 'dupeuser2@example.com');
 
-        $result = $this->createService(ModuleConfigFactory::create(enableSocialNetworkRegistration: true), $currentUser)
+        $result = $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true), $currentUser)
             ->run('github', 'dupe_account', ['username' => 'dupeuser', 'email' => 'new_dupe@example.com']);
 
         self::assertTrue($result->isSuccess());
@@ -153,7 +153,7 @@ final class UserSocialAuthenticateServiceTest extends TestCase
 
     public function testRunEmptyClientIdWithoutSessionDataReturnsFailure(): void
     {
-        $result = $this->createService(ModuleConfigFactory::create(enableSocialNetworkRegistration: true))
+        $result = $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true))
             ->run('github', '', ['email' => 'test@example.com']);
 
         self::assertTrue($result->isFailure());
@@ -164,7 +164,7 @@ final class UserSocialAuthenticateServiceTest extends TestCase
     {
         $this->session->set('oauth_client_data', ['user_id' => 'session_user_123']);
 
-        $result = $this->createService(ModuleConfigFactory::create(enableSocialNetworkRegistration: true))
+        $result = $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true))
             ->run('github', '', ['email' => 'test@example.com']);
 
         self::assertTrue($result->isSuccess());
@@ -177,7 +177,7 @@ final class UserSocialAuthenticateServiceTest extends TestCase
         $currentUser = $this->createMock(CurrentUser::class);
         $currentUser->expects($this->never())->method('login');
 
-        $result = $this->createService(ModuleConfigFactory::create(enableSocialNetworkRegistration: true), $currentUser)
+        $result = $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true), $currentUser)
             ->run('github', 'existing_email_client', ['email' => 'existing@example.com', 'username' => 'ext']);
 
         self::assertTrue($result->isSuccess());
@@ -191,7 +191,7 @@ final class UserSocialAuthenticateServiceTest extends TestCase
 
     public function testRunNewAccountWithNameAttributeAsFallback(): void
     {
-        $result = $this->createService(ModuleConfigFactory::create(enableSocialNetworkRegistration: true))
+        $result = $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true))
             ->run('github', 'name_fallback_client', ['name' => 'fallback_user']);
 
         self::assertTrue($result->isSuccess());
@@ -203,7 +203,7 @@ final class UserSocialAuthenticateServiceTest extends TestCase
 
     public function testRunNewAccountWithNoEmailNoUsername(): void
     {
-        $result = $this->createService(ModuleConfigFactory::create(enableSocialNetworkRegistration: true))
+        $result = $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true))
             ->run('github', 'bare_client', ['id' => 'bare_user_123']);
 
         self::assertTrue($result->isSuccess());
@@ -220,7 +220,7 @@ final class UserSocialAuthenticateServiceTest extends TestCase
         $currentUser = $this->createMock(CurrentUser::class);
         $currentUser->expects($this->never())->method('login');
 
-        $config = ModuleConfigFactory::create(enableSocialNetworkRegistration: true, enableRegistration: false);
+        $config = VoytiConfigFactory::create(enableSocialNetworkRegistration: true, enableRegistration: false);
         $result = $this->createService($config, $currentUser)
             ->run('github', 'no_registration_client', ['username' => 'newuser', 'email' => 'blocked_signup@example.com']);
 
@@ -235,7 +235,7 @@ final class UserSocialAuthenticateServiceTest extends TestCase
 
     public function testRunSocialRegistrationDisabledReturnsFailure(): void
     {
-        $result = $this->createService(ModuleConfigFactory::create(enableSocialNetworkRegistration: false))
+        $result = $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: false))
             ->run('github', 'client123', ['email' => 'test@example.com']);
 
         self::assertTrue($result->isFailure());
@@ -247,7 +247,7 @@ final class UserSocialAuthenticateServiceTest extends TestCase
         $user = $this->createUser('blocked', 'blocked@example.com', blockedAt: time());
         $this->createConnectedAccount('blocked_client', (int) $user->getId());
 
-        $result = $this->createService(ModuleConfigFactory::create(enableSocialNetworkRegistration: true))
+        $result = $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true))
             ->run('github', 'blocked_client', ['email' => 'test@example.com']);
 
         self::assertTrue($result->isFailure());
@@ -262,7 +262,7 @@ final class UserSocialAuthenticateServiceTest extends TestCase
         $user = $this->createUser('noremote', 'noremote@example.com');
         $this->createConnectedAccount('noremote_client', (int) $user->getId());
 
-        $this->createService(ModuleConfigFactory::create(enableSocialNetworkRegistration: true), $currentUser)
+        $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true), $currentUser)
             ->run('github', 'noremote_client', []);
 
         $updated = User::findByEmail('noremote@example.com');
@@ -277,7 +277,7 @@ final class UserSocialAuthenticateServiceTest extends TestCase
         $user = $this->createUser('iplogin', 'iplogin@example.com');
         $this->createConnectedAccount('ip_login_client', (int) $user->getId());
 
-        $this->createService(ModuleConfigFactory::create(enableSocialNetworkRegistration: true), $currentUser)
+        $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true), $currentUser)
             ->run('github', 'ip_login_client', [], ['REMOTE_ADDR' => '192.168.1.50']);
 
         $updated = User::findByEmail('iplogin@example.com');
@@ -294,7 +294,7 @@ final class UserSocialAuthenticateServiceTest extends TestCase
         $user = $this->createUser('active', 'active@example.com');
         $this->createConnectedAccount('active_client', (int) $user->getId());
 
-        $result = $this->createService(ModuleConfigFactory::create(enableSocialNetworkRegistration: true), $currentUser, $eventDispatcher)
+        $result = $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true), $currentUser, $eventDispatcher)
             ->run('github', 'active_client', ['email' => 'test@example.com'], ['REMOTE_ADDR' => '10.0.0.1']);
 
         self::assertTrue($result->isSuccess());
@@ -327,7 +327,7 @@ final class UserSocialAuthenticateServiceTest extends TestCase
     }
 
     private function createService(
-        ModuleConfig $config,
+        VoytiConfig $config,
         ?CurrentUser $currentUser = null,
         ?EventDispatcherInterface $eventDispatcher = null,
     ): UserSocialAuthenticateService {
@@ -344,7 +344,7 @@ final class UserSocialAuthenticateServiceTest extends TestCase
         );
     }
 
-    private function createUserCreationHelper(ModuleConfig $config, EventDispatcherInterface $eventDispatcher): UserCreationHelper
+    private function createUserCreationHelper(VoytiConfig $config, EventDispatcherInterface $eventDispatcher): UserCreationHelper
     {
         $passwordHasher = TestPasswordHasherFactory::create();
 

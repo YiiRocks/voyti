@@ -315,5 +315,4 @@ final class UserSocialAccountTest extends TestCase
 
         return $account;
     }
-
 }

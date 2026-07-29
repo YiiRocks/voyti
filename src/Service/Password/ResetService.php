@@ -9,7 +9,7 @@ use YiiRocks\Voyti\Event\Security\ResetPasswordEvent;
 use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
-use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\VoytiConfig;
 
 /**
  * Applies a new password to a user, rejecting reuse via {@see PasswordHistoryService}, consuming the
@@ -18,7 +18,7 @@ use YiiRocks\Voyti\ModuleConfig;
 final readonly class ResetService
 {
     public function __construct(
-        private ModuleConfig $config,
+        private VoytiConfig $config,
         private EventDispatcherInterface $eventDispatcher,
         private PasswordHistoryService $passwordHistoryService,
     ) {}

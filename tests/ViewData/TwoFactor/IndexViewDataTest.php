@@ -6,15 +6,16 @@ namespace YiiRocks\Voyti\tests\ViewData\TwoFactor;
 
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\ViewData\TwoFactor\IndexViewData;
 
 final class IndexViewDataTest extends TestCase
 {
     use TranslatorMockTrait;
     use UserFactoryTrait;
+
     public function testCreateWhenEnabled(): void
     {
         $user = $this->buildUser(authTfEnabled: true);
@@ -29,7 +30,7 @@ final class IndexViewDataTest extends TestCase
             true,
             true,
             true,
-            ModuleConfigFactory::create(),
+            VoytiConfigFactory::create(),
             new FakeUrlGenerator(),
             $this->createTranslator(),
             false,
@@ -58,7 +59,7 @@ final class IndexViewDataTest extends TestCase
             false,
             false,
             false,
-            ModuleConfigFactory::create(),
+            VoytiConfigFactory::create(),
             new FakeUrlGenerator(),
             $this->createTranslator(),
             false,
@@ -84,7 +85,7 @@ final class IndexViewDataTest extends TestCase
             false,
             false,
             true,
-            ModuleConfigFactory::create(),
+            VoytiConfigFactory::create(),
             new FakeUrlGenerator(),
             $this->createTranslator(),
             false,
@@ -110,7 +111,7 @@ final class IndexViewDataTest extends TestCase
             false,
             true,
             true,
-            ModuleConfigFactory::create(),
+            VoytiConfigFactory::create(),
             new FakeUrlGenerator(),
             $this->createTranslator(),
             false,
@@ -138,7 +139,7 @@ final class IndexViewDataTest extends TestCase
             false,
             true,
             true,
-            ModuleConfigFactory::create(),
+            VoytiConfigFactory::create(),
             new FakeUrlGenerator(),
             $this->createTranslator(),
             false,
@@ -149,5 +150,4 @@ final class IndexViewDataTest extends TestCase
         self::assertNull($data->emailSetup);
         self::assertSame('<svg></svg>', $data->googleSetup->qrCodeUri);
     }
-
 }

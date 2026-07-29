@@ -6,9 +6,9 @@ namespace YiiRocks\Voyti\ViewData\SocialNetwork;
 
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSocialAccount;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\ViewData\Shared\MenuViewData;
 use YiiRocks\Voyti\ViewData\Shared\SocialConnectViewData;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Yii\AuthClient\Collection;
@@ -36,7 +36,7 @@ final readonly class IndexViewData
         ?Collection $clientCollection,
         array $excludedProviders,
         string $connectRouteName,
-        ModuleConfig $config,
+        VoytiConfig $config,
         UrlGeneratorInterface $url,
         TranslatorInterface $translator,
         bool $isSwitched,

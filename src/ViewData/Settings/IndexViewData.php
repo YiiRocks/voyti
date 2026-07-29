@@ -6,8 +6,8 @@ namespace YiiRocks\Voyti\ViewData\Settings;
 
 use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\ViewData\Shared\MenuViewData;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 
@@ -24,7 +24,7 @@ final readonly class IndexViewData
     ) {}
 
     public static function create(
-        ModuleConfig $config,
+        VoytiConfig $config,
         UrlGeneratorInterface $url,
         TranslatorInterface $translator,
         User $user,

@@ -12,8 +12,8 @@ use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\User\UserCreationHelper;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
 
 /**
@@ -89,7 +89,7 @@ final class UserCreationHelperTest extends TestCase
 
     private function createHelper(): UserCreationHelper
     {
-        $config = ModuleConfigFactory::create(enableEmailConfirmation: false);
+        $config = VoytiConfigFactory::create(enableEmailConfirmation: false);
         $passwordHasher = TestPasswordHasherFactory::create();
 
         return new UserCreationHelper(

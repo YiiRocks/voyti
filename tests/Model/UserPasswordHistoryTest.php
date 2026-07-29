@@ -114,5 +114,4 @@ final class UserPasswordHistoryTest extends TestCase
         $entity = new UserPasswordHistory();
         self::assertSame(['user_id', 'password_hash'], $entity->primaryKey());
     }
-
 }

@@ -19,7 +19,6 @@ use YiiRocks\Voyti\Model\Form\Settings\UserProfileForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserProfile;
 use YiiRocks\Voyti\Model\UserSessions;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\AuditLogService;
 use YiiRocks\Voyti\Service\Password\ExpireService;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
@@ -38,6 +37,7 @@ use YiiRocks\Voyti\ViewData\Admin\User\InfoViewData;
 use YiiRocks\Voyti\ViewData\Admin\User\ProfileViewData;
 use YiiRocks\Voyti\ViewData\Admin\User\SessionsViewData;
 use YiiRocks\Voyti\ViewData\Shared\MessageViewData;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Data\Db\QueryDataReader;
 use Yiisoft\Data\Paginator\OffsetPaginator;
 use Yiisoft\Http\Method;
@@ -83,7 +83,7 @@ final readonly class UserController
         private ValidatorInterface $validator,
         private EventDispatcherInterface $eventDispatcher,
         private UrlGeneratorInterface $url,
-        private ModuleConfig $config,
+        private VoytiConfig $config,
         private HydratorInterface $hydrator,
         private CurrentUser $currentUser,
         private ResponseFactoryInterface $responseFactory,

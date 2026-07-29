@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\ViewData\Shared;
 
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 
 /**
- * A navigation menu (account settings menu or admin menu), pre-resolved from {@see ModuleConfig}
+ * A navigation menu (account settings menu or admin menu), pre-resolved from {@see VoytiConfig}
  * feature flags and route names so templates never need either.
  */
 final readonly class MenuViewData
@@ -34,7 +34,7 @@ final readonly class MenuViewData
     ) {}
 
     public static function forAccount(
-        ModuleConfig $config,
+        VoytiConfig $config,
         UrlGeneratorInterface $url,
         TranslatorInterface $translator,
         bool $isSwitched,

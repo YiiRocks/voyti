@@ -6,17 +6,17 @@ namespace YiiRocks\Voyti\Service;
 
 use YiiRocks\Voyti\Helper\LoginMetadataHelper;
 use YiiRocks\Voyti\Model\UserAuditLog;
-use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Json\Json;
 
 /**
  * Records an admin/system action as a {@see UserAuditLog} row, a no-op when
- * `ModuleConfig::$enableAuditLog` is disabled.
+ * `VoytiConfig::$enableAuditLog` is disabled.
  */
 final readonly class AuditLogService
 {
     public function __construct(
-        private ModuleConfig $config,
+        private VoytiConfig $config,
     ) {}
 
     /**

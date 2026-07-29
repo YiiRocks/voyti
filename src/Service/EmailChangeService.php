@@ -9,7 +9,7 @@ use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Model\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
-use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\VoytiConfig;
 
 /**
  * Handles user email changes: `initiate()` sends confirmation email(s) according to the configured
@@ -19,7 +19,7 @@ use YiiRocks\Voyti\ModuleConfig;
 final readonly class EmailChangeService
 {
     public function __construct(
-        private ModuleConfig $config,
+        private VoytiConfig $config,
         private UserTokenFactory $tokenFactory,
         private MailService $mailService,
     ) {}

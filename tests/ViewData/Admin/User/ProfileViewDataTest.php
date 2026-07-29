@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\ViewData\Admin\User;
 
 use PHPUnit\Framework\TestCase;
+use ReflectionProperty;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
 use YiiRocks\Voyti\ViewData\Admin\User\ProfileViewData;
@@ -21,7 +22,7 @@ final class ProfileViewDataTest extends TestCase
         $user->setAuthKey('key');
         $user->setCreatedAt(time());
         $user->setUpdatedAt(time());
-        (new \ReflectionProperty(User::class, 'id'))->setValue($user, 999999);
+        (new ReflectionProperty(User::class, 'id'))->setValue($user, 999999);
 
         $translator = new Translator('en', null, 'voyti');
 

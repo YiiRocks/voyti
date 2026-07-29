@@ -6,7 +6,7 @@ namespace YiiRocks\Voyti\Service;
 
 use Throwable;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Mailer\MailerInterface;
 use Yiisoft\Mailer\Message;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -162,7 +162,7 @@ final readonly class MailService
     private function renderView(string $view, array $params): string
     {
         $file = $this->mailPath . '/' . $view;
-        $basePath = is_file($file) ? $this->mailPath : ModuleConfig::DEFAULT_MAIL_PATH;
+        $basePath = is_file($file) ? $this->mailPath : VoytiConfig::DEFAULT_MAIL_PATH;
 
         return $this->view->withBasePath($basePath)->render($view, $params);
     }

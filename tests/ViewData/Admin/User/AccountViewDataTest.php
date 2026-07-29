@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\ViewData\Admin\User;
 
+use ReflectionProperty;
 use YiiRocks\Voyti\Model\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
 use YiiRocks\Voyti\ViewData\Admin\User\AccountViewData;
 
@@ -22,9 +23,9 @@ final class AccountViewDataTest extends TestCase
         $user->setAuthKey('key');
         $user->setCreatedAt(time());
         $user->setUpdatedAt(time());
-        (new \ReflectionProperty(User::class, 'id'))->setValue($user, 999999);
+        (new ReflectionProperty(User::class, 'id'))->setValue($user, 999999);
 
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $model = new SettingsForm($config, $this->createTranslator());
         $model->username = 'jane';
         $model->email = 'jane@example.com';

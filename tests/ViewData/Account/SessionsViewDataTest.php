@@ -7,7 +7,7 @@ namespace YiiRocks\Voyti\tests\ViewData\Account;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\ViewData\Account\SessionsViewData;
 use Yiisoft\Translator\Translator;
 
@@ -34,7 +34,7 @@ final class SessionsViewDataTest extends TestCase
             [$revoked, $active],
             'active',
             'UTC',
-            ModuleConfigFactory::create(),
+            VoytiConfigFactory::create(),
             new FakeUrlGenerator(),
             $translator,
             false,
@@ -44,6 +44,7 @@ final class SessionsViewDataTest extends TestCase
         self::assertCount(1, $data->sessions);
         self::assertTrue($data->sessions[0]->isCurrentSession);
     }
+
     public function testCreateMapsEachSessionToARow(): void
     {
         $session = new UserSessions();
@@ -60,7 +61,7 @@ final class SessionsViewDataTest extends TestCase
             [$session],
             'abc',
             'UTC',
-            ModuleConfigFactory::create(),
+            VoytiConfigFactory::create(),
             new FakeUrlGenerator(),
             $translator,
             false,

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Model\Form\Rbac;
 
 use PHPUnit\Framework\TestCase;
+use ReflectionProperty;
 use YiiRocks\Voyti\Model\Form\Rbac\AuthItemForm;
 use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
 use Yiisoft\Validator\Rule\Length;
@@ -95,7 +96,7 @@ final class AuthItemFormTest extends TestCase
 
     private function readPrivate(object $object, string $property): mixed
     {
-        $reflection = new \ReflectionProperty($object::class, $property);
+        $reflection = new ReflectionProperty($object::class, $property);
         return $reflection->getValue($object);
     }
 }

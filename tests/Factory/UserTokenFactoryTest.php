@@ -141,5 +141,4 @@ final class UserTokenFactoryTest extends TestCase
 
         self::assertNotSame($rawCode1, $rawCode2);
     }
-
 }

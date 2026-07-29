@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Support;
 
+use Throwable;
 use Yiisoft\Mailer\MailerInterface;
 use Yiisoft\Mailer\MessageInterface;
 use Yiisoft\Mailer\SendResults;
@@ -47,7 +48,7 @@ final class MailCapture implements MailerInterface
             try {
                 $this->send($message);
                 $success[] = $message;
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $fail[] = ['message' => $message, 'error' => $e];
             }
         }

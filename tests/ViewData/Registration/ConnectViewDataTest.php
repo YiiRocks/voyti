@@ -25,6 +25,7 @@ final class ConnectViewDataTest extends TestCase
 
         self::assertSame('github', $data->providerTitle);
     }
+
     public function testCreateResolvesProviderTitleAndUrls(): void
     {
         $client = $this->createMock(OAuth2::class);

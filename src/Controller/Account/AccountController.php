@@ -11,12 +11,12 @@ use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Model\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\EmailChangeService;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\ViewData\Account\UpdateViewData;
 use YiiRocks\Voyti\ViewData\Shared\MessageViewData;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Input\Http\Attribute\Parameter\Body;
@@ -42,7 +42,7 @@ final readonly class AccountController
         private WebViewRenderer $viewRenderer,
         private ValidatorInterface $validator,
         private UrlGeneratorInterface $url,
-        private ModuleConfig $config,
+        private VoytiConfig $config,
         private EmailChangeService $emailChangeService,
         private HydratorInterface $hydrator,
         private CurrentUser $currentUser,
@@ -131,5 +131,4 @@ final readonly class AccountController
             ),
         ]);
     }
-
 }

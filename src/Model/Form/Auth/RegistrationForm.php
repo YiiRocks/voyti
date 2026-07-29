@@ -6,8 +6,8 @@ namespace YiiRocks\Voyti\Model\Form\Auth;
 
 use Override;
 use YiiRocks\Voyti\Helper\RecaptchaHelper;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Validator\PasswordComplexityRule;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\Helper\ObjectParser;
@@ -46,7 +46,7 @@ final class RegistrationForm extends FormModel implements LabelsProviderInterfac
     public string $username = '';
 
     public function __construct(
-        private readonly ModuleConfig $config,
+        private readonly VoytiConfig $config,
         private readonly TranslatorInterface $translator,
     ) {}
 

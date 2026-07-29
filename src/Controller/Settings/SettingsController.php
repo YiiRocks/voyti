@@ -7,9 +7,9 @@ namespace YiiRocks\Voyti\Controller\Settings;
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\ViewData\Settings\IndexViewData;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -28,7 +28,7 @@ final readonly class SettingsController
         private TranslatorInterface $translator,
         private WebViewRenderer $viewRenderer,
         private UrlGeneratorInterface $url,
-        private ModuleConfig $config,
+        private VoytiConfig $config,
         private FlashInterface $flash,
         private CurrentUser $currentUser,
         private SwitchIdentityService $switchIdentityService,

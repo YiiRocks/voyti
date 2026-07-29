@@ -11,14 +11,14 @@ use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Console\PasswordCommand;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserPasswordHistory;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\Password\RandomPasswordGenerator;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Yii\Console\ExitCode;
 
 #[AllowMockObjectsWithoutExpectations]
@@ -100,7 +100,7 @@ final class PasswordCommandTest extends TestCase
 
         $output = $this->createMock(OutputInterface::class);
 
-        $config = ModuleConfigFactory::create(maxPasswordAge: 90);
+        $config = VoytiConfigFactory::create(maxPasswordAge: 90);
         $command = $this->createCommand(config: $config);
         $result = $command->run($input, $output);
 
@@ -197,13 +197,13 @@ final class PasswordCommandTest extends TestCase
 
     private function createCommand(
         ?PasswordGeneratorInterface $passwordGenerator = null,
-        ?ModuleConfig $config = null,
+        ?VoytiConfig $config = null,
     ): PasswordCommand {
         $passwordHasher = TestPasswordHasherFactory::create();
 
         return new PasswordCommand(
             $passwordGenerator ?? new RandomPasswordGenerator(),
-            new PasswordHistoryService($passwordHasher, $config ?? ModuleConfigFactory::create()),
+            new PasswordHistoryService($passwordHasher, $config ?? VoytiConfigFactory::create()),
         );
     }
 }

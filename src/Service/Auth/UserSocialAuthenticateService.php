@@ -9,9 +9,9 @@ use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
 use YiiRocks\Voyti\Helper\LoginMetadataHelper;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSocialAccount;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\ServiceResult;
 use YiiRocks\Voyti\Service\User\UserCreationHelper;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Json\Json;
 use Yiisoft\Security\Random;
 use Yiisoft\Session\SessionInterface;
@@ -28,7 +28,7 @@ final readonly class UserSocialAuthenticateService
     private const string SESSION_KEY = 'oauth_client_data';
 
     public function __construct(
-        private ModuleConfig $config,
+        private VoytiConfig $config,
         private CurrentUser $currentUser,
         private SessionInterface $session,
         private EventDispatcherInterface $eventDispatcher,

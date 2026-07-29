@@ -9,9 +9,9 @@ use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Model\UserSocialAccount;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\ViewData\SocialNetwork\IndexViewData;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -32,7 +32,7 @@ final readonly class SocialNetworkController
         private TranslatorInterface $translator,
         private WebViewRenderer $viewRenderer,
         private UrlGeneratorInterface $url,
-        private ModuleConfig $config,
+        private VoytiConfig $config,
         private ?Collection $clientCollection,
         private CurrentUser $currentUser,
         private ResponseFactoryInterface $responseFactory,
@@ -80,5 +80,4 @@ final readonly class SocialNetworkController
             ),
         ]);
     }
-
 }

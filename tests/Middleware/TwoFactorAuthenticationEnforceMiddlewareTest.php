@@ -10,12 +10,13 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use ReflectionProperty;
 use YiiRocks\Voyti\Helper\FlashType;
 use YiiRocks\Voyti\Middleware\TwoFactorAuthenticationEnforceMiddleware;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\ModuleConfig;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Rbac\ManagerInterface;
@@ -32,7 +33,7 @@ final class TwoFactorAuthenticationEnforceMiddlewareTest extends TestCase
 {
     public function testProcessDoesNotQueryRbacWhenNoForcedPermissions(): void
     {
-        $config = ModuleConfigFactory::create(
+        $config = VoytiConfigFactory::create(
             enableTwoFactorAuthentication: true,
             twoFactorAuthenticationForcedPermissions: [],
         );
@@ -61,7 +62,7 @@ final class TwoFactorAuthenticationEnforceMiddlewareTest extends TestCase
 
     public function testProcessPassesThroughForExemptLogoutRoute(): void
     {
-        $config = ModuleConfigFactory::create(
+        $config = VoytiConfigFactory::create(
             enableTwoFactorAuthentication: true,
             twoFactorAuthenticationForcedPermissions: ['admin'],
         );
@@ -94,7 +95,7 @@ final class TwoFactorAuthenticationEnforceMiddlewareTest extends TestCase
 
     public function testProcessPassesThroughForExemptTwoFactorRoute(): void
     {
-        $config = ModuleConfigFactory::create(
+        $config = VoytiConfigFactory::create(
             enableTwoFactorAuthentication: true,
             twoFactorAuthenticationForcedPermissions: ['admin'],
         );
@@ -127,7 +128,7 @@ final class TwoFactorAuthenticationEnforceMiddlewareTest extends TestCase
 
     public function testProcessPassesThroughForGuestUser(): void
     {
-        $config = ModuleConfigFactory::create(enableTwoFactorAuthentication: true);
+        $config = VoytiConfigFactory::create(enableTwoFactorAuthentication: true);
 
         $guestIdentity = new GuestIdentity();
         $currentUser = $this->createCurrentUser($guestIdentity);
@@ -146,7 +147,7 @@ final class TwoFactorAuthenticationEnforceMiddlewareTest extends TestCase
 
     public function testProcessPassesThroughForNonUserIdentity(): void
     {
-        $config = ModuleConfigFactory::create(enableTwoFactorAuthentication: true);
+        $config = VoytiConfigFactory::create(enableTwoFactorAuthentication: true);
 
         $identity = $this->createMock(IdentityInterface::class);
         $currentUser = $this->createCurrentUser($identity);
@@ -165,7 +166,7 @@ final class TwoFactorAuthenticationEnforceMiddlewareTest extends TestCase
 
     public function testProcessPassesThroughForNonUserIdentityWithForcedPermissions(): void
     {
-        $config = ModuleConfigFactory::create(
+        $config = VoytiConfigFactory::create(
             enableTwoFactorAuthentication: true,
             twoFactorAuthenticationForcedPermissions: ['admin'],
         );
@@ -196,7 +197,7 @@ final class TwoFactorAuthenticationEnforceMiddlewareTest extends TestCase
 
     public function testProcessPassesThroughWhen2FADisabled(): void
     {
-        $config = ModuleConfigFactory::create(enableTwoFactorAuthentication: false);
+        $config = VoytiConfigFactory::create(enableTwoFactorAuthentication: false);
 
         $request = $this->createMock(ServerRequestInterface::class);
         $response = $this->createMock(ResponseInterface::class);
@@ -212,7 +213,7 @@ final class TwoFactorAuthenticationEnforceMiddlewareTest extends TestCase
 
     public function testProcessPassesThroughWhen2FADisabledDespiteForcedPermissions(): void
     {
-        $config = ModuleConfigFactory::create(
+        $config = VoytiConfigFactory::create(
             enableTwoFactorAuthentication: false,
             twoFactorAuthenticationForcedPermissions: ['admin'],
         );
@@ -243,7 +244,7 @@ final class TwoFactorAuthenticationEnforceMiddlewareTest extends TestCase
 
     public function testProcessPassesThroughWhenUserHasRequiredPermissionAnd2FAEnabled(): void
     {
-        $config = ModuleConfigFactory::create(
+        $config = VoytiConfigFactory::create(
             enableTwoFactorAuthentication: true,
             twoFactorAuthenticationForcedPermissions: ['admin'],
         );
@@ -275,7 +276,7 @@ final class TwoFactorAuthenticationEnforceMiddlewareTest extends TestCase
 
     public function testProcessPassesThroughWhenUserLacksRequiredPermissions(): void
     {
-        $config = ModuleConfigFactory::create(
+        $config = VoytiConfigFactory::create(
             enableTwoFactorAuthentication: true,
             twoFactorAuthenticationForcedPermissions: ['admin'],
         );
@@ -306,7 +307,7 @@ final class TwoFactorAuthenticationEnforceMiddlewareTest extends TestCase
 
     public function testProcessRedirectsToTwoFactorSettingsWithoutFlashServiceConfigured(): void
     {
-        $config = ModuleConfigFactory::create(
+        $config = VoytiConfigFactory::create(
             enableTwoFactorAuthentication: true,
             twoFactorAuthenticationForcedPermissions: ['admin'],
         );
@@ -352,7 +353,7 @@ final class TwoFactorAuthenticationEnforceMiddlewareTest extends TestCase
 
     public function testProcessRedirectsWhenUserHasRequiredPermissionBut2FANotEnabled(): void
     {
-        $config = ModuleConfigFactory::create(
+        $config = VoytiConfigFactory::create(
             enableTwoFactorAuthentication: true,
             twoFactorAuthenticationForcedPermissions: ['admin'],
         );
@@ -402,7 +403,7 @@ final class TwoFactorAuthenticationEnforceMiddlewareTest extends TestCase
 
     public function testProcessWithUserIdZero(): void
     {
-        $config = ModuleConfigFactory::create(
+        $config = VoytiConfigFactory::create(
             enableTwoFactorAuthentication: true,
             twoFactorAuthenticationForcedPermissions: ['admin'],
         );
@@ -440,7 +441,7 @@ final class TwoFactorAuthenticationEnforceMiddlewareTest extends TestCase
 
     private function createMiddleware(
         ?CurrentUser $currentUser = null,
-        ?ModuleConfig $config = null,
+        ?VoytiConfig $config = null,
         ?ManagerInterface $authManager = null,
         ?CurrentRoute $currentRoute = null,
         ?ResponseFactoryInterface $responseFactory = null,
@@ -450,7 +451,7 @@ final class TwoFactorAuthenticationEnforceMiddlewareTest extends TestCase
     ): TwoFactorAuthenticationEnforceMiddleware {
         return new TwoFactorAuthenticationEnforceMiddleware(
             $currentUser ?? $this->createCurrentUser($this->createMock(IdentityInterface::class)),
-            $config ?? ModuleConfigFactory::create(),
+            $config ?? VoytiConfigFactory::create(),
             $authManager ?? $this->createMock(ManagerInterface::class),
             $currentRoute ?? $this->createMock(CurrentRoute::class),
             $responseFactory ?? $this->createMock(ResponseFactoryInterface::class),
@@ -464,7 +465,7 @@ final class TwoFactorAuthenticationEnforceMiddlewareTest extends TestCase
     {
         $user = new User();
         if ($id !== null) {
-            $ref = new \ReflectionProperty(User::class, 'id');
+            $ref = new ReflectionProperty(User::class, 'id');
             $ref->setValue($user, $id);
         }
         return $user;

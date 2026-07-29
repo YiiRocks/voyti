@@ -19,7 +19,6 @@ use YiiRocks\Voyti\Middleware\RememberMeMiddleware;
 use YiiRocks\Voyti\Middleware\SessionRevocationEnforceMiddleware;
 use YiiRocks\Voyti\Middleware\TwoFactorAuthenticationEnforceMiddleware;
 use YiiRocks\Voyti\Middleware\VoytiMiddleware;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Admin\DashboardService;
 use YiiRocks\Voyti\Service\AuditLogService;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
@@ -52,6 +51,7 @@ use YiiRocks\Voyti\Service\UserSession\TerminateUserSessionsService;
 use YiiRocks\Voyti\Service\UserSession\UserSessionDecorator;
 use YiiRocks\Voyti\Validator\Rbac\ItemsValidator;
 use YiiRocks\Voyti\Validator\Rbac\RuleValidator;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Aliases\Aliases;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Auth\IdentityWithTokenRepositoryInterface;
@@ -102,7 +102,7 @@ $cookieSecretKey = static function () use ($params): string {
 
 return [
     // Module configuration, built once from the host's `yiirocks/voyti` params array.
-    ModuleConfig::class => static fn() => new ModuleConfig(
+    VoytiConfig::class => static fn() => new VoytiConfig(
         appName: $params['yiirocks/voyti']['appName'] ?? 'Voyti',
         recaptchaVersion: $params['yiirocks/voyti']['recaptchaVersion'] ?? RecaptchaVersion::V3,
         enableGdprCompliance: $params['yiirocks/voyti']['enableGdprCompliance'] ?? false,
@@ -128,8 +128,8 @@ return [
         administratorPermissionName: $params['yiirocks/voyti']['administratorPermissionName'] ?? 'voyti-admin',
         profileVisibility: $params['yiirocks/voyti']['profileVisibility'] ?? ProfileVisibility::USERS,
         maxPasswordAge: $params['yiirocks/voyti']['maxPasswordAge'] ?? 0,
-        viewPath: $params['yiirocks/voyti']['viewPath'] ?? ModuleConfig::DEFAULT_VIEW_PATH,
-        mailPath: $params['yiirocks/voyti']['mailPath'] ?? ModuleConfig::DEFAULT_MAIL_PATH,
+        viewPath: $params['yiirocks/voyti']['viewPath'] ?? VoytiConfig::DEFAULT_VIEW_PATH,
+        mailPath: $params['yiirocks/voyti']['mailPath'] ?? VoytiConfig::DEFAULT_MAIL_PATH,
         apiTokenLifespan: $params['yiirocks/voyti']['apiTokenLifespan'] ?? 0,
         enableAuditLog: $params['yiirocks/voyti']['enableAuditLog'] ?? true,
     ),
@@ -181,7 +181,7 @@ return [
         ManagerInterface $authManager,
         ItemsStorageInterface $itemsStorage,
         AssignmentsStorageInterface $assignmentsStorage,
-        ModuleConfig $config,
+        VoytiConfig $config,
         CurrentUser $currentUser,
     ) => new AuthHelper($authManager, $itemsStorage, $assignmentsStorage, $config, $currentUser),
     ItemsValidator::class => fn(
@@ -205,11 +205,11 @@ return [
     PasswordGeneratorInterface::class => RandomPasswordGenerator::class,
     PasswordHistoryService::class => PasswordHistoryService::class,
     ExpireService::class => fn(
-        ModuleConfig $config,
+        VoytiConfig $config,
     ) => new ExpireService($config),
     RecoveryService::class => RecoveryService::class,
     ResetService::class => fn(
-        ModuleConfig $config,
+        VoytiConfig $config,
         EventDispatcherInterface $eventDispatcher,
         PasswordHistoryService $passwordHistoryService,
     ) => new ResetService($config, $eventDispatcher, $passwordHistoryService),
@@ -217,7 +217,7 @@ return [
     // Registration, confirmation, and email-change lifecycle.
     MailService::class => fn(
         MailerInterface $mailer,
-        ModuleConfig $config,
+        VoytiConfig $config,
         TranslatorInterface $translator,
         UrlGeneratorInterface $url,
         View $view,
@@ -232,7 +232,7 @@ return [
         MailService $mailService,
     ) => new ConfirmationService($eventDispatcher, $userTokenFactory, $mailService),
     EmailChangeService::class => fn(
-        ModuleConfig $config,
+        VoytiConfig $config,
         UserTokenFactory $tokenFactory,
         MailService $mailService,
     ) => new EmailChangeService($config, $tokenFactory, $mailService),
@@ -243,7 +243,7 @@ return [
 
     // Sessions and identity: login persistence, switching, API tokens, session tracking.
     RememberMeCookieService::class => static fn(
-        ModuleConfig $config,
+        VoytiConfig $config,
         ClockInterface $clock,
         ?EventDispatcherInterface $eventDispatcher = null,
     ) => new RememberMeCookieService(
@@ -252,7 +252,7 @@ return [
         eventDispatcher: $eventDispatcher,
     ),
     SwitchIdentityService::class => fn(
-        ModuleConfig $config,
+        VoytiConfig $config,
         CurrentUser $currentUser,
         SessionInterface $session,
         EventDispatcherInterface $eventDispatcher,
@@ -260,7 +260,7 @@ return [
     ApiTokenService::class => ApiTokenService::class,
     UserSessionDecorator::class => fn(
         EventDispatcherInterface $eventDispatcher,
-        ModuleConfig $config,
+        VoytiConfig $config,
         ?SessionInterface $session = null,
     ) => new UserSessionDecorator($eventDispatcher, $config, $session),
     TerminateUserSessionsService::class => TerminateUserSessionsService::class,
@@ -270,7 +270,7 @@ return [
         MailService $mailService,
     ) => new EmailCodeGeneratorService($mailService),
     QrCodeUriGeneratorService::class => fn(
-        ModuleConfig $config,
+        VoytiConfig $config,
     ) => new QrCodeUriGeneratorService($config),
     BackupCodeService::class => fn() => new BackupCodeService(
         new PasswordHasher(PASSWORD_BCRYPT, ['cost' => 6]),
@@ -300,7 +300,7 @@ return [
     PendingSocialAccountService::class => PendingSocialAccountService::class,
     SocialAuthCallbackService::class => SocialAuthCallbackService::class,
     UserSocialAuthenticateService::class => fn(
-        ModuleConfig $config,
+        VoytiConfig $config,
         CurrentUser $currentUser,
         SessionInterface $session,
         EventDispatcherInterface $eventDispatcher,

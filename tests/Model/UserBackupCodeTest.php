@@ -191,5 +191,4 @@ final class UserBackupCodeTest extends TestCase
         $entity = new UserBackupCode();
         self::assertSame(['user_id', 'code_hash'], $entity->primaryKey());
     }
-
 }

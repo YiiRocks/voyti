@@ -6,10 +6,10 @@ namespace YiiRocks\Voyti\Controller\Api\V1\User;
 
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\User\UserCreationHelper;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Data\Db\QueryDataReader;
 use Yiisoft\Data\Paginator\OffsetPaginator;
 use Yiisoft\DataResponse\ResponseFactory\DataResponseFactoryInterface;
@@ -30,7 +30,7 @@ final readonly class UserController
 
     public function __construct(
         private TranslatorInterface $translator,
-        private ModuleConfig $config,
+        private VoytiConfig $config,
         private DataResponseFactoryInterface $responseFactory,
         private PasswordGeneratorInterface $passwordGenerator,
         private PasswordHistoryService $passwordHistoryService,

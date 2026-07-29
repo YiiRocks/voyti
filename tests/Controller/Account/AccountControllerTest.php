@@ -12,15 +12,15 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\Account\AccountController;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\EmailChangeService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -187,7 +187,7 @@ final class AccountControllerTest extends TestCase
     public function testAccountPostWithPreviouslyUsedPasswordShowsError(): void
     {
         $controller = $this->createController([
-            ModuleConfig::class => ModuleConfigFactory::create(maxPasswordAge: 90),
+            VoytiConfig::class => VoytiConfigFactory::create(maxPasswordAge: 90),
         ]);
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['settings' => ['username' => 'testuser', 'email' => 'test@example.com', 'password' => 'secret', 'passwordRepeat' => 'secret']]);
 
@@ -265,5 +265,4 @@ final class AccountControllerTest extends TestCase
             WebViewRenderer::class => $this->viewRenderer,
         ], $overrides))->get(AccountController::class);
     }
-
 }

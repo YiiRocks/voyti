@@ -7,16 +7,17 @@ namespace YiiRocks\Voyti\tests\Service;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
+use ReflectionProperty;
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
 use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 use YiiRocks\Voyti\tests\Support\FakeSession;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\User\CurrentUser;
 
@@ -38,7 +39,7 @@ final class SwitchIdentityServiceTest extends TestCase
 
     public function testGetOriginalUserReturnsUserWhenSessionHasKey(): void
     {
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $user = $this->createUser(username: 'original', email: 'original@example.com');
         $session = new FakeSession();
         $session->set('voyti_original_admin_user', (string) $user->getId());
@@ -52,7 +53,7 @@ final class SwitchIdentityServiceTest extends TestCase
 
     public function testIsSwitchedReturnsTrueWhenSessionHasKey(): void
     {
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $session = new FakeSession();
         $session->set('voyti_original_admin_user', '42');
 
@@ -63,7 +64,7 @@ final class SwitchIdentityServiceTest extends TestCase
 
     public function testRestoreDispatchesEvents(): void
     {
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $user = $this->createUser(username: 'restoredispatch', email: 'restoredispatch@example.com');
         $session = new FakeSession();
         $session->set('voyti_original_admin_user', (string) $user->getId());
@@ -90,7 +91,7 @@ final class SwitchIdentityServiceTest extends TestCase
 
     public function testRestoreSuccess(): void
     {
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $user = $this->createUser(username: 'restoresuccess', email: 'restoresuccess@example.com');
         $session = new FakeSession();
         $session->set('voyti_original_admin_user', (string) $user->getId());
@@ -110,7 +111,7 @@ final class SwitchIdentityServiceTest extends TestCase
 
     public function testRestoreWithNullSessionValueReturnsFailure(): void
     {
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $session = new FakeSession();
         $service = $this->createService($config, session: $session);
 
@@ -122,7 +123,7 @@ final class SwitchIdentityServiceTest extends TestCase
 
     public function testRestoreWithUserNotFoundReturnsFailure(): void
     {
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $session = new FakeSession();
         $session->set('voyti_original_admin_user', '999999');
 
@@ -135,11 +136,11 @@ final class SwitchIdentityServiceTest extends TestCase
 
     public function testRunDispatchesEvents(): void
     {
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $targetUser = $this->createUser(username: 'rundispatch', email: 'rundispatch@example.com');
 
         $identity = new User();
-        $ref = new \ReflectionProperty(User::class, 'id');
+        $ref = new ReflectionProperty(User::class, 'id');
         $ref->setValue($identity, 999999);
 
         $session = new FakeSession();
@@ -167,11 +168,11 @@ final class SwitchIdentityServiceTest extends TestCase
 
     public function testRunSuccessWithIdentity(): void
     {
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $targetUser = $this->createUser(username: 'runsuccess', email: 'runsuccess@example.com');
 
         $identity = new User();
-        $ref = new \ReflectionProperty(User::class, 'id');
+        $ref = new ReflectionProperty(User::class, 'id');
         $ref->setValue($identity, 999999);
 
         $session = new FakeSession();
@@ -191,7 +192,7 @@ final class SwitchIdentityServiceTest extends TestCase
 
     public function testRunWithBlockedUserReturnsFailure(): void
     {
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $targetUser = $this->createUser(username: 'blockeduser', email: 'blockeduser@example.com');
         $targetUser->setBlockedAt(12345);
         $targetUser->save();
@@ -205,7 +206,7 @@ final class SwitchIdentityServiceTest extends TestCase
 
     public function testRunWithNullIdentityDoesNotStoreSession(): void
     {
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $targetUser = $this->createUser(username: 'nullidentity', email: 'nullidentity@example.com');
 
         $session = new FakeSession();
@@ -224,11 +225,11 @@ final class SwitchIdentityServiceTest extends TestCase
 
     public function testRunWithSelfTargetReturnsFailure(): void
     {
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $targetUser = $this->createUser(username: 'selftarget', email: 'selftarget@example.com');
 
         $identity = new User();
-        $ref = new \ReflectionProperty(User::class, 'id');
+        $ref = new ReflectionProperty(User::class, 'id');
         $ref->setValue($identity, (int) $targetUser->getId());
 
         $session = new FakeSession();
@@ -247,7 +248,7 @@ final class SwitchIdentityServiceTest extends TestCase
 
     public function testRunWithSwitchDisabledReturnsFailure(): void
     {
-        $config = ModuleConfigFactory::create(enableSwitchIdentities: false);
+        $config = VoytiConfigFactory::create(enableSwitchIdentities: false);
         $service = $this->createService($config);
 
         $result = $service->run(42);
@@ -258,7 +259,7 @@ final class SwitchIdentityServiceTest extends TestCase
 
     public function testRunWithUserNotFoundReturnsFailure(): void
     {
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $service = $this->createService($config);
         $result = $service->run(999999);
 
@@ -274,7 +275,7 @@ final class SwitchIdentityServiceTest extends TestCase
     }
 
     private function createService(
-        ModuleConfig $config,
+        VoytiConfig $config,
         ?CurrentUser $currentUser = null,
         ?FakeSession $session = null,
         ?EventDispatcherInterface $eventDispatcher = null,
@@ -287,5 +288,4 @@ final class SwitchIdentityServiceTest extends TestCase
         $eventDispatcher ??= $this->createEventDispatcher();
         return new SwitchIdentityService($config, $currentUser, $session, $eventDispatcher);
     }
-
 }

@@ -18,5 +18,4 @@ final class AfterLoginEventTest extends TestCase
 
         self::assertSame($user, $event->getUser());
     }
-
 }

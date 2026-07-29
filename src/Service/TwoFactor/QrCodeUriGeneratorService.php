@@ -6,7 +6,7 @@ namespace YiiRocks\Voyti\Service\TwoFactor;
 
 use chillerlan\TwoFactorQRCode\TwoFactorQRCode;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\VoytiConfig;
 
 /**
  * Builds QR-code SVGs for two-factor authentication setup. `generateQrCodeSvg()` reuses the
@@ -17,7 +17,7 @@ use YiiRocks\Voyti\ModuleConfig;
 final readonly class QrCodeUriGeneratorService
 {
     public function __construct(
-        private ModuleConfig $config,
+        private VoytiConfig $config,
     ) {}
 
     public function generateQrCodeSvg(User $user): string

@@ -14,19 +14,19 @@ use YiiRocks\Voyti\Controller\Session\SessionController;
 use YiiRocks\Voyti\Model\Form\Auth\LoginForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
 use YiiRocks\Voyti\tests\Support\HydrateObjectTrait;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Security\PasswordHasher;
@@ -134,8 +134,8 @@ final class SessionControllerTest extends TestCase
 
     public function testConfirmPostSuccessRedirectsToConfiguredRoute(): void
     {
-        $config = ModuleConfigFactory::create(homeRoute: 'app/dashboard');
-        $container = $this->getTestContainer(array_merge($this->mockOverrides(), [ModuleConfig::class => $config]));
+        $config = VoytiConfigFactory::create(homeRoute: 'app/dashboard');
+        $container = $this->getTestContainer(array_merge($this->mockOverrides(), [VoytiConfig::class => $config]));
         $container->get(SessionInterface::class)->set('credentials', [
             'login' => 'jdoe',
             'rememberMe' => false,
@@ -250,7 +250,7 @@ final class SessionControllerTest extends TestCase
 
     public function testLoginPostSuccessRedirectsToConfiguredRoute(): void
     {
-        $config = ModuleConfigFactory::create(homeRoute: 'app/dashboard');
+        $config = VoytiConfigFactory::create(homeRoute: 'app/dashboard');
 
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
 
@@ -264,7 +264,7 @@ final class SessionControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory, '//app/dashboard');
 
-        $controller = $this->createController([ModuleConfig::class => $config]);
+        $controller = $this->createController([VoytiConfig::class => $config]);
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
         $result = $controller->login($request, ['login' => 'jdoe', 'password' => 'secret']);
@@ -296,8 +296,8 @@ final class SessionControllerTest extends TestCase
 
     public function testLoginPostSuccessThrowsWhenHomeRouteIsNotRegistered(): void
     {
-        $config = ModuleConfigFactory::create(homeRoute: 'nonexistent');
-        $container = $this->getTestContainer(array_merge($this->mockOverrides(), [ModuleConfig::class => $config]));
+        $config = VoytiConfigFactory::create(homeRoute: 'nonexistent');
+        $container = $this->getTestContainer(array_merge($this->mockOverrides(), [VoytiConfig::class => $config]));
         /** @var FakeUrlGenerator $urlGenerator */
         $urlGenerator = $container->get(UrlGeneratorInterface::class);
         $urlGenerator->setMissingRoute('nonexistent');
@@ -398,7 +398,7 @@ final class SessionControllerTest extends TestCase
 
     public function testLoginPostWithTwoFactorEmailMethodSendsCodeAndShowsConfirm(): void
     {
-        $config = ModuleConfigFactory::create(enableTwoFactorAuthentication: true);
+        $config = VoytiConfigFactory::create(enableTwoFactorAuthentication: true);
 
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
 
@@ -425,7 +425,7 @@ final class SessionControllerTest extends TestCase
             ))
             ->willReturn($response);
 
-        $controller = $this->createController([ModuleConfig::class => $config]);
+        $controller = $this->createController([VoytiConfig::class => $config]);
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
         $result = $controller->login($request, ['login' => 'jdoe', 'password' => 'secret']);
@@ -435,7 +435,7 @@ final class SessionControllerTest extends TestCase
 
     public function testLoginPostWithTwoFactorGoogleMethodShowsConfirmWithoutSendingCode(): void
     {
-        $config = ModuleConfigFactory::create(enableTwoFactorAuthentication: true);
+        $config = VoytiConfigFactory::create(enableTwoFactorAuthentication: true);
 
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
 
@@ -460,7 +460,7 @@ final class SessionControllerTest extends TestCase
             ))
             ->willReturn($response);
 
-        $controller = $this->createController([ModuleConfig::class => $config]);
+        $controller = $this->createController([VoytiConfig::class => $config]);
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
         $result = $controller->login($request, ['login' => 'jdoe', 'password' => 'secret']);

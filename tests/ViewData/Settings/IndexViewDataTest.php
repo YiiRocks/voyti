@@ -7,8 +7,8 @@ namespace YiiRocks\Voyti\tests\ViewData\Settings;
 use YiiRocks\Voyti\Model\UserProfile;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
 use YiiRocks\Voyti\ViewData\Settings\IndexViewData;
 
@@ -31,7 +31,7 @@ final class IndexViewDataTest extends TestCase
     {
         $user = $this->createUser();
 
-        $data = IndexViewData::create(ModuleConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), $user, false, null);
+        $data = IndexViewData::create(VoytiConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), $user, false, null);
 
         self::assertNotEmpty($data->menu->items);
     }
@@ -40,7 +40,7 @@ final class IndexViewDataTest extends TestCase
     {
         $user = $this->createUser(email: 'jane@example.com', createdAt: 1700000000);
 
-        $data = IndexViewData::create(ModuleConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), $user, false, null);
+        $data = IndexViewData::create(VoytiConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), $user, false, null);
 
         self::assertSame('jane@example.com', $data->email);
         self::assertNotSame('', $data->memberSinceDisplay);
@@ -52,7 +52,7 @@ final class IndexViewDataTest extends TestCase
         $user = $this->createUser(username: 'switcheduser', email: 'switcheduser@example.com');
 
         $data = IndexViewData::create(
-            ModuleConfigFactory::create(),
+            VoytiConfigFactory::create(),
             new FakeUrlGenerator(),
             $this->createTranslator(),
             $user,
@@ -69,7 +69,7 @@ final class IndexViewDataTest extends TestCase
         $user = $this->createUser(username: 'hasprofileuser');
         $this->createUserProfile((int) $user->getId(), 'Jane Doe');
 
-        $data = IndexViewData::create(ModuleConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), $user, false, null);
+        $data = IndexViewData::create(VoytiConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), $user, false, null);
 
         self::assertSame('Jane Doe', $data->displayName);
     }
@@ -78,7 +78,7 @@ final class IndexViewDataTest extends TestCase
     {
         $user = $this->createUser(username: 'noprofileuser');
 
-        $data = IndexViewData::create(ModuleConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), $user, false, null);
+        $data = IndexViewData::create(VoytiConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), $user, false, null);
 
         self::assertSame('noprofileuser', $data->displayName);
     }

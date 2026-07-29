@@ -19,16 +19,16 @@ use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserProfile;
 use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\Model\UserSocialAccount;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\UserSession\TerminateUserSessionsService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -77,7 +77,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testAnonymizeGetShowsForm(): void
     {
-        $controller = $this->createController(ModuleConfigFactory::create(enableGdprCompliance: true));
+        $controller = $this->createController(VoytiConfigFactory::create(enableGdprCompliance: true));
         $request = new ServerRequest('GET', '/');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -96,7 +96,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testAnonymizePostWithValidPasswordAnonymizesUser(): void
     {
-        $controller = $this->createController(ModuleConfigFactory::create(enableGdprCompliance: true));
+        $controller = $this->createController(VoytiConfigFactory::create(enableGdprCompliance: true));
 
         $password = 'mypassword';
 
@@ -138,7 +138,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testDeleteGetShowsForm(): void
     {
-        $controller = $this->createController(ModuleConfigFactory::create(allowAccountDelete: true));
+        $controller = $this->createController(VoytiConfigFactory::create(allowAccountDelete: true));
         $request = new ServerRequest('GET', '/');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -157,7 +157,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testDeletePostWithInvalidPasswordShowsForm(): void
     {
-        $controller = $this->createController(ModuleConfigFactory::create(allowAccountDelete: true));
+        $controller = $this->createController(VoytiConfigFactory::create(allowAccountDelete: true));
 
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['delete-account' => ['password' => 'wrongpassword', 'consent' => '1']]);
 
@@ -192,7 +192,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testDeletePostWithValidPasswordDeletesUser(): void
     {
-        $controller = $this->createController(ModuleConfigFactory::create(allowAccountDelete: true));
+        $controller = $this->createController(VoytiConfigFactory::create(allowAccountDelete: true));
 
         $password = 'mypassword';
 
@@ -232,7 +232,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testExportIncludesSessionsAndSocialAccounts(): void
     {
-        $controller = $this->createController(ModuleConfigFactory::create(
+        $controller = $this->createController(VoytiConfigFactory::create(
             enableGdprCompliance: true,
             gdprExportProperties: ['userSessions', 'userSocialAccount'],
         ));
@@ -291,7 +291,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testExportIncludesUserProfileFields(): void
     {
-        $controller = $this->createController(ModuleConfigFactory::create(
+        $controller = $this->createController(VoytiConfigFactory::create(
             enableGdprCompliance: true,
             gdprExportProperties: [
                 'userProfile.public_email',
@@ -347,7 +347,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testExportReturnsData(): void
     {
-        $controller = $this->createController(ModuleConfigFactory::create(
+        $controller = $this->createController(VoytiConfigFactory::create(
             enableGdprCompliance: true,
             gdprExportProperties: ['email', 'username'],
         ));
@@ -379,7 +379,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testGdprConsentGetShowsConsentDateWhenAlreadyConsented(): void
     {
-        $controller = $this->createController(ModuleConfigFactory::create(enableGdprCompliance: true));
+        $controller = $this->createController(VoytiConfigFactory::create(enableGdprCompliance: true));
         $request = new ServerRequest('GET', '/');
 
         $user = $this->createUser(gdprConsent: true, gdprConsentDate: 1700000000, confirmedAt: time());
@@ -413,7 +413,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testGdprConsentGetShowsForm(): void
     {
-        $controller = $this->createController(ModuleConfigFactory::create(enableGdprCompliance: true));
+        $controller = $this->createController(VoytiConfigFactory::create(enableGdprCompliance: true));
         $request = new ServerRequest('GET', '/');
 
         $user = $this->createUser(gdprConsent: false, confirmedAt: time());
@@ -440,7 +440,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testGdprConsentPostAlreadyConsentedResubmitIsNoop(): void
     {
-        $controller = $this->createController(ModuleConfigFactory::create(enableGdprCompliance: true));
+        $controller = $this->createController(VoytiConfigFactory::create(enableGdprCompliance: true));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['gdpr-consent' => ['consent' => '1']]);
 
         $this->hydrator->method('hydrate')->willReturnCallback(
@@ -467,7 +467,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testGdprConsentPostCannotRevokeConsent(): void
     {
-        $controller = $this->createController(ModuleConfigFactory::create(enableGdprCompliance: true));
+        $controller = $this->createController(VoytiConfigFactory::create(enableGdprCompliance: true));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['gdpr-consent' => ['consent' => '0']]);
 
         $this->hydrator->method('hydrate')->willReturnCallback(
@@ -493,7 +493,7 @@ final class PrivacyControllerTest extends TestCase
 
     public function testGdprConsentPostSavesAndRedirects(): void
     {
-        $controller = $this->createController(ModuleConfigFactory::create(enableGdprCompliance: true));
+        $controller = $this->createController(VoytiConfigFactory::create(enableGdprCompliance: true));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['gdpr-consent' => ['consent' => '1']]);
 
         $this->hydrator->method('hydrate')->willReturnCallback(
@@ -536,7 +536,7 @@ final class PrivacyControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    private function createController(?ModuleConfig $config = null): PrivacyController
+    private function createController(?VoytiConfig $config = null): PrivacyController
     {
         $overrides = [
             CurrentUser::class => $this->currentUser,
@@ -550,7 +550,7 @@ final class PrivacyControllerTest extends TestCase
         ];
 
         if ($config !== null) {
-            $overrides[ModuleConfig::class] = $config;
+            $overrides[VoytiConfig::class] = $config;
         }
 
         return $this->getTestContainer($overrides)->get(PrivacyController::class);

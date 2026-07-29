@@ -56,6 +56,4 @@ final class IndexViewDataTest extends TestCase
         self::assertSame('//voyti/admin-audit-log', $data->auditLogUrl);
         self::assertNotEmpty($data->menu->items);
     }
-
-
 }

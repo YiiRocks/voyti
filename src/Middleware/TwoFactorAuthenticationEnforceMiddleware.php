@@ -12,7 +12,7 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use YiiRocks\Voyti\Helper\FlashType;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Http\Header;
 use Yiisoft\Http\Status;
 use Yiisoft\Rbac\ManagerInterface;
@@ -35,7 +35,7 @@ final readonly class TwoFactorAuthenticationEnforceMiddleware implements Middlew
 
     public function __construct(
         private CurrentUser $currentUser,
-        private ModuleConfig $config,
+        private VoytiConfig $config,
         private ManagerInterface $authManager,
         private CurrentRoute $currentRoute,
         private ResponseFactoryInterface $responseFactory,

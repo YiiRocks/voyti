@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Helper;
 
-use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Rbac\Assignment;
 use Yiisoft\Rbac\AssignmentsStorageInterface;
 use Yiisoft\Rbac\ItemsStorageInterface;
@@ -16,7 +16,7 @@ use Yiisoft\User\CurrentUser;
 /**
  * RBAC query helpers built on top of `yiisoft/rbac`: listing rule names, finding items not yet
  * assigned to a user, checking role/permission membership, and the module-wide `isAdmin()` check
- * driven by `ModuleConfig::$administratorPermissionName`.
+ * driven by `VoytiConfig::$administratorPermissionName`.
  */
 final readonly class AuthHelper
 {
@@ -24,7 +24,7 @@ final readonly class AuthHelper
         private ManagerInterface $authManager,
         private ItemsStorageInterface $itemsStorage,
         private AssignmentsStorageInterface $assignmentsStorage,
-        private ModuleConfig $config,
+        private VoytiConfig $config,
         private CurrentUser $currentUser,
     ) {}
 

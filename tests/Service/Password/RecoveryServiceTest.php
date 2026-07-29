@@ -11,7 +11,7 @@ use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
 
 #[AllowMockObjectsWithoutExpectations]
@@ -43,7 +43,7 @@ final class RecoveryServiceTest extends TestCase
 
         $userTokenFactory = new UserTokenFactory();
         $mailService = $this->createMock(MailService::class);
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $translator = $this->createTranslator();
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 
@@ -63,7 +63,7 @@ final class RecoveryServiceTest extends TestCase
     {
         $userTokenFactory = new UserTokenFactory();
         $mailService = $this->createMock(MailService::class);
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $translator = $this->createTranslator();
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 
@@ -94,7 +94,7 @@ final class RecoveryServiceTest extends TestCase
         $userTokenFactory = new UserTokenFactory();
         $mailService = $this->createMock(MailService::class);
         $mailService->method('sendRecovery')->willReturn(true);
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $translator = $this->createTranslator();
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 

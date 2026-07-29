@@ -12,17 +12,17 @@ use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\PasswordReset\PasswordResetController;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
 use YiiRocks\Voyti\Service\Password\ResetService;
 use YiiRocks\Voyti\Service\ServiceResult;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\HydrateObjectTrait;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Validator\Result;
@@ -108,8 +108,8 @@ final class PasswordResetControllerTest extends TestCase
 
     public function testRequestWhenDisabledShowsError(): void
     {
-        $config = ModuleConfigFactory::create(allowPasswordRecovery: false);
-        $controller = $this->createController([ModuleConfig::class => $config]);
+        $config = VoytiConfigFactory::create(allowPasswordRecovery: false);
+        $controller = $this->createController([VoytiConfig::class => $config]);
         $request = new ServerRequest('GET', '/');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -240,8 +240,8 @@ final class PasswordResetControllerTest extends TestCase
 
     public function testResetWithDisabledConfigShowsMessage(): void
     {
-        $config = ModuleConfigFactory::create(allowPasswordRecovery: false, allowAdminPasswordRecovery: false);
-        $controller = $this->createController([ModuleConfig::class => $config]);
+        $config = VoytiConfigFactory::create(allowPasswordRecovery: false, allowAdminPasswordRecovery: false);
+        $controller = $this->createController([VoytiConfig::class => $config]);
         $request = new ServerRequest('GET', '/');
 
         $response = $this->createMock(ResponseInterface::class);

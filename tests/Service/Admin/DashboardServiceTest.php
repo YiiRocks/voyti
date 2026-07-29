@@ -11,15 +11,15 @@ use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserAuditLog;
 use YiiRocks\Voyti\Model\UserSessions;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Admin\DashboardService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\SimpleAssignmentsStorage;
 use YiiRocks\Voyti\tests\Support\SimpleItemsStorage;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\Support\UserSessionFactoryTrait;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Rbac\Manager;
 use Yiisoft\Rbac\Permission;
@@ -48,7 +48,7 @@ final class DashboardServiceTest extends TestCase
 
     public function testGetStatsActiveSessionsTrendCountsSessionsWithinEachWindowBoundaryInclusive(): void
     {
-        $lifespan = (ModuleConfigFactory::create())->rememberLoginLifespan;
+        $lifespan = (VoytiConfigFactory::create())->rememberLoginLifespan;
         $user = $this->createUser('sessions-user', 'sessions-user@example.com', confirmedAt: time());
         $userId = (int) $user->getId();
 
@@ -68,7 +68,7 @@ final class DashboardServiceTest extends TestCase
 
     public function testGetStatsActiveSessionsTrendFiltersByUpdatedAtNotCreatedAt(): void
     {
-        $lifespan = (ModuleConfigFactory::create())->rememberLoginLifespan;
+        $lifespan = (VoytiConfigFactory::create())->rememberLoginLifespan;
         $user = $this->createUser('updated-at-user', 'updated-at-user@example.com', confirmedAt: time());
         $userId = (int) $user->getId();
 
@@ -137,7 +137,7 @@ final class DashboardServiceTest extends TestCase
 
     public function testGetStatsNewRegistrationsTrendCountsUsersWithinEachWindowBoundaryInclusive(): void
     {
-        $lifespan = (ModuleConfigFactory::create())->rememberLoginLifespan;
+        $lifespan = (VoytiConfigFactory::create())->rememberLoginLifespan;
         $offsets = $this->trendBoundaryOffsets($lifespan);
         $emails = array_map(static fn(string $label): string => $label . '@example.com', array_keys($offsets));
 
@@ -223,7 +223,7 @@ final class DashboardServiceTest extends TestCase
 
     public function testGetStatsRememberLifespanDaysRoundsDownBelowHalfADay(): void
     {
-        $config = ModuleConfigFactory::create(rememberLoginLifespan: 100000);
+        $config = VoytiConfigFactory::create(rememberLoginLifespan: 100000);
 
         $stats = $this->createService($config)->getStats();
 
@@ -232,7 +232,7 @@ final class DashboardServiceTest extends TestCase
 
     public function testGetStatsRememberLifespanDaysRoundsUpAboveHalfADay(): void
     {
-        $config = ModuleConfigFactory::create(rememberLoginLifespan: 130000);
+        $config = VoytiConfigFactory::create(rememberLoginLifespan: 130000);
 
         $stats = $this->createService($config)->getStats();
 
@@ -243,7 +243,7 @@ final class DashboardServiceTest extends TestCase
     {
         $this->createUser('unconfirmed', 'unconfirmed@example.com');
 
-        $stats = $this->createService(ModuleConfigFactory::create(enableEmailConfirmation: false))->getStats();
+        $stats = $this->createService(VoytiConfigFactory::create(enableEmailConfirmation: false))->getStats();
 
         self::assertNull($stats['userUnconfirmed']);
     }
@@ -256,9 +256,9 @@ final class DashboardServiceTest extends TestCase
         $log->save();
     }
 
-    private function createService(?ModuleConfig $config = null, string $locale = 'en'): DashboardService
+    private function createService(?VoytiConfig $config = null, string $locale = 'en'): DashboardService
     {
-        $config ??= ModuleConfigFactory::create();
+        $config ??= VoytiConfigFactory::create();
         $assignmentsStorage = new SimpleAssignmentsStorage();
         $manager = new Manager($this->itemsStorage, $assignmentsStorage);
         $currentUser = new CurrentUser(
@@ -270,7 +270,6 @@ final class DashboardServiceTest extends TestCase
 
         return new DashboardService($authHelper, $config, $this->itemsStorage, $translator);
     }
-
 
     /**
      * @return array<string, int> offset in seconds relative to "now", keyed by fixture label

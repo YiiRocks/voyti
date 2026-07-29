@@ -12,13 +12,13 @@ use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Model\Form\Auth\RegistrationForm;
 use YiiRocks\Voyti\Model\Form\Auth\ResendForm;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\RegisterService;
 use YiiRocks\Voyti\ViewData\Registration\ConnectViewData;
 use YiiRocks\Voyti\ViewData\Registration\RegisterViewData;
 use YiiRocks\Voyti\ViewData\Registration\ResendViewData;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Input\Http\Attribute\Parameter\Body;
@@ -46,7 +46,7 @@ final readonly class RegistrationController
         private ConfirmationService $confirmationService,
         private ValidatorInterface $validator,
         private UrlGeneratorInterface $url,
-        private ModuleConfig $config,
+        private VoytiConfig $config,
         private PendingSocialAccountService $pendingSocialAccountService,
         private HydratorInterface $hydrator,
         private ResponseFactoryInterface $responseFactory,
@@ -172,5 +172,4 @@ final readonly class RegistrationController
             'data' => ResendViewData::create($form, $this->config, $this->url),
         ]);
     }
-
 }

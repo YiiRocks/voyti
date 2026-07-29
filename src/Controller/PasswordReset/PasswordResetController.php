@@ -14,10 +14,10 @@ use YiiRocks\Voyti\Helper\FlashType;
 use YiiRocks\Voyti\Model\Form\Auth\RecoveryForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
 use YiiRocks\Voyti\Service\Password\ResetService;
 use YiiRocks\Voyti\ViewData\PasswordReset\RequestViewData;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Input\Http\Attribute\Parameter\Body;
@@ -45,7 +45,7 @@ final readonly class PasswordResetController
         private ResetService $resetPasswordService,
         private ValidatorInterface $validator,
         private EventDispatcherInterface $eventDispatcher,
-        private ModuleConfig $config,
+        private VoytiConfig $config,
         private HydratorInterface $hydrator,
         private ResponseFactoryInterface $responseFactory,
         private FlashInterface $flash,
@@ -131,5 +131,4 @@ final readonly class PasswordResetController
             'data' => RequestViewData::create($form, $this->config, $this->url),
         ]);
     }
-
 }

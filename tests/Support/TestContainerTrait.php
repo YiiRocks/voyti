@@ -14,6 +14,7 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use RuntimeException;
 use Yiisoft\Cookies\CookieEncryptor;
 use Yiisoft\Cookies\CookieSigner;
 use Yiisoft\Di\Container;
@@ -89,7 +90,7 @@ trait TestContainerTrait
             PsrClientInterface::class => new class implements PsrClientInterface {
                 public function sendRequest(\Psr\Http\Message\RequestInterface $request): \Psr\Http\Message\ResponseInterface
                 {
-                    throw new \RuntimeException('HTTP client not configured in tests');
+                    throw new RuntimeException('HTTP client not configured in tests');
                 }
             },
             RequestFactoryInterface::class => $psr17Factory,
@@ -137,5 +138,4 @@ trait TestContainerTrait
     {
         self::$sharedTestContainer = null;
     }
-
 }

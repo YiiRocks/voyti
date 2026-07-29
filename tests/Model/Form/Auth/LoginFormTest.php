@@ -9,8 +9,8 @@ use YiiRocks\Recaptcha\RecaptchaRegistry;
 use YiiRocks\Recaptcha\RecaptchaV3Rule;
 use YiiRocks\Voyti\Enum\RecaptchaVersion;
 use YiiRocks\Voyti\Model\Form\Auth\LoginForm;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\RecaptchaRegistryTrait;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Validator\Rule\Required;
 use Yiisoft\Validator\Validator;
@@ -27,7 +27,7 @@ final class LoginFormTest extends TestCase
 
     public function testConstruct(): void
     {
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $form = new LoginForm($config, $this->createTranslator());
         $this->assertSame('', $form->login);
         $this->assertSame('', $form->password);
@@ -38,13 +38,13 @@ final class LoginFormTest extends TestCase
 
     public function testGetFormName(): void
     {
-        $form = new LoginForm(ModuleConfigFactory::create(), $this->createTranslator());
+        $form = new LoginForm(VoytiConfigFactory::create(), $this->createTranslator());
         $this->assertSame('login', $form->getFormName());
     }
 
     public function testGetPropertyLabels(): void
     {
-        $form = new LoginForm(ModuleConfigFactory::create(), $this->createTranslator());
+        $form = new LoginForm(VoytiConfigFactory::create(), $this->createTranslator());
         $labels = $form->getPropertyLabels();
         $this->assertArrayHasKey('login', $labels);
         $this->assertArrayHasKey('password', $labels);
@@ -54,7 +54,7 @@ final class LoginFormTest extends TestCase
 
     public function testGetRulesReturnsLoginRules(): void
     {
-        $form = new LoginForm(ModuleConfigFactory::create(), $this->createTranslator());
+        $form = new LoginForm(VoytiConfigFactory::create(), $this->createTranslator());
         $rules = $form->getRules();
         $this->assertIsArray($rules);
         $this->assertArrayHasKey('login', $rules);
@@ -66,7 +66,7 @@ final class LoginFormTest extends TestCase
     public function testGetRulesWithRecaptchaV2(): void
     {
         $this->configureRecaptchaRegistry();
-        $config = ModuleConfigFactory::create(recaptchaVersion: RecaptchaVersion::V2);
+        $config = VoytiConfigFactory::create(recaptchaVersion: RecaptchaVersion::V2);
         $form = new LoginForm($config, $this->createTranslator());
         $rules = $form->getRules();
         $this->assertArrayHasKey('gRecaptchaResponse', $rules);
@@ -76,7 +76,7 @@ final class LoginFormTest extends TestCase
     public function testGetRulesWithRecaptchaV3(): void
     {
         $this->configureRecaptchaRegistry();
-        $config = ModuleConfigFactory::create(recaptchaVersion: RecaptchaVersion::V3);
+        $config = VoytiConfigFactory::create(recaptchaVersion: RecaptchaVersion::V3);
         $form = new LoginForm($config, $this->createTranslator());
         $rules = $form->getRules();
         $this->assertArrayHasKey('gRecaptchaResponse', $rules);
@@ -89,7 +89,7 @@ final class LoginFormTest extends TestCase
 
     public function testGetRulesWithRequireTwoFactorAuthenticationCode(): void
     {
-        $form = new LoginForm(ModuleConfigFactory::create(), $this->createTranslator(), requireTwoFactorAuthenticationCode: true);
+        $form = new LoginForm(VoytiConfigFactory::create(), $this->createTranslator(), requireTwoFactorAuthenticationCode: true);
         $rules = $form->getRules();
         $this->assertArrayHasKey('twoFactorAuthenticationCode', $rules);
         $this->assertCount(1, $rules['twoFactorAuthenticationCode']);
@@ -99,19 +99,19 @@ final class LoginFormTest extends TestCase
 
     public function testGetValidationPropertyLabels(): void
     {
-        $form = new LoginForm(ModuleConfigFactory::create(), $this->createTranslator());
+        $form = new LoginForm(VoytiConfigFactory::create(), $this->createTranslator());
         $this->assertSame($form->getPropertyLabels(), $form->getValidationPropertyLabels());
     }
 
     public function testRememberMeDefaultsToFalse(): void
     {
-        $form = new LoginForm(ModuleConfigFactory::create(), $this->createTranslator());
+        $form = new LoginForm(VoytiConfigFactory::create(), $this->createTranslator());
         $this->assertFalse($form->rememberMe);
     }
 
     public function testSetPropertiesViaPublicAccess(): void
     {
-        $form = new LoginForm(ModuleConfigFactory::create(), $this->createTranslator());
+        $form = new LoginForm(VoytiConfigFactory::create(), $this->createTranslator());
         $form->login = 'testuser';
         $form->password = 'secret';
         $form->rememberMe = true;
@@ -125,7 +125,7 @@ final class LoginFormTest extends TestCase
 
     public function testValidationErrorMessageUsesPropertyLabelNotRawPropertyName(): void
     {
-        $form = new LoginForm(ModuleConfigFactory::create(), $this->createTranslator());
+        $form = new LoginForm(VoytiConfigFactory::create(), $this->createTranslator());
         $result = (new Validator())->validate($form);
 
         $messages = $result->getErrorMessagesIndexedByProperty();

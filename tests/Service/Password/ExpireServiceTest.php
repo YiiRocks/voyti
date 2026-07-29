@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\Password\ExpireService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 
 final class ExpireServiceTest extends TestCase
 {
@@ -38,7 +38,7 @@ final class ExpireServiceTest extends TestCase
     #[DataProvider('isExpiredAgeProvider')]
     public function testIsExpiredWithAge(int $ageDays, bool $expected): void
     {
-        $config = ModuleConfigFactory::create(maxPasswordAge: 90);
+        $config = VoytiConfigFactory::create(maxPasswordAge: 90);
         $service = new ExpireService($config);
         $user = $this->createUser();
         $user->setPasswordChangedAt(time() - $ageDays * 86400);
@@ -48,7 +48,7 @@ final class ExpireServiceTest extends TestCase
 
     public function testIsExpiredWithMaxPasswordAgeZeroIgnoresExpiredUser(): void
     {
-        $config = ModuleConfigFactory::create(maxPasswordAge: 0);
+        $config = VoytiConfigFactory::create(maxPasswordAge: 0);
         $service = new ExpireService($config);
         $user = $this->createUser();
         $user->setPasswordChangedAt(time() - 100 * 86400);
@@ -58,7 +58,7 @@ final class ExpireServiceTest extends TestCase
 
     public function testIsExpiredWithPasswordAge9999WhenNeverChanged(): void
     {
-        $config = ModuleConfigFactory::create(maxPasswordAge: 90);
+        $config = VoytiConfigFactory::create(maxPasswordAge: 90);
         $service = new ExpireService($config);
         $user = $this->createUser();
         $user->setPasswordChangedAt(null);
@@ -68,7 +68,7 @@ final class ExpireServiceTest extends TestCase
 
     public function testRun(): void
     {
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $service = new ExpireService($config);
         $user = $this->createUser();
         $user->setPasswordChangedAt(time() - 100 * 86400);

@@ -13,11 +13,11 @@ use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Model\Form\Rbac\AuthItemForm;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\AuditLogService;
 use YiiRocks\Voyti\ViewData\Admin\Rbac\CreateViewData;
 use YiiRocks\Voyti\ViewData\Admin\Rbac\IndexViewData;
 use YiiRocks\Voyti\ViewData\Admin\Rbac\UpdateViewData;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Http\Method;
 use Yiisoft\Input\Http\Attribute\Parameter\Body;
 use Yiisoft\Input\Http\Attribute\Parameter\Query;
@@ -58,7 +58,7 @@ final readonly class RbacController
         private ManagerInterface $managerInterface,
         private AssignmentsStorageInterface $assignmentsStorage,
         private FlashInterface $flash,
-        private ModuleConfig $config,
+        private VoytiConfig $config,
         private AuditLogService $auditLogService,
         private CurrentUser $currentUser,
     ) {}

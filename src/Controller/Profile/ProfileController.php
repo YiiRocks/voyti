@@ -16,10 +16,10 @@ use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Model\Form\Settings\UserProfileForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserProfile;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\ViewData\Profile\UpdateViewData;
 use YiiRocks\Voyti\ViewData\Shared\ProfileCardViewData;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\Http\Method;
 use Yiisoft\Hydrator\HydratorInterface;
@@ -47,7 +47,7 @@ final readonly class ProfileController
         private ValidatorInterface $validator,
         private UrlGeneratorInterface $url,
         private AuthHelper $authHelper,
-        private ModuleConfig $config,
+        private VoytiConfig $config,
         private CurrentUser $currentUser,
         private EventDispatcherInterface $eventDispatcher,
         private HydratorInterface $hydrator,

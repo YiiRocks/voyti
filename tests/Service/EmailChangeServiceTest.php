@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Service;
 
 use PHPUnit\Framework\TestCase;
+use ReflectionProperty;
 use YiiRocks\Voyti\Enum\EmailChangeConfirmation;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Model\Form\Settings\SettingsForm;
@@ -15,7 +16,7 @@ use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
 use YiiRocks\Voyti\tests\Support\MailCapture;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\View\View;
 
@@ -35,7 +36,7 @@ final class EmailChangeServiceTest extends TestCase
 
     public function testInitiateBothReturnsFalseWhenNewFails(): void
     {
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $mailService = $this->createStub(MailService::class);
         $mailService->method('sendReconfirmation')->willReturn(false);
         $service = new EmailChangeService($config, new UserTokenFactory(), $mailService);
@@ -50,7 +51,7 @@ final class EmailChangeServiceTest extends TestCase
 
     public function testInitiateBothReturnsFalseWhenOldFails(): void
     {
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $mailService = $this->createStub(MailService::class);
         $mailService->method('sendReconfirmation')->willReturnOnConsecutiveCalls(true, false);
         $service = new EmailChangeService($config, new UserTokenFactory(), $mailService);
@@ -65,7 +66,7 @@ final class EmailChangeServiceTest extends TestCase
 
     public function testInitiateBothSendsTwoConfirmationEmails(): void
     {
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $mailCapture = new MailCapture();
         $service = new EmailChangeService($config, new UserTokenFactory(), $this->createMailService($mailCapture));
 
@@ -84,7 +85,7 @@ final class EmailChangeServiceTest extends TestCase
 
     public function testInitiateNewPersistsTokenWithZeroUserIdWhenUserUnsaved(): void
     {
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $mailCapture = new MailCapture();
         $service = new EmailChangeService($config, new UserTokenFactory(), $this->createMailService($mailCapture));
 
@@ -110,7 +111,7 @@ final class EmailChangeServiceTest extends TestCase
 
     public function testInitiateNewReturnsFalseWhenUserIsNull(): void
     {
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $service = new EmailChangeService($config, new UserTokenFactory(), $this->createStub(MailService::class));
         $form = new SettingsForm($config, $this->createStub(TranslatorInterface::class));
 
@@ -119,7 +120,7 @@ final class EmailChangeServiceTest extends TestCase
 
     public function testInitiateNewSetsUnconfirmedEmailAndSavesToken(): void
     {
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $mailCapture = new MailCapture();
         $service = new EmailChangeService($config, new UserTokenFactory(), $this->createMailService($mailCapture));
 
@@ -138,7 +139,7 @@ final class EmailChangeServiceTest extends TestCase
 
     public function testInitiateNoneReturnsFalseWhenUserIsNull(): void
     {
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $service = new EmailChangeService($config, new UserTokenFactory(), $this->createStub(MailService::class));
         $form = new SettingsForm($config, $this->createStub(TranslatorInterface::class));
 
@@ -147,7 +148,7 @@ final class EmailChangeServiceTest extends TestCase
 
     public function testInitiateNoneSetsEmailDirectly(): void
     {
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $service = new EmailChangeService($config, new UserTokenFactory(), $this->createStub(MailService::class));
 
         $user = $this->createSavedUser();
@@ -161,7 +162,7 @@ final class EmailChangeServiceTest extends TestCase
 
     public function testRunDefaultStrategy(): void
     {
-        $config = ModuleConfigFactory::create(
+        $config = VoytiConfigFactory::create(
             emailChangeConfirmation: EmailChangeConfirmation::NEW,
             tokenConfirmationLifespan: 999999,
         );
@@ -187,11 +188,11 @@ final class EmailChangeServiceTest extends TestCase
 
     public function testRunExistingEmailConflictReturnsFalse(): void
     {
-        $config = ModuleConfigFactory::create(tokenConfirmationLifespan: 999999);
+        $config = VoytiConfigFactory::create(tokenConfirmationLifespan: 999999);
         $service = new EmailChangeService($config, new UserTokenFactory(), $this->createStub(MailService::class));
 
         $other = $this->createSavedUser('otheruser');
-        $ref = new \ReflectionProperty(User::class, 'email');
+        $ref = new ReflectionProperty(User::class, 'email');
         $ref->setValue($other, 'existing@example.com');
         $other->save();
 
@@ -206,7 +207,7 @@ final class EmailChangeServiceTest extends TestCase
 
     public function testRunInsecureStrategyOnlyNewFlagDoesNotChangeEmail(): void
     {
-        $config = ModuleConfigFactory::create(
+        $config = VoytiConfigFactory::create(
             emailChangeConfirmation: EmailChangeConfirmation::NONE,
             tokenConfirmationLifespan: 999999,
         );
@@ -226,7 +227,7 @@ final class EmailChangeServiceTest extends TestCase
 
     public function testRunSecureOldEmailTokenOnlyOldFlagDoesNotChangeEmail(): void
     {
-        $config = ModuleConfigFactory::create(
+        $config = VoytiConfigFactory::create(
             emailChangeConfirmation: EmailChangeConfirmation::BOTH,
             tokenConfirmationLifespan: 999999,
         );
@@ -246,7 +247,7 @@ final class EmailChangeServiceTest extends TestCase
 
     public function testRunSecureOldEmailTokenWithoutInitialFlagSetsOldFlag(): void
     {
-        $config = ModuleConfigFactory::create(
+        $config = VoytiConfigFactory::create(
             emailChangeConfirmation: EmailChangeConfirmation::BOTH,
             tokenConfirmationLifespan: 999999,
         );
@@ -264,7 +265,7 @@ final class EmailChangeServiceTest extends TestCase
 
     public function testRunSecureStrategyBothFlagsAlreadySet(): void
     {
-        $config = ModuleConfigFactory::create(
+        $config = VoytiConfigFactory::create(
             emailChangeConfirmation: EmailChangeConfirmation::BOTH,
             tokenConfirmationLifespan: 999999,
         );
@@ -285,7 +286,7 @@ final class EmailChangeServiceTest extends TestCase
 
     public function testRunSecureStrategyNewEmailToken(): void
     {
-        $config = ModuleConfigFactory::create(
+        $config = VoytiConfigFactory::create(
             emailChangeConfirmation: EmailChangeConfirmation::BOTH,
             tokenConfirmationLifespan: 999999,
         );
@@ -308,7 +309,7 @@ final class EmailChangeServiceTest extends TestCase
 
     public function testRunSecureStrategyNewEmailTokenWithBothFlagsDoesNotChangeEmail(): void
     {
-        $config = ModuleConfigFactory::create(
+        $config = VoytiConfigFactory::create(
             emailChangeConfirmation: EmailChangeConfirmation::BOTH,
             tokenConfirmationLifespan: 999999,
         );
@@ -329,7 +330,7 @@ final class EmailChangeServiceTest extends TestCase
 
     public function testRunSecureStrategyOldEmailToken(): void
     {
-        $config = ModuleConfigFactory::create(
+        $config = VoytiConfigFactory::create(
             emailChangeConfirmation: EmailChangeConfirmation::BOTH,
             tokenConfirmationLifespan: 999999,
         );
@@ -349,7 +350,7 @@ final class EmailChangeServiceTest extends TestCase
 
     public function testRunTokenExpiredReturnsFalse(): void
     {
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $service = new EmailChangeService($config, new UserTokenFactory(), $this->createStub(MailService::class));
 
         $user = $this->createSavedUser();
@@ -364,7 +365,7 @@ final class EmailChangeServiceTest extends TestCase
 
     public function testRunTokenExpiredReturnsFalseEvenWhenEmailCouldChange(): void
     {
-        $config = ModuleConfigFactory::create(
+        $config = VoytiConfigFactory::create(
             emailChangeConfirmation: EmailChangeConfirmation::NEW,
             tokenConfirmationLifespan: 100,
         );
@@ -382,7 +383,7 @@ final class EmailChangeServiceTest extends TestCase
 
     public function testRunTokenNotFoundReturnsFalse(): void
     {
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $service = new EmailChangeService($config, new UserTokenFactory(), $this->createStub(MailService::class));
 
         $user = $this->createSavedUser();
@@ -392,7 +393,7 @@ final class EmailChangeServiceTest extends TestCase
 
     public function testRunTokenWrongTypeReturnsFalse(): void
     {
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $service = new EmailChangeService($config, new UserTokenFactory(), $this->createStub(MailService::class));
 
         $user = $this->createSavedUser();
@@ -404,7 +405,7 @@ final class EmailChangeServiceTest extends TestCase
 
     public function testRunUnconfirmedEmailNullReturnsFalse(): void
     {
-        $config = ModuleConfigFactory::create(tokenConfirmationLifespan: 999999);
+        $config = VoytiConfigFactory::create(tokenConfirmationLifespan: 999999);
         $service = new EmailChangeService($config, new UserTokenFactory(), $this->createStub(MailService::class));
 
         $user = $this->createSavedUser();
@@ -416,7 +417,7 @@ final class EmailChangeServiceTest extends TestCase
 
     public function testRunWithNullUserIdUsesZeroNotMinusOne(): void
     {
-        $config = ModuleConfigFactory::create(
+        $config = VoytiConfigFactory::create(
             emailChangeConfirmation: EmailChangeConfirmation::NEW,
             tokenConfirmationLifespan: 999999,
         );
@@ -445,7 +446,7 @@ final class EmailChangeServiceTest extends TestCase
 
     public function testRunWithNullUserIdUsesZeroNotOne(): void
     {
-        $config = ModuleConfigFactory::create(
+        $config = VoytiConfigFactory::create(
             emailChangeConfirmation: EmailChangeConfirmation::NEW,
             tokenConfirmationLifespan: 999999,
         );

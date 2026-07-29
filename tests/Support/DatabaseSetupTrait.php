@@ -8,7 +8,7 @@ use M240118192500CreateAssignmentsTable;
 use M240118192500CreateItemsTables;
 use M260621101843_create_user_module_tables;
 use Psr\SimpleCache\CacheInterface;
-use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Db\Cache\SchemaCache;
 use Yiisoft\Db\Connection\ConnectionInterface;
 use Yiisoft\Db\Connection\ConnectionProvider;
@@ -33,7 +33,7 @@ trait DatabaseSetupTrait
         (new M240118192500CreateItemsTables())->up($builder);
         (new M240118192500CreateAssignmentsTable())->up($builder);
 
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $migration = new M260621101843_create_user_module_tables($config, TestPasswordHasherFactory::create());
         ob_start();
         $migration->up($builder);
@@ -77,7 +77,7 @@ trait DatabaseSetupTrait
         $this->dbConnection = null;
     }
 
-    private function removeSeededAdmin(ModuleConfig $config): void
+    private function removeSeededAdmin(VoytiConfig $config): void
     {
         $this->dbConnection->createCommand(
             'DELETE FROM {{%yii_rbac_assignment}} WHERE item_name = :name',

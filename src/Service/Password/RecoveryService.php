@@ -7,9 +7,9 @@ namespace YiiRocks\Voyti\Service\Password;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\ServiceResult;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Translator\TranslatorInterface;
 
 /**
@@ -22,7 +22,7 @@ final readonly class RecoveryService
     public function __construct(
         private UserTokenFactory $userTokenFactory,
         private MailService $mailService,
-        private ModuleConfig $config,
+        private VoytiConfig $config,
         private TranslatorInterface $translator,
         private EventDispatcherInterface $eventDispatcher,
     ) {}

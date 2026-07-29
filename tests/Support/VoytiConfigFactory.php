@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Support;
 
-use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\VoytiConfig;
 
 /**
- * Builds a {@see ModuleConfig} from the package's real `config/params.php` defaults, with
+ * Builds a {@see VoytiConfig} from the package's real `config/params.php` defaults, with
  * per-test overrides layered on top — avoids duplicating the default values here.
  */
-final class ModuleConfigFactory
+final class VoytiConfigFactory
 {
-    public static function create(mixed ...$overrides): ModuleConfig
+    public static function create(mixed ...$overrides): VoytiConfig
     {
-        return new ModuleConfig(...[...self::defaults(), ...$overrides]);
+        return new VoytiConfig(...[...self::defaults(), ...$overrides]);
     }
 
     /**

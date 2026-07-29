@@ -155,5 +155,4 @@ final class SessionControllerTest extends TestCase
             WebViewRenderer::class => $this->viewRenderer,
         ])->get(SessionController::class);
     }
-
 }

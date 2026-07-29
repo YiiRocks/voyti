@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Service;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use ReflectionProperty;
 use RuntimeException;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\MailService;
@@ -88,7 +89,7 @@ final class MailServiceTest extends TestCase
         $user = new User();
         $user->setUsername('testuser');
         $user->setEmail('test@example.com');
-        $ref = new \ReflectionProperty(User::class, 'id');
+        $ref = new ReflectionProperty(User::class, 'id');
         $ref->setValue($user, 42);
 
         $result = $this->service->sendConfirmation($user, 'abcdef123');

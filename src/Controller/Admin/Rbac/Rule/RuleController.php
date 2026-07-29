@@ -12,12 +12,12 @@ use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Model\Form\Rbac\RuleForm;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\AuditLogService;
 use YiiRocks\Voyti\Service\Rbac\RuleEditionService;
 use YiiRocks\Voyti\ViewData\Admin\Rbac\Rule\CreateViewData;
 use YiiRocks\Voyti\ViewData\Admin\Rbac\Rule\IndexViewData;
 use YiiRocks\Voyti\ViewData\Admin\Rbac\Rule\UpdateViewData;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Http\Method;
 use Yiisoft\Input\Http\Attribute\Parameter\Body;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
@@ -48,7 +48,7 @@ final readonly class RuleController
         private RuleEditionService $authRuleEditionService,
         private ResponseFactoryInterface $responseFactory,
         private FlashInterface $flash,
-        private ModuleConfig $config,
+        private VoytiConfig $config,
         private AuditLogService $auditLogService,
         private CurrentUser $currentUser,
     ) {}
@@ -149,5 +149,4 @@ final readonly class RuleController
             'data' => UpdateViewData::create($form, $errors, $this->url, $this->translator()),
         ]);
     }
-
 }

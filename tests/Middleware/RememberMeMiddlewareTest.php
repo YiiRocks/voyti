@@ -295,5 +295,4 @@ final class RememberMeMiddlewareTest extends TestCase
         $handler->method('handle')->willReturn($response);
         return $handler;
     }
-
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Validator\Rbac;
 
 use PHPUnit\Framework\TestCase;
+use stdClass;
 use YiiRocks\Voyti\Validator\Rbac\RuleValidator;
 use Yiisoft\Rbac\CompositeRule;
 
@@ -13,7 +14,7 @@ final class RuleValidatorTest extends TestCase
     public function testValidateWithBuiltInClassNotImplementingRuleInterface(): void
     {
         $validator = new RuleValidator();
-        $result = $validator->validate(\stdClass::class);
+        $result = $validator->validate(stdClass::class);
 
         $this->assertFalse($result->isValid());
         $this->assertStringContainsString('must implement RuleInterface', $result->getErrors()[0]->getMessage());
@@ -38,6 +39,7 @@ final class RuleValidatorTest extends TestCase
         $this->assertCount(1, $result->getErrors());
         $this->assertStringContainsString('does not exist', $result->getErrors()[0]->getMessage());
     }
+
     public function testValidateWithValidRuleClass(): void
     {
         $validator = new RuleValidator();

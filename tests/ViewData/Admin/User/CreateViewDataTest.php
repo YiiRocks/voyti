@@ -6,7 +6,7 @@ namespace YiiRocks\Voyti\tests\ViewData\Admin\User;
 
 use YiiRocks\Voyti\Model\Form\Auth\RegistrationForm;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
 use YiiRocks\Voyti\ViewData\Admin\User\CreateViewData;
 
@@ -14,7 +14,7 @@ final class CreateViewDataTest extends TestCase
 {
     public function testCreateBuildsItemsAndCarriesFormValues(): void
     {
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $model = new RegistrationForm($config, $this->createTranslator());
         $model->username = 'jane';
         $model->email = 'jane@example.com';

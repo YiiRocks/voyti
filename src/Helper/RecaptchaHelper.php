@@ -11,13 +11,13 @@ use YiiRocks\Recaptcha\RecaptchaV3Badge;
 use YiiRocks\Recaptcha\RecaptchaV3Field;
 use YiiRocks\Recaptcha\RecaptchaV3Rule;
 use YiiRocks\Voyti\Enum\RecaptchaVersion;
-use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\FormModel\FormModelInterface;
 use Yiisoft\Validator\RuleInterface;
 
 /**
  * Renders the reCAPTCHA widget and builds its validation rule for a form, based on
- * `ModuleConfig::$recaptchaVersion`. The optional `yiirocks/recaptcha` package is guarded by
+ * `VoytiConfig::$recaptchaVersion`. The optional `yiirocks/recaptcha` package is guarded by
  * `class_exists()` checks so forms degrade to a no-op when it isn't installed, and a form degrades
  * to a no-op the same way when the package is installed but the host hasn't configured a site key
  * and secret for the selected version via `RecaptchaRegistry::configure()`.
@@ -38,7 +38,7 @@ final class RecaptchaHelper
 
     public static function render(
         FormModelInterface $form,
-        ModuleConfig $config,
+        VoytiConfig $config,
         string $attribute = 'gRecaptchaResponse',
     ): string {
         if (!self::isAvailable()) {
@@ -80,7 +80,7 @@ final class RecaptchaHelper
     /**
      * @return list<RuleInterface>
      */
-    public static function rules(ModuleConfig $config, string $formName): array
+    public static function rules(VoytiConfig $config, string $formName): array
     {
         if (!class_exists(RecaptchaV3Rule::class) || !self::isConfigured($config->recaptchaVersion)) {
             return [];

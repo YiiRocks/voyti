@@ -6,7 +6,7 @@ namespace YiiRocks\Voyti\Model\Form\Auth;
 
 use Override;
 use YiiRocks\Voyti\Helper\RecaptchaHelper;
-use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\Helper\ObjectParser;
@@ -30,7 +30,7 @@ final class LoginForm extends FormModel implements LabelsProviderInterface, Rule
     public ?string $twoFactorAuthenticationCode = null;
 
     public function __construct(
-        private readonly ModuleConfig $config,
+        private readonly VoytiConfig $config,
         private readonly TranslatorInterface $translator,
         private readonly bool $requireTwoFactorAuthenticationCode = false,
     ) {}

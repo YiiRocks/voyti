@@ -17,7 +17,6 @@ use YiiRocks\Voyti\Model\Form\Settings\GdprConsentForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\Model\UserSocialAccount;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\Service\UserSession\TerminateUserSessionsService;
 use YiiRocks\Voyti\ViewData\Privacy\AnonymizeViewData;
@@ -25,6 +24,7 @@ use YiiRocks\Voyti\ViewData\Privacy\DeleteViewData;
 use YiiRocks\Voyti\ViewData\Privacy\GdprConsentViewData;
 use YiiRocks\Voyti\ViewData\Privacy\IndexViewData;
 use YiiRocks\Voyti\ViewData\Shared\MessageViewData;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Http\Header;
 use Yiisoft\Http\Method;
 use Yiisoft\Http\Status;
@@ -56,7 +56,7 @@ final readonly class PrivacyController
         private ValidatorInterface $validator,
         private EventDispatcherInterface $eventDispatcher,
         private UrlGeneratorInterface $url,
-        private ModuleConfig $config,
+        private VoytiConfig $config,
         private HydratorInterface $hydrator,
         private CurrentUser $currentUser,
         private ResponseFactoryInterface $responseFactory,

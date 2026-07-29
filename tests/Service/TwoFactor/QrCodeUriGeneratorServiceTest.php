@@ -8,14 +8,14 @@ use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 
 #[AllowMockObjectsWithoutExpectations]
 final class QrCodeUriGeneratorServiceTest extends TestCase
 {
     public function testGenerateQrCodeSvgReturnsSvgForExistingSecret(): void
     {
-        $config = ModuleConfigFactory::create(appName: 'VoytiApp');
+        $config = VoytiConfigFactory::create(appName: 'VoytiApp');
         $service = new QrCodeUriGeneratorService($config);
 
         $user = $this->createMock(User::class);
@@ -29,14 +29,14 @@ final class QrCodeUriGeneratorServiceTest extends TestCase
 
     public function testIsAvailableReturnsTrueWhenBothLibrariesAreInstalled(): void
     {
-        $service = new QrCodeUriGeneratorService(ModuleConfigFactory::create());
+        $service = new QrCodeUriGeneratorService(VoytiConfigFactory::create());
 
         self::assertTrue($service->isAvailable());
     }
 
     public function testRegenerateQrCodeSvgIgnoresExistingSecret(): void
     {
-        $config = ModuleConfigFactory::create(appName: 'TestApp');
+        $config = VoytiConfigFactory::create(appName: 'TestApp');
         $service = new QrCodeUriGeneratorService($config);
 
         $user = $this->createMock(User::class);

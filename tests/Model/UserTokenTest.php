@@ -315,5 +315,4 @@ final class UserTokenTest extends TestCase
         $entity = new UserToken();
         self::assertSame(['user_id', 'code', 'type'], $entity->primaryKey());
     }
-
 }

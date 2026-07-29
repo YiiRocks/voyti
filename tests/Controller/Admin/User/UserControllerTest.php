@@ -17,7 +17,6 @@ use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserAuditLog;
 use YiiRocks\Voyti\Model\UserProfile;
 use YiiRocks\Voyti\Model\UserSessions;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\ExpireService;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
@@ -28,14 +27,15 @@ use YiiRocks\Voyti\Service\User\BlockService;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\CreateService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\Support\UserSessionFactoryTrait;
 use YiiRocks\Voyti\tests\Support\ViewCaptureTrait;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Data\Paginator\OffsetPaginator;
 use Yiisoft\Hydrator\HydratorInterface;
@@ -853,7 +853,7 @@ final class UserControllerTest extends TestCase
         $user->save();
         $userId = (int) $user->getId();
 
-        $controller = $this->createController(ModuleConfigFactory::create(maxPasswordAge: 90));
+        $controller = $this->createController(VoytiConfigFactory::create(maxPasswordAge: 90));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['user' => ['username' => 'updated', 'email' => 'updated@example.com', 'password' => 'originalpass'], 'assignedItems' => []]);
 
         $response = $this->createMock(ResponseInterface::class);
@@ -967,7 +967,7 @@ final class UserControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    private function createController(?ModuleConfig $config = null): UserController
+    private function createController(?VoytiConfig $config = null): UserController
     {
         $overrides = [
             AuthHelper::class => $this->authHelper,
@@ -988,12 +988,11 @@ final class UserControllerTest extends TestCase
         ];
 
         if ($config !== null) {
-            $overrides[ModuleConfig::class] = $config;
+            $overrides[VoytiConfig::class] = $config;
         }
 
         return $this->getTestContainer($overrides)->get(UserController::class);
     }
-
 
     private function createUserWithProfile(string $name = 'John'): User
     {

@@ -6,9 +6,9 @@ namespace YiiRocks\Voyti\tests\ViewData\Shared;
 
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\ViewData\Shared\MenuViewData;
 
 final class MenuViewDataTest extends TestCase
@@ -18,7 +18,7 @@ final class MenuViewDataTest extends TestCase
 
     public function testForAccountIncludesPrivacyWhenAccountDeleteAllowedWithoutGdpr(): void
     {
-        $config = ModuleConfigFactory::create(enableGdprCompliance: false, allowAccountDelete: true);
+        $config = VoytiConfigFactory::create(enableGdprCompliance: false, allowAccountDelete: true);
 
         $menu = MenuViewData::forAccount($config, new FakeUrlGenerator(), $this->createTranslator(), false, null);
 
@@ -29,7 +29,7 @@ final class MenuViewDataTest extends TestCase
 
     public function testForAccountIncludesTwoFactorAndPrivacyWhenEnabled(): void
     {
-        $config = ModuleConfigFactory::create(enableTwoFactorAuthentication: true, enableGdprCompliance: true);
+        $config = VoytiConfigFactory::create(enableTwoFactorAuthentication: true, enableGdprCompliance: true);
 
         $menu = MenuViewData::forAccount($config, new FakeUrlGenerator(), $this->createTranslator(), false, null);
 
@@ -41,7 +41,7 @@ final class MenuViewDataTest extends TestCase
 
     public function testForAccountOmitsOptionalItemsWhenDisabled(): void
     {
-        $menu = MenuViewData::forAccount(ModuleConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), false, null);
+        $menu = MenuViewData::forAccount(VoytiConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), false, null);
 
         $labels = array_map(static fn($item) => $item->label, $menu->items);
 
@@ -59,7 +59,7 @@ final class MenuViewDataTest extends TestCase
 
     public function testForAccountOmitsSwitchedBannerWhenIsSwitchedButOriginalUserUnknown(): void
     {
-        $menu = MenuViewData::forAccount(ModuleConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), true, null);
+        $menu = MenuViewData::forAccount(VoytiConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), true, null);
 
         self::assertNull($menu->switchedBannerMessage);
         self::assertNull($menu->switchIdentityRestoreUrl);
@@ -70,7 +70,7 @@ final class MenuViewDataTest extends TestCase
     {
         $originalUser = $this->buildUser(username: 'original-admin');
 
-        $menu = MenuViewData::forAccount(ModuleConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), true, $originalUser);
+        $menu = MenuViewData::forAccount(VoytiConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), true, $originalUser);
 
         self::assertSame('voyti.view.admin.switched_banner', $menu->switchedBannerMessage);
         self::assertSame('//voyti/admin-users-switch-identity-restore', $menu->switchIdentityRestoreUrl);
@@ -94,6 +94,4 @@ final class MenuViewDataTest extends TestCase
         ], $labels);
         self::assertTrue($menu->items[array_key_last($menu->items)]->alignEnd);
     }
-
-
 }

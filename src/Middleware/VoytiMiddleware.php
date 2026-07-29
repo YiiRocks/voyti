@@ -9,14 +9,14 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\VoytiConfig;
 
 /**
  * Convenience wrapper that chains voyti's remember-me and enforcement middleware in the recommended order.
  *
  * Add this single middleware to your app's route group (or global pipeline, after session middleware)
  * instead of adding the sub-middlewares individually. Each sub-middleware still checks its own
- * feature flag internally, so features that are disabled in {@see ModuleConfig}
+ * feature flag internally, so features that are disabled in {@see VoytiConfig}
  * become no-ops without any extra configuration.
  */
 final readonly class VoytiMiddleware implements MiddlewareInterface

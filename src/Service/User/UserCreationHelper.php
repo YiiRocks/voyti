@@ -11,9 +11,9 @@ use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserProfile;
 use YiiRocks\Voyti\Model\UserToken;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Db\Exception\IntegrityException;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Security\Random;
@@ -21,7 +21,7 @@ use Yiisoft\Security\Random;
 /**
  * Shared user-persistence logic for account creation: builds a {@see User} with a hashed password,
  * checks email/username uniqueness, and persists it with its profile. `persistAndNotify()` requires
- * email confirmation (sending a confirmation token) when {@see ModuleConfig::$enableEmailConfirmation}
+ * email confirmation (sending a confirmation token) when {@see VoytiConfig::$enableEmailConfirmation}
  * is on; `persistAndNotifySkippingConfirmation()` always persists as already-confirmed and sends a
  * welcome email instead (e.g. when the identity was already verified by a social provider).
  * `findUniquenessConflict()` then persisting isn't atomic, so a concurrent request can still slip
@@ -35,7 +35,7 @@ final readonly class UserCreationHelper
         private MailService $mailService,
         private EventDispatcherInterface $eventDispatcher,
         private PasswordHasher $passwordHasher,
-        private ModuleConfig $config,
+        private VoytiConfig $config,
         private PasswordHistoryService $passwordHistoryService,
     ) {}
 

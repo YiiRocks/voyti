@@ -10,8 +10,8 @@ use PHPUnit\Framework\TestCase;
 use YiiRocks\Recaptcha\RecaptchaRegistry;
 use YiiRocks\Voyti\Enum\RecaptchaVersion;
 use YiiRocks\Voyti\Helper\RecaptchaHelper;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\RecaptchaRegistryTrait;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\FormModel\FormModelInterface;
 
@@ -57,7 +57,7 @@ final class RecaptchaHelperTest extends TestCase
     #[DataProvider('renderWithoutConfiguredKeyProvider')]
     public function testRenderReturnsEmptyStringWhenNotConfigured(RecaptchaVersion $version): void
     {
-        $config = ModuleConfigFactory::create(recaptchaVersion: $version);
+        $config = VoytiConfigFactory::create(recaptchaVersion: $version);
         $form = $this->createMock(FormModelInterface::class);
 
         self::assertSame('', RecaptchaHelper::render($form, $config));
@@ -68,7 +68,7 @@ final class RecaptchaHelperTest extends TestCase
     {
         $this->configureRecaptchaRegistryWithoutSecret();
 
-        $config = ModuleConfigFactory::create(recaptchaVersion: $version);
+        $config = VoytiConfigFactory::create(recaptchaVersion: $version);
         $form = $this->createMock(FormModelInterface::class);
 
         self::assertSame('', RecaptchaHelper::render($form, $config));
@@ -78,7 +78,7 @@ final class RecaptchaHelperTest extends TestCase
     {
         $this->configureRecaptchaRegistry();
 
-        $config = ModuleConfigFactory::create(recaptchaVersion: RecaptchaVersion::V2);
+        $config = VoytiConfigFactory::create(recaptchaVersion: RecaptchaVersion::V2);
         $form = new RecaptchaTestForm();
 
         $html = RecaptchaHelper::render($form, $config);
@@ -91,7 +91,7 @@ final class RecaptchaHelperTest extends TestCase
     {
         $this->configureRecaptchaRegistry();
 
-        $config = ModuleConfigFactory::create(recaptchaVersion: RecaptchaVersion::V3);
+        $config = VoytiConfigFactory::create(recaptchaVersion: RecaptchaVersion::V3);
         $form = new RecaptchaTestForm();
 
         $html = RecaptchaHelper::render($form, $config);

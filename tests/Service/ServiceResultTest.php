@@ -38,6 +38,7 @@ final class ServiceResultTest extends TestCase
         self::assertSame('', $result->getMessage());
         self::assertSame([], $result->getErrors());
     }
+
     public function testSuccessStaticFactory(): void
     {
         $result = ServiceResult::success('Operation completed');

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\ViewData\Privacy;
 
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\ViewData\Shared\MenuViewData;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 
@@ -16,8 +16,8 @@ use Yiisoft\Translator\TranslatorInterface;
 final readonly class IndexViewData
 {
     /**
-     * @param bool $showGdprLinks whether to render $gdprConsentUrl as a link (`ModuleConfig::$enableGdprCompliance`)
-     * @param bool $showDeleteLink whether to render $deleteUrl as a link (`ModuleConfig::$allowAccountDelete`)
+     * @param bool $showGdprLinks whether to render $gdprConsentUrl as a link (`VoytiConfig::$enableGdprCompliance`)
+     * @param bool $showDeleteLink whether to render $deleteUrl as a link (`VoytiConfig::$allowAccountDelete`)
      */
     private function __construct(
         public MenuViewData $menu,
@@ -30,7 +30,7 @@ final readonly class IndexViewData
     ) {}
 
     public static function create(
-        ModuleConfig $config,
+        VoytiConfig $config,
         UrlGeneratorInterface $url,
         TranslatorInterface $translator,
         bool $isSwitched,

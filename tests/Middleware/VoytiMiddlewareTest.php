@@ -16,14 +16,14 @@ use YiiRocks\Voyti\Middleware\RememberMeMiddleware;
 use YiiRocks\Voyti\Middleware\SessionRevocationEnforceMiddleware;
 use YiiRocks\Voyti\Middleware\TwoFactorAuthenticationEnforceMiddleware;
 use YiiRocks\Voyti\Middleware\VoytiMiddleware;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\ExpireService;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\FakeSession;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Cookies\CookieMiddleware;
 use Yiisoft\Http\Status;
@@ -176,7 +176,7 @@ final class VoytiMiddlewareTest extends TestCase
 
     public function testProcessWithRealMiddlewaresAllFeaturesDisabled(): void
     {
-        $config = ModuleConfigFactory::create(
+        $config = VoytiConfigFactory::create(
             enableTwoFactorAuthentication: false,
         );
 
@@ -197,7 +197,7 @@ final class VoytiMiddlewareTest extends TestCase
         // CookieMiddleware is only ever wrapped by RememberMeMiddleware itself, not chained a
         // second time by VoytiMiddleware - otherwise the second pass would try to decrypt an
         // already-decrypted cookie and fail. See VoytiMiddleware's class docblock.
-        $config = ModuleConfigFactory::create(
+        $config = VoytiConfigFactory::create(
             enableTwoFactorAuthentication: false,
         );
 
@@ -220,7 +220,7 @@ final class VoytiMiddlewareTest extends TestCase
 
     public function testProcessWithRealMiddlewaresSessionRevocationShortCircuits(): void
     {
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
 
         $user = $this->createUser(username: 'voytiuser', email: 'voytiuser@example.com');
 
@@ -291,7 +291,7 @@ final class VoytiMiddlewareTest extends TestCase
         ?SessionRevocationEnforceMiddleware $sessionRevocation = null,
         ?TwoFactorAuthenticationEnforceMiddleware $twoFactorAuth = null,
         ?CookieMiddleware $cookieMiddleware = null,
-        ?ModuleConfig $config = null,
+        ?VoytiConfig $config = null,
         ?CurrentUser $currentUser = null,
         ?CurrentRoute $currentRoute = null,
         ?ResponseFactoryInterface $responseFactory = null,
@@ -301,7 +301,7 @@ final class VoytiMiddlewareTest extends TestCase
         ?ManagerInterface $authManager = null,
         ?IdentityRepositoryInterface $identityRepository = null,
     ): VoytiMiddleware {
-        $config ??= ModuleConfigFactory::create();
+        $config ??= VoytiConfigFactory::create();
 
         $currentUser ??= $this->createMock(CurrentUser::class);
         $currentRoute ??= $this->createMock(CurrentRoute::class);

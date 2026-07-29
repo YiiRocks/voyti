@@ -16,16 +16,16 @@ use YiiRocks\Voyti\Enum\ProfileVisibility;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserProfile;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\HydrateObjectTrait;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\Support\ViewCaptureTrait;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\User\CurrentUser;
@@ -96,7 +96,7 @@ final class ProfileControllerTest extends TestCase
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
 
         $controller = $this->createController(
-            ModuleConfigFactory::create(profileVisibility: ProfileVisibility::ADMIN),
+            VoytiConfigFactory::create(profileVisibility: ProfileVisibility::ADMIN),
         );
 
         $response = $this->createMock(ResponseInterface::class);
@@ -119,7 +119,7 @@ final class ProfileControllerTest extends TestCase
         $this->currentUser->method('getIdentity')->willReturn($identity);
 
         $controller = $this->createController(
-            ModuleConfigFactory::create(profileVisibility: ProfileVisibility::ADMIN),
+            VoytiConfigFactory::create(profileVisibility: ProfileVisibility::ADMIN),
         );
 
         $response = $this->createMock(ResponseInterface::class);
@@ -147,7 +147,7 @@ final class ProfileControllerTest extends TestCase
         $this->createUserWithProfile();
 
         $controller = $this->createController(
-            ModuleConfigFactory::create(profileVisibility: $visibility),
+            VoytiConfigFactory::create(profileVisibility: $visibility),
         );
 
         $response = $this->createMock(ResponseInterface::class);
@@ -174,7 +174,7 @@ final class ProfileControllerTest extends TestCase
         }
 
         $controller = $this->createController(
-            ModuleConfigFactory::create(profileVisibility: $visibility),
+            VoytiConfigFactory::create(profileVisibility: $visibility),
         );
 
         $response = $this->createMock(ResponseInterface::class);
@@ -404,7 +404,7 @@ final class ProfileControllerTest extends TestCase
         $this->assertSame('1990-05-15', $updatedProfile->getBirthday()?->format('Y-m-d'));
     }
 
-    private function createController(?ModuleConfig $config = null): ProfileController
+    private function createController(?VoytiConfig $config = null): ProfileController
     {
         $overrides = [
             AuthHelper::class => $this->authHelper,
@@ -417,7 +417,7 @@ final class ProfileControllerTest extends TestCase
         ];
 
         if ($config !== null) {
-            $overrides[ModuleConfig::class] = $config;
+            $overrides[VoytiConfig::class] = $config;
         }
 
         return $this->getTestContainer($overrides)->get(ProfileController::class);

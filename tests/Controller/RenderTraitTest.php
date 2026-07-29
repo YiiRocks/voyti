@@ -7,10 +7,10 @@ namespace YiiRocks\Voyti\tests\Controller;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\RenderTrait;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -22,7 +22,7 @@ final class RenderTraitTest extends TestCase
 {
     public function testAddsCsrfInjectionScopedToTheRenderCallOnly(): void
     {
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
         $viewRenderer = $this->createMock(WebViewRenderer::class);
         $response = $this->createMock(ResponseInterface::class);
 
@@ -38,7 +38,7 @@ final class RenderTraitTest extends TestCase
 
             public function __construct(
                 private WebViewRenderer $viewRenderer,
-                private ModuleConfig $config,
+                private VoytiConfig $config,
                 private TranslatorInterface $translator,
                 private UrlGeneratorInterface $url,
                 private FlashInterface $flash,
@@ -61,7 +61,7 @@ final class RenderTraitTest extends TestCase
         try {
             $capturedPath = $this->renderWithConfiguredPath($customViewPath, 'shared/message');
 
-            self::assertSame(ModuleConfig::DEFAULT_VIEW_PATH, $capturedPath);
+            self::assertSame(VoytiConfig::DEFAULT_VIEW_PATH, $capturedPath);
         } finally {
             rmdir($customViewPath);
         }
@@ -87,7 +87,7 @@ final class RenderTraitTest extends TestCase
 
     private function renderWithConfiguredPath(string $viewPath, string $view): ?string
     {
-        $config = ModuleConfigFactory::create(viewPath: $viewPath);
+        $config = VoytiConfigFactory::create(viewPath: $viewPath);
         $viewRenderer = $this->createMock(WebViewRenderer::class);
         $response = $this->createMock(ResponseInterface::class);
 
@@ -106,7 +106,7 @@ final class RenderTraitTest extends TestCase
 
             public function __construct(
                 private WebViewRenderer $viewRenderer,
-                private ModuleConfig $config,
+                private VoytiConfig $config,
                 private TranslatorInterface $translator,
                 private UrlGeneratorInterface $url,
                 private FlashInterface $flash,

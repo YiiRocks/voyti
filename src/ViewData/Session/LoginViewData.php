@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\ViewData\Session;
 
 use YiiRocks\Voyti\Helper\RecaptchaHelper;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\ViewData\Shared\SocialConnectViewData;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\FormModel\FormModelInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Yii\AuthClient\Collection;
@@ -34,7 +34,7 @@ final readonly class LoginViewData
 
     public static function create(
         FormModelInterface $form,
-        ModuleConfig $config,
+        VoytiConfig $config,
         UrlGeneratorInterface $url,
         ?Collection $clientCollection,
     ): self {

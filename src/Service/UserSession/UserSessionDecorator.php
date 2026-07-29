@@ -9,19 +9,19 @@ use YiiRocks\Voyti\Event\Session\SessionEvent;
 use YiiRocks\Voyti\Helper\LoginMetadataHelper;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
-use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Session\SessionInterface;
 
 /**
  * Records a new login as a {@see UserSessions} row, replacing the session record identified by
  * `previousSessionId` (e.g. after session ID regeneration on login) and pruning sessions older than
- * {@see ModuleConfig::$rememberLoginLifespan}.
+ * {@see VoytiConfig::$rememberLoginLifespan}.
  */
 final readonly class UserSessionDecorator
 {
     public function __construct(
         private EventDispatcherInterface $eventDispatcher,
-        private ModuleConfig $config,
+        private VoytiConfig $config,
         private ?SessionInterface $session = null,
     ) {}
 

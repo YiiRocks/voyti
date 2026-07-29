@@ -6,32 +6,33 @@ namespace YiiRocks\Voyti\tests\ViewData\Admin\User;
 
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\ViewData\Admin\User\UserRow;
 
 final class UserRowTest extends TestCase
 {
     use TranslatorMockTrait;
     use UserFactoryTrait;
+
     public function testCreateBuildsBlockToggleLabel(): void
     {
         $user = $this->buildUser();
 
-        $row = UserRow::create($user, ModuleConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), false, 999999);
+        $row = UserRow::create($user, VoytiConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), false, 999999);
 
         self::assertSame('voyti.view.block_button', $row->blockToggleLabel);
 
         $user->setBlockedAt(time());
-        $blockedRow = UserRow::create($user, ModuleConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), false, 999999);
+        $blockedRow = UserRow::create($user, VoytiConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), false, 999999);
 
         self::assertSame('voyti.view.unblock_button', $blockedRow->blockToggleLabel);
     }
 
     public function testCreateBuildsUrlsScopedToUserId(): void
     {
-        $row = UserRow::create($this->buildUser(), ModuleConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), false, 999999);
+        $row = UserRow::create($this->buildUser(), VoytiConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), false, 999999);
 
         self::assertSame('//voyti/admin-users-show?id=0', $row->showUrl);
         self::assertSame('//voyti/admin-users-update?id=0', $row->updateUrl);
@@ -49,7 +50,7 @@ final class UserRowTest extends TestCase
     {
         $user = $this->buildUser();
 
-        $config = ModuleConfigFactory::create(enableSwitchIdentities: true);
+        $config = VoytiConfigFactory::create(enableSwitchIdentities: true);
         $row = UserRow::create($user, $config, new FakeUrlGenerator(), $this->createTranslator(), false, $user->getIdOrZero());
 
         self::assertTrue($row->switchIdentityDisabled);
@@ -57,7 +58,7 @@ final class UserRowTest extends TestCase
 
     public function testCreateHidesForcePasswordChangeWhenDisabled(): void
     {
-        $config = ModuleConfigFactory::create();
+        $config = VoytiConfigFactory::create();
 
         $row = UserRow::create($this->buildUser(), $config, new FakeUrlGenerator(), $this->createTranslator(), false, 999999);
 
@@ -66,7 +67,7 @@ final class UserRowTest extends TestCase
 
     public function testCreateHidesSwitchIdentityWhenAlreadySwitched(): void
     {
-        $config = ModuleConfigFactory::create(enableSwitchIdentities: true);
+        $config = VoytiConfigFactory::create(enableSwitchIdentities: true);
 
         $row = UserRow::create($this->buildUser(), $config, new FakeUrlGenerator(), $this->createTranslator(), true, 999999);
 
@@ -78,7 +79,7 @@ final class UserRowTest extends TestCase
         $user = $this->buildUser();
         $user->setBlockedAt(time());
 
-        $row = UserRow::create($user, ModuleConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), false, 999999);
+        $row = UserRow::create($user, VoytiConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), false, 999999);
 
         self::assertSame('voyti.view.status_blocked', $row->statusLabel);
         self::assertSame('bg-danger', $row->statusBadgeClass);
@@ -90,7 +91,7 @@ final class UserRowTest extends TestCase
         $user = $this->buildUser();
         $user->setConfirmedAt(time());
 
-        $row = UserRow::create($user, ModuleConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), false, 999999);
+        $row = UserRow::create($user, VoytiConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), false, 999999);
 
         self::assertSame('voyti.view.status_active', $row->statusLabel);
         self::assertFalse($row->showConfirmAction);
@@ -98,7 +99,7 @@ final class UserRowTest extends TestCase
 
     public function testCreateResolvesPendingStatus(): void
     {
-        $row = UserRow::create($this->buildUser(), ModuleConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), false, 999999);
+        $row = UserRow::create($this->buildUser(), VoytiConfigFactory::create(), new FakeUrlGenerator(), $this->createTranslator(), false, 999999);
 
         self::assertSame('voyti.view.status_pending', $row->statusLabel);
         self::assertTrue($row->showConfirmAction);
@@ -106,7 +107,7 @@ final class UserRowTest extends TestCase
 
     public function testCreateShowsForcePasswordChangeWhenEnabled(): void
     {
-        $config = ModuleConfigFactory::create(maxPasswordAge: 90);
+        $config = VoytiConfigFactory::create(maxPasswordAge: 90);
 
         $row = UserRow::create($this->buildUser(), $config, new FakeUrlGenerator(), $this->createTranslator(), false, 999999);
 
@@ -115,11 +116,10 @@ final class UserRowTest extends TestCase
 
     public function testCreateShowsSwitchIdentityWhenEnabledAndNotSwitched(): void
     {
-        $config = ModuleConfigFactory::create(enableSwitchIdentities: true);
+        $config = VoytiConfigFactory::create(enableSwitchIdentities: true);
 
         $row = UserRow::create($this->buildUser(), $config, new FakeUrlGenerator(), $this->createTranslator(), false, 999999);
 
         self::assertTrue($row->showSwitchIdentityAction);
     }
-
 }

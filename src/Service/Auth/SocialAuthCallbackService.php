@@ -10,9 +10,9 @@ use RuntimeException;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\ViewData\Shared\MessageViewData;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Session\SessionInterface;
@@ -43,7 +43,7 @@ final readonly class SocialAuthCallbackService
         private WebViewRenderer $viewRenderer,
         private ResponseFactoryInterface $responseFactory,
         private UrlGeneratorInterface $url,
-        private ModuleConfig $config,
+        private VoytiConfig $config,
         private SessionInterface $session,
         private FlashInterface $flash,
         private CurrentUser $currentUser,

@@ -8,7 +8,7 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
 use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
@@ -22,7 +22,7 @@ final readonly class SwitchIdentityService
     private const SESSION_KEY = 'voyti_original_admin_user';
 
     public function __construct(
-        private ModuleConfig $config,
+        private VoytiConfig $config,
         private CurrentUser $currentUser,
         private SessionInterface $session,
         private EventDispatcherInterface $eventDispatcher,

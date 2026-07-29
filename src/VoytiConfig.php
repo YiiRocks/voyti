@@ -15,7 +15,7 @@ use Yiisoft\Router\UrlGeneratorInterface;
  * Single source of truth for all module settings: an immutable value object injected into
  * services instead of raw params.
  */
-final readonly class ModuleConfig
+final readonly class VoytiConfig
 {
     public const DEFAULT_MAIL_PATH = __DIR__ . '/../resources/mail';
     public const DEFAULT_VIEW_PATH = __DIR__ . '/../resources/views/bootstrap5';

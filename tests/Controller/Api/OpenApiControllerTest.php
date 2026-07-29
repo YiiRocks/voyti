@@ -8,10 +8,10 @@ use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\Api\OpenApiController;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\DataResponse\ResponseFactory\DataResponseFactoryInterface;
 
 #[AllowMockObjectsWithoutExpectations]
@@ -279,11 +279,11 @@ final class OpenApiControllerTest extends TestCase
         return $captured;
     }
 
-    private function createController(?ModuleConfig $config = null): OpenApiController
+    private function createController(?VoytiConfig $config = null): OpenApiController
     {
         return new OpenApiController(
             responseFactory: $this->responseFactory,
-            config: $config ?? ModuleConfigFactory::create(),
+            config: $config ?? VoytiConfigFactory::create(),
             url: $this->url,
         );
     }

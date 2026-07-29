@@ -11,10 +11,10 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use YiiRocks\Voyti\Middleware\PasswordAgeEnforceMiddleware;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\ExpireService;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\Router\CurrentRoute;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -27,7 +27,7 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
 {
     public function testProcessPassesThroughForExemptAccountSettingsRoute(): void
     {
-        $config = ModuleConfigFactory::create(
+        $config = VoytiConfigFactory::create(
             maxPasswordAge: 90,
         );
 
@@ -51,9 +51,10 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
 
         self::assertSame($response, $result);
     }
+
     public function testProcessPassesThroughForExemptLogoutRoute(): void
     {
-        $config = ModuleConfigFactory::create(maxPasswordAge: 90);
+        $config = VoytiConfigFactory::create(maxPasswordAge: 90);
 
         $user = new User();
         $user->setPasswordChangedAt(time() - 91 * 86400);
@@ -78,7 +79,7 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
 
     public function testProcessPassesThroughForGuestUser(): void
     {
-        $config = ModuleConfigFactory::create(maxPasswordAge: 90);
+        $config = VoytiConfigFactory::create(maxPasswordAge: 90);
 
         $request = $this->createMock(ServerRequestInterface::class);
         $response = $this->createMock(ResponseInterface::class);
@@ -99,7 +100,7 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
 
     public function testProcessPassesThroughForNonUserIdentity(): void
     {
-        $config = ModuleConfigFactory::create(maxPasswordAge: 90);
+        $config = VoytiConfigFactory::create(maxPasswordAge: 90);
 
         $request = $this->createMock(ServerRequestInterface::class);
         $response = $this->createMock(ResponseInterface::class);
@@ -120,7 +121,7 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
 
     public function testProcessPassesThroughWhenMaxPasswordAgeIsZeroEvenIfPasswordVeryOld(): void
     {
-        $config = ModuleConfigFactory::create(maxPasswordAge: 0);
+        $config = VoytiConfigFactory::create(maxPasswordAge: 0);
 
         $user = new User();
         $user->setPasswordChangedAt(time() - 9999 * 86400);
@@ -142,7 +143,7 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
 
     public function testProcessPassesThroughWhenPasswordNotExpired(): void
     {
-        $config = ModuleConfigFactory::create(maxPasswordAge: 90);
+        $config = VoytiConfigFactory::create(maxPasswordAge: 90);
 
         $user = new User();
         $user->setPasswordChangedAt(time());
@@ -164,7 +165,7 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
 
     public function testProcessRedirectsWhenPasswordExpired(): void
     {
-        $config = ModuleConfigFactory::create(
+        $config = VoytiConfigFactory::create(
             maxPasswordAge: 90,
         );
 
@@ -199,7 +200,7 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
 
     public function testProcessRedirectsWhenPasswordNeverChanged(): void
     {
-        $config = ModuleConfigFactory::create(
+        $config = VoytiConfigFactory::create(
             maxPasswordAge: 90,
         );
 
@@ -230,15 +231,16 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
 
         $middleware->process($request, $handler);
     }
+
     private function createMiddleware(
         ?CurrentUser $currentUser = null,
-        ?ModuleConfig $config = null,
+        ?VoytiConfig $config = null,
         ?CurrentRoute $currentRoute = null,
         ?TranslatorInterface $translator = null,
         ?ResponseFactoryInterface $responseFactory = null,
         ?UrlGeneratorInterface $url = null,
     ): PasswordAgeEnforceMiddleware {
-        $config ??= ModuleConfigFactory::create();
+        $config ??= VoytiConfigFactory::create();
 
         return new PasswordAgeEnforceMiddleware(
             $currentUser ?? $this->createMock(CurrentUser::class),

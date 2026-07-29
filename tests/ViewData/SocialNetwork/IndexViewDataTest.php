@@ -6,9 +6,10 @@ namespace YiiRocks\Voyti\tests\ViewData\SocialNetwork;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
+use ReflectionProperty;
 use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\ViewData\SocialNetwork\IndexViewData;
 use Yiisoft\Translator\Translator;
 use Yiisoft\Yii\AuthClient\Collection;
@@ -28,19 +29,19 @@ final class IndexViewDataTest extends TestCase
         $account = new UserSocialAccount();
         $account->setProvider('github');
         $account->setClientId('123');
-        (new \ReflectionProperty(UserSocialAccount::class, 'id'))->setValue($account, 999999);
+        (new ReflectionProperty(UserSocialAccount::class, 'id'))->setValue($account, 999999);
 
         $secondAccount = new UserSocialAccount();
         $secondAccount->setProvider('google');
         $secondAccount->setClientId('456');
-        (new \ReflectionProperty(UserSocialAccount::class, 'id'))->setValue($secondAccount, 42);
+        (new ReflectionProperty(UserSocialAccount::class, 'id'))->setValue($secondAccount, 42);
 
         $data = IndexViewData::create(
             [$account, $secondAccount],
             new Collection(['github' => $github, 'google' => $google]),
             ['github'],
             'voyti/session-auth',
-            ModuleConfigFactory::create(),
+            VoytiConfigFactory::create(),
             new FakeUrlGenerator(),
             new Translator('en', null, 'voyti'),
             false,
@@ -61,14 +62,14 @@ final class IndexViewDataTest extends TestCase
         $account = new UserSocialAccount();
         $account->setProvider('github');
         $account->setClientId('123');
-        (new \ReflectionProperty(UserSocialAccount::class, 'id'))->setValue($account, 999999);
+        (new ReflectionProperty(UserSocialAccount::class, 'id'))->setValue($account, 999999);
 
         $data = IndexViewData::create(
             [$account],
             null,
             [],
             'voyti/session-auth',
-            ModuleConfigFactory::create(),
+            VoytiConfigFactory::create(),
             new FakeUrlGenerator(),
             new Translator('en', null, 'voyti'),
             false,

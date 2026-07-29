@@ -11,11 +11,11 @@ use YiiRocks\Voyti\Adapter\IdentityAdapter;
 use YiiRocks\Voyti\Clock\SystemClock;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\FixedClock;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
+use YiiRocks\Voyti\VoytiConfig;
 
 final class IdentityAdapterTest extends TestCase
 {
@@ -37,7 +37,7 @@ final class IdentityAdapterTest extends TestCase
         $now = time();
         $user = $this->createUser();
         $this->createApiToken($user, 'raw-token', createdAt: $now - 500);
-        $adapter = $this->createAdapter(config: ModuleConfigFactory::create(apiTokenLifespan: 500), clock: $this->fixedClock($now));
+        $adapter = $this->createAdapter(config: VoytiConfigFactory::create(apiTokenLifespan: 500), clock: $this->fixedClock($now));
 
         self::assertNotNull($adapter->findIdentityByToken('raw-token'));
     }
@@ -56,7 +56,7 @@ final class IdentityAdapterTest extends TestCase
     {
         $user = $this->createUser();
         $this->createApiToken($user, 'raw-token', createdAt: time() - 1000);
-        $adapter = $this->createAdapter(config: ModuleConfigFactory::create(apiTokenLifespan: 500));
+        $adapter = $this->createAdapter(config: VoytiConfigFactory::create(apiTokenLifespan: 500));
 
         self::assertNull($adapter->findIdentityByToken('raw-token'));
     }
@@ -85,7 +85,7 @@ final class IdentityAdapterTest extends TestCase
         $user = $this->createUser();
         $this->createApiToken($user, 'raw-token', createdAt: 1_000_000);
         $adapter = $this->createAdapter(
-            config: ModuleConfigFactory::create(apiTokenLifespan: 500),
+            config: VoytiConfigFactory::create(apiTokenLifespan: 500),
             clock: $this->fixedClock(1_000_100),
         );
 
@@ -96,7 +96,7 @@ final class IdentityAdapterTest extends TestCase
     {
         $user = $this->createUser();
         $this->createApiToken($user, 'raw-token', createdAt: time() - 100);
-        $adapter = $this->createAdapter(config: ModuleConfigFactory::create(apiTokenLifespan: 500));
+        $adapter = $this->createAdapter(config: VoytiConfigFactory::create(apiTokenLifespan: 500));
 
         self::assertNotNull($adapter->findIdentityByToken('raw-token'));
     }
@@ -105,7 +105,7 @@ final class IdentityAdapterTest extends TestCase
     {
         $user = $this->createUser();
         $this->createApiToken($user, 'raw-token', createdAt: time() - 1_000_000);
-        $adapter = $this->createAdapter(config: ModuleConfigFactory::create(apiTokenLifespan: 0));
+        $adapter = $this->createAdapter(config: VoytiConfigFactory::create(apiTokenLifespan: 0));
 
         self::assertNotNull($adapter->findIdentityByToken('raw-token'));
     }
@@ -128,9 +128,9 @@ final class IdentityAdapterTest extends TestCase
         self::assertNull($adapter->findIdentity('999999'));
     }
 
-    private function createAdapter(?ModuleConfig $config = null, ?ClockInterface $clock = null): IdentityAdapter
+    private function createAdapter(?VoytiConfig $config = null, ?ClockInterface $clock = null): IdentityAdapter
     {
-        return new IdentityAdapter($config ?? ModuleConfigFactory::create(), $clock ?? new SystemClock());
+        return new IdentityAdapter($config ?? VoytiConfigFactory::create(), $clock ?? new SystemClock());
     }
 
     private function createApiToken(User $user, string $rawToken, ?int $createdAt = null): UserToken

@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\UserAuditLog;
 use YiiRocks\Voyti\Service\AuditLogService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 
 final class AuditLogServiceTest extends TestCase
 {
@@ -26,7 +26,7 @@ final class AuditLogServiceTest extends TestCase
 
     public function testLogDoesNothingWhenDisabled(): void
     {
-        $service = new AuditLogService(ModuleConfigFactory::create(enableAuditLog: false));
+        $service = new AuditLogService(VoytiConfigFactory::create(enableAuditLog: false));
 
         $service->log(1, 'user.create', []);
 
@@ -35,7 +35,7 @@ final class AuditLogServiceTest extends TestCase
 
     public function testLogPersistsActorIpAndUserAgent(): void
     {
-        $service = new AuditLogService(ModuleConfigFactory::create(enableAuditLog: true));
+        $service = new AuditLogService(VoytiConfigFactory::create(enableAuditLog: true));
 
         $service->log(1, 'user.create', ['REMOTE_ADDR' => '203.0.113.5', 'HTTP_USER_AGENT' => 'curl/8.0']);
 
@@ -47,7 +47,7 @@ final class AuditLogServiceTest extends TestCase
 
     public function testLogPersistsFallbackIpAndNullUserAgentWhenMissing(): void
     {
-        $service = new AuditLogService(ModuleConfigFactory::create(enableAuditLog: true));
+        $service = new AuditLogService(VoytiConfigFactory::create(enableAuditLog: true));
 
         $service->log(1, 'user.create', []);
 
@@ -59,7 +59,7 @@ final class AuditLogServiceTest extends TestCase
 
     public function testLogPersistsMinimalEntry(): void
     {
-        $service = new AuditLogService(ModuleConfigFactory::create(enableAuditLog: true));
+        $service = new AuditLogService(VoytiConfigFactory::create(enableAuditLog: true));
 
         $service->log(1, 'user.create', []);
 
@@ -75,7 +75,7 @@ final class AuditLogServiceTest extends TestCase
 
     public function testLogPersistsNullActorForSystemActions(): void
     {
-        $service = new AuditLogService(ModuleConfigFactory::create(enableAuditLog: true));
+        $service = new AuditLogService(VoytiConfigFactory::create(enableAuditLog: true));
 
         $service->log(null, 'user.create', [], targetUserId: 5);
 
@@ -87,7 +87,7 @@ final class AuditLogServiceTest extends TestCase
 
     public function testLogPersistsTargetAndContext(): void
     {
-        $service = new AuditLogService(ModuleConfigFactory::create(enableAuditLog: true));
+        $service = new AuditLogService(VoytiConfigFactory::create(enableAuditLog: true));
 
         $service->log(1, 'rbac.role.update', [], targetUserId: null, targetName: 'editor', context: ['previousName' => 'old-editor']);
 

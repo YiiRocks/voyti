@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Helper;
 
+use DateTimeZone;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
@@ -108,7 +109,7 @@ final class TimezoneHelperTest extends TestCase
         self::assertSame($sorted, $timezones);
 
         foreach ($timezones as $key => $value) {
-            self::assertTrue(in_array($key, \DateTimeZone::listIdentifiers(), true), "{$key} is not a valid timezone");
+            self::assertTrue(in_array($key, DateTimeZone::listIdentifiers(), true), "{$key} is not a valid timezone");
             self::assertIsString($key);
             self::assertIsString($value);
             self::assertStringStartsWith('(GMT', $value);

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\ViewData\Registration;
 
 use YiiRocks\Voyti\Helper\RecaptchaHelper;
-use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\FormModel\FormModelInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
 
@@ -26,7 +26,7 @@ final readonly class RegisterViewData
         public string $recaptchaFieldHtml,
     ) {}
 
-    public static function create(FormModelInterface $form, ModuleConfig $config, UrlGeneratorInterface $url): self
+    public static function create(FormModelInterface $form, VoytiConfig $config, UrlGeneratorInterface $url): self
     {
         return new self(
             formSubmitUrl: $url->generate('voyti/registration-register'),

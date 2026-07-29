@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use YiiRocks\Voyti\ModuleConfig;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Db\Migration\MigrationBuilder;
 use Yiisoft\Db\Migration\RevertibleMigrationInterface;
 use Yiisoft\Db\Migration\TransactionalMigrationInterface;
@@ -17,7 +17,7 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
     public const SEED_USERNAME = 'admin';
 
     public function __construct(
-        private readonly ModuleConfig $config,
+        private readonly VoytiConfig $config,
         private readonly PasswordHasher $passwordHasher,
     ) {}
 
@@ -32,6 +32,7 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
         $b->dropTable('{{%user_profile}}');
         $b->dropTable('{{%user}}');
     }
+
     public function up(MigrationBuilder $b): void
     {
         $b->createTable('{{%user}}', [

@@ -7,9 +7,9 @@ namespace YiiRocks\Voyti\Controller\Admin\Dashboard;
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Admin\DashboardService;
 use YiiRocks\Voyti\ViewData\Admin\Dashboard\IndexViewData;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -27,7 +27,7 @@ final readonly class DashboardController
         private TranslatorInterface $translator,
         private WebViewRenderer $viewRenderer,
         private UrlGeneratorInterface $url,
-        private ModuleConfig $config,
+        private VoytiConfig $config,
         private DashboardService $dashboardService,
         private FlashInterface $flash,
         private CurrentUser $currentUser,

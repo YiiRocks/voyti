@@ -15,6 +15,7 @@ final class ProfileCardViewDataTest extends TestCase
 {
     use TranslatorMockTrait;
     use UserFactoryTrait;
+
     public function testCreateFormatsRegisteredDisplayInViewerTimezoneNotProfileTimezone(): void
     {
         $createdAt = time();
@@ -140,5 +141,4 @@ final class ProfileCardViewDataTest extends TestCase
     {
         return new UserProfile();
     }
-
 }

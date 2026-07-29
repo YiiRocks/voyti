@@ -12,18 +12,18 @@ use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\Registration\RegistrationController;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSocialAccount;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\ServiceResult;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\RegisterService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\HydrateObjectTrait;
-use YiiRocks\Voyti\tests\Support\ModuleConfigFactory;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Validator\Result;
@@ -139,7 +139,7 @@ final class RegistrationControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $controller = $this->createController(ModuleConfigFactory::create(enableEmailConfirmation: false));
+        $controller = $this->createController(VoytiConfigFactory::create(enableEmailConfirmation: false));
 
         $result = $controller->confirm(999999, 'code123');
 
@@ -282,7 +282,7 @@ final class RegistrationControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $controller = $this->createController(ModuleConfigFactory::create(enableRegistration: false));
+        $controller = $this->createController(VoytiConfigFactory::create(enableRegistration: false));
         $request = new ServerRequest('GET', '/');
 
         $result = $controller->register($request);
@@ -356,7 +356,7 @@ final class RegistrationControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $controller = $this->createController(ModuleConfigFactory::create(enableEmailConfirmation: false));
+        $controller = $this->createController(VoytiConfigFactory::create(enableEmailConfirmation: false));
         $request = new ServerRequest('GET', '/');
 
         $result = $controller->resend($request);
@@ -364,7 +364,7 @@ final class RegistrationControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    private function createController(?ModuleConfig $config = null): RegistrationController
+    private function createController(?VoytiConfig $config = null): RegistrationController
     {
         $overrides = [
             FlashInterface::class => $this->flash,
@@ -378,7 +378,7 @@ final class RegistrationControllerTest extends TestCase
         ];
 
         if ($config !== null) {
-            $overrides[ModuleConfig::class] = $config;
+            $overrides[VoytiConfig::class] = $config;
         }
 
         return $this->getTestContainer($overrides)->get(RegistrationController::class);

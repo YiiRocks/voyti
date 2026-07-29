@@ -370,5 +370,4 @@ final class UserProfileTest extends TestCase
         self::assertNotNull($found);
         self::assertSame($user->getId(), $found->getId());
     }
-
 }

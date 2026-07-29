@@ -6,20 +6,20 @@ namespace YiiRocks\Voyti\Service\User;
 
 use RuntimeException;
 use YiiRocks\Voyti\Helper\LoginMetadataHelper;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\ServiceResult;
+use YiiRocks\Voyti\VoytiConfig;
 
 /**
  * Handles self-registration from raw form data: generates a password if none was supplied,
  * enforces email/username uniqueness, applies GDPR consent and registration IP per
- * {@see ModuleConfig}, and delegates persistence/notification to {@see UserCreationHelper}.
+ * {@see VoytiConfig}, and delegates persistence/notification to {@see UserCreationHelper}.
  */
 final readonly class RegisterService
 {
     public function __construct(
         private UserCreationHelper $userCreationHelper,
-        private ModuleConfig $config,
+        private VoytiConfig $config,
         private PasswordGeneratorInterface $passwordGenerator,
     ) {}
 

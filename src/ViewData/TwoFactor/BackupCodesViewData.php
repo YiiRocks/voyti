@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\ViewData\TwoFactor;
 
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\ModuleConfig;
 use YiiRocks\Voyti\ViewData\Shared\MenuViewData;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 
@@ -29,7 +29,7 @@ final readonly class BackupCodesViewData
      */
     public static function create(
         array $codes,
-        ModuleConfig $config,
+        VoytiConfig $config,
         UrlGeneratorInterface $url,
         TranslatorInterface $translator,
         bool $isSwitched,
