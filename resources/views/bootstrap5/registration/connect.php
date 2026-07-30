@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use YiiRocks\Voyti\Helper\LinkButtonHelper;
 use YiiRocks\Voyti\ViewData\Registration\ConnectViewData;
 use Yiisoft\Html\Html;
 use Yiisoft\Translator\TranslatorInterface;
@@ -22,7 +23,7 @@ echo Html::p($translator->translate('voyti.view.registration.connect_provider', 
 
 echo Html::p($translator->translate('voyti.view.registration.connect_message'));
 
-echo Html::a($translator->translate('voyti.view.registration.connect_login'), $data->loginUrl)->class('btn', 'btn-primary');
+echo Html::a($translator->translate('voyti.view.registration.connect_login'), $data->loginUrl)->class(LinkButtonHelper::submitButtonClass());
 
 echo ' ';
 

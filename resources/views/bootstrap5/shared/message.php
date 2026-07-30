@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use YiiRocks\Voyti\Helper\LinkButtonHelper;
 use YiiRocks\Voyti\ViewData\Shared\MessageViewData;
 use Yiisoft\Html\Html;
 use Yiisoft\Translator\TranslatorInterface;
@@ -20,6 +21,6 @@ echo Html::div()->class('card shadow-sm')->open();
 echo Html::div()->class('card-body text-center py-5')->open();
 echo Html::H1($data->title);
 
-echo Html::a($translator->translate('voyti.view.go_home'), $data->homeUrl)->class('btn', 'btn-primary');
+echo Html::a($translator->translate('voyti.view.go_home'), $data->homeUrl)->class(LinkButtonHelper::submitButtonClass());
 echo Html::div()->close();
 echo Html::div()->close();

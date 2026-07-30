@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use YiiRocks\Voyti\Helper\LinkButtonHelper;
 use YiiRocks\Voyti\ViewData\Admin\Rbac\Rule\IndexViewData;
 use YiiRocks\Voyti\ViewData\Admin\Rbac\Rule\RuleRow;
 use YiiRocks\Voyti\ViewData\Shared\FlashViewData;
@@ -28,7 +29,7 @@ echo $this->render('../../../shared/_flash', ['flash' => $flash]);
 
 echo Html::div()->class('d-flex justify-content-between align-items-center mb-3')->open();
 echo Html::H1($translator->translate('voyti.view.rule.title'));
-echo Html::a($translator->translate('voyti.view.rule.create_link'), $data->createUrl)->class('btn', 'btn-primary');
+echo Html::a($translator->translate('voyti.view.rule.create_link'), $data->createUrl)->class(LinkButtonHelper::submitButtonClass());
 echo Html::div()->close();
 
 echo Html::div()->class('d-none d-md-flex row fw-bold border-bottom pb-2 mb-2')->open();

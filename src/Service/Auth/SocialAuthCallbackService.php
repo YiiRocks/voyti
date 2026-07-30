@@ -101,7 +101,9 @@ final readonly class SocialAuthCallbackService
 
     /**
      * Redirects to the given URL, handling popups opened by OAuth widget.
-     * If called from a popup, closes it and reloads the main window; otherwise redirects normally.
+     * If called from a popup, closes it and — when $enforceRedirect is true — navigates the
+     * opener to $url; otherwise just focuses the opener. If not called from a popup, redirects
+     * the current window normally.
      */
     private function popupAwareRedirect(string $url, bool $enforceRedirect = true): ResponseInterface
     {
