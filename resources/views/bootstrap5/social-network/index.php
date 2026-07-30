@@ -59,7 +59,7 @@ if (empty($data->accounts)) {
 }
 
 if ($data->connect->providers !== []) {
-    echo Html::div()->class('mt-4')->open();
+    echo Html::div()->class('text-center mt-4')->open();
     /** @psalm-suppress InvalidScope */
     echo $this->render('../shared/_connect', ['connect' => $data->connect]);
     echo Html::div()->close();

@@ -6,7 +6,6 @@ namespace YiiRocks\Voyti\tests\Service\Auth;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
-use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use RuntimeException;
 use YiiRocks\Voyti\Model\User;
@@ -18,7 +17,6 @@ use YiiRocks\Voyti\Service\Auth\UserSocialAccountConnectService;
 use YiiRocks\Voyti\Service\Auth\UserSocialAuthenticateService;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\Service\ServiceResult;
-use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -30,7 +28,6 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 #[AllowMockObjectsWithoutExpectations]
 final class SocialAuthCallbackServiceTest extends TestCase
 {
-    use RedirectResponseMockTrait;
     use TestContainerTrait;
 
     private CurrentUser&MockObject $currentUser;
@@ -38,7 +35,6 @@ final class SocialAuthCallbackServiceTest extends TestCase
     private SocialUserAttributesNormalizer&MockObject $normalizer;
     private PendingSocialAccountService&MockObject $pendingSocialAccountService;
     private RememberMeCookieService&MockObject $rememberMeCookieService;
-    private ResponseFactoryInterface&MockObject $responseFactory;
     private UserSocialAccountConnectService&MockObject $socialAccountConnectService;
     private UserSocialAuthenticateService&MockObject $socialAuthenticateService;
     private WebViewRenderer&MockObject $viewRenderer;
@@ -48,7 +44,6 @@ final class SocialAuthCallbackServiceTest extends TestCase
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
         $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
         $this->currentUser = $this->createMock(CurrentUser::class);
-        $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
         $this->flash = $this->createMock(FlashInterface::class);
         $this->rememberMeCookieService = $this->createMock(RememberMeCookieService::class);
         $this->pendingSocialAccountService = $this->createMock(PendingSocialAccountService::class);
@@ -57,9 +52,9 @@ final class SocialAuthCallbackServiceTest extends TestCase
         $this->normalizer = $this->createMock(SocialUserAttributesNormalizer::class);
     }
 
-    public function testHandleCancelRendersCancelledMessage(): void
+    public function testHandleCancelRedirectsToLoginWithoutEnforcingRedirect(): void
     {
-        $response = $this->expectMessageRender('Social sign-in was cancelled.');
+        $response = $this->mockPopupAwareRedirectResponse('//voyti/session-login', false);
 
         $result = $this->createService()->handleCancel($this->client('github'));
 
@@ -103,7 +98,7 @@ final class SocialAuthCallbackServiceTest extends TestCase
         $this->currentUser->method('getIdentity')->willReturnOnConsecutiveCalls($guestIdentity, $user);
         $this->rememberMeCookieService->method('addCookie')->willReturnArgument(1);
 
-        $response = $this->mockRedirectResponse($this->responseFactory, '//home');
+        $response = $this->mockPopupAwareRedirectResponse('//home');
 
         $result = $this->createService()->handleSuccess($this->client('github'));
 
@@ -120,21 +115,21 @@ final class SocialAuthCallbackServiceTest extends TestCase
         $account->method('getCode')->willReturn('pending-code');
         $this->pendingSocialAccountService->method('getPendingAccount')->willReturn($account);
 
-        $response = $this->mockRedirectResponse($this->responseFactory, '//voyti/registration-connect?code=pending-code');
+        $response = $this->mockPopupAwareRedirectResponse('//voyti/registration-connect?code=pending-code');
 
         $result = $this->createService()->handleSuccess($this->client('github'));
 
         $this->assertSame($response, $result);
     }
 
-    public function testHandleSuccessGuestSuccessWithoutUserIdentityShowsAuthenticatedMessage(): void
+    public function testHandleSuccessGuestSuccessWithoutUserIdentityRedirectsHome(): void
     {
         $this->normalizer->method('normalize')->willReturn($this->attributes());
         $this->socialAuthenticateService->method('run')->willReturn(ServiceResult::success());
         $this->pendingSocialAccountService->method('getPendingAccount')->willReturn(null);
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
 
-        $response = $this->expectMessageRender('Authenticated');
+        $response = $this->mockPopupAwareRedirectResponse('//home');
 
         $result = $this->createService()->handleSuccess($this->client('github'));
 
@@ -182,7 +177,7 @@ final class SocialAuthCallbackServiceTest extends TestCase
         $this->normalizer->method('normalize')->willReturn($this->attributes());
         $this->socialAccountConnectService->method('run')->willReturn(ServiceResult::success());
 
-        $response = $this->mockRedirectResponse($this->responseFactory, '//voyti/user-social-network');
+        $response = $this->mockPopupAwareRedirectResponse('//voyti/user-social-network');
 
         $result = $this->createService()->handleSuccess($this->client('github'));
 
@@ -212,7 +207,6 @@ final class SocialAuthCallbackServiceTest extends TestCase
             FlashInterface::class => $this->flash,
             PendingSocialAccountService::class => $this->pendingSocialAccountService,
             RememberMeCookieService::class => $this->rememberMeCookieService,
-            ResponseFactoryInterface::class => $this->responseFactory,
             SocialUserAttributesNormalizer::class => $this->normalizer,
             UserSocialAccountConnectService::class => $this->socialAccountConnectService,
             UserSocialAuthenticateService::class => $this->socialAuthenticateService,
@@ -229,6 +223,22 @@ final class SocialAuthCallbackServiceTest extends TestCase
             ->with('shared/message', $this->callback(
                 static fn(array $params): bool => $params['data']->title === $expectedTitle,
             ))
+            ->willReturn($response);
+
+        return $response;
+    }
+
+    private function mockPopupAwareRedirectResponse(
+        string $expectedUrl,
+        bool $expectedEnforceRedirect = true,
+    ): ResponseInterface&MockObject {
+        $response = $this->createMock(ResponseInterface::class);
+        $this->viewRenderer->expects($this->once())
+            ->method('renderPartial')
+            ->with(
+                $this->stringEndsWith('/resources/views/redirect.php'),
+                ['url' => $expectedUrl, 'enforceRedirect' => $expectedEnforceRedirect, 'appName' => 'app'],
+            )
             ->willReturn($response);
 
         return $response;

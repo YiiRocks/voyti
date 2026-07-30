@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service\Auth;
 
-use Psr\Http\Message\ResponseFactoryInterface;
+use Composer\InstalledVersions;
 use Psr\Http\Message\ResponseInterface;
 use RuntimeException;
-use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
@@ -35,13 +34,11 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
  */
 final readonly class SocialAuthCallbackService
 {
-    use RedirectTrait;
     use RenderTrait;
 
     public function __construct(
         private TranslatorInterface $translator,
         private WebViewRenderer $viewRenderer,
-        private ResponseFactoryInterface $responseFactory,
         private UrlGeneratorInterface $url,
         private VoytiConfig $config,
         private SessionInterface $session,
@@ -56,9 +53,7 @@ final readonly class SocialAuthCallbackService
 
     public function handleCancel(AuthClientInterface $client): ResponseInterface
     {
-        return $this->renderMessage(
-            $this->translator()->translate('voyti.security.social_auth_cancelled'),
-        );
+        return $this->popupAwareRedirect($this->url->generate('voyti/session-login'), false);
     }
 
     public function handleSuccess(AuthClientInterface $client): ResponseInterface
@@ -82,12 +77,12 @@ final readonly class SocialAuthCallbackService
         }
 
         if (!$isGuest) {
-            return $this->redirect($this->url->generate('voyti/user-social-network'));
+            return $this->popupAwareRedirect($this->url->generate('voyti/user-social-network'));
         }
 
         $account = $this->pendingSocialAccountService->getPendingAccount();
         if ($account !== null) {
-            return $this->redirect(
+            return $this->popupAwareRedirect(
                 $this->url->generate('voyti/registration-connect', ['code' => $account->getCode() ?? 'connect']),
             );
         }
@@ -96,12 +91,33 @@ final readonly class SocialAuthCallbackService
         if ($user instanceof User) {
             return $this->rememberMeCookieService->addCookie(
                 $user,
-                $this->redirect($this->homeUrl()),
+                $this->popupAwareRedirect($this->homeUrl()),
                 $this->session->getId() ?? '',
             );
         }
 
-        return $this->renderMessage($this->translator()->translate('voyti.security.authenticated'));
+        return $this->popupAwareRedirect($this->homeUrl());
+    }
+
+    /**
+     * Redirects to the given URL, handling popups opened by OAuth widget.
+     * If called from a popup, closes it and reloads the main window; otherwise redirects normally.
+     */
+    private function popupAwareRedirect(string $url, bool $enforceRedirect = true): ResponseInterface
+    {
+        /**
+         * @psalm-suppress PossiblyNullOperand Unreachable while this class is loaded at all: it
+         * type-hints AuthClientInterface from the same package, so yiisoft/yii-auth-client is
+         * always installed whenever this runs.
+         */
+        $redirectViewFile = InstalledVersions::getInstallPath('yiisoft/yii-auth-client')
+            . '/resources/views/redirect.php';
+
+        return $this->viewRenderer->renderPartial($redirectViewFile, [
+            'url' => $url,
+            'enforceRedirect' => $enforceRedirect,
+            'appName' => 'app',
+        ]);
     }
 
     private function renderMessage(string $title): ResponseInterface
