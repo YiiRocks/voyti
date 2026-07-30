@@ -56,7 +56,7 @@ final readonly class MenuViewData
             $items[] = new MenuLinkViewData($translator->translate('voyti.view.settings.privacy'), $url->generate('voyti/user-privacy'));
         }
 
-        $items[] = new MenuLinkViewData($translator->translate('voyti.menu.logout'), $url->generate('voyti/session-logout'), alignEnd: true);
+        $items[] = new MenuLinkViewData($translator->translate('voyti.menu.logout'), $url->generate('voyti/session-logout'), alignEnd: true, routeName: 'voyti/session-logout');
 
         $isSwitched = $isSwitched && $originalUser !== null;
 
@@ -80,7 +80,7 @@ final readonly class MenuViewData
                 new MenuLinkViewData($translator->translate('voyti.view.permission.title'), $url->generate('voyti/admin-rbac-permissions')),
                 new MenuLinkViewData($translator->translate('voyti.view.rule.title'), $url->generate('voyti/admin-rbac-rules')),
                 new MenuLinkViewData($translator->translate('voyti.view.audit_log.title'), $url->generate('voyti/admin-audit-log')),
-                new MenuLinkViewData($translator->translate('voyti.menu.logout'), $url->generate('voyti/session-logout'), alignEnd: true),
+                new MenuLinkViewData($translator->translate('voyti.menu.logout'), $url->generate('voyti/session-logout'), alignEnd: true, routeName: 'voyti/session-logout'),
             ],
             switchedBannerMessage: null,
             switchIdentityRestoreUrl: null,

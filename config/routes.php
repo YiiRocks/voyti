@@ -76,7 +76,7 @@ $ruleRoutes = [
 
 $sessionRoutes = [
     Route::methods(['GET', 'POST'], 'login')->name('voyti/session-login')->action([Controller\Session\SessionController::class, 'login']),
-    Route::methods(['GET', 'POST'], 'logout')->name('voyti/session-logout')->action([Controller\Session\SessionController::class, 'logout']),
+    Route::post('logout')->name('voyti/session-logout')->action([Controller\Session\SessionController::class, 'logout']),
     Route::methods(['GET', 'POST'], 'confirm')->name('voyti/session-confirm')->action([Controller\Session\SessionController::class, 'confirm']),
 ];
 

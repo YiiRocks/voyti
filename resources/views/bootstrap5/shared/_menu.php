@@ -23,14 +23,21 @@ if ($menu->switchedBannerMessage !== null) {
     echo Html::div()->close();
 }
 
-$items = array_map(
-    static fn(MenuLinkViewData $item) => Html::li(
-        Html::a($item->label, $item->url)->class('nav-link'),
-        ['class' => $item->alignEnd ? 'nav-item ms-auto' : 'nav-item'],
-    ),
-    $menu->items,
-);
+echo Html::ul()->class('nav nav-tabs mb-4')->open();
+foreach ($menu->items as $item) {
+    echo Html::li()->class($item->alignEnd ? 'nav-item ms-auto' : 'nav-item')->open();
 
-echo Html::ul()
-    ->class('nav nav-tabs mb-4')
-    ->items(...$items);
+    if ($item->routeName === 'voyti/session-logout') {
+        echo Html::form()
+            ->post($item->url)
+            ->csrf($csrf)
+            ->open();
+        echo Html::submitButton($item->label)->class('nav-link', 'btn', 'btn-link');
+        echo Html::form()->close();
+    } else {
+        echo Html::a($item->label, $item->url)->class('nav-link');
+    }
+
+    echo Html::li()->close();
+}
+echo Html::ul()->close();
