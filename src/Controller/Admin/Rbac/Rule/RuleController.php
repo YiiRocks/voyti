@@ -55,17 +55,15 @@ final readonly class RuleController
 
     public function create(
         ServerRequestInterface $request,
-        #[Body('name')]
-        string $ruleName = '',
-        #[Body('class')]
-        string $ruleClass = '',
+        #[Body('rule')]
+        array $formData = [],
     ): ResponseInterface {
         $form = new RuleForm($this->translator);
         $errors = [];
 
         if ($request->getMethod() === Method::POST) {
-            $form->name = $ruleName;
-            $form->class = $ruleClass;
+            $form->name = (string) ($formData['name'] ?? '');
+            $form->class = (string) ($formData['class'] ?? '');
 
             $result = $this->validator->validate($form);
             if ($result->isValid()) {
@@ -107,10 +105,8 @@ final readonly class RuleController
         ServerRequestInterface $request,
         #[RouteArgument]
         string $name,
-        #[Body('name')]
-        string $ruleName = '',
-        #[Body('class')]
-        string $ruleClass = '',
+        #[Body('rule')]
+        array $formData = [],
     ): ResponseInterface {
         $form = new RuleForm($this->translator);
         $form->previousName = $name;
@@ -119,8 +115,8 @@ final readonly class RuleController
         $errors = [];
 
         if ($request->getMethod() === Method::POST) {
-            $form->name = $ruleName;
-            $form->class = $ruleClass;
+            $form->name = (string) ($formData['name'] ?? '');
+            $form->class = (string) ($formData['class'] ?? '');
 
             $result = $this->validator->validate($form);
             if ($result->isValid()) {

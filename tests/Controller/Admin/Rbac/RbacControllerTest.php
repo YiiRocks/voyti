@@ -141,8 +141,12 @@ final class RbacControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
+        $request = (new ServerRequest('POST', '/'))->withParsedBody([
+            $itemType => ['name' => $itemName, 'description' => '', 'rule' => '', 'children' => ['']],
+        ]);
+
         $controller = $this->createController();
-        $result = $controller->create(request: new ServerRequest('POST', '/'), name: $itemName, description: '', rule: '', children: [''], itemType: $itemType, indexRouteName: $indexRouteName);
+        $result = $controller->create(request: $request, itemType: $itemType, indexRouteName: $indexRouteName);
 
         $this->assertSame($response, $result);
         $this->assertNotNull($this->getItem($itemType, $itemName));
@@ -156,8 +160,12 @@ final class RbacControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
+        $request = (new ServerRequest('POST', '/'))->withParsedBody([
+            'role' => ['name' => 'parent', 'description' => '', 'rule' => '', 'children' => ['child-role']],
+        ]);
+
         $controller = $this->createController();
-        $result = $controller->create(request: new ServerRequest('POST', '/'), name: 'parent', description: '', rule: '', children: ['child-role'], itemType: 'role', indexRouteName: 'admin-rbac-roles');
+        $result = $controller->create(request: $request, itemType: 'role', indexRouteName: 'admin-rbac-roles');
 
         $this->assertSame($response, $result);
         $this->assertTrue($this->itemsStorage->hasChild('parent', 'child-role'));
@@ -179,8 +187,12 @@ final class RbacControllerTest extends TestCase
             ))
             ->willReturn($response);
 
+        $request = (new ServerRequest('POST', '/'))->withParsedBody([
+            $itemType => ['name' => '', 'description' => '', 'rule' => '', 'children' => ['']],
+        ]);
+
         $controller = $this->createController();
-        $result = $controller->create(request: new ServerRequest('POST', '/'), name: '', description: '', rule: '', children: [''], itemType: $itemType, indexRouteName: $indexRouteName);
+        $result = $controller->create(request: $request, itemType: $itemType, indexRouteName: $indexRouteName);
 
         $this->assertSame($response, $result);
     }
@@ -198,8 +210,12 @@ final class RbacControllerTest extends TestCase
             ))
             ->willReturn($response);
 
+        $request = (new ServerRequest('POST', '/'))->withParsedBody([
+            'role' => ['name' => 'parent', 'description' => '', 'rule' => '', 'children' => ['missing-child']],
+        ]);
+
         $controller = $this->createController();
-        $result = $controller->create(request: new ServerRequest('POST', '/'), name: 'parent', description: '', rule: '', children: ['missing-child'], itemType: 'role', indexRouteName: 'admin-rbac-roles');
+        $result = $controller->create(request: $request, itemType: 'role', indexRouteName: 'admin-rbac-roles');
 
         $this->assertSame($response, $result);
         $this->assertNotNull($this->itemsStorage->getRole('parent'));
@@ -213,8 +229,12 @@ final class RbacControllerTest extends TestCase
         $this->responseFactory->method('createResponse')->willReturn($response);
         $response->method('withHeader')->willReturnSelf();
 
+        $request = (new ServerRequest('POST', '/'))->withParsedBody([
+            'role' => ['name' => 'editor', 'description' => '', 'rule' => ''],
+        ]);
+
         $controller = $this->createController();
-        $result = $controller->create(request: new ServerRequest('POST', '/'), name: 'editor', description: '', rule: '', itemType: 'role', indexRouteName: 'admin-rbac-roles');
+        $result = $controller->create(request: $request, itemType: 'role', indexRouteName: 'admin-rbac-roles');
 
         $this->assertSame($response, $result);
         $this->assertNotNull($this->itemsStorage->getRole('editor'));
@@ -235,8 +255,12 @@ final class RbacControllerTest extends TestCase
             ))
             ->willReturn($response);
 
+        $request = (new ServerRequest('POST', '/'))->withParsedBody([
+            'permission' => ['name' => 'edit-posts', 'description' => '', 'rule' => '', 'children' => ['some-role']],
+        ]);
+
         $controller = $this->createController();
-        $result = $controller->create(request: new ServerRequest('POST', '/'), name: 'edit-posts', description: '', rule: '', children: ['some-role'], itemType: 'permission', indexRouteName: 'admin-rbac-permissions');
+        $result = $controller->create(request: $request, itemType: 'permission', indexRouteName: 'admin-rbac-permissions');
 
         $this->assertSame($response, $result);
     }
@@ -247,8 +271,12 @@ final class RbacControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
+        $request = (new ServerRequest('POST', '/'))->withParsedBody([
+            'permission' => ['name' => 'restricted-action', 'description' => '', 'rule' => 'ownerRule', 'children' => ['']],
+        ]);
+
         $controller = $this->createController();
-        $result = $controller->create(request: new ServerRequest('POST', '/'), name: 'restricted-action', description: '', rule: 'ownerRule', children: [''], itemType: 'permission', indexRouteName: 'admin-rbac-permissions');
+        $result = $controller->create(request: $request, itemType: 'permission', indexRouteName: 'admin-rbac-permissions');
 
         $this->assertSame($response, $result);
         $perm = $this->itemsStorage->getPermission('restricted-action');
@@ -378,8 +406,12 @@ final class RbacControllerTest extends TestCase
         $this->responseFactory->method('createResponse')->willReturn($response);
         $response->method('withHeader')->willReturnSelf();
 
+        $request = (new ServerRequest('POST', '/'))->withParsedBody([
+            'role' => ['name' => 'editor', 'description' => 'Updated', 'rule' => '', 'children' => [''], 'assignedUsers' => ['2']],
+        ]);
+
         $controller = $this->createController();
-        $result = $controller->update(request: new ServerRequest('POST', '/'), name: 'editor', formName: 'editor', description: 'Updated', rule: '', children: [''], assignedUsers: ['2'], itemType: 'role', indexRouteName: 'admin-rbac-roles');
+        $result = $controller->update(request: $request, name: 'editor', itemType: 'role', indexRouteName: 'admin-rbac-roles');
 
         $this->assertSame($response, $result);
         $this->assertNull($this->assignmentsStorage->get('editor', '1'));
@@ -395,8 +427,12 @@ final class RbacControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
+        $request = (new ServerRequest('POST', '/'))->withParsedBody([
+            $itemType => ['name' => $itemName, 'description' => 'Updated', 'rule' => '', 'children' => [''], 'assignedUsers' => []],
+        ]);
+
         $controller = $this->createController();
-        $result = $controller->update(request: new ServerRequest('POST', '/'), name: $itemName, formName: $itemName, description: 'Updated', rule: '', children: [''], assignedUsers: [], itemType: $itemType, indexRouteName: $indexRouteName);
+        $result = $controller->update(request: $request, name: $itemName, itemType: $itemType, indexRouteName: $indexRouteName);
 
         $this->assertSame($response, $result);
     }
@@ -414,6 +450,10 @@ final class RbacControllerTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage(ucfirst($itemType) . " '$itemName' not found.");
 
+        $request = (new ServerRequest('POST', '/'))->withParsedBody([
+            $itemType => ['name' => $itemName, 'description' => '', 'rule' => '', 'children' => []],
+        ]);
+
         $controller = $this->getTestContainer([
             ItemsStorageInterface::class => $this->itemsStorage,
             ManagerInterface::class => $manager,
@@ -424,7 +464,7 @@ final class RbacControllerTest extends TestCase
             WebViewRenderer::class => $this->viewRenderer,
             UrlGeneratorInterface::class => new FakeUrlGenerator(),
         ])->get(RbacController::class);
-        $controller->update(request: new ServerRequest('POST', '/'), name: $itemName, formName: $itemName, description: '', rule: '', children: [''], itemType: $itemType, indexRouteName: $indexRouteName);
+        $controller->update(request: $request, name: $itemName, itemType: $itemType, indexRouteName: $indexRouteName);
     }
 
     public function testUpdatePostWithChildren(): void
@@ -438,8 +478,12 @@ final class RbacControllerTest extends TestCase
         $this->responseFactory->method('createResponse')->willReturn($response);
         $response->method('withHeader')->willReturnSelf();
 
+        $request = (new ServerRequest('POST', '/'))->withParsedBody([
+            'role' => ['name' => 'editor', 'description' => '', 'rule' => '', 'children' => ['child-role'], 'assignedUsers' => []],
+        ]);
+
         $controller = $this->createController();
-        $result = $controller->update(request: new ServerRequest('POST', '/'), name: 'editor', formName: 'editor', description: '', rule: '', children: ['child-role'], assignedUsers: [], itemType: 'role', indexRouteName: 'admin-rbac-roles');
+        $result = $controller->update(request: $request, name: 'editor', itemType: 'role', indexRouteName: 'admin-rbac-roles');
 
         $this->assertSame($response, $result);
         $this->assertTrue($this->itemsStorage->hasChild('editor', 'child-role'));
@@ -453,8 +497,12 @@ final class RbacControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
+        $request = (new ServerRequest('POST', '/'))->withParsedBody([
+            'role' => ['name' => 'editor', 'description' => '', 'rule' => '', 'children' => [''], 'assignedUsers' => []],
+        ]);
+
         $controller = $this->createController();
-        $result = $controller->update(request: new ServerRequest('POST', '/'), name: 'editor', formName: 'editor', description: '', rule: '', children: [''], assignedUsers: [], itemType: 'role', indexRouteName: 'admin-rbac-roles');
+        $result = $controller->update(request: $request, name: 'editor', itemType: 'role', indexRouteName: 'admin-rbac-roles');
 
         $this->assertSame($response, $result);
         $role = $this->itemsStorage->getRole('editor');
@@ -479,8 +527,12 @@ final class RbacControllerTest extends TestCase
             ))
             ->willReturn($response);
 
+        $request = (new ServerRequest('POST', '/'))->withParsedBody([
+            'role' => ['name' => '', 'description' => '', 'rule' => '', 'children' => []],
+        ]);
+
         $controller = $this->createController();
-        $result = $controller->update(request: new ServerRequest('POST', '/'), name: 'editor', formName: '', description: '', rule: '', children: [''], itemType: 'role', indexRouteName: 'admin-rbac-roles');
+        $result = $controller->update(request: $request, name: 'editor', itemType: 'role', indexRouteName: 'admin-rbac-roles');
 
         $this->assertSame($response, $result);
     }
@@ -500,8 +552,12 @@ final class RbacControllerTest extends TestCase
             ))
             ->willReturn($response);
 
+        $request = (new ServerRequest('POST', '/'))->withParsedBody([
+            'role' => ['name' => 'editor', 'description' => 'Updated', 'rule' => '', 'children' => ['missing-child']],
+        ]);
+
         $controller = $this->createController();
-        $result = $controller->update(request: new ServerRequest('POST', '/'), name: 'editor', formName: 'editor', description: 'Updated', rule: '', children: ['missing-child'], itemType: 'role', indexRouteName: 'admin-rbac-roles');
+        $result = $controller->update(request: $request, name: 'editor', itemType: 'role', indexRouteName: 'admin-rbac-roles');
 
         $this->assertSame($response, $result);
         $role = $this->itemsStorage->getRole('editor');
@@ -520,8 +576,12 @@ final class RbacControllerTest extends TestCase
         $this->responseFactory->method('createResponse')->willReturn($response);
         $response->method('withHeader')->willReturnSelf();
 
+        $request = (new ServerRequest('POST', '/'))->withParsedBody([
+            $itemType => ['name' => $itemName, 'description' => '', 'rule' => 'someRule', 'children' => [''], 'assignedUsers' => []],
+        ]);
+
         $controller = $this->createController();
-        $result = $controller->update(request: new ServerRequest('POST', '/'), name: $itemName, formName: $itemName, description: '', rule: 'someRule', children: [''], assignedUsers: [], itemType: $itemType, indexRouteName: $indexRouteName);
+        $result = $controller->update(request: $request, name: $itemName, itemType: $itemType, indexRouteName: $indexRouteName);
 
         $this->assertSame($response, $result);
         $item = $this->getItem($itemType, $itemName);

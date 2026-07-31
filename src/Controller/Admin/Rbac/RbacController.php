@@ -19,7 +19,6 @@ use YiiRocks\Voyti\ViewData\Admin\Rbac\IndexViewData;
 use YiiRocks\Voyti\ViewData\Admin\Rbac\UpdateViewData;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Http\Method;
-use Yiisoft\Input\Http\Attribute\Parameter\Body;
 use Yiisoft\Input\Http\Attribute\Parameter\Query;
 use Yiisoft\Rbac\AssignmentsStorageInterface;
 use Yiisoft\Rbac\Item;
@@ -65,14 +64,6 @@ final readonly class RbacController
 
     public function create(
         ServerRequestInterface $request,
-        #[Body('name')]
-        string $name = '',
-        #[Body('description')]
-        string $description = '',
-        #[Body('rule')]
-        string $rule = '',
-        #[Body('children')]
-        ?array $children = null,
         #[RouteArgument]
         string $itemType = '',
         #[RouteArgument]
@@ -83,7 +74,9 @@ final readonly class RbacController
         $errors = [];
 
         if ($request->getMethod() === Method::POST) {
-            $this->loadForm($form, $name, $description, $rule, $children);
+            /** @var array<string, mixed> $data */
+            $data = $request->getParsedBody()[$itemType] ?? [];
+            $this->loadFormFromData($form, $data);
 
             $result = $this->validator->validate($form);
             if ($result->isValid()) {
@@ -211,16 +204,6 @@ final readonly class RbacController
         ServerRequestInterface $request,
         #[RouteArgument]
         string $name,
-        #[Body('name')]
-        string $formName = '',
-        #[Body('description')]
-        string $description = '',
-        #[Body('rule')]
-        string $rule = '',
-        #[Body('children')]
-        ?array $children = null,
-        #[Body('assignedUsers')]
-        ?array $assignedUsers = null,
         #[RouteArgument]
         string $itemType = '',
         #[RouteArgument]
@@ -247,7 +230,9 @@ final readonly class RbacController
         $errors = [];
 
         if ($request->getMethod() === Method::POST) {
-            $this->loadForm($form, $formName, $description, $rule, $children);
+            /** @var array<string, mixed> $data */
+            $data = $request->getParsedBody()[$itemType] ?? [];
+            $this->loadFormFromData($form, $data);
             $result = $this->validator->validate($form);
 
             if ($result->isValid()) {
@@ -285,7 +270,9 @@ final readonly class RbacController
                 }
 
                 if ($errors === []) {
-                    $this->processUserAssignments($assignedUsers ?? [], $form->name);
+                    /** @var array<mixed> $assignedUsers */
+                    $assignedUsers = $data['assignedUsers'] ?? [];
+                    $this->processUserAssignments($assignedUsers, $form->name);
 
                     $this->auditLogService->log(
                         $this->actorId(),
@@ -344,14 +331,17 @@ final readonly class RbacController
         return $candidates;
     }
 
-    private function loadForm(AuthItemForm $form, string $name, string $description, string $rule, ?array $children): void
+    private function loadFormFromData(AuthItemForm $form, array $data): void
     {
-        $form->name = $name;
-        $form->description = $description;
+        $form->name = (string) ($data['name'] ?? '');
+        $form->description = (string) ($data['description'] ?? '');
+        $rule = (string) ($data['rule'] ?? '');
         $form->rule = $rule !== '' ? $rule : $form->rule;
 
-        if (is_array($children)) {
-            $form->children = array_values(array_filter($children, 'is_string'));
+        /** @var mixed $childrenValue */
+        $childrenValue = $data['children'] ?? null;
+        if (is_array($childrenValue)) {
+            $form->children = array_values(array_filter($childrenValue, 'is_string'));
         }
     }
 

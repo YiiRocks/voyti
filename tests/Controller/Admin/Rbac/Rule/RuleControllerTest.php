@@ -79,8 +79,10 @@ final class RuleControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['rule' => ['name' => 'myRule', 'class' => 'Invalid\\Class']]);
+
         $controller = $this->createController();
-        $result = $controller->create(request: new ServerRequest('POST', '/'), ruleName: 'myRule', ruleClass: 'Invalid\\Class');
+        $result = $controller->create(request: $request);
 
         $this->assertSame($response, $result);
     }
@@ -94,8 +96,10 @@ final class RuleControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['rule' => ['name' => 'myRule', 'class' => 'App\\Rule\\MyRule']]);
+
         $controller = $this->createController();
-        $result = $controller->create(request: new ServerRequest('POST', '/'), ruleName: 'myRule', ruleClass: 'App\\Rule\\MyRule');
+        $result = $controller->create(request: $request);
 
         $this->assertSame($response, $result);
     }
@@ -116,8 +120,10 @@ final class RuleControllerTest extends TestCase
             ))
             ->willReturn($response);
 
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['rule' => ['name' => '', 'class' => '']]);
+
         $controller = $this->createController();
-        $result = $controller->create(request: new ServerRequest('POST', '/'), ruleName: '', ruleClass: '');
+        $result = $controller->create(request: $request);
 
         $this->assertSame($response, $result);
     }
@@ -185,8 +191,10 @@ final class RuleControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['rule' => ['name' => 'updatedRule', 'class' => 'Invalid\\Class']]);
+
         $controller = $this->createController();
-        $result = $controller->update(request: new ServerRequest('POST', '/'), name: 'oldRule', ruleName: 'updatedRule', ruleClass: 'Invalid\\Class');
+        $result = $controller->update(request: $request, name: 'oldRule');
 
         $this->assertSame($response, $result);
     }
@@ -200,8 +208,10 @@ final class RuleControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['rule' => ['name' => 'updatedRule', 'class' => 'App\\Rule\\UpdatedRule']]);
+
         $controller = $this->createController();
-        $result = $controller->update(request: new ServerRequest('POST', '/'), name: 'oldRule', ruleName: 'updatedRule', ruleClass: 'App\\Rule\\UpdatedRule');
+        $result = $controller->update(request: $request, name: 'oldRule');
 
         $this->assertSame($response, $result);
     }
@@ -222,8 +232,10 @@ final class RuleControllerTest extends TestCase
             ))
             ->willReturn($response);
 
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['rule' => ['name' => '', 'class' => '']]);
+
         $controller = $this->createController();
-        $result = $controller->update(request: new ServerRequest('POST', '/'), name: 'oldRule', ruleName: '', ruleClass: '');
+        $result = $controller->update(request: $request, name: 'oldRule');
 
         $this->assertSame($response, $result);
     }
