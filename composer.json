@@ -54,6 +54,7 @@
         "yiisoft/translator-message-php": "^1.0",
         "yiisoft/user": "^2.3",
         "yiisoft/validator": "^2.6",
+        "yiisoft/widget": "^2.2",
         "yiisoft/yii-console": "^2.3",
         "yiisoft/yii-dataview": "^1.1",
         "yiisoft/yii-view-renderer": "^7.1"

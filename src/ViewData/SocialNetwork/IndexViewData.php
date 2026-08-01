@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\ViewData\SocialNetwork;
 
-use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\ViewData\Shared\MenuViewData;
 use YiiRocks\Voyti\VoytiConfig;
@@ -41,8 +40,6 @@ final readonly class IndexViewData
         VoytiConfig $config,
         UrlGeneratorInterface $url,
         TranslatorInterface $translator,
-        bool $isSwitched,
-        ?User $originalUser,
     ): self {
         $authChoice = $clientCollection !== null ? AuthChoice::widget()->authRoute('voyti/session-auth') : null;
         $clients = $authChoice?->getClients() ?? [];
@@ -63,7 +60,7 @@ final readonly class IndexViewData
         $authChoice?->setClients(array_diff_key($clients, array_flip($excludedProviders)));
 
         return new self(
-            menu: MenuViewData::forAccount($config, $url, $translator, $isSwitched, $originalUser),
+            menu: MenuViewData::forAccount($config, $url, $translator),
             accounts: $rows,
             authChoice: $authChoice,
         );

@@ -9,7 +9,6 @@ use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Model\UserSocialAccount;
-use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\ViewData\SocialNetwork\IndexViewData;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
@@ -37,7 +36,6 @@ final readonly class SocialNetworkController
         private CurrentUser $currentUser,
         private ResponseFactoryInterface $responseFactory,
         private FlashInterface $flash,
-        private SwitchIdentityService $switchIdentityService,
     ) {}
 
     public function delete(#[RouteArgument] int $id): ResponseInterface
@@ -74,8 +72,6 @@ final readonly class SocialNetworkController
                 $this->config,
                 $this->url,
                 $this->translator(),
-                $this->switchIdentityService->isSwitched(),
-                $this->switchIdentityService->getOriginalUser(),
             ),
         ]);
     }

@@ -16,7 +16,6 @@ use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Model\Form\Settings\UserProfileForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserProfile;
-use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\ViewData\Profile\UpdateViewData;
 use YiiRocks\Voyti\ViewData\Shared\ProfileCardViewData;
 use YiiRocks\Voyti\VoytiConfig;
@@ -53,7 +52,6 @@ final readonly class ProfileController
         private HydratorInterface $hydrator,
         private ResponseFactoryInterface $responseFactory,
         private FlashInterface $flash,
-        private SwitchIdentityService $switchIdentityService,
     ) {}
 
     public function show(#[RouteArgument] int $id): ResponseInterface
@@ -127,8 +125,6 @@ final readonly class ProfileController
                 $this->config,
                 $this->url,
                 $this->translator(),
-                $this->switchIdentityService->isSwitched(),
-                $this->switchIdentityService->getOriginalUser(),
             ),
         ]);
     }

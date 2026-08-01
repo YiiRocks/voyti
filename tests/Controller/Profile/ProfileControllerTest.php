@@ -28,7 +28,6 @@ use YiiRocks\Voyti\tests\TestCase;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
-use Yiisoft\Session\SessionInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentity;
 use Yiisoft\User\Guest\GuestIdentityInterface;
@@ -191,22 +190,6 @@ final class ProfileControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    public function testUpdateGetDoesNotShowSwitchedBannerWhenNotSwitched(): void
-    {
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
-        $user = $this->createUser(passwordHash: TestPasswordHasherFactory::create()->hash('secret'), confirmedAt: time());
-        $this->createUserProfile((int) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($user);
-
-        [$state, $response] = $this->captureRenderedView($this->viewRenderer);
-
-        $controller->update($request);
-
-        $this->assertNull($state->params['data']->menu->switchedBannerMessage);
-    }
-
     public function testUpdateGetShowsFormWithExistingProfile(): void
     {
         $controller = $this->createController();
@@ -228,26 +211,6 @@ final class ProfileControllerTest extends TestCase
         $result = $controller->update($request);
 
         $this->assertSame($response, $result);
-    }
-
-    public function testUpdateGetShowsSwitchedBanner(): void
-    {
-        $originalUser = $this->createUser(username: 'original', email: 'original@example.com', passwordHash: TestPasswordHasherFactory::create()->hash('secret'), confirmedAt: time());
-
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
-        $user = $this->createUser(username: 'switcheduser', email: 'switched@example.com', passwordHash: TestPasswordHasherFactory::create()->hash('secret'), confirmedAt: time());
-        $this->createUserProfile((int) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($user);
-
-        $this->getTestContainer()->get(SessionInterface::class)->set('voyti_original_admin_user', (string) $originalUser->getId());
-
-        [$state, $response] = $this->captureRenderedView($this->viewRenderer);
-
-        $controller->update($request);
-
-        $this->assertStringContainsString('original', (string) $state->params['data']->menu->switchedBannerMessage);
     }
 
     public function testUpdatePostClearingFieldsSetsThemToNullNotEmptyString(): void

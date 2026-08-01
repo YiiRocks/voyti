@@ -15,7 +15,7 @@ final class UpdateViewDataTest extends TestCase
 {
     use UserFactoryTrait;
 
-    public function testCreateWithoutSwitchedIdentity(): void
+    public function testCreate(): void
     {
         $user = $this->buildUser();
 
@@ -25,31 +25,10 @@ final class UpdateViewDataTest extends TestCase
             VoytiConfigFactory::create(),
             new FakeUrlGenerator(),
             $this->createTranslator(),
-            isSwitched: false,
-            originalUser: null,
         );
 
-        self::assertNull($data->menu->switchedBannerMessage);
         self::assertSame('//voyti/user-profile', $data->updateUrl);
         self::assertNotEmpty($data->timezoneOptions);
         self::assertSame('list-group list-group-flush', $data->profile->profilePreviewClass);
-    }
-
-    public function testCreateWithSwitchedIdentityIncludesOriginalUsername(): void
-    {
-        $originalUser = $this->buildUser(username: 'admin');
-
-        $data = UpdateViewData::create(
-            $this->buildUser(username: 'switcheduser'),
-            new UserProfile(),
-            VoytiConfigFactory::create(),
-            new FakeUrlGenerator(),
-            $this->createTranslator(),
-            isSwitched: true,
-            originalUser: $originalUser,
-        );
-
-        self::assertNotNull($data->menu->switchedBannerMessage);
-        self::assertStringContainsString('admin', $data->menu->switchedBannerMessage);
     }
 }

@@ -89,20 +89,6 @@ echo Html::div()->close();
 
 echo Html::form()->close();
 
-if ($data->switchedBannerMessage !== null) {
-    echo Html::div()->class('alert alert-warning d-flex justify-content-between align-items-center')->open();
-    echo Html::span($data->switchedBannerMessage);
-    echo Html::form()
-        ->post($data->formSubmitUrl)
-        ->csrf($csrf)
-        ->open();
-    echo Html::submitButton(
-        $translator->translate('voyti.view.admin.restore_button'),
-    )->class('btn', 'btn-warning', 'btn-sm');
-    echo Html::form()->close();
-    echo Html::div()->close();
-}
-
 echo Html::div()->class('d-none d-md-flex row fw-bold border-bottom pb-2 mb-2')->open();
 echo Html::div($translator->translate('voyti.view.id_header'))->class('col-1');
 echo Html::div($translator->translate('voyti.view.username_header'))->class('col-3');

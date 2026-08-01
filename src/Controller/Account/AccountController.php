@@ -13,7 +13,6 @@ use YiiRocks\Voyti\Model\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\EmailChangeService;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
-use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\ViewData\Account\UpdateViewData;
 use YiiRocks\Voyti\ViewData\Shared\MessageViewData;
 use YiiRocks\Voyti\VoytiConfig;
@@ -49,7 +48,6 @@ final readonly class AccountController
         private ResponseFactoryInterface $responseFactory,
         private FlashInterface $flash,
         private PasswordHistoryService $passwordHistoryService,
-        private SwitchIdentityService $switchIdentityService,
     ) {}
 
     public function confirm(#[RouteArgument] string $code): ResponseInterface
@@ -126,8 +124,6 @@ final readonly class AccountController
                 $this->config,
                 $this->url,
                 $this->translator(),
-                $this->switchIdentityService->isSwitched(),
-                $this->switchIdentityService->getOriginalUser(),
             ),
         ]);
     }

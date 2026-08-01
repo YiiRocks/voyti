@@ -35,11 +35,9 @@ final readonly class UpdateViewData
         VoytiConfig $config,
         UrlGeneratorInterface $url,
         TranslatorInterface $translator,
-        bool $isSwitched,
-        ?User $originalUser,
     ): self {
         return new self(
-            menu: MenuViewData::forAccount($config, $url, $translator, $isSwitched, $originalUser),
+            menu: MenuViewData::forAccount($config, $url, $translator),
             updateUrl: $url->generate('voyti/user-profile'),
             profile: ProfileCardViewData::create(
                 $user,

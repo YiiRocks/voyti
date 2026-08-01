@@ -269,7 +269,6 @@ final readonly class UserController
                 $this->url,
                 $this->translator(),
                 $this->switchIdentityService->isSwitched(),
-                $this->switchIdentityService->getOriginalUser(),
                 (int) $this->currentUser->getIdentity()->getId(),
             ),
         ]);

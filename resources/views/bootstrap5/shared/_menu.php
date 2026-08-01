@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use YiiRocks\Voyti\ViewData\Shared\MenuViewData;
+use YiiRocks\Voyti\Widget\SwitchIdentityWidget;
 use Yiisoft\Html\Html;
 
 /**
@@ -10,17 +11,7 @@ use Yiisoft\Html\Html;
  * @var string $csrf
  */
 
-if ($menu->switchedBannerMessage !== null) {
-    echo Html::div()->class('alert alert-warning d-flex justify-content-between align-items-center')->open();
-    echo Html::span($menu->switchedBannerMessage);
-    echo Html::form()
-        ->post($menu->switchIdentityRestoreUrl)
-        ->csrf($csrf)
-        ->open();
-    echo Html::submitButton($menu->switchIdentityRestoreButtonLabel)->class('btn', 'btn-warning', 'btn-sm');
-    echo Html::form()->close();
-    echo Html::div()->close();
-}
+echo SwitchIdentityWidget::widget();
 
 echo Html::ul()->class('nav nav-tabs mb-4')->open();
 foreach ($menu->items as $item) {

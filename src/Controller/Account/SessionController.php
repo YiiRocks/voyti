@@ -12,7 +12,6 @@ use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Event\Session\SessionEvent;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
-use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\ViewData\Account\SessionsViewData;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
@@ -42,7 +41,6 @@ final readonly class SessionController
         private VoytiConfig $config,
         private EventDispatcherInterface $eventDispatcher,
         private FlashInterface $flash,
-        private SwitchIdentityService $switchIdentityService,
     ) {}
 
     public function index(): ResponseInterface
@@ -58,8 +56,6 @@ final readonly class SessionController
                 $this->config,
                 $this->url,
                 $this->translator(),
-                $this->switchIdentityService->isSwitched(),
-                $this->switchIdentityService->getOriginalUser(),
             ),
         ]);
     }

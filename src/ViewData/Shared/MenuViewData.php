@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\ViewData\Shared;
 
-use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -18,28 +16,15 @@ final readonly class MenuViewData
 {
     /**
      * @param list<MenuLinkViewData> $items
-     * @param string|null $switchedBannerMessage set only when an admin is currently impersonating
-     *        another user (see {@see SwitchIdentityService}); pair with
-     *        $switchIdentityRestoreUrl/$switchIdentityRestoreButtonLabel to offer a "restore my
-     *        identity" action on every account settings page
-     * @param string|null $switchIdentityRestoreUrl POST target restoring the admin's original
-     *        identity, set together with $switchedBannerMessage
-     * @param string|null $switchIdentityRestoreButtonLabel already-translated, set together with
-     *        $switchedBannerMessage
      */
     private function __construct(
         public array $items,
-        public ?string $switchedBannerMessage,
-        public ?string $switchIdentityRestoreUrl,
-        public ?string $switchIdentityRestoreButtonLabel,
     ) {}
 
     public static function forAccount(
         VoytiConfig $config,
         UrlGeneratorInterface $url,
         TranslatorInterface $translator,
-        bool $isSwitched,
-        ?User $originalUser,
     ): self {
         $items = [
             new MenuLinkViewData($translator->translate('voyti.menu.dashboard'), $url->generate('voyti/user')),
@@ -59,33 +44,19 @@ final readonly class MenuViewData
 
         $items[] = new MenuLinkViewData($translator->translate('voyti.menu.logout'), $url->generate('voyti/session-logout'), alignEnd: true, routeName: 'voyti/session-logout');
 
-        $isSwitched = $isSwitched && $originalUser !== null;
-
-        return new self(
-            items: $items,
-            switchedBannerMessage: $isSwitched
-                ? $translator->translate('voyti.view.admin.switched_banner', ['username' => $originalUser->getUsername()])
-                : null,
-            switchIdentityRestoreUrl: $isSwitched ? $url->generate('voyti/admin-users-switch-identity-restore') : null,
-            switchIdentityRestoreButtonLabel: $isSwitched ? $translator->translate('voyti.view.admin.restore_button') : null,
-        );
+        return new self($items);
     }
 
     public static function forAdmin(UrlGeneratorInterface $url, TranslatorInterface $translator): self
     {
-        return new self(
-            items: [
-                new MenuLinkViewData($translator->translate('voyti.view.dashboard.title'), $url->generate('voyti/admin')),
-                new MenuLinkViewData($translator->translate('voyti.view.admin.title'), $url->generate('voyti/admin-users')),
-                new MenuLinkViewData($translator->translate('voyti.view.role.title'), $url->generate('voyti/admin-rbac-roles')),
-                new MenuLinkViewData($translator->translate('voyti.view.permission.title'), $url->generate('voyti/admin-rbac-permissions')),
-                new MenuLinkViewData($translator->translate('voyti.view.rule.title'), $url->generate('voyti/admin-rbac-rules')),
-                new MenuLinkViewData($translator->translate('voyti.view.audit_log.title'), $url->generate('voyti/admin-audit-log')),
-                new MenuLinkViewData($translator->translate('voyti.menu.logout'), $url->generate('voyti/session-logout'), alignEnd: true, routeName: 'voyti/session-logout'),
-            ],
-            switchedBannerMessage: null,
-            switchIdentityRestoreUrl: null,
-            switchIdentityRestoreButtonLabel: null,
-        );
+        return new self([
+            new MenuLinkViewData($translator->translate('voyti.view.dashboard.title'), $url->generate('voyti/admin')),
+            new MenuLinkViewData($translator->translate('voyti.view.admin.title'), $url->generate('voyti/admin-users')),
+            new MenuLinkViewData($translator->translate('voyti.view.role.title'), $url->generate('voyti/admin-rbac-roles')),
+            new MenuLinkViewData($translator->translate('voyti.view.permission.title'), $url->generate('voyti/admin-rbac-permissions')),
+            new MenuLinkViewData($translator->translate('voyti.view.rule.title'), $url->generate('voyti/admin-rbac-rules')),
+            new MenuLinkViewData($translator->translate('voyti.view.audit_log.title'), $url->generate('voyti/admin-audit-log')),
+            new MenuLinkViewData($translator->translate('voyti.menu.logout'), $url->generate('voyti/session-logout'), alignEnd: true, routeName: 'voyti/session-logout'),
+        ]);
     }
 }

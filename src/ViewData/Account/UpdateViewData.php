@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\ViewData\Account;
 
-use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\ViewData\Shared\MenuViewData;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -24,11 +23,9 @@ final readonly class UpdateViewData
         VoytiConfig $config,
         UrlGeneratorInterface $url,
         TranslatorInterface $translator,
-        bool $isSwitched,
-        ?User $originalUser,
     ): self {
         return new self(
-            menu: MenuViewData::forAccount($config, $url, $translator, $isSwitched, $originalUser),
+            menu: MenuViewData::forAccount($config, $url, $translator),
             formSubmitUrl: $url->generate('voyti/user-account'),
         );
     }

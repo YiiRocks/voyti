@@ -17,7 +17,7 @@ final class IndexViewDataTest extends TestCase
 {
     use UserFactoryTrait;
 
-    public function testCreateWithoutSwitchedIdentity(): void
+    public function testCreate(): void
     {
         $user = $this->buildUser('jane');
         $paginator = new OffsetPaginator(new IterableDataReader([]));
@@ -32,13 +32,11 @@ final class IndexViewDataTest extends TestCase
             new FakeUrlGenerator(),
             $translator,
             false,
-            null,
             999999,
         );
 
         self::assertCount(1, $data->users);
         self::assertSame('jane', $data->users[0]->username);
-        self::assertNull($data->switchedBannerMessage);
         self::assertSame(['username' => 'jane', 'email' => '', 'status' => ''], $data->filters);
         self::assertSame('//voyti/admin-users-create', $data->createUserUrl);
         self::assertSame(25, $data->perPage);
@@ -46,14 +44,14 @@ final class IndexViewDataTest extends TestCase
         self::assertStringContainsString('perPage=25', $data->firstPageUrl);
     }
 
-    public function testCreateWithSwitchedIdentity(): void
+    public function testCreateHidesSwitchIdentityActionWhenAlreadySwitched(): void
     {
-        $originalUser = $this->buildUser('admin');
+        $user = $this->buildUser('jane');
         $paginator = new OffsetPaginator(new IterableDataReader([]));
         $translator = $this->createTranslator();
 
         $data = IndexViewData::create(
-            [],
+            [$user],
             $paginator,
             [],
             25,
@@ -61,11 +59,9 @@ final class IndexViewDataTest extends TestCase
             new FakeUrlGenerator(),
             $translator,
             true,
-            $originalUser,
             999999,
         );
 
-        self::assertNotNull($data->switchedBannerMessage);
-        self::assertStringContainsString('admin', $data->switchedBannerMessage);
+        self::assertFalse($data->users[0]->showSwitchIdentityAction);
     }
 }
