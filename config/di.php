@@ -11,6 +11,7 @@ use YiiRocks\Voyti\Clock\SystemClock;
 use YiiRocks\Voyti\Enum\EmailChangeConfirmation;
 use YiiRocks\Voyti\Enum\ProfileVisibility;
 use YiiRocks\Voyti\Enum\RecaptchaVersion;
+use YiiRocks\Voyti\Enum\WebTheme;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Listener;
@@ -128,7 +129,8 @@ return [
         administratorPermissionName: $params['yiirocks/voyti']['administratorPermissionName'] ?? 'voyti-admin',
         profileVisibility: $params['yiirocks/voyti']['profileVisibility'] ?? ProfileVisibility::USERS,
         maxPasswordAge: $params['yiirocks/voyti']['maxPasswordAge'] ?? 0,
-        viewPath: $params['yiirocks/voyti']['viewPath'] ?? VoytiConfig::DEFAULT_VIEW_PATH,
+        webTheme: $params['yiirocks/voyti']['webTheme'] ?? WebTheme::BOOTSTRAP5,
+        viewPath: $params['yiirocks/voyti']['viewPath'] ?? null,
         mailPath: $params['yiirocks/voyti']['mailPath'] ?? VoytiConfig::DEFAULT_MAIL_PATH,
         apiTokenLifespan: $params['yiirocks/voyti']['apiTokenLifespan'] ?? 0,
         enableAuditLog: $params['yiirocks/voyti']['enableAuditLog'] ?? true,

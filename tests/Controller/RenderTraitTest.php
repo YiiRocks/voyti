@@ -53,15 +53,17 @@ final class RenderTraitTest extends TestCase
         $fixture->render('shared/message');
     }
 
-    public function testFallsBackToDefaultViewPathWhenTemplateIsMissingFromConfiguredPath(): void
+    public function testFallsBackToThemeViewPathWhenTemplateIsMissingFromConfiguredPath(): void
     {
         $customViewPath = sys_get_temp_dir() . '/voyti-render-trait-test-' . uniqid();
         mkdir($customViewPath);
 
         try {
-            $capturedPath = $this->renderWithConfiguredPath($customViewPath, 'shared/message');
+            $config = VoytiConfigFactory::create(viewPath: $customViewPath);
+            $capturedPath = $this->renderWithConfig($config, 'shared/message');
 
-            self::assertSame(VoytiConfig::DEFAULT_VIEW_PATH, $capturedPath);
+            $expectedPath = dirname(__DIR__, 2) . '/resources/views/' . $config->webTheme->value;
+            self::assertSame($expectedPath, $capturedPath);
         } finally {
             rmdir($customViewPath);
         }
@@ -75,7 +77,8 @@ final class RenderTraitTest extends TestCase
         file_put_contents($customViewPath . '/shared/message.php', '<?php');
 
         try {
-            $capturedPath = $this->renderWithConfiguredPath($customViewPath, 'shared/message');
+            $config = VoytiConfigFactory::create(viewPath: $customViewPath);
+            $capturedPath = $this->renderWithConfig($config, 'shared/message');
 
             self::assertSame($customViewPath, $capturedPath);
         } finally {
@@ -85,9 +88,8 @@ final class RenderTraitTest extends TestCase
         }
     }
 
-    private function renderWithConfiguredPath(string $viewPath, string $view): ?string
+    private function renderWithConfig(VoytiConfig $config, string $view): ?string
     {
-        $config = VoytiConfigFactory::create(viewPath: $viewPath);
         $viewRenderer = $this->createMock(WebViewRenderer::class);
         $response = $this->createMock(ResponseInterface::class);
 

@@ -8,6 +8,7 @@ use LogicException;
 use YiiRocks\Voyti\Enum\EmailChangeConfirmation;
 use YiiRocks\Voyti\Enum\ProfileVisibility;
 use YiiRocks\Voyti\Enum\RecaptchaVersion;
+use YiiRocks\Voyti\Enum\WebTheme;
 use Yiisoft\Router\RouteNotFoundException;
 use Yiisoft\Router\UrlGeneratorInterface;
 
@@ -18,7 +19,6 @@ use Yiisoft\Router\UrlGeneratorInterface;
 final readonly class VoytiConfig
 {
     public const string DEFAULT_MAIL_PATH = __DIR__ . '/../resources/mail';
-    public const string DEFAULT_VIEW_PATH = __DIR__ . '/../resources/views/bootstrap5';
 
     public function __construct(
         public string $appName,
@@ -48,7 +48,8 @@ final readonly class VoytiConfig
         public string $administratorPermissionName,
         public ProfileVisibility $profileVisibility,
         public int $maxPasswordAge,
-        public string $viewPath,
+        public WebTheme $webTheme,
+        public ?string $viewPath,
         public string $mailPath,
         public int $apiTokenLifespan,
         public bool $enableAuditLog,

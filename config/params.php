@@ -6,6 +6,7 @@ use YiiRocks\Voyti\Console;
 use YiiRocks\Voyti\Enum\EmailChangeConfirmation;
 use YiiRocks\Voyti\Enum\ProfileVisibility;
 use YiiRocks\Voyti\Enum\RecaptchaVersion;
+use YiiRocks\Voyti\Enum\WebTheme;
 use YiiRocks\Voyti\VoytiConfig;
 
 return [
@@ -47,7 +48,8 @@ return [
         'administratorPermissionName' => 'voyti-admin',
         'profileVisibility' => ProfileVisibility::USERS,
         'maxPasswordAge' => 0,
-        'viewPath' => VoytiConfig::DEFAULT_VIEW_PATH,
+        'webTheme' => WebTheme::BOOTSTRAP5,
+        'viewPath' => null,
         'mailPath' => VoytiConfig::DEFAULT_MAIL_PATH,
         'apiTokenLifespan' => 0,
         'enableAuditLog' => true,

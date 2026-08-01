@@ -47,14 +47,6 @@ trait RenderTrait
     }
 
     /**
-     * @psalm-suppress UndefinedThisPropertyFetch
-     */
-    protected function viewPath(): string
-    {
-        return $this->config->viewPath;
-    }
-
-    /**
      * Renders a view without the host application's layout - used for AJAX fragments that
      * get injected into an existing page rather than replacing it.
      *
@@ -85,9 +77,11 @@ trait RenderTrait
      */
     private function resolveViewPath(string $view): string
     {
-        $configuredPath = $this->viewPath();
+        if ($this->config->viewPath !== null && is_file($this->config->viewPath . '/' . $view . '.php')) {
+            return $this->config->viewPath;
+        }
 
-        return is_file($configuredPath . '/' . $view . '.php') ? $configuredPath : VoytiConfig::DEFAULT_VIEW_PATH;
+        return dirname(__DIR__, 2) . '/resources/views/' . $this->config->webTheme->value;
     }
 
     /**
