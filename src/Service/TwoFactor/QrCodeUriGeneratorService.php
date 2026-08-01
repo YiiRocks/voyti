@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Service\TwoFactor;
 
 use chillerlan\TwoFactorQRCode\TwoFactorQRCode;
+use InvalidArgumentException;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\VoytiConfig;
 
@@ -37,10 +38,18 @@ final readonly class QrCodeUriGeneratorService
 
     private function buildSvg(User $user, ?string $secret): string
     {
-        $secret = $this->resolveSecret($user, $secret);
-
         $twoFactorQrCode = new TwoFactorQRCode(['outputBase64' => false, 'connectPaths' => true, 'scale' => 4]);
-        $twoFactorQrCode->setSecret($secret);
+
+        $secret = $this->resolveSecret($user, $secret);
+        try {
+            $twoFactorQrCode->setSecret($secret);
+        } catch (InvalidArgumentException) {
+            // auth_tf_key also stores the email 2FA one-time code, so a leftover non-base32
+            // value can survive here despite auth_tf_type reading 'google' (e.g. an interrupted
+            // method switch) - fall back to a fresh secret rather than surfacing the exception.
+            $secret = $this->resolveSecret($user, null);
+            $twoFactorQrCode->setSecret($secret);
+        }
 
         return $twoFactorQrCode->getQRCode($user->getEmail(), $this->config->appName);
     }

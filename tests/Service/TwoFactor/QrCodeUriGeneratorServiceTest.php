@@ -13,6 +13,23 @@ use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 #[AllowMockObjectsWithoutExpectations]
 final class QrCodeUriGeneratorServiceTest extends TestCase
 {
+    public function testGenerateQrCodeSvgRegeneratesSecretWhenStoredValueIsNotValidBase32(): void
+    {
+        $config = VoytiConfigFactory::create(appName: 'VoytiApp');
+        $service = new QrCodeUriGeneratorService($config);
+
+        $user = $this->createMock(User::class);
+        $user->method('getAuthTfKey')->willReturn('190812');
+        $user->method('getEmail')->willReturn('user@example.com');
+        $user->expects($this->once())->method('setAuthTfKey')->with($this->callback(
+            static fn(string $secret): bool => $secret !== '190812' && $secret !== '',
+        ));
+        $user->expects($this->once())->method('save');
+
+        $svg = $service->generateQrCodeSvg($user);
+        self::assertStringContainsString('<svg', $svg);
+    }
+
     public function testGenerateQrCodeSvgReturnsSvgForExistingSecret(): void
     {
         $config = VoytiConfigFactory::create(appName: 'VoytiApp');
