@@ -65,8 +65,8 @@ return [
     'voyti.admin.user_created' => 'Benutzer wurde erstellt',
     'voyti.admin.account_updated' => 'Konto wurde aktualisiert',
     'voyti.admin.password_previously_used' => 'Dieses Passwort wurde kürzlich bereits verwendet. Bitte wählen Sie ein anderes.',
-    'voyti.admin.switch_identity_success' => 'Sie sind jetzt als dieser Benutzer angemeldet',
-    'voyti.admin.switch_identity_restored' => 'Sie wurden zu Ihrer ursprünglichen Identität zurückgesetzt',
+    'voyti.admin.impersonate_identity_success' => 'Sie sind jetzt als dieser Benutzer angemeldet',
+    'voyti.admin.impersonate_identity_restored' => 'Sie wurden zu Ihrer ursprünglichen Identität zurückgesetzt',
 
     // RuleController
     'voyti.rule.added' => 'Autorisierungsregel wurde hinzugefügt',
@@ -230,9 +230,9 @@ return [
     'voyti.view.admin.sessions' => 'Sitzungsverwaltung',
     'voyti.view.admin.sessions_link' => 'Sitzungen',
     'voyti.view.admin.terminate_sessions' => 'Sitzungen beenden',
-    'voyti.view.admin.switch_button' => 'Wechseln',
+    'voyti.view.admin.impersonate_button' => 'Imitieren',
     'voyti.view.admin.restore_button' => 'Wiederherstellen',
-    'voyti.view.admin.switched_banner' => 'Sie sind derzeit als dieser Benutzer angemeldet. Klicken Sie auf Wiederherstellen, um zu {username} zurückzukehren.',
+    'voyti.view.admin.impersonating_banner' => 'Sie sind derzeit als dieser Benutzer angemeldet. Klicken Sie auf Wiederherstellen, um zu {username} zurückzukehren.',
 
     // RBAC views
     'voyti.view.assignments.title' => 'Zuweisungen',

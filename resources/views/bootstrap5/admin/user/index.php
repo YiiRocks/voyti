@@ -170,7 +170,7 @@ foreach ($data->users as $user) {
             ->post($user->switchIdentityUrl)
             ->csrf($csrf)
             ->open();
-        echo Html::submitButton($translator->translate('voyti.view.admin.switch_button'))
+        echo Html::submitButton($translator->translate('voyti.view.admin.impersonate_button'))
             ->class('dropdown-item')
             ->attribute('tabindex', 1)
             ->disabled($user->switchIdentityDisabled);

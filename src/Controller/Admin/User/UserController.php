@@ -332,7 +332,7 @@ final readonly class UserController
             $this->auditLogService->log($actorId, 'user.switch_identity', $request->getServerParams(), targetUserId: $id);
             $this->flash->set(
                 FlashType::SUCCESS,
-                $this->translator->translate('voyti.admin.switch_identity_success', category: 'voyti'),
+                $this->translator->translate('voyti.admin.impersonate_identity_success', category: 'voyti'),
             );
 
             return $this->redirect($this->url->generate('voyti/user'));
@@ -347,7 +347,7 @@ final readonly class UserController
         if ($result->isSuccess()) {
             $this->flash->set(
                 FlashType::SUCCESS,
-                $this->translator->translate('voyti.admin.switch_identity_restored', category: 'voyti'),
+                $this->translator->translate('voyti.admin.impersonate_identity_restored', category: 'voyti'),
             );
 
             return $this->redirect($this->url->generate('voyti/user-profile'));

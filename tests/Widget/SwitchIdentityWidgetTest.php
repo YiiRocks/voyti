@@ -72,7 +72,7 @@ final class SwitchIdentityWidgetTest extends TestCase
         self::assertStringContainsString('alert alert-warning', $html);
         self::assertStringContainsString('switch back to admin', $html);
         self::assertStringContainsString('Restore', $html);
-        self::assertStringNotContainsString('voyti.view.admin.switched_banner', $html);
+        self::assertStringNotContainsString('voyti.view.admin.impersonating_banner', $html);
         self::assertStringNotContainsString('voyti.view.admin.restore_button', $html);
         self::assertStringContainsString('//voyti/admin-users-switch-identity-restore', $html);
         self::assertStringContainsString('btn-warning', $html);

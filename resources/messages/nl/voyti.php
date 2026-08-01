@@ -65,8 +65,8 @@ return [
     'voyti.admin.user_created' => 'Gebruiker is aangemaakt',
     'voyti.admin.account_updated' => 'Account is bijgewerkt',
     'voyti.admin.password_previously_used' => 'Dit wachtwoord is onlangs al gebruikt. Kies een ander wachtwoord.',
-    'voyti.admin.switch_identity_success' => 'U bent nu ingelogd als deze gebruiker',
-    'voyti.admin.switch_identity_restored' => 'U bent hersteld naar uw oorspronkelijke identiteit',
+    'voyti.admin.impersonate_identity_success' => 'U bent nu ingelogd als deze gebruiker',
+    'voyti.admin.impersonate_identity_restored' => 'U bent hersteld naar uw oorspronkelijke identiteit',
 
     // RuleController
     'voyti.rule.added' => 'Autorisatieregel is toegevoegd',
@@ -230,9 +230,9 @@ return [
     'voyti.view.admin.sessions' => 'Sessiebeheer',
     'voyti.view.admin.sessions_link' => 'Sessies',
     'voyti.view.admin.terminate_sessions' => 'Sessies beëindigen',
-    'voyti.view.admin.switch_button' => 'Wisselen',
+    'voyti.view.admin.impersonate_button' => 'Imiteren',
     'voyti.view.admin.restore_button' => 'Herstellen',
-    'voyti.view.admin.switched_banner' => 'U bent momenteel ingelogd als deze gebruiker. Klik op Herstellen om terug te keren naar {username}.',
+    'voyti.view.admin.impersonating_banner' => 'U bent momenteel ingelogd als deze gebruiker. Klik op Herstellen om terug te keren naar {username}.',
 
     // RBAC views
     'voyti.view.assignments.title' => 'Toewijzingen',

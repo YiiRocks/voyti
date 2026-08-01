@@ -45,7 +45,7 @@ final class SwitchIdentityWidget extends Widget
         }
 
         $message = $this->translator->translate(
-            'voyti.view.admin.switched_banner',
+            'voyti.view.admin.impersonating_banner',
             ['username' => $originalUser->getUsername()],
             category: 'voyti',
         );

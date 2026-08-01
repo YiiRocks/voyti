@@ -65,8 +65,8 @@ return [
     'voyti.admin.user_created' => 'Пользователь создан',
     'voyti.admin.account_updated' => 'Аккаунт обновлён',
     'voyti.admin.password_previously_used' => 'Этот пароль недавно уже использовался. Пожалуйста, выберите другой.',
-    'voyti.admin.switch_identity_success' => 'Вы вошли как этот пользователь',
-    'voyti.admin.switch_identity_restored' => 'Вы возвращены в свой исходный аккаунт',
+    'voyti.admin.impersonate_identity_success' => 'Вы вошли как этот пользователь',
+    'voyti.admin.impersonate_identity_restored' => 'Вы возвращены в свой исходный аккаунт',
 
     // RuleController
     'voyti.rule.added' => 'Правило авторизации добавлено',
@@ -230,9 +230,9 @@ return [
     'voyti.view.admin.sessions' => 'Управление сессиями',
     'voyti.view.admin.sessions_link' => 'Сессии',
     'voyti.view.admin.terminate_sessions' => 'Завершить сессии',
-    'voyti.view.admin.switch_button' => 'Переключиться',
+    'voyti.view.admin.impersonate_button' => 'Имитировать',
     'voyti.view.admin.restore_button' => 'Восстановить',
-    'voyti.view.admin.switched_banner' => 'Сейчас вы вошли как этот пользователь. Нажмите «Восстановить», чтобы вернуться к {username}.',
+    'voyti.view.admin.impersonating_banner' => 'Сейчас вы вошли как этот пользователь. Нажмите «Восстановить», чтобы вернуться к {username}.',
 
     // RBAC views
     'voyti.view.assignments.title' => 'Назначения',

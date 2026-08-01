@@ -65,8 +65,8 @@ return [
     'voyti.admin.user_created' => "L'utilisateur a été créé",
     'voyti.admin.account_updated' => 'Le compte a été mis à jour',
     'voyti.admin.password_previously_used' => 'Ce mot de passe a été utilisé récemment. Veuillez en choisir un autre.',
-    'voyti.admin.switch_identity_success' => 'Vous êtes maintenant connecté en tant que cet utilisateur',
-    'voyti.admin.switch_identity_restored' => 'Vous avez été restauré à votre identité d\'origine',
+    'voyti.admin.impersonate_identity_success' => 'Vous êtes maintenant connecté en tant que cet utilisateur',
+    'voyti.admin.impersonate_identity_restored' => 'Vous avez été restauré à votre identité d\'origine',
 
     // RuleController
     'voyti.rule.added' => "La règle d'autorisation a été ajoutée",
@@ -230,9 +230,9 @@ return [
     'voyti.view.admin.sessions' => 'Gestion des sessions',
     'voyti.view.admin.sessions_link' => 'Sessions',
     'voyti.view.admin.terminate_sessions' => 'Terminer les sessions',
-    'voyti.view.admin.switch_button' => 'Basculer',
+    'voyti.view.admin.impersonate_button' => 'Usurper',
     'voyti.view.admin.restore_button' => 'Restaurer',
-    'voyti.view.admin.switched_banner' => 'Vous êtes actuellement connecté en tant que cet utilisateur. Cliquez sur Restaurer pour revenir à {username}.',
+    'voyti.view.admin.impersonating_banner' => 'Vous êtes actuellement connecté en tant que cet utilisateur. Cliquez sur Restaurer pour revenir à {username}.',
 
     // RBAC views
     'voyti.view.assignments.title' => 'Attributions',
