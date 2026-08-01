@@ -1,28 +1,18 @@
 <?php
-$finder = PhpCsFixer\Finder::create()
-    ->in(__DIR__)
-;
 
-$config = new PhpCsFixer\Config();
-return $config
-    ->setUsingCache(false)
+declare(strict_types=1);
+
+use PhpCsFixer\Finder;
+use Yiisoft\CodeStyle\ConfigBuilder;
+
+$finder = (new Finder())->in(__DIR__);
+
+return ConfigBuilder::build()
     ->setRiskyAllowed(true)
+    ->setUsingCache(false)
     ->setRules([
+        '@Yiisoft/Core' => true,
         '@PER-CS3.0' => true,
-        'class_attributes_separation' => ['elements' => ['method' => 'one']],
-        'global_namespace_import' => [
-            'import_classes' => true,
-            'import_constants' => true,
-            'import_functions' => true,
-        ],
-        'no_empty_statement' => true,
-        'no_extra_blank_lines' => [
-            'tokens' => [
-                'curly_brace_block',
-                'extra',
-            ],
-        ],
-        'no_unused_imports' => true,
         'ordered_class_elements' => [
             'sort_algorithm' => 'alpha',
         ],
@@ -33,5 +23,4 @@ return $config
             'sort_algorithm' => 'alpha',
         ],
     ])
-    ->setFinder($finder)
-;
+    ->setFinder($finder);

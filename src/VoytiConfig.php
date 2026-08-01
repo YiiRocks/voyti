@@ -17,8 +17,8 @@ use Yiisoft\Router\UrlGeneratorInterface;
  */
 final readonly class VoytiConfig
 {
-    public const DEFAULT_MAIL_PATH = __DIR__ . '/../resources/mail';
-    public const DEFAULT_VIEW_PATH = __DIR__ . '/../resources/views/bootstrap5';
+    public const string DEFAULT_MAIL_PATH = __DIR__ . '/../resources/mail';
+    public const string DEFAULT_VIEW_PATH = __DIR__ . '/../resources/views/bootstrap5';
 
     public function __construct(
         public string $appName,

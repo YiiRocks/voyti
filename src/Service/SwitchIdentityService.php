@@ -19,7 +19,7 @@ use Yiisoft\User\Guest\GuestIdentityInterface;
  */
 final readonly class SwitchIdentityService
 {
-    private const SESSION_KEY = 'voyti_original_admin_user';
+    private const string SESSION_KEY = 'voyti_original_admin_user';
 
     public function __construct(
         private VoytiConfig $config,

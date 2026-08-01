@@ -71,7 +71,6 @@ final readonly class SocialNetworkController
                 $accounts,
                 $this->clientCollection,
                 array_values($connectedProviders),
-                'voyti/session-auth',
                 $this->config,
                 $this->url,
                 $this->translator(),

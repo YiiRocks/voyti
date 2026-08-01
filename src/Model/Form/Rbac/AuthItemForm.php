@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Model\Form\Rbac;
 
 use Override;
+use YiiRocks\Voyti\Controller\Admin\Rbac\RbacController;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Validator\LabelsProviderInterface;
@@ -16,7 +17,7 @@ use Yiisoft\Validator\RulesProviderInterface;
 /**
  * Backs the admin create/update page for an RBAC item. Shared by both roles and permissions —
  * `$type` ('role'|'permission') is also used as the form name, matching how
- * {@see \YiiRocks\Voyti\Controller\Admin\Rbac\RbacController} branches on `$itemType`.
+ * {@see RbacController} branches on `$itemType`.
  */
 final class AuthItemForm extends FormModel implements LabelsProviderInterface, RulesProviderInterface
 {

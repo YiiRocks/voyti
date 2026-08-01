@@ -31,7 +31,7 @@ final readonly class SessionRevocationEnforceMiddleware implements MiddlewareInt
      * @var string[] Route names that must stay reachable even for a revoked session, to always allow
      * logging out and to avoid a redirect loop on the login route itself.
      */
-    private const EXEMPT_ROUTES = ['voyti/session-login', 'voyti/session-logout'];
+    private const array EXEMPT_ROUTES = ['voyti/session-login', 'voyti/session-logout'];
 
     public function __construct(
         private CurrentUser $currentUser,

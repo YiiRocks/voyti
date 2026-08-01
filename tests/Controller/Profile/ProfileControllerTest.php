@@ -28,6 +28,7 @@ use YiiRocks\Voyti\tests\TestCase;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
+use Yiisoft\Session\SessionInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentity;
 use Yiisoft\User\Guest\GuestIdentityInterface;
@@ -240,7 +241,7 @@ final class ProfileControllerTest extends TestCase
         $this->createUserProfile((int) $user->getId());
         $this->currentUser->method('getIdentity')->willReturn($user);
 
-        $this->getTestContainer()->get(\Yiisoft\Session\SessionInterface::class)->set('voyti_original_admin_user', (string) $originalUser->getId());
+        $this->getTestContainer()->get(SessionInterface::class)->set('voyti_original_admin_user', (string) $originalUser->getId());
 
         [$state, $response] = $this->captureRenderedView($this->viewRenderer);
 

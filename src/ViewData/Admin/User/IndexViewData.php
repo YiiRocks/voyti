@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\ViewData\Admin\User;
 
 use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\ViewData\Shared\MenuViewData;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Data\Paginator\OffsetPaginator;
@@ -25,12 +26,12 @@ final readonly class IndexViewData
      * @param string $createUserUrl a link (GET) to the create-user screen, not a form target
      * @param string $filterActionUrl the filter form's GET target
      * @param string|null $switchedBannerMessage set only when an admin is currently impersonating
-     *        another user (see {@see \YiiRocks\Voyti\Service\SwitchIdentityService}); pair with
+     *        another user (see {@see SwitchIdentityService}); pair with
      *        $formSubmitUrl to offer a "restore my identity" action
      * @param string $formSubmitUrl the "restore original identity" form's POST target - not
      *        related to $users/creating/updating a user
      * @param string $pageUrlPattern a URL template containing the literal placeholder
-     *        {@see \Yiisoft\Yii\DataView\Pagination\PaginationContext::URL_PLACEHOLDER}; pass
+     *        {@see PaginationContext::URL_PLACEHOLDER}; pass
      *        straight through to `Yiisoft\Yii\DataView\Pagination\OffsetPagination::create()`
      *        along with $firstPageUrl, do not build page URLs manually
      */

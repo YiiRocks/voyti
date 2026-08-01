@@ -5,6 +5,7 @@
         ]
     },
     "timeout": 60,
+    "threads": "max",
     "minMsi": 100,
     "minCoveredMsi": 100
 }

@@ -6,13 +6,17 @@ namespace YiiRocks\Voyti\tests\ViewData\Session;
 
 use YiiRocks\Voyti\Model\Form\Auth\LoginForm;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
+use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
 use YiiRocks\Voyti\ViewData\Session\LoginViewData;
 use Yiisoft\Yii\AuthClient\Collection;
+use Yiisoft\Yii\AuthClient\Widget\AuthChoice;
 
 final class LoginViewDataTest extends TestCase
 {
+    use TestContainerTrait;
+
     public function testCreateWithRegistrationDisabled(): void
     {
         $config = VoytiConfigFactory::create(enableRegistration: false);
@@ -22,21 +26,25 @@ final class LoginViewDataTest extends TestCase
         $data = LoginViewData::create($form, $config, new FakeUrlGenerator(), null);
 
         self::assertFalse($data->showRegisterLink);
-        self::assertSame([], $data->connect->providers);
+        self::assertNull($data->authChoice);
     }
 
     public function testCreateWithRegistrationEnabled(): void
     {
+        // Triggers WidgetFactory::initialize() so AuthChoice::widget() can resolve below.
+        $this->getTestContainer();
+
         $config = VoytiConfigFactory::create(enableRegistration: true);
         $form = new LoginForm($config, $this->createTranslator());
+        $url = new FakeUrlGenerator();
 
-        $data = LoginViewData::create($form, $config, new FakeUrlGenerator(), new Collection([]));
+        $data = LoginViewData::create($form, $config, $url, new Collection([]));
 
         self::assertTrue($data->showRegisterLink);
         self::assertSame('//voyti/registration-register', $data->registerUrl);
         self::assertSame('//voyti/session-login', $data->formSubmitUrl);
         self::assertSame('//voyti/password-reset-request', $data->forgotPasswordUrl);
         self::assertSame('', $data->recaptchaFieldHtml);
-        self::assertSame([], $data->connect->providers);
+        self::assertInstanceOf(AuthChoice::class, $data->authChoice);
     }
 }

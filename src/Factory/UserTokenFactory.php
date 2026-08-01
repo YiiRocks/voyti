@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Factory;
 
 use YiiRocks\Voyti\Model\UserToken;
+use YiiRocks\Voyti\Service\User\ApiTokenService;
 use Yiisoft\Security\Random;
 
 /**
  * Creates and persists `UserToken` rows (confirmation, email-change, and password-recovery
  * tokens) with a random code, returning the raw code for the caller to embed in a link — only its
- * SHA-256 hash is persisted, following the same pattern as {@see \YiiRocks\Voyti\Service\User\ApiTokenService}.
+ * SHA-256 hash is persisted, following the same pattern as {@see ApiTokenService}.
  */
 final readonly class UserTokenFactory
 {

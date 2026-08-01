@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\ViewData\Session;
 
 use YiiRocks\Voyti\Helper\RecaptchaHelper;
-use YiiRocks\Voyti\ViewData\Shared\SocialConnectViewData;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\FormModel\FormModelInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Yii\AuthClient\Collection;
+use Yiisoft\Yii\AuthClient\Widget\AuthChoice;
 
 /**
  * Data for the `session/login` screen.
@@ -20,8 +20,8 @@ final readonly class LoginViewData
      * @param string $recaptchaFieldHtml pre-rendered reCAPTCHA widget HTML - echo raw (not
      *        `Html::encode()`); empty string when reCAPTCHA is disabled or the optional
      *        `yiirocks/recaptcha` package isn't installed
-     * @param SocialConnectViewData $connect empty provider list when no providers are configured
-     *        or the optional `yiisoft/yii-auth-client` package isn't installed
+     * @param AuthChoice|null $authChoice social login widget - null when
+     *        `yiisoft/yii-auth-client` isn't installed
      */
     private function __construct(
         public string $formSubmitUrl,
@@ -29,7 +29,7 @@ final readonly class LoginViewData
         public bool $showRegisterLink,
         public string $registerUrl,
         public string $recaptchaFieldHtml,
-        public SocialConnectViewData $connect,
+        public ?AuthChoice $authChoice,
     ) {}
 
     public static function create(
@@ -44,7 +44,7 @@ final readonly class LoginViewData
             showRegisterLink: $config->enableRegistration,
             registerUrl: $url->generate('voyti/registration-register'),
             recaptchaFieldHtml: RecaptchaHelper::render($form, $config),
-            connect: SocialConnectViewData::create($clientCollection, $url),
+            authChoice: $clientCollection !== null ? AuthChoice::widget()->authRoute('voyti/session-auth') : null,
         );
     }
 }

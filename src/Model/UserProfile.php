@@ -18,8 +18,8 @@ use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
 final class UserProfile extends ActiveRecord
 {
     use PrivatePropertiesTrait;
-    private const AGE_TOKEN = '{age}';
-    private const LOCATION_TOKEN = '{location}';
+    private const string AGE_TOKEN = '{age}';
+    private const string LOCATION_TOKEN = '{location}';
     private ?string $bio = null;
     private ?DateTimeImmutable $birthday = null;
     private ?string $gravatar_email = null;

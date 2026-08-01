@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
 use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
+use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\ViewData\SocialNetwork\IndexViewData;
 use Yiisoft\Translator\Translator;
@@ -18,6 +19,8 @@ use Yiisoft\Yii\AuthClient\OAuth2;
 #[AllowMockObjectsWithoutExpectations]
 final class IndexViewDataTest extends TestCase
 {
+    use TestContainerTrait;
+
     public function testCreateBuildsRowsAndConnectList(): void
     {
         $github = $this->createMock(OAuth2::class);
@@ -25,6 +28,11 @@ final class IndexViewDataTest extends TestCase
 
         $google = $this->createMock(OAuth2::class);
         $google->method('getTitle')->willReturn('Google');
+
+        $clientCollection = new Collection(['github' => $github, 'google' => $google]);
+        // Overriding Collection::class re-initializes WidgetFactory against a container that
+        // resolves AuthChoice::widget() with these specific test clients.
+        $this->getTestContainer([Collection::class => $clientCollection]);
 
         $account = new UserSocialAccount();
         $account->setProvider('github');
@@ -38,9 +46,8 @@ final class IndexViewDataTest extends TestCase
 
         $data = IndexViewData::create(
             [$account, $secondAccount],
-            new Collection(['github' => $github, 'google' => $google]),
+            $clientCollection,
             ['github'],
-            'voyti/session-auth',
             VoytiConfigFactory::create(),
             new FakeUrlGenerator(),
             new Translator('en', null, 'voyti'),
@@ -52,8 +59,7 @@ final class IndexViewDataTest extends TestCase
         self::assertSame('GitHub', $data->accounts[0]->providerTitle);
         self::assertSame('//voyti/user-social-network-delete?id=999999', $data->accounts[0]->formSubmitUrl);
         self::assertSame('//voyti/user-social-network-delete?id=42', $data->accounts[1]->formSubmitUrl);
-        self::assertCount(1, $data->connect->providers);
-        self::assertSame('Google', $data->connect->providers[0]->title);
+        self::assertSame(['google'], array_keys($data->authChoice?->getClients() ?? []));
         self::assertNotEmpty($data->menu->items);
     }
 
@@ -68,7 +74,6 @@ final class IndexViewDataTest extends TestCase
             [$account],
             null,
             [],
-            'voyti/session-auth',
             VoytiConfigFactory::create(),
             new FakeUrlGenerator(),
             new Translator('en', null, 'voyti'),
@@ -77,6 +82,6 @@ final class IndexViewDataTest extends TestCase
         );
 
         self::assertSame('github', $data->accounts[0]->providerTitle);
-        self::assertSame([], $data->connect->providers);
+        self::assertNull($data->authChoice);
     }
 }

@@ -58,10 +58,9 @@ if (empty($data->accounts)) {
     echo Html::ul()->close();
 }
 
-if ($data->connect->providers !== []) {
+if ($data->authChoice !== null && $data->authChoice->getClients() !== []) {
     echo Html::div()->class('text-center mt-4')->open();
-    /** @psalm-suppress InvalidScope */
-    echo $this->render('../shared/_connect', ['connect' => $data->connect]);
+    echo $data->authChoice->render();
     echo Html::div()->close();
 }
 

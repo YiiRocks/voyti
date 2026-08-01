@@ -63,7 +63,7 @@ if ($data->showRegisterLink) {
 }
 echo Html::div()->close();
 
-if ($data->connect->providers !== []) {
+if ($data->authChoice !== null && $data->authChoice->getClients() !== []) {
     echo Html::div()->class('mt-4')->open();
 
     echo Html::div()->class('d-flex align-items-center mb-3')->open();
@@ -73,8 +73,7 @@ if ($data->connect->providers !== []) {
     echo Html::div()->close();
 
     echo Html::div()->class('text-center')->open();
-    /** @psalm-suppress InvalidScope */
-    echo $this->render('../shared/_connect', ['connect' => $data->connect]);
+    echo $data->authChoice->render();
     echo Html::div()->close();
 
     echo Html::div()->close();

@@ -20,7 +20,7 @@ final readonly class IndexViewData
      * @param array{actorUserId: string, targetUserId: string, action: string} $filters
      * @param string $filterActionUrl the filter form's GET target
      * @param string $pageUrlPattern a URL template containing the literal placeholder
-     *        {@see \Yiisoft\Yii\DataView\Pagination\PaginationContext::URL_PLACEHOLDER}; pass
+     *        {@see PaginationContext::URL_PLACEHOLDER}; pass
      *        straight through to `Yiisoft\Yii\DataView\Pagination\OffsetPagination::create()`
      *        along with $firstPageUrl, do not build page URLs manually
      */

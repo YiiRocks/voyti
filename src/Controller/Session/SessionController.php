@@ -17,6 +17,7 @@ use YiiRocks\Voyti\Model\Form\Auth\LoginForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
+use YiiRocks\Voyti\Service\Auth\SocialAuthCallbackService;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\Service\TwoFactor\BackupCodeService;
 use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
@@ -37,13 +38,14 @@ use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Validator\ValidatorInterface;
+use Yiisoft\Yii\AuthClient\AuthAction;
 use Yiisoft\Yii\AuthClient\Collection;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 /**
  * Handles login, logout, and two-factor confirmation during login. The social-auth redirect/callback
- * flow itself is handled by {@see \Yiisoft\Yii\AuthClient\AuthAction} and
- * {@see \YiiRocks\Voyti\Service\Auth\SocialAuthCallbackService}, wired directly as the
+ * flow itself is handled by {@see AuthAction} and
+ * {@see SocialAuthCallbackService}, wired directly as the
  * `voyti/session-auth` route action.
  */
 final readonly class SessionController

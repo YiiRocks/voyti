@@ -35,13 +35,13 @@ use function is_string;
  * authenticates and reports whether a reissue is needed; {@see RememberMeMiddleware}
  * is what writes the cookie back.
  */
-final class RememberMeCookieService
+final readonly class RememberMeCookieService
 {
     public function __construct(
-        private readonly int $duration,
-        private readonly ClockInterface $clock,
-        private readonly string $cookieName = 'autoLogin',
-        private readonly ?EventDispatcherInterface $eventDispatcher = null,
+        private int $duration,
+        private ClockInterface $clock,
+        private string $cookieName = 'autoLogin',
+        private ?EventDispatcherInterface $eventDispatcher = null,
     ) {}
 
     public function addCookie(
@@ -110,17 +110,16 @@ final class RememberMeCookieService
             return false;
         }
 
-        if ($identity instanceof User) {
-            $userSession = UserSessions::findByUserIdAndSessionId(
-                $identity->getIdOrZero(),
-                (string) $cookieSessionId,
-            );
-            if ($userSession === null || $userSession->isRevoked()) {
-                // The session this cookie was issued for was terminated (self-service or admin) - the
-                // cookie must not resurrect it, even though the shared cookieLoginKey is still otherwise
-                // valid.
-                return false;
-            }
+        if (
+            $identity instanceof User
+            && !UserSessions::claimByUserIdAndSessionId($identity->getIdOrZero(), (string) $cookieSessionId)
+        ) {
+            // The session this cookie was issued for was already terminated (self-service, admin,
+            // or a concurrent auto-login on another request claiming this same cookie first) - the
+            // cookie must not resurrect it, even though the shared cookieLoginKey is still otherwise
+            // valid. The atomic claim (vs. a plain existence check) is what makes this exclusive
+            // between two requests racing on the same stale cookie.
+            return false;
         }
 
         $currentUser->login($identity);

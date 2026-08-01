@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use YiiRocks\Voyti\ViewData\Shared\MenuLinkViewData;
 use YiiRocks\Voyti\ViewData\Shared\MenuViewData;
 use Yiisoft\Html\Html;
 

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\ViewData\Registration;
 
 use YiiRocks\Voyti\Model\UserSocialAccount;
-use YiiRocks\Voyti\ViewData\Shared\SocialConnectViewData;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Yii\AuthClient\Collection;
 
@@ -27,8 +26,12 @@ final readonly class ConnectViewData
     ): self {
         $provider = $account->getProvider();
 
+        $title = $clientCollection?->hasClient($provider) === true
+            ? $clientCollection->getClient($provider)->getTitle()
+            : $provider;
+
         return new self(
-            providerTitle: SocialConnectViewData::providerTitle($clientCollection, $provider),
+            providerTitle: $title,
             loginUrl: $url->generate('voyti/session-login'),
             registerUrl: $url->generate('voyti/registration-register'),
         );

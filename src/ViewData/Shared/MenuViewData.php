@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\ViewData\Shared;
 
 use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -18,7 +19,7 @@ final readonly class MenuViewData
     /**
      * @param list<MenuLinkViewData> $items
      * @param string|null $switchedBannerMessage set only when an admin is currently impersonating
-     *        another user (see {@see \YiiRocks\Voyti\Service\SwitchIdentityService}); pair with
+     *        another user (see {@see SwitchIdentityService}); pair with
      *        $switchIdentityRestoreUrl/$switchIdentityRestoreButtonLabel to offer a "restore my
      *        identity" action on every account settings page
      * @param string|null $switchIdentityRestoreUrl POST target restoring the admin's original

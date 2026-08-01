@@ -61,7 +61,7 @@ final readonly class UserSessionDecorator
         (new UserSessions())->deleteAll([
             'and',
             ['user_id' => $userId],
-            ['<', 'created_at', $cutoff],
+            ['<', 'updated_at', $cutoff],
         ]);
     }
 

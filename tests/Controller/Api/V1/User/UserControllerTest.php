@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Controller\Api\V1\User;
 
 use Nyholm\Psr7\Factory\Psr17Factory;
-use Override;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseInterface;
@@ -156,10 +155,9 @@ final class UserControllerTest extends TestCase
 
         $response = $controller->create(email: 'real@example.com', username: 'realuser', password: 'secret123');
 
-        $handler = new class ($response) implements RequestHandlerInterface {
-            public function __construct(private readonly ResponseInterface $response) {}
+        $handler = new readonly class ($response) implements RequestHandlerInterface {
+            public function __construct(private ResponseInterface $response) {}
 
-            #[Override]
             public function handle(ServerRequestInterface $request): ResponseInterface
             {
                 return $this->response;

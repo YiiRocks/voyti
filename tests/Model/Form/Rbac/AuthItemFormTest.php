@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
 use YiiRocks\Voyti\Model\Form\Rbac\AuthItemForm;
 use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
+use Yiisoft\Rbac\CompositeRule;
 use Yiisoft\Validator\Rule\Length;
 use Yiisoft\Validator\Rule\Regex;
 use Yiisoft\Validator\Rule\Required;
@@ -79,13 +80,13 @@ final class AuthItemFormTest extends TestCase
         $form->name = 'admin';
         $form->description = 'Admin role';
         $form->children = ['createPost', 'editPost'];
-        $form->rule = 'Yiisoft\Rbac\CompositeRule';
+        $form->rule = CompositeRule::class;
         $form->itemName = 'old_name';
 
         $this->assertSame('admin', $form->name);
         $this->assertSame('Admin role', $form->description);
         $this->assertSame(['createPost', 'editPost'], $form->children);
-        $this->assertSame('Yiisoft\Rbac\CompositeRule', $form->rule);
+        $this->assertSame(CompositeRule::class, $form->rule);
         $this->assertSame('old_name', $form->itemName);
     }
 

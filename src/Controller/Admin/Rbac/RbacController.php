@@ -341,7 +341,7 @@ final readonly class RbacController
         /** @var mixed $childrenValue */
         $childrenValue = $data['children'] ?? null;
         if (is_array($childrenValue)) {
-            $form->children = array_values(array_filter($childrenValue, 'is_string'));
+            $form->children = array_values(array_filter($childrenValue, is_string(...)));
         }
     }
 

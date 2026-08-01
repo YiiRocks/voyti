@@ -30,8 +30,8 @@ use Yiisoft\User\Guest\GuestIdentityInterface;
  */
 final readonly class TwoFactorAuthenticationEnforceMiddleware implements MiddlewareInterface
 {
-    private const LOGOUT_ROUTE = 'voyti/session-logout';
-    private const TWO_FACTOR_ROUTE = 'voyti/user-two-factor';
+    private const string LOGOUT_ROUTE = 'voyti/session-logout';
+    private const string TWO_FACTOR_ROUTE = 'voyti/user-two-factor';
 
     public function __construct(
         private CurrentUser $currentUser,

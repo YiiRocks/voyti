@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Model;
 
 use Override;
+use YiiRocks\Voyti\Service\UserSession\UserSessionDecorator;
 use Yiisoft\ActiveRecord\ActiveRecord;
 use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
 
@@ -12,7 +13,7 @@ use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
  * ActiveRecord for the `user_sessions` table: tracks each login session per user (IP, user
  * agent, timestamps) for session management and admin visibility. Terminating a session sets
  * `revoked_at` rather than deleting the row, so the row remains visible as history until it is
- * pruned for age; only {@see \YiiRocks\Voyti\Service\UserSession\UserSessionDecorator}'s
+ * pruned for age; only {@see UserSessionDecorator}'s
  * lifespan-based pruning hard-deletes rows.
  */
 final class UserSessions extends ActiveRecord
@@ -26,6 +27,22 @@ final class UserSessions extends ActiveRecord
     private int $updated_at = 0;
     private ?string $user_agent = null;
     private int $user_id = 0;
+
+    /**
+     * Atomically marks the row identified by `$userId`/`$sessionId` as revoked, but only if it
+     * isn't already revoked - an UPDATE with a `revoked_at IS NULL` condition, so the row-level
+     * lock makes this exclusive between concurrent callers racing on the same session id. Returns
+     * whether this call was the one that claimed it.
+     */
+    public static function claimByUserIdAndSessionId(int $userId, string $sessionId): bool
+    {
+        $affected = (new self())->updateAll(
+            ['revoked_at' => time()],
+            ['and', ['user_id' => $userId, 'session_id' => $sessionId], ['revoked_at' => null]],
+        );
+
+        return $affected > 0;
+    }
 
     public static function deleteAllByUserId(int $userId): void
     {

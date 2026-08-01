@@ -70,6 +70,13 @@ final class TimezoneHelperTest extends TestCase
         self::assertSame($withoutTimezone, $withInvalidTimezone);
     }
 
+    public function testFormatLocalizedWithRegionalLocaleUsesTimezoneRegionFormat(): void
+    {
+        $formatted = TimezoneHelper::formatLocalized(1700000000, 'en_GB', 'America/New_York');
+        self::assertStringStartsWith('Nov 14, 2023, 5:13:20', $formatted);
+        self::assertMatchesRegularExpression('/PM$/u', $formatted);
+    }
+
     public function testFormatLocalizedWithTimezoneShiftsDisplayedTime(): void
     {
         $formatted = TimezoneHelper::formatLocalized(1700000000, 'en', 'America/New_York');

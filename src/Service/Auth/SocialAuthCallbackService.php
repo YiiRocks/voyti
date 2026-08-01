@@ -18,12 +18,13 @@ use Yiisoft\Session\SessionInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
+use Yiisoft\Yii\AuthClient\AuthAction;
 use Yiisoft\Yii\AuthClient\AuthClientInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 /**
  * Replaces `SessionController::auth()`'s body as the success/cancel callbacks wired into
- * {@see \Yiisoft\Yii\AuthClient\AuthAction}: normalizes the provider's attributes, then either logs
+ * {@see AuthAction}: normalizes the provider's attributes, then either logs
  * a guest in via {@see UserSocialAuthenticateService} or links the account to the current user via
  * {@see UserSocialAccountConnectService}.
  *

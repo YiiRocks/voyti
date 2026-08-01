@@ -10,7 +10,9 @@ use Psr\Container\ContainerInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Client\ClientInterface as PsrClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
+use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -34,6 +36,7 @@ use Yiisoft\Translator\Message\Php\MessageSource;
 use Yiisoft\Translator\SimpleMessageFormatter;
 use Yiisoft\Translator\Translator;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\Widget\WidgetFactory;
 
 /**
  * Builds a fresh PSR-11 DI container per test from config/di.php with
@@ -73,6 +76,17 @@ trait TestContainerTrait
         })($authClientParams);
         $definitions = array_merge($authClientDefinitions, $definitions);
 
+        // yii-auth-client's AuthChoice widget needs AssetManager, which needs AssetLoaderInterface -
+        // both come from yiisoft/assets's own config/di.php (a real dependency of yii-auth-client,
+        // auto-merged by yiisoft/config in a real application). Replicate that merge here too.
+        $assetsInstallPath = InstalledVersions::getInstallPath('yiisoft/assets');
+        $assetsParams = require $assetsInstallPath . '/config/params.php';
+        $assetsDiPath = $assetsInstallPath . '/config/di.php';
+        $assetsDefinitions = (static function (array $params) use ($assetsDiPath): array {
+            return require $assetsDiPath;
+        })($assetsParams);
+        $definitions = array_merge($assetsDefinitions, $definitions);
+
         $psr17Factory = new Psr17Factory();
         $session = new FakeSession();
 
@@ -88,7 +102,7 @@ trait TestContainerTrait
             MailerInterface::class => new MailCapture(),
             ManagerInterface::class => Manager::class,
             PsrClientInterface::class => new class implements PsrClientInterface {
-                public function sendRequest(\Psr\Http\Message\RequestInterface $request): \Psr\Http\Message\ResponseInterface
+                public function sendRequest(RequestInterface $request): ResponseInterface
                 {
                     throw new RuntimeException('HTTP client not configured in tests');
                 }
@@ -114,7 +128,15 @@ trait TestContainerTrait
 
         $definitions = array_merge($definitions, $overrides);
 
-        return new Container(ContainerConfig::create()->withDefinitions($definitions));
+        $container = new Container(ContainerConfig::create()->withDefinitions($definitions));
+
+        // AuthChoice::widget() (and any other yiisoft/widget-based widget) resolves through
+        // WidgetFactory's own static container reference rather than this one directly - in a
+        // real application yiisoft/widget's own config/bootstrap.php wires this up via the
+        // runner's bootstrap step. Replicate that here so widgets resolve the same way.
+        WidgetFactory::initialize($container);
+
+        return $container;
     }
 
     /**

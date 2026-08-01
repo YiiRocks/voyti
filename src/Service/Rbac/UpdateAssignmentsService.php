@@ -24,7 +24,7 @@ final readonly class UpdateAssignmentsService
     public function run(int $userId, array $items): bool
     {
         /** @var list<string> $itemsList */
-        $itemsList = array_values(array_filter($items, 'is_string'));
+        $itemsList = array_values(array_filter($items, is_string(...)));
 
         $validationResult = $this->itemsValidator->validate($itemsList);
         if (!$validationResult->isValid()) {
