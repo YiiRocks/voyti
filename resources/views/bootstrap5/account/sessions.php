@@ -41,7 +41,7 @@ foreach ($data->sessions as $row) {
     echo Html::div($row->session->userAgent)->class('col-5 text-break');
     echo Html::div($row->session->lastSeenDisplay)->class('col-2');
 
-    echo Html::div()->class($row->isCurrentSession ? 'col-2 text-end' : 'col-2')->open();
+    echo Html::div()->class('col-2 text-end')->open();
     if ($row->isCurrentSession) {
         echo Html::button($translator->translate('voyti.view.sessions.this_device'))
             ->class('btn', 'btn-sm', 'btn-outline-primary')
