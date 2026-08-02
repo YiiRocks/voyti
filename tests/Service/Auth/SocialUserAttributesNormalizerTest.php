@@ -15,7 +15,7 @@ use Yiisoft\Yii\AuthClient\Client\Facebook;
 use Yiisoft\Yii\AuthClient\Client\GitHub;
 use Yiisoft\Yii\AuthClient\Client\Google;
 use Yiisoft\Yii\AuthClient\Client\LinkedIn;
-use Yiisoft\Yii\AuthClient\Client\MicrosoftOnline;
+use Yiisoft\Yii\AuthClient\Client\Microsoft;
 use Yiisoft\Yii\AuthClient\Client\VKontakte;
 use Yiisoft\Yii\AuthClient\Client\X;
 use Yiisoft\Yii\AuthClient\Client\Yandex;
@@ -119,15 +119,15 @@ final class SocialUserAttributesNormalizerTest extends TestCase
         self::assertSame('Bob Jones', $result['name']);
     }
 
-    public function testNormalizeMicrosoft365ReadsMailAndDisplayNameKeys(): void
+    public function testNormalizeMicrosoftReadsMailAndDisplayNameKeys(): void
     {
         $client = $this->makeClient(
-            MicrosoftOnline::class,
+            Microsoft::class,
             new Response(200, [], '{"id":"ms-1","mail":"carol@example.com","displayName":"Carol Danvers"}'),
         );
         $client->setAccessToken($this->token());
 
-        $result = $this->normalizer()->normalize('microsoftonline', $client);
+        $result = $this->normalizer()->normalize('microsoft', $client);
 
         self::assertSame('ms-1', $result['id']);
         self::assertSame('carol@example.com', $result['email']);
