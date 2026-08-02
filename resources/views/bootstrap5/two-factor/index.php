@@ -11,6 +11,7 @@ use Yiisoft\Html\Html;
 use Yiisoft\Json\Json;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\View\WebView;
+use Yiisoft\Yii\View\Renderer\Csrf;
 
 /**
  * @var WebView $this
@@ -18,7 +19,7 @@ use Yiisoft\View\WebView;
  * @var IndexViewData $data
  * @var TranslatorInterface $translator
  * @var FlashViewData $flash
- * @var string $csrf
+ * @var Csrf $csrf
  */
 
 /** @psalm-suppress InvalidScope */
@@ -151,62 +152,138 @@ if ($data->isEnabled) {
         'renewUrl' => $data->renewUrl,
         // Json::encode() only reads public properties via get_object_vars(), so passing
         // the Csrf object itself would silently serialize as {} - force the string value.
-        'csrfToken' => $csrf . '',
+        'csrfToken' => (string) $csrf,
         'renewErrorMessage' => $data->renewErrorMessage,
         'autoloadUrl' => $data->autoloadUrl,
         'autoloadMethod' => $data->method,
+        'activeClass' => LinkButtonHelper::submitButtonClass(),
+        'inactiveClass' => LinkButtonHelper::resetButtonClass(),
     ];
-    echo Html::script(
-        '(function(){'
-        . 'var cfg=' . Json::htmlEncode($switchConfig) . ';'
-        . 'var content=document.getElementById("voyti-2fa-content");'
-        . 'var buttons=document.querySelectorAll("[data-voyti-2fa-method]");'
-        . 'function setActive(method){'
-        . 'buttons.forEach(function(b){'
-        . 'var active=b.getAttribute("data-voyti-2fa-method")===method;'
-        . 'b.classList.toggle("btn-primary",active);'
-        . 'b.classList.toggle("btn-outline-primary",!active);'
-        . '});'
-        . '}'
-        . 'function loadMethod(method,fragmentUrl){'
-        . 'if(!content||!fragmentUrl){return;}'
-        . 'fetch(fragmentUrl,{headers:{"Accept":"text/html","X-Requested-With":"XMLHttpRequest"},credentials:"same-origin"})'
-        . '.then(function(response){if(!response.ok){throw new Error("load failed");}return response.text();})'
-        . '.then(function(html){'
-        . 'content.innerHTML=html;'
-        . 'setActive(method);'
-        . 'window.history.replaceState(null,"",fragmentUrl);'
-        . '})'
-        . '.catch(function(){window.location.href=fragmentUrl;});'
-        . '}'
-        . 'buttons.forEach(function(btn){'
-        . 'btn.addEventListener("click",function(e){'
-        . 'if(e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey){return;}'
-        . 'e.preventDefault();'
-        . 'loadMethod(btn.getAttribute("data-voyti-2fa-method"),btn.getAttribute("href"));'
-        . '});'
-        . '});'
-        . 'if(content){'
-        . 'content.addEventListener("click",function(e){'
-        . 'var btn=e.target.closest("#voyti-2fa-renew");'
-        . 'if(!btn){return;}'
-        . 'btn.disabled=true;'
-        . 'var body=new URLSearchParams();'
-        . 'body.set("_csrf",cfg.csrfToken);'
-        . 'fetch(cfg.renewUrl,{method:"POST",headers:{"Accept":"application/json"},credentials:"same-origin",body:body})'
-        . '.then(function(response){if(!response.ok){throw new Error("renew failed");}return response.json();})'
-        . '.then(function(data){'
-        . 'var qrEl=document.getElementById("voyti-2fa-qr");'
-        . 'if(qrEl&&data.qrCodeUri){qrEl.innerHTML=data.qrCodeUri;}'
-        . 'var secretEl=document.getElementById("voyti-2fa-secret");'
-        . 'if(secretEl&&data.secret){secretEl.textContent=data.secret;}'
-        . 'btn.disabled=false;'
-        . '})'
-        . '.catch(function(){window.alert(cfg.renewErrorMessage);btn.disabled=false;});'
-        . '});'
-        . '}'
-        . 'if(cfg.autoloadUrl){loadMethod(cfg.autoloadMethod,cfg.autoloadUrl);}'
-        . '})();',
-    )->render();
+    $switchConfigJson = Json::htmlEncode($switchConfig);
+
+    $js = <<<JS
+        (() => {
+            const cfg = {$switchConfigJson};
+
+            const content = document.getElementById('voyti-2fa-content');
+            const buttons = document.querySelectorAll('[data-voyti-2fa-method]');
+
+            const classNames = value => (value ? value.split(/\\s+/).filter(Boolean) : []);
+
+            const setActive = method => {
+                buttons.forEach(button => {
+                    const active = button.getAttribute('data-voyti-2fa-method') === method;
+                    const onClasses = classNames(active ? cfg.activeClass : cfg.inactiveClass);
+                    const offClasses = classNames(active ? cfg.inactiveClass : cfg.activeClass);
+
+                    offClasses.forEach(className => {
+                        if (!onClasses.includes(className)) {
+                            button.classList.remove(className);
+                        }
+                    });
+                    onClasses.forEach(className => button.classList.add(className));
+                });
+            };
+
+            const loadMethod = async (method, url) => {
+                if (!content || !url) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch(url, {
+                        credentials: 'same-origin',
+                        headers: {
+                            Accept: 'text/html',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                    });
+
+                    if (!response.ok) {
+                        throw new Error();
+                    }
+
+                    content.innerHTML = await response.text();
+                    setActive(method);
+                    history.replaceState(null, '', url);
+                } catch {
+                    location.href = url;
+                }
+            };
+
+            buttons.forEach(button => {
+                button.addEventListener('click', event => {
+                    if (
+                        event.defaultPrevented ||
+                        event.button !== 0 ||
+                        event.metaKey ||
+                        event.ctrlKey ||
+                        event.shiftKey ||
+                        event.altKey
+                    ) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    loadMethod(button.getAttribute('data-voyti-2fa-method'), button.href);
+                });
+            });
+
+            if (content) {
+                content.addEventListener('click', async event => {
+                    const button = event.target.closest('#voyti-2fa-renew');
+
+                    if (!button) {
+                        return;
+                    }
+
+                    button.disabled = true;
+
+                    try {
+                        const response = await fetch(cfg.renewUrl, {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: {
+                                Accept: 'application/json',
+                            },
+                            body: new URLSearchParams({
+                                _csrf: cfg.csrfToken,
+                            }),
+                        });
+
+                        if (!response.ok) {
+                            throw new Error();
+                        }
+
+                        const data = await response.json();
+
+                        if (data.qrCodeUri) {
+                            const qr = document.getElementById('voyti-2fa-qr');
+                            if (qr) {
+                                qr.innerHTML = data.qrCodeUri;
+                            }
+                        }
+
+                        if (data.secret) {
+                            const secret = document.getElementById('voyti-2fa-secret');
+                            if (secret) {
+                                secret.textContent = data.secret;
+                            }
+                        }
+                    } catch {
+                        alert(cfg.renewErrorMessage);
+                    } finally {
+                        button.disabled = false;
+                    }
+                });
+            }
+
+            if (cfg.autoloadUrl) {
+                loadMethod(cfg.autoloadMethod, cfg.autoloadUrl);
+            }
+        })();
+        JS;
+
+    echo Html::script($js)->render();
 }
 echo Html::div()->close();

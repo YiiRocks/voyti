@@ -7,13 +7,14 @@ use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\View\WebView;
+use Yiisoft\Yii\View\Renderer\Csrf;
 
 /**
  * @var WebView $this
  * @var TwoFactorCodeForm $form
  * @var string $formSubmitUrl
  * @var TranslatorInterface $translator
- * @var string $csrf
+ * @var Csrf $csrf
  */
 
 echo Html::form()

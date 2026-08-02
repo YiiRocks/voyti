@@ -7,13 +7,14 @@ use YiiRocks\Voyti\ViewData\TwoFactor\GoogleSetupViewData;
 use Yiisoft\Html\Html;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\View\WebView;
+use Yiisoft\Yii\View\Renderer\Csrf;
 
 /**
  * @var WebView $this
  * @var TwoFactorCodeForm $form
  * @var GoogleSetupViewData $data
  * @var TranslatorInterface $translator
- * @var string $csrf
+ * @var Csrf $csrf
  */
 
 echo Html::p($translator->translate('voyti.view.two_factor.scan_qr'));

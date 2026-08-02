@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\Form\Settings\UserProfileForm;
 use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
+use Yiisoft\Translator\TranslatorInterface;
 
 #[AllowMockObjectsWithoutExpectations]
 final class UserProfileFormTest extends TestCase
@@ -32,6 +33,19 @@ final class UserProfileFormTest extends TestCase
     {
         $form = new UserProfileForm($this->createTranslator());
         $this->assertSame('userProfile', $form->getFormName());
+    }
+
+    public function testGetPropertyHints(): void
+    {
+        $translator = $this->createMock(TranslatorInterface::class);
+        $translator->expects($this->once())
+            ->method('translate')
+            ->with('voyti.view.bio_variables_hint', ['age' => '{age}', 'location' => '{location}'], 'voyti')
+            ->willReturn('Use {age} and {location} placeholders.');
+
+        $form = new UserProfileForm($translator);
+        $hints = $form->getPropertyHints();
+        $this->assertSame(['bio' => 'Use {age} and {location} placeholders.'], $hints);
     }
 
     public function testGetPropertyLabels(): void

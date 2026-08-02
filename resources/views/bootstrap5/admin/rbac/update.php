@@ -10,13 +10,14 @@ use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\View\WebView;
+use Yiisoft\Yii\View\Renderer\Csrf;
 
 /**
  * @var WebView $this
  * @var AuthItemForm $form
  * @var UpdateViewData $data
  * @var TranslatorInterface $translator
- * @var string $csrf
+ * @var Csrf $csrf
  */
 
 /** @psalm-suppress InvalidScope */

@@ -5,10 +5,11 @@ declare(strict_types=1);
 use YiiRocks\Voyti\ViewData\Shared\MenuViewData;
 use YiiRocks\Voyti\Widget\SwitchIdentityWidget;
 use Yiisoft\Html\Html;
+use Yiisoft\Yii\View\Renderer\Csrf;
 
 /**
  * @var MenuViewData $menu
- * @var string $csrf
+ * @var Csrf $csrf
  */
 
 echo SwitchIdentityWidget::widget();

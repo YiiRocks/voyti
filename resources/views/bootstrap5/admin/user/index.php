@@ -11,13 +11,14 @@ use Yiisoft\Html\Html;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\View\WebView;
 use Yiisoft\Yii\DataView\Pagination\OffsetPagination;
+use Yiisoft\Yii\View\Renderer\Csrf;
 
 /**
  * @var WebView $this
  * @var IndexViewData $data
  * @var TranslatorInterface $translator
  * @var FlashViewData $flash
- * @var string $csrf
+ * @var Csrf $csrf
  */
 
 /** @psalm-suppress InvalidScope */
