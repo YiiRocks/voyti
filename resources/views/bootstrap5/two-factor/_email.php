@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use YiiRocks\Voyti\Helper\LinkButtonHelper;
 use YiiRocks\Voyti\Model\Form\Settings\TwoFactorCodeForm;
 use YiiRocks\Voyti\ViewData\TwoFactor\EmailSetupViewData;
 use Yiisoft\FormModel\Field;
@@ -34,7 +35,7 @@ if ($data->emailCodeSent) {
         ->open();
     echo Field::buttonGroup()
         ->buttonsData([
-            [$translator->translate('voyti.view.two_factor_email.send_button'), 'type' => 'submit', 'class' => 'btn btn-primary', 'tabindex' => 1],
+            [$translator->translate('voyti.view.two_factor_email.send_button'), 'type' => 'submit', 'class' => LinkButtonHelper::submitButtonClass(), 'tabindex' => 1],
         ]);
     echo Html::form()->close();
 }

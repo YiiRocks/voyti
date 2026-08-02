@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Helper;
 
+use Yiisoft\Form\Field\ResetButton;
 use Yiisoft\Form\Field\SubmitButton;
 use Yiisoft\Form\Theme\ThemeContainer;
 
@@ -15,6 +16,15 @@ use Yiisoft\Form\Theme\ThemeContainer;
  */
 final class LinkButtonHelper
 {
+    public static function resetButtonClass(): string
+    {
+        $config = ThemeContainer::getTheme()?->getFieldConfig(ResetButton::class) ?? [];
+        /** @psalm-suppress MixedAssignment */
+        $class = $config['buttonClass()'][0] ?? null;
+
+        return is_string($class) ? $class : '';
+    }
+
     public static function submitButtonClass(): string
     {
         $config = ThemeContainer::getTheme()?->getFieldConfig(SubmitButton::class) ?? [];

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use YiiRocks\Voyti\Helper\LinkButtonHelper;
 use YiiRocks\Voyti\Model\Form\Settings\TwoFactorCodeForm;
 use YiiRocks\Voyti\ViewData\Shared\FlashViewData;
 use YiiRocks\Voyti\ViewData\TwoFactor\IndexViewData;
@@ -100,7 +101,7 @@ if ($data->isEnabled) {
 
         echo Field::buttonGroup()
             ->buttonsData([
-                [$translator->translate('voyti.view.two_factor.regenerate_backup_codes'), 'type' => 'submit', 'class' => 'btn btn-secondary', 'tabindex' => 4],
+                [$translator->translate('voyti.view.two_factor.regenerate_backup_codes'), 'type' => 'submit', 'class' => LinkButtonHelper::submitButtonClass(), 'tabindex' => 4],
             ]);
 
         echo Html::form()->close();
@@ -110,11 +111,11 @@ if ($data->isEnabled) {
     echo Html::div()->class('btn-group')->open();
     if ($data->googleUrl !== null) {
         echo Html::a($translator->translate('voyti.view.two_factor_google.button_label'), $data->googleUrl)
-            ->class('btn', $data->method === 'google' ? 'btn-primary' : 'btn-outline-primary')
+            ->class($data->method === 'google' ? LinkButtonHelper::submitButtonClass() : LinkButtonHelper::resetButtonClass())
             ->attribute('data-voyti-2fa-method', 'google');
     }
     echo Html::a($translator->translate('voyti.view.two_factor_email.button_label'), $data->emailUrl)
-        ->class('btn', $data->method === 'email' ? 'btn-primary' : 'btn-outline-primary')
+        ->class($data->method === 'email' ? LinkButtonHelper::submitButtonClass() : LinkButtonHelper::resetButtonClass())
         ->attribute('data-voyti-2fa-method', 'email');
     echo Html::div()->close();
     echo Html::div()->close();
