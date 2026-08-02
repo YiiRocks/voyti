@@ -308,6 +308,7 @@ return [
     'voyti.view.name_label' => 'Name',
     'voyti.view.description_label' => 'Beschreibung',
     'voyti.view.bio_label' => 'Bio',
+    'voyti.view.bio_variables_hint' => 'Sie können {age} und {location} Platzhalter verwenden. Sie werden durch Ihr berechnetes Alter und Ihren Standort ersetzt, wenn diese verfügbar sind.',
     'voyti.view.public_email_label' => 'Öffentliche E-Mail',
     'voyti.view.not_set' => 'Nicht festgelegt',
     'voyti.view.website_label' => 'Webseite',

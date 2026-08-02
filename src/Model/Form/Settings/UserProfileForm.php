@@ -92,6 +92,18 @@ final class UserProfileForm extends FormModel implements LabelsProviderInterface
         return 'userProfile';
     }
 
+    #[Override]
+    public function getPropertyHints(): array
+    {
+        return [
+            'bio' => $this->translator->translate(
+                'voyti.view.bio_variables_hint',
+                ['age' => '{age}', 'location' => '{location}'],
+                'voyti',
+            ),
+        ];
+    }
+
     /**
      * @return string[]
      *

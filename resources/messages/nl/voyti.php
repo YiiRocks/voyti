@@ -308,6 +308,7 @@ return [
     'voyti.view.name_label' => 'Naam',
     'voyti.view.description_label' => 'Omschrijving',
     'voyti.view.bio_label' => 'Bio',
+    'voyti.view.bio_variables_hint' => 'U kunt de aanduidingen {age} en {location} gebruiken. Ze worden vervangen door uw berekende leeftijd en locatie wanneer deze beschikbaar zijn.',
     'voyti.view.public_email_label' => 'Openbaar e-mailadres',
     'voyti.view.not_set' => 'Niet ingesteld',
     'voyti.view.website_label' => 'Website',

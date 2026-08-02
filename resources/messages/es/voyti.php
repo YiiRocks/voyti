@@ -308,6 +308,7 @@ return [
     'voyti.view.name_label' => 'Nombre',
     'voyti.view.description_label' => 'Descripción',
     'voyti.view.bio_label' => 'Biografía',
+    'voyti.view.bio_variables_hint' => 'Puede usar los marcadores de posición {age} y {location}. Se reemplazarán con su edad calculada y ubicación cuando estén disponibles.',
     'voyti.view.public_email_label' => 'Correo electrónico público',
     'voyti.view.not_set' => 'No establecido',
     'voyti.view.website_label' => 'Sitio web',

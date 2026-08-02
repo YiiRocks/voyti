@@ -308,6 +308,7 @@ return [
     'voyti.view.name_label' => 'Имя',
     'voyti.view.description_label' => 'Описание',
     'voyti.view.bio_label' => 'О себе',
+    'voyti.view.bio_variables_hint' => 'Вы можете использовать заполнители {age} и {location}. Они будут заменены на ваш рассчитанный возраст и местоположение, когда они доступны.',
     'voyti.view.public_email_label' => 'Публичный email',
     'voyti.view.not_set' => 'Не указано',
     'voyti.view.website_label' => 'Веб-сайт',

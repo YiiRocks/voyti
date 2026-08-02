@@ -309,6 +309,7 @@ return [
     'voyti.view.name_label' => 'Name',
     'voyti.view.description_label' => 'Description',
     'voyti.view.bio_label' => 'Bio',
+    'voyti.view.bio_variables_hint' => 'You can use {age} and {location} placeholders. They will be replaced with your calculated age and location when available.',
     'voyti.view.public_email_label' => 'Public email',
     'voyti.view.not_set' => 'Not set',
     'voyti.view.website_label' => 'Website',

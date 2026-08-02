@@ -309,6 +309,7 @@ return [
     'voyti.view.name_label' => 'Nom',
     'voyti.view.description_label' => 'Description',
     'voyti.view.bio_label' => 'Bio',
+    'voyti.view.bio_variables_hint' => 'Vous pouvez utiliser les espaces réservés {age} et {location}. Ils seront remplacés par votre âge calculé et votre localisation lorsqu\'ils sont disponibles.',
     'voyti.view.public_email_label' => 'E-mail public',
     'voyti.view.not_set' => 'Non défini',
     'voyti.view.website_label' => 'Site web',
