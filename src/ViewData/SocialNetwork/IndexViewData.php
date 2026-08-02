@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\ViewData\SocialNetwork;
 
+use YiiRocks\Voyti\Helper\LinkButtonHelper;
 use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\ViewData\Shared\MenuViewData;
 use YiiRocks\Voyti\VoytiConfig;
@@ -41,7 +42,12 @@ final readonly class IndexViewData
         UrlGeneratorInterface $url,
         TranslatorInterface $translator,
     ): self {
-        $authChoice = $clientCollection !== null ? AuthChoice::widget()->authRoute('voyti/session-auth') : null;
+        $authChoice = null;
+        if ($clientCollection !== null) {
+            $authChoice = AuthChoice::widget()
+                ->authRoute('voyti/session-auth')
+                ->linkAttributes(['class' => LinkButtonHelper::submitButtonClass()]);
+        }
         $clients = $authChoice?->getClients() ?? [];
 
         $rows = array_map(

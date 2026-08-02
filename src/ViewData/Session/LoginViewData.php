@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\ViewData\Session;
 
+use YiiRocks\Voyti\Helper\LinkButtonHelper;
 use YiiRocks\Voyti\Helper\RecaptchaHelper;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\FormModel\FormModelInterface;
@@ -38,13 +39,20 @@ final readonly class LoginViewData
         UrlGeneratorInterface $url,
         ?Collection $clientCollection,
     ): self {
+        $authChoice = null;
+        if ($clientCollection !== null) {
+            $authChoice = AuthChoice::widget()
+                ->authRoute('voyti/session-auth')
+                ->linkAttributes(['class' => LinkButtonHelper::submitButtonClass()]);
+        }
+
         return new self(
             formSubmitUrl: $url->generate('voyti/session-login'),
             forgotPasswordUrl: $url->generate('voyti/password-reset-request'),
             showRegisterLink: $config->enableRegistration,
             registerUrl: $url->generate('voyti/registration-register'),
             recaptchaFieldHtml: RecaptchaHelper::render($form, $config),
-            authChoice: $clientCollection !== null ? AuthChoice::widget()->authRoute('voyti/session-auth') : null,
+            authChoice: $authChoice,
         );
     }
 }
