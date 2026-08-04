@@ -25,7 +25,7 @@ echo Html::div($data->qrCodeUri)
     ->addStyle(['max-width' => '260px'])
     ->encode(false);
 
-$renewButton = Html::button('&#128472;')
+$renewButton = Html::button('&#8635;')
     ->id('voyti-2fa-renew')
     ->class('btn', 'btn-outline-secondary', 'btn-sm', 'ms-2')
     ->attribute('title', $data->renewLabel)
