@@ -7,9 +7,9 @@ namespace YiiRocks\Voyti\tests\Support;
 trait HydrateObjectTrait
 {
     /**
-     * @param array<string, mixed> $data
+     * @param mixed $data
      */
-    private function hydrateObject(object $object, array $data): void
+    private function hydrateObject(object $object, mixed $data): void
     {
         foreach ($data as $key => $value) {
             if (property_exists($object, $key)) {

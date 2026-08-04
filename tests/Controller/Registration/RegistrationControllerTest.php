@@ -17,16 +17,14 @@ use YiiRocks\Voyti\Service\ServiceResult;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\RegisterService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
-use YiiRocks\Voyti\tests\Support\HydrateObjectTrait;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\Support\ValidatorMockTrait;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
 use YiiRocks\Voyti\VoytiConfig;
-use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
-use Yiisoft\Validator\Result;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
@@ -34,14 +32,13 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 final class RegistrationControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
-    use HydrateObjectTrait;
     use RedirectResponseMockTrait;
     use TestContainerTrait;
     use UserFactoryTrait;
+    use ValidatorMockTrait;
 
     private ConfirmationService&MockObject $confirmationService;
     private FlashInterface&MockObject $flash;
-    private HydratorInterface&MockObject $hydrator;
     private PendingSocialAccountService&MockObject $pendingSocialAccountService;
     private RegisterService&MockObject $registerService;
     private ResponseFactoryInterface&MockObject $responseFactory;
@@ -53,19 +50,12 @@ final class RegistrationControllerTest extends TestCase
         $this->setUpDatabase();
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
         $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
-        $this->validator = $this->createMock(ValidatorInterface::class);
         $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
-        $this->hydrator = $this->createMock(HydratorInterface::class);
         $this->flash = $this->createMock(FlashInterface::class);
         $this->registerService = $this->createMock(RegisterService::class);
         $this->confirmationService = $this->createMock(ConfirmationService::class);
         $this->pendingSocialAccountService = $this->createMock(PendingSocialAccountService::class);
-
-        $this->hydrator->method('hydrate')->willReturnCallback(
-            function (object $object, array $data = []): void {
-                $this->hydrateObject($object, $data);
-            },
-        );
+        $this->validator = $this->mockValidValidator();
     }
 
     protected function tearDown(): void
@@ -213,7 +203,6 @@ final class RegistrationControllerTest extends TestCase
     {
         $user = $this->createUser('testuser', 'test@example.com');
 
-        $this->validator->method('validate')->willReturn(new Result());
         $this->registerService->expects($this->once())
             ->method('run')
             ->willReturn(ServiceResult::success('voyti.registration.account_created_check_email'));
@@ -226,14 +215,13 @@ final class RegistrationControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['register' => ['username' => 'testuser', 'email' => 'test@example.com', 'password' => 'password123', 'passwordRepeat' => 'password123']]);
 
-        $result = $controller->register($request, ['username' => 'testuser', 'email' => 'test@example.com', 'password' => 'password123', 'passwordRepeat' => 'password123']);
+        $result = $controller->register($request);
 
         $this->assertSame($response, $result);
     }
 
     public function testRegisterPostWithServiceFailure(): void
     {
-        $this->validator->method('validate')->willReturn(new Result());
         $this->registerService->expects($this->once())
             ->method('run')
             ->willReturn(ServiceResult::failure('Email already exists', ['Email already exists']));
@@ -249,7 +237,7 @@ final class RegistrationControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['register' => ['username' => 'existing', 'email' => 'existing@example.com', 'password' => 'password123', 'passwordRepeat' => 'password123']]);
 
-        $result = $controller->register($request, ['username' => 'existing', 'email' => 'existing@example.com', 'password' => 'password123', 'passwordRepeat' => 'password123']);
+        $result = $controller->register($request);
 
         $this->assertSame($response, $result);
     }
@@ -264,10 +252,11 @@ final class RegistrationControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $controller = $this->createController();
+        // Needs the real Validator - this test's whole point is that empty required fields get rejected.
+        $controller = $this->createControllerWithRealValidation();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['register' => ['username' => '', 'email' => '', 'password' => '', 'passwordRepeat' => '']]);
 
-        $result = $controller->register($request, ['username' => '', 'email' => '', 'password' => '', 'passwordRepeat' => '']);
+        $result = $controller->register($request);
 
         $this->assertSame($response, $result);
     }
@@ -313,7 +302,6 @@ final class RegistrationControllerTest extends TestCase
     {
         $this->createUser('resenduser', 'test@example.com');
 
-        $this->validator->method('validate')->willReturn(new Result());
         $this->confirmationService->expects($this->once())
             ->method('resend')
             ->willReturn(true);
@@ -323,7 +311,7 @@ final class RegistrationControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['resend' => ['email' => 'test@example.com']]);
 
-        $result = $controller->resend($request, ['email' => 'test@example.com']);
+        $result = $controller->resend($request);
 
         $this->assertSame($response, $result);
     }
@@ -341,7 +329,7 @@ final class RegistrationControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['resend' => ['email' => 'nonexistent@example.com']]);
 
-        $result = $controller->resend($request, ['email' => 'nonexistent@example.com']);
+        $result = $controller->resend($request);
 
         $this->assertSame($response, $result);
     }
@@ -364,16 +352,14 @@ final class RegistrationControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    private function createController(?VoytiConfig $config = null): RegistrationController
+    private function baseOverrides(?VoytiConfig $config = null): array
     {
         $overrides = [
             FlashInterface::class => $this->flash,
-            HydratorInterface::class => $this->hydrator,
             PendingSocialAccountService::class => $this->pendingSocialAccountService,
             ConfirmationService::class => $this->confirmationService,
             RegisterService::class => $this->registerService,
             ResponseFactoryInterface::class => $this->responseFactory,
-            ValidatorInterface::class => $this->validator,
             WebViewRenderer::class => $this->viewRenderer,
         ];
 
@@ -381,6 +367,23 @@ final class RegistrationControllerTest extends TestCase
             $overrides[VoytiConfig::class] = $config;
         }
 
-        return $this->getTestContainer($overrides)->get(RegistrationController::class);
+        return $overrides;
+    }
+
+    private function createController(?VoytiConfig $config = null): RegistrationController
+    {
+        return $this->getTestContainer([
+            ...$this->baseOverrides($config),
+            ValidatorInterface::class => $this->validator,
+        ])->get(RegistrationController::class);
+    }
+
+    /**
+     * Uses the real ValidatorInterface instead of the fast valid-by-default mock, for tests whose point is that a
+     * real validation rule rejects the input.
+     */
+    private function createControllerWithRealValidation(?VoytiConfig $config = null): RegistrationController
+    {
+        return $this->getTestContainer($this->baseOverrides($config))->get(RegistrationController::class);
     }
 }

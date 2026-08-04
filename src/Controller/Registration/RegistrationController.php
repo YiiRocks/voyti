@@ -19,14 +19,11 @@ use YiiRocks\Voyti\ViewData\Registration\ConnectViewData;
 use YiiRocks\Voyti\ViewData\Registration\RegisterViewData;
 use YiiRocks\Voyti\ViewData\Registration\ResendViewData;
 use YiiRocks\Voyti\VoytiConfig;
-use Yiisoft\Http\Method;
-use Yiisoft\Hydrator\HydratorInterface;
-use Yiisoft\Input\Http\Attribute\Parameter\Body;
+use Yiisoft\FormModel\FormHydrator;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
-use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\AuthClient\Collection;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
@@ -44,11 +41,10 @@ final readonly class RegistrationController
         private WebViewRenderer $viewRenderer,
         private RegisterService $userRegisterService,
         private ConfirmationService $confirmationService,
-        private ValidatorInterface $validator,
         private UrlGeneratorInterface $url,
         private VoytiConfig $config,
         private PendingSocialAccountService $pendingSocialAccountService,
-        private HydratorInterface $hydrator,
+        private FormHydrator $formHydrator,
         private ResponseFactoryInterface $responseFactory,
         private FlashInterface $flash,
         private ?Collection $clientCollection,
@@ -85,54 +81,45 @@ final readonly class RegistrationController
         ]);
     }
 
-    public function register(
-        ServerRequestInterface $request,
-        #[Body('register')]
-        array $formData = [],
-    ): ResponseInterface {
+    public function register(ServerRequestInterface $request): ResponseInterface
+    {
         if (!$this->config->enableRegistration) {
             return $this->renderError('voyti.registration.disabled');
         }
 
         $form = new RegistrationForm($this->config, $this->translator);
-        $this->hydrator->hydrate($form, $formData);
 
-        if ($request->getMethod() === Method::POST) {
-            $result = $this->validator->validate($form);
-            $form->processValidationResult($result);
+        if ($this->formHydrator->populateFromPostAndValidate($form, $request)) {
+            $serviceResult = $this->userRegisterService->run(
+                [
+                    'username' => $form->username,
+                    'email' => $form->email,
+                    'password' => $form->password,
+                    'gdprConsent' => $form->gdprConsent,
+                ],
+                $request->getServerParams(),
+            );
 
-            if ($result->isValid()) {
-                $serviceResult = $this->userRegisterService->run(
-                    [
-                        'username' => $form->username,
-                        'email' => $form->email,
-                        'password' => $form->password,
-                        'gdprConsent' => $form->gdprConsent,
-                    ],
-                    $request->getServerParams(),
-                );
-
-                if ($serviceResult->isSuccess()) {
-                    $user = User::findByEmail($form->email);
-                    if ($user !== null) {
-                        $this->pendingSocialAccountService->connect($user);
-                    }
-
-                    return $this->redirectWithFlash(
-                        $this->url->generate('voyti/session-login'),
-                        $serviceResult->getMessage(),
-                    );
+            if ($serviceResult->isSuccess()) {
+                $user = User::findByEmail($form->email);
+                if ($user !== null) {
+                    $this->pendingSocialAccountService->connect($user);
                 }
-                $errors = $serviceResult->getErrors();
-                array_walk(
-                    $errors,
-                    function (mixed $error) use ($form): void {
-                        if (is_string($error)) {
-                            $form->addError($error, []);
-                        }
-                    },
+
+                return $this->redirectWithFlash(
+                    $this->url->generate('voyti/session-login'),
+                    $serviceResult->getMessage(),
                 );
             }
+            $errors = $serviceResult->getErrors();
+            array_walk(
+                $errors,
+                function (mixed $error) use ($form): void {
+                    if (is_string($error)) {
+                        $form->addError($error, []);
+                    }
+                },
+            );
         }
 
         return $this->renderView('registration/register', [
@@ -141,29 +128,21 @@ final readonly class RegistrationController
         ]);
     }
 
-    public function resend(
-        ServerRequestInterface $request,
-        #[Body('resend')]
-        array $formData = [],
-    ): ResponseInterface {
+    public function resend(ServerRequestInterface $request): ResponseInterface
+    {
         if (!$this->config->enableEmailConfirmation) {
             return $this->renderError('voyti.registration.email_confirmation_disabled');
         }
 
         $form = new ResendForm($this->config, $this->translator);
-        $this->hydrator->hydrate($form, $formData);
 
-        if ($request->getMethod() === Method::POST) {
-            $result = $this->validator->validate($form);
-
-            if ($result->isValid()) {
-                $user = User::findByEmail($form->email);
-                if ($user !== null && $this->confirmationService->resend($user)) {
-                    return $this->redirectWithFlash(
-                        $this->url->generate('voyti/session-login'),
-                        'voyti.registration.new_confirmation_sent',
-                    );
-                }
+        if ($this->formHydrator->populateFromPostAndValidate($form, $request)) {
+            $user = User::findByEmail($form->email);
+            if ($user !== null && $this->confirmationService->resend($user)) {
+                return $this->redirectWithFlash(
+                    $this->url->generate('voyti/session-login'),
+                    'voyti.registration.new_confirmation_sent',
+                );
             }
         }
 

@@ -16,15 +16,12 @@ use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\ViewData\Account\UpdateViewData;
 use YiiRocks\Voyti\ViewData\Shared\MessageViewData;
 use YiiRocks\Voyti\VoytiConfig;
-use Yiisoft\Http\Method;
-use Yiisoft\Hydrator\HydratorInterface;
-use Yiisoft\Input\Http\Attribute\Parameter\Body;
+use Yiisoft\FormModel\FormHydrator;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
-use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 /**
@@ -39,11 +36,10 @@ final readonly class AccountController
     public function __construct(
         private TranslatorInterface $translator,
         private WebViewRenderer $viewRenderer,
-        private ValidatorInterface $validator,
         private UrlGeneratorInterface $url,
         private VoytiConfig $config,
         private EmailChangeService $emailChangeService,
-        private HydratorInterface $hydrator,
+        private FormHydrator $formHydrator,
         private CurrentUser $currentUser,
         private ResponseFactoryInterface $responseFactory,
         private FlashInterface $flash,
@@ -67,33 +63,25 @@ final readonly class AccountController
         return $this->renderError('voyti.settings.email_change_failed');
     }
 
-    public function update(
-        ServerRequestInterface $request,
-        #[Body('settings')]
-        array $formData = [],
-    ): ResponseInterface {
+    public function update(ServerRequestInterface $request): ResponseInterface
+    {
         /** @var User $user */
         $user = $this->currentUser->getIdentity();
 
         $form = new SettingsForm($this->config, $this->translator);
         $form->username = $user->getUsername();
         $form->email = $user->getEmail();
-        $this->hydrator->hydrate($form, $formData);
 
-        if ($request->getMethod() === Method::POST) {
-            $result = $this->validator->validate($form);
-
+        if ($this->formHydrator->populateFromPostAndValidate($form, $request)) {
             if (
-                $result->isValid()
-                && $form->password !== ''
+                $form->password !== ''
                 && $this->passwordHistoryService->wasUsedRecently($user, $form->password)
             ) {
-                $form->processValidationResult($result);
                 $form->addError(
                     $this->translator->translate('voyti.settings.password_previously_used', category: 'voyti'),
                     ['password'],
                 );
-            } elseif ($result->isValid()) {
+            } else {
                 $user->setUsername($form->username);
 
                 if ($form->email !== $user->getEmail()) {

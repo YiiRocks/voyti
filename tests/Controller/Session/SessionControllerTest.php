@@ -11,7 +11,6 @@ use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\Session\SessionController;
-use YiiRocks\Voyti\Model\Form\Auth\LoginForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
@@ -19,22 +18,20 @@ use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
-use YiiRocks\Voyti\tests\Support\HydrateObjectTrait;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\Support\ValidatorMockTrait;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
 use YiiRocks\Voyti\VoytiConfig;
-use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
-use Yiisoft\Validator\Result;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
@@ -42,14 +39,13 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 final class SessionControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
-    use HydrateObjectTrait;
     use RedirectResponseMockTrait;
     use TestContainerTrait;
     use UserFactoryTrait;
+    use ValidatorMockTrait;
 
     private CurrentUser&MockObject $currentUser;
     private FlashInterface&MockObject $flash;
-    private HydratorInterface&MockObject $hydrator;
     private PasswordHasher $passwordHasher;
     private PendingSocialAccountService&MockObject $pendingSocialAccountService;
     private RememberMeCookieService&MockObject $rememberMeCookieService;
@@ -63,21 +59,14 @@ final class SessionControllerTest extends TestCase
         $this->setUpDatabase();
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
         $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
-        $this->validator = $this->createMock(ValidatorInterface::class);
         $this->currentUser = $this->createMock(CurrentUser::class);
         $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
-        $this->hydrator = $this->createMock(HydratorInterface::class);
         $this->flash = $this->createMock(FlashInterface::class);
         $this->passwordHasher = TestPasswordHasherFactory::create();
         $this->rememberMeCookieService = $this->createMock(RememberMeCookieService::class);
         $this->pendingSocialAccountService = $this->createMock(PendingSocialAccountService::class);
         $this->twoFactorEmailCodeService = $this->createMock(EmailCodeGeneratorService::class);
-
-        $this->hydrator->method('hydrate')->willReturnCallback(
-            function (object $object, array $data = []): void {
-                $this->hydrateObject($object, $data);
-            },
-        );
+        $this->validator = $this->mockValidValidator();
     }
 
     protected function tearDown(): void
@@ -110,14 +99,6 @@ final class SessionControllerTest extends TestCase
             'rememberMe' => false,
         ]);
 
-        $capturedForm = null;
-        $this->validator->method('validate')->willReturnCallback(
-            function (object $model) use (&$capturedForm): Result {
-                $capturedForm = $model;
-                return new Result();
-            },
-        );
-
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
         $this->viewRenderer->method('render')->willReturn($response);
@@ -125,11 +106,9 @@ final class SessionControllerTest extends TestCase
         $controller = $container->get(SessionController::class);
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['twoFactorAuthenticationCode' => '']]);
 
-        $result = $controller->confirm($request, ['twoFactorAuthenticationCode' => '']);
+        $result = $controller->confirm($request);
 
         $this->assertSame($response, $result);
-        $this->assertInstanceOf(LoginForm::class, $capturedForm);
-        $this->assertArrayHasKey('twoFactorAuthenticationCode', $capturedForm->getRules());
     }
 
     public function testConfirmPostSuccessRedirectsToConfiguredRoute(): void
@@ -156,7 +135,7 @@ final class SessionControllerTest extends TestCase
         $controller = $container->get(SessionController::class);
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['twoFactorAuthenticationCode' => '123456']]);
 
-        $result = $controller->confirm($request, ['twoFactorAuthenticationCode' => '123456']);
+        $result = $controller->confirm($request);
 
         $this->assertSame($response, $result);
     }
@@ -188,7 +167,7 @@ final class SessionControllerTest extends TestCase
         $controller = $container->get(SessionController::class);
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['twoFactorAuthenticationCode' => '123456']]);
 
-        $result = $controller->confirm($request, ['twoFactorAuthenticationCode' => '123456']);
+        $result = $controller->confirm($request);
 
         $this->assertSame($response, $result);
     }
@@ -222,7 +201,7 @@ final class SessionControllerTest extends TestCase
         $controller = $container->get(SessionController::class);
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['twoFactorAuthenticationCode' => 'wrong']]);
 
-        $result = $controller->confirm($request, ['twoFactorAuthenticationCode' => 'wrong']);
+        $result = $controller->confirm($request);
 
         $this->assertSame($response, $result);
     }
@@ -260,14 +239,13 @@ final class SessionControllerTest extends TestCase
             passwordHash: $this->passwordHasher->hash('secret'),
             confirmedAt: time(),
         );
-        $this->validator->method('validate')->willReturn(new Result());
 
         $response = $this->mockRedirectResponse($this->responseFactory, '//app/dashboard');
 
         $controller = $this->createController([VoytiConfig::class => $config]);
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
-        $result = $controller->login($request, ['login' => 'jdoe', 'password' => 'secret']);
+        $result = $controller->login($request);
 
         $this->assertSame($response, $result);
     }
@@ -282,14 +260,13 @@ final class SessionControllerTest extends TestCase
             passwordHash: $this->passwordHasher->hash('secret'),
             confirmedAt: time(),
         );
-        $this->validator->method('validate')->willReturn(new Result());
 
         $response = $this->mockRedirectResponse($this->responseFactory, '//home');
 
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
-        $result = $controller->login($request, ['login' => 'jdoe', 'password' => 'secret']);
+        $result = $controller->login($request);
 
         $this->assertSame($response, $result);
     }
@@ -310,7 +287,6 @@ final class SessionControllerTest extends TestCase
             passwordHash: $this->passwordHasher->hash('secret'),
             confirmedAt: time(),
         );
-        $this->validator->method('validate')->willReturn(new Result());
 
         $controller = $container->get(SessionController::class);
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
@@ -318,7 +294,7 @@ final class SessionControllerTest extends TestCase
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('"homeRoute" is set to "nonexistent", but no such route is registered.');
 
-        $controller->login($request, ['login' => 'jdoe', 'password' => 'secret']);
+        $controller->login($request);
     }
 
     public function testLoginPostSuccessWithRememberMeAddsCookie(): void
@@ -331,7 +307,6 @@ final class SessionControllerTest extends TestCase
             passwordHash: $this->passwordHasher->hash('secret'),
             confirmedAt: time(),
         );
-        $this->validator->method('validate')->willReturn(new Result());
         $this->currentUser->method('withAuthTimeout')->willReturnSelf();
         $this->rememberMeCookieService->expects($this->once())->method('addCookie')->willReturnArgument(1);
 
@@ -342,7 +317,7 @@ final class SessionControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret', 'rememberMe' => true]]);
 
-        $result = $controller->login($request, ['login' => 'jdoe', 'password' => 'secret', 'rememberMe' => true]);
+        $result = $controller->login($request);
 
         $this->assertSame($response, $result);
     }
@@ -358,7 +333,6 @@ final class SessionControllerTest extends TestCase
             confirmedAt: time(),
             blockedAt: time(),
         );
-        $this->validator->method('validate')->willReturn(new Result());
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -370,7 +344,7 @@ final class SessionControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
-        $result = $controller->login($request, ['login' => 'jdoe', 'password' => 'secret']);
+        $result = $controller->login($request);
 
         $this->assertSame($response, $result);
     }
@@ -378,8 +352,6 @@ final class SessionControllerTest extends TestCase
     public function testLoginPostWithInvalidCredentialsShowsError(): void
     {
         $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-
-        $this->validator->method('validate')->willReturn(new Result());
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -391,7 +363,7 @@ final class SessionControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'wrong']]);
 
-        $result = $controller->login($request, ['login' => 'jdoe', 'password' => 'wrong']);
+        $result = $controller->login($request);
 
         $this->assertSame($response, $result);
     }
@@ -411,7 +383,6 @@ final class SessionControllerTest extends TestCase
             authTfType: 'email',
         );
 
-        $this->validator->method('validate')->willReturn(new Result());
         $this->twoFactorEmailCodeService->expects($this->once())->method('run')->with(
             $this->callback(static fn(User $u): bool => $u->getId() === $user->getId()),
         );
@@ -428,7 +399,7 @@ final class SessionControllerTest extends TestCase
         $controller = $this->createController([VoytiConfig::class => $config]);
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
-        $result = $controller->login($request, ['login' => 'jdoe', 'password' => 'secret']);
+        $result = $controller->login($request);
 
         $this->assertSame($response, $result);
     }
@@ -448,7 +419,6 @@ final class SessionControllerTest extends TestCase
             authTfType: 'google',
         );
 
-        $this->validator->method('validate')->willReturn(new Result());
         $this->twoFactorEmailCodeService->expects($this->never())->method('run');
 
         $response = $this->createMock(ResponseInterface::class);
@@ -463,7 +433,7 @@ final class SessionControllerTest extends TestCase
         $controller = $this->createController([VoytiConfig::class => $config]);
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
-        $result = $controller->login($request, ['login' => 'jdoe', 'password' => 'secret']);
+        $result = $controller->login($request);
 
         $this->assertSame($response, $result);
     }
@@ -477,7 +447,6 @@ final class SessionControllerTest extends TestCase
             email: 'jdoe@example.com',
             passwordHash: $this->passwordHasher->hash('secret'),
         );
-        $this->validator->method('validate')->willReturn(new Result());
 
         $response = $this->createMock(ResponseInterface::class);
         $this->viewRenderer->method('withViewPath')->willReturnSelf();
@@ -489,7 +458,7 @@ final class SessionControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
-        $result = $controller->login($request, ['login' => 'jdoe', 'password' => 'secret']);
+        $result = $controller->login($request);
 
         $this->assertSame($response, $result);
     }
@@ -617,7 +586,6 @@ final class SessionControllerTest extends TestCase
             CurrentUser::class => $this->currentUser,
             EmailCodeGeneratorService::class => $this->twoFactorEmailCodeService,
             FlashInterface::class => $this->flash,
-            HydratorInterface::class => $this->hydrator,
             PasswordHasher::class => $this->passwordHasher,
             PendingSocialAccountService::class => $this->pendingSocialAccountService,
             RememberMeCookieService::class => $this->rememberMeCookieService,

@@ -24,7 +24,6 @@ final class LoginForm extends FormModel implements LabelsProviderInterface, Rule
     #[Required]
     #[Length(max: 255)]
     public string $login = '';
-    #[Required]
     public string $password = '';
     public bool $rememberMe = false;
     public ?string $twoFactorAuthenticationCode = null;
@@ -77,8 +76,11 @@ final class LoginForm extends FormModel implements LabelsProviderInterface, Rule
             // so no format-specific rule can be enforced here beyond presence.
             $rules['twoFactorAuthenticationCode'] = [new Required()];
             // The password was already verified during the initial login step; the 2FA step
-            // doesn't ask for it again, so its Required rule doesn't apply here.
-            unset($rules['password']);
+            // doesn't ask for it again. $password has no #[Required] attribute so this branch
+            // can leave it optional - ObjectDataSet re-merges attribute rules for any property
+            // unset() from here, which would silently undo that.
+        } else {
+            $rules['password'] = [new Required()];
         }
 
         $recaptchaRules = RecaptchaHelper::rules($this->config, $this->getFormName());

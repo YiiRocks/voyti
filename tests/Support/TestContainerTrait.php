@@ -64,6 +64,20 @@ trait TestContainerTrait
         $hydratorDiPath = InstalledVersions::getInstallPath('yiisoft/hydrator') . '/config/di.php';
         $definitions = array_merge(require $hydratorDiPath, $definitions);
 
+        // Voyti binds no ValidatorInterface of its own - it comes from yiisoft/validator's own
+        // config/di.php, which yiisoft/config auto-merges in for any host application. Replicate
+        // that merge here so FormHydrator's real validation behavior matches production instead
+        // of requiring every test to hand-mock ValidatorInterface.
+        $validatorInstallPath = InstalledVersions::getInstallPath('yiisoft/validator');
+        $validatorParams = require $validatorInstallPath . '/config/params.php';
+        $validatorDiPath = $validatorInstallPath . '/config/di.php';
+        $validatorDefinitions = (static function (array $params) use ($validatorDiPath): array {
+            return require $validatorDiPath;
+        })(array_merge($params, $validatorParams));
+        /** @var CategorySource $validatorCategorySource */
+        $validatorCategorySource = $validatorDefinitions['yii.validator.categorySource']['definition']();
+        $definitions = array_merge($validatorDefinitions, $definitions);
+
         // Voyti binds no Collection/StateStorageInterface of its own - those come from
         // yii-auth-client's own config/di.php, which yiisoft/config auto-merges in for any host
         // that installs the (optional) package. Replicate that merge here so AuthAction's
@@ -111,7 +125,7 @@ trait TestContainerTrait
             ResponseFactoryInterface::class => $psr17Factory,
             SessionInterface::class => $session,
             StreamFactoryInterface::class => $psr17Factory,
-            TranslatorInterface::class => (static function (): TranslatorInterface {
+            TranslatorInterface::class => (static function () use ($validatorCategorySource): TranslatorInterface {
                 $translator = new Translator('en', null, 'voyti');
                 $translator->addCategorySources(
                     new CategorySource(
@@ -119,6 +133,7 @@ trait TestContainerTrait
                         new MessageSource(dirname(__DIR__, 2) . '/resources/messages'),
                         new SimpleMessageFormatter(),
                     ),
+                    $validatorCategorySource,
                 );
 
                 return $translator;

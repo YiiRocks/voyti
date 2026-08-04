@@ -16,16 +16,14 @@ use YiiRocks\Voyti\Service\Password\RecoveryService;
 use YiiRocks\Voyti\Service\Password\ResetService;
 use YiiRocks\Voyti\Service\ServiceResult;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
-use YiiRocks\Voyti\tests\Support\HydrateObjectTrait;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\Support\ValidatorMockTrait;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
 use YiiRocks\Voyti\VoytiConfig;
-use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
-use Yiisoft\Validator\Result;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
@@ -33,13 +31,12 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 final class PasswordResetControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
-    use HydrateObjectTrait;
     use RedirectResponseMockTrait;
     use TestContainerTrait;
     use UserFactoryTrait;
+    use ValidatorMockTrait;
 
     private FlashInterface&MockObject $flash;
-    private HydratorInterface&MockObject $hydrator;
     private RecoveryService&MockObject $recoveryService;
     private ResetService&MockObject $resetService;
     private ResponseFactoryInterface&MockObject $responseFactory;
@@ -51,18 +48,11 @@ final class PasswordResetControllerTest extends TestCase
         $this->setUpDatabase();
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
         $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
-        $this->validator = $this->createMock(ValidatorInterface::class);
         $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
-        $this->hydrator = $this->createMock(HydratorInterface::class);
         $this->flash = $this->createMock(FlashInterface::class);
         $this->recoveryService = $this->createMock(RecoveryService::class);
         $this->resetService = $this->createMock(ResetService::class);
-
-        $this->hydrator->method('hydrate')->willReturnCallback(
-            function (object $object, array $data = []): void {
-                $this->hydrateObject($object, $data);
-            },
-        );
+        $this->validator = $this->mockValidValidator();
     }
 
     protected function tearDown(): void
@@ -94,14 +84,13 @@ final class PasswordResetControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['recovery' => ['email' => 'test@example.com']]);
 
-        $this->validator->method('validate')->willReturn(new Result());
         $this->recoveryService->expects($this->once())
             ->method('run')
             ->willReturn(ServiceResult::success('voyti.recovery.message_sent'));
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->request($request, ['email' => 'test@example.com']);
+        $result = $controller->request($request);
 
         $this->assertSame($response, $result);
     }
@@ -155,7 +144,6 @@ final class PasswordResetControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['recovery' => ['password' => 'newpass123', 'passwordRepeat' => 'newpass123']]);
 
-        $this->validator->method('validate')->willReturn(new Result());
         $this->resetService->expects($this->once())
             ->method('run')
             ->with(
@@ -167,7 +155,7 @@ final class PasswordResetControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->confirm($request, (int) $user->getId(), 'valid', ['password' => 'newpass123', 'passwordRepeat' => 'newpass123']);
+        $result = $controller->confirm($request, (int) $user->getId(), 'valid');
 
         $this->assertSame($response, $result);
     }
@@ -177,12 +165,10 @@ final class PasswordResetControllerTest extends TestCase
         $user = $this->createUser(username: 'recoveryuser', email: 'recoveryuser@example.com');
         $this->createRecoveryToken((int) $user->getId(), 'valid', time());
 
-        $controller = $this->createController();
+        // Needs the real Validator - asserts on real rule-generated messages, not just that validation failed.
+        $controller = $this->createControllerWithRealValidation();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['recovery' => ['password' => '', 'passwordRepeat' => '']]);
 
-        $result = new Result();
-        $result->addError('Password is required.', valuePath: ['password']);
-        $this->validator->method('validate')->willReturn($result);
         $this->resetService->expects($this->never())->method('run');
 
         $captured = [];
@@ -196,13 +182,13 @@ final class PasswordResetControllerTest extends TestCase
             }))
             ->willReturn($response);
 
-        $result2 = $controller->confirm($request, (int) $user->getId(), 'valid', ['password' => '', 'passwordRepeat' => '']);
+        $result2 = $controller->confirm($request, (int) $user->getId(), 'valid');
 
         $this->assertSame($response, $result2);
         $this->assertFalse($captured['form']->isValid());
         $this->assertSame(
-            ['Password is required.'],
-            $captured['form']->getValidationResult()->getPropertyErrorMessages('password'),
+            ['New password cannot be blank.', 'New password must contain at least 6 characters.'],
+            $captured['form']->getValidationResult()?->getPropertyErrorMessages('password'),
         );
     }
 
@@ -214,7 +200,6 @@ final class PasswordResetControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['recovery' => ['password' => 'newpass123', 'passwordRepeat' => 'newpass123']]);
 
-        $this->validator->method('validate')->willReturn(new Result());
         $this->resetService->expects($this->once())->method('run')->willReturn(false);
 
         $captured = [];
@@ -228,13 +213,13 @@ final class PasswordResetControllerTest extends TestCase
             }))
             ->willReturn($response);
 
-        $result = $controller->confirm($request, (int) $user->getId(), 'valid', ['password' => 'newpass123', 'passwordRepeat' => 'newpass123']);
+        $result = $controller->confirm($request, (int) $user->getId(), 'valid');
 
         $this->assertSame($response, $result);
         $this->assertFalse($captured['form']->isValid());
         $this->assertSame(
             ['This password has been used recently. Please choose a different one.'],
-            $captured['form']->getValidationResult()->getPropertyErrorMessages('password'),
+            $captured['form']->getValidationResult()?->getPropertyErrorMessages('password'),
         );
     }
 
@@ -296,18 +281,33 @@ final class PasswordResetControllerTest extends TestCase
         $this->assertSame($response, $result);
     }
 
-    private function createController(array $overrides = []): PasswordResetController
+    private function baseOverrides(): array
     {
-        return $this->getTestContainer([
+        return [
             FlashInterface::class => $this->flash,
-            HydratorInterface::class => $this->hydrator,
             RecoveryService::class => $this->recoveryService,
             ResetService::class => $this->resetService,
             ResponseFactoryInterface::class => $this->responseFactory,
-            ValidatorInterface::class => $this->validator,
             WebViewRenderer::class => $this->viewRenderer,
+        ];
+    }
+
+    private function createController(array $overrides = []): PasswordResetController
+    {
+        return $this->getTestContainer([
+            ...$this->baseOverrides(),
+            ValidatorInterface::class => $this->validator,
             ...$overrides,
         ])->get(PasswordResetController::class);
+    }
+
+    /**
+     * Uses the real ValidatorInterface instead of the fast valid-by-default mock, for tests that assert on real
+     * rule-generated validation messages.
+     */
+    private function createControllerWithRealValidation(): PasswordResetController
+    {
+        return $this->getTestContainer($this->baseOverrides())->get(PasswordResetController::class);
     }
 
     private function createRecoveryToken(int $userId, string $code, int $createdAt): UserToken

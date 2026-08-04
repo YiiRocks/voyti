@@ -31,7 +31,7 @@ final class SettingsForm extends FormModel implements LabelsProviderInterface, R
     #[Email(checkDns: true, enableIdn: true, skipOnEmpty: true)]
     #[Length(max: 255)]
     public string $email = '';
-    #[Length(min: 6, max: 72)]
+    #[Length(min: 6, max: 72, skipOnEmpty: true)]
     public string $password = '';
     #[Equal(targetProperty: 'password', strict: true, type: CompareType::STRING)]
     public string $passwordRepeat = '';

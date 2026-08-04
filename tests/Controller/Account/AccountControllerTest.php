@@ -18,14 +18,13 @@ use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\Support\ValidatorMockTrait;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
 use YiiRocks\Voyti\VoytiConfig;
-use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\User\CurrentUser;
-use Yiisoft\Validator\Result;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
@@ -36,11 +35,11 @@ final class AccountControllerTest extends TestCase
     use RedirectResponseMockTrait;
     use TestContainerTrait;
     use UserFactoryTrait;
+    use ValidatorMockTrait;
 
     private CurrentUser&MockObject $currentUser;
     private EmailChangeService&MockObject $emailChangeService;
     private FlashInterface&MockObject $flash;
-    private HydratorInterface&MockObject $hydrator;
     private PasswordHasher $passwordHasher;
     private ResponseFactoryInterface&MockObject $responseFactory;
     private ValidatorInterface&MockObject $validator;
@@ -51,13 +50,12 @@ final class AccountControllerTest extends TestCase
         $this->setUpDatabase();
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
         $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
-        $this->validator = $this->createMock(ValidatorInterface::class);
         $this->currentUser = $this->createMock(CurrentUser::class);
         $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
-        $this->hydrator = $this->createMock(HydratorInterface::class);
         $this->flash = $this->createMock(FlashInterface::class);
         $this->passwordHasher = TestPasswordHasherFactory::create();
         $this->emailChangeService = $this->createMock(EmailChangeService::class);
+        $this->validator = $this->mockValidValidator();
     }
 
     protected function tearDown(): void
@@ -101,13 +99,12 @@ final class AccountControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['settings' => ['username' => 'testuser', 'email' => 'test@example.com', 'password' => '', 'passwordRepeat' => '']]);
 
-        $this->validator->method('validate')->willReturn(new Result());
         $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->update($request, ['username' => 'testuser', 'email' => 'test@example.com', 'password' => '', 'passwordRepeat' => '']);
+        $result = $controller->update($request);
 
         $this->assertSame($response, $result);
         $updated = User::findById((int) $user->getId());
@@ -120,17 +117,6 @@ final class AccountControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['settings' => ['username' => 'testuser', 'email' => 'new@example.com', 'password' => '', 'passwordRepeat' => '']]);
 
-        $this->hydrator->method('hydrate')->willReturnCallback(
-            function (object $object, array $data = []): void {
-                if (property_exists($object, 'username') && isset($data['username'])) {
-                    $object->username = $data['username'];
-                }
-                if (property_exists($object, 'email') && isset($data['email'])) {
-                    $object->email = $data['email'];
-                }
-            },
-        );
-        $this->validator->method('validate')->willReturn(new Result());
         $user = $this->createUser(email: 'old@example.com', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $this->currentUser->method('getIdentity')->willReturn($user);
 
@@ -142,7 +128,7 @@ final class AccountControllerTest extends TestCase
         $this->responseFactory->method('createResponse')->willReturn($response);
         $response->method('withHeader')->willReturnSelf();
 
-        $result = $controller->update($request, ['username' => 'testuser', 'email' => 'new@example.com', 'password' => '', 'passwordRepeat' => '']);
+        $result = $controller->update($request);
 
         $this->assertSame($response, $result);
     }
@@ -152,30 +138,13 @@ final class AccountControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['settings' => ['username' => 'testuser', 'email' => 'test@example.com', 'password' => 'newpassword', 'passwordRepeat' => 'newpassword']]);
 
-        $this->hydrator->method('hydrate')->willReturnCallback(
-            function (object $object, array $data = []): void {
-                if (property_exists($object, 'password') && isset($data['password'])) {
-                    $object->password = $data['password'];
-                }
-                if (property_exists($object, 'passwordRepeat') && isset($data['passwordRepeat'])) {
-                    $object->passwordRepeat = $data['passwordRepeat'];
-                }
-                if (property_exists($object, 'username') && isset($data['username'])) {
-                    $object->username = $data['username'];
-                }
-                if (property_exists($object, 'email') && isset($data['email'])) {
-                    $object->email = $data['email'];
-                }
-            },
-        );
-        $this->validator->method('validate')->willReturn(new Result());
         $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $originalHash = $user->getPasswordHash();
         $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->update($request, ['username' => 'testuser', 'email' => 'test@example.com', 'password' => 'newpassword', 'passwordRepeat' => 'newpassword']);
+        $result = $controller->update($request);
 
         $this->assertSame($response, $result);
         $updated = User::findById((int) $user->getId());
@@ -191,23 +160,6 @@ final class AccountControllerTest extends TestCase
         ]);
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['settings' => ['username' => 'testuser', 'email' => 'test@example.com', 'password' => 'secret', 'passwordRepeat' => 'secret']]);
 
-        $this->hydrator->method('hydrate')->willReturnCallback(
-            function (object $object, array $data = []): void {
-                if (property_exists($object, 'password') && isset($data['password'])) {
-                    $object->password = $data['password'];
-                }
-                if (property_exists($object, 'passwordRepeat') && isset($data['passwordRepeat'])) {
-                    $object->passwordRepeat = $data['passwordRepeat'];
-                }
-                if (property_exists($object, 'username') && isset($data['username'])) {
-                    $object->username = $data['username'];
-                }
-                if (property_exists($object, 'email') && isset($data['email'])) {
-                    $object->email = $data['email'];
-                }
-            },
-        );
-        $this->validator->method('validate')->willReturn(new Result());
         $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $this->currentUser->method('getIdentity')->willReturn($user);
 
@@ -218,7 +170,7 @@ final class AccountControllerTest extends TestCase
             ->with('account/update', $this->anything())
             ->willReturn($response);
 
-        $result = $controller->update($request, ['username' => 'testuser', 'email' => 'test@example.com', 'password' => 'secret', 'passwordRepeat' => 'secret']);
+        $result = $controller->update($request);
 
         $this->assertSame($response, $result);
         $updated = User::findById((int) $user->getId());
@@ -259,7 +211,6 @@ final class AccountControllerTest extends TestCase
             CurrentUser::class => $this->currentUser,
             EmailChangeService::class => $this->emailChangeService,
             FlashInterface::class => $this->flash,
-            HydratorInterface::class => $this->hydrator,
             ResponseFactoryInterface::class => $this->responseFactory,
             ValidatorInterface::class => $this->validator,
             WebViewRenderer::class => $this->viewRenderer,

@@ -27,6 +27,17 @@ final class PasswordComplexityRuleTest extends TestCase
         yield 'missing special character' => ['Str0ngPass', false];
     }
 
+    public function testRegexSkipsEmptyPassword(): void
+    {
+        $config = VoytiConfigFactory::create(enablePasswordComplexity: true);
+        $rule = PasswordComplexityRule::rules($config, $this->createTranslator())[0];
+
+        $validator = new Validator();
+        $result = $validator->validate('', [$rule]);
+
+        $this->assertTrue($result->isValid());
+    }
+
     #[DataProvider('passwordProvider')]
     public function testRegexValidatesComplexity(string $password, bool $expectedValid): void
     {

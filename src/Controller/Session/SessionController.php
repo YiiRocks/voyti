@@ -26,9 +26,7 @@ use YiiRocks\Voyti\Validator\TwoFactor\EmailValidator;
 use YiiRocks\Voyti\ViewData\Session\ConfirmViewData;
 use YiiRocks\Voyti\ViewData\Session\LoginViewData;
 use YiiRocks\Voyti\VoytiConfig;
-use Yiisoft\Http\Method;
-use Yiisoft\Hydrator\HydratorInterface;
-use Yiisoft\Input\Http\Attribute\Parameter\Body;
+use Yiisoft\FormModel\FormHydrator;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Security\Random;
@@ -37,7 +35,6 @@ use Yiisoft\Session\SessionInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
-use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\AuthClient\AuthAction;
 use Yiisoft\Yii\AuthClient\Collection;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
@@ -60,7 +57,6 @@ final readonly class SessionController
         private WebViewRenderer $viewRenderer,
         private CurrentUser $currentUser,
         private PasswordHasher $passwordHasher,
-        private ValidatorInterface $validator,
         private EventDispatcherInterface $eventDispatcher,
         private ResponseFactoryInterface $responseFactory,
         private UrlGeneratorInterface $url,
@@ -69,17 +65,14 @@ final readonly class SessionController
         private VoytiConfig $config,
         private ?Collection $clientCollection,
         private PendingSocialAccountService $pendingSocialAccountService,
-        private HydratorInterface $hydrator,
+        private FormHydrator $formHydrator,
         private EmailCodeGeneratorService $twoFactorEmailCodeService,
         private FlashInterface $flash,
         private BackupCodeService $backupCodeService,
     ) {}
 
-    public function confirm(
-        ServerRequestInterface $request,
-        #[Body('login')]
-        array $formData = [],
-    ): ResponseInterface {
+    public function confirm(ServerRequestInterface $request): ResponseInterface
+    {
         /** @var mixed $credentialsValue */
         $credentialsValue = $this->session->get(self::SESSION_KEY_CREDENTIALS);
         $credentials = is_array($credentialsValue) ? $credentialsValue : [];
@@ -98,11 +91,7 @@ final readonly class SessionController
         $form->login = is_string($loginValue) ? $loginValue : '';
         $method = User::findByUsernameOrEmail($form->login)?->getAuthTfType() ?? 'google';
 
-        $this->hydrator->hydrate($form, $formData);
-
-        if ($request->getMethod() === Method::POST) {
-            $form->processValidationResult($this->validator->validate($form));
-
+        if ($this->formHydrator->populateFromPostAndValidate($form, $request)) {
             $user = User::findByUsernameOrEmail($form->login);
 
             if ($user !== null) {
@@ -164,84 +153,75 @@ final readonly class SessionController
         return $this->renderView('session/confirm', ['form' => $form, 'data' => ConfirmViewData::create($method, $this->url)]);
     }
 
-    public function login(
-        ServerRequestInterface $request,
-        #[Body('login')]
-        array $formData = [],
-    ): ResponseInterface {
+    public function login(ServerRequestInterface $request): ResponseInterface
+    {
         if (!$this->currentUser->getIdentity() instanceof GuestIdentityInterface) {
             return $this->homeRedirectResponse();
         }
 
         $form = new LoginForm($this->config, $this->translator);
-        $this->hydrator->hydrate($form, $formData);
 
-        if ($request->getMethod() === Method::POST) {
-            $result = $this->validator->validate($form);
-            $form->processValidationResult($result);
+        if ($this->formHydrator->populateFromPostAndValidate($form, $request, map: ['rememberMe' => 'rememberMe'])) {
+            $user = User::findByUsernameOrEmail($form->login);
 
-            if ($result->isValid()) {
-                $user = User::findByUsernameOrEmail($form->login);
-
-                if ($user === null || !$this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
-                    $form->addError(
-                        $this->translator->translate('voyti.security.invalid_login', category: 'voyti'),
-                        ['login'],
-                    );
-                } elseif ($user->isBlocked()) {
-                    $form->addError(
-                        $this->translator->translate('voyti.security.account_blocked', category: 'voyti'),
-                        ['login'],
-                    );
-                } elseif ($this->config->enableEmailConfirmation && !$user->isConfirmed()) {
-                    $form->addError(
-                        $this->translator->translate('voyti.security.need_email_confirmation', category: 'voyti'),
-                        ['login'],
-                    );
-                } else {
-                    if ($this->config->enableTwoFactorAuthentication && $user->isAuthTfEnabled()) {
-                        if ($user->getAuthTfType() === 'email') {
-                            $this->twoFactorEmailCodeService->run($user);
-                        }
-
-                        $this->session->set(self::SESSION_KEY_CREDENTIALS, [
-                            'login' => $form->login,
-                            'rememberMe' => $form->rememberMe,
-                        ]);
-                        return $this->renderView('session/confirm', [
-                            'form' => $form,
-                            'data' => ConfirmViewData::create($user->getAuthTfType() ?? 'google', $this->url),
-                        ]);
+            if ($user === null || !$this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
+                $form->addError(
+                    $this->translator->translate('voyti.security.invalid_login', category: 'voyti'),
+                    ['login'],
+                );
+            } elseif ($user->isBlocked()) {
+                $form->addError(
+                    $this->translator->translate('voyti.security.account_blocked', category: 'voyti'),
+                    ['login'],
+                );
+            } elseif ($this->config->enableEmailConfirmation && !$user->isConfirmed()) {
+                $form->addError(
+                    $this->translator->translate('voyti.security.need_email_confirmation', category: 'voyti'),
+                    ['login'],
+                );
+            } else {
+                if ($this->config->enableTwoFactorAuthentication && $user->isAuthTfEnabled()) {
+                    if ($user->getAuthTfType() === 'email') {
+                        $this->twoFactorEmailCodeService->run($user);
                     }
 
-                    $previousSessionId = $this->session->getId();
-                    $userToLogin = $this->currentUser;
-                    if ($form->rememberMe) {
-                        $userToLogin = $userToLogin->withAuthTimeout($this->config->rememberLoginLifespan);
-                    }
-                    $userToLogin->login($user);
-                    LoginMetadataHelper::recordLogin($user, $request->getServerParams());
-                    $this->pendingSocialAccountService->connect($user);
-
-                    $this->eventDispatcher->dispatch(
-                        new AfterLoginEvent(
-                            $user,
-                            previousSessionId: $previousSessionId,
-                            serverParams: $request->getServerParams(),
-                        ),
-                    );
-
-                    $response = $this->homeRedirectResponse();
-                    if ($form->rememberMe) {
-                        $response = $this->rememberMeCookieService->addCookie(
-                            $user,
-                            $response,
-                            $this->session->getId() ?? '',
-                        );
-                    }
-
-                    return $response;
+                    $this->session->set(self::SESSION_KEY_CREDENTIALS, [
+                        'login' => $form->login,
+                        'rememberMe' => $form->rememberMe,
+                    ]);
+                    return $this->renderView('session/confirm', [
+                        'form' => $form,
+                        'data' => ConfirmViewData::create($user->getAuthTfType() ?? 'google', $this->url),
+                    ]);
                 }
+
+                $previousSessionId = $this->session->getId();
+                $userToLogin = $this->currentUser;
+                if ($form->rememberMe) {
+                    $userToLogin = $userToLogin->withAuthTimeout($this->config->rememberLoginLifespan);
+                }
+                $userToLogin->login($user);
+                LoginMetadataHelper::recordLogin($user, $request->getServerParams());
+                $this->pendingSocialAccountService->connect($user);
+
+                $this->eventDispatcher->dispatch(
+                    new AfterLoginEvent(
+                        $user,
+                        previousSessionId: $previousSessionId,
+                        serverParams: $request->getServerParams(),
+                    ),
+                );
+
+                $response = $this->homeRedirectResponse();
+                if ($form->rememberMe) {
+                    $response = $this->rememberMeCookieService->addCookie(
+                        $user,
+                        $response,
+                        $this->session->getId() ?? '',
+                    );
+                }
+
+                return $response;
             }
         }
 

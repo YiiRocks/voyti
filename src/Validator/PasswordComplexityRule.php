@@ -27,6 +27,7 @@ final class PasswordComplexityRule
             new Regex(
                 pattern: '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).+$/',
                 message: $translator->translate('voyti.validator.password_complexity', category: 'voyti'),
+                skipOnEmpty: true,
             ),
         ];
     }

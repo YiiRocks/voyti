@@ -26,14 +26,13 @@ use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\Support\ValidatorMockTrait;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
 use YiiRocks\Voyti\VoytiConfig;
-use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\User\CurrentUser;
-use Yiisoft\Validator\Result;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
@@ -44,11 +43,11 @@ final class PrivacyControllerTest extends TestCase
     use RedirectResponseMockTrait;
     use TestContainerTrait;
     use UserFactoryTrait;
+    use ValidatorMockTrait;
 
     private CurrentUser&MockObject $currentUser;
     private EventCaptureDispatcher $eventDispatcher;
     private FlashInterface&MockObject $flash;
-    private HydratorInterface&MockObject $hydrator;
     private PasswordHasher $passwordHasher;
     private ResponseFactoryInterface&MockObject $responseFactory;
     private TerminateUserSessionsService&MockObject $terminateUserSessionsService;
@@ -60,14 +59,13 @@ final class PrivacyControllerTest extends TestCase
         $this->setUpDatabase();
         $this->viewRenderer = $this->createMock(WebViewRenderer::class);
         $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
-        $this->validator = $this->createMock(ValidatorInterface::class);
         $this->currentUser = $this->createMock(CurrentUser::class);
         $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
-        $this->hydrator = $this->createMock(HydratorInterface::class);
         $this->flash = $this->createMock(FlashInterface::class);
         $this->passwordHasher = TestPasswordHasherFactory::create();
         $this->terminateUserSessionsService = $this->createMock(TerminateUserSessionsService::class);
         $this->eventDispatcher = new EventCaptureDispatcher();
+        $this->validator = $this->mockValidValidator();
     }
 
     protected function tearDown(): void
@@ -102,17 +100,6 @@ final class PrivacyControllerTest extends TestCase
 
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['anonymize' => ['password' => $password, 'consent' => '1']]);
 
-        $this->hydrator->method('hydrate')->willReturnCallback(
-            function (object $object, array $data = []): void {
-                if (property_exists($object, 'password') && isset($data['password'])) {
-                    $object->password = $data['password'];
-                }
-                if (property_exists($object, 'consent') && isset($data['consent'])) {
-                    $object->consent = (bool) $data['consent'];
-                }
-            },
-        );
-        $this->validator->method('validate')->willReturn(new Result());
         $user = $this->createUser(passwordHash: $this->passwordHasher->hash($password), confirmedAt: time());
         $this->currentUser->method('getIdentity')->willReturn($user);
 
@@ -124,7 +111,7 @@ final class PrivacyControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->anonymize($request, ['password' => $password, 'consent' => '1']);
+        $result = $controller->anonymize($request);
 
         $this->assertSame($response, $result);
         $updated = User::findById((int) $user->getId());
@@ -161,17 +148,6 @@ final class PrivacyControllerTest extends TestCase
 
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['delete-account' => ['password' => 'wrongpassword', 'consent' => '1']]);
 
-        $this->hydrator->method('hydrate')->willReturnCallback(
-            function (object $object, array $data = []): void {
-                if (property_exists($object, 'password') && isset($data['password'])) {
-                    $object->password = $data['password'];
-                }
-                if (property_exists($object, 'consent') && isset($data['consent'])) {
-                    $object->consent = (bool) $data['consent'];
-                }
-            },
-        );
-        $this->validator->method('validate')->willReturn(new Result());
         $user = $this->createUser(passwordHash: $this->passwordHasher->hash('correctpassword'), confirmedAt: time());
         $this->currentUser->method('getIdentity')->willReturn($user);
 
@@ -184,7 +160,7 @@ final class PrivacyControllerTest extends TestCase
             ->with('privacy/delete', $this->anything())
             ->willReturn($response);
 
-        $result = $controller->delete($request, ['password' => 'wrongpassword', 'consent' => '1']);
+        $result = $controller->delete($request);
 
         $this->assertSame($response, $result);
         $this->assertNotNull(User::findById((int) $user->getId()));
@@ -198,17 +174,6 @@ final class PrivacyControllerTest extends TestCase
 
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['delete-account' => ['password' => $password, 'consent' => '1']]);
 
-        $this->hydrator->method('hydrate')->willReturnCallback(
-            function (object $object, array $data = []): void {
-                if (property_exists($object, 'password') && isset($data['password'])) {
-                    $object->password = $data['password'];
-                }
-                if (property_exists($object, 'consent') && isset($data['consent'])) {
-                    $object->consent = (bool) $data['consent'];
-                }
-            },
-        );
-        $this->validator->method('validate')->willReturn(new Result());
         $user = $this->createUser(passwordHash: $this->passwordHasher->hash($password), confirmedAt: time());
         $userId = (int) $user->getId();
         $this->currentUser->method('getIdentity')->willReturn($user);
@@ -221,7 +186,7 @@ final class PrivacyControllerTest extends TestCase
             ->method('render')
             ->willReturn($response);
 
-        $result = $controller->delete($request, ['password' => $password, 'consent' => '1']);
+        $result = $controller->delete($request);
 
         $this->assertSame($response, $result);
         $this->assertNull(User::findById($userId));
@@ -443,21 +408,13 @@ final class PrivacyControllerTest extends TestCase
         $controller = $this->createController(VoytiConfigFactory::create(enableGdprCompliance: true));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['gdpr-consent' => ['consent' => '1']]);
 
-        $this->hydrator->method('hydrate')->willReturnCallback(
-            function (object $object, array $data = []): void {
-                if (property_exists($object, 'consent') && isset($data['consent'])) {
-                    $object->consent = (bool) $data['consent'];
-                }
-            },
-        );
-
         $user = $this->createUser(gdprConsent: true, confirmedAt: time());
         $consentDate = $user->getGdprConsentDate();
         $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->gdprConsent($request, ['consent' => '1']);
+        $result = $controller->gdprConsent($request);
 
         $this->assertSame($response, $result);
         $updated = User::findById((int) $user->getId());
@@ -470,20 +427,12 @@ final class PrivacyControllerTest extends TestCase
         $controller = $this->createController(VoytiConfigFactory::create(enableGdprCompliance: true));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['gdpr-consent' => ['consent' => '0']]);
 
-        $this->hydrator->method('hydrate')->willReturnCallback(
-            function (object $object, array $data = []): void {
-                if (property_exists($object, 'consent') && isset($data['consent'])) {
-                    $object->consent = (bool) $data['consent'];
-                }
-            },
-        );
-
         $user = $this->createUser(gdprConsent: true, confirmedAt: time());
         $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->gdprConsent($request, ['consent' => '0']);
+        $result = $controller->gdprConsent($request);
 
         $this->assertSame($response, $result);
         $updated = User::findById((int) $user->getId());
@@ -496,20 +445,12 @@ final class PrivacyControllerTest extends TestCase
         $controller = $this->createController(VoytiConfigFactory::create(enableGdprCompliance: true));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['gdpr-consent' => ['consent' => '1']]);
 
-        $this->hydrator->method('hydrate')->willReturnCallback(
-            function (object $object, array $data = []): void {
-                if (property_exists($object, 'consent') && isset($data['consent'])) {
-                    $object->consent = (bool) $data['consent'];
-                }
-            },
-        );
-
         $user = $this->createUser(gdprConsent: false, confirmedAt: time());
         $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->gdprConsent($request, ['consent' => '1']);
+        $result = $controller->gdprConsent($request);
 
         $this->assertSame($response, $result);
         $updated = User::findById((int) $user->getId());
@@ -542,7 +483,6 @@ final class PrivacyControllerTest extends TestCase
             CurrentUser::class => $this->currentUser,
             EventDispatcherInterface::class => $this->eventDispatcher,
             FlashInterface::class => $this->flash,
-            HydratorInterface::class => $this->hydrator,
             ResponseFactoryInterface::class => $this->responseFactory,
             TerminateUserSessionsService::class => $this->terminateUserSessionsService,
             ValidatorInterface::class => $this->validator,

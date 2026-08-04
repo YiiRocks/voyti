@@ -18,14 +18,11 @@ use YiiRocks\Voyti\Service\Password\RecoveryService;
 use YiiRocks\Voyti\Service\Password\ResetService;
 use YiiRocks\Voyti\ViewData\PasswordReset\RequestViewData;
 use YiiRocks\Voyti\VoytiConfig;
-use Yiisoft\Http\Method;
-use Yiisoft\Hydrator\HydratorInterface;
-use Yiisoft\Input\Http\Attribute\Parameter\Body;
+use Yiisoft\FormModel\FormHydrator;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
-use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 /**
@@ -43,10 +40,9 @@ final readonly class PasswordResetController
         private UrlGeneratorInterface $url,
         private RecoveryService $passwordRecoveryService,
         private ResetService $resetPasswordService,
-        private ValidatorInterface $validator,
         private EventDispatcherInterface $eventDispatcher,
         private VoytiConfig $config,
-        private HydratorInterface $hydrator,
+        private FormHydrator $formHydrator,
         private ResponseFactoryInterface $responseFactory,
         private FlashInterface $flash,
     ) {}
@@ -57,8 +53,6 @@ final readonly class PasswordResetController
         int $id,
         #[RouteArgument]
         string $code,
-        #[Body('recovery')]
-        array $formData = [],
     ): ResponseInterface {
         if (!$this->config->allowPasswordRecovery && !$this->config->allowAdminPasswordRecovery) {
             return $this->renderError('voyti.recovery.reset_disabled');
@@ -75,55 +69,40 @@ final readonly class PasswordResetController
         }
 
         $form = new RecoveryForm($this->config, $this->translator, RecoveryForm::SCENARIO_RESET);
-        $this->hydrator->hydrate($form, $formData);
 
-        if ($request->getMethod() === Method::POST) {
-            $result = $this->validator->validate($form);
-            $form->processValidationResult($result);
+        if ($this->formHydrator->populateFromPostAndValidate($form, $request)) {
+            /** @var User $user */
+            $user = $userToken->getUser();
 
-            if ($result->isValid()) {
-                /** @var User $user */
-                $user = $userToken->getUser();
-
-                if ($this->resetPasswordService->run($form->password, $user, $userToken)) {
-                    return $this->redirectWithFlash(
-                        $this->url->generate('voyti/session-login'),
-                        'voyti.recovery.password_changed',
-                    );
-                }
-
-                $form->addError(
-                    $this->translator->translate('voyti.recovery.password_previously_used', category: 'voyti'),
-                    ['password'],
+            if ($this->resetPasswordService->run($form->password, $user, $userToken)) {
+                return $this->redirectWithFlash(
+                    $this->url->generate('voyti/session-login'),
+                    'voyti.recovery.password_changed',
                 );
             }
+
+            $form->addError(
+                $this->translator->translate('voyti.recovery.password_previously_used', category: 'voyti'),
+                ['password'],
+            );
         }
 
         return $this->renderView('password-reset/confirm', ['form' => $form]);
     }
 
-    public function request(
-        ServerRequestInterface $request,
-        #[Body('recovery')]
-        array $formData = [],
-    ): ResponseInterface {
+    public function request(ServerRequestInterface $request): ResponseInterface
+    {
         if (!$this->config->allowPasswordRecovery) {
             return $this->renderError('voyti.recovery.disabled');
         }
 
         $form = new RecoveryForm($this->config, $this->translator, RecoveryForm::SCENARIO_REQUEST);
-        $this->hydrator->hydrate($form, $formData);
 
-        if ($request->getMethod() === Method::POST) {
-            $result = $this->validator->validate($form);
-            $form->processValidationResult($result);
+        if ($this->formHydrator->populateFromPostAndValidate($form, $request)) {
+            $serviceResult = $this->passwordRecoveryService->run($form->email);
+            $this->flash->set(FlashType::SUCCESS, $serviceResult->getMessage());
 
-            if ($result->isValid()) {
-                $serviceResult = $this->passwordRecoveryService->run($form->email);
-                $this->flash->set(FlashType::SUCCESS, $serviceResult->getMessage());
-
-                return $this->redirect($this->url->generate('voyti/session-login'));
-            }
+            return $this->redirect($this->url->generate('voyti/session-login'));
         }
 
         return $this->renderView('password-reset/request', [

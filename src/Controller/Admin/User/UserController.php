@@ -40,8 +40,8 @@ use YiiRocks\Voyti\ViewData\Shared\MessageViewData;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Data\Db\QueryDataReader;
 use Yiisoft\Data\Paginator\OffsetPaginator;
+use Yiisoft\FormModel\FormHydrator;
 use Yiisoft\Http\Method;
-use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Input\Http\Attribute\Parameter\Body;
 use Yiisoft\Input\Http\Attribute\Parameter\Query;
 use Yiisoft\Rbac\Assignment;
@@ -52,7 +52,6 @@ use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
-use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 /**
@@ -80,11 +79,10 @@ final readonly class UserController
         private UpdateAssignmentsService $updateAuthAssignmentsService,
         private AuthHelper $authHelper,
         private PasswordGeneratorInterface $passwordGenerator,
-        private ValidatorInterface $validator,
         private EventDispatcherInterface $eventDispatcher,
         private UrlGeneratorInterface $url,
         private VoytiConfig $config,
-        private HydratorInterface $hydrator,
+        private FormHydrator $formHydrator,
         private CurrentUser $currentUser,
         private ResponseFactoryInterface $responseFactory,
         private ItemsStorageInterface $itemsStorage,
@@ -149,16 +147,13 @@ final readonly class UserController
 
     public function create(
         ServerRequestInterface $request,
-        #[Body('register')]
-        array $formData = [],
         #[Body('assignedItems')]
         array $assignedItems = [],
     ): ResponseInterface {
         $errors = [];
         $form = new RegistrationForm($this->config, $this->translator);
-        $this->hydrator->hydrate($form, $formData);
 
-        if ($request->getMethod() === Method::POST) {
+        if ($this->formHydrator->populateFromPost($form, $request)) {
             $email = $form->email;
             $username = $form->username;
             $password = $form->password !== '' ? $form->password : $this->passwordGenerator->generate(12);
@@ -381,12 +376,6 @@ final readonly class UserController
         ServerRequestInterface $request,
         #[RouteArgument]
         int $id,
-        #[Body('user/password')]
-        string $password = '',
-        #[Body('user/username')]
-        ?string $username = null,
-        #[Body('user/email')]
-        ?string $email = null,
         #[Body('assignedItems')]
         array $assignedItems = [],
     ): ResponseInterface {
@@ -400,7 +389,8 @@ final readonly class UserController
         $form->email = $user->getEmail();
         $errors = [];
 
-        if ($request->getMethod() === Method::POST) {
+        if ($this->formHydrator->populateFromPost($form, $request, scope: 'user')) {
+            $password = $form->password;
             if ($password !== '' && $this->passwordHistoryService->wasUsedRecently($user, $password)) {
                 $errors = [
                     'password' => [
@@ -408,8 +398,8 @@ final readonly class UserController
                     ],
                 ];
             } else {
-                $user->setUsername($username ?? $user->getUsername());
-                $user->setEmail($email ?? $user->getEmail());
+                $user->setUsername($form->username);
+                $user->setEmail($form->email);
                 if ($password !== '') {
                     $this->passwordHistoryService->applyPasswordChange($user, $password);
                 } else {
@@ -455,8 +445,6 @@ final readonly class UserController
         ServerRequestInterface $request,
         #[RouteArgument]
         int $id,
-        #[Body('userProfile')]
-        array $formData = [],
     ): ResponseInterface {
         $user = $this->resolveUser($id);
         if (!$user instanceof User) {
@@ -470,19 +458,14 @@ final readonly class UserController
         }
 
         $form = UserProfileForm::fromProfile($userProfile, $this->translator);
-        $this->hydrator->hydrate($form, $formData);
 
-        if ($request->getMethod() === Method::POST) {
-            $result = $this->validator->validate($form);
-            $form->processValidationResult($result);
-            if ($result->isValid()) {
-                $form->applyToProfile($userProfile);
-                $userProfile->save();
-                return $this->redirectWithFlash(
-                    $this->url->generate('voyti/admin-users-update-profile', ['id' => $id]),
-                    'voyti.admin.profile_details_updated',
-                );
-            }
+        if ($this->formHydrator->populateFromPostAndValidate($form, $request)) {
+            $form->applyToProfile($userProfile);
+            $userProfile->save();
+            return $this->redirectWithFlash(
+                $this->url->generate('voyti/admin-users-update-profile', ['id' => $id]),
+                'voyti.admin.profile_details_updated',
+            );
         }
 
         return $this->renderView('admin/user/_profile', [

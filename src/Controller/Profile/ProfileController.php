@@ -20,16 +20,13 @@ use YiiRocks\Voyti\ViewData\Profile\UpdateViewData;
 use YiiRocks\Voyti\ViewData\Shared\ProfileCardViewData;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Auth\IdentityInterface;
-use Yiisoft\Http\Method;
-use Yiisoft\Hydrator\HydratorInterface;
-use Yiisoft\Input\Http\Attribute\Parameter\Body;
+use Yiisoft\FormModel\FormHydrator;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
-use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 /**
@@ -43,13 +40,12 @@ final readonly class ProfileController
     public function __construct(
         private TranslatorInterface $translator,
         private WebViewRenderer $viewRenderer,
-        private ValidatorInterface $validator,
         private UrlGeneratorInterface $url,
         private AuthHelper $authHelper,
         private VoytiConfig $config,
         private CurrentUser $currentUser,
         private EventDispatcherInterface $eventDispatcher,
-        private HydratorInterface $hydrator,
+        private FormHydrator $formHydrator,
         private ResponseFactoryInterface $responseFactory,
         private FlashInterface $flash,
     ) {}
@@ -84,11 +80,8 @@ final readonly class ProfileController
         ]);
     }
 
-    public function update(
-        ServerRequestInterface $request,
-        #[Body('userProfile')]
-        array $formData = [],
-    ): ResponseInterface {
+    public function update(ServerRequestInterface $request): ResponseInterface
+    {
         /** @var User $user */
         $user = $this->currentUser->getIdentity();
 
@@ -99,22 +92,15 @@ final readonly class ProfileController
         }
 
         $form = UserProfileForm::fromProfile($userProfile, $this->translator);
-        $this->hydrator->hydrate($form, $formData);
 
-        if ($request->getMethod() === Method::POST) {
-            $result = $this->validator->validate($form);
-
-            if ($result->isValid()) {
-                $form->applyToProfile($userProfile);
-                $userProfile->save();
-                $this->eventDispatcher->dispatch(new UserProfileEvent($userProfile));
-                return $this->redirectWithFlash(
-                    $this->url->generate('voyti/user-profile'),
-                    'voyti.settings.profile_updated',
-                );
-            }
-
-            $form->processValidationResult($result);
+        if ($this->formHydrator->populateFromPostAndValidate($form, $request)) {
+            $form->applyToProfile($userProfile);
+            $userProfile->save();
+            $this->eventDispatcher->dispatch(new UserProfileEvent($userProfile));
+            return $this->redirectWithFlash(
+                $this->url->generate('voyti/user-profile'),
+                'voyti.settings.profile_updated',
+            );
         }
 
         return $this->renderView('profile/update', [

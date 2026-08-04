@@ -17,21 +17,19 @@ use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserProfile;
 use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
-use YiiRocks\Voyti\tests\Support\HydrateObjectTrait;
 use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\Support\ValidatorMockTrait;
 use YiiRocks\Voyti\tests\Support\ViewCaptureTrait;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
 use YiiRocks\Voyti\VoytiConfig;
-use Yiisoft\Hydrator\HydratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentity;
 use Yiisoft\User\Guest\GuestIdentityInterface;
-use Yiisoft\Validator\Validator;
 use Yiisoft\Validator\ValidatorInterface;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
@@ -39,17 +37,17 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 final class ProfileControllerTest extends TestCase
 {
     use DatabaseSetupTrait;
-    use HydrateObjectTrait;
     use RedirectResponseMockTrait;
     use TestContainerTrait;
     use UserFactoryTrait;
+    use ValidatorMockTrait;
     use ViewCaptureTrait;
 
     private AuthHelper&MockObject $authHelper;
     private CurrentUser&MockObject $currentUser;
     private FlashInterface&MockObject $flash;
-    private HydratorInterface&MockObject $hydrator;
     private ResponseFactoryInterface&MockObject $responseFactory;
+    private ValidatorInterface&MockObject $validator;
     private WebViewRenderer&MockObject $viewRenderer;
 
     protected function setUp(): void
@@ -60,8 +58,8 @@ final class ProfileControllerTest extends TestCase
         $this->currentUser = $this->createMock(CurrentUser::class);
         $this->authHelper = $this->createMock(AuthHelper::class);
         $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
-        $this->hydrator = $this->createMock(HydratorInterface::class);
         $this->flash = $this->createMock(FlashInterface::class);
+        $this->validator = $this->mockValidValidator();
     }
 
     protected function tearDown(): void
@@ -218,12 +216,6 @@ final class ProfileControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['userProfile' => ['name' => '', 'publicEmail' => '', 'gravatarEmail' => '', 'location' => '', 'website' => '', 'timezone' => '', 'bio' => '', 'birthday' => '']]);
 
-        $this->hydrator->method('hydrate')->willReturnCallback(
-            function (object $object, array $data = []): void {
-                $this->hydrateObject($object, $data);
-            },
-        );
-
         $user = $this->createUser(passwordHash: TestPasswordHasherFactory::create()->hash('secret'), confirmedAt: time());
         $profile = $this->createUserProfile((int) $user->getId());
         $profile->setPublicEmail('public@example.com');
@@ -239,7 +231,7 @@ final class ProfileControllerTest extends TestCase
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->update($request, ['name' => '', 'publicEmail' => '', 'gravatarEmail' => '', 'location' => '', 'website' => '', 'timezone' => '', 'bio' => '', 'birthday' => '']);
+        $result = $controller->update($request);
 
         $this->assertSame($response, $result);
         $updatedProfile = UserProfile::findByUserId((int) $user->getId());
@@ -259,18 +251,12 @@ final class ProfileControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['userProfile' => ['name' => 'Jane']]);
 
-        $this->hydrator->method('hydrate')->willReturnCallback(
-            function (object $object, array $data = []): void {
-                $this->hydrateObject($object, $data);
-            },
-        );
-
         $user = $this->createUser(passwordHash: TestPasswordHasherFactory::create()->hash('secret'), confirmedAt: time());
         $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->update($request, ['name' => 'Jane']);
+        $result = $controller->update($request);
 
         $this->assertSame($response, $result);
         $savedProfile = UserProfile::findByUserId((int) $user->getId());
@@ -281,14 +267,9 @@ final class ProfileControllerTest extends TestCase
 
     public function testUpdatePostRejectsHtmlInBioAndDoesNotSave(): void
     {
-        $controller = $this->createController();
+        // Needs the real Validator - this test's whole point is that a real rule rejects HTML in bio.
+        $controller = $this->createControllerWithRealValidation();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['userProfile' => ['name' => 'John', 'publicEmail' => '', 'gravatarEmail' => '', 'location' => '', 'website' => '', 'timezone' => '', 'bio' => '<script>alert(1)</script>', 'birthday' => '']]);
-
-        $this->hydrator->method('hydrate')->willReturnCallback(
-            function (object $object, array $data = []): void {
-                $this->hydrateObject($object, $data);
-            },
-        );
 
         $user = $this->createUser(passwordHash: TestPasswordHasherFactory::create()->hash('secret'), confirmedAt: time());
         $this->createUserProfile((int) $user->getId(), name: 'OldName');
@@ -302,7 +283,7 @@ final class ProfileControllerTest extends TestCase
             ->willReturn($response);
         $this->responseFactory->expects($this->never())->method('createResponse');
 
-        $result = $controller->update($request, ['name' => 'John', 'publicEmail' => '', 'gravatarEmail' => '', 'location' => '', 'website' => '', 'timezone' => '', 'bio' => '<script>alert(1)</script>', 'birthday' => '']);
+        $result = $controller->update($request);
 
         $this->assertSame($response, $result);
         $updatedProfile = UserProfile::findByUserId((int) $user->getId());
@@ -313,14 +294,9 @@ final class ProfileControllerTest extends TestCase
 
     public function testUpdatePostRejectsMalformedBirthdayAndDoesNotSave(): void
     {
-        $controller = $this->createController();
+        // Needs the real Validator - this test's whole point is that a real rule rejects a malformed date.
+        $controller = $this->createControllerWithRealValidation();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['userProfile' => ['name' => 'John', 'publicEmail' => '', 'gravatarEmail' => '', 'location' => '', 'website' => '', 'timezone' => '', 'bio' => '', 'birthday' => 'not-a-date']]);
-
-        $this->hydrator->method('hydrate')->willReturnCallback(
-            function (object $object, array $data = []): void {
-                $this->hydrateObject($object, $data);
-            },
-        );
 
         $user = $this->createUser(passwordHash: TestPasswordHasherFactory::create()->hash('secret'), confirmedAt: time());
         $this->createUserProfile((int) $user->getId(), name: 'OldName');
@@ -334,7 +310,7 @@ final class ProfileControllerTest extends TestCase
             ->willReturn($response);
         $this->responseFactory->expects($this->never())->method('createResponse');
 
-        $result = $controller->update($request, ['name' => 'John', 'publicEmail' => '', 'gravatarEmail' => '', 'location' => '', 'website' => '', 'timezone' => '', 'bio' => '', 'birthday' => 'not-a-date']);
+        $result = $controller->update($request);
 
         $this->assertSame($response, $result);
         $updatedProfile = UserProfile::findByUserId((int) $user->getId());
@@ -347,19 +323,13 @@ final class ProfileControllerTest extends TestCase
         $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['userProfile' => ['name' => 'John', 'publicEmail' => '', 'gravatarEmail' => '', 'location' => '', 'website' => '', 'timezone' => '', 'bio' => '', 'birthday' => '1990-05-15']]);
 
-        $this->hydrator->method('hydrate')->willReturnCallback(
-            function (object $object, array $data = []): void {
-                $this->hydrateObject($object, $data);
-            },
-        );
-
         $user = $this->createUser(passwordHash: TestPasswordHasherFactory::create()->hash('secret'), confirmedAt: time());
         $this->createUserProfile((int) $user->getId(), name: 'OldName');
         $this->currentUser->method('getIdentity')->willReturn($user);
 
         $response = $this->mockRedirectResponse($this->responseFactory);
 
-        $result = $controller->update($request, ['name' => 'John', 'publicEmail' => '', 'gravatarEmail' => '', 'location' => '', 'website' => '', 'timezone' => '', 'bio' => '', 'birthday' => '1990-05-15']);
+        $result = $controller->update($request);
 
         $this->assertSame($response, $result);
         $updatedProfile = UserProfile::findByUserId((int) $user->getId());
@@ -368,15 +338,13 @@ final class ProfileControllerTest extends TestCase
         $this->assertSame('1990-05-15', $updatedProfile->getBirthday()?->format('Y-m-d'));
     }
 
-    private function createController(?VoytiConfig $config = null): ProfileController
+    private function baseOverrides(?VoytiConfig $config = null): array
     {
         $overrides = [
             AuthHelper::class => $this->authHelper,
             CurrentUser::class => $this->currentUser,
             FlashInterface::class => $this->flash,
-            HydratorInterface::class => $this->hydrator,
             ResponseFactoryInterface::class => $this->responseFactory,
-            ValidatorInterface::class => new Validator(),
             WebViewRenderer::class => $this->viewRenderer,
         ];
 
@@ -384,7 +352,24 @@ final class ProfileControllerTest extends TestCase
             $overrides[VoytiConfig::class] = $config;
         }
 
-        return $this->getTestContainer($overrides)->get(ProfileController::class);
+        return $overrides;
+    }
+
+    private function createController(?VoytiConfig $config = null): ProfileController
+    {
+        return $this->getTestContainer([
+            ...$this->baseOverrides($config),
+            ValidatorInterface::class => $this->validator,
+        ])->get(ProfileController::class);
+    }
+
+    /**
+     * Uses the real ValidatorInterface instead of the fast valid-by-default mock, for tests whose point is that a
+     * real validation rule rejects the input.
+     */
+    private function createControllerWithRealValidation(?VoytiConfig $config = null): ProfileController
+    {
+        return $this->getTestContainer($this->baseOverrides($config))->get(ProfileController::class);
     }
 
     private function createUserProfile(int $userId, string $name = 'John'): UserProfile
