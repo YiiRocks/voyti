@@ -63,7 +63,7 @@ final class ApiTokenAuthenticationMiddlewareTest extends TestCase
         $challengedResponse = $this->createMock(ResponseInterface::class);
         $unauthorizedResponse->expects(self::once())
             ->method('withHeader')
-            ->with('WWW-Authenticate', 'Authorization realm="api"')
+            ->with('WWW-Authenticate', 'Bearer realm="api"')
             ->willReturn($challengedResponse);
 
         $responseFactory = $this->createMock(ResponseFactoryInterface::class);
