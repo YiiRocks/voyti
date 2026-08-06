@@ -10,7 +10,7 @@ use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\VoytiConfig;
-use YiiRocks\Voyti\Widget\SwitchIdentityWidget;
+use YiiRocks\Voyti\Widget\SwitchIdentity;
 use Yiisoft\Csrf\CsrfTokenInterface;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\Translator\CategorySource;
@@ -20,7 +20,7 @@ use Yiisoft\Translator\Translator;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 
-final class SwitchIdentityWidgetTest extends TestCase
+final class SwitchIdentityTest extends TestCase
 {
     use UserFactoryTrait;
 
@@ -28,7 +28,7 @@ final class SwitchIdentityWidgetTest extends TestCase
     {
         $switchService = $this->createSwitchIdentityService(isSwitched: false);
 
-        $widget = new SwitchIdentityWidget(
+        $widget = new SwitchIdentity(
             $this->createCsrfToken(),
             $switchService,
             $this->createRealTranslator(),
@@ -42,7 +42,7 @@ final class SwitchIdentityWidgetTest extends TestCase
     {
         $switchService = $this->createSwitchIdentityService(isSwitched: true, originalUserId: null);
 
-        $widget = new SwitchIdentityWidget(
+        $widget = new SwitchIdentity(
             $this->createCsrfToken(),
             $switchService,
             $this->createRealTranslator(),
@@ -60,7 +60,7 @@ final class SwitchIdentityWidgetTest extends TestCase
         $switchService->method('isSwitched')->willReturn(true);
         $switchService->method('getOriginalUser')->willReturn($originalUser);
 
-        $widget = new SwitchIdentityWidget(
+        $widget = new SwitchIdentity(
             $this->createCsrfToken('test-csrf-token'),
             $switchService,
             $this->createRealTranslator(),

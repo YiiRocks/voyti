@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use YiiRocks\Voyti\ViewData\Shared\MenuViewData;
-use YiiRocks\Voyti\Widget\SwitchIdentityWidget;
+use YiiRocks\Voyti\Widget\SwitchIdentity;
 use Yiisoft\Html\Html;
 use Yiisoft\Yii\View\Renderer\Csrf;
 
@@ -12,7 +12,7 @@ use Yiisoft\Yii\View\Renderer\Csrf;
  * @var Csrf $csrf
  */
 
-echo SwitchIdentityWidget::widget();
+echo SwitchIdentity::widget();
 
 echo Html::ul()->class('nav nav-tabs mb-4')->open();
 foreach ($menu->items as $item) {

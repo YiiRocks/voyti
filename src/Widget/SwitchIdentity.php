@@ -17,13 +17,13 @@ use Yiisoft\Widget\Widget;
  * into any template with no setup beyond having voyti installed:
  *
  * ```php
- * <?= SwitchIdentityWidget::widget(); ?>
+ * <?= SwitchIdentity::widget(); ?>
  * ```
  *
  * Dependencies are resolved through the DI container by {@see Widget::widget()}. Renders an
  * empty string if the current user isn't impersonating anyone.
  */
-final class SwitchIdentityWidget extends Widget
+final class SwitchIdentity extends Widget
 {
     public function __construct(
         private readonly CsrfTokenInterface $csrfToken,
