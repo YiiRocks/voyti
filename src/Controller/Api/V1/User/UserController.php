@@ -47,28 +47,17 @@ final readonly class UserController
     ): ResponseInterface {
         $password = $password !== '' ? $password : $this->passwordGenerator->generate(12);
 
-        $conflict = $this->userCreationHelper->findUniquenessConflict($email, $username);
-        if ($conflict !== null) {
-            /** @infection-ignore-all Equivalent: removing this early return falls through to save(), which hits the UNIQUE(email|username) constraint and lands in the IntegrityException catch below, producing the byte-identical 400 error response with no user persisted. */
-            return $this->responseFactory->createResponse(['error' => $conflict], Status::BAD_REQUEST);
-        }
-
         $user = $this->userCreationHelper->buildUser($email, $username, $password);
         $user->setConfirmedAt(time());
         try {
             $user->save();
-            // @codeCoverageIgnoreStart
-            // Reachable only under a genuine insert race: findUniquenessConflict() above returned
-            // null, yet the save hit a UNIQUE(email|username) constraint because a concurrent request
-            // inserted the same value first. That interleaving can't be reproduced single-threaded, so
-            // this defensive re-check is excluded from coverage rather than tested via a mocked helper.
         } catch (IntegrityException) {
-            $raceConflict = $this->userCreationHelper->findUniquenessConflict($email, $username)
-                ?? 'A user with this email or username already exists.';
-
-            return $this->responseFactory->createResponse(['error' => $raceConflict], Status::BAD_REQUEST);
+            return $this->responseFactory->createResponse(
+                ['error' => $this->userCreationHelper->findUniquenessConflict($email, $username)],
+                Status::BAD_REQUEST,
+            );
         }
-        // @codeCoverageIgnoreEnd
+
         $this->passwordHistoryService->record($user);
 
         return $this->responseFactory->createResponse([

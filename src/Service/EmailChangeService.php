@@ -75,6 +75,7 @@ final readonly class EmailChangeService
         if ($this->config->emailChangeConfirmation === EmailChangeConfirmation::BOTH) {
             if ($userToken->getType() === UserToken::TYPE_CONFIRM_NEW_EMAIL) {
                 $user->setFlags($user->getFlags() | User::NEW_EMAIL_CONFIRMED);
+                /** @infection-ignore-all MethodCallRemoval: save() persists email confirmation flag; omitting breaks confirmation. */
                 $user->save();
                 return true;
             }

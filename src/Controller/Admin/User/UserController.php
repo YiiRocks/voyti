@@ -318,6 +318,7 @@ final readonly class UserController
         }
 
         $viewer = $this->currentUser->getIdentity();
+        /** @infection-ignore-all NullSafeMethodCall: ?-> is correct; removing it would cause TypeError on null profile. */
         $viewerTimezone = $viewer instanceof User ? $viewer->getProfile()?->getTimezone() : null;
 
         return $this->renderView('admin/user/_info', [

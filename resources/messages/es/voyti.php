@@ -95,9 +95,7 @@ return [
     'voyti.validator.two_factor_library_missing' => 'La biblioteca 2FA (chillerlan/2fa-qrcode-bundle) no está instalada.',
     'voyti.validator.invalid_verification_code' => 'Código de verificación no válido.',
     'voyti.validator.password_complexity' => 'La contraseña debe contener al menos una letra mayúscula, una minúscula, un dígito y un carácter especial.',
-    'voyti.validator.two_factor_enabled' => 'La autenticación de dos factores ha sido habilitada.',
-    'voyti.validator.invalid_code_with_time' => 'Código no válido. Inténtelo de nuevo dentro de {timeDuration} segundos.',
-    'voyti.validator.invalid_two_factor_code_with_time' => 'Código de autenticación de dos factores no válido. Inténtelo de nuevo dentro de {timeDuration} segundos.',
+    'voyti.validator.email_two_factor_not_configured' => 'La autenticación de dos factores por correo electrónico no está configurada.',
 
     // Mail subjects
     'voyti.mail.welcome_subject' => 'Bienvenido a {app}',

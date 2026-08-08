@@ -88,21 +88,15 @@ final readonly class SocialAuthCallbackService
             );
         }
 
+        // A guest-success flow with no pending account always logged a User in above.
+        /** @var User $user */
         $user = $this->currentUser->getIdentity();
-        if ($user instanceof User) {
-            return $this->rememberMeCookieService->addCookie(
-                $user,
-                $this->popupAwareRedirect($this->homeUrl()),
-                $this->session->getId() ?? '',
-            );
-        }
 
-        // @codeCoverageIgnoreStart
-        // Unreachable defensive fallback: a successful guest social login always either logs a User
-        // in (handled just above) or leaves a pending account (handled earlier), so the current
-        // identity is never a non-User here in practice.
-        return $this->popupAwareRedirect($this->homeUrl());
-        // @codeCoverageIgnoreEnd
+        return $this->rememberMeCookieService->addCookie(
+            $user,
+            $this->popupAwareRedirect($this->homeUrl()),
+            $this->session->getId() ?? '',
+        );
     }
 
     /**

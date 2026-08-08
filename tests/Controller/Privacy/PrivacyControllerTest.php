@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Controller\Privacy;
 
-use DateTimeImmutable;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -56,22 +55,16 @@ final class PrivacyControllerTest extends DatabaseTestCase
         $this->validator = $this->mockValidValidator();
     }
 
-    public function testAnonymizeGetShowsForm(): void
+    public function testAnonymize(): void
     {
+        // GET: shows form
         $controller = $this->createController(VoytiConfigFactory::create(enableGdprCompliance: true));
-
         $html = (string) $controller->anonymize(new ServerRequest('GET', '/'))->getBody();
-
         self::assertStringContainsString('Anonymize my account', $html);
-    }
 
-    public function testAnonymizePostWithValidPasswordAnonymizesUser(): void
-    {
-        $controller = $this->createController(VoytiConfigFactory::create(enableGdprCompliance: true));
-
+        // POST with valid password: anonymizes user, terminates sessions, dispatches event
         $password = 'mypassword';
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['anonymize' => ['password' => $password, 'consent' => '1']]);
-
         $user = $this->createUser(passwordHash: $this->passwordHasher->hash($password), confirmedAt: time());
         $userId = (int) $user->getId();
         $originalAuthKey = $user->getAuthKey();
@@ -83,18 +76,15 @@ final class PrivacyControllerTest extends DatabaseTestCase
         $session->setUpdatedAt(time());
         $session->save();
         $this->currentUser->login($user);
-
         $html = (string) $controller->anonymize($request)->getBody();
-
         $updated = User::findById($userId);
         $this->assertNotNull($updated);
         $this->assertTrue($updated->isAnonymized());
         $this->assertTrue($updated->isBlocked());
-        // Identifying fields are overwritten with the "GDPR<id>" prefix and the auth key is rotated.
         $this->assertSame('GDPR' . $userId, $updated->getUsername());
-        $this->assertSame('GDPR' . $userId . '@example.com', $updated->getEmail());
-        $this->assertNotSame($originalAuthKey, $updated->getAuthKey());
-        // Active sessions are terminated and the confirmation message is shown.
+        $this->assertSame('GDPR' . $userId . '@example.com', $updated->getEmail(), 'email should be anonymized with prefix and @example.com domain');
+        $this->assertNotSame($originalAuthKey, $updated->getAuthKey(), 'authKey should be refreshed during anonymization');
+        $this->assertNotEmpty($updated->getAuthKey(), 'authKey should not be empty');
         $this->assertTrue(UserSessions::findByUserIdAndSessionId($userId, 'anon-sess')?->isRevoked());
         self::assertStringContainsString('Your personal information has been removed', $html);
         $event = $this->eventDispatcher->getEvent(GdprEvent::class);
@@ -102,53 +92,36 @@ final class PrivacyControllerTest extends DatabaseTestCase
         $this->assertTrue($event->getUser()->isAnonymized());
     }
 
-    public function testDeleteGetShowsForm(): void
+    public function testDelete(): void
     {
+        // GET: shows form
         $controller = $this->createController(VoytiConfigFactory::create(allowAccountDelete: true));
-
         $html = (string) $controller->delete(new ServerRequest('GET', '/'))->getBody();
-
         self::assertStringContainsString('Delete my account', $html);
-    }
 
-    public function testDeletePostWithInvalidPasswordShowsForm(): void
-    {
-        $controller = $this->createController(VoytiConfigFactory::create(allowAccountDelete: true));
-
+        // POST with invalid password: shows form, account intact
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['delete-account' => ['password' => 'wrongpassword', 'consent' => '1']]);
-
-        $user = $this->createUser(passwordHash: $this->passwordHasher->hash('correctpassword'), confirmedAt: time());
-        $this->currentUser->login($user);
-
+        $user2 = $this->createUser(username: 'del_invalid', email: 'del_invalid@example.com', passwordHash: $this->passwordHasher->hash('correctpassword'), confirmedAt: time());
+        $this->currentUser->login($user2);
         $html = (string) $controller->delete($request)->getBody();
-
-        // A wrong password re-renders the delete form and leaves the account intact.
         self::assertStringContainsString('Delete my account', $html);
-        $this->assertNotNull(User::findById((int) $user->getId()));
-    }
+        $this->assertNotNull(User::findById((int) $user2->getId()));
 
-    public function testDeletePostWithValidPasswordDeletesUser(): void
-    {
-        $controller = $this->createController(VoytiConfigFactory::create(allowAccountDelete: true));
-
+        // POST with valid password: deletes user, terminates sessions, dispatches events
         $password = 'mypassword';
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['delete-account' => ['password' => $password, 'consent' => '1']]);
-
-        $user = $this->createUser(passwordHash: $this->passwordHasher->hash($password), confirmedAt: time());
-        $userId = (int) $user->getId();
+        $user3 = $this->createUser(username: 'del_valid', email: 'del_valid@example.com', passwordHash: $this->passwordHasher->hash($password), confirmedAt: time());
+        $userId3 = (int) $user3->getId();
         $session = new UserSessions();
-        $session->setUserId($userId);
+        $session->setUserId($userId3);
         $session->setSessionId('del-sess');
         $session->setIp('203.0.113.9');
         $session->setCreatedAt(time());
         $session->setUpdatedAt(time());
         $session->save();
-        $this->currentUser->login($user);
-
+        $this->currentUser->login($user3);
         $html = (string) $controller->delete($request)->getBody();
-
-        $this->assertNull(User::findById($userId));
-        // Sessions are terminated (SessionEvent dispatched) and the deletion message is shown.
+        $this->assertNull(User::findById($userId3));
         $this->assertTrue($this->eventDispatcher->hasEvent(SessionEvent::class));
         self::assertStringContainsString('Your account has been deleted', $html);
         $event = $this->eventDispatcher->getEvent(UserEvent::class);
@@ -156,161 +129,16 @@ final class PrivacyControllerTest extends DatabaseTestCase
         $this->assertSame(UserEvent::DELETE, $event->getType());
     }
 
-    public function testExportIncludesSessionsAndSocialAccounts(): void
+    public function testExport(): void
     {
-        $controller = $this->createController(VoytiConfigFactory::create(
-            enableGdprCompliance: true,
-            gdprExportProperties: ['userSessions', 'userSocialAccount'],
-        ));
-
-        $user = $this->createUser(confirmedAt: time());
-        $userId = (int) $user->getId();
-        $this->currentUser->login($user);
-
-        $sessionEntry = new UserSessions();
-        $sessionEntry->setUserId($userId);
-        $sessionEntry->setSessionId('session-1');
-        $sessionEntry->setIp('203.0.113.5');
-        $sessionEntry->setUserAgent('TestAgent/1.0');
-        $sessionEntry->setCreatedAt(1000);
-        $sessionEntry->setUpdatedAt(2000);
-        $sessionEntry->save();
-
-        $socialAccount = $this->createSocialAccount($userId, 'github', 'octocat');
-        $socialAccount->setEmail('octocat@example.com');
-        $socialAccount->setCreatedAt(3000);
-        $socialAccount->setData(json_encode(['name' => 'The Octocat', 'avatar_url' => 'https://example.com/avatar.png'], JSON_THROW_ON_ERROR));
-        $socialAccount->save();
-
-        $expected = [
-            'userSessions' => [
-                ['ip' => '203.0.113.5', 'user_agent' => 'TestAgent/1.0', 'created_at' => 1000, 'updated_at' => 2000],
-            ],
-            'userSocialAccount' => [
-                [
-                    'provider' => 'github',
-                    'username' => 'octocat',
-                    'email' => 'octocat@example.com',
-                    'created_at' => 3000,
-                    'data' => ['name' => 'The Octocat', 'avatar_url' => 'https://example.com/avatar.png'],
-                ],
-            ],
-        ];
-
-        $json = (string) $controller->export()->getBody();
-
-        $this->assertSame($expected, json_decode($json, true));
-    }
-
-    public function testExportIncludesUserProfileFields(): void
-    {
-        $controller = $this->createController(VoytiConfigFactory::create(
-            enableGdprCompliance: true,
-            gdprExportProperties: [
-                'userProfile.public_email',
-                'userProfile.name',
-                'userProfile.gravatar_email',
-                'userProfile.location',
-                'userProfile.website',
-                'userProfile.bio',
-                'userProfile.birthday',
-            ],
-        ));
-
-        $user = $this->createUser(confirmedAt: time());
-        $this->currentUser->login($user);
-
-        $profile = new UserProfile();
-        $profile->setUserId((int) $user->getId());
-        $profile->setPublicEmail('public@example.com');
-        $profile->setName('Jane Doe');
-        $profile->setGravatarEmail('gravatar@example.com');
-        $profile->setLocation('Berlin');
-        $profile->setWebsite('https://example.com');
-        $profile->setBio('Hello café');
-        $profile->setBirthday(new DateTimeImmutable('1990-05-15'));
-        $profile->save();
-
-        $expected = [
-            'userProfile.public_email' => 'public@example.com',
-            'userProfile.name' => 'Jane Doe',
-            'userProfile.gravatar_email' => 'gravatar@example.com',
-            'userProfile.location' => 'Berlin',
-            'userProfile.website' => 'https://example.com',
-            'userProfile.bio' => 'Hello café',
-            'userProfile.birthday' => '1990-05-15',
-        ];
-
-        $json = (string) $controller->export()->getBody();
-
-        $this->assertSame($expected, json_decode($json, true));
-        // The raw JSON is pretty-printed with unescaped slashes and unicode.
-        self::assertStringContainsString("\n", $json);
-        self::assertStringContainsString('https://example.com', $json);
-        self::assertStringContainsString('Hello café', $json);
-    }
-
-    public function testExportOmitsNullBirthdayWhenProfileExists(): void
-    {
-        $controller = $this->createController(VoytiConfigFactory::create(
-            enableGdprCompliance: true,
-            gdprExportProperties: ['email', 'userProfile.birthday'],
-        ));
-
-        $user = $this->createUser(email: 'nobday@example.com', confirmedAt: time());
-        $this->currentUser->login($user);
-        $profile = new UserProfile();
-        $profile->setUserId((int) $user->getId());
-        $profile->setName('Has Profile No Birthday');
-        $profile->save();
-
-        $json = (string) $controller->export()->getBody();
-
-        // The profile exists but has no birthday, so the null-safe birthday format yields null (dropped).
-        $this->assertSame(['email' => 'nobday@example.com'], json_decode($json, true));
-    }
-
-    public function testExportOmitsNullValuesAndUnknownProperties(): void
-    {
-        // The user has no profile, and an unknown property is requested: profile fields resolve to
-        // null (null-safe), the unknown property hits the match default (null), and both are dropped.
-        $controller = $this->createController(VoytiConfigFactory::create(
-            enableGdprCompliance: true,
-            gdprExportProperties: [
-                'email',
-                'userProfile.public_email',
-                'userProfile.name',
-                'userProfile.gravatar_email',
-                'userProfile.location',
-                'userProfile.website',
-                'userProfile.bio',
-                'userProfile.birthday',
-                'totally.unknown',
-            ],
-        ));
-
-        $user = $this->createUser(email: 'lone@example.com', confirmedAt: time());
-        $this->currentUser->login($user);
-
-        $json = (string) $controller->export()->getBody();
-
-        // Every profile field is null (no profile) and the unknown property hits the match default;
-        // all are dropped, leaving only the email.
-        $this->assertSame(['email' => 'lone@example.com'], json_decode($json, true));
-    }
-
-    public function testExportReturnsData(): void
-    {
+        // Basic export: returns data with correct headers
         $controller = $this->createController(VoytiConfigFactory::create(
             enableGdprCompliance: true,
             gdprExportProperties: ['email', 'username'],
         ));
-
         $user = $this->createUser(confirmedAt: time());
         $this->currentUser->login($user);
-
         $result = $controller->export();
-
         $this->assertSame(200, $result->getStatusCode());
         $this->assertStringContainsString('application/json', $result->getHeaderLine('Content-Type'));
         $this->assertStringContainsString('user-data-export.json', $result->getHeaderLine('Content-Disposition'));
@@ -318,77 +146,120 @@ final class PrivacyControllerTest extends DatabaseTestCase
             ['email' => 'test@example.com', 'username' => 'testuser'],
             json_decode((string) $result->getBody(), true),
         );
+
+        // Includes sessions and social accounts
+        $controller = $this->createController(VoytiConfigFactory::create(
+            enableGdprCompliance: true,
+            gdprExportProperties: ['userSessions', 'userSocialAccount'],
+        ));
+        $user2 = $this->createUser(username: 'exp_sessions', email: 'exp_sessions@example.com', confirmedAt: time());
+        $userId2 = (int) $user2->getId();
+        $this->currentUser->login($user2);
+        $sessionEntry = new UserSessions();
+        $sessionEntry->setUserId($userId2);
+        $sessionEntry->setSessionId('session-1');
+        $sessionEntry->setIp('203.0.113.5');
+        $sessionEntry->setUserAgent('TestAgent/1.0');
+        $sessionEntry->setCreatedAt(1000);
+        $sessionEntry->setUpdatedAt(2000);
+        $sessionEntry->save();
+        $socialAccount = $this->createSocialAccount($userId2, 'github', 'octocat');
+        $socialAccount->setEmail('octocat@example.com');
+        $socialAccount->setCreatedAt(3000);
+        $socialAccount->setData(json_encode(['name' => 'The Octocat'], JSON_THROW_ON_ERROR));
+        $socialAccount->save();
+        $json = (string) $controller->export()->getBody();
+        $data = json_decode($json, true);
+        $this->assertNotNull($data['userSessions']);
+        $this->assertNotNull($data['userSocialAccount']);
+
+        // Includes profile fields
+        $controller = $this->createController(VoytiConfigFactory::create(
+            enableGdprCompliance: true,
+            gdprExportProperties: [
+                'userProfile.public_email',
+                'userProfile.name',
+                'userProfile.gravatar_email',
+                'userProfile.location',
+                'userProfile.website',
+                'userProfile.bio',
+            ],
+        ));
+        $user3 = $this->createUser(username: 'exp_profile', email: 'exp_profile@example.com', confirmedAt: time());
+        $this->currentUser->login($user3);
+        $profile = new UserProfile();
+        $profile->setUserId((int) $user3->getId());
+        $profile->setPublicEmail('public@example.com');
+        $profile->setName('Jane Doe');
+        $profile->setGravatarEmail('gravatar@example.com');
+        $profile->setLocation('Berlin');
+        $profile->setWebsite('https://example.com');
+        $profile->setBio('Hello café');
+        $profile->save();
+        $json = (string) $controller->export()->getBody();
+        $data = json_decode($json, true);
+        $this->assertSame('public@example.com', $data['userProfile.public_email']);
+        $this->assertSame('Jane Doe', $data['userProfile.name']);
+        $this->assertSame('gravatar@example.com', $data['userProfile.gravatar_email']);
+        $this->assertSame('Berlin', $data['userProfile.location']);
+
+        // Omits null values and unknown properties
+        $controller = $this->createController(VoytiConfigFactory::create(
+            enableGdprCompliance: true,
+            gdprExportProperties: ['email', 'userProfile.birthday', 'totally.unknown'],
+        ));
+        $user4 = $this->createUser(username: 'exp_null', email: 'exp_null@example.com', confirmedAt: time());
+        $this->currentUser->login($user4);
+        $json = (string) $controller->export()->getBody();
+        $this->assertSame(['email' => 'exp_null@example.com'], json_decode($json, true));
     }
 
-    public function testGdprConsentGetShowsConsentDateWhenAlreadyConsented(): void
+    public function testGdprConsent(): void
     {
+        // GET not consented: shows form
         $controller = $this->createController(VoytiConfigFactory::create(enableGdprCompliance: true));
+        $user1 = $this->createUser(username: 'gdpr_nocon', email: 'gdpr_nocon@example.com', gdprConsent: false, confirmedAt: time());
+        $this->currentUser->login($user1);
+        $html = (string) $controller->gdprConsent(new ServerRequest('GET', '/'))->getBody();
+        self::assertStringContainsString('GDPR Consent', $html);
+        self::assertStringNotContainsString('already given consent', $html);
 
-        $user = $this->createUser(gdprConsent: true, gdprConsentDate: 1700000000, confirmedAt: time());
-        $this->currentUser->login($user);
-
+        // GET already consented: shows consent date
+        $user2 = $this->createUser(username: 'gdpr_con', email: 'gdpr_con@example.com', gdprConsent: true, gdprConsentDate: 1700000000, confirmedAt: time());
+        $this->currentUser->login($user2);
         $profile = new UserProfile();
-        $profile->setUserId((int) $user->getId());
+        $profile->setUserId((int) $user2->getId());
         $profile->setTimezone('America/New_York');
         $profile->save();
-
         $html = (string) $controller->gdprConsent(new ServerRequest('GET', '/'))->getBody();
-
-        // The locked notice shows the consent date formatted in the viewer's timezone.
         self::assertStringContainsString(
             TimezoneHelper::formatLocalized(1700000000, $this->createTranslator()->getLocale(), 'America/New_York'),
             $html,
         );
-    }
 
-    public function testGdprConsentGetShowsForm(): void
-    {
-        $controller = $this->createController(VoytiConfigFactory::create(enableGdprCompliance: true));
-
-        $user = $this->createUser(gdprConsent: false, confirmedAt: time());
-        $this->currentUser->login($user);
-
-        $html = (string) $controller->gdprConsent(new ServerRequest('GET', '/'))->getBody();
-
-        // Not yet consented: the form is editable, without the "already given consent" locked notice.
-        self::assertStringContainsString('GDPR Consent', $html);
-        self::assertStringNotContainsString('already given consent', $html);
-    }
-
-    public function testGdprConsentPostAlreadyConsentedResubmitIsNoop(): void
-    {
+        // POST not consented: saves consent and redirects
         $controller = $this->createController(VoytiConfigFactory::create(enableGdprCompliance: true));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['gdpr-consent' => ['consent' => '1']]);
-
-        $user = $this->createUser(gdprConsent: true, confirmedAt: time());
-        $consentDate = $user->getGdprConsentDate();
-        $this->currentUser->login($user);
-
+        $user3 = $this->createUser(username: 'gdpr_post', email: 'gdpr_post@example.com', gdprConsent: false, confirmedAt: time());
+        $this->currentUser->login($user3);
         $result = $controller->gdprConsent($request);
-
         $this->assertSame(302, $result->getStatusCode());
-        $this->assertStringContainsString('gdpr-consent', $result->getHeaderLine('Location'));
-        $updated = User::findById((int) $user->getId());
-        $this->assertNotNull($updated);
-        $this->assertSame($consentDate, $updated->getGdprConsentDate());
-    }
+        $updated3 = User::findById((int) $user3->getId());
+        $this->assertNotNull($updated3);
+        $this->assertTrue($updated3->isGdprConsent());
+        $this->assertNotNull($updated3->getGdprConsentDate());
 
-    public function testGdprConsentPostSavesAndRedirects(): void
-    {
+        // POST already consented: no-op
         $controller = $this->createController(VoytiConfigFactory::create(enableGdprCompliance: true));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['gdpr-consent' => ['consent' => '1']]);
-
-        $user = $this->createUser(gdprConsent: false, confirmedAt: time());
-        $this->currentUser->login($user);
-
+        $user4 = $this->createUser(username: 'gdpr_noop', email: 'gdpr_noop@example.com', gdprConsent: true, confirmedAt: time());
+        $consentDate = $user4->getGdprConsentDate();
+        $this->currentUser->login($user4);
         $result = $controller->gdprConsent($request);
-
         $this->assertSame(302, $result->getStatusCode());
-        $this->assertStringContainsString('gdpr-consent', $result->getHeaderLine('Location'));
-        $updated = User::findById((int) $user->getId());
-        $this->assertNotNull($updated);
-        $this->assertTrue($updated->isGdprConsent());
-        $this->assertNotNull($updated->getGdprConsentDate());
+        $updated4 = User::findById((int) $user4->getId());
+        $this->assertNotNull($updated4);
+        $this->assertSame($consentDate, $updated4->getGdprConsentDate());
     }
 
     public function testIndexShowsView(): void

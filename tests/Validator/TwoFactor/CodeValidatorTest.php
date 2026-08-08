@@ -22,72 +22,9 @@ final class CodeValidatorTest extends TestCase
             $user->setAuthTfKey($authTfKey);
         }
 
-        $validator = new CodeValidator($user, '123456');
-        $validator->validate();
-        $this->assertSame('voyti.validator.two_factor_not_configured', $validator->getErrorMessage());
-    }
-
-    public function testGetSuccessMessageWithoutTranslator(): void
-    {
-        $user = new User();
-        $validator = new CodeValidator($user, '123456');
-
-        $this->assertSame('voyti.validator.two_factor_enabled', $validator->getSuccessMessage());
-    }
-
-    public function testGetSuccessMessageWithTranslator(): void
-    {
-        $user = new User();
-        $validator = new CodeValidator($user, '123456');
-        $validator->setTranslator($this->createTranslator());
-
-        $this->assertSame('Two factor authentication has been enabled.', $validator->getSuccessMessage());
-    }
-
-    public function testGetUnsuccessLoginMessageWithoutTranslator(): void
-    {
-        $user = new User();
-        $validator = new CodeValidator($user, '123456');
-
-        $this->assertSame(
-            'voyti.validator.invalid_two_factor_code_with_time',
-            $validator->getUnsuccessLoginMessage(30),
-        );
-    }
-
-    public function testGetUnsuccessLoginMessageWithTranslator(): void
-    {
-        $user = new User();
-        $validator = new CodeValidator($user, '123456');
-        $validator->setTranslator($this->createTranslator());
-
-        $this->assertSame(
-            'Invalid two factor authentication code. Please try again within 30 seconds.',
-            $validator->getUnsuccessLoginMessage(30),
-        );
-    }
-
-    public function testGetUnsuccessMessageWithoutTranslator(): void
-    {
-        $user = new User();
-        $validator = new CodeValidator($user, '123456');
-
-        $this->assertSame(
-            'voyti.validator.invalid_code_with_time',
-            $validator->getUnsuccessMessage(30),
-        );
-    }
-
-    public function testGetUnsuccessMessageWithTranslator(): void
-    {
-        $user = new User();
-        $validator = new CodeValidator($user, '123456');
-        $validator->setTranslator($this->createTranslator());
-
-        $this->assertSame(
-            'Invalid code. Please try again within 30 seconds.',
-            $validator->getUnsuccessMessage(30),
-        );
+        $validator = new CodeValidator($this->createTranslator());
+        $validator->validate($user, '123456');
+        $this->assertSame('Two factor authentication is not configured.', $validator->getErrorMessage());
     }
 
     public function testValidateAcceptsPreviousWindowCodeWithDefaultCycles(): void
@@ -101,9 +38,9 @@ final class CodeValidatorTest extends TestCase
         $authenticator->setSecret($secret);
         $code = $authenticator->code($now - 30);
 
-        $validator = new CodeValidator($user, $code);
+        $validator = new CodeValidator($this->createTranslator());
 
-        $this->assertTrue($validator->validate());
+        $this->assertTrue($validator->validate($user, $code));
     }
 
     public function testValidateRejectsTwoWindowsBackCodeWithDefaultCycles(): void
@@ -117,9 +54,9 @@ final class CodeValidatorTest extends TestCase
         $authenticator->setSecret($secret);
         $code = $authenticator->code($now - 60);
 
-        $validator = new CodeValidator($user, $code);
+        $validator = new CodeValidator($this->createTranslator());
 
-        $this->assertFalse($validator->validate());
+        $this->assertFalse($validator->validate($user, $code));
     }
 
     #[DataProvider('unconfiguredTwoFactorKeyProvider')]
@@ -130,8 +67,8 @@ final class CodeValidatorTest extends TestCase
             $user->setAuthTfKey($authTfKey);
         }
 
-        $validator = new CodeValidator($user, '123456');
-        $this->assertFalse($validator->validate());
+        $validator = new CodeValidator($this->createTranslator());
+        $this->assertFalse($validator->validate($user, '123456'));
     }
 
     public function testValidateWithValidAuthTfKeyAndInvalidCode(): void
@@ -139,8 +76,8 @@ final class CodeValidatorTest extends TestCase
         $user = new User();
         $user->setAuthTfKey('VEVTVFNlY3JldEtleTEyMw==');
 
-        $validator = new CodeValidator($user, '000000');
-        $this->assertFalse($validator->validate());
+        $validator = new CodeValidator($this->createTranslator());
+        $this->assertFalse($validator->validate($user, '000000'));
     }
 
     public static function unconfiguredTwoFactorKeyProvider(): iterable

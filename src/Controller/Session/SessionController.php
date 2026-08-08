@@ -69,6 +69,8 @@ final readonly class SessionController
         private EmailCodeGeneratorService $twoFactorEmailCodeService,
         private FlashInterface $flash,
         private BackupCodeService $backupCodeService,
+        private CodeValidator $codeValidator,
+        private EmailValidator $emailValidator,
     ) {}
 
     public function confirm(ServerRequestInterface $request): ResponseInterface
@@ -98,14 +100,11 @@ final readonly class SessionController
                 $code = $form->twoFactorAuthenticationCode ?? '';
 
                 if ($method === 'email') {
-                    $emailValidator = new EmailValidator($user, $code);
-                    $isValid = $emailValidator->validate();
-                    $errorMessage = $emailValidator->getErrorMessage();
+                    $isValid = $this->emailValidator->validate($user, $code);
+                    $errorMessage = $this->emailValidator->getErrorMessage();
                 } else {
-                    $codeValidator = new CodeValidator($user, $code);
-                    $codeValidator->setTranslator($this->translator);
-                    $isValid = $codeValidator->validate();
-                    $errorMessage = $codeValidator->getErrorMessage();
+                    $isValid = $this->codeValidator->validate($user, $code);
+                    $errorMessage = $this->codeValidator->getErrorMessage();
                 }
 
                 if (!$isValid) {

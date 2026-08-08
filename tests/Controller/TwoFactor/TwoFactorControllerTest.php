@@ -52,94 +52,8 @@ final class TwoFactorControllerTest extends DatabaseTestCase
         yield 'google action' => [static fn(TwoFactorController $controller): mixed => $controller->google(new ServerRequest('GET', '/'))];
     }
 
-    public function testTwoFactorDisableSendCodeSendsCodeAndRendersView(): void
-    {
-        $user = $this->createUser(authTfEnabled: true, authTfType: 'email', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $this->currentUser->login($user);
-
-        $html = (string) $this->createController()->disableSendCode()->getBody();
-
-        self::assertStringContainsString('Enter the verification code sent to your email', $html);
-        $this->assertMailSent();
-    }
-
-    public function testTwoFactorDisableSendCodeWhenGoogleMethodRedirects(): void
-    {
-        $user = $this->createUser(authTfEnabled: true, authTfType: 'google', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $this->currentUser->login($user);
-
-        $result = $this->createController()->disableSendCode();
-
-        $this->assertSame(302, $result->getStatusCode());
-        $this->assertNoMailSent();
-    }
-
-    public function testTwoFactorDisableWithInvalidEmailCodeShowsFormWithCodeSent(): void
-    {
-        $user = $this->createUser(authTfEnabled: true, authTfType: 'email', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $this->currentUser->login($user);
-
-        $html = (string) $this->createController()->disable(code: 'wrong')->getBody();
-
-        self::assertStringContainsString('alert alert-danger', $html);
-        self::assertStringContainsString('Invalid verification code.', $html);
-        self::assertStringContainsString('Enter the verification code sent to your email', $html);
-        $updated = User::findById((int) $user->getId());
-        $this->assertNotNull($updated);
-        $this->assertTrue($updated->isAuthTfEnabled());
-    }
-
-    public function testTwoFactorDisableWithInvalidGoogleCodeShowsFormWithoutCodeSent(): void
-    {
-        $user = $this->createUser(authTfEnabled: true, authTfType: 'google', authTfKey: null, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $this->currentUser->login($user);
-
-        $html = (string) $this->createController()->disable(code: 'wrong')->getBody();
-
-        self::assertStringContainsString('alert alert-danger', $html);
-        // The translated CodeValidator message (needs the translator wired into the validator).
-        self::assertStringContainsString('Two factor authentication is not configured.', $html);
-        $updated = User::findById((int) $user->getId());
-        $this->assertNotNull($updated);
-        $this->assertTrue($updated->isAuthTfEnabled());
-    }
-
-    public function testTwoFactorDisableWithValidBackupCodeDisablesAndRedirects(): void
-    {
-        $backupCodeService = new BackupCodeService($this->passwordHasher);
-
-        $user = $this->createUser(authTfEnabled: true, authTfType: 'email', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $codes = $backupCodeService->generate($user);
-
-        $this->currentUser->login($user);
-
-        $result = $this->createController(backupCodeService: $backupCodeService)->disable(code: $codes[0]);
-
-        $this->assertSame(302, $result->getStatusCode());
-        $updated = User::findById((int) $user->getId());
-        $this->assertNotNull($updated);
-        $this->assertFalse($updated->isAuthTfEnabled());
-        $this->assertFalse($backupCodeService->hasUnused($updated));
-        $this->assertCount(0, UserBackupCode::query()->where(['user_id' => $updated->getIdOrZero()])->all());
-    }
-
-    public function testTwoFactorDisableWithValidEmailCodeDisablesAndRedirects(): void
-    {
-        $user = $this->createUser(authTfEnabled: true, authTfType: 'email', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $this->currentUser->login($user);
-
-        $result = $this->createController()->disable(code: '123456');
-
-        $this->assertSame(302, $result->getStatusCode());
-        $updated = User::findById((int) $user->getId());
-        $this->assertNotNull($updated);
-        $this->assertFalse($updated->isAuthTfEnabled());
-        $this->assertNull($updated->getAuthTfKey());
-        $this->assertNull($updated->getAuthTfType());
-    }
-
     #[DataProvider('alreadyEnabledRedirectProvider')]
-    public function testTwoFactorEmailGoogleWhenAlreadyEnabledRedirects(Closure $action): void
+    public function testAlreadyEnabledRedirects(Closure $action): void
     {
         $user = $this->createUser(authTfEnabled: true, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $this->currentUser->login($user);
@@ -149,32 +63,157 @@ final class TwoFactorControllerTest extends DatabaseTestCase
         $this->assertSame(302, $result->getStatusCode());
     }
 
-    public function testTwoFactorEmailRendersFragmentWithFragmentHeader(): void
+    public function testDisableSendCode(): void
     {
-        $user = $this->createUser(authTfEnabled: false, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $this->currentUser->login($user);
+        // Email method: sends code and renders view
+        $user1 = $this->createUser(username: 'disable_email', email: 'disable_email@example.com', authTfEnabled: true, authTfType: 'email', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $this->currentUser->login($user1);
+        $html = (string) $this->createController()->disableSendCode()->getBody();
+        self::assertStringContainsString('Enter the verification code sent to your email', $html);
+        $this->assertMailSent();
 
-        $request = (new ServerRequest('GET', '/'))->withHeader('X-Requested-With', 'XMLHttpRequest');
-        $html = (string) $this->createController()->email($request)->getBody();
-
-        // The fragment shows the "send code" prompt (no code sent yet) without the full page shell.
-        self::assertStringContainsString('A verification code will be sent to the email address below.', $html);
-        self::assertStringNotContainsString('<h1>', $html);
+        // Google method: redirects without sending
+        $user2 = $this->createUser(username: 'disable_google', email: 'disable_google@example.com', authTfEnabled: true, authTfType: 'google', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $this->currentUser->login($user2);
+        $result = $this->createController()->disableSendCode();
+        $this->assertSame(302, $result->getStatusCode());
         $this->assertNoMailSent();
     }
 
-    public function testTwoFactorEmailRendersShellWithoutFragmentHeader(): void
+    public function testDisableWithInvalidCode(): void
+    {
+        // Email method: shows form with code-sent prompt
+        $user1 = $this->createUser(username: 'disable_invalid_email', email: 'disable_invalid_email@example.com', authTfEnabled: true, authTfType: 'email', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $this->currentUser->login($user1);
+        $html = (string) $this->createController()->disable(code: 'wrong')->getBody();
+        self::assertStringContainsString('alert alert-danger', $html);
+        self::assertStringContainsString('Invalid verification code.', $html);
+        self::assertStringContainsString('Enter the verification code sent to your email', $html);
+        $updated1 = User::findById((int) $user1->getId());
+        $this->assertNotNull($updated1);
+        $this->assertTrue($updated1->isAuthTfEnabled());
+
+        // Google method: shows form without code-sent prompt
+        $user2 = $this->createUser(username: 'disable_invalid_google', email: 'disable_invalid_google@example.com', authTfEnabled: true, authTfType: 'google', authTfKey: null, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $this->currentUser->login($user2);
+        $html = (string) $this->createController()->disable(code: 'wrong')->getBody();
+        self::assertStringContainsString('alert alert-danger', $html);
+        self::assertStringContainsString('Two factor authentication is not configured.', $html);
+        $updated2 = User::findById((int) $user2->getId());
+        $this->assertNotNull($updated2);
+        $this->assertTrue($updated2->isAuthTfEnabled());
+    }
+
+    public function testDisableWithValidCode(): void
+    {
+        // Backup code: disables and deletes codes
+        $backupCodeService = new BackupCodeService($this->passwordHasher);
+        $user1 = $this->createUser(username: 'disable_backup', email: 'disable_backup@example.com', authTfEnabled: true, authTfType: 'email', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $codes = $backupCodeService->generate($user1);
+        $this->currentUser->login($user1);
+        $result = $this->createController(backupCodeService: $backupCodeService)->disable(code: $codes[0]);
+        $this->assertSame(302, $result->getStatusCode());
+        $updated1 = User::findById((int) $user1->getId());
+        $this->assertNotNull($updated1);
+        $this->assertFalse($updated1->isAuthTfEnabled());
+        $this->assertFalse($backupCodeService->hasUnused($updated1));
+        $this->assertCount(0, UserBackupCode::query()->where(['user_id' => $updated1->getIdOrZero()])->all());
+
+        // Email code: disables and clears auth type/key
+        $user2 = $this->createUser(username: 'disable_email_valid', email: 'disable_email_valid@example.com', authTfEnabled: true, authTfType: 'email', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $this->currentUser->login($user2);
+        $result = $this->createController()->disable(code: '123456');
+        $this->assertSame(302, $result->getStatusCode());
+        $updated2 = User::findById((int) $user2->getId());
+        $this->assertNotNull($updated2);
+        $this->assertFalse($updated2->isAuthTfEnabled());
+        $this->assertNull($updated2->getAuthTfKey());
+        $this->assertNull($updated2->getAuthTfType());
+    }
+
+    public function testEmailRendering(): void
     {
         $user = $this->createUser(authTfEnabled: false, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $this->currentUser->login($user);
 
-        $html = (string) $this->createController()->email(new ServerRequest('GET', '/'))->getBody();
+        // Fragment with X-Requested-With header: no page shell
+        $request = (new ServerRequest('GET', '/'))->withHeader('X-Requested-With', 'XMLHttpRequest');
+        $html = (string) $this->createController()->email($request)->getBody();
+        self::assertStringContainsString('A verification code will be sent to the email address below.', $html);
+        self::assertStringNotContainsString('<h1>', $html);
+        $this->assertNoMailSent();
 
+        // Shell without fragment header: full page
+        $html = (string) $this->createController()->email(new ServerRequest('GET', '/'))->getBody();
         self::assertStringContainsString('Two-Factor Authentication', $html);
         self::assertStringContainsString('A verification code will be sent to the email address below.', $html);
     }
 
-    public function testTwoFactorEnableWhenAlreadyEnabledRedirects(): void
+    public function testEnableEmail(): void
+    {
+        // Valid email code: enables and shows backup codes
+        $user1 = $this->createUser(username: 'enable_email_valid', email: 'enable_email_valid@example.com', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $this->currentUser->login($user1);
+        $html = (string) $this->createController()->enable(method: 'email', code: '123456')->getBody();
+        self::assertStringContainsString('Backup Codes', $html);
+        self::assertSame(10, substr_count($html, 'font-monospace'));
+        $updated1 = User::findById((int) $user1->getId());
+        $this->assertNotNull($updated1);
+        $this->assertTrue($updated1->isAuthTfEnabled());
+        $this->assertSame('email', $updated1->getAuthTfType());
+
+        // Invalid email code: shows form with code-sent prompt
+        $user2 = $this->createUser(username: 'enable_email_invalid', email: 'enable_email_invalid@example.com', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $this->currentUser->login($user2);
+        $html = (string) $this->createController()->enable(method: 'email', code: 'wrong')->getBody();
+        self::assertStringContainsString('alert alert-danger', $html);
+        self::assertStringContainsString('Invalid verification code.', $html);
+        self::assertStringContainsString('Enter the verification code sent to your email', $html);
+        $updated2 = User::findById((int) $user2->getId());
+        $this->assertNotNull($updated2);
+        $this->assertFalse($updated2->isAuthTfEnabled());
+    }
+
+    public function testEnableGoogle(): void
+    {
+        // Invalid google code without secret: shows form without code-sent prompt
+        $user1 = $this->createUser(username: 'enable_google_invalid', email: 'enable_google_invalid@example.com', authTfType: 'google', authTfKey: null, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $this->currentUser->login($user1);
+        $html = (string) $this->createController()->enable(method: 'google', code: 'wrong')->getBody();
+        self::assertStringContainsString('Scan this QR code', $html);
+        self::assertStringContainsString('Two factor authentication is not configured.', $html);
+        $updated1 = User::findById((int) $user1->getId());
+        $this->assertNotNull($updated1);
+        $this->assertFalse($updated1->isAuthTfEnabled());
+
+        // Invalid code switching from email: clears stale email key and switches method
+        $user2 = $this->createUser(username: 'enable_google_switch', email: 'enable_google_switch@example.com', authTfEnabled: false, authTfType: 'email', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $this->currentUser->login($user2);
+        $html = (string) $this->createController()->enable(method: 'google', code: 'wrong')->getBody();
+        self::assertStringContainsString('Scan this QR code', $html);
+        self::assertStringNotContainsString('123456', $html);
+        $updated2 = User::findById((int) $user2->getId());
+        $this->assertNotNull($updated2);
+        $this->assertFalse($updated2->isAuthTfEnabled());
+        $this->assertSame('google', $updated2->getAuthTfType());
+
+        // Valid google code: enables and shows backup codes
+        $secret = (new Authenticator())->createSecret();
+        $authenticator = new Authenticator();
+        $authenticator->setSecret($secret);
+        $code = $authenticator->code();
+        $user3 = $this->createUser(username: 'enable_google_valid', email: 'enable_google_valid@example.com', authTfType: null, authTfKey: $secret, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $this->currentUser->login($user3);
+        $html = (string) $this->createController()->enable(method: 'google', code: $code)->getBody();
+        self::assertStringContainsString('Backup Codes', $html);
+        self::assertSame(10, substr_count($html, 'font-monospace'));
+        $updated3 = User::findById((int) $user3->getId());
+        $this->assertNotNull($updated3);
+        $this->assertTrue($updated3->isAuthTfEnabled());
+        $this->assertSame('google', $updated3->getAuthTfType());
+    }
+
+    public function testEnableWhenAlreadyEnabled(): void
     {
         $user = $this->createUser(authTfEnabled: true, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $this->currentUser->login($user);
@@ -187,288 +226,149 @@ final class TwoFactorControllerTest extends DatabaseTestCase
         $this->assertTrue($updated->isAuthTfEnabled());
     }
 
-    public function testTwoFactorEnableWithEmailCode(): void
-    {
-        $user = $this->createUser(authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $this->currentUser->login($user);
-
-        $html = (string) $this->createController()->enable(method: 'email', code: '123456')->getBody();
-
-        self::assertStringContainsString('Backup Codes', $html);
-        self::assertSame(10, substr_count($html, 'font-monospace'));
-        $updated = User::findById((int) $user->getId());
-        $this->assertNotNull($updated);
-        $this->assertTrue($updated->isAuthTfEnabled());
-        $this->assertSame('email', $updated->getAuthTfType());
-    }
-
-    public function testTwoFactorEnableWithInvalidEmailCodeShowsFormWithCodeSent(): void
-    {
-        $user = $this->createUser(authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $this->currentUser->login($user);
-
-        $html = (string) $this->createController()->enable(method: 'email', code: 'wrong')->getBody();
-
-        self::assertStringContainsString('alert alert-danger', $html);
-        self::assertStringContainsString('Invalid verification code.', $html);
-        self::assertStringContainsString('Enter the verification code sent to your email', $html);
-        $updated = User::findById((int) $user->getId());
-        $this->assertNotNull($updated);
-        $this->assertFalse($updated->isAuthTfEnabled());
-    }
-
-    public function testTwoFactorEnableWithInvalidGoogleCodeShowsFormWithoutCodeSent(): void
-    {
-        $user = $this->createUser(authTfType: 'google', authTfKey: null, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $this->currentUser->login($user);
-
-        $html = (string) $this->createController()->enable(method: 'google', code: 'wrong')->getBody();
-
-        self::assertStringContainsString('Scan this QR code', $html);
-        // With no secret yet, CodeValidator emits the translated "not configured" message.
-        self::assertStringContainsString('Two factor authentication is not configured.', $html);
-        $updated = User::findById((int) $user->getId());
-        $this->assertNotNull($updated);
-        $this->assertFalse($updated->isAuthTfEnabled());
-    }
-
-    public function testTwoFactorEnableWithInvalidGoogleCodeSwitchesTypeFromEmail(): void
-    {
-        // A leftover email account switching to Google: an invalid code must still switch the method
-        // and clear the stale 6-digit key so a fresh QR secret is issued.
-        $user = $this->createUser(authTfEnabled: false, authTfType: 'email', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $this->currentUser->login($user);
-
-        $html = (string) $this->createController()->enable(method: 'google', code: 'wrong')->getBody();
-
-        self::assertStringContainsString('Scan this QR code', $html);
-        self::assertStringNotContainsString('123456', $html);
-        $updated = User::findById((int) $user->getId());
-        $this->assertNotNull($updated);
-        $this->assertFalse($updated->isAuthTfEnabled());
-        $this->assertSame('google', $updated->getAuthTfType());
-    }
-
-    public function testTwoFactorEnableWithValidGoogleCodeEnablesAndRedirects(): void
-    {
-        $secret = (new Authenticator())->createSecret();
-        $authenticator = new Authenticator();
-        $authenticator->setSecret($secret);
-        $code = $authenticator->code();
-
-        // Start from an unset method so enabling must switch the account over to Google.
-        $user = $this->createUser(authTfType: null, authTfKey: $secret, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $this->currentUser->login($user);
-
-        $html = (string) $this->createController()->enable(method: 'google', code: $code)->getBody();
-
-        self::assertStringContainsString('Backup Codes', $html);
-        self::assertSame(10, substr_count($html, 'font-monospace'));
-        $updated = User::findById((int) $user->getId());
-        $this->assertNotNull($updated);
-        $this->assertTrue($updated->isAuthTfEnabled());
-        $this->assertSame('google', $updated->getAuthTfType());
-    }
-
-    public function testTwoFactorGoogleRendersFragmentWithFragmentHeader(): void
+    public function testGoogleRendering(): void
     {
         $user = $this->createUser(authTfEnabled: false, authTfType: null, authTfKey: 'secret', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $this->currentUser->login($user);
 
+        // Fragment with X-Requested-With header: no page shell
         $request = (new ServerRequest('GET', '/'))->withHeader('X-Requested-With', 'XMLHttpRequest');
         $html = (string) $this->createController()->google($request)->getBody();
-
         self::assertStringContainsString('Scan this QR code', $html);
         self::assertStringContainsString('<svg', $html);
         self::assertStringNotContainsString('<h1>', $html);
-    }
 
-    public function testTwoFactorGoogleRendersShellWithoutFragmentHeader(): void
-    {
-        // A leftover 6-digit email code sits in auth_tf_key; switching to Google must clear it and
-        // switch the method, so the stale code never surfaces as a TOTP secret.
-        $user = $this->createUser(authTfEnabled: false, authTfType: 'email', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $this->currentUser->login($user);
-
+        // Shell without fragment header: full page, switches from email to google if needed
+        $user2 = $this->createUser(username: 'google_shell', email: 'google_shell@example.com', authTfEnabled: false, authTfType: 'email', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $this->currentUser->login($user2);
         $html = (string) $this->createController()->google(new ServerRequest('GET', '/'))->getBody();
-
         self::assertStringContainsString('Two-Factor Authentication', $html);
         self::assertStringContainsString('Scan this QR code', $html);
         self::assertStringContainsString('<svg', $html);
         self::assertStringNotContainsString('123456', $html);
-        $updated = User::findById((int) $user->getId());
-        $this->assertNotNull($updated);
-        $this->assertSame('google', $updated->getAuthTfType());
+        $updated2 = User::findById((int) $user2->getId());
+        $this->assertNotNull($updated2);
+        $this->assertSame('google', $updated2->getAuthTfType());
     }
 
-    public function testTwoFactorIndexReportsHasBackupCodesWhenCodesExist(): void
+    public function testIndex(): void
     {
+        // Already enabled: shows settings with stored method
+        $user1 = $this->createUser(username: 'index_enabled', email: 'index_enabled@example.com', authTfEnabled: true, authTfType: 'email', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $this->currentUser->login($user1);
+        $html = (string) $this->createController()->index()->getBody();
+        self::assertStringContainsString('To disable two-factor authentication', $html);
+
+        // Not enabled: shows loading spinner without preloading method content
+        $user2 = $this->createUser(username: 'index_disabled', email: 'index_disabled@example.com', authTfEnabled: false, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $this->currentUser->login($user2);
+        $html = (string) $this->createController()->index()->getBody();
+        self::assertStringContainsString('Two-Factor Authentication', $html);
+        self::assertStringContainsString('Loading', $html);
+        self::assertStringNotContainsString('Scan this QR code', $html);
+
+        // With backup codes: shows regenerate option
         $backupCodeService = new BackupCodeService($this->passwordHasher);
-
-        $user = $this->createUser(authTfEnabled: true, authTfType: 'google', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $backupCodeService->generate($user);
-
-        $this->currentUser->login($user);
-
+        $user3 = $this->createUser(username: 'index_backupcode', email: 'index_backupcode@example.com', authTfEnabled: true, authTfType: 'google', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $backupCodeService->generate($user3);
+        $this->currentUser->login($user3);
         $html = (string) $this->createController($backupCodeService)->index()->getBody();
-
         self::assertStringContainsString('Regenerate Backup Codes', $html);
         self::assertStringNotContainsString('You have no backup codes remaining', $html);
     }
 
-    public function testTwoFactorRegenerateBackupCodesWhenNotEnabledRedirects(): void
+    public function testRegenerateBackupCodes(): void
     {
-        $user = $this->createUser(authTfEnabled: false, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $this->currentUser->login($user);
-
+        // Not enabled: redirects
+        $user1 = $this->createUser(username: 'regen_disabled', email: 'regen_disabled@example.com', authTfEnabled: false, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $this->currentUser->login($user1);
         $result = $this->createController()->regenerateBackupCodes();
-
         $this->assertSame(302, $result->getStatusCode());
-    }
 
-    public function testTwoFactorRegenerateBackupCodesWithInvalidCodeShowsForm(): void
-    {
-        $user = $this->createUser(authTfEnabled: true, authTfType: 'email', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $this->currentUser->login($user);
-
+        // Invalid email code: shows settings form with error
+        $user2 = $this->createUser(username: 'regen_invalid_email', email: 'regen_invalid_email@example.com', authTfEnabled: true, authTfType: 'email', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $this->currentUser->login($user2);
         $html = (string) $this->createController()->regenerateBackupCodes(code: 'wrong')->getBody();
-
-        // Re-renders the 2FA settings page (email method) with the error, rather than issuing codes.
         self::assertStringContainsString('To disable two-factor authentication', $html);
         self::assertStringContainsString('Invalid verification code.', $html);
         self::assertStringNotContainsString('Backup Codes', $html);
-    }
 
-    public function testTwoFactorRegenerateBackupCodesWithInvalidGoogleCodeShowsForm(): void
-    {
-        $user = $this->createUser(authTfEnabled: true, authTfType: 'google', authTfKey: null, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $this->currentUser->login($user);
-
+        // Invalid google code: shows settings without code list
+        $user3 = $this->createUser(username: 'regen_invalid_google', email: 'regen_invalid_google@example.com', authTfEnabled: true, authTfType: 'google', authTfKey: null, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $this->currentUser->login($user3);
         $html = (string) $this->createController()->regenerateBackupCodes(code: 'wrong')->getBody();
-
-        // The translated CodeValidator message requires the translator wired into the validator.
         self::assertStringContainsString('Two factor authentication is not configured.', $html);
-        // The settings page (not the new-codes list) is re-rendered - no monospace code list.
         self::assertStringNotContainsString('font-monospace', $html);
-    }
 
-    public function testTwoFactorRegenerateBackupCodesWithValidCodeShowsNewCodes(): void
-    {
-        $user = $this->createUser(authTfEnabled: true, authTfType: 'email', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-
-        $this->currentUser->login($user);
-
+        // Valid code: shows new backup codes
+        $user4 = $this->createUser(username: 'regen_valid', email: 'regen_valid@example.com', authTfEnabled: true, authTfType: 'email', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $this->currentUser->login($user4);
         $html = (string) $this->createController()->regenerateBackupCodes(code: '123456')->getBody();
-
         self::assertStringContainsString('Backup Codes', $html);
         self::assertSame(10, substr_count($html, 'font-monospace'));
     }
 
-    public function testTwoFactorRenewDoesNotResetTypeWhenAlreadyGoogle(): void
+    public function testRenew(): void
     {
-        $user = $this->createUser(authTfEnabled: false, authTfType: 'google', authTfKey: 'secret', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $this->currentUser->login($user);
-
+        // Already google type: doesn't reset method
+        $user1 = $this->createUser(username: 'renew_google', email: 'renew_google@example.com', authTfEnabled: false, authTfType: 'google', authTfKey: 'secret', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $this->currentUser->login($user1);
         $result = $this->createController()->renew();
-
         $this->assertSame(200, $result->getStatusCode());
-        $updated = User::findById((int) $user->getId());
-        $this->assertNotNull($updated);
-        $this->assertSame('google', $updated->getAuthTfType());
-    }
+        $updated1 = User::findById((int) $user1->getId());
+        $this->assertNotNull($updated1);
+        $this->assertSame('google', $updated1->getAuthTfType());
 
-    public function testTwoFactorRenewGeneratesNewSecret(): void
-    {
-        $user = $this->createUser(authTfEnabled: false, authTfType: 'email', authTfKey: 'new-secret', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $this->currentUser->login($user);
-
+        // Email type: generates new secret and switches to google
+        $user2 = $this->createUser(username: 'renew_email', email: 'renew_email@example.com', authTfEnabled: false, authTfType: 'email', authTfKey: 'new-secret', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $this->currentUser->login($user2);
         $result = $this->createController()->renew();
-
         $this->assertSame(200, $result->getStatusCode());
         $decoded = json_decode((string) $result->getBody(), true);
         self::assertIsArray($decoded);
         self::assertStringContainsString('<svg', (string) $decoded['qrCodeUri']);
-        // regenerateQrCodeSvg rotates the secret, so it differs from the original and matches the persisted value.
         self::assertNotSame('new-secret', $decoded['secret']);
-        $reloaded = User::findById((int) $user->getId());
-        self::assertSame($reloaded?->getAuthTfKey(), $decoded['secret']);
-        // Renewing from the email method switches the account over to the Google method.
-        self::assertSame('google', $reloaded?->getAuthTfType());
-    }
+        $reloaded2 = User::findById((int) $user2->getId());
+        self::assertSame($reloaded2?->getAuthTfKey(), $decoded['secret']);
+        self::assertSame('google', $reloaded2?->getAuthTfType());
 
-    public function testTwoFactorRenewWhenAlreadyEnabledReturnsError(): void
-    {
-        $user = $this->createUser(authTfEnabled: true, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $this->currentUser->login($user);
-
+        // Already enabled: returns error
+        $user3 = $this->createUser(username: 'renew_enabled', email: 'renew_enabled@example.com', authTfEnabled: true, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $this->currentUser->login($user3);
         $result = $this->createController()->renew();
-
         $this->assertSame(403, $result->getStatusCode());
         $decoded = json_decode((string) $result->getBody(), true);
         self::assertIsArray($decoded);
         self::assertSame('Two-factor authentication is already enabled.', $decoded['error']);
     }
 
-    public function testTwoFactorSendEmailCodeDoesNotResetTypeWhenAlreadyEmail(): void
+    public function testSendEmailCode(): void
     {
-        $user = $this->createUser(authTfEnabled: false, authTfType: 'email', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $this->currentUser->login($user);
-
+        // Already email type: doesn't reset method
+        $user1 = $this->createUser(username: 'send_email_type', email: 'send_email_type@example.com', authTfEnabled: false, authTfType: 'email', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $this->currentUser->login($user1);
         (string) $this->createController()->sendEmailCode()->getBody();
-
         $this->assertMailSent();
-        $updated = User::findById((int) $user->getId());
-        $this->assertNotNull($updated);
-        $this->assertSame('email', $updated->getAuthTfType());
-    }
+        $updated1 = User::findById((int) $user1->getId());
+        $this->assertNotNull($updated1);
+        $this->assertSame('email', $updated1->getAuthTfType());
 
-    public function testTwoFactorSendEmailCodeSendsCodeAndRendersView(): void
-    {
-        $user = $this->createUser(authTfEnabled: false, authTfType: null, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $this->currentUser->login($user);
-
+        // Null type: sends code and sets email method
+        $user2 = $this->createUser(username: 'send_email_null', email: 'send_email_null@example.com', authTfEnabled: false, authTfType: null, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $this->currentUser->login($user2);
         $html = (string) $this->createController()->sendEmailCode()->getBody();
-
         self::assertStringContainsString('Enter the verification code sent to your email', $html);
         $this->assertMailSent();
-        $updated = User::findById((int) $user->getId());
-        $this->assertNotNull($updated);
-        $this->assertSame('email', $updated->getAuthTfType());
-    }
+        $updated2 = User::findById((int) $user2->getId());
+        $this->assertNotNull($updated2);
+        $this->assertSame('email', $updated2->getAuthTfType());
 
-    public function testTwoFactorSendEmailCodeWhenAlreadyEnabledRedirects(): void
-    {
-        $user = $this->createUser(authTfEnabled: true, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $this->currentUser->login($user);
-
+        // Already enabled: redirects without sending
+        $user3 = $this->createUser(username: 'send_email_enabled', email: 'send_email_enabled@example.com', authTfEnabled: true, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
+        $this->currentUser->login($user3);
         $result = $this->createController()->sendEmailCode();
-
         $this->assertSame(302, $result->getStatusCode());
         $this->assertNoMailSent();
-    }
-
-    public function testTwoFactorWhenAlreadyEnabledShowsSettings(): void
-    {
-        // An enabled email account: index must honour the stored method (email), not default to google.
-        $user = $this->createUser(authTfEnabled: true, authTfType: 'email', authTfKey: '123456', passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $this->currentUser->login($user);
-
-        $html = (string) $this->createController()->index()->getBody();
-
-        self::assertStringContainsString('To disable two-factor authentication', $html);
-    }
-
-    public function testTwoFactorWhenNotEnabledRendersShellWithoutPreloadingContent(): void
-    {
-        $user = $this->createUser(authTfEnabled: false, passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $this->currentUser->login($user);
-
-        $html = (string) $this->createController()->index()->getBody();
-
-        // The not-enabled shell shows the loading spinner instead of preloaded method content.
-        self::assertStringContainsString('Two-Factor Authentication', $html);
-        self::assertStringContainsString('Loading', $html);
-        self::assertStringNotContainsString('Scan this QR code', $html);
     }
 
     private function createController(?BackupCodeService $backupCodeService = null): TwoFactorController

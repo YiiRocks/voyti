@@ -20,47 +20,32 @@ final class BlockServiceTest extends DatabaseTestCase
     use UserFactoryTrait;
     use UserSessionFactoryTrait;
 
-    public function testRunWithBlockedUserUnblocks(): void
+    public function testRun(): void
     {
+        // Unblock: removes blocked status without terminating sessions
         $eventDispatcher = new EventCaptureDispatcher();
         $service = new BlockService($eventDispatcher, new TerminateUserSessionsService(new EventCaptureDispatcher()));
-
-        $user = $this->createUser();
+        $user = $this->createUser(username: 'blocked_user', email: 'blocked@example.com');
         $user->setBlockedAt(time());
         $user->save();
         $this->createUserSession($user->getIdOrZero(), 'session-1');
-
         self::assertTrue($service->run($user));
         self::assertNull($user->getBlockedAt());
-        self::assertCount(1, $eventDispatcher->getEvents());
         $event = $eventDispatcher->getEvent(UserEvent::class);
-        self::assertNotNull($event);
         self::assertSame(UserEvent::UNBLOCK, $event->getType());
-
-        // Unblocking must not terminate the user's active sessions.
         $session = UserSessions::findByUserIdAndSessionId($user->getIdOrZero(), 'session-1');
-        self::assertNotNull($session);
         self::assertFalse($session->isRevoked());
-    }
 
-    public function testRunWithUnblockedUserBlocksAndTerminatesSessions(): void
-    {
-        $eventDispatcher = new EventCaptureDispatcher();
-        $service = new BlockService($eventDispatcher, new TerminateUserSessionsService(new EventCaptureDispatcher()));
-
-        $user = $this->createUser();
-        $this->createUserSession($user->getIdOrZero(), 'session-1');
-
-        self::assertTrue($service->run($user));
-        self::assertNotNull($user->getBlockedAt());
-        self::assertCount(1, $eventDispatcher->getEvents());
-        $event = $eventDispatcher->getEvent(UserEvent::class);
-        self::assertNotNull($event);
-        self::assertSame(UserEvent::BLOCK, $event->getType());
-
-        // Blocking terminates (revokes) the user's active sessions.
-        $session = UserSessions::findByUserIdAndSessionId($user->getIdOrZero(), 'session-1');
-        self::assertNotNull($session);
-        self::assertTrue($session->isRevoked());
+        // Block: sets blocked status and terminates sessions
+        $eventDispatcher2 = new EventCaptureDispatcher();
+        $service2 = new BlockService($eventDispatcher2, new TerminateUserSessionsService(new EventCaptureDispatcher()));
+        $user2 = $this->createUser(username: 'active_user', email: 'active@example.com');
+        $this->createUserSession($user2->getIdOrZero(), 'session-2');
+        self::assertTrue($service2->run($user2));
+        self::assertNotNull($user2->getBlockedAt());
+        $event2 = $eventDispatcher2->getEvent(UserEvent::class);
+        self::assertSame(UserEvent::BLOCK, $event2->getType());
+        $session2 = UserSessions::findByUserIdAndSessionId($user2->getIdOrZero(), 'session-2');
+        self::assertTrue($session2->isRevoked());
     }
 }

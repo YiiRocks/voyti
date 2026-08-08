@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Validator\TwoFactor;
 
 use YiiRocks\Voyti\Model\User;
+use Yiisoft\Translator\TranslatorInterface;
 
 /**
  * Generates and verifies email-delivered two-factor authentication codes by comparing against the
@@ -15,8 +16,7 @@ final class EmailValidator
     private string $error = '';
 
     public function __construct(
-        private readonly User $user,
-        private readonly string $code,
+        private readonly TranslatorInterface $translator,
     ) {}
 
     public function getErrorMessage(): string
@@ -24,28 +24,13 @@ final class EmailValidator
         return $this->error;
     }
 
-    public function getSuccessMessage(): string
+    public function validate(User $user, string $code): bool
     {
-        return 'Email two factor authentication has been enabled.';
-    }
-
-    public function getUnsuccessLoginMessage(int $timeDuration): string
-    {
-        return "Invalid email verification code. Please try again within {$timeDuration} seconds.";
-    }
-
-    public function getUnsuccessMessage(int $timeDuration): string
-    {
-        return "Invalid code. Please try again within {$timeDuration} seconds.";
-    }
-
-    public function validate(): bool
-    {
-        $storedCode = $this->user->getAuthTfKey() ?? '';
+        $storedCode = $user->getAuthTfKey() ?? '';
         if ($storedCode === '') {
-            $this->error = 'Email 2FA is not configured.';
+            $this->error = $this->translator->translate('voyti.validator.email_two_factor_not_configured', category: 'voyti');
             return false;
         }
-        return hash_equals($storedCode, $this->code);
+        return hash_equals($storedCode, $code);
     }
 }

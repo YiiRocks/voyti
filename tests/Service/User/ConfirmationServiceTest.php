@@ -21,50 +21,43 @@ final class ConfirmationServiceTest extends DatabaseTestCase
     use MailServiceFactoryTrait;
     use UserFactoryTrait;
 
-    public function testConfirmWithCodeAlreadyConfirmedReturnsFalse(): void
+    public function testConfirmWithCode(): void
     {
-        $user = $this->createUser('confirmed', 'confirmed@example.com');
-        $user->setConfirmedAt(time());
-        $user->save();
+        // Already confirmed: returns false
+        $confirmed = $this->createUser('confirmed', 'confirm_confirmed@example.com');
+        $confirmed->setConfirmedAt(time());
+        $confirmed->save();
+        self::assertFalse($this->createService()->confirmWithCode('code', $confirmed));
 
-        self::assertFalse($this->createService()->confirmWithCode('code', $user));
-    }
-
-    public function testConfirmWithCodeSuccess(): void
-    {
-        $user = $this->createUser('success', 'success@example.com');
+        // Success: deletes token
+        $success = $this->createUser('success', 'confirm_success@example.com');
         $token = new UserToken();
-        $token->setUserId((int) $user->getId());
+        $token->setUserId((int) $success->getId());
         $token->setCode(hash('sha256', 'successcode'));
         $token->setType(UserToken::TYPE_CONFIRMATION);
         $token->setCreatedAt(time());
         $token->save();
-
-        self::assertTrue($this->createService()->confirmWithCode('successcode', $user));
-
-        $foundToken = UserToken::findByUserIdAndCode((int) $user->getId(), 'successcode');
+        self::assertTrue($this->createService()->confirmWithCode('successcode', $success));
+        $foundToken = UserToken::findByUserIdAndCode((int) $success->getId(), 'successcode');
         self::assertNull($foundToken);
+
+        // Expired token: returns false
+        $expired = $this->createUser('expired', 'confirm_expired@example.com');
+        $expiredToken = new UserToken();
+        $expiredToken->setUserId((int) $expired->getId());
+        $expiredToken->setCode(hash('sha256', 'expiredcode'));
+        $expiredToken->setType(UserToken::TYPE_CONFIRMATION);
+        $expiredToken->setCreatedAt(time() - 200000);
+        $expiredToken->save();
+        self::assertFalse($this->createService()->confirmWithCode('expiredcode', $expired));
     }
 
-    public function testConfirmWithCodeTokenExpiredReturnsFalse(): void
+    public function testResend(): void
     {
-        $user = $this->createUser('expired', 'expired@example.com');
-        $token = new UserToken();
-        $token->setUserId((int) $user->getId());
-        $token->setCode(hash('sha256', 'expiredcode'));
-        $token->setType(UserToken::TYPE_CONFIRMATION);
-        $token->setCreatedAt(time() - 200000);
-        $token->save();
-
-        self::assertFalse($this->createService()->confirmWithCode('expiredcode', $user));
-    }
-
-    public function testResendAlreadyConfirmedReturnsFalse(): void
-    {
-        $user = $this->createUser('confirmed', 'confirmed@example.com');
-        $user->setConfirmedAt(time());
-        $user->save();
-
+        // Already confirmed: returns false
+        $confirmed = $this->createUser('resend_confirmed', 'resend_confirmed@example.com');
+        $confirmed->setConfirmedAt(time());
+        $confirmed->save();
         $tokenFactory = new UserTokenFactory();
         $mailService = $this->createMailService(new MailCapture());
         $service = new ConfirmationService(
@@ -72,47 +65,37 @@ final class ConfirmationServiceTest extends DatabaseTestCase
             $tokenFactory,
             $mailService,
         );
+        self::assertFalse($service->resend($confirmed));
 
-        self::assertFalse($service->resend($user));
-    }
-
-    public function testResendDeletesOnlyConfirmationTokens(): void
-    {
-        $user = $this->createUser('resend_delete_tokens', 'resend_delete_tokens@example.com');
-        $userId = (int) $user->getId();
-
+        // Deletes only confirmation tokens, preserves recovery tokens
+        $deleteTokens = $this->createUser('resend_delete_tokens', 'resend_delete_tokens@example.com');
+        $userId = (int) $deleteTokens->getId();
         $confirmationToken = new UserToken();
         $confirmationToken->setUserId($userId);
         $confirmationToken->setCode('old_confirm_token');
         $confirmationToken->setType(UserToken::TYPE_CONFIRMATION);
         $confirmationToken->setCreatedAt(time());
         $confirmationToken->save();
-
         $recoveryToken = new UserToken();
         $recoveryToken->setUserId($userId);
         $recoveryToken->setCode('recovery_token');
         $recoveryToken->setType(UserToken::TYPE_RECOVERY);
         $recoveryToken->setCreatedAt(time());
         $recoveryToken->save();
-
         $mailService = $this->createMailService(new MailCapture());
         $service = new ConfirmationService(
             $this->createMock(EventDispatcherInterface::class),
             new UserTokenFactory(),
             $mailService,
         );
-
-        self::assertTrue($service->resend($user));
-
+        self::assertTrue($service->resend($deleteTokens));
         $remaining = UserToken::findByUserId($userId);
         self::assertCount(2, $remaining);
         $remainingTypes = array_map(static fn(UserToken $token): int => $token->getType(), $remaining);
         self::assertContains(UserToken::TYPE_RECOVERY, $remainingTypes);
-    }
 
-    public function testResendSuccess(): void
-    {
-        $user = $this->createUser('unconfirmed', 'unconfirmed@example.com');
+        // Success: sends email
+        $unconfirmed = $this->createUser('resend_unconfirmed', 'resend_unconfirmed@example.com');
         $tokenFactory = new UserTokenFactory();
         $mailCapture = new MailCapture();
         $mailService = $this->createMailService($mailCapture);
@@ -121,51 +104,40 @@ final class ConfirmationServiceTest extends DatabaseTestCase
             $tokenFactory,
             $mailService,
         );
-
-        self::assertTrue($service->resend($user));
-        // A confirmation email is actually sent.
+        self::assertTrue($service->resend($unconfirmed));
         self::assertCount(1, $mailCapture->getSentMessages());
     }
 
-    public function testRunDeletesOnlyConfirmationTokens(): void
+    public function testRun(): void
     {
+        // Deletes only confirmation tokens, preserves recovery tokens
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $eventDispatcher->expects($this->exactly(1))->method('dispatch');
-
-        $user = $this->createUser('delete_tokens', 'delete_tokens@example.com');
-        $userId = (int) $user->getId();
-
+        $deleteTokens = $this->createUser('run_delete_tokens', 'run_delete_tokens@example.com');
+        $userId = (int) $deleteTokens->getId();
         $confirmationToken = new UserToken();
         $confirmationToken->setUserId($userId);
         $confirmationToken->setCode('confirm_token');
         $confirmationToken->setType(UserToken::TYPE_CONFIRMATION);
         $confirmationToken->setCreatedAt(time());
         $confirmationToken->save();
-
         $recoveryToken = new UserToken();
         $recoveryToken->setUserId($userId);
         $recoveryToken->setCode('recovery_token');
         $recoveryToken->setType(UserToken::TYPE_RECOVERY);
         $recoveryToken->setCreatedAt(time());
         $recoveryToken->save();
-
-        self::assertTrue($this->createService($eventDispatcher)->run($user));
-
+        self::assertTrue($this->createService($eventDispatcher)->run($deleteTokens));
         $remaining = UserToken::findByUserId($userId);
         self::assertCount(1, $remaining);
         self::assertSame(UserToken::TYPE_RECOVERY, $remaining[0]->getType());
-    }
 
-    public function testRunPersistsConfirmation(): void
-    {
-        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $eventDispatcher->expects($this->exactly(1))->method('dispatch');
-
-        $user = $this->createUser('persist_confirm', 'persist_confirm@example.com');
-
-        self::assertTrue($this->createService($eventDispatcher)->run($user));
-
-        $reloaded = User::findById((int) $user->getId());
+        // Persists confirmation
+        $persistEventDispatcher = $this->createMock(EventDispatcherInterface::class);
+        $persistEventDispatcher->expects($this->exactly(1))->method('dispatch');
+        $persistConfirm = $this->createUser('run_persist_confirm', 'run_persist_confirm@example.com');
+        self::assertTrue($this->createService($persistEventDispatcher)->run($persistConfirm));
+        $reloaded = User::findById((int) $persistConfirm->getId());
         self::assertNotNull($reloaded);
         self::assertNotNull($reloaded->getConfirmedAt());
     }

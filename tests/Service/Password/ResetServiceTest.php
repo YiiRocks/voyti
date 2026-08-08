@@ -24,60 +24,48 @@ final class ResetServiceTest extends DatabaseTestCase
 {
     use UserFactoryTrait;
 
-    public function testRunDeletesProvidedToken(): void
+    public function testRun(): void
     {
+        // With token: deletes provided token
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $eventDispatcher->expects($this->exactly(2))->method('dispatch');
-
         $user = $this->createUser(username: 'tokenuser', email: 'token@example.com', passwordHash: 'oldhash');
         $userId = (int) $user->getId();
         $userToken = $this->createUserToken($userId, 'tokencode');
-
         $this->createService($eventDispatcher)->run('newpassword', $user, $userToken);
-
         self::assertCount(0, UserToken::findByUserId($userId));
-    }
 
-    public function testRunRecordsPasswordHistoryWhenEnabled(): void
-    {
-        $config = VoytiConfigFactory::create(maxPasswordAge: 90);
-        $user = $this->createUser(username: 'historyuser', email: 'history@example.com', passwordHash: 'oldhash');
-
-        $this->createService(config: $config)->run('newpassword', $user, null);
-
-        $reloaded = User::findById((int) $user->getId());
-        self::assertNotNull($reloaded);
-        $history = UserPasswordHistory::findByUserId($reloaded->getIdOrZero());
-        self::assertCount(1, $history);
-        self::assertTrue((TestPasswordHasherFactory::create())->validate('newpassword', $history[0]->getPasswordHash()));
-    }
-
-    public function testRunRejectsRecentlyUsedPassword(): void
-    {
-        $config = VoytiConfigFactory::create(maxPasswordAge: 90);
-        $user = $this->createUser(username: 'reuseuser', email: 'reuse@example.com', passwordHash: 'oldhash');
-
-        $this->createService(config: $config)->run('newpassword', $user, null);
-        $reloaded = User::findById((int) $user->getId());
-        self::assertNotNull($reloaded);
-
-        $result = $this->createService(config: $config)->run('newpassword', $reloaded, null);
-
-        self::assertFalse($result);
-    }
-
-    public function testRunWithoutUserToken(): void
-    {
+        // Without token: still resets password
         $eventDispatcher = new EventCaptureDispatcher();
-
         $user = $this->createUser(username: 'testuser', email: 'test@example.com', passwordHash: 'oldhash');
-
         $result = $this->createService($eventDispatcher)->run('newpassword', $user, null);
         self::assertTrue($result);
         self::assertCount(1, $eventDispatcher->getEvents());
         $event = $eventDispatcher->getEvent(UserEvent::class);
         self::assertNotNull($event);
         self::assertSame(UserEvent::PASSWORD_RESET, $event->getType());
+    }
+
+    public function testRunWithHistoryTracking(): void
+    {
+        // Records password history when enabled
+        $config = VoytiConfigFactory::create(maxPasswordAge: 90);
+        $user = $this->createUser(username: 'historyuser', email: 'history@example.com', passwordHash: 'oldhash');
+        $this->createService(config: $config)->run('newpassword', $user, null);
+        $reloaded = User::findById((int) $user->getId());
+        self::assertNotNull($reloaded);
+        $history = UserPasswordHistory::findByUserId($reloaded->getIdOrZero());
+        self::assertCount(1, $history);
+        self::assertTrue((TestPasswordHasherFactory::create())->validate('newpassword', $history[0]->getPasswordHash()));
+
+        // Rejects recently used password
+        $config = VoytiConfigFactory::create(maxPasswordAge: 90);
+        $user = $this->createUser(username: 'reuseuser', email: 'reuse@example.com', passwordHash: 'oldhash');
+        $this->createService(config: $config)->run('newpassword', $user, null);
+        $reloaded = User::findById((int) $user->getId());
+        self::assertNotNull($reloaded);
+        $result = $this->createService(config: $config)->run('newpassword', $reloaded, null);
+        self::assertFalse($result);
     }
 
     private function createService(?EventDispatcherInterface $eventDispatcher = null, ?VoytiConfig $config = null): ResetService

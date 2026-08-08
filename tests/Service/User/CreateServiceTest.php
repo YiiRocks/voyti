@@ -25,8 +25,9 @@ use Yiisoft\View\View;
 #[AllowMockObjectsWithoutExpectations]
 final class CreateServiceTest extends DatabaseTestCase
 {
-    public function testRunEmailAlreadyExistsReturnsFailure(): void
+    public function testRunErrors(): void
     {
+        // Email already exists
         $existing = new User();
         $existing->setUsername('existing');
         $existing->setEmail('existing@example.com');
@@ -35,25 +36,17 @@ final class CreateServiceTest extends DatabaseTestCase
         $existing->setCreatedAt(time());
         $existing->setUpdatedAt(time());
         $existing->save();
-
         $mailService = $this->createMailService(new MailCapture());
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $passwordHasher = TestPasswordHasherFactory::create();
         $config = VoytiConfigFactory::create();
-
         $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
         $service = new CreateService($userCreationHelper);
         $result = $service->run('existing@example.com', 'testuser', 'password123');
-
         self::assertTrue($result->isFailure());
         self::assertSame('Email already exists', $result->getMessage());
-    }
 
-    public function testRunHandlesRaceLostAfterUniquenessCheckPasses(): void
-    {
-        // The uniqueness check passes, but persistAndNotify throws (as it would when a concurrent
-        // insert wins the race). A real helper whose event dispatch throws exercises run()'s
-        // catch branch without mocking the final UserCreationHelper.
+        // Race condition: uniqueness passes but persistence fails
         $passwordHasher = TestPasswordHasherFactory::create();
         $config = VoytiConfigFactory::create();
         $userCreationHelper = new UserCreationHelper(
@@ -63,33 +56,29 @@ final class CreateServiceTest extends DatabaseTestCase
             $config,
             new PasswordHistoryService($passwordHasher, $config),
         );
-
         $service = new CreateService($userCreationHelper);
         $result = $service->run('race@example.com', 'raceuser', 'password123');
-
         self::assertTrue($result->isFailure());
         self::assertSame('Email already exists', $result->getMessage());
     }
 
-    public function testRunWithEmailConfirmationDisabled(): void
+    public function testRunWithEmailConfirmation(): void
     {
+        // Confirmation disabled: user immediately confirmed
         $mailCapture = new MailCapture();
         $mailService = $this->createMailService($mailCapture);
         $eventDispatcher = new EventCaptureDispatcher();
         $passwordHasher = TestPasswordHasherFactory::create();
         $config = VoytiConfigFactory::create(enableEmailConfirmation: false);
-
         $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
         $service = new CreateService($userCreationHelper);
-        $result = $service->run('new@example.com', 'testuser', 'password123');
-
+        $result = $service->run('disabled@example.com', 'testuser1', 'password123');
         self::assertTrue($result->isSuccess());
         self::assertSame('User has been created', $result->getMessage());
-
-        $foundUser = User::findByEmail('new@example.com');
+        $foundUser = User::findByEmail('disabled@example.com');
         self::assertNotNull($foundUser);
         self::assertNotNull($foundUser->getConfirmedAt());
-        self::assertSame('testuser', $foundUser->getUsername());
+        self::assertSame('testuser1', $foundUser->getUsername());
         self::assertNotEmpty($foundUser->getPasswordHash());
         self::assertNotEmpty($foundUser->getAuthKey());
         self::assertGreaterThan(0, $foundUser->getCreatedAt());
@@ -99,32 +88,26 @@ final class CreateServiceTest extends DatabaseTestCase
         $userEvent = $eventDispatcher->getEvent(UserEvent::class);
         self::assertNotNull($userEvent);
         self::assertSame(UserEvent::CREATE, $userEvent->getType());
-    }
 
-    public function testRunWithEmailConfirmationEnabled(): void
-    {
+        // Confirmation enabled: user pending confirmation with token
         $mailCapture = new MailCapture();
         $mailService = $this->createMailService($mailCapture);
         $eventDispatcher = new EventCaptureDispatcher();
         $passwordHasher = TestPasswordHasherFactory::create();
         $config = VoytiConfigFactory::create(enableEmailConfirmation: true);
-
         $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
         $service = new CreateService($userCreationHelper);
-        $result = $service->run('new@example.com', 'testuser', 'password123');
-
+        $result = $service->run('enabled@example.com', 'testuser2', 'password123');
         self::assertTrue($result->isSuccess());
         self::assertSame('User has been created', $result->getMessage());
-
-        $foundUser = User::findByEmail('new@example.com');
+        $foundUser = User::findByEmail('enabled@example.com');
         self::assertNotNull($foundUser);
         self::assertNull($foundUser->getConfirmedAt());
-        self::assertSame('testuser', $foundUser->getUsername());
+        self::assertSame('testuser2', $foundUser->getUsername());
         self::assertNotEmpty($foundUser->getPasswordHash());
         self::assertNotEmpty($foundUser->getAuthKey());
         self::assertGreaterThan(0, $foundUser->getCreatedAt());
         self::assertGreaterThan(0, $foundUser->getUpdatedAt());
-
         $tokens = UserToken::findByUserId((int) $foundUser->getId());
         self::assertCount(1, $tokens);
         $userToken = $tokens[0];

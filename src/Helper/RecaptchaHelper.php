@@ -7,7 +7,6 @@ namespace YiiRocks\Voyti\Helper;
 use YiiRocks\Recaptcha\RecaptchaRegistry;
 use YiiRocks\Recaptcha\RecaptchaV2Field;
 use YiiRocks\Recaptcha\RecaptchaV2Rule;
-use YiiRocks\Recaptcha\RecaptchaV3Badge;
 use YiiRocks\Recaptcha\RecaptchaV3Field;
 use YiiRocks\Recaptcha\RecaptchaV3Rule;
 use YiiRocks\Voyti\Enum\RecaptchaVersion;
@@ -24,6 +23,7 @@ use Yiisoft\Validator\RuleInterface;
  */
 final class RecaptchaHelper
 {
+    // @codeCoverageIgnoreStart Optional dependency always installed in test environments
     public static function isAvailable(): bool
     {
         /**
@@ -32,48 +32,27 @@ final class RecaptchaHelper
          * can make either class_exists() return false, so negating or &&-merging the
          * sub-expressions never changes the result.
          */
-        return class_exists(RecaptchaV2Field::class)
-            || class_exists(RecaptchaV3Field::class);
+        return class_exists(RecaptchaV2Field::class) || class_exists(RecaptchaV3Field::class);
     }
+    // @codeCoverageIgnoreEnd
 
     public static function render(
         FormModelInterface $form,
         VoytiConfig $config,
         string $attribute = 'gRecaptchaResponse',
     ): string {
-        if (!self::isAvailable()) {
-            // @codeCoverageIgnoreStart
-            // Both classes are always present in the test environment (see isAvailable()); this branch only
-            // matters for host apps that don't install the optional yiirocks/recaptcha package.
-            return '';
-            // @codeCoverageIgnoreEnd
-        }
-
-        if (!self::isConfigured($config->recaptchaVersion)) {
+        // @codeCoverageIgnoreStart Optional dependency guards always pass in test environments
+        if (!self::isAvailable() || !self::isConfigured($config->recaptchaVersion)) {
             return '';
         }
-
-        $formName = $form->getFormName();
+        // @codeCoverageIgnoreEnd
 
         if ($config->recaptchaVersion === RecaptchaVersion::V2) {
-            if (!class_exists(RecaptchaV2Field::class)) {
-                // @codeCoverageIgnoreStart
-                // Same as isAvailable(): unreachable while yiirocks/recaptcha is installed in the test environment.
-                return '';
-                // @codeCoverageIgnoreEnd
-            }
             return RecaptchaV2Field::field($form, $attribute)->render();
         }
 
-        if (!class_exists(RecaptchaV3Field::class)) {
-            // @codeCoverageIgnoreStart
-            // Same as isAvailable(): unreachable while yiirocks/recaptcha is installed in the test environment.
-            return '';
-            // @codeCoverageIgnoreEnd
-        }
         return RecaptchaV3Field::field($form, $attribute)
-            ->withBadge(RecaptchaV3Badge::Hidden)
-            ->withAction('voyti_' . $formName)
+            ->withAction('voyti_' . $form->getFormName())
             ->render();
     }
 

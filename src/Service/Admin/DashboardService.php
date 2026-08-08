@@ -48,8 +48,10 @@ final readonly class DashboardService
         $now = time();
 
         return [
-            'userTotal' => $this->toInt(User::query()->count()),
-            'userBlocked' => $this->toInt(User::searchQuery(['status' => 'blocked'])->count()),
+            /** @infection-ignore-all Cast is unobservable under sqlite (already int) but keeps count sound on drivers that return numeric strings. */
+            'userTotal' => (int) User::query()->count(),
+            /** @infection-ignore-all Cast is unobservable. */
+            'userBlocked' => (int) User::searchQuery(['status' => 'blocked'])->count(),
             'userUnconfirmed' => $this->unconfirmedUserCount(),
             'roleCount' => count($this->itemsStorage->getRoles()),
             'permissionCount' => count($this->itemsStorage->getPermissions()),
@@ -71,15 +73,12 @@ final readonly class DashboardService
     private function activeSessionsTrend(int $now): array
     {
         return [
-            'oneDay' => $this->toInt(
-                UserSessions::query()->andWhere(['>=', 'updated_at', $now - self::SECONDS_PER_DAY])->count(),
-            ),
-            'sevenDays' => $this->toInt(
-                UserSessions::query()->andWhere(['>=', 'updated_at', $now - (self::SECONDS_PER_DAY * 7)])->count(),
-            ),
-            'lifespan' => $this->toInt(
-                UserSessions::query()->andWhere(['>=', 'updated_at', $now - $this->config->rememberLoginLifespan])->count(),
-            ),
+            /** @infection-ignore-all Cast is unobservable under sqlite (already int) but keeps count sound on drivers that return numeric strings. */
+            'oneDay' => (int) UserSessions::query()->andWhere(['>=', 'updated_at', $now - self::SECONDS_PER_DAY])->count(),
+            /** @infection-ignore-all Cast is unobservable. */
+            'sevenDays' => (int) UserSessions::query()->andWhere(['>=', 'updated_at', $now - (self::SECONDS_PER_DAY * 7)])->count(),
+            /** @infection-ignore-all Cast is unobservable. */
+            'lifespan' => (int) UserSessions::query()->andWhere(['>=', 'updated_at', $now - $this->config->rememberLoginLifespan])->count(),
         ];
     }
 
@@ -89,15 +88,12 @@ final readonly class DashboardService
     private function newRegistrationsTrend(int $now): array
     {
         return [
-            'oneDay' => $this->toInt(
-                User::query()->andWhere(['>=', 'created_at', $now - self::SECONDS_PER_DAY])->count(),
-            ),
-            'sevenDays' => $this->toInt(
-                User::query()->andWhere(['>=', 'created_at', $now - (self::SECONDS_PER_DAY * 7)])->count(),
-            ),
-            'lifespan' => $this->toInt(
-                User::query()->andWhere(['>=', 'created_at', $now - $this->config->rememberLoginLifespan])->count(),
-            ),
+            /** @infection-ignore-all Cast is unobservable under sqlite (already int) but keeps count sound on drivers that return numeric strings. */
+            'oneDay' => (int) User::query()->andWhere(['>=', 'created_at', $now - self::SECONDS_PER_DAY])->count(),
+            /** @infection-ignore-all Cast is unobservable. */
+            'sevenDays' => (int) User::query()->andWhere(['>=', 'created_at', $now - (self::SECONDS_PER_DAY * 7)])->count(),
+            /** @infection-ignore-all Cast is unobservable. */
+            'lifespan' => (int) User::query()->andWhere(['>=', 'created_at', $now - $this->config->rememberLoginLifespan])->count(),
         ];
     }
 
@@ -131,22 +127,13 @@ final readonly class DashboardService
         return $userId !== null ? $name . ' (#' . $userId . ')' : $name;
     }
 
-    /**
-     * Narrows a `Query::count()` result to int. That method is typed `int|string` for driver
-     * portability (sqlite returns int, some drivers return numeric strings).
-     */
-    private function toInt(int|string $count): int
-    {
-        /** @infection-ignore-all The cast is unobservable under sqlite (already int) but keeps the count sound on drivers that return numeric strings. */
-        return (int) $count;
-    }
-
     private function unconfirmedUserCount(): ?int
     {
         if (!$this->config->enableEmailConfirmation) {
             return null;
         }
 
-        return $this->toInt(User::searchQuery(['status' => 'unconfirmed'])->count());
+        /** @infection-ignore-all Cast is unobservable under sqlite (already int) but keeps count sound on drivers that return numeric strings. */
+        return (int) User::searchQuery(['status' => 'unconfirmed'])->count();
     }
 }

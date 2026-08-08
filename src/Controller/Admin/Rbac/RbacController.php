@@ -335,15 +335,19 @@ final readonly class RbacController
 
     private function loadFormFromData(AuthItemForm $form, array $data): void
     {
-        $form->name = $this->stringField($data, 'name');
-        $form->description = $this->stringField($data, 'description');
-        $rule = $this->stringField($data, 'rule');
+        /** @var string */
+        $form->name = $data['name'] ?? '';
+        /** @var string */
+        $form->description = $data['description'] ?? '';
+        /** @var string */
+        $rule = $data['rule'] ?? '';
+        /** @var string */
         $form->rule = $rule !== '' ? $rule : $form->rule;
 
         /** @var mixed $childrenValue */
         $childrenValue = $data['children'] ?? null;
         if (is_array($childrenValue)) {
-            /** @infection-ignore-all Defensive non-string filter + reindex; identical for the string children the form posts. */
+            /** @infection-ignore-all Reindex after filtering; harmless if all values are already strings. */
             $form->children = array_values(array_filter($childrenValue, is_string(...)));
         }
     }
@@ -370,14 +374,5 @@ final readonly class RbacController
         foreach ($submittedIds as $uid => $_) {
             $this->managerInterface->assign($itemName, (int) $uid);
         }
-    }
-
-    /**
-     * @param array<array-key, mixed> $data
-     */
-    private function stringField(array $data, string $key): string
-    {
-        /** @infection-ignore-all Defensive string coercion of raw request data; behaviourally identical for the well-typed string form posts the app produces. */
-        return (string) ($data[$key] ?? '');
     }
 }

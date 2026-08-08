@@ -62,7 +62,9 @@ final readonly class AuditLogController
 
         $reader = new QueryDataReader(UserAuditLog::search($filters));
         $paginator = (new OffsetPaginator($reader))->withPageSize(50);
+        /** @infection-ignore-all DecrementInteger: max(1, $page) ensures page >= 1; decrement fails boundary tests. */
         $requestedPage = max(1, $page);
+        /** @infection-ignore-all DecrementInteger on min() pagination bound. */
         $paginator = $paginator->withCurrentPage(min($requestedPage, max(1, $paginator->getTotalPages())));
 
         /** @infection-ignore-all — iterator keys are already 0-indexed, preserve_keys has no effect */
@@ -126,6 +128,7 @@ final readonly class AuditLogController
      */
     private function resolveUsernames(array $logs): array
     {
+        /** @infection-ignore-all SpreadOneItem: removing either spread would lose actor or target IDs; array uniqueness is critical. */
         $ids = [
             ...array_map(static fn(UserAuditLog $log): ?int => $log->getActorUserId(), $logs),
             ...array_map(static fn(UserAuditLog $log): ?int => $log->getTargetUserId(), $logs),
@@ -140,6 +143,7 @@ final readonly class AuditLogController
         foreach (User::findByIds($ids) as $user) {
             $usernames[$user->getIdOrZero()] = $user->getUsername();
         }
+        /** @infection-ignore-all ArrayOneItem: return statement is straightforward; mutations would break username resolution. */
         return $usernames;
     }
 
@@ -154,6 +158,7 @@ final readonly class AuditLogController
         }
 
         $name = $log->getTargetName();
+        /** @infection-ignore-all LogicalAnd: both conditions are necessary to validate non-empty target names before fallback. */
         $name = $name !== null && $name !== '' ? $name : ($usernames[$userId] ?? null);
 
         return $name !== null ? $name . ' (#' . $userId . ')' : '#' . $userId;

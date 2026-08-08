@@ -95,9 +95,7 @@ return [
     'voyti.validator.two_factor_library_missing' => '2FA library (chillerlan/2fa-qrcode-bundle) is not installed.',
     'voyti.validator.invalid_verification_code' => 'Invalid verification code.',
     'voyti.validator.password_complexity' => 'Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character.',
-    'voyti.validator.two_factor_enabled' => 'Two factor authentication has been enabled.',
-    'voyti.validator.invalid_code_with_time' => 'Invalid code. Please try again within {timeDuration} seconds.',
-    'voyti.validator.invalid_two_factor_code_with_time' => 'Invalid two factor authentication code. Please try again within {timeDuration} seconds.',
+    'voyti.validator.email_two_factor_not_configured' => 'Email two factor authentication is not configured.',
 
     // Mail subjects
     'voyti.mail.welcome_subject' => 'Welcome to {app}',

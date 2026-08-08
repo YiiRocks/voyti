@@ -56,70 +56,89 @@ final class RbacControllerTest extends DatabaseTestCase
         ];
     }
 
-    public function testCreateGetShowsAvailableChildrenExcludingRoles(): void
+    public function testCreateGetShowsAvailableChildrenByType(): void
     {
         $this->itemsStorage->add(new Permission('other-permission'));
         $this->itemsStorage->add(new Role('some-role'));
+        $this->itemsStorage->add(new Role('other-role'));
 
+        // Permission: only permissions, not roles
         $html = (string) $this->createController()
             ->create(request: new ServerRequest('GET', '/'), itemType: 'permission', indexRouteName: 'admin-rbac-permissions')
             ->getBody();
-
-        // A permission may only take permissions (not roles) as children.
         self::assertStringContainsString('value="other-permission"', $html);
         self::assertStringNotContainsString('value="some-role"', $html);
-    }
 
-    public function testCreateGetShowsAvailableChildrenIncludingRolesAndPermissions(): void
-    {
-        $this->itemsStorage->add(new Role('other-role'));
-        $this->itemsStorage->add(new Permission('some-permission'));
-
+        // Role: both roles and permissions
         $html = (string) $this->createController()
             ->create(request: new ServerRequest('GET', '/'), itemType: 'role', indexRouteName: 'admin-rbac-roles')
             ->getBody();
-
-        // A role may take both roles and permissions as children.
         self::assertStringContainsString('value="other-role"', $html);
-        self::assertStringContainsString('value="some-permission"', $html);
+        self::assertStringContainsString('value="other-permission"', $html);
     }
 
     #[DataProvider('itemTypeProvider')]
-    public function testCreatePostSuccessful(string $itemType, string $indexRouteName, string $itemName): void
+    public function testCreatePost(string $itemType, string $indexRouteName, string $itemName): void
     {
         $this->validator->method('validate')->willReturn(new Result());
+        $this->itemsStorage->add(new Role('child-role'));
+        $this->itemsStorage->add(new Role('child2'));
 
+        // Successful create
         $request = (new ServerRequest('POST', '/'))->withParsedBody([
             $itemType => ['name' => $itemName, 'description' => '', 'rule' => '', 'children' => ['']],
         ]);
-
         $result = $this->createController()->create(request: $request, itemType: $itemType, indexRouteName: $indexRouteName);
-
         $this->assertSame(302, $result->getStatusCode());
         $this->assertSame('//voyti/' . $indexRouteName, $result->getHeaderLine('Location'));
         $this->assertNotNull($this->getItem($itemType, $itemName));
-        // The mutating action is recorded in the audit log under the item-type-specific key.
         $this->assertNotEmpty(UserAuditLog::search(['action' => 'rbac.' . $itemType . '.create'])->all());
     }
 
     public function testCreatePostWithChildren(): void
     {
         $this->itemsStorage->add(new Role('child-role'));
-
+        $this->itemsStorage->add(new Role('child2'));
         $this->validator->method('validate')->willReturn(new Result());
 
+        // Clean children
         $request = (new ServerRequest('POST', '/'))->withParsedBody([
             'role' => ['name' => 'parent', 'description' => '', 'rule' => '', 'children' => ['child-role']],
         ]);
-
         $result = $this->createController()->create(request: $request, itemType: 'role', indexRouteName: 'admin-rbac-roles');
-
         $this->assertSame(302, $result->getStatusCode());
         $this->assertTrue($this->itemsStorage->hasChild('parent', 'child-role'));
+
+        // Non-strings and gaps are filtered and reindexed
+        $request = (new ServerRequest('POST', '/'))->withParsedBody([
+            'role' => ['name' => 'parent2', 'description' => '', 'rule' => '', 'children' => [0 => 'child-role', 2 => 123, 4 => 'child2', 6 => false]],
+        ]);
+        $result = $this->createController()->create(request: $request, itemType: 'role', indexRouteName: 'admin-rbac-roles');
+        $this->assertSame(302, $result->getStatusCode());
+        $this->assertTrue($this->itemsStorage->hasChild('parent2', 'child-role'));
+        $this->assertTrue($this->itemsStorage->hasChild('parent2', 'child2'));
+
+        // Nonexistent child shows error but item persists
+        $request = (new ServerRequest('POST', '/'))->withParsedBody([
+            'role' => ['name' => 'parent3', 'description' => '', 'rule' => '', 'children' => ['missing-child']],
+        ]);
+        $html = (string) $this->createController()->create(request: $request, itemType: 'role', indexRouteName: 'admin-rbac-roles')->getBody();
+        self::assertStringContainsString('Child "missing-child" does not exist.', $html);
+        $this->assertNotNull($this->itemsStorage->getRole('parent3'));
+
+        // With rule
+        $request = (new ServerRequest('POST', '/'))->withParsedBody([
+            'permission' => ['name' => 'perm-with-rule', 'description' => '', 'rule' => 'ownerRule', 'children' => ['']],
+        ]);
+        $result = $this->createController()->create(request: $request, itemType: 'permission', indexRouteName: 'admin-rbac-permissions');
+        $this->assertSame(302, $result->getStatusCode());
+        $perm = $this->itemsStorage->getPermission('perm-with-rule');
+        $this->assertNotNull($perm);
+        $this->assertSame('ownerRule', $perm->getRuleName());
     }
 
     #[DataProvider('itemTypeProvider')]
-    public function testCreatePostWithInvalidDataShowsErrors(string $itemType, string $indexRouteName, string $itemName): void
+    public function testCreatePostWithInvalidData(string $itemType, string $indexRouteName, string $itemName): void
     {
         $validationResult = new Result();
         $validationResult->addError('Name is required.');
@@ -132,37 +151,6 @@ final class RbacControllerTest extends DatabaseTestCase
         $html = (string) $this->createController()->create(request: $request, itemType: $itemType, indexRouteName: $indexRouteName)->getBody();
 
         self::assertStringContainsString('Name is required.', $html);
-    }
-
-    public function testCreatePostWithNonexistentChildShowsErrorsAndPersistsItem(): void
-    {
-        $this->validator->method('validate')->willReturn(new Result());
-
-        $request = (new ServerRequest('POST', '/'))->withParsedBody([
-            'role' => ['name' => 'parent', 'description' => '', 'rule' => '', 'children' => ['missing-child']],
-        ]);
-
-        $html = (string) $this->createController()->create(request: $request, itemType: 'role', indexRouteName: 'admin-rbac-roles')->getBody();
-
-        self::assertStringContainsString('Child "missing-child" does not exist.', $html);
-        // The item itself is still persisted; only the missing child is rejected.
-        $this->assertNotNull($this->itemsStorage->getRole('parent'));
-    }
-
-    public function testCreatePostWithRule(): void
-    {
-        $this->validator->method('validate')->willReturn(new Result());
-
-        $request = (new ServerRequest('POST', '/'))->withParsedBody([
-            'permission' => ['name' => 'restricted-action', 'description' => '', 'rule' => 'ownerRule', 'children' => ['']],
-        ]);
-
-        $result = $this->createController()->create(request: $request, itemType: 'permission', indexRouteName: 'admin-rbac-permissions');
-
-        $this->assertSame(302, $result->getStatusCode());
-        $perm = $this->itemsStorage->getPermission('restricted-action');
-        $this->assertNotNull($perm);
-        $this->assertSame('ownerRule', $perm->getRuleName());
     }
 
     #[DataProvider('itemTypeProvider')]
@@ -178,184 +166,121 @@ final class RbacControllerTest extends DatabaseTestCase
         $this->assertNotEmpty(UserAuditLog::search(['action' => 'rbac.' . $itemType . '.delete'])->all());
     }
 
-    public function testIndexFiltersByDescription(): void
+    public function testIndex(): void
     {
         $this->itemsStorage->add((new Role('admin'))->withDescription('platform staff'));
         $this->itemsStorage->add((new Role('editor'))->withDescription('content team'));
-
-        $html = (string) $this->createController()
-            ->index(filterDescription: 'platform', itemType: 'role', indexRouteName: 'admin-rbac-roles')
-            ->getBody();
-
-        // The description filter narrows the item rows to the matching role only.
-        self::assertStringContainsString('col-3 text-break">admin</div>', $html);
-        self::assertStringNotContainsString('col-3 text-break">editor</div>', $html);
-    }
-
-    public function testIndexFiltersByName(): void
-    {
-        $this->itemsStorage->add(new Role('admin'));
-        $this->itemsStorage->add(new Role('editor'));
-
-        $html = (string) $this->createController()
-            ->index(filterName: 'admin', itemType: 'role', indexRouteName: 'admin-rbac-roles')
-            ->getBody();
-
-        // The name filter narrows the item rows to the matching role only.
-        self::assertStringContainsString('col-3 text-break">admin</div>', $html);
-        self::assertStringNotContainsString('col-3 text-break">editor</div>', $html);
-    }
-
-    #[DataProvider('itemTypeProvider')]
-    public function testIndexShowsItems(string $itemType, string $indexRouteName, string $itemName): void
-    {
-        $this->addItem($itemType, $itemName);
-
-        $html = (string) $this->createController()->index(itemType: $itemType, indexRouteName: $indexRouteName)->getBody();
-
-        self::assertStringContainsString('>' . $itemName . '</div>', $html);
-    }
-
-    public function testIndexShowsItemsWithTheirChildren(): void
-    {
         $this->itemsStorage->add(new Role('parentrole'));
         $this->itemsStorage->add(new Role('kidrole'));
         $this->manager->addChild('parentrole', 'kidrole');
 
-        $html = (string) $this->createController()->index(itemType: 'role', indexRouteName: 'admin-rbac-roles')->getBody();
+        $controller = $this->createController();
 
+        // Shows all items
+        $html = (string) $controller->index(itemType: 'role', indexRouteName: 'admin-rbac-roles')->getBody();
+        self::assertStringContainsString('>admin</div>', $html);
+        self::assertStringContainsString('>editor</div>', $html);
+
+        // Filters by name
+        $html = (string) $controller->index(filterName: 'admin', itemType: 'role', indexRouteName: 'admin-rbac-roles')->getBody();
+        self::assertStringContainsString('col-3 text-break">admin</div>', $html);
+        self::assertStringNotContainsString('col-3 text-break">editor</div>', $html);
+
+        // Filters by description
+        $html = (string) $controller->index(filterDescription: 'platform', itemType: 'role', indexRouteName: 'admin-rbac-roles')->getBody();
+        self::assertStringContainsString('col-3 text-break">admin</div>', $html);
+        self::assertStringNotContainsString('col-3 text-break">editor</div>', $html);
+
+        // Shows items with their children
+        $html = (string) $controller->index(itemType: 'role', indexRouteName: 'admin-rbac-roles')->getBody();
         self::assertStringContainsString('>parentrole</div>', $html);
-        // The parent's children column lists its child (col-2), distinct from the child's own name column (col-3).
         self::assertStringContainsString('col-2 text-break">kidrole</div>', $html);
+
+        // Lists permissions (getPermissions branch)
+        $this->itemsStorage->add((new Permission('edit-posts'))->withDescription('editing'));
+        $html = (string) $controller->index(itemType: 'permission', indexRouteName: 'admin-rbac-permissions')->getBody();
+        self::assertStringContainsString('>edit-posts</div>', $html);
     }
 
-    public function testUpdateGetPrefillsRuleAndCheckedChildren(): void
+    public function testUpdateGet(): void
     {
         $this->itemsStorage->add(new Permission('ownerRule-perm'));
         $this->itemsStorage->add(new Role('childrole'));
         $this->itemsStorage->add((new Role('editor'))->withRuleName('ownerRule'));
-        $this->manager->addChild('editor', 'childrole');
-
-        $html = (string) $this->createController()
-            ->update(request: new ServerRequest('GET', '/'), name: 'editor', itemType: 'role', indexRouteName: 'admin-rbac-roles')
-            ->getBody();
-
-        // The rule field is pre-filled and the already-assigned child checkbox is checked.
-        self::assertStringContainsString('value="ownerRule"', $html);
-        self::assertMatchesRegularExpression('/name="role\[children\]\[\]" value="childrole"[^>]*checked/', $html);
-    }
-
-    public function testUpdateGetShowsAvailableChildrenExcludingSelf(): void
-    {
-        $this->itemsStorage->add(new Role('editor'));
-        // Added out of alphabetical order to prove the candidates are sorted before rendering.
         $this->itemsStorage->add(new Role('zzz-role'));
         $this->itemsStorage->add(new Permission('aaa-permission'));
+        $this->manager->addChild('editor', 'childrole');
 
-        $html = (string) $this->createController()
-            ->update(request: new ServerRequest('GET', '/'), name: 'editor', itemType: 'role', indexRouteName: 'admin-rbac-roles')
-            ->getBody();
+        $controller = $this->createController();
 
+        // Prefills rule and checked children
+        $html = (string) $controller->update(request: new ServerRequest('GET', '/'), name: 'editor', itemType: 'role', indexRouteName: 'admin-rbac-roles')->getBody();
+        self::assertStringContainsString('value="ownerRule"', $html);
+        self::assertMatchesRegularExpression('/name="role\[children\]\[\]" value="childrole"[^>]*checked/', $html);
+
+        // Shows available children sorted, excluding self
         self::assertStringContainsString('value="zzz-role"', $html);
         self::assertStringContainsString('value="aaa-permission"', $html);
-        // The item can't be its own child (its name still appears in the name field, so match the child input).
         self::assertStringNotContainsString('name="role[children][]" value="editor"', $html);
-        // Candidates are sorted by name: aaa-permission renders before zzz-role.
         self::assertLessThan(
             strpos($html, 'value="zzz-role"'),
             strpos($html, 'value="aaa-permission"'),
         );
-    }
 
-    #[DataProvider('itemTypeProvider')]
-    public function testUpdateNonExistentShowsError(string $itemType, string $indexRouteName, string $itemName): void
-    {
-        $html = (string) $this->createController()
-            ->update(request: new ServerRequest('GET', '/'), name: 'nonexistent', itemType: $itemType, indexRouteName: $indexRouteName)
-            ->getBody();
-
+        // Shows error for nonexistent item
+        $html = (string) $controller->update(request: new ServerRequest('GET', '/'), name: 'nonexistent', itemType: 'role', indexRouteName: 'admin-rbac-roles')->getBody();
         self::assertStringContainsString('Authorization item not found', $html);
     }
 
-    public function testUpdatePostAssignsAndUnassignsUsers(): void
+    public function testUpdatePost(): void
     {
         $this->itemsStorage->add(new Role('editor'));
-        $this->assignmentsStorage->add(new Assignment('1', 'editor', time()));
-
-        $this->validator->method('validate')->willReturn(new Result());
-
-        // The empty-string id must be ignored, not assigned.
-        $request = (new ServerRequest('POST', '/'))->withParsedBody([
-            'role' => ['name' => 'editor', 'description' => 'Updated', 'rule' => '', 'children' => [''], 'assignedUsers' => ['2', '']],
-        ]);
-
-        $result = $this->createController()->update(request: $request, name: 'editor', itemType: 'role', indexRouteName: 'admin-rbac-roles');
-
-        $this->assertSame(302, $result->getStatusCode());
-        $this->assertNull($this->assignmentsStorage->get('editor', '1'));
-        $this->assertNotNull($this->assignmentsStorage->get('editor', '2'));
-        // The empty-string id was filtered out, so no assignment was created for user "0" ((int) '').
-        $this->assertNull($this->assignmentsStorage->get('editor', '0'));
-    }
-
-    public function testUpdatePostRemovesReplacedChildren(): void
-    {
         $this->itemsStorage->add(new Role('parent'));
         $this->itemsStorage->add(new Role('oldchild'));
         $this->itemsStorage->add(new Role('newchild'));
+        $this->itemsStorage->add(new Role('oldrole'));
         $this->manager->addChild('parent', 'oldchild');
+        $this->assignmentsStorage->add(new Assignment('1', 'editor', time()));
 
         $this->validator->method('validate')->willReturn(new Result());
+        $controller = $this->createController();
 
+        // Successful update with description and audit log
+        $request = (new ServerRequest('POST', '/'))->withParsedBody([
+            'role' => ['name' => 'editor', 'description' => 'Updated', 'rule' => '', 'children' => [''], 'assignedUsers' => []],
+        ]);
+        $result = $controller->update(request: $request, name: 'editor', itemType: 'role', indexRouteName: 'admin-rbac-roles');
+        $this->assertSame(302, $result->getStatusCode());
+        $this->assertSame('//voyti/admin-rbac-roles', $result->getHeaderLine('Location'));
+        $this->assertNotEmpty(UserAuditLog::search(['action' => 'rbac.role.update'])->all());
+
+        // Assigns and unassigns users (empty-string id ignored)
+        $request = (new ServerRequest('POST', '/'))->withParsedBody([
+            'role' => ['name' => 'editor', 'description' => 'Updated', 'rule' => '', 'children' => [''], 'assignedUsers' => ['2', '']],
+        ]);
+        $controller->update(request: $request, name: 'editor', itemType: 'role', indexRouteName: 'admin-rbac-roles');
+        $this->assertNull($this->assignmentsStorage->get('editor', '1'));
+        $this->assertNotNull($this->assignmentsStorage->get('editor', '2'));
+        $this->assertNull($this->assignmentsStorage->get('editor', '0'));
+
+        // Removes replaced children
         $request = (new ServerRequest('POST', '/'))->withParsedBody([
             'role' => ['name' => 'parent', 'description' => '', 'rule' => '', 'children' => ['newchild'], 'assignedUsers' => []],
         ]);
-
-        $result = $this->createController()->update(request: $request, name: 'parent', itemType: 'role', indexRouteName: 'admin-rbac-roles');
-
-        $this->assertSame(302, $result->getStatusCode());
+        $controller->update(request: $request, name: 'parent', itemType: 'role', indexRouteName: 'admin-rbac-roles');
         $this->assertTrue($this->itemsStorage->hasChild('parent', 'newchild'));
-        // The previously-assigned child is removed before the new set is applied.
         $this->assertFalse($this->itemsStorage->hasChild('parent', 'oldchild'));
-    }
 
-    public function testUpdatePostRenamesItemAndRecordsPreviousName(): void
-    {
-        $this->itemsStorage->add(new Role('oldrole'));
-
-        $this->validator->method('validate')->willReturn(new Result());
-
+        // Renames item and records previous name in audit log
         $request = (new ServerRequest('POST', '/'))->withParsedBody([
             'role' => ['name' => 'newrole', 'description' => '', 'rule' => '', 'children' => [], 'assignedUsers' => []],
         ]);
-
-        $result = $this->createController()->update(request: $request, name: 'oldrole', itemType: 'role', indexRouteName: 'admin-rbac-roles');
-
-        $this->assertSame(302, $result->getStatusCode());
+        $controller->update(request: $request, name: 'oldrole', itemType: 'role', indexRouteName: 'admin-rbac-roles');
         $this->assertNotNull($this->itemsStorage->getRole('newrole'));
         $this->assertNull($this->itemsStorage->getRole('oldrole'));
-        // The audit log records the pre-rename name in its context.
         $logs = UserAuditLog::search(['action' => 'rbac.role.update'])->all();
         self::assertNotEmpty($logs);
         self::assertStringContainsString('oldrole', (string) $logs[0]->getContext());
-    }
-
-    #[DataProvider('itemTypeProvider')]
-    public function testUpdatePostSuccessful(string $itemType, string $indexRouteName, string $itemName): void
-    {
-        $this->addItem($itemType, $itemName);
-
-        $this->validator->method('validate')->willReturn(new Result());
-
-        $request = (new ServerRequest('POST', '/'))->withParsedBody([
-            $itemType => ['name' => $itemName, 'description' => 'Updated', 'rule' => '', 'children' => [''], 'assignedUsers' => []],
-        ]);
-
-        $result = $this->createController()->update(request: $request, name: $itemName, itemType: $itemType, indexRouteName: $indexRouteName);
-
-        $this->assertSame(302, $result->getStatusCode());
-        $this->assertSame('//voyti/' . $indexRouteName, $result->getHeaderLine('Location'));
-        $this->assertNotEmpty(UserAuditLog::search(['action' => 'rbac.' . $itemType . '.update'])->all());
     }
 
     #[DataProvider('itemTypeProvider')]
@@ -385,7 +310,7 @@ final class RbacControllerTest extends DatabaseTestCase
         $controller->update(request: $request, name: $itemName, itemType: $itemType, indexRouteName: $indexRouteName);
     }
 
-    public function testUpdatePostWithInvalidDataShowsErrors(): void
+    public function testUpdatePostValidationError(): void
     {
         $this->itemsStorage->add(new Role('editor'));
 
@@ -402,10 +327,9 @@ final class RbacControllerTest extends DatabaseTestCase
         self::assertStringContainsString('Name is required.', $html);
     }
 
-    public function testUpdatePostWithNonexistentChildShowsErrors(): void
+    public function testUpdatePostWithNonexistentChild(): void
     {
         $this->itemsStorage->add(new Role('editor'));
-
         $this->validator->method('validate')->willReturn(new Result());
 
         $request = (new ServerRequest('POST', '/'))->withParsedBody([
@@ -415,7 +339,6 @@ final class RbacControllerTest extends DatabaseTestCase
         $html = (string) $this->createController()->update(request: $request, name: 'editor', itemType: 'role', indexRouteName: 'admin-rbac-roles')->getBody();
 
         self::assertStringContainsString('Child "missing-child" does not exist.', $html);
-        // The item's own fields are still persisted; only the missing child is rejected.
         $role = $this->itemsStorage->getRole('editor');
         $this->assertNotNull($role);
         $this->assertSame('Updated', $role->getDescription());
@@ -425,7 +348,6 @@ final class RbacControllerTest extends DatabaseTestCase
     public function testUpdatePostWithRule(string $itemType, string $indexRouteName, string $itemName): void
     {
         $this->addItem($itemType, $itemName);
-
         $this->validator->method('validate')->willReturn(new Result());
 
         $request = (new ServerRequest('POST', '/'))->withParsedBody([
@@ -458,7 +380,6 @@ final class RbacControllerTest extends DatabaseTestCase
             ->update(request: new ServerRequest('GET', '/'), name: 'editor', itemType: 'role', indexRouteName: 'admin-rbac-roles')
             ->getBody();
 
-        // The assigned user is rendered as a checked assignment with their username.
         self::assertStringContainsString('assigned', $html);
         self::assertStringContainsString('name="assignedUsers[]" value="' . $assignedUser->getId() . '"', $html);
     }

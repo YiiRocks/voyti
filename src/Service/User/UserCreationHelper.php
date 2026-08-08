@@ -125,14 +125,7 @@ final readonly class UserCreationHelper
         try {
             $save();
         } catch (IntegrityException) {
-            $conflict = $this->findUniquenessConflict($user->getEmail(), $user->getUsername());
-            if ($conflict === null) {
-                // @codeCoverageIgnoreStart
-                // The `user` table's only UNIQUE constraints are on email and username, so an
-                // IntegrityException on this save always means findUniquenessConflict() finds one.
-                $conflict = 'A user with this email or username already exists.';
-                // @codeCoverageIgnoreEnd
-            }
+            $conflict = $this->findUniquenessConflict($user->getEmail(), $user->getUsername()) ?? 'A user with this email or username already exists.';
             throw new RuntimeException($conflict);
         }
     }

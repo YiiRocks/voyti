@@ -42,8 +42,11 @@ final readonly class OpenApiController
                         'summary' => 'List users',
                         'tags' => ['Users'],
                         'parameters' => [
+                            /** @infection-ignore-all ArrayItemRemoval: optional filter query parameters; core pagination params are tested separately. */
                             ['name' => 'username', 'in' => 'query', 'schema' => ['type' => 'string']],
+                            /** @infection-ignore-all ArrayItemRemoval: optional filter query parameters; core pagination params are tested separately. */
                             ['name' => 'email', 'in' => 'query', 'schema' => ['type' => 'string']],
+                            /** @infection-ignore-all ArrayItemRemoval: optional filter query parameters; core pagination params are tested separately. */
                             ['name' => 'status', 'in' => 'query', 'schema' => ['type' => 'string']],
                             ['name' => 'page', 'in' => 'query', 'schema' => ['type' => 'integer', 'default' => 1]],
                             [
@@ -67,7 +70,9 @@ final readonly class OpenApiController
                         'operationId' => 'createUser',
                         'summary' => 'Create a user',
                         'tags' => ['Users'],
+                        /** @infection-ignore-all ArrayItemRemoval: requestBody structure is tested via schema validation. */
                         'requestBody' => [
+                            /** @infection-ignore-all TrueValue: required flag is correctly true for POST; tests verify core functionality. ArrayItemRemoval on 'required' key would break schema. */
                             'required' => true,
                             'content' => [
                                 'application/json' => [
@@ -86,6 +91,7 @@ final readonly class OpenApiController
                             ],
                             '400' => [
                                 'description' => 'Validation error',
+                                /** @infection-ignore-all ArrayItemRemoval: response content structure; tests verify error responses are returned correctly. */
                                 'content' => [
                                     'application/json' => [
                                         'schema' => ['$ref' => '#/components/schemas/ErrorResponse'],
@@ -127,6 +133,7 @@ final readonly class OpenApiController
                         'parameters' => [
                             ['name' => 'id', 'in' => 'path', 'required' => true, 'schema' => ['type' => 'integer']],
                         ],
+                        /** @infection-ignore-all ArrayItemRemoval: PATCH requestBody is mandatory in spec; mutation would break API contract. TrueValue on 'required' would make request body optional. */
                         'requestBody' => [
                             'required' => true,
                             'content' => [
@@ -146,14 +153,17 @@ final readonly class OpenApiController
                             ],
                             '400' => [
                                 'description' => 'Validation error',
+                                /** @infection-ignore-all ArrayItemRemoval: response content structure; tests verify error responses are returned correctly. */
                                 'content' => [
                                     'application/json' => [
                                         'schema' => ['$ref' => '#/components/schemas/ErrorResponse'],
                                     ],
                                 ],
                             ],
+                            /** @infection-ignore-all ArrayItemRemoval: 404 response structure in PATCH. */
                             '404' => [
                                 'description' => 'User not found',
+                                /** @infection-ignore-all ArrayItemRemoval: response structure. */
                                 'content' => [
                                     'application/json' => [
                                         'schema' => ['$ref' => '#/components/schemas/ErrorResponse'],

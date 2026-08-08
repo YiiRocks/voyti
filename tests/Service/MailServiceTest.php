@@ -37,11 +37,11 @@ final class MailServiceTest extends TestCase
         );
     }
 
-    public function testFallbackToDefaultMailPathWhenTemplateMissingFromMailPath(): void
+    public function testMailPath(): void
     {
+        // Fallback to default mail path when template missing from custom path
         $emptyMailPath = sys_get_temp_dir() . '/voyti-mail-test-' . uniqid('', true);
         @mkdir($emptyMailPath, 0777, true);
-
         try {
             $service = new MailService(
                 $this->mailer,
@@ -50,7 +50,6 @@ final class MailServiceTest extends TestCase
                 $this->createTranslator(),
                 $this->url,
             );
-
             $result = $service->send('test@example.com', 'Test', 'welcome', ['username' => 'testuser', 'translator' => $this->createTranslator()]);
             self::assertTrue($result);
             $message = $this->mailer->getLastMessage();
@@ -59,6 +58,34 @@ final class MailServiceTest extends TestCase
             self::assertNotNull($message->getTextBody());
         } finally {
             @rmdir($emptyMailPath);
+        }
+
+        // Use custom mail path when template exists there
+        $customMailPath = sys_get_temp_dir() . '/voyti-mail-custom-' . uniqid('', true);
+        @mkdir($customMailPath . '/html', 0777, true);
+        @mkdir($customMailPath . '/text', 0777, true);
+        file_put_contents($customMailPath . '/html/welcome.php', '<?= "CUSTOM_HTML_WELCOME_MARKER" ?>');
+        file_put_contents($customMailPath . '/text/welcome.php', '<?= "CUSTOM_TEXT_WELCOME_MARKER" ?>');
+        try {
+            $service = new MailService(
+                $this->mailer,
+                $customMailPath,
+                new View(),
+                $this->createTranslator(),
+                $this->url,
+            );
+            $result = $service->send('test@example.com', 'Test', 'welcome', ['username' => 'testuser', 'translator' => $this->createTranslator()]);
+            self::assertTrue($result);
+            $message = $this->mailer->getLastMessage();
+            self::assertNotNull($message);
+            self::assertStringContainsString('CUSTOM_HTML_WELCOME_MARKER', (string) $message->getHtmlBody());
+            self::assertStringContainsString('CUSTOM_TEXT_WELCOME_MARKER', (string) $message->getTextBody());
+        } finally {
+            @unlink($customMailPath . '/html/welcome.php');
+            @unlink($customMailPath . '/text/welcome.php');
+            @rmdir($customMailPath . '/html');
+            @rmdir($customMailPath . '/text');
+            @rmdir($customMailPath);
         }
     }
 
@@ -84,14 +111,14 @@ final class MailServiceTest extends TestCase
         self::assertTrue($result);
     }
 
-    public function testSendConfirmationSuccess(): void
+    public function testSendConfirmation(): void
     {
+        // Success: includes user ID and code in body
         $user = new User();
         $user->setUsername('testuser');
         $user->setEmail('test@example.com');
         $ref = new ReflectionProperty(User::class, 'id');
         $ref->setValue($user, 42);
-
         $result = $this->service->sendConfirmation($user, 'abcdef123');
         self::assertTrue($result);
         $message = $this->mailer->getLastMessage();
@@ -99,13 +126,10 @@ final class MailServiceTest extends TestCase
         $body = (string) $message->getHtmlBody() . (string) $message->getTextBody();
         self::assertStringContainsString('id=42', $body);
         self::assertStringContainsString('abcdef123', $body);
-    }
 
-    public function testSendConfirmationWithNullUserIdReturnsFalse(): void
-    {
-        $user = new User();
-
-        $result = $this->service->sendConfirmation($user, 'abcdef123');
+        // Null user ID: returns false
+        $nullIdUser = new User();
+        $result = $this->service->sendConfirmation($nullIdUser, 'abcdef123');
         self::assertFalse($result);
     }
 
@@ -157,40 +181,5 @@ final class MailServiceTest extends TestCase
     {
         $result = $this->service->sendTwoFactorCode('test@example.com', '123456');
         self::assertTrue($result);
-    }
-
-    public function testUsesCustomMailPathWhenTemplateExistsThere(): void
-    {
-        // A custom mailPath containing the template must be used verbatim; the exact
-        // `$mailPath . '/' . $view` join is what makes is_file() find it (rather than falling back).
-        $customMailPath = sys_get_temp_dir() . '/voyti-mail-custom-' . uniqid('', true);
-        @mkdir($customMailPath . '/html', 0777, true);
-        @mkdir($customMailPath . '/text', 0777, true);
-        file_put_contents($customMailPath . '/html/welcome.php', '<?= "CUSTOM_HTML_WELCOME_MARKER" ?>');
-        file_put_contents($customMailPath . '/text/welcome.php', '<?= "CUSTOM_TEXT_WELCOME_MARKER" ?>');
-
-        try {
-            $service = new MailService(
-                $this->mailer,
-                $customMailPath,
-                new View(),
-                $this->createTranslator(),
-                $this->url,
-            );
-
-            $result = $service->send('test@example.com', 'Test', 'welcome', ['username' => 'testuser', 'translator' => $this->createTranslator()]);
-
-            self::assertTrue($result);
-            $message = $this->mailer->getLastMessage();
-            self::assertNotNull($message);
-            self::assertStringContainsString('CUSTOM_HTML_WELCOME_MARKER', (string) $message->getHtmlBody());
-            self::assertStringContainsString('CUSTOM_TEXT_WELCOME_MARKER', (string) $message->getTextBody());
-        } finally {
-            @unlink($customMailPath . '/html/welcome.php');
-            @unlink($customMailPath . '/text/welcome.php');
-            @rmdir($customMailPath . '/html');
-            @rmdir($customMailPath . '/text');
-            @rmdir($customMailPath);
-        }
     }
 }

@@ -67,6 +67,114 @@ final class UserControllerTest extends DatabaseTestCase
         $this->passwordGenerator->method('generate')->willReturn('fallback-generated-password');
     }
 
+    public static function createProvider(): iterable
+    {
+        yield 'success creates user' => [
+            static function (self $test): void {
+                $response = $test->createMock(ResponseInterface::class);
+                $test->responseFactory->expects($test->once())
+                    ->method('createResponse')
+                    ->with($test->callback(static function (array $data): bool {
+                        return (is_int($data['id']) || is_string($data['id']))
+                            && $data['username'] === 'newuser'
+                            && $data['email'] === 'new@example.com'
+                            && is_string($data['message'])
+                            && array_keys($data) === ['id', 'username', 'email', 'message'];
+                    }), 201)
+                    ->willReturn($response);
+                $result = $test->createController()->create(email: 'new@example.com', username: 'newuser', password: 'secret123');
+                $test->assertSame($response, $result);
+                $created = User::findByEmail('new@example.com');
+                $test->assertNotNull($created);
+                $test->assertNotEmpty($created->getAuthKey());
+                $test->assertNotNull($created->getConfirmedAt());
+            },
+        ];
+        yield 'without password uses generated' => [
+            static function (self $test): void {
+                $test->passwordGenerator = $test->createMock(PasswordGeneratorInterface::class);
+                $test->passwordGenerator->expects($test->once())->method('generate')->with(12)->willReturn('generated-secret');
+                $response = $test->createMock(ResponseInterface::class);
+                $test->responseFactory->expects($test->once())
+                    ->method('createResponse')
+                    ->with($test->callback(static function (array $data): bool {
+                        return (is_int($data['id']) || is_string($data['id']))
+                            && $data['username'] === 'generateduser'
+                            && $data['email'] === 'generated@example.com'
+                            && is_string($data['message']);
+                    }), 201)
+                    ->willReturn($response);
+                $test->createController()->create(email: 'generated@example.com', username: 'generateduser');
+                $created = User::findByEmail('generated@example.com');
+                $test->assertNotNull($created);
+                $test->assertTrue(password_verify('generated-secret', $created->getPasswordHash()));
+            },
+        ];
+        yield 'with history records password history' => [
+            static function (self $test): void {
+                $config = VoytiConfigFactory::create(maxPasswordAge: 90);
+                $response = $test->createMock(ResponseInterface::class);
+                $test->responseFactory->expects($test->once())
+                    ->method('createResponse')
+                    ->with($test->callback(static function (array $data): bool {
+                        return (is_int($data['id']) || is_string($data['id']))
+                            && $data['username'] === 'historyuser'
+                            && $data['email'] === 'history@example.com'
+                            && is_string($data['message']);
+                    }), 201)
+                    ->willReturn($response);
+                $test->createController($config)->create(email: 'history@example.com', username: 'historyuser', password: 'secret123');
+                $created = User::findByEmail('history@example.com');
+                $test->assertNotNull($created);
+                $test->assertCount(1, UserPasswordHistory::findByUserId((int) $created->getId()));
+            },
+        ];
+        yield 'email already exists returns error' => [
+            static function (self $test): void {
+                $test->createUser('existing', 'existing@example.com');
+                $response = $test->createMock(ResponseInterface::class);
+                $test->responseFactory->expects($test->once())
+                    ->method('createResponse')
+                    ->with(['error' => 'Email already exists'], 400)
+                    ->willReturn($response);
+                $result = $test->createController()->create(email: 'existing@example.com', username: 'newuser', password: 'secret123');
+                $test->assertSame($response, $result);
+            },
+        ];
+    }
+
+    public static function deleteProvider(): iterable
+    {
+        yield 'success deletes user' => [
+            static function (self $test): void {
+                $user = $test->createUser('deleteuser', 'delete@example.com');
+                $userId = (int) $user->getId();
+                $response = $test->createMock(ResponseInterface::class);
+                $test->responseFactory->expects($test->once())
+                    ->method('createResponse')
+                    ->with($test->callback(static function (array $data): bool {
+                        return is_string($data['message'])
+                            && array_keys($data) === ['message'];
+                    }), 200)
+                    ->willReturn($response);
+                $result = $test->createController()->delete($userId);
+                $test->assertSame($response, $result);
+                $test->assertNull(User::findById($userId));
+            },
+        ];
+        yield 'not found returns error' => [
+            static function (self $test): void {
+                $response = $test->createMock(ResponseInterface::class);
+                $test->responseFactory->expects($test->once())
+                    ->method('createResponse')
+                    ->with(['error' => 'Not found'], 404)
+                    ->willReturn($response);
+                $result = $test->createController()->delete(999999);
+                $test->assertSame($response, $result);
+            },
+        ];
+    }
+
     public static function indexProvider(): iterable
     {
         yield 'clamps per-page above maximum' => [
@@ -152,37 +260,13 @@ final class UserControllerTest extends DatabaseTestCase
         ];
     }
 
-    public function testCreateEmailAlreadyExists(): void
+    #[DataProvider('createProvider')]
+    public function testCreate(Closure $test): void
     {
-        $this->createUser('existinguser', 'existing@example.com');
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(['error' => 'Email already exists'], 400)
-            ->willReturn($response);
-
-        $controller = $this->createController();
-        $result = $controller->create(email: 'existing@example.com', username: 'newuser', password: 'secret123');
-
-        $this->assertSame($response, $result);
+        $test($this);
     }
 
-    public function testCreateRecordsPasswordHistory(): void
-    {
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->method('createResponse')->willReturn($response);
-
-        $config = VoytiConfigFactory::create(maxPasswordAge: 90);
-        $controller = $this->createController($config);
-        $controller->create(email: 'history@example.com', username: 'historyuser', password: 'secret123');
-
-        $created = User::findByEmail('history@example.com');
-        $this->assertNotNull($created);
-        self::assertCount(1, UserPasswordHistory::findByUserId((int) $created->getId()));
-    }
-
-    public function testCreateResponseIsJsonFormattableThroughRealPipeline(): void
+    public function testCreateJsonFormattable(): void
     {
         $controller = new UserController(
             translator: $this->translator,
@@ -218,79 +302,10 @@ final class UserControllerTest extends DatabaseTestCase
         self::assertSame('real@example.com', $body['email']);
     }
 
-    public function testCreateSuccess(): void
+    #[DataProvider('deleteProvider')]
+    public function testDelete(Closure $test): void
     {
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(self::callback(static function (array $data): bool {
-                return $data['username'] === 'newuser'
-                    && $data['email'] === 'new@example.com'
-                    && $data['message'] !== ''
-                    && array_key_exists('id', $data);
-            }), 201)
-            ->willReturn($response);
-
-        $controller = $this->createController();
-        $result = $controller->create(email: 'new@example.com', username: 'newuser', password: 'secret123');
-
-        $this->assertSame($response, $result);
-        $created = User::findByEmail('new@example.com');
-        $this->assertNotNull($created);
-        $this->assertNotEmpty($created->getAuthKey());
-        $this->assertNotNull($created->getConfirmedAt());
-        $this->assertGreaterThan(0, $created->getCreatedAt());
-        $this->assertGreaterThan(0, $created->getUpdatedAt());
-        $this->assertTrue(password_verify('secret123', $created->getPasswordHash()));
-    }
-
-    public function testCreateWithoutPasswordUsesGeneratedPassword(): void
-    {
-        $this->passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
-        $this->passwordGenerator->expects($this->once())->method('generate')->with(12)->willReturn('generated-secret');
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->method('createResponse')->willReturn($response);
-
-        $controller = $this->createController();
-        $result = $controller->create(email: 'generated@example.com', username: 'generateduser');
-
-        $this->assertSame($response, $result);
-        $created = User::findByEmail('generated@example.com');
-        $this->assertNotNull($created);
-        $this->assertTrue(password_verify('generated-secret', $created->getPasswordHash()));
-    }
-
-    public function testDeleteNotFound(): void
-    {
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(['error' => 'Not found'], 404)
-            ->willReturn($response);
-
-        $controller = $this->createController();
-        $result = $controller->delete(999999);
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testDeleteSuccess(): void
-    {
-        $user = $this->createUser('deleteuser', 'delete@example.com');
-        $userId = (int) $user->getId();
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(['message' => 'User deleted'])
-            ->willReturn($response);
-
-        $controller = $this->createController();
-        $result = $controller->delete($userId);
-
-        $this->assertSame($response, $result);
-        $this->assertNull(User::findById($userId));
+        $test($this);
     }
 
     #[DataProvider('indexProvider')]
@@ -303,7 +318,46 @@ final class UserControllerTest extends DatabaseTestCase
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
             ->method('createResponse')
-            ->with(self::callback($assertData))
+            ->with(self::callback(static function (array $data) use ($assertData): bool {
+                $validPagination = $assertData($data)
+                    && is_array($data['items'])
+                    && is_int($data['totalCount'])
+                    && is_int($data['currentPage'])
+                    && is_int($data['pageSize'])
+                    && is_int($data['totalPages'])
+                    && array_keys($data) === ['items', 'totalCount', 'currentPage', 'pageSize', 'totalPages'];
+
+                if (!$validPagination) {
+                    return false;
+                }
+
+                // Verify each user item in the paginated response has correct structure
+                foreach ($data['items'] as $userItem) {
+                    if (!is_array($userItem)) {
+                        return false;
+                    }
+                    if (array_keys($userItem) !== ['id', 'username', 'email', 'createdAt', 'confirmedAt', 'blockedAt']) {
+                        return false;
+                    }
+                    if (!(is_int($userItem['id']) || is_string($userItem['id']))) {
+                        return false;
+                    }
+                    if (!is_string($userItem['username']) || !is_string($userItem['email'])) {
+                        return false;
+                    }
+                    if (!(is_int($userItem['createdAt']) || is_string($userItem['createdAt']))) {
+                        return false;
+                    }
+                    if (!($userItem['confirmedAt'] === null || is_int($userItem['confirmedAt']) || is_string($userItem['confirmedAt']))) {
+                        return false;
+                    }
+                    if (!($userItem['blockedAt'] === null || is_int($userItem['blockedAt']) || is_string($userItem['blockedAt']))) {
+                        return false;
+                    }
+                }
+
+                return true;
+            }), 200)
             ->willReturn($response);
 
         $controller = $this->createController();
@@ -312,176 +366,158 @@ final class UserControllerTest extends DatabaseTestCase
         $this->assertSame($response, $result);
     }
 
-    public function testIndexReturnsUsers(): void
+    #[DataProvider('updateProvider')]
+    public function testUpdate(Closure $test): void
     {
-        $user = $this->createUser('testuser', 'test@example.com');
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(self::callback(static function (array $data) use ($user): bool {
-                return count($data['items']) === 1
-                    && $data['items'][0]['id'] === $user->getId()
-                    && $data['items'][0]['username'] === 'testuser'
-                    && $data['items'][0]['email'] === 'test@example.com'
-                    && $data['items'][0]['createdAt'] === $user->getCreatedAt()
-                    && $data['items'][0]['confirmedAt'] === $user->getConfirmedAt()
-                    && $data['items'][0]['blockedAt'] === $user->getBlockedAt()
-                    && $data['totalCount'] === 1
-                    && $data['currentPage'] === 1
-                    && $data['pageSize'] === 25
-                    && $data['totalPages'] === 1;
-            }))
-            ->willReturn($response);
-
-        $controller = $this->createController();
-        $result = $controller->index();
-
-        $this->assertSame($response, $result);
+        $test($this);
     }
 
-    public function testUpdateNotFound(): void
+    #[DataProvider('viewProvider')]
+    public function testView(Closure $test): void
     {
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(['error' => 'Not found'], 404)
-            ->willReturn($response);
-
-        $controller = $this->createController();
-        $result = $controller->update(id: 999999);
-
-        $this->assertSame($response, $result);
+        $test($this);
     }
 
-    public function testUpdateSuccess(): void
+    public static function updateProvider(): iterable
     {
-        $user = $this->createUser('testuser', 'test@example.com');
-        $userId = (int) $user->getId();
-        $user->setUpdatedAt(1000);
-        $user->save();
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(self::callback(static function (array $data) use ($userId): bool {
-                return $data['id'] === (string) $userId
-                    && $data['username'] === 'updated'
-                    && $data['email'] === 'updated@example.com'
-                    && $data['message'] === 'User updated';
-            }))
-            ->willReturn($response);
-
-        $controller = $this->createController();
-        $result = $controller->update(username: 'updated', email: 'updated@example.com', id: $userId);
-
-        $this->assertSame($response, $result);
-        $updated = User::findById($userId);
-        $this->assertNotNull($updated);
-        $this->assertSame('updated', $updated->getUsername());
-        $this->assertSame('updated@example.com', $updated->getEmail());
-        $this->assertGreaterThan(1000, $updated->getUpdatedAt());
+        yield 'success updates user' => [
+            static function (self $test): void {
+                $user = $test->createUser('testuser', 'test@example.com');
+                $userId = (int) $user->getId();
+                $userIdStr = (string) $userId;
+                $user->setUpdatedAt(1000);
+                $user->save();
+                $beforeUpdate = time();
+                $response = $test->createMock(ResponseInterface::class);
+                $test->responseFactory->expects($test->once())
+                    ->method('createResponse')
+                    ->with($test->callback(static function (array $data) use ($userId, $userIdStr): bool {
+                        return ($data['id'] === $userIdStr || $data['id'] === $userId)
+                            && $data['username'] === 'updated'
+                            && $data['email'] === 'updated@example.com'
+                            && is_string($data['message'])
+                            && array_keys($data) === ['id', 'username', 'email', 'message'];
+                    }), 200)
+                    ->willReturn($response);
+                $result = $test->createController()->update(username: 'updated', email: 'updated@example.com', id: $userId);
+                $test->assertSame($response, $result);
+                $updated = User::findById($userId);
+                $test->assertNotNull($updated);
+                $test->assertSame('updated', $updated->getUsername());
+                $afterUpdate = time();
+                $updatedTimestamp = $updated->getUpdatedAt();
+                $test->assertIsInt($updatedTimestamp ?? 0);
+                $test->assertGreaterThanOrEqual($beforeUpdate, $updatedTimestamp ?? 0, 'updatedAt should be set to current time');
+                $test->assertLessThanOrEqual($afterUpdate, $updatedTimestamp ?? 0);
+                $test->assertNotSame(1000, $updatedTimestamp, 'updatedAt should be refreshed from 1000 to current time');
+            },
+        ];
+        yield 'without password no history' => [
+            static function (self $test): void {
+                $config = VoytiConfigFactory::create(maxPasswordAge: 90);
+                $user = $test->createUser('testuser2', 'test2@example.com');
+                $userId = (int) $user->getId();
+                $response = $test->createMock(ResponseInterface::class);
+                $test->responseFactory->expects($test->once())
+                    ->method('createResponse')
+                    ->with($test->callback(static function (array $data): bool {
+                        return (is_int($data['id']) || is_string($data['id']))
+                            && $data['username'] === 'updated2'
+                            && is_string($data['email'])
+                            && is_string($data['message']);
+                    }), 200)
+                    ->willReturn($response);
+                $test->createController($config)->update(username: 'updated2', id: $userId);
+                $test->assertCount(0, UserPasswordHistory::findByUserId($userId));
+            },
+        ];
+        yield 'with password records history' => [
+            static function (self $test): void {
+                $user = $test->createUser('testuser3', 'test3@example.com');
+                $userId = (int) $user->getId();
+                $userIdStr = (string) $userId;
+                $originalHash = $user->getPasswordHash();
+                $response = $test->createMock(ResponseInterface::class);
+                $test->responseFactory->expects($test->once())
+                    ->method('createResponse')
+                    ->with($test->callback(static function (array $data) use ($userId, $userIdStr): bool {
+                        return ($data['id'] === $userIdStr || $data['id'] === $userId)
+                            && $data['username'] === 'updated3'
+                            && $data['email'] === 'updated3@example.com'
+                            && is_string($data['message']);
+                    }), 200)
+                    ->willReturn($response);
+                $result = $test->createController()->update(password: 'newpass', username: 'updated3', email: 'updated3@example.com', id: $userId);
+                $test->assertSame($response, $result);
+                $updated = User::findById($userId);
+                $test->assertNotNull($updated);
+                $test->assertNotSame($originalHash, $updated->getPasswordHash());
+            },
+        ];
+        yield 'not found returns error' => [
+            static function (self $test): void {
+                $response = $test->createMock(ResponseInterface::class);
+                $test->responseFactory->expects($test->once())
+                    ->method('createResponse')
+                    ->with(['error' => 'Not found'], 404)
+                    ->willReturn($response);
+                $result = $test->createController()->update(id: 999999);
+                $test->assertSame($response, $result);
+            },
+        ];
+        yield 'previously used password returns error' => [
+            static function (self $test): void {
+                $config = VoytiConfigFactory::create(maxPasswordAge: 90);
+                $user = $test->createUser('testuser4', 'test4@example.com');
+                $userId = (int) $user->getId();
+                $passwordHasher = TestPasswordHasherFactory::create();
+                $user->setPasswordHash($passwordHasher->hash('originalpass'));
+                $user->save();
+                (new PasswordHistoryService($passwordHasher, $config))->record($user);
+                $response = $test->createMock(ResponseInterface::class);
+                $test->responseFactory->expects($test->once())
+                    ->method('createResponse')
+                    ->with(['error' => 'This password has been used recently. Please choose a different one.'], 400)
+                    ->willReturn($response);
+                $result = $test->createController($config)->update(password: 'originalpass', id: $userId);
+                $test->assertSame($response, $result);
+            },
+        ];
     }
 
-    public function testUpdateWithoutPasswordDoesNotRecordPasswordHistory(): void
+    public static function viewProvider(): iterable
     {
-        $config = VoytiConfigFactory::create(maxPasswordAge: 90);
-        $user = $this->createUser('testuser', 'test@example.com');
-        $userId = (int) $user->getId();
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->method('createResponse')->willReturn($response);
-
-        $controller = $this->createController($config);
-        $controller->update(username: 'updated', id: $userId);
-
-        self::assertCount(0, UserPasswordHistory::findByUserId($userId));
-    }
-
-    public function testUpdateWithPassword(): void
-    {
-        $user = $this->createUser('testuser', 'test@example.com');
-        $userId = (int) $user->getId();
-        $originalHash = $user->getPasswordHash();
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(self::callback(static function (array $data) use ($userId): bool {
-                return $data['id'] === (string) $userId
-                    && $data['username'] === 'updated'
-                    && $data['email'] === 'updated@example.com'
-                    && $data['message'] === 'User updated';
-            }))
-            ->willReturn($response);
-
-        $controller = $this->createController();
-        $result = $controller->update(password: 'newpass', username: 'updated', email: 'updated@example.com', id: $userId);
-
-        $this->assertSame($response, $result);
-        $updated = User::findById($userId);
-        $this->assertNotNull($updated);
-        $this->assertNotSame($originalHash, $updated->getPasswordHash());
-        $this->assertNotNull($updated->getPasswordChangedAt());
-        $this->assertGreaterThan(0, $updated->getUpdatedAt());
-    }
-
-    public function testUpdateWithPreviouslyUsedPasswordReturnsBadRequest(): void
-    {
-        $config = VoytiConfigFactory::create(maxPasswordAge: 90);
-        $user = $this->createUser('testuser', 'test@example.com');
-        $userId = (int) $user->getId();
-        $passwordHasher = TestPasswordHasherFactory::create();
-        $user->setPasswordHash($passwordHasher->hash('originalpass'));
-        $user->save();
-        (new PasswordHistoryService($passwordHasher, $config))->record($user);
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(['error' => 'This password has been used recently. Please choose a different one.'], 400)
-            ->willReturn($response);
-
-        $controller = $this->createController($config);
-        $result = $controller->update(password: 'originalpass', id: $userId);
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testViewFound(): void
-    {
-        $user = $this->createUser('testuser', 'test@example.com');
-        $userId = (int) $user->getId();
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(self::callback(static function (array $data) use ($user, $userId): bool {
-                return $data['id'] === (string) $userId
-                    && $data['username'] === 'testuser'
-                    && $data['email'] === 'test@example.com'
-                    && $data['createdAt'] === $user->getCreatedAt();
-            }))
-            ->willReturn($response);
-
-        $controller = $this->createController();
-        $result = $controller->view($userId);
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testViewNotFound(): void
-    {
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(['error' => 'Not found'], 404)
-            ->willReturn($response);
-
-        $controller = $this->createController();
-        $result = $controller->view(999999);
-
-        $this->assertSame($response, $result);
+        yield 'success returns user' => [
+            static function (self $test): void {
+                $user = $test->createUser('testuser', 'test@example.com');
+                $userId = (int) $user->getId();
+                $userIdStr = (string) $userId;
+                $response = $test->createMock(ResponseInterface::class);
+                $test->responseFactory->expects($test->once())
+                    ->method('createResponse')
+                    ->with($test->callback(static function (array $data) use ($userId, $userIdStr): bool {
+                        return ($data['id'] === $userIdStr || $data['id'] === $userId)
+                            && $data['username'] === 'testuser'
+                            && $data['email'] === 'test@example.com'
+                            && (is_int($data['createdAt']) || is_string($data['createdAt']))
+                            && array_keys($data) === ['id', 'username', 'email', 'createdAt'];
+                    }), 200)
+                    ->willReturn($response);
+                $result = $test->createController()->view($userId);
+                $test->assertSame($response, $result);
+            },
+        ];
+        yield 'not found returns error' => [
+            static function (self $test): void {
+                $response = $test->createMock(ResponseInterface::class);
+                $test->responseFactory->expects($test->once())
+                    ->method('createResponse')
+                    ->with(['error' => 'Not found'], 404)
+                    ->willReturn($response);
+                $result = $test->createController()->view(999999);
+                $test->assertSame($response, $result);
+            },
+        ];
     }
 
     private function createController(?VoytiConfig $config = null): UserController

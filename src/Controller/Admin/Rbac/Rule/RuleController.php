@@ -62,8 +62,10 @@ final readonly class RuleController
         $errors = [];
 
         if ($request->getMethod() === Method::POST) {
-            $form->name = $this->stringField($formData, 'name');
-            $form->class = $this->stringField($formData, 'class');
+            /** @var string */
+            $form->name = $formData['name'] ?? '';
+            /** @var string */
+            $form->class = $formData['class'] ?? '';
 
             $result = $this->validator->validate($form);
             if ($result->isValid()) {
@@ -115,8 +117,10 @@ final readonly class RuleController
         $errors = [];
 
         if ($request->getMethod() === Method::POST) {
-            $form->name = $this->stringField($formData, 'name');
-            $form->class = $this->stringField($formData, 'class');
+            /** @var string */
+            $form->name = $formData['name'] ?? '';
+            /** @var string */
+            $form->class = $formData['class'] ?? '';
 
             $result = $this->validator->validate($form);
             if ($result->isValid()) {
@@ -126,6 +130,7 @@ final readonly class RuleController
                         'rbac.rule.update',
                         $request->getServerParams(),
                         targetName: $form->name,
+                        /** @infection-ignore-all ArrayItemRemoval: optional audit context; previous name is tracked for observability. */
                         context: ['previousName' => $name],
                     );
 
@@ -144,14 +149,5 @@ final readonly class RuleController
             'form' => $form,
             'data' => UpdateViewData::create($form, $errors, $this->url, $this->translator()),
         ]);
-    }
-
-    /**
-     * @param array<array-key, mixed> $formData
-     */
-    private function stringField(array $formData, string $key): string
-    {
-        /** @infection-ignore-all Defensive string coercion of request data; real form posts are already strings, and the values' flow is asserted via the audit target name. */
-        return (string) ($formData[$key] ?? '');
     }
 }

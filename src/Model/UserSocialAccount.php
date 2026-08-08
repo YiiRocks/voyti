@@ -6,6 +6,7 @@ namespace YiiRocks\Voyti\Model;
 
 use Yiisoft\ActiveRecord\ActiveRecord;
 use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
+use Yiisoft\Json\Json;
 
 /**
  * ActiveRecord for the `user_social_account` table: a social-provider identity (e.g. Google,
@@ -89,7 +90,7 @@ final class UserSocialAccount extends ActiveRecord
     {
         if ($this->data !== null && $this->decodedData === null) {
             /** @var ?array $this->decodedData */
-            $this->decodedData = json_decode($this->data, true);
+            $this->decodedData = Json::decode($this->data);
         }
         return $this->decodedData;
     }

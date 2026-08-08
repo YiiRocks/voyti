@@ -155,185 +155,159 @@ final class UserControllerTest extends DatabaseTestCase
         ];
     }
 
-    public function testAssignmentsGetShowsAssignments(): void
+    public static function notFoundActionsProvider(): iterable
     {
-        $user = $this->createUser(email: 'testuser@example.com');
-
-        $html = (string) $this->createController()->assignments(new ServerRequest('GET', '/'), (int) $user->getId())->getBody();
-
-        self::assertStringContainsString('Assignments', $html);
+        yield 'assignments' => [
+            static fn(UserController $controller): string => (string) $controller->assignments(new ServerRequest('GET', '/'), 999999)->getBody(),
+        ];
+        yield 'show' => [
+            static fn(UserController $controller): string => (string) $controller->show(999999)->getBody(),
+        ];
+        yield 'passwordReset' => [
+            static fn(UserController $controller): string => (string) $controller->passwordReset(new ServerRequest('POST', '/'), 999999)->getBody(),
+        ];
+        yield 'sessions' => [
+            static fn(UserController $controller): string => (string) $controller->sessions(999999)->getBody(),
+        ];
+        yield 'terminateSessions' => [
+            static fn(UserController $controller): string => (string) $controller->terminateSessions(999999)->getBody(),
+        ];
+        yield 'update' => [
+            static fn(UserController $controller): string => (string) $controller->update(new ServerRequest('GET', '/'), 999999)->getBody(),
+        ];
+        yield 'updateProfile' => [
+            static fn(UserController $controller): string => (string) $controller->updateProfile(new ServerRequest('GET', '/'), 999999)->getBody(),
+        ];
     }
 
-    public function testAssignmentsPostUpdates(): void
+    #[DataProvider('notFoundActionsProvider')]
+    public function testActionUserNotFound(callable $invoke): void
+    {
+        $html = $invoke($this->createController());
+        self::assertStringContainsString('User not found', $html);
+    }
+
+    public function testAssignments(): void
     {
         $user = $this->createUser(email: 'testuser@example.com');
         $userId = (int) $user->getId();
+
+        // GET: shows assignments
+        $html = (string) $this->createController()->assignments(new ServerRequest('GET', '/'), $userId)->getBody();
+        self::assertStringContainsString('Assignments', $html);
+
+        // POST: updates assignments
         $this->itemsStorage->add(new Role('admin'));
         $this->itemsStorage->add(new Role('editor'));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['items' => ['admin', 'editor']]);
-
         (string) $this->createController()->assignments($request, $userId, ['admin', 'editor'])->getBody();
-
-        // The real UpdateAssignmentsService persisted both roles for the user.
         $this->assertSame(['admin', 'editor'], $this->assignedNames($userId));
         $this->assertNotEmpty(UserAuditLog::search(['action' => 'user.assignments_update'])->all());
     }
 
-    public function testAssignmentsUserNotFoundShowsError(): void
-    {
-        $this->assertNotFoundRendersError(
-            static fn(UserController $controller): string => (string) $controller->assignments(new ServerRequest('GET', '/'), 999999)->getBody(),
-        );
-    }
-
-    public function testBlockNonExistentUserStillRedirects(): void
-    {
-        $result = $this->createController()->block(new ServerRequest('POST', '/'), 999999);
-
-        $this->assertSame(302, $result->getStatusCode());
-    }
-
-    public function testBlockTogglesUserBlock(): void
+    public function testBlock(): void
     {
         $user = $this->createUser(email: 'testuser@example.com');
         $userId = (int) $user->getId();
 
-        $result = $this->createController()->block(new ServerRequest('POST', '/'), $userId);
-
+        // Nonexistent user still redirects
+        $result = $this->createController()->block(new ServerRequest('POST', '/'), 999999);
         $this->assertSame(302, $result->getStatusCode());
-        // The real BlockService flipped the account to blocked.
+
+        // Existing user: toggles block status
+        $result = $this->createController()->block(new ServerRequest('POST', '/'), $userId);
+        $this->assertSame(302, $result->getStatusCode());
         $this->assertTrue(User::findById($userId)?->isBlocked());
-        // Blocking a previously-unblocked user records the "block" (not "unblock") audit action.
         $this->assertNotEmpty(UserAuditLog::search(['action' => 'user.block'])->all());
         $this->assertEmpty(UserAuditLog::search(['action' => 'user.unblock'])->all());
     }
 
-    public function testConfirmFailureShowsError(): void
+    public function testConfirm(): void
     {
-        // An already-confirmed user makes the real ConfirmationService return false.
-        $user = $this->createUser(email: 'testuser@example.com');
+        // Failure: already confirmed user shows error
+        $user = $this->createUser(username: 'confirmed_user', email: 'confirmed@example.com');
         $user->setConfirmedAt(time());
         $user->save();
-
         $html = (string) $this->createController()->confirm(new ServerRequest('POST', '/'), (int) $user->getId())->getBody();
-
         self::assertStringContainsString('Unable to confirm', $html);
-    }
 
-    public function testConfirmSuccessful(): void
-    {
-        $user = $this->createUser(email: 'testuser@example.com');
-        $userId = (int) $user->getId();
-
+        // Success: unconfirmed user gets confirmed and redirects
+        $unconfirmed = $this->createUser(username: 'unconfirmed_user', email: 'unconfirmed@example.com');
+        $userId = (int) $unconfirmed->getId();
         $result = $this->createController()->confirm(new ServerRequest('POST', '/'), $userId);
-
         $this->assertSame(302, $result->getStatusCode());
-        // The real ConfirmationService marked the account confirmed.
         $this->assertNotNull(User::findById($userId)?->getConfirmedAt());
         $this->assertNotEmpty(UserAuditLog::search(['action' => 'user.confirm'])->all());
     }
 
-    public function testCreateGetShowsForm(): void
+    public function testCreate(): void
     {
+        // GET: shows create form
         $html = (string) $this->createController()->create(new ServerRequest('GET', '/'))->getBody();
-
         self::assertStringContainsString('Create user', $html);
-    }
 
-    public function testCreatePostSuccessful(): void
-    {
+        // POST success: creates user with auto-generated password
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['register' => ['username' => 'newuser', 'email' => 'new@example.com', 'password' => '', 'passwordRepeat' => '']]);
-
-        // An empty password must trigger generation of a 12-character password.
         $this->passwordGenerator->expects($this->once())->method('generate')->with(12)->willReturn('autogenerated123');
-
         $result = $this->createController()->create($request);
-
         $this->assertSame(302, $result->getStatusCode());
         $this->assertStringContainsString('admin-users', $result->getHeaderLine('Location'));
-        // The real CreateService created the account with the generated password.
         $this->assertNotNull(User::findByEmail('new@example.com'));
-    }
 
-    public function testCreatePostWithAssignedItemsAssignsUser(): void
-    {
+        // POST with assigned items: assigns role to newly created user
         $this->itemsStorage->add(new Role('admin'));
         $request = (new ServerRequest('POST', '/'))->withParsedBody([
-            'register' => ['username' => 'newuser', 'email' => 'new@example.com', 'password' => 'password123', 'passwordRepeat' => 'password123'],
+            'register' => ['username' => 'withitem', 'email' => 'withitem@example.com', 'password' => 'password123', 'passwordRepeat' => 'password123'],
             'assignedItems' => ['admin'],
         ]);
-
         $result = $this->createController()->create($request, ['admin']);
-
         $this->assertSame(302, $result->getStatusCode());
-        $createdUser = User::findByUsername('newuser');
-        $this->assertNotNull($createdUser);
-        // The real UpdateAssignmentsService assigned the role to the newly created user.
-        $this->assertSame(['admin'], $this->assignedNames((int) $createdUser->getId()));
-    }
+        $created = User::findByUsername('withitem');
+        $this->assertNotNull($created);
+        $this->assertSame(['admin'], $this->assignedNames((int) $created->getId()));
 
-    public function testCreatePostWithServiceFailure(): void
-    {
-        // A user with this email already exists, so the real CreateService reports a uniqueness conflict.
+        // POST service failure: re-renders form with existing email
         $this->createUser('existing', 'existing@example.com');
-
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['register' => ['username' => 'existing2', 'email' => 'existing@example.com', 'password' => 'password123', 'passwordRepeat' => 'password123']]);
-
-        // On failure the create form is re-rendered rather than redirecting.
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['register' => ['username' => 'different', 'email' => 'existing@example.com', 'password' => 'password123', 'passwordRepeat' => 'password123']]);
         $html = (string) $this->createController()->create($request)->getBody();
-
         self::assertStringContainsString('Create user', $html);
     }
 
-    public function testDeleteDifferentUser(): void
+    public function testDelete(): void
     {
-        $this->loginAdmin();
-
-        $user = $this->createUser(email: 'testuser@example.com');
+        // Delete different user: succeeds and redirects
+        $admin1 = $this->createUser(username: 'delete_admin1', email: 'delete_admin1@example.com');
+        $this->currentUser->login($admin1);
+        $user = $this->createUser(username: 'delete_target', email: 'delete_target@example.com');
         $userId = (int) $user->getId();
-
         $result = $this->createController()->delete(new ServerRequest('POST', '/'), $userId);
-
         $this->assertSame(302, $result->getStatusCode());
         $this->assertStringContainsString('admin-users', $result->getHeaderLine('Location'));
         $this->assertNull(User::findById($userId));
         $this->assertNotEmpty(UserAuditLog::search(['action' => 'user.delete'])->all());
-    }
 
-    public function testDeleteNonExistentUserShowsError(): void
-    {
-        $this->loginAdmin();
+        // Delete own user: shows error
+        $admin2 = $this->createUser(username: 'delete_admin2', email: 'delete_admin2@example.com');
+        $this->currentUser->login($admin2);
+        $html = (string) $this->createController()->delete(new ServerRequest('POST', '/'), (int) $admin2->getId())->getBody();
+        self::assertStringContainsString('cannot delete', strtolower($html));
 
+        // Nonexistent user: shows "not found" error
         $html = (string) $this->createController()->delete(new ServerRequest('POST', '/'), 999999)->getBody();
-
         self::assertStringContainsString('User not found', $html);
     }
 
-    public function testDeleteOwnUserShowsError(): void
+    public function testForcePasswordChange(): void
     {
-        $admin = $this->loginAdmin();
-
-        $html = (string) $this->createController()->delete(new ServerRequest('POST', '/'), (int) $admin->getId())->getBody();
-
-        self::assertStringContainsString('cannot delete', strtolower($html));
-    }
-
-    public function testForcePasswordChangeFailsShowsError(): void
-    {
+        // Failure: nonexistent user shows error
         $html = (string) $this->createController()->forcePasswordChange(new ServerRequest('POST', '/'), 999999)->getBody();
-
         self::assertStringContainsString('There was an error', $html);
-    }
 
-    public function testForcePasswordChangeUserFound(): void
-    {
+        // Success: resets password-changed timestamp
         $user = $this->createUser(email: 'testuser@example.com');
         $userId = (int) $user->getId();
-
         $result = $this->createController()->forcePasswordChange(new ServerRequest('POST', '/'), $userId);
-
         $this->assertSame(302, $result->getStatusCode());
-        // The real ExpireService reset the password-changed timestamp to force a change.
         $this->assertSame(0, User::findById($userId)?->getPasswordChangedAt());
         $this->assertNotEmpty(UserAuditLog::search(['action' => 'user.force_password_change'])->all());
     }
@@ -350,8 +324,9 @@ final class UserControllerTest extends DatabaseTestCase
         $assertHtml($html);
     }
 
-    public function testInfoShowsUserInfo(): void
+    public function testInfo(): void
     {
+        // Shows user with profile
         $user = $this->createUserWithProfile();
         $profile = $user->getProfile();
         $this->assertNotNull($profile);
@@ -365,122 +340,91 @@ final class UserControllerTest extends DatabaseTestCase
         $adminProfile->save();
 
         $html = (string) $this->createController()->show((int) $user->getId())->getBody();
-
-        // The registration date is formatted in the viewing admin's timezone.
         self::assertStringContainsString(
             TimezoneHelper::formatLocalized($user->getCreatedAt(), $this->createTranslator()->getLocale(), 'Asia/Tokyo'),
             $html,
         );
-    }
 
-    public function testInfoShowsUserInfoWhenUserHasNoProfile(): void
-    {
-        $user = $this->createUser(username: 'noprofileuser');
-        $this->loginAdmin();
-
-        $html = (string) $this->createController()->show((int) $user->getId())->getBody();
-
-        // The info page renders using the username as its heading.
+        // Shows user without profile
+        $noProfileUser = $this->createUser(username: 'noprofileuser');
+        $html = (string) $this->createController()->show((int) $noProfileUser->getId())->getBody();
         self::assertStringContainsString('noprofileuser', $html);
     }
 
-    public function testInfoUserNotFoundShowsError(): void
+    public function testPasswordReset(): void
     {
-        $this->assertNotFoundRendersError(
-            static fn(UserController $controller): string => (string) $controller->show(999999)->getBody(),
-        );
-    }
-
-    public function testPasswordResetUserFound(): void
-    {
+        // Success: sends recovery message and issues token
         $user = $this->createUser(email: 'test@example.com');
         $userId = (int) $user->getId();
-
         $html = (string) $this->createController()->passwordReset(new ServerRequest('POST', '/'), $userId)->getBody();
-
-        // The recovery result message is rendered, and the real RecoveryService issued a token.
         self::assertStringContainsString('Recovery message sent', $html);
         $this->assertNotEmpty(UserToken::findByUserId($userId));
         $this->assertNotEmpty(UserAuditLog::search(['action' => 'user.password_reset_triggered'])->all());
     }
 
-    public function testPasswordResetUserNotFoundShowsError(): void
+    public function testSessions(): void
     {
-        $this->assertNotFoundRendersError(
-            static fn(UserController $controller): string => (string) $controller->passwordReset(new ServerRequest('POST', '/'), 999999)->getBody(),
-        );
-    }
-
-    public function testSessionsRendersWhenViewerHasNoProfile(): void
-    {
-        $user = $this->createUser(email: 'targetuser@example.com');
+        // Renders when viewer has no profile
+        $user = $this->createUser(username: 'sess_user1', email: 'sessuser1@example.com');
         $this->createUserSession((int) $user->getId(), 'sess-x');
-
-        // The viewing admin has no profile, so viewer-timezone resolution must handle a null profile.
-        $this->loginAdmin();
-
+        $admin1 = $this->createUser(username: 'sess_admin1', email: 'sessadmin1@example.com');
+        $this->currentUser->login($admin1);
         $html = (string) $this->createController()->sessions((int) $user->getId())->getBody();
-
         self::assertStringContainsString('Session management', $html);
-    }
 
-    public function testSessionsUserFound(): void
-    {
-        $user = $this->createUser(email: 'testuser@example.com');
+        // Shows sessions with timezone formatting
+        $targetUser = $this->createUser(username: 'sess_target', email: 'sesstarget@example.com');
         $targetProfile = new UserProfile();
-        $targetProfile->setUserId((int) $user->getId());
+        $targetProfile->setUserId((int) $targetUser->getId());
         $targetProfile->setTimezone('America/New_York');
         $targetProfile->save();
 
         $updatedAt = time();
         $session = new UserSessions();
-        $session->setUserId((int) $user->getId());
+        $session->setUserId((int) $targetUser->getId());
         $session->setSessionId('abc');
         $session->setIp('203.0.113.1');
         $session->setCreatedAt($updatedAt);
         $session->setUpdatedAt($updatedAt);
         $session->save();
 
-        $admin = $this->loginAdmin();
+        $admin2 = $this->createUser(username: 'sess_admin2', email: 'sessadmin2@example.com');
+        $this->currentUser->login($admin2);
         $adminProfile = new UserProfile();
-        $adminProfile->setUserId((int) $admin->getId());
+        $adminProfile->setUserId((int) $admin2->getId());
         $adminProfile->setTimezone('Asia/Tokyo');
         $adminProfile->save();
 
-        $html = (string) $this->createController()->sessions((int) $user->getId())->getBody();
-
-        // The session's last-seen time is formatted in the viewing admin's timezone.
+        $html = (string) $this->createController()->sessions((int) $targetUser->getId())->getBody();
         self::assertStringContainsString(
             TimezoneHelper::formatLocalized($updatedAt, $this->createTranslator()->getLocale(), 'Asia/Tokyo'),
             $html,
         );
     }
 
-    public function testSessionsUserNotFoundShowsError(): void
+    public function testSwitchIdentity(): void
     {
-        $this->assertNotFoundRendersError(
-            static fn(UserController $controller): string => (string) $controller->sessions(999999)->getBody(),
-        );
-    }
-
-    public function testSwitchIdentityFailureShowsError(): void
-    {
-        // No user with this id exists, so the real SwitchIdentityService fails.
+        // Failure: nonexistent user shows error
         $html = (string) $this->createController()->switchIdentity(new ServerRequest('POST', '/'), 999999)->getBody();
-
         self::assertStringContainsString('User not found', $html);
+
+        // Success: switches and redirects
+        $target = $this->createUser(username: 'switchtarget', email: 'switchtarget@example.com');
+        $flash = $this->createMock(FlashInterface::class);
+        $flash->expects($this->once())->method('set');
+        $result = $this->createController(overrides: [FlashInterface::class => $flash])->switchIdentity(new ServerRequest('POST', '/'), (int) $target->getId());
+        $this->assertSame(302, $result->getStatusCode());
+        $this->assertSame('//voyti/user', $result->getHeaderLine('Location'));
     }
 
-    public function testSwitchIdentityLogsOriginalActorNotTarget(): void
+    public function testSwitchIdentityLogsOriginalActor(): void
     {
         $admin = $this->createUser(username: 'realadmin', email: 'realadmin@example.com');
         $targetUser = $this->createUser(username: 'targetuser', email: 'targetuser@example.com');
-
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $eventDispatcher->method('dispatch')->willReturnArgument(0);
         $currentUser = new CurrentUser($this->createMock(IdentityRepositoryInterface::class), $eventDispatcher);
         $currentUser->login($admin);
-
         $controller = $this->createController(overrides: [CurrentUser::class => $currentUser]);
 
         $controller->switchIdentity(new ServerRequest('POST', '/'), (int) $targetUser->getId());
@@ -491,219 +435,133 @@ final class UserControllerTest extends DatabaseTestCase
         self::assertSame((int) $targetUser->getId(), $logs[0]->getTargetUserId());
     }
 
-    public function testSwitchIdentityRestoreFailureShowsError(): void
+    public function testSwitchIdentityRestore(): void
     {
-        // No original identity is stored in the session, so the real restore fails.
+        // Failure: no original identity in session shows error
         $html = (string) $this->createController()->switchIdentityRestore(new ServerRequest('POST', '/'))->getBody();
-
         self::assertStringContainsString('No original identity to restore', $html);
-    }
 
-    public function testSwitchIdentityRestoreSuccessRedirects(): void
-    {
+        // Success: restores and redirects
         $original = $this->createUser(username: 'original', email: 'original@example.com');
         $session = new FakeSession();
         $session->set('voyti_original_admin_user', (string) $original->getId());
-
-        // A success flash is set before redirecting.
-        $this->flash->expects($this->once())->method('set');
-
-        $result = $this->createController(overrides: [SessionInterface::class => $session])
+        $flash = $this->createMock(FlashInterface::class);
+        $flash->expects($this->once())->method('set');
+        $result = $this->createController(overrides: [SessionInterface::class => $session, FlashInterface::class => $flash])
             ->switchIdentityRestore(new ServerRequest('POST', '/'));
-
         $this->assertSame(302, $result->getStatusCode());
-        // The real SwitchIdentityService cleared the stored original identity.
         $this->assertFalse($session->has('voyti_original_admin_user'));
     }
 
-    public function testSwitchIdentitySuccessRedirects(): void
+    public function testTerminateSessions(): void
     {
-        $target = $this->createUser(username: 'switchtarget', email: 'switchtarget@example.com');
-
-        // A success flash is set before redirecting.
-        $this->flash->expects($this->once())->method('set');
-
-        $result = $this->createController()->switchIdentity(new ServerRequest('POST', '/'), (int) $target->getId());
-
-        $this->assertSame(302, $result->getStatusCode());
-        $this->assertSame('//voyti/user', $result->getHeaderLine('Location'));
-    }
-
-    public function testTerminateSessionsDoesNotOverwriteAlreadyRevokedTimestamp(): void
-    {
-        $user = $this->createUser(email: 'testuser2@example.com');
-        $userId = (int) $user->getId();
+        // Does not overwrite already-revoked timestamp
+        $user1 = $this->createUser(username: 'term_user1', email: 'termuser1@example.com');
+        $userId = (int) $user1->getId();
         $session = $this->createUserSession($userId, 'sess-1');
         $session->setRevokedAt(1000);
         $session->save();
-
         $this->createController()->terminateSessions($userId);
-
         $refreshed = UserSessions::findByUserIdAndSessionId($userId, 'sess-1');
         $this->assertNotNull($refreshed);
         $this->assertSame(1000, $refreshed->getRevokedAt());
-    }
 
-    public function testTerminateSessionsUserFound(): void
-    {
-        $user = $this->createUser(email: 'testuser@example.com');
-        $userId = (int) $user->getId();
-        $this->createUserSession($userId, 'sess-1');
-
-        $result = $this->createController()->terminateSessions($userId);
-
+        // Success: revokes sessions and redirects
+        $targetUser = $this->createUser(username: 'term_target', email: 'termtarget@example.com');
+        $targetId = (int) $targetUser->getId();
+        $this->createUserSession($targetId, 'sess-1');
+        $result = $this->createController()->terminateSessions($targetId);
         $this->assertSame(302, $result->getStatusCode());
-        // The redirect targets this user's sessions page (id carried in the URL).
-        $this->assertStringContainsString('id=' . $userId, $result->getHeaderLine('Location'));
-        $sessions = UserSessions::findByUserId($userId);
+        $this->assertStringContainsString('id=' . $targetId, $result->getHeaderLine('Location'));
+        $sessions = UserSessions::findByUserId($targetId);
         $this->assertCount(1, $sessions);
         $this->assertTrue($sessions[0]->isRevoked());
     }
 
-    public function testTerminateSessionsUserNotFoundShowsError(): void
+    public function testUpdate(): void
     {
-        $this->assertNotFoundRendersError(
-            static fn(UserController $controller): string => (string) $controller->terminateSessions(999999)->getBody(),
-        );
-    }
-
-    public function testUpdateGetShowsForm(): void
-    {
-        $user = $this->createUser(username: 'edituser', email: 'testuser@example.com');
-
+        // GET: shows update form
+        $user = $this->createUser(username: 'edituser', email: 'edituser@example.com');
         $html = (string) $this->createController()->update(new ServerRequest('GET', '/'), (int) $user->getId())->getBody();
-
         self::assertStringContainsString('Update user: edituser', $html);
-    }
 
-    public function testUpdatePostSuccessful(): void
-    {
-        $user = $this->createUser(email: 'testuser@example.com');
+        // POST success: updates user
         $userId = (int) $user->getId();
-        // A distinct past timestamp so the update's setUpdatedAt(time()) bump is observable.
         $user->setUpdatedAt(1000);
         $user->save();
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['user' => ['username' => 'updated', 'email' => 'updated@example.com', 'password' => ''], 'assignedItems' => []]);
-
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['user' => ['username' => 'updated1', 'email' => 'updated1@example.com', 'password' => ''], 'assignedItems' => []]);
         $result = $this->createController()->update($request, $userId);
-
         $this->assertSame(302, $result->getStatusCode());
         $updated = User::findById($userId);
         $this->assertNotNull($updated);
-        $this->assertSame('updated', $updated->getUsername());
-        $this->assertSame('updated@example.com', $updated->getEmail());
+        $this->assertSame('updated1', $updated->getUsername());
+        $this->assertSame('updated1@example.com', $updated->getEmail());
         $this->assertNotSame(1000, $updated->getUpdatedAt());
-        // The update is audited, recording that the password was not changed.
         $logs = UserAuditLog::search(['action' => 'user.update'])->all();
         self::assertNotEmpty($logs);
         self::assertStringContainsString('"passwordChanged":false', (string) $logs[0]->getContext());
-    }
 
-    public function testUpdatePostWithAssignedItemsAssignsUser(): void
-    {
-        $user = $this->createUser(email: 'testuser@example.com');
-        $userId = (int) $user->getId();
+        // POST with assigned items: assigns role
+        $roleUser = $this->createUser(username: 'roleuser', email: 'roleuser@example.com');
+        $roleUserId = (int) $roleUser->getId();
         $this->itemsStorage->add(new Role('admin'));
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['user' => ['username' => 'updated', 'email' => 'updated@example.com', 'password' => ''], 'assignedItems' => ['admin']]);
-
-        $result = $this->createController()->update($request, $userId, ['admin']);
-
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['user' => ['username' => 'updated2', 'email' => 'updated2@example.com', 'password' => ''], 'assignedItems' => ['admin']]);
+        $result = $this->createController()->update($request, $roleUserId, ['admin']);
         $this->assertSame(302, $result->getStatusCode());
-        // The real UpdateAssignmentsService assigned the role during the update.
-        $this->assertSame(['admin'], $this->assignedNames($userId));
-    }
+        $this->assertSame(['admin'], $this->assignedNames($roleUserId));
 
-    public function testUpdatePostWithPasswordChange(): void
-    {
-        $user = $this->createUser(email: 'testuser@example.com');
-        $userId = (int) $user->getId();
-        $originalHash = $user->getPasswordHash();
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['user' => ['username' => 'updated', 'email' => 'updated@example.com', 'password' => 'newpass'], 'assignedItems' => []]);
-
-        $result = $this->createController()->update($request, $userId);
-
+        // POST with password change: updates hash and timestamp
+        $passUser = $this->createUser(username: 'passuser', email: 'passuser@example.com');
+        $passUserId = (int) $passUser->getId();
+        $originalHash = $passUser->getPasswordHash();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['user' => ['username' => 'updated3', 'email' => 'updated3@example.com', 'password' => 'newpass'], 'assignedItems' => []]);
+        $result = $this->createController()->update($request, $passUserId);
         $this->assertSame(302, $result->getStatusCode());
-        $updated = User::findById($userId);
-        $this->assertNotNull($updated);
-        $this->assertNotSame($originalHash, $updated->getPasswordHash());
-        $this->assertNotNull($updated->getPasswordChangedAt());
-        // The update audit records that the password was changed.
-        $logs = UserAuditLog::search(['action' => 'user.update'])->all();
-        self::assertNotEmpty($logs);
-        self::assertStringContainsString('"passwordChanged":true', (string) $logs[0]->getContext());
-    }
+        $passUpdated = User::findById($passUserId);
+        $this->assertNotNull($passUpdated);
+        $this->assertNotSame($originalHash, $passUpdated->getPasswordHash());
+        $this->assertNotNull($passUpdated->getPasswordChangedAt());
+        $passLogs = UserAuditLog::search(['action' => 'user.update', 'target_user_id' => $passUserId])->all();
+        self::assertNotEmpty($passLogs);
+        self::assertStringContainsString('"passwordChanged":true', (string) $passLogs[0]->getContext());
 
-    public function testUpdatePostWithPreviouslyUsedPasswordShowsError(): void
-    {
-        $user = new User();
-        $user->setUsername('testuser');
-        $user->setEmail('testuser@example.com');
-        $user->setPasswordHash($this->passwordHasher->hash('originalpass'));
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-        $userId = (int) $user->getId();
-
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['user' => ['username' => 'updated', 'email' => 'updated@example.com', 'password' => 'originalpass'], 'assignedItems' => []]);
-
-        $html = (string) $this->createController(VoytiConfigFactory::create(maxPasswordAge: 90))->update($request, $userId)->getBody();
-
-        // The reused password re-renders the account form with the error and leaves the account unchanged.
-        self::assertStringContainsString('Update user: testuser', $html);
+        // POST with reused password: shows error and leaves account unchanged
+        $oldPassUser = new User();
+        $oldPassUser->setUsername('oldpassuser');
+        $oldPassUser->setEmail('oldpass@example.com');
+        $oldPassUser->setPasswordHash($this->passwordHasher->hash('originalpass'));
+        $oldPassUser->setAuthKey('key');
+        $oldPassUser->setCreatedAt(time());
+        $oldPassUser->setUpdatedAt(time());
+        $oldPassUser->save();
+        $oldPassUserId = (int) $oldPassUser->getId();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['user' => ['username' => 'updated4', 'email' => 'updated4@example.com', 'password' => 'originalpass'], 'assignedItems' => []]);
+        $html = (string) $this->createController(VoytiConfigFactory::create(maxPasswordAge: 90))->update($request, $oldPassUserId)->getBody();
+        self::assertStringContainsString('Update user: oldpassuser', $html);
         self::assertStringContainsString('This password has been used recently.', $html);
-        $updated = User::findById($userId);
-        $this->assertNotNull($updated);
-        $this->assertSame('testuser', $updated->getUsername());
+        $oldPassUpdated = User::findById($oldPassUserId);
+        $this->assertNotNull($oldPassUpdated);
+        $this->assertSame('oldpassuser', $oldPassUpdated->getUsername());
     }
 
-    public function testUpdateProfileGetCreatesNewProfileWhenNoneExists(): void
+    public function testUpdateProfile(): void
     {
+        // GET: creates new profile when none exists
         $user = $this->createUser(email: 'testuser@example.com');
-
         $html = (string) $this->createController()->updateProfile(new ServerRequest('GET', '/'), (int) $user->getId())->getBody();
-
         self::assertStringContainsString('Update profile', $html);
-    }
 
-    public function testUpdateProfilePostSuccessful(): void
-    {
-        // No pre-existing profile, so the controller creates one bound to this user id.
-        $user = $this->createUser(email: 'testuser@example.com');
+        // POST: creates profile bound to user and redirects
         $userId = (int) $user->getId();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['userProfile' => ['name' => 'Updated', 'publicEmail' => '', 'gravatarEmail' => '', 'location' => '', 'website' => '', 'timezone' => '', 'bio' => '', 'birthday' => '1990-05-15']]);
-
         $result = $this->createController()->updateProfile($request, $userId);
-
         $this->assertSame(302, $result->getStatusCode());
-        // The redirect returns to this user's profile page (id carried in the URL).
         $this->assertStringContainsString('id=' . $userId, $result->getHeaderLine('Location'));
         $updated = UserProfile::findByUserId($userId);
         $this->assertNotNull($updated);
         $this->assertSame($userId, $updated->getUserId());
         $this->assertSame('Updated', $updated->getName());
         $this->assertSame('1990-05-15', $updated->getBirthday()?->format('Y-m-d'));
-    }
-
-    public function testUpdateProfileUserNotFoundShowsError(): void
-    {
-        $this->assertNotFoundRendersError(
-            static fn(UserController $controller): string => (string) $controller->updateProfile(new ServerRequest('GET', '/'), 999999)->getBody(),
-        );
-    }
-
-    public function testUpdateUserNotFoundShowsError(): void
-    {
-        $this->assertNotFoundRendersError(
-            static fn(UserController $controller): string => (string) $controller->update(new ServerRequest('GET', '/'), 999999)->getBody(),
-        );
-    }
-
-    private function assertNotFoundRendersError(callable $invoke): void
-    {
-        $html = $invoke($this->createController());
-
-        self::assertStringContainsString('User not found', $html);
     }
 
     private function assignedNames(int $userId): array
