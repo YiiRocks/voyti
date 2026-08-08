@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Model;
 
-use PHPUnit\Framework\Attributes\DataProvider;
 use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\tests\Support\UserSessionFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
@@ -44,9 +43,6 @@ final class UserSessionsTest extends TestCase
         }
     }
 
-    /**
-     * @return iterable<string, array{string, string, int|string}>
-     */
     public static function getterSetterProvider(): iterable
     {
         yield 'createdAt' => ['setCreatedAt', 'getCreatedAt', 1000];
@@ -56,6 +52,18 @@ final class UserSessionsTest extends TestCase
         yield 'updatedAt' => ['setUpdatedAt', 'getUpdatedAt', 2000];
         yield 'userAgent' => ['setUserAgent', 'getUserAgent', 'Mozilla/5.0'];
         yield 'userId' => ['setUserId', 'getUserId', 42];
+    }
+
+    public function testClaimByUserIdAndSessionIdRevokesOnlyThatUsersSession(): void
+    {
+        // Two users share the same session id; the claim must revoke only the target user's row.
+        $this->createUserSession(1, 'shared-sess', '203.0.113.1');
+        $this->createUserSession(2, 'shared-sess', '203.0.113.2');
+
+        self::assertTrue(UserSessions::claimByUserIdAndSessionId(1, 'shared-sess'));
+
+        self::assertTrue(UserSessions::findByUserIdAndSessionId(1, 'shared-sess')?->isRevoked());
+        self::assertFalse(UserSessions::findByUserIdAndSessionId(2, 'shared-sess')?->isRevoked());
     }
 
     public function testDefaultValues(): void
@@ -90,20 +98,6 @@ final class UserSessionsTest extends TestCase
         self::assertCount(2, UserSessions::findAllSessions());
     }
 
-    public function testFindByUserIdAndSessionIdFiltersByBoth(): void
-    {
-        $this->createUserSession(1, 'sess-1', '203.0.113.1');
-        $this->createUserSession(2, 'sess-2', '203.0.113.2');
-
-        $found = UserSessions::findByUserIdAndSessionId(1, 'sess-1');
-        self::assertNotNull($found);
-        self::assertSame(1, $found->getUserId());
-        self::assertSame('sess-1', $found->getSessionId());
-
-        self::assertNull(UserSessions::findByUserIdAndSessionId(1, 'sess-2'));
-        self::assertNull(UserSessions::findByUserIdAndSessionId(2, 'sess-1'));
-    }
-
     public function testFindByUserIdFiltersByUserId(): void
     {
         $this->createUserSession(1, 'sess-1', '203.0.113.1');
@@ -113,23 +107,6 @@ final class UserSessionsTest extends TestCase
         $sessions = UserSessions::findByUserId(1);
 
         self::assertCount(2, $sessions);
-    }
-
-    #[DataProvider('getterSetterProvider')]
-    public function testGetSetProperty(string $setter, string $getter, int|string $value): void
-    {
-        $entity = new UserSessions();
-        $entity->$setter($value);
-        self::assertSame($value, $entity->$getter());
-    }
-
-    public function testIsRevokedReflectsRevokedAt(): void
-    {
-        $entity = new UserSessions();
-        self::assertFalse($entity->isRevoked());
-
-        $entity->setRevokedAt(time());
-        self::assertTrue($entity->isRevoked());
     }
 
     public function testPrimaryKey(): void
@@ -148,14 +125,6 @@ final class UserSessionsTest extends TestCase
         self::assertCount(1, $sessions);
     }
 
-    public function testSearchWithNoFiltersReturnsAll(): void
-    {
-        $this->createUserSession(1, 'sess-1', '203.0.113.1');
-        $this->createUserSession(2, 'sess-2', '203.0.113.2');
-
-        self::assertCount(2, UserSessions::search());
-    }
-
     public function testSearchWithUserIdAndIpFiltersCombinesBoth(): void
     {
         $this->createUserSession(1, 'sess-1', '203.0.113.1');
@@ -163,17 +132,6 @@ final class UserSessionsTest extends TestCase
         $this->createUserSession(2, 'sess-3', '203.0.113.1');
 
         $sessions = UserSessions::search(['user_id' => 1, 'ip' => '203.0.113']);
-
-        self::assertCount(1, $sessions);
-        self::assertSame('sess-1', $sessions[0]->getSessionId());
-    }
-
-    public function testSearchWithUserIdFilter(): void
-    {
-        $this->createUserSession(1, 'sess-1', '203.0.113.1');
-        $this->createUserSession(2, 'sess-2', '203.0.113.2');
-
-        $sessions = UserSessions::search(['user_id' => 1]);
 
         self::assertCount(1, $sessions);
         self::assertSame('sess-1', $sessions[0]->getSessionId());

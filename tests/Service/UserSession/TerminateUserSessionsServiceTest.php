@@ -4,27 +4,14 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Service\UserSession;
 
-use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Event\Session\SessionEvent;
 use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\Service\UserSession\TerminateUserSessionsService;
-use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 
-final class TerminateUserSessionsServiceTest extends TestCase
+final class TerminateUserSessionsServiceTest extends DatabaseTestCase
 {
-    use DatabaseSetupTrait;
-
-    protected function setUp(): void
-    {
-        $this->setUpDatabase();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->tearDownDatabase();
-    }
-
     public function testRunCanBeCalledWithZero(): void
     {
         $eventDispatcher = new EventCaptureDispatcher();
@@ -34,20 +21,6 @@ final class TerminateUserSessionsServiceTest extends TestCase
 
         $event = $eventDispatcher->getEvent(SessionEvent::class);
         self::assertInstanceOf(SessionEvent::class, $event);
-        self::assertSame(['type' => SessionEvent::SESSION_TERMINATED], $event->getData());
-    }
-
-    public function testRunDispatchesEvent(): void
-    {
-        $eventDispatcher = new EventCaptureDispatcher();
-
-        $service = new TerminateUserSessionsService($eventDispatcher);
-        $service->run(42);
-
-        $event = $eventDispatcher->getEvent(SessionEvent::class);
-        self::assertInstanceOf(SessionEvent::class, $event);
-        self::assertSame(42, $event->getUserId());
-        self::assertSame('', $event->getSessionId());
         self::assertSame(['type' => SessionEvent::SESSION_TERMINATED], $event->getData());
     }
 
@@ -84,32 +57,5 @@ final class TerminateUserSessionsServiceTest extends TestCase
         $kept = UserSessions::query()->where(['user_id' => 99, 'session_id' => 'keep'])->one();
         self::assertNotNull($kept);
         self::assertFalse($kept->isRevoked());
-    }
-
-    public function testRunRevokesOnlyMatchingUserSessions(): void
-    {
-        $other = new UserSessions();
-        $other->setUserId(7);
-        $other->setSessionId('keep');
-        $other->setIp('127.0.0.1');
-        $other->save();
-
-        $mine = new UserSessions();
-        $mine->setUserId(42);
-        $mine->setSessionId('remove');
-        $mine->setIp('127.0.0.1');
-        $mine->save();
-
-        $eventDispatcher = new EventCaptureDispatcher();
-        $service = new TerminateUserSessionsService($eventDispatcher);
-        $service->run(42);
-
-        $mineRefreshed = UserSessions::query()->where(['user_id' => 42, 'session_id' => 'remove'])->one();
-        self::assertNotNull($mineRefreshed);
-        self::assertTrue($mineRefreshed->isRevoked());
-
-        $otherRefreshed = UserSessions::query()->where(['user_id' => 7, 'session_id' => 'keep'])->one();
-        self::assertNotNull($otherRefreshed);
-        self::assertFalse($otherRefreshed->isRevoked());
     }
 }

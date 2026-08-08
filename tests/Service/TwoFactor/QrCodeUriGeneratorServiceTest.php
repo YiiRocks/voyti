@@ -5,29 +5,31 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Service\TwoFactor;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
-use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 
 #[AllowMockObjectsWithoutExpectations]
-final class QrCodeUriGeneratorServiceTest extends TestCase
+final class QrCodeUriGeneratorServiceTest extends DatabaseTestCase
 {
+    use UserFactoryTrait;
+
     public function testGenerateQrCodeSvgRegeneratesSecretWhenStoredValueIsNotValidBase32(): void
     {
         $config = VoytiConfigFactory::create(appName: 'VoytiApp');
         $service = new QrCodeUriGeneratorService($config);
 
-        $user = $this->createMock(User::class);
-        $user->method('getAuthTfKey')->willReturn('190812');
-        $user->method('getEmail')->willReturn('user@example.com');
-        $user->expects($this->once())->method('setAuthTfKey')->with($this->callback(
-            static fn(string $secret): bool => $secret !== '190812' && $secret !== '',
-        ));
-        $user->expects($this->once())->method('save');
+        $user = $this->createUser(email: 'user@example.com', authTfKey: '190812');
 
         $svg = $service->generateQrCodeSvg($user);
+
         self::assertStringContainsString('<svg', $svg);
+        $secret = $user->getAuthTfKey();
+        self::assertNotSame('190812', $secret);
+        self::assertNotSame('', $secret);
+        self::assertSame($secret, User::findById((int) $user->getId())?->getAuthTfKey());
     }
 
     public function testGenerateQrCodeSvgReturnsSvgForExistingSecret(): void
@@ -35,13 +37,12 @@ final class QrCodeUriGeneratorServiceTest extends TestCase
         $config = VoytiConfigFactory::create(appName: 'VoytiApp');
         $service = new QrCodeUriGeneratorService($config);
 
-        $user = $this->createMock(User::class);
-        $user->method('getAuthTfKey')->willReturn('JBSWY3DPEHPK3PXP');
-        $user->method('getEmail')->willReturn('user@example.com');
-        $user->expects($this->never())->method('setAuthTfKey');
+        $user = $this->createUser(email: 'user@example.com', authTfKey: 'JBSWY3DPEHPK3PXP');
 
         $svg = $service->generateQrCodeSvg($user);
+
         self::assertStringContainsString('<svg', $svg);
+        self::assertSame('JBSWY3DPEHPK3PXP', $user->getAuthTfKey());
     }
 
     public function testIsAvailableReturnsTrueWhenBothLibrariesAreInstalled(): void
@@ -56,16 +57,14 @@ final class QrCodeUriGeneratorServiceTest extends TestCase
         $config = VoytiConfigFactory::create(appName: 'TestApp');
         $service = new QrCodeUriGeneratorService($config);
 
-        $user = $this->createMock(User::class);
-        $user->method('getAuthTfKey')->willReturn('existing-secret-key');
-        $user->method('getEmail')->willReturn('user@example.com');
-        $user->expects($this->once())->method('setAuthTfKey')->with($this->callback(
-            static fn(string $secret): bool => $secret !== 'existing-secret-key' && $secret !== '',
-        ));
-        $user->expects($this->once())->method('save');
+        $user = $this->createUser(email: 'user@example.com', authTfKey: 'existing-secret-key');
 
         $result = $service->regenerateQrCodeSvg($user);
 
         self::assertStringContainsString('<svg', $result);
+        $secret = $user->getAuthTfKey();
+        self::assertNotSame('existing-secret-key', $secret);
+        self::assertNotSame('', $secret);
+        self::assertSame($secret, User::findById((int) $user->getId())?->getAuthTfKey());
     }
 }

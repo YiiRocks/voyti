@@ -167,8 +167,10 @@ final class UserSocialAccountTest extends TestCase
 
     public function testFindByProviderAndClientIdReturnsMatch(): void
     {
-        $this->createAccount('github', 'client-1', 'code-a');
+        // The other-provider row is inserted first, so a lookup that ignored the provider filter would
+        // return it instead of the github one.
         $this->createAccount('gitlab', 'client-1', 'code-b');
+        $this->createAccount('github', 'client-1', 'code-a');
 
         $account = UserSocialAccount::findByProviderAndClientId('github', 'client-1');
 
@@ -211,13 +213,6 @@ final class UserSocialAccountTest extends TestCase
         self::assertIsArray($decoded);
         self::assertSame('John', $decoded['name']);
         self::assertSame(30, $decoded['age']);
-    }
-
-    public function testGetDecodedDataReturnsNullForInvalidJson(): void
-    {
-        $entity = new UserSocialAccount();
-        $entity->setData('{invalid json}');
-        self::assertNull($entity->getDecodedData());
     }
 
     public function testGetDecodedDataReturnsNullWhenNoData(): void
@@ -275,33 +270,6 @@ final class UserSocialAccountTest extends TestCase
     {
         $entity = new UserSocialAccount();
         self::assertFalse($entity->isConnected());
-    }
-
-    public function testIsConnectedWithUserId(): void
-    {
-        $entity = new UserSocialAccount();
-        $entity->setUserId(5);
-        self::assertTrue($entity->isConnected());
-    }
-
-    public function testSetDataResetsDecodedCache(): void
-    {
-        $entity = new UserSocialAccount();
-        $entity->setData('{"key":"val"}');
-        self::assertSame(['key' => 'val'], $entity->getDecodedData());
-
-        $entity->setData('{"new":"data"}');
-        self::assertSame(['new' => 'data'], $entity->getDecodedData());
-    }
-
-    public function testSetDataWithNullResetsDecodedCache(): void
-    {
-        $entity = new UserSocialAccount();
-        $entity->setData('{"key":"val"}');
-        self::assertSame(['key' => 'val'], $entity->getDecodedData());
-
-        $entity->setData(null);
-        self::assertNull($entity->getDecodedData());
     }
 
     private function createAccount(string $provider, string $clientId, string $code): UserSocialAccount

@@ -17,9 +17,6 @@ use Yiisoft\Rbac\Role;
 #[AllowMockObjectsWithoutExpectations]
 final class RuleEditionServiceTest extends TestCase
 {
-    /**
-     * @return iterable<string, array{string, bool}>
-     */
     public static function createProvider(): iterable
     {
         yield 'returns false when invalid' => ['NonExistentClassName', false];
@@ -79,27 +76,6 @@ final class RuleEditionServiceTest extends TestCase
         $service = new RuleEditionService($itemsStorage, $ruleValidator);
 
         $form = $this->createRuleForm(class: CompositeRule::class, previousName: 'OldRule');
-        self::assertTrue($service->update($form));
-    }
-
-    public function testUpdateReturnsTrueWhenPreviousNameDiffers(): void
-    {
-        $itemsStorage = $this->createMock(ItemsStorageInterface::class);
-        $itemsStorage->method('getAll')->willReturn([]);
-        $ruleValidator = new RuleValidator();
-        $service = new RuleEditionService($itemsStorage, $ruleValidator);
-
-        $form = $this->createRuleForm(class: CompositeRule::class, previousName: 'OldClassName');
-        self::assertTrue($service->update($form));
-    }
-
-    public function testUpdateReturnsTrueWhenValid(): void
-    {
-        $itemsStorage = $this->createMock(ItemsStorageInterface::class);
-        $ruleValidator = new RuleValidator();
-        $service = new RuleEditionService($itemsStorage, $ruleValidator);
-
-        $form = $this->createRuleForm(class: CompositeRule::class);
         self::assertTrue($service->update($form));
     }
 

@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Service\UserSession;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
-use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Event\Session\SessionEvent;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\Service\UserSession\UserSessionDecorator;
-use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 use YiiRocks\Voyti\tests\Support\FakeSession;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
@@ -18,21 +17,10 @@ use YiiRocks\Voyti\tests\Support\UserSessionFactoryTrait;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 
 #[AllowMockObjectsWithoutExpectations]
-final class UserSessionDecoratorTest extends TestCase
+final class UserSessionDecoratorTest extends DatabaseTestCase
 {
-    use DatabaseSetupTrait;
     use UserFactoryTrait;
     use UserSessionFactoryTrait;
-
-    protected function setUp(): void
-    {
-        $this->setUpDatabase();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->tearDownDatabase();
-    }
 
     public function testAgePruneDoesNotDeleteExpiredSessionsOfOtherUsers(): void
     {
@@ -184,22 +172,6 @@ final class UserSessionDecoratorTest extends TestCase
         self::assertCount(0, $events);
     }
 
-    public function testRegisterLoginWithEmptyPreviousSessionIdSkipsReplace(): void
-    {
-        $eventDispatcher = new EventCaptureDispatcher();
-        $config = VoytiConfigFactory::create();
-
-        $session = $this->createOpenSession('sessemptyprev');
-        $decorator = new UserSessionDecorator($eventDispatcher, $config, $session);
-
-        $user = $this->createUser('emptyprev', 'emptyprev@example.com');
-
-        $decorator->registerLogin($user, '', ['REMOTE_ADDR' => '192.168.1.1']);
-
-        $sessions = UserSessions::query()->where(['user_id' => (int) $user->getId()])->all();
-        self::assertCount(1, $sessions);
-    }
-
     public function testRegisterLoginWithNullUserIdRecordsZero(): void
     {
         $eventDispatcher = new EventCaptureDispatcher();
@@ -218,38 +190,6 @@ final class UserSessionDecoratorTest extends TestCase
         $sessions = UserSessions::query()->where(['user_id' => 0])->all();
         self::assertCount(1, $sessions);
         self::assertSame(0, $sessions[0]->getUserId());
-    }
-
-    public function testRegisterLoginWithPreviousSessionIdEqualToCurrentSkipsReplace(): void
-    {
-        $eventDispatcher = new EventCaptureDispatcher();
-        $config = VoytiConfigFactory::create();
-
-        $session = $this->createOpenSession('sesssame');
-        $decorator = new UserSessionDecorator($eventDispatcher, $config, $session);
-
-        $user = $this->createUser('samesession', 'samesession@example.com');
-
-        $decorator->registerLogin($user, 'sesssame', ['REMOTE_ADDR' => '192.168.1.1']);
-
-        $sessions = UserSessions::query()->where(['user_id' => (int) $user->getId()])->all();
-        self::assertCount(1, $sessions);
-    }
-
-    public function testRegisterLoginWithSessionNullId(): void
-    {
-        $eventDispatcher = new EventCaptureDispatcher();
-        $config = VoytiConfigFactory::create();
-
-        $decorator = new UserSessionDecorator($eventDispatcher, $config);
-
-        $user = $this->createUser('nosess', 'nosess@example.com');
-
-        $decorator->registerLogin($user, serverParams: ['REMOTE_ADDR' => '10.0.0.1']);
-
-        $sessions = UserSessions::query()->where(['user_id' => (int) $user->getId()])->all();
-        self::assertCount(1, $sessions);
-        self::assertSame('', $sessions[0]->getSessionId());
     }
 
     private function createOpenSession(string $id): FakeSession

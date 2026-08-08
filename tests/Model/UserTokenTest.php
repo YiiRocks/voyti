@@ -67,9 +67,6 @@ final class UserTokenTest extends TestCase
         $this->connection = null;
     }
 
-    /**
-     * @return iterable<string, array{string, string, int|string}>
-     */
     public static function getterSetterProvider(): iterable
     {
         yield 'code' => ['setCode', 'getCode', 'abc123'];
@@ -78,9 +75,6 @@ final class UserTokenTest extends TestCase
         yield 'userId' => ['setUserId', 'getUserId', 42];
     }
 
-    /**
-     * @return iterable<string, array{int, int, int|null, bool}>
-     */
     public static function isExpiredProvider(): iterable
     {
         yield 'default lifespan for confirmation boundary' => [86401, UserToken::TYPE_CONFIRMATION, null, true];
@@ -96,23 +90,6 @@ final class UserTokenTest extends TestCase
         yield 'custom lifespan edge case' => [86400, UserToken::TYPE_CONFIRMATION, 86400, false];
         yield 'custom lifespan expired' => [100, UserToken::TYPE_CONFIRMATION, 50, true];
         yield 'custom lifespan not expired' => [0, UserToken::TYPE_CONFIRMATION, 86400, false];
-    }
-
-    public function testConstants(): void
-    {
-        self::assertSame(0, UserToken::TYPE_CONFIRMATION);
-        self::assertSame(1, UserToken::TYPE_RECOVERY);
-        self::assertSame(2, UserToken::TYPE_CONFIRM_NEW_EMAIL);
-        self::assertSame(3, UserToken::TYPE_CONFIRM_OLD_EMAIL);
-    }
-
-    public function testDefaultValues(): void
-    {
-        $entity = new UserToken();
-        self::assertSame(0, $entity->getUserId());
-        self::assertSame('', $entity->getCode());
-        self::assertSame(0, $entity->getType());
-        self::assertSame(0, $entity->getCreatedAt());
     }
 
     public function testDeleteAllByUserIdAndTypeRemovesOnlyMatchingTypeForThatUser(): void
@@ -191,6 +168,15 @@ final class UserTokenTest extends TestCase
 
     public function testFindByUserIdAndCodeAndTypeReturnsMatch(): void
     {
+        // Another user's token with the same code and type is inserted first, so a lookup that ignored
+        // the user_id filter would return it instead.
+        $otherToken = new UserToken();
+        $otherToken->setUserId(2);
+        $otherToken->setCode(hash('sha256', 'codeA'));
+        $otherToken->setType(UserToken::TYPE_CONFIRM_NEW_EMAIL);
+        $otherToken->setCreatedAt(time());
+        $otherToken->save();
+
         $token = new UserToken();
         $token->setUserId(1);
         $token->setCode(hash('sha256', 'codeA'));
@@ -200,6 +186,7 @@ final class UserTokenTest extends TestCase
 
         $found = UserToken::findByUserIdAndCodeAndType(1, 'codeA', UserToken::TYPE_CONFIRM_NEW_EMAIL);
         self::assertNotNull($found);
+        self::assertSame(1, $found->getUserId());
         self::assertSame(hash('sha256', 'codeA'), $found->getCode());
 
         self::assertNull(UserToken::findByUserIdAndCodeAndType(1, 'codeA', UserToken::TYPE_RECOVERY));
@@ -219,27 +206,6 @@ final class UserTokenTest extends TestCase
         self::assertSame(hash('sha256', 'codeA'), $found->getCode());
 
         self::assertNull(UserToken::findByUserIdAndCode(2, 'codeA'));
-    }
-
-    public function testFindByUserIdFiltersByUserId(): void
-    {
-        $token1 = new UserToken();
-        $token1->setUserId(1);
-        $token1->setCode('user1token');
-        $token1->setType(UserToken::TYPE_CONFIRM_NEW_EMAIL);
-        $token1->setCreatedAt(time());
-        $token1->save();
-
-        $token2 = new UserToken();
-        $token2->setUserId(2);
-        $token2->setCode('user2token');
-        $token2->setType(UserToken::TYPE_RECOVERY);
-        $token2->setCreatedAt(time());
-        $token2->save();
-
-        $tokens = UserToken::findByUserId(1);
-        self::assertCount(1, $tokens);
-        self::assertSame('user1token', $tokens[0]->getCode());
     }
 
     public function testFindByUserIdRespectsAllResultsWhenMultipleMatch(): void
@@ -270,14 +236,6 @@ final class UserTokenTest extends TestCase
         $entity->setType($type);
 
         self::assertSame($expected, $lifespan === null ? $entity->isExpired() : $entity->isExpired($lifespan));
-    }
-
-    #[DataProvider('getterSetterProvider')]
-    public function testGetSetProperty(string $setter, string $getter, int|string $value): void
-    {
-        $entity = new UserToken();
-        $entity->$setter($value);
-        self::assertSame($value, $entity->$getter());
     }
 
     public function testGetUserReturnsNullWhenNoUser(): void

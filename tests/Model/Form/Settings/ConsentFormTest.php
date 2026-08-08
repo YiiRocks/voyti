@@ -14,25 +14,6 @@ final class ConsentFormTest extends TestCase
 {
     use TranslatorMockTrait;
 
-    public function testAnonymizeFormDefaults(): void
-    {
-        $form = new ConsentForm($this->createTranslator(), 'anonymize', 'voyti.view.anonymize.confirm_label');
-        $this->assertFalse($form->consent);
-        $this->assertSame('', $form->password);
-    }
-
-    public function testAnonymizeFormGetFormName(): void
-    {
-        $form = new ConsentForm($this->createTranslator(), 'anonymize', 'voyti.view.anonymize.confirm_label');
-        $this->assertSame('anonymize', $form->getFormName());
-    }
-
-    public function testDeleteAccountFormGetFormName(): void
-    {
-        $form = new ConsentForm($this->createTranslator(), 'delete-account', 'voyti.view.delete_account.confirm_label');
-        $this->assertSame('delete-account', $form->getFormName());
-    }
-
     public function testGetPropertyLabels(): void
     {
         $form = new ConsentForm($this->createTranslator(), 'test', 'voyti.view.anonymize.confirm_label');
@@ -45,14 +26,5 @@ final class ConsentFormTest extends TestCase
     {
         $form = new ConsentForm($this->createTranslator(), 'test', 'voyti.view.anonymize.confirm_label');
         $this->assertSame($form->getPropertyLabels(), $form->getValidationPropertyLabels());
-    }
-
-    public function testSetProperties(): void
-    {
-        $form = new ConsentForm($this->createTranslator(), 'test', 'voyti.view.anonymize.confirm_label');
-        $form->consent = true;
-        $form->password = 'mypassword';
-        $this->assertTrue($form->consent);
-        $this->assertSame('mypassword', $form->password);
     }
 }

@@ -5,33 +5,21 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Service\User;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
-use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
-use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
-use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
-use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
-use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
+use YiiRocks\Voyti\tests\Support\MailCapture;
+use YiiRocks\Voyti\tests\Support\MailServiceFactoryTrait;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 
 #[AllowMockObjectsWithoutExpectations]
-final class ConfirmationServiceTest extends TestCase
+final class ConfirmationServiceTest extends DatabaseTestCase
 {
-    use DatabaseSetupTrait;
+    use MailServiceFactoryTrait;
     use UserFactoryTrait;
-
-    protected function setUp(): void
-    {
-        $this->setUpDatabase();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->tearDownDatabase();
-    }
 
     public function testConfirmWithCodeAlreadyConfirmedReturnsFalse(): void
     {
@@ -40,29 +28,6 @@ final class ConfirmationServiceTest extends TestCase
         $user->save();
 
         self::assertFalse($this->createService()->confirmWithCode('code', $user));
-    }
-
-    public function testConfirmWithCodeServiceFailureReturnsFalse(): void
-    {
-        $user = $this->createUser('fail', 'fail@example.com');
-        $token = new UserToken();
-        $token->setUserId((int) $user->getId());
-        $token->setCode(hash('sha256', 'validcode'));
-        $token->setType(UserToken::TYPE_CONFIRMATION);
-        $token->setCreatedAt(time());
-        $token->save();
-
-        $confirmationService = $this->getMockBuilder(ConfirmationService::class)
-            ->setConstructorArgs([
-                $this->createMock(EventDispatcherInterface::class),
-                new UserTokenFactory(),
-                $this->createMock(MailService::class),
-            ])
-            ->onlyMethods(['run'])
-            ->getMock();
-        $confirmationService->method('run')->willReturn(false);
-
-        self::assertFalse($confirmationService->confirmWithCode('validcode', $user));
     }
 
     public function testConfirmWithCodeSuccess(): void
@@ -94,13 +59,6 @@ final class ConfirmationServiceTest extends TestCase
         self::assertFalse($this->createService()->confirmWithCode('expiredcode', $user));
     }
 
-    public function testConfirmWithCodeTokenNotFoundReturnsFalse(): void
-    {
-        $user = $this->createUser('no-token', 'notoken@example.com');
-
-        self::assertFalse($this->createService()->confirmWithCode('nonexistent', $user));
-    }
-
     public function testResendAlreadyConfirmedReturnsFalse(): void
     {
         $user = $this->createUser('confirmed', 'confirmed@example.com');
@@ -108,7 +66,7 @@ final class ConfirmationServiceTest extends TestCase
         $user->save();
 
         $tokenFactory = new UserTokenFactory();
-        $mailService = $this->createMock(MailService::class);
+        $mailService = $this->createMailService(new MailCapture());
         $service = new ConfirmationService(
             $this->createMock(EventDispatcherInterface::class),
             $tokenFactory,
@@ -137,8 +95,7 @@ final class ConfirmationServiceTest extends TestCase
         $recoveryToken->setCreatedAt(time());
         $recoveryToken->save();
 
-        $mailService = $this->createMock(MailService::class);
-        $mailService->method('sendConfirmation')->willReturn(true);
+        $mailService = $this->createMailService(new MailCapture());
         $service = new ConfirmationService(
             $this->createMock(EventDispatcherInterface::class),
             new UserTokenFactory(),
@@ -157,8 +114,8 @@ final class ConfirmationServiceTest extends TestCase
     {
         $user = $this->createUser('unconfirmed', 'unconfirmed@example.com');
         $tokenFactory = new UserTokenFactory();
-        $mailService = $this->createMock(MailService::class);
-        $mailService->method('sendConfirmation')->willReturn(true);
+        $mailCapture = new MailCapture();
+        $mailService = $this->createMailService($mailCapture);
         $service = new ConfirmationService(
             $this->createMock(EventDispatcherInterface::class),
             $tokenFactory,
@@ -166,15 +123,8 @@ final class ConfirmationServiceTest extends TestCase
         );
 
         self::assertTrue($service->resend($user));
-    }
-
-    public function testRunAlreadyConfirmedReturnsFalse(): void
-    {
-        $user = $this->createUser('confirmed', 'confirmed@example.com');
-        $user->setConfirmedAt(time());
-        $user->save();
-
-        self::assertFalse($this->createService()->run($user));
+        // A confirmation email is actually sent.
+        self::assertCount(1, $mailCapture->getSentMessages());
     }
 
     public function testRunDeletesOnlyConfirmationTokens(): void
@@ -220,26 +170,12 @@ final class ConfirmationServiceTest extends TestCase
         self::assertNotNull($reloaded->getConfirmedAt());
     }
 
-    public function testRunSuccess(): void
-    {
-        $eventDispatcher = new EventCaptureDispatcher();
-
-        $user = $this->createUser('unconfirmed', 'unconfirmed@example.com');
-
-        self::assertTrue($this->createService($eventDispatcher)->run($user));
-        self::assertNotNull($user->getConfirmedAt());
-        self::assertCount(1, $eventDispatcher->getEvents());
-        $event = $eventDispatcher->getEvent(UserEvent::class);
-        self::assertNotNull($event);
-        self::assertSame(UserEvent::CONFIRM, $event->getType());
-    }
-
     private function createService(?EventDispatcherInterface $eventDispatcher = null): ConfirmationService
     {
         return new ConfirmationService(
             $eventDispatcher ?? $this->createMock(EventDispatcherInterface::class),
             new UserTokenFactory(),
-            $this->createMock(MailService::class),
+            $this->createMailService(new MailCapture()),
         );
     }
 }

@@ -20,9 +20,14 @@ vendor/bin/phpunit --filter testMethodName
 vendor/bin/phpunit tests/Service/User/RegisterServiceTest.php
 ```
 
-Tests do not boot the DI container — `tests/Support/ControllerHarness.php` builds the object graph manually with
-in-memory fakes. `tests/ContainerWiringTest.php` is the one exception, booting a real container purely to assert
-`config/di.php` resolves.
+Controller and other DI-resolved tests boot a real `Yiisoft\Di\Container`: `tests/Support/TestContainerTrait.php`
+builds one fresh per call from `config/di.php` (plus `yiisoft/hydrator`'s own config), with in-memory test fakes
+overlaid (`FakeSession`, `FakeUrlGenerator`, `MailCapture`, `EventCaptureDispatcher`, and
+`SimpleItemsStorage`/`SimpleAssignmentsStorage`-backed RBAC), and per-test mocks supplied as overrides. Model tests
+exercise real `ActiveRecord` persistence against an in-memory SQLite database via `tests/Support/DatabaseSetupTrait`,
+which runs the real migration classes — hence the `pdo_sqlite` CLI requirement. Smaller per-test concerns are factored
+into the support traits under `tests/Support/` (`CurrentRouteTrait`, `CurrentUserTrait`, `TranslatorMockTrait`,
+`RecaptchaRegistryTrait`, etc.).
 
 ## Coverage
 

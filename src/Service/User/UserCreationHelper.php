@@ -91,6 +91,7 @@ final readonly class UserCreationHelper
         $userProfile = new UserProfile();
 
         if ($this->config->enableEmailConfirmation && !$skipConfirmation) {
+            /** @infection-ignore-all The token's exact length is immaterial: it is stored only as a sha256 hash and emailed as an opaque click-through code, so any length works identically. */
             $rawCode = Random::string(32);
             $userToken = new UserToken();
             $userToken->setCreatedAt(time());

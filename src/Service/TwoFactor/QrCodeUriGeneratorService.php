@@ -38,6 +38,7 @@ final readonly class QrCodeUriGeneratorService
 
     private function buildSvg(User $user, ?string $secret): string
     {
+        /** @infection-ignore-all These are cosmetic QR rendering options (path joining, pixel scale) that don't change the encoded otpauth secret the code scans to; their exact values aren't behaviourally observable. */
         $twoFactorQrCode = new TwoFactorQRCode(['outputBase64' => false, 'connectPaths' => true, 'scale' => 4]);
 
         $secret = $this->resolveSecret($user, $secret);

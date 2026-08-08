@@ -7,53 +7,38 @@ namespace YiiRocks\Voyti\tests\Controller\Account;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\EventDispatcher\EventDispatcherInterface;
-use Psr\Http\Message\ResponseFactoryInterface;
-use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\Account\SessionController;
 use YiiRocks\Voyti\Event\Session\SessionEvent;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
-use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\CurrentUserTrait;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
-use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\Support\UserSessionFactoryTrait;
-use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\User\CurrentUser;
-use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 #[AllowMockObjectsWithoutExpectations]
-final class SessionControllerTest extends TestCase
+final class SessionControllerTest extends DatabaseTestCase
 {
-    use DatabaseSetupTrait;
-    use RedirectResponseMockTrait;
+    use CurrentUserTrait;
     use TestContainerTrait;
     use UserFactoryTrait;
     use UserSessionFactoryTrait;
 
-    private CurrentUser&MockObject $currentUser;
+    private CurrentUser $currentUser;
     private EventCaptureDispatcher $eventDispatcher;
     private FlashInterface&MockObject $flash;
-    private ResponseFactoryInterface&MockObject $responseFactory;
-    private WebViewRenderer&MockObject $viewRenderer;
 
     protected function setUp(): void
     {
-        $this->setUpDatabase();
-        $this->viewRenderer = $this->createMock(WebViewRenderer::class);
-        $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
-        $this->currentUser = $this->createMock(CurrentUser::class);
-        $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
+        parent::setUp();
+        $this->currentUser = $this->createCurrentUser();
         $this->flash = $this->createMock(FlashInterface::class);
         $this->eventDispatcher = new EventCaptureDispatcher();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->tearDownDatabase();
     }
 
     public function testIndexFlagsCurrentDevice(): void
@@ -68,22 +53,13 @@ final class SessionControllerTest extends TestCase
         $session = $this->getTestContainer()->get(SessionInterface::class);
         $session->open();
         $session->setId('current-session');
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('account/sessions', $this->callback(
-                static function (array $params): bool {
-                    $sessions = $params['data']->sessions;
-                    $currentCount = count(array_filter($sessions, static fn($row): bool => $row->isCurrentSession));
-                    return count($sessions) === 2 && $currentCount === 1;
-                },
-            ))
-            ->willReturn($response);
 
-        $result = $controller->index();
+        $html = (string) $controller->index()->getBody();
 
-        $this->assertSame($response, $result);
+        // Both sessions render, and exactly one is flagged as the current device.
+        self::assertStringContainsString('203.0.113.1', $html);
+        self::assertStringContainsString('203.0.113.2', $html);
+        self::assertSame(1, substr_count($html, 'This device'));
     }
 
     public function testTerminateCurrentSessionLogsOutAndRedirectsToLogin(): void
@@ -96,15 +72,16 @@ final class SessionControllerTest extends TestCase
         $session = $this->getTestContainer()->get(SessionInterface::class);
         $session->open();
         $session->setId('current-session');
-        $this->currentUser->expects($this->once())->method('logout');
-
-        $response = $this->mockRedirectResponse($this->responseFactory);
 
         $result = $controller->terminate('current-session');
 
-        $this->assertSame($response, $result);
+        $this->assertSame(302, $result->getStatusCode());
+        $this->assertStringContainsString('session-login', $result->getHeaderLine('Location'));
+        $this->assertTrue($this->currentUser->isGuest());
         $event = $this->eventDispatcher->getEvent(SessionEvent::class);
         $this->assertInstanceOf(SessionEvent::class, $event);
+        // The event carries the termination type in its data.
+        $this->assertSame(SessionEvent::SESSION_TERMINATED, $event->getData()['type'] ?? null);
     }
 
     public function testTerminateOtherSessionRevokesItAndRedirects(): void
@@ -113,13 +90,10 @@ final class SessionControllerTest extends TestCase
         $this->authenticateAs($user);
         $this->createUserSession($user->getIdOrZero(), 'other-session', '203.0.113.1');
 
-        $controller = $this->createController();
+        $result = $this->createController()->terminate('other-session');
 
-        $response = $this->mockRedirectResponse($this->responseFactory);
-
-        $result = $controller->terminate('other-session');
-
-        $this->assertSame($response, $result);
+        $this->assertSame(302, $result->getStatusCode());
+        $this->assertStringContainsString('user-account-sessions', $result->getHeaderLine('Location'));
         $revoked = UserSessions::findByUserIdAndSessionId($user->getIdOrZero(), 'other-session');
         $this->assertNotNull($revoked);
         $this->assertTrue($revoked->isRevoked());
@@ -130,19 +104,14 @@ final class SessionControllerTest extends TestCase
         $user = $this->createUser(username: 'sessionuser', email: 'sessionuser@example.com');
         $this->authenticateAs($user);
 
-        $controller = $this->createController();
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->method('render')->willReturn($response);
+        $html = (string) $this->createController()->terminate('unknown-session')->getBody();
 
-        $result = $controller->terminate('unknown-session');
-
-        $this->assertSame($response, $result);
+        self::assertStringContainsString('Session not found', $html);
     }
 
     private function authenticateAs(User $user): void
     {
-        $this->currentUser->method('getIdentity')->willReturn($user);
+        $this->currentUser->login($user);
     }
 
     private function createController(): SessionController
@@ -151,8 +120,6 @@ final class SessionControllerTest extends TestCase
             CurrentUser::class => $this->currentUser,
             EventDispatcherInterface::class => $this->eventDispatcher,
             FlashInterface::class => $this->flash,
-            ResponseFactoryInterface::class => $this->responseFactory,
-            WebViewRenderer::class => $this->viewRenderer,
         ])->get(SessionController::class);
     }
 }

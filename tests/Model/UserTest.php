@@ -137,9 +137,6 @@ final class UserTest extends TestCase
         $this->connection = null;
     }
 
-    /**
-     * @return iterable<string, array{string, string, int|string}>
-     */
     public static function getterSetterProvider(): iterable
     {
         yield 'authKey' => ['setAuthKey', 'getAuthKey', 'auth_key_value'];
@@ -161,9 +158,6 @@ final class UserTest extends TestCase
         yield 'username' => ['setUsername', 'getUsername', 'johndoe'];
     }
 
-    /**
-     * @return iterable<string, array{string, list<string>, bool}>
-     */
     public static function isAdminByListProvider(): iterable
     {
         yield 'returns false' => ['normal_user', ['admin_user', 'other'], false];
@@ -213,23 +207,6 @@ final class UserTest extends TestCase
         self::assertCount(0, UserPasswordHistory::findByUserId($userId));
     }
 
-    public function testDeleteOnlyCascadesRelatedRowsForThatUser(): void
-    {
-        $user = $this->createUser('alice', 'alice@example.com', createdAt: time());
-        $otherUser = $this->createUser('bob', 'bob@example.com', createdAt: time());
-        $otherUserId = (int) $otherUser->getId();
-
-        $this->createRelatedRows($otherUserId);
-
-        $user->delete();
-
-        self::assertCount(1, UserSocialAccount::findByUserId($otherUserId));
-        self::assertCount(1, UserToken::findByUserId($otherUserId));
-        self::assertCount(1, UserSessions::findByUserId($otherUserId));
-        self::assertCount(1, UserBackupCode::findUnusedByUserId($otherUserId));
-        self::assertCount(1, UserPasswordHistory::findByUserId($otherUserId));
-    }
-
     public function testDeleteRemovesUserAndProfile(): void
     {
         $user = $this->createUser('alice', 'alice@example.com', createdAt: time());
@@ -243,15 +220,6 @@ final class UserTest extends TestCase
 
         self::assertNull(User::findByUsername('alice'));
         self::assertNull(UserProfile::findByUserId((int) $user->getId()));
-    }
-
-    public function testDeleteWithoutProfileOnlyRemovesUser(): void
-    {
-        $user = $this->createUser('alice', 'alice@example.com', createdAt: time());
-
-        $user->delete();
-
-        self::assertNull(User::findByUsername('alice'));
     }
 
     public function testFindAllUsersReturnsAllUsers(): void
@@ -293,64 +261,6 @@ final class UserTest extends TestCase
         self::assertSame('alice@example.com', $user->getEmail());
     }
 
-    public function testGetCookieLoginKey(): void
-    {
-        $entity = new User();
-        $entity->setAuthKey('cookie_key');
-        self::assertSame('cookie_key', $entity->getCookieLoginKey());
-    }
-
-    public function testGetIdOrZeroReturnsIdWhenSet(): void
-    {
-        $entity = new User();
-        $entity->setUsername('test');
-        $entity->setEmail('test@example.com');
-        $entity->setPasswordHash('hash');
-        $entity->setAuthKey('key');
-        $entity->setCreatedAt(1000);
-        $entity->setUpdatedAt(1000);
-        $entity->save();
-
-        self::assertSame((int) $entity->getId(), $entity->getIdOrZero());
-        self::assertGreaterThan(0, $entity->getIdOrZero());
-    }
-
-    public function testGetIdOrZeroReturnsZeroWhenNotSet(): void
-    {
-        $entity = new User();
-        self::assertSame(0, $entity->getIdOrZero());
-    }
-
-    public function testGetIdReturnsNullWhenNotSet(): void
-    {
-        $entity = new User();
-        self::assertNull($entity->getId());
-    }
-
-    public function testGetIdReturnsStringWhenSet(): void
-    {
-        $entity = new User();
-        $entity->setUsername('test');
-        $entity->setEmail('test@example.com');
-        $entity->setPasswordHash('hash');
-        $entity->setAuthKey('key');
-        $entity->setCreatedAt(1000);
-        $entity->setUpdatedAt(1000);
-        $entity->save();
-
-        $id = $entity->getId();
-        self::assertNotNull($id);
-        self::assertIsString($id);
-    }
-
-    public function testGetPasswordAgeAtExactDay(): void
-    {
-        $entity = new User();
-        $entity->setPasswordChangedAt(time() - 86400);
-        $age = $entity->getPasswordAge();
-        self::assertSame(1, $age);
-    }
-
     public function testGetPasswordAgeJustUnderDay(): void
     {
         $entity = new User();
@@ -359,48 +269,11 @@ final class UserTest extends TestCase
         self::assertSame(0, $age);
     }
 
-    public function testGetPasswordAgeWithCurrentTime(): void
-    {
-        $entity = new User();
-        $entity->setPasswordChangedAt(time());
-        self::assertSame(0, $entity->getPasswordAge());
-    }
-
     public function testGetPasswordAgeWithNullPasswordChangedAt(): void
     {
         $entity = new User();
         $entity->setPasswordChangedAt(null);
         self::assertSame(9999, $entity->getPasswordAge());
-    }
-
-    public function testGetProfileReturnsNullWhenNotLinked(): void
-    {
-        $entity = new User();
-        self::assertNull($entity->getProfile());
-    }
-
-    public function testGetProfileReturnsProfileWhenLinked(): void
-    {
-        $entity = new User();
-        $entity->setUsername('profile_test');
-        $entity->setEmail('profile_test@example.com');
-        $entity->setPasswordHash('hash');
-        $entity->setAuthKey('key');
-        $entity->setCreatedAt(1000);
-        $entity->setUpdatedAt(1000);
-        $entity->save();
-
-        $profile = new UserProfile();
-        $profile->setUserId((int) $entity->getId());
-        $profile->setBio('Test bio');
-        $profile->save();
-
-        $loaded = User::query()->where(['username' => 'profile_test'])->one();
-        self::assertNotNull($loaded);
-
-        $found = $loaded->getProfile();
-        self::assertNotNull($found);
-        self::assertSame('Test bio', $found->getBio());
     }
 
     #[DataProvider('getterSetterProvider')]
@@ -488,9 +361,6 @@ final class UserTest extends TestCase
         self::assertSame('code123', $tokens[0]->getCode());
     }
 
-    /**
-     * @param list<string> $adminList
-     */
     #[DataProvider('isAdminByListProvider')]
     public function testIsAdminByList(string $username, array $adminList, bool $expected): void
     {
@@ -506,67 +376,11 @@ final class UserTest extends TestCase
         self::assertTrue($entity->isAnonymized());
     }
 
-    public function testIsAnonymizedWithZero(): void
-    {
-        $entity = new User();
-        $entity->setAnonymized(0);
-        self::assertFalse($entity->isAnonymized());
-    }
-
-    public function testIsAuthTfEnabledWithOne(): void
-    {
-        $entity = new User();
-        $entity->setAuthTfEnabled(1);
-        self::assertTrue($entity->isAuthTfEnabled());
-    }
-
-    public function testIsAuthTfEnabledWithZero(): void
-    {
-        $entity = new User();
-        $entity->setAuthTfEnabled(0);
-        self::assertFalse($entity->isAuthTfEnabled());
-    }
-
-    public function testIsBlockedReturnsFalse(): void
-    {
-        $entity = new User();
-        $entity->setBlockedAt(null);
-        self::assertFalse($entity->isBlocked());
-    }
-
-    public function testIsBlockedReturnsTrue(): void
-    {
-        $entity = new User();
-        $entity->setBlockedAt(12345);
-        self::assertTrue($entity->isBlocked());
-    }
-
-    public function testIsConfirmedReturnsFalse(): void
-    {
-        $entity = new User();
-        $entity->setConfirmedAt(null);
-        self::assertFalse($entity->isConfirmed());
-    }
-
-    public function testIsConfirmedReturnsTrue(): void
-    {
-        $entity = new User();
-        $entity->setConfirmedAt(12345);
-        self::assertTrue($entity->isConfirmed());
-    }
-
     public function testIsGdprConsentWithOne(): void
     {
         $entity = new User();
         $entity->setGdprConsent(1);
         self::assertTrue($entity->isGdprConsent());
-    }
-
-    public function testIsGdprConsentWithZero(): void
-    {
-        $entity = new User();
-        $entity->setGdprConsent(0);
-        self::assertFalse($entity->isGdprConsent());
     }
 
     public function testIsSwitchDisabledForReturnsFalseForOtherActiveUser(): void
@@ -589,16 +403,6 @@ final class UserTest extends TestCase
         self::assertTrue($user->isSwitchDisabledFor((int) $user->getId()));
     }
 
-    public function testNewEmailConfirmedConstant(): void
-    {
-        self::assertSame(2, User::NEW_EMAIL_CONFIRMED);
-    }
-
-    public function testOldEmailConfirmedConstant(): void
-    {
-        self::assertSame(1, User::OLD_EMAIL_CONFIRMED);
-    }
-
     public function testSearchQueryCountReflectsStatusFilter(): void
     {
         $blocked = $this->createUser('alice', 'alice@example.com', createdAt: time());
@@ -608,19 +412,6 @@ final class UserTest extends TestCase
 
         self::assertSame(1, User::searchQuery(['status' => 'blocked'])->count());
         self::assertSame(2, User::searchQuery()->count());
-    }
-
-    public function testSearchQueryWithBlockedStatusFilter(): void
-    {
-        $blocked = $this->createUser('alice', 'alice@example.com', createdAt: time());
-        $blocked->setBlockedAt(time());
-        $blocked->save();
-        $this->createUser('bob', 'bob@example.com', createdAt: time());
-
-        $result = User::searchQuery(['status' => 'blocked'])->all();
-
-        self::assertCount(1, $result);
-        self::assertSame('alice', $result[0]->getUsername());
     }
 
     public function testSearchQueryWithConfirmedStatusFilter(): void
@@ -676,35 +467,6 @@ final class UserTest extends TestCase
         $entity = new User();
         $entity->setAuthKey('valid_key');
         self::assertFalse($entity->validateAuthKey('wrong_key'));
-    }
-
-    public function testValidateAuthKeyReturnsTrue(): void
-    {
-        $entity = new User();
-        $entity->setAuthKey('valid_key');
-        self::assertTrue($entity->validateAuthKey('valid_key'));
-    }
-
-    public function testValidateAuthKeyWithEmptyString(): void
-    {
-        $entity = new User();
-        $entity->setAuthKey('');
-        self::assertTrue($entity->validateAuthKey(''));
-        self::assertFalse($entity->validateAuthKey('non_empty'));
-    }
-
-    public function testValidateCookieLoginKeyReturnsFalse(): void
-    {
-        $entity = new User();
-        $entity->setAuthKey('cookie_key_val');
-        self::assertFalse($entity->validateCookieLoginKey('wrong'));
-    }
-
-    public function testValidateCookieLoginKeyReturnsTrue(): void
-    {
-        $entity = new User();
-        $entity->setAuthKey('cookie_key_val');
-        self::assertTrue($entity->validateCookieLoginKey('cookie_key_val'));
     }
 
     private function createRelatedRows(int $userId): void

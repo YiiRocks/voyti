@@ -69,13 +69,11 @@
     },
     "require-dev": {
         "chillerlan/2fa-qrcode-bundle": "^2.0",
-        "dg/bypass-finals": "^1.10",
         "friendsofphp/php-cs-fixer": "@stable",
         "infection/infection": "^0.34.0",
         "nyholm/psr7": "^1.8",
         "phpunit/phpunit": "@stable",
         "rector/rector": "^2.1.1",
-        "squizlabs/php_codesniffer": "@stable",
         "vimeo/psalm": "^6.0",
         "yiirocks/recaptcha": "^1.0",
         "yiisoft/code-style": "^1.1",

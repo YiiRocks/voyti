@@ -8,26 +8,16 @@ use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
-use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
+use YiiRocks\Voyti\tests\Support\MailCapture;
+use YiiRocks\Voyti\tests\Support\MailServiceFactoryTrait;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
-use YiiRocks\Voyti\tests\TestCase;
 
 #[AllowMockObjectsWithoutExpectations]
-final class RecoveryServiceTest extends TestCase
+final class RecoveryServiceTest extends DatabaseTestCase
 {
-    use DatabaseSetupTrait;
-
-    protected function setUp(): void
-    {
-        $this->setUpDatabase();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->tearDownDatabase();
-    }
+    use MailServiceFactoryTrait;
 
     public function testRunWithBlockedUserReturnsGenericSuccess(): void
     {
@@ -42,7 +32,7 @@ final class RecoveryServiceTest extends TestCase
         $user->save();
 
         $userTokenFactory = new UserTokenFactory();
-        $mailService = $this->createMock(MailService::class);
+        $mailService = $this->createMailService(new MailCapture());
         $config = VoytiConfigFactory::create();
         $translator = $this->createTranslator();
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
@@ -62,7 +52,7 @@ final class RecoveryServiceTest extends TestCase
     public function testRunWithUnknownEmailReturnsGenericSuccess(): void
     {
         $userTokenFactory = new UserTokenFactory();
-        $mailService = $this->createMock(MailService::class);
+        $mailService = $this->createMailService(new MailCapture());
         $config = VoytiConfigFactory::create();
         $translator = $this->createTranslator();
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
@@ -92,8 +82,8 @@ final class RecoveryServiceTest extends TestCase
         $user->save();
 
         $userTokenFactory = new UserTokenFactory();
-        $mailService = $this->createMock(MailService::class);
-        $mailService->method('sendRecovery')->willReturn(true);
+        $mailCapture = new MailCapture();
+        $mailService = $this->createMailService($mailCapture);
         $config = VoytiConfigFactory::create();
         $translator = $this->createTranslator();
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
@@ -109,5 +99,7 @@ final class RecoveryServiceTest extends TestCase
         $result = $service->run('valid@example.com');
         self::assertTrue($result->isSuccess());
         self::assertSame('Recovery message sent', $result->getMessage());
+        // A recovery email is actually sent to the user.
+        self::assertCount(1, $mailCapture->getSentMessages());
     }
 }

@@ -5,48 +5,43 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Middleware;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use YiiRocks\Voyti\Middleware\SessionRevocationEnforceMiddleware;
 use YiiRocks\Voyti\Model\UserSessions;
-use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\CurrentRouteTrait;
+use YiiRocks\Voyti\tests\Support\CurrentUserTrait;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
 use YiiRocks\Voyti\tests\Support\FakeSession;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\Router\CurrentRoute;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\User\CurrentUser;
-use Yiisoft\User\Guest\GuestIdentityInterface;
 
 #[AllowMockObjectsWithoutExpectations]
-final class SessionRevocationEnforceMiddlewareTest extends TestCase
+final class SessionRevocationEnforceMiddlewareTest extends DatabaseTestCase
 {
-    use DatabaseSetupTrait;
+    use CurrentRouteTrait;
+    use CurrentUserTrait;
     use UserFactoryTrait;
 
-    protected function setUp(): void
+    public static function exemptRouteProvider(): iterable
     {
-        $this->setUpDatabase();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->tearDownDatabase();
+        yield 'login' => ['voyti/session-login'];
+        yield 'logout' => ['voyti/session-logout'];
     }
 
     public function testProcessLogsOutAndRedirectsWhenSessionRowMissing(): void
     {
         $user = $this->createUser('sessuser', 'sessuser@example.com');
 
-        $currentUser = $this->createMock(CurrentUser::class);
-        $currentUser->expects(self::once())->method('getIdentity')->willReturn($user);
-        $currentUser->expects(self::once())->method('logout');
+        $currentUser = $this->createCurrentUser($user);
 
-        $currentRoute = $this->createMock(CurrentRoute::class);
-        $currentRoute->method('getName')->willReturn('voyti/user-profile');
+        $currentRoute = $this->createCurrentRoute('voyti/user-profile');
 
         $request = $this->createMock(ServerRequestInterface::class);
         $handler = $this->createMock(RequestHandlerInterface::class);
@@ -72,6 +67,8 @@ final class SessionRevocationEnforceMiddlewareTest extends TestCase
         );
 
         $middleware->process($request, $handler);
+
+        self::assertTrue($currentUser->isGuest());
     }
 
     public function testProcessLogsOutAndRedirectsWhenSessionRowRevoked(): void
@@ -87,12 +84,9 @@ final class SessionRevocationEnforceMiddlewareTest extends TestCase
         $userSession->setRevokedAt(time());
         $userSession->save();
 
-        $currentUser = $this->createMock(CurrentUser::class);
-        $currentUser->expects(self::once())->method('getIdentity')->willReturn($user);
-        $currentUser->expects(self::once())->method('logout');
+        $currentUser = $this->createCurrentUser($user);
 
-        $currentRoute = $this->createMock(CurrentRoute::class);
-        $currentRoute->method('getName')->willReturn('voyti/user-profile');
+        $currentRoute = $this->createCurrentRoute('voyti/user-profile');
 
         $request = $this->createMock(ServerRequestInterface::class);
         $handler = $this->createMock(RequestHandlerInterface::class);
@@ -118,18 +112,18 @@ final class SessionRevocationEnforceMiddlewareTest extends TestCase
         );
 
         $middleware->process($request, $handler);
+
+        self::assertTrue($currentUser->isGuest());
     }
 
-    public function testProcessPassesThroughForExemptLoginRoute(): void
+    #[DataProvider('exemptRouteProvider')]
+    public function testProcessPassesThroughForExemptRoute(string $routeName): void
     {
         $user = $this->createUser('sessuser', 'sessuser@example.com');
 
-        $currentUser = $this->createMock(CurrentUser::class);
-        $currentUser->expects(self::once())->method('getIdentity')->willReturn($user);
-        $currentUser->expects(self::never())->method('logout');
+        $currentUser = $this->createCurrentUser($user);
 
-        $currentRoute = $this->createMock(CurrentRoute::class);
-        $currentRoute->method('getName')->willReturn('voyti/session-login');
+        $currentRoute = $this->createCurrentRoute($routeName);
 
         $request = $this->createMock(ServerRequestInterface::class);
         $response = $this->createMock(ResponseInterface::class);
@@ -139,48 +133,6 @@ final class SessionRevocationEnforceMiddlewareTest extends TestCase
         $session = $this->createOpenSession('unrecorded-session-id');
 
         $middleware = $this->createMiddleware(currentUser: $currentUser, currentRoute: $currentRoute, session: $session);
-        $result = $middleware->process($request, $handler);
-
-        self::assertSame($response, $result);
-    }
-
-    public function testProcessPassesThroughForExemptLogoutRoute(): void
-    {
-        $user = $this->createUser('sessuser', 'sessuser@example.com');
-
-        $currentUser = $this->createMock(CurrentUser::class);
-        $currentUser->expects(self::once())->method('getIdentity')->willReturn($user);
-        $currentUser->expects(self::never())->method('logout');
-
-        $currentRoute = $this->createMock(CurrentRoute::class);
-        $currentRoute->method('getName')->willReturn('voyti/session-logout');
-
-        $request = $this->createMock(ServerRequestInterface::class);
-        $response = $this->createMock(ResponseInterface::class);
-        $handler = $this->createMock(RequestHandlerInterface::class);
-        $handler->expects(self::once())->method('handle')->with($request)->willReturn($response);
-
-        $session = $this->createOpenSession('unrecorded-session-id');
-
-        $middleware = $this->createMiddleware(currentUser: $currentUser, currentRoute: $currentRoute, session: $session);
-        $result = $middleware->process($request, $handler);
-
-        self::assertSame($response, $result);
-    }
-
-    public function testProcessPassesThroughForGuestUser(): void
-    {
-        $request = $this->createMock(ServerRequestInterface::class);
-        $response = $this->createMock(ResponseInterface::class);
-        $handler = $this->createMock(RequestHandlerInterface::class);
-        $handler->expects(self::once())->method('handle')->with($request)->willReturn($response);
-
-        $guestIdentity = $this->createMock(GuestIdentityInterface::class);
-
-        $currentUser = $this->createMock(CurrentUser::class);
-        $currentUser->expects(self::once())->method('getIdentity')->willReturn($guestIdentity);
-
-        $middleware = $this->createMiddleware(currentUser: $currentUser);
         $result = $middleware->process($request, $handler);
 
         self::assertSame($response, $result);
@@ -193,12 +145,15 @@ final class SessionRevocationEnforceMiddlewareTest extends TestCase
         $handler = $this->createMock(RequestHandlerInterface::class);
         $handler->expects(self::once())->method('handle')->with($request)->willReturn($response);
 
-        $identity = $this->createMock(IdentityInterface::class);
+        $currentUser = $this->createCurrentUser($this->createMock(IdentityInterface::class));
 
-        $currentUser = $this->createMock(CurrentUser::class);
-        $currentUser->expects(self::once())->method('getIdentity')->willReturn($identity);
-
-        $middleware = $this->createMiddleware(currentUser: $currentUser);
+        // A non-exempt route and an open session ensure the non-User guard must short-circuit before the
+        // User-only session lookup - otherwise the middleware would call getIdOrZero() on a non-User identity.
+        $middleware = $this->createMiddleware(
+            currentUser: $currentUser,
+            currentRoute: $this->createCurrentRoute('voyti/user-profile'),
+            session: $this->createOpenSession('some-session-id'),
+        );
         $result = $middleware->process($request, $handler);
 
         self::assertSame($response, $result);
@@ -208,12 +163,9 @@ final class SessionRevocationEnforceMiddlewareTest extends TestCase
     {
         $user = $this->createUser('sessuser', 'sessuser@example.com');
 
-        $currentUser = $this->createMock(CurrentUser::class);
-        $currentUser->expects(self::once())->method('getIdentity')->willReturn($user);
-        $currentUser->expects(self::never())->method('logout');
+        $currentUser = $this->createCurrentUser($user);
 
-        $currentRoute = $this->createMock(CurrentRoute::class);
-        $currentRoute->method('getName')->willReturn('voyti/user-profile');
+        $currentRoute = $this->createCurrentRoute('voyti/user-profile');
 
         $request = $this->createMock(ServerRequestInterface::class);
         $response = $this->createMock(ResponseInterface::class);
@@ -238,12 +190,9 @@ final class SessionRevocationEnforceMiddlewareTest extends TestCase
         $userSession->setUpdatedAt(time() - 3600);
         $userSession->save();
 
-        $currentUser = $this->createMock(CurrentUser::class);
-        $currentUser->expects(self::once())->method('getIdentity')->willReturn($user);
-        $currentUser->expects(self::never())->method('logout');
+        $currentUser = $this->createCurrentUser($user);
 
-        $currentRoute = $this->createMock(CurrentRoute::class);
-        $currentRoute->method('getName')->willReturn('voyti/user-profile');
+        $currentRoute = $this->createCurrentRoute('voyti/user-profile');
 
         $request = $this->createMock(ServerRequestInterface::class);
         $response = $this->createMock(ResponseInterface::class);
@@ -271,8 +220,8 @@ final class SessionRevocationEnforceMiddlewareTest extends TestCase
         ?UrlGeneratorInterface $url = null,
     ): SessionRevocationEnforceMiddleware {
         return new SessionRevocationEnforceMiddleware(
-            $currentUser ?? $this->createMock(CurrentUser::class),
-            $currentRoute ?? $this->createMock(CurrentRoute::class),
+            $currentUser ?? $this->createCurrentUser(),
+            $currentRoute ?? $this->createCurrentRoute(),
             $responseFactory ?? $this->createMock(ResponseFactoryInterface::class),
             $session ?? new FakeSession(),
             $url ?? $this->createMock(UrlGeneratorInterface::class),

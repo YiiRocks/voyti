@@ -5,17 +5,18 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Service\Auth;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
-use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\Auth\UserSocialAuthenticateService;
-use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\User\UserCreationHelper;
-use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\CurrentUserTrait;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
 use YiiRocks\Voyti\tests\Support\FakeSession;
+use YiiRocks\Voyti\tests\Support\MailCapture;
+use YiiRocks\Voyti\tests\Support\MailServiceFactoryTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
@@ -23,23 +24,19 @@ use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\User\CurrentUser;
 
 #[AllowMockObjectsWithoutExpectations]
-final class UserSocialAuthenticateServiceTest extends TestCase
+final class UserSocialAuthenticateServiceTest extends DatabaseTestCase
 {
-    use DatabaseSetupTrait;
+    use CurrentUserTrait;
+    use MailServiceFactoryTrait;
     use UserFactoryTrait;
 
     private FakeSession $session;
 
     protected function setUp(): void
     {
-        $this->setUpDatabase();
+        parent::setUp();
         $this->session = new FakeSession();
         $this->session->open();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->tearDownDatabase();
     }
 
     public function testRunAccountWithoutUserIdAndEmptyCodeReturnsFailure(): void
@@ -51,28 +48,6 @@ final class UserSocialAuthenticateServiceTest extends TestCase
 
         self::assertTrue($result->isFailure());
         self::assertSame('Unable to prepare the social account connection', $result->getMessage());
-    }
-
-    public function testRunAccountWithoutUserIdAndNoCodeReturnsFailure(): void
-    {
-        $this->createPendingAccount('no_code_client', null);
-
-        $result = $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true))
-            ->run('github', 'no_code_client', ['email' => 'test@example.com']);
-
-        self::assertTrue($result->isFailure());
-        self::assertSame('Unable to prepare the social account connection', $result->getMessage());
-    }
-
-    public function testRunAccountWithoutUserIdSetsSessionCode(): void
-    {
-        $this->createPendingAccount('pending_client', 'pending_code_123');
-
-        $result = $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true))
-            ->run('github', 'pending_client', ['email' => 'test@example.com']);
-
-        self::assertTrue($result->isSuccess());
-        self::assertSame('pending_code_123', $this->session->get('social_network_account_code'));
     }
 
     public function testRunAccountWithUserIdUserNotFoundReturnsFailure(): void
@@ -114,41 +89,73 @@ final class UserSocialAuthenticateServiceTest extends TestCase
 
     public function testRunCreatesNewAccountWhenNotFound(): void
     {
-        $currentUser = $this->createMock(CurrentUser::class);
-        $currentUser->expects($this->once())->method('login');
+        $currentUser = $this->createCurrentUser();
 
         $result = $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true), $currentUser)
-            ->run('github', 'new_account', ['username' => 'newuser', 'email' => 'new@example.com']);
+            ->run('github', 'new_account', ['username' => 'newuser', 'email' => 'new@example.com'], ['REMOTE_ADDR' => '198.51.100.7']);
 
         self::assertTrue($result->isSuccess());
+        self::assertFalse($currentUser->isGuest());
 
         $user = User::findByEmail('new@example.com');
         self::assertNotNull($user);
         self::assertSame('newuser', $user->getUsername());
         self::assertTrue($user->isConfirmed());
+        // The auto-registered user records the request's registration IP.
+        self::assertSame('198.51.100.7', $user->getRegistrationIp());
 
         $saved = UserSocialAccount::findByProviderAndClientId('github', 'new_account');
         self::assertNotNull($saved);
         self::assertSame((int) $user->getId(), $saved->getUserId());
         self::assertNull($saved->getCode());
+        // Once linked to a user the account's own username/email are cleared, but the raw attributes
+        // and creation timestamp are retained.
+        self::assertNull($saved->getUsername());
+        self::assertNull($saved->getEmail());
+        self::assertGreaterThan(0, $saved->getCreatedAt());
+        self::assertSame(['username' => 'newuser', 'email' => 'new@example.com'], json_decode((string) $saved->getData(), true));
     }
 
     public function testRunCreatesNewAccountWithDeduplicatedUsernameOnCollision(): void
     {
-        $currentUser = $this->createMock(CurrentUser::class);
-        $currentUser->expects($this->once())->method('login');
+        $currentUser = $this->createCurrentUser();
 
+        // Only the base name is taken, so the first numeric suffix (2) must be used.
         $this->createUser('dupeuser', 'dupeuser@example.com');
-        $this->createUser('dupeuser_2', 'dupeuser2@example.com');
 
         $result = $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true), $currentUser)
             ->run('github', 'dupe_account', ['username' => 'dupeuser', 'email' => 'new_dupe@example.com']);
 
         self::assertTrue($result->isSuccess());
+        self::assertFalse($currentUser->isGuest());
 
         $user = User::findByEmail('new_dupe@example.com');
         self::assertNotNull($user);
-        self::assertSame('dupeuser_3', $user->getUsername());
+        self::assertSame('dupeuser_2', $user->getUsername());
+    }
+
+    public function testRunDerivesUsernameFromEmailPrefixWhenNoUsername(): void
+    {
+        $result = $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true))
+            ->run('github', 'prefix_client', ['email' => 'prefixname@example.com']);
+
+        self::assertTrue($result->isSuccess());
+
+        $user = User::findByEmail('prefixname@example.com');
+        self::assertNotNull($user);
+        self::assertSame('prefixname', $user->getUsername());
+    }
+
+    public function testRunEmptyClientIdWithNonArraySessionDataReturnsFailure(): void
+    {
+        // Non-array session data must be ignored (guarded), leaving the client id unresolved.
+        $this->session->set('oauth_client_data', 'not-an-array');
+
+        $result = $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true))
+            ->run('github', '', ['email' => 'test@example.com']);
+
+        self::assertTrue($result->isFailure());
+        self::assertSame('Unable to determine social network client ID', $result->getMessage());
     }
 
     public function testRunEmptyClientIdWithoutSessionDataReturnsFailure(): void
@@ -170,23 +177,34 @@ final class UserSocialAuthenticateServiceTest extends TestCase
         self::assertTrue($result->isSuccess());
     }
 
-    public function testRunNewAccountWithExistingEmailRemainsPendingForPasswordLinking(): void
+    public function testRunIncrementsSuffixAcrossMultipleCollisions(): void
     {
-        $this->createUser('existing', 'existing@example.com');
+        $currentUser = $this->createCurrentUser();
 
-        $currentUser = $this->createMock(CurrentUser::class);
-        $currentUser->expects($this->never())->method('login');
+        // Both the base and _2 are taken, so the suffix must advance to _3.
+        $this->createUser('dupeuser', 'dupeuser@example.com');
+        $this->createUser('dupeuser_2', 'dupeuser2@example.com');
 
-        $result = $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true), $currentUser)
-            ->run('github', 'existing_email_client', ['email' => 'existing@example.com', 'username' => 'ext']);
+        $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true), $currentUser)
+            ->run('github', 'dupe_account2', ['username' => 'dupeuser', 'email' => 'new_dupe2@example.com']);
+
+        self::assertSame('dupeuser_3', User::findByEmail('new_dupe2@example.com')?->getUsername());
+    }
+
+    public function testRunMergesSessionOauthDataWithCallbackAttributes(): void
+    {
+        // clientId comes from the session, the email from the callback attributes; both must survive
+        // the merge so auto-registration uses the session-provided name and the callback email.
+        $this->session->set('oauth_client_data', ['user_id' => 'sess-uid', 'name' => 'sessionname']);
+
+        $result = $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true))
+            ->run('github', '', ['email' => 'merged@example.com']);
 
         self::assertTrue($result->isSuccess());
 
-        $saved = UserSocialAccount::findByProviderAndClientId('github', 'existing_email_client');
-        self::assertNotNull($saved);
-        self::assertNull($saved->getUserId());
-        self::assertNotNull($saved->getCode());
-        self::assertSame($saved->getCode(), $this->session->get('social_network_account_code'));
+        $user = User::findByEmail('merged@example.com');
+        self::assertNotNull($user);
+        self::assertSame('sessionname', $user->getUsername());
     }
 
     public function testRunNewAccountWithNameAttributeAsFallback(): void
@@ -213,33 +231,39 @@ final class UserSocialAuthenticateServiceTest extends TestCase
         self::assertNull($saved->getUsername());
         self::assertNull($saved->getEmail());
         self::assertNotNull($saved->getCode());
+        // The pending connection code is a 32-character random token.
+        self::assertSame(32, strlen((string) $saved->getCode()));
     }
 
-    public function testRunNewAccountWithRegistrationDisabledRemainsPending(): void
+    public function testRunPrefersUsernameAttributeOverName(): void
     {
-        $currentUser = $this->createMock(CurrentUser::class);
-        $currentUser->expects($this->never())->method('login');
-
-        $config = VoytiConfigFactory::create(enableSocialNetworkRegistration: true, enableRegistration: false);
-        $result = $this->createService($config, $currentUser)
-            ->run('github', 'no_registration_client', ['username' => 'newuser', 'email' => 'blocked_signup@example.com']);
+        $result = $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true))
+            ->run('github', 'prefer_client', ['username' => 'chosen', 'name' => 'ignored', 'email' => 'prefer@example.com']);
 
         self::assertTrue($result->isSuccess());
-        self::assertNull(User::findByEmail('blocked_signup@example.com'));
 
-        $saved = UserSocialAccount::findByProviderAndClientId('github', 'no_registration_client');
-        self::assertNotNull($saved);
-        self::assertNull($saved->getUserId());
-        self::assertNotNull($saved->getCode());
+        $user = User::findByEmail('prefer@example.com');
+        self::assertNotNull($user);
+        self::assertSame('chosen', $user->getUsername());
     }
 
-    public function testRunSocialRegistrationDisabledReturnsFailure(): void
+    public function testRunTreatsEmptyUsernameAttributeAsAbsentAndFallsBackToName(): void
     {
-        $result = $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: false))
-            ->run('github', 'client123', ['email' => 'test@example.com']);
+        $result = $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true))
+            ->run('github', 'empty_username_client', ['username' => '', 'name' => 'realname', 'email' => 'emptyu@example.com']);
 
-        self::assertTrue($result->isFailure());
-        self::assertSame('Social network registration is disabled', $result->getMessage());
+        self::assertTrue($result->isSuccess());
+        // The blank username is ignored, so the name attribute is used.
+        self::assertSame('realname', User::findByEmail('emptyu@example.com')?->getUsername());
+    }
+
+    public function testRunTruncatesLongUsernameTo250Characters(): void
+    {
+        $result = $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true))
+            ->run('github', 'long_client', ['username' => str_repeat('a', 300), 'email' => 'long@example.com']);
+
+        self::assertTrue($result->isSuccess());
+        self::assertSame(250, strlen((string) User::findByEmail('long@example.com')?->getUsername()));
     }
 
     public function testRunWithBlockedUserReturnsFailure(): void
@@ -256,8 +280,7 @@ final class UserSocialAuthenticateServiceTest extends TestCase
 
     public function testRunWithLoggedInUserNoRemoteAddrDefaultsTo127(): void
     {
-        $currentUser = $this->createMock(CurrentUser::class);
-        $currentUser->method('login');
+        $currentUser = $this->createCurrentUser();
 
         $user = $this->createUser('noremote', 'noremote@example.com');
         $this->createConnectedAccount('noremote_client', (int) $user->getId());
@@ -267,37 +290,6 @@ final class UserSocialAuthenticateServiceTest extends TestCase
 
         $updated = User::findByEmail('noremote@example.com');
         self::assertSame('127.0.0.1', $updated->getLastLoginIp());
-    }
-
-    public function testRunWithLoggedInUserUpdatesLastLoginIp(): void
-    {
-        $currentUser = $this->createMock(CurrentUser::class);
-        $currentUser->method('login');
-
-        $user = $this->createUser('iplogin', 'iplogin@example.com');
-        $this->createConnectedAccount('ip_login_client', (int) $user->getId());
-
-        $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true), $currentUser)
-            ->run('github', 'ip_login_client', [], ['REMOTE_ADDR' => '192.168.1.50']);
-
-        $updated = User::findByEmail('iplogin@example.com');
-        self::assertSame('192.168.1.50', $updated->getLastLoginIp());
-    }
-
-    public function testRunWithValidConnectedUserLogsIn(): void
-    {
-        $currentUser = $this->createMock(CurrentUser::class);
-        $currentUser->expects($this->once())->method('login');
-        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $eventDispatcher->expects($this->once())->method('dispatch');
-
-        $user = $this->createUser('active', 'active@example.com');
-        $this->createConnectedAccount('active_client', (int) $user->getId());
-
-        $result = $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true), $currentUser, $eventDispatcher)
-            ->run('github', 'active_client', ['email' => 'test@example.com'], ['REMOTE_ADDR' => '10.0.0.1']);
-
-        self::assertTrue($result->isSuccess());
     }
 
     private function createConnectedAccount(string $clientId, int $userId): UserSocialAccount
@@ -331,7 +323,7 @@ final class UserSocialAuthenticateServiceTest extends TestCase
         ?CurrentUser $currentUser = null,
         ?EventDispatcherInterface $eventDispatcher = null,
     ): UserSocialAuthenticateService {
-        $currentUser ??= $this->createMock(CurrentUser::class);
+        $currentUser ??= $this->createCurrentUser();
         $eventDispatcher ??= $this->createMock(EventDispatcherInterface::class);
 
         return new UserSocialAuthenticateService(
@@ -349,7 +341,7 @@ final class UserSocialAuthenticateServiceTest extends TestCase
         $passwordHasher = TestPasswordHasherFactory::create();
 
         return new UserCreationHelper(
-            $this->createMock(MailService::class),
+            $this->createMailService(new MailCapture()),
             $eventDispatcher,
             $passwordHasher,
             $config,

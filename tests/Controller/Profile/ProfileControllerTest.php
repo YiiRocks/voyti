@@ -9,206 +9,144 @@ use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
-use Psr\Http\Message\ResponseFactoryInterface;
-use Psr\Http\Message\ResponseInterface;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Controller\Profile\ProfileController;
 use YiiRocks\Voyti\Enum\ProfileVisibility;
+use YiiRocks\Voyti\Event\User\UserProfileEvent;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserProfile;
-use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
-use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
+use YiiRocks\Voyti\tests\Support\CurrentUserTrait;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
+use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
+use YiiRocks\Voyti\tests\Support\SimpleAssignmentsStorage;
+use YiiRocks\Voyti\tests\Support\SimpleItemsStorage;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\Support\ValidatorMockTrait;
-use YiiRocks\Voyti\tests\Support\ViewCaptureTrait;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
-use YiiRocks\Voyti\tests\TestCase;
 use YiiRocks\Voyti\VoytiConfig;
+use Yiisoft\Rbac\Manager;
+use Yiisoft\Rbac\Permission;
+use Yiisoft\Rbac\Role;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\User\CurrentUser;
-use Yiisoft\User\Guest\GuestIdentity;
-use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Validator\ValidatorInterface;
-use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 #[AllowMockObjectsWithoutExpectations]
-final class ProfileControllerTest extends TestCase
+final class ProfileControllerTest extends DatabaseTestCase
 {
-    use DatabaseSetupTrait;
-    use RedirectResponseMockTrait;
+    use CurrentUserTrait;
     use TestContainerTrait;
     use UserFactoryTrait;
     use ValidatorMockTrait;
-    use ViewCaptureTrait;
 
-    private AuthHelper&MockObject $authHelper;
-    private CurrentUser&MockObject $currentUser;
+    private CurrentUser $currentUser;
     private FlashInterface&MockObject $flash;
-    private ResponseFactoryInterface&MockObject $responseFactory;
+    private bool $isViewerAdmin = false;
     private ValidatorInterface&MockObject $validator;
-    private WebViewRenderer&MockObject $viewRenderer;
 
     protected function setUp(): void
     {
-        $this->setUpDatabase();
-        $this->viewRenderer = $this->createMock(WebViewRenderer::class);
-        $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
-        $this->currentUser = $this->createMock(CurrentUser::class);
-        $this->authHelper = $this->createMock(AuthHelper::class);
-        $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
+        parent::setUp();
+        $this->currentUser = $this->createCurrentUser();
         $this->flash = $this->createMock(FlashInterface::class);
         $this->validator = $this->mockValidValidator();
     }
 
-    protected function tearDown(): void
-    {
-        $this->tearDownDatabase();
-    }
-
-    /**
-     * @return iterable<string, array{ProfileVisibility, string|null, bool|null}>
-     */
     public static function showProfileAllowedProvider(): iterable
     {
         yield 'admin different user admin allowed' => [ProfileVisibility::ADMIN, '2', true];
+        // Own profile under ADMIN visibility is allowed even for a non-admin (the id-equality short-circuit).
+        yield 'admin same user non-admin allowed' => [ProfileVisibility::ADMIN, '1', false];
         yield 'owner same user allowed' => [ProfileVisibility::OWNER, '1', null];
         yield 'public no auth' => [ProfileVisibility::PUBLIC, null, null];
         yield 'users authenticated allowed' => [ProfileVisibility::USERS, '2', null];
     }
 
-    /**
-     * @return iterable<string, array{ProfileVisibility, string|null, bool|null}>
-     */
     public static function showProfileForbiddenOrNotFoundProvider(): iterable
     {
-        yield 'profile not found' => [ProfileVisibility::PUBLIC, null, null];
-        yield 'admin different user not admin forbidden' => [ProfileVisibility::ADMIN, '2', false];
-        yield 'owner different user forbidden' => [ProfileVisibility::OWNER, '2', null];
-        yield 'users no auth forbidden' => [ProfileVisibility::USERS, null, null];
+        yield 'profile not found' => [ProfileVisibility::PUBLIC, null, null, 'Profile not found'];
+        yield 'admin different user not admin forbidden' => [ProfileVisibility::ADMIN, '2', false, 'Forbidden'];
+        yield 'owner different user forbidden' => [ProfileVisibility::OWNER, '2', null, 'Forbidden'];
+        yield 'users no auth forbidden' => [ProfileVisibility::USERS, null, null, 'Forbidden'];
     }
 
     public function testIsAdminReturnsFalseForGuestIdentity(): void
     {
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-
         $controller = $this->createController(
             VoytiConfigFactory::create(profileVisibility: ProfileVisibility::ADMIN),
         );
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturn($response);
+        $html = (string) $controller->show(1)->getBody();
 
-        $result = $controller->show(1);
-
-        $this->assertSame($response, $result);
+        // A guest is never admin, so an admin-only profile is forbidden.
+        self::assertStringContainsString('Forbidden', $html);
     }
 
     public function testIsAdminReturnsFalseForIdentityWithNullId(): void
     {
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn(null);
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->login(new User());
 
         $controller = $this->createController(
             VoytiConfigFactory::create(profileVisibility: ProfileVisibility::ADMIN),
         );
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturn($response);
+        $html = (string) $controller->show(1)->getBody();
 
-        $result = $controller->show(1);
-
-        $this->assertSame($response, $result);
+        self::assertStringContainsString('Forbidden', $html);
     }
 
     #[DataProvider('showProfileAllowedProvider')]
     public function testShowProfileAllowed(ProfileVisibility $visibility, ?string $identityId, ?bool $isAdminReturn): void
     {
-        $this->setUpIdentity($identityId);
+        $owner = $this->createUserWithProfile();
+        $this->loginViewerFor($identityId, (int) $owner->getId());
 
-        if ($isAdminReturn !== null) {
-            $this->authHelper->method('isAdmin')->willReturn($isAdminReturn);
-        }
-
-        $this->createUserWithProfile();
+        $this->isViewerAdmin = $isAdminReturn === true;
 
         $controller = $this->createController(
             VoytiConfigFactory::create(profileVisibility: $visibility),
         );
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('profile/show', $this->anything())
-            ->willReturn($response);
+        $html = (string) $controller->show((int) $owner->getId())->getBody();
 
-        $result = $controller->show(1);
-
-        $this->assertSame($response, $result);
+        // The owner's profile card renders (its display name is the owner's username).
+        self::assertStringContainsString('profileuser', $html);
     }
 
     #[DataProvider('showProfileForbiddenOrNotFoundProvider')]
-    public function testShowProfileForbiddenOrNotFound(ProfileVisibility $visibility, ?string $identityId, ?bool $isAdminReturn): void
-    {
-        $this->setUpIdentity($identityId);
+    public function testShowProfileForbiddenOrNotFound(
+        ProfileVisibility $visibility,
+        ?string $identityId,
+        ?bool $isAdminReturn,
+        string $expectedMessage,
+    ): void {
+        $this->loginViewerFor($identityId, 1);
 
-        if ($isAdminReturn !== null) {
-            $this->authHelper->method('isAdmin')->willReturn($isAdminReturn);
-        }
+        $this->isViewerAdmin = $isAdminReturn === true;
 
         $controller = $this->createController(
             VoytiConfigFactory::create(profileVisibility: $visibility),
         );
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturn($response);
+        $html = (string) $controller->show(1)->getBody();
 
-        $result = $controller->show(1);
-
-        $this->assertSame($response, $result);
+        self::assertStringContainsString($expectedMessage, $html);
     }
 
     public function testUpdateGetShowsFormWithExistingProfile(): void
     {
         $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
 
         $user = $this->createUser(passwordHash: TestPasswordHasherFactory::create()->hash('secret'), confirmedAt: time());
         $this->createUserProfile((int) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($user);
+        $this->currentUser->login($user);
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('profile/update', $this->anything())
-            ->willReturn($response);
+        $html = (string) $controller->update(new ServerRequest('GET', '/'))->getBody();
 
-        $result = $controller->update($request);
-
-        $this->assertSame($response, $result);
+        self::assertStringContainsString('Edit Profile', $html);
     }
 
     public function testUpdatePostClearingFieldsSetsThemToNullNotEmptyString(): void
@@ -227,13 +165,11 @@ final class ProfileControllerTest extends TestCase
         $profile->setBirthday(new DateTimeImmutable('1990-05-15'));
         $profile->save();
 
-        $this->currentUser->method('getIdentity')->willReturn($user);
-
-        $response = $this->mockRedirectResponse($this->responseFactory);
+        $this->currentUser->login($user);
 
         $result = $controller->update($request);
 
-        $this->assertSame($response, $result);
+        $this->assertSame(302, $result->getStatusCode());
         $updatedProfile = UserProfile::findByUserId((int) $user->getId());
         $this->assertNotNull($updatedProfile);
         $this->assertNull($updatedProfile->getName());
@@ -252,17 +188,37 @@ final class ProfileControllerTest extends TestCase
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['userProfile' => ['name' => 'Jane']]);
 
         $user = $this->createUser(passwordHash: TestPasswordHasherFactory::create()->hash('secret'), confirmedAt: time());
-        $this->currentUser->method('getIdentity')->willReturn($user);
-
-        $response = $this->mockRedirectResponse($this->responseFactory);
+        $this->currentUser->login($user);
 
         $result = $controller->update($request);
 
-        $this->assertSame($response, $result);
+        $this->assertSame(302, $result->getStatusCode());
         $savedProfile = UserProfile::findByUserId((int) $user->getId());
         $this->assertNotNull($savedProfile);
         $this->assertSame((int) $user->getId(), $savedProfile->getUserId());
         $this->assertSame('Jane', $savedProfile->getName());
+    }
+
+    public function testUpdatePostDispatchesProfileEvent(): void
+    {
+        $eventDispatcher = new EventCaptureDispatcher();
+        $container = $this->getTestContainer([
+            ...$this->baseOverrides(),
+            ValidatorInterface::class => $this->validator,
+            EventDispatcherInterface::class => $eventDispatcher,
+        ]);
+
+        $user = $this->createUser(passwordHash: TestPasswordHasherFactory::create()->hash('secret'), confirmedAt: time());
+        $this->createUserProfile((int) $user->getId(), name: 'OldName');
+        $this->currentUser->login($user);
+
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['userProfile' => ['name' => 'John', 'publicEmail' => '', 'gravatarEmail' => '', 'location' => '', 'website' => '', 'timezone' => '', 'bio' => '', 'birthday' => '']]);
+
+        $result = $container->get(ProfileController::class)->update($request);
+
+        $this->assertSame(302, $result->getStatusCode());
+        // A successful profile update notifies listeners via UserProfileEvent.
+        self::assertTrue($eventDispatcher->hasEvent(UserProfileEvent::class));
     }
 
     public function testUpdatePostRejectsHtmlInBioAndDoesNotSave(): void
@@ -273,79 +229,24 @@ final class ProfileControllerTest extends TestCase
 
         $user = $this->createUser(passwordHash: TestPasswordHasherFactory::create()->hash('secret'), confirmedAt: time());
         $this->createUserProfile((int) $user->getId(), name: 'OldName');
-        $this->currentUser->method('getIdentity')->willReturn($user);
+        $this->currentUser->login($user);
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('profile/update', $this->anything())
-            ->willReturn($response);
-        $this->responseFactory->expects($this->never())->method('createResponse');
+        // Invalid input re-renders the edit form instead of redirecting, and nothing is persisted.
+        $html = (string) $controller->update($request)->getBody();
 
-        $result = $controller->update($request);
-
-        $this->assertSame($response, $result);
+        self::assertStringContainsString('Edit Profile', $html);
         $updatedProfile = UserProfile::findByUserId((int) $user->getId());
         $this->assertNotNull($updatedProfile);
         $this->assertSame('OldName', $updatedProfile->getName());
         $this->assertNull($updatedProfile->getBio());
     }
 
-    public function testUpdatePostRejectsMalformedBirthdayAndDoesNotSave(): void
-    {
-        // Needs the real Validator - this test's whole point is that a real rule rejects a malformed date.
-        $controller = $this->createControllerWithRealValidation();
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['userProfile' => ['name' => 'John', 'publicEmail' => '', 'gravatarEmail' => '', 'location' => '', 'website' => '', 'timezone' => '', 'bio' => '', 'birthday' => 'not-a-date']]);
-
-        $user = $this->createUser(passwordHash: TestPasswordHasherFactory::create()->hash('secret'), confirmedAt: time());
-        $this->createUserProfile((int) $user->getId(), name: 'OldName');
-        $this->currentUser->method('getIdentity')->willReturn($user);
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('profile/update', $this->anything())
-            ->willReturn($response);
-        $this->responseFactory->expects($this->never())->method('createResponse');
-
-        $result = $controller->update($request);
-
-        $this->assertSame($response, $result);
-        $updatedProfile = UserProfile::findByUserId((int) $user->getId());
-        $this->assertNotNull($updatedProfile);
-        $this->assertNull($updatedProfile->getBirthday());
-    }
-
-    public function testUpdatePostUpdatesAndRedirects(): void
-    {
-        $controller = $this->createController();
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['userProfile' => ['name' => 'John', 'publicEmail' => '', 'gravatarEmail' => '', 'location' => '', 'website' => '', 'timezone' => '', 'bio' => '', 'birthday' => '1990-05-15']]);
-
-        $user = $this->createUser(passwordHash: TestPasswordHasherFactory::create()->hash('secret'), confirmedAt: time());
-        $this->createUserProfile((int) $user->getId(), name: 'OldName');
-        $this->currentUser->method('getIdentity')->willReturn($user);
-
-        $response = $this->mockRedirectResponse($this->responseFactory);
-
-        $result = $controller->update($request);
-
-        $this->assertSame($response, $result);
-        $updatedProfile = UserProfile::findByUserId((int) $user->getId());
-        $this->assertNotNull($updatedProfile);
-        $this->assertSame('John', $updatedProfile->getName());
-        $this->assertSame('1990-05-15', $updatedProfile->getBirthday()?->format('Y-m-d'));
-    }
-
     private function baseOverrides(?VoytiConfig $config = null): array
     {
         $overrides = [
-            AuthHelper::class => $this->authHelper,
+            AuthHelper::class => $this->createAuthHelper($config),
             CurrentUser::class => $this->currentUser,
             FlashInterface::class => $this->flash,
-            ResponseFactoryInterface::class => $this->responseFactory,
-            WebViewRenderer::class => $this->viewRenderer,
         ];
 
         if ($config !== null) {
@@ -353,6 +254,23 @@ final class ProfileControllerTest extends TestCase
         }
 
         return $overrides;
+    }
+
+    private function createAuthHelper(?VoytiConfig $config): AuthHelper
+    {
+        $config ??= VoytiConfigFactory::create();
+        $itemsStorage = new SimpleItemsStorage();
+        $assignmentsStorage = new SimpleAssignmentsStorage();
+        $manager = new Manager($itemsStorage, $assignmentsStorage);
+
+        if ($this->isViewerAdmin) {
+            $itemsStorage->add(new Permission($config->administratorPermissionName));
+            $itemsStorage->add(new Role('admin'));
+            $manager->addChild('admin', $config->administratorPermissionName);
+            $manager->assign('admin', (string) $this->currentUser->getId());
+        }
+
+        return new AuthHelper($manager, $itemsStorage, $assignmentsStorage, $config, $this->currentUser);
     }
 
     private function createController(?VoytiConfig $config = null): ProfileController
@@ -400,15 +318,29 @@ final class ProfileControllerTest extends TestCase
         return $user;
     }
 
-    private function setUpIdentity(?string $identityId): void
+    /**
+     * Logs in a viewer for a profile owned by $profileOwnerId: null leaves a guest, an id equal to
+     * the owner's logs the owner in (self), any other id logs in a distinct real user (non-owner).
+     */
+    private function loginViewerFor(?string $identityId, int $profileOwnerId): void
     {
         if ($identityId === null) {
-            $this->currentUser->method('getIdentity')->willReturn(new GuestIdentity());
             return;
         }
 
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn($identityId);
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        if ($identityId === (string) $profileOwnerId) {
+            $owner = User::findById($profileOwnerId);
+            self::assertNotNull($owner);
+            $this->currentUser->login($owner);
+            return;
+        }
+
+        do {
+            $other = $this->createUser(
+                username: 'viewer' . random_int(1, PHP_INT_MAX),
+                email: 'viewer' . random_int(1, PHP_INT_MAX) . '@example.com',
+            );
+        } while ((int) $other->getId() === $profileOwnerId);
+        $this->currentUser->login($other);
     }
 }

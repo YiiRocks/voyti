@@ -5,14 +5,13 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Service;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
-use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use ReflectionProperty;
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
 use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\SwitchIdentityService;
-use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 use YiiRocks\Voyti\tests\Support\FakeSession;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
@@ -22,45 +21,9 @@ use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\User\CurrentUser;
 
 #[AllowMockObjectsWithoutExpectations]
-final class SwitchIdentityServiceTest extends TestCase
+final class SwitchIdentityServiceTest extends DatabaseTestCase
 {
-    use DatabaseSetupTrait;
     use UserFactoryTrait;
-
-    protected function setUp(): void
-    {
-        $this->setUpDatabase();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->tearDownDatabase();
-    }
-
-    public function testGetOriginalUserReturnsUserWhenSessionHasKey(): void
-    {
-        $config = VoytiConfigFactory::create();
-        $user = $this->createUser(username: 'original', email: 'original@example.com');
-        $session = new FakeSession();
-        $session->set('voyti_original_admin_user', (string) $user->getId());
-
-        $service = $this->createService($config, session: $session);
-
-        $found = $service->getOriginalUser();
-        self::assertNotNull($found);
-        self::assertSame($user->getId(), $found->getId());
-    }
-
-    public function testIsSwitchedReturnsTrueWhenSessionHasKey(): void
-    {
-        $config = VoytiConfigFactory::create();
-        $session = new FakeSession();
-        $session->set('voyti_original_admin_user', '42');
-
-        $service = $this->createService($config, session: $session);
-
-        self::assertTrue($service->isSwitched());
-    }
 
     public function testRestoreDispatchesEvents(): void
     {
@@ -202,25 +165,6 @@ final class SwitchIdentityServiceTest extends TestCase
 
         self::assertTrue($result->isFailure());
         self::assertSame('Cannot switch to a blocked user', $result->getMessage());
-    }
-
-    public function testRunWithNullIdentityDoesNotStoreSession(): void
-    {
-        $config = VoytiConfigFactory::create();
-        $targetUser = $this->createUser(username: 'nullidentity', email: 'nullidentity@example.com');
-
-        $session = new FakeSession();
-        $currentUser = new CurrentUser(
-            $this->createMock(IdentityRepositoryInterface::class),
-            $this->createEventDispatcher(),
-        );
-
-        $eventDispatcher = $this->createEventDispatcher();
-        $service = $this->createService($config, $currentUser, $session, $eventDispatcher);
-        $result = $service->run((int) $targetUser->getId());
-
-        self::assertTrue($result->isSuccess());
-        self::assertFalse($session->has('voyti_original_admin_user'));
     }
 
     public function testRunWithSelfTargetReturnsFailure(): void

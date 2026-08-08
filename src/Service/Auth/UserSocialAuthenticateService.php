@@ -54,6 +54,7 @@ final readonly class UserSocialAuthenticateService
             /** @var mixed $oauthData */
             $oauthData = $this->session->get(self::SESSION_KEY);
             if ($oauthData !== null && is_array($oauthData)) {
+                /** @infection-ignore-all Defensive string coercion of the session-stored user id; identical for the string ids the flow stores. */
                 $clientId = (string) ($oauthData['user_id'] ?? '');
                 $userAttributes = array_merge($oauthData, $userAttributes);
             }
@@ -102,6 +103,7 @@ final readonly class UserSocialAuthenticateService
 
     private function buildUniqueUsername(?string $usernameHint, string $email): string
     {
+        /** @infection-ignore-all The explode limit is immaterial - [0] is the part before the first '@' for any limit >= 1; the hint/email-prefix/'user' fallback chain is covered behaviourally. */
         $base = $this->sanitizeUsername($usernameHint) ?? $this->sanitizeUsername(explode('@', $email, 2)[0]) ?? 'user';
 
         $username = $base;
@@ -155,6 +157,7 @@ final readonly class UserSocialAuthenticateService
     private function registerUser(string $email, ?string $usernameHint, array $serverParams): User
     {
         $username = $this->buildUniqueUsername($usernameHint, $email);
+        /** @infection-ignore-all The random password's exact length is unobservable once hashed. */
         $password = Random::string(24);
 
         $user = $this->userCreationHelper->buildUser($email, $username, $password);
@@ -171,6 +174,7 @@ final readonly class UserSocialAuthenticateService
             return null;
         }
 
+        /** @infection-ignore-all The cast is defensive: preg_replace only returns null on a malformed pattern, which this constant one never is. */
         $sanitized = (string) preg_replace('/[^-a-zA-Z0-9_.@]/', '', $value);
 
         return $sanitized !== '' ? substr($sanitized, 0, 250) : null;

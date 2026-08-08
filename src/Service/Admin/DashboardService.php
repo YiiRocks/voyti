@@ -48,14 +48,8 @@ final readonly class DashboardService
         $now = time();
 
         return [
-            /**
-             * @infection-ignore-all Query::count() is typed int|string for driver portability; sqlite
-             * already returns int here, so the cast is unobservable in tests but keeps the return
-             * type sound on drivers that return numeric strings.
-             */
-            'userTotal' => (int) User::query()->count(),
-            /** @infection-ignore-all Same driver-portability cast as userTotal above. */
-            'userBlocked' => (int) User::searchQuery(['status' => 'blocked'])->count(),
+            'userTotal' => $this->toInt(User::query()->count()),
+            'userBlocked' => $this->toInt(User::searchQuery(['status' => 'blocked'])->count()),
             'userUnconfirmed' => $this->unconfirmedUserCount(),
             'roleCount' => count($this->itemsStorage->getRoles()),
             'permissionCount' => count($this->itemsStorage->getPermissions()),
@@ -77,18 +71,15 @@ final readonly class DashboardService
     private function activeSessionsTrend(int $now): array
     {
         return [
-            /** @infection-ignore-all Same driver-portability cast as userTotal in getStats() above. */
-            'oneDay' => (int) UserSessions::query()
-                ->andWhere(['>=', 'updated_at', $now - self::SECONDS_PER_DAY])
-                ->count(),
-            /** @infection-ignore-all Same driver-portability cast as userTotal in getStats() above. */
-            'sevenDays' => (int) UserSessions::query()
-                ->andWhere(['>=', 'updated_at', $now - (self::SECONDS_PER_DAY * 7)])
-                ->count(),
-            /** @infection-ignore-all Same driver-portability cast as userTotal in getStats() above. */
-            'lifespan' => (int) UserSessions::query()
-                ->andWhere(['>=', 'updated_at', $now - $this->config->rememberLoginLifespan])
-                ->count(),
+            'oneDay' => $this->toInt(
+                UserSessions::query()->andWhere(['>=', 'updated_at', $now - self::SECONDS_PER_DAY])->count(),
+            ),
+            'sevenDays' => $this->toInt(
+                UserSessions::query()->andWhere(['>=', 'updated_at', $now - (self::SECONDS_PER_DAY * 7)])->count(),
+            ),
+            'lifespan' => $this->toInt(
+                UserSessions::query()->andWhere(['>=', 'updated_at', $now - $this->config->rememberLoginLifespan])->count(),
+            ),
         ];
     }
 
@@ -98,18 +89,15 @@ final readonly class DashboardService
     private function newRegistrationsTrend(int $now): array
     {
         return [
-            /** @infection-ignore-all Same driver-portability cast as userTotal in getStats() above. */
-            'oneDay' => (int) User::query()
-                ->andWhere(['>=', 'created_at', $now - self::SECONDS_PER_DAY])
-                ->count(),
-            /** @infection-ignore-all Same driver-portability cast as userTotal in getStats() above. */
-            'sevenDays' => (int) User::query()
-                ->andWhere(['>=', 'created_at', $now - (self::SECONDS_PER_DAY * 7)])
-                ->count(),
-            /** @infection-ignore-all Same driver-portability cast as userTotal in getStats() above. */
-            'lifespan' => (int) User::query()
-                ->andWhere(['>=', 'created_at', $now - $this->config->rememberLoginLifespan])
-                ->count(),
+            'oneDay' => $this->toInt(
+                User::query()->andWhere(['>=', 'created_at', $now - self::SECONDS_PER_DAY])->count(),
+            ),
+            'sevenDays' => $this->toInt(
+                User::query()->andWhere(['>=', 'created_at', $now - (self::SECONDS_PER_DAY * 7)])->count(),
+            ),
+            'lifespan' => $this->toInt(
+                User::query()->andWhere(['>=', 'created_at', $now - $this->config->rememberLoginLifespan])->count(),
+            ),
         ];
     }
 
@@ -143,13 +131,22 @@ final readonly class DashboardService
         return $userId !== null ? $name . ' (#' . $userId . ')' : $name;
     }
 
+    /**
+     * Narrows a `Query::count()` result to int. That method is typed `int|string` for driver
+     * portability (sqlite returns int, some drivers return numeric strings).
+     */
+    private function toInt(int|string $count): int
+    {
+        /** @infection-ignore-all The cast is unobservable under sqlite (already int) but keeps the count sound on drivers that return numeric strings. */
+        return (int) $count;
+    }
+
     private function unconfirmedUserCount(): ?int
     {
         if (!$this->config->enableEmailConfirmation) {
             return null;
         }
 
-        /** @infection-ignore-all Same driver-portability cast as userTotal in getStats() above. */
-        return (int) User::searchQuery(['status' => 'unconfirmed'])->count();
+        return $this->toInt(User::searchQuery(['status' => 'unconfirmed'])->count());
     }
 }

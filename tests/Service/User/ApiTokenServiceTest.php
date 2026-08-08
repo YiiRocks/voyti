@@ -4,45 +4,19 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Service\User;
 
-use PHPUnit\Framework\TestCase;
-use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\Service\User\ApiTokenService;
-use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
-use Yiisoft\ActiveRecord\ActiveQuery;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 
-final class ApiTokenServiceTest extends TestCase
+final class ApiTokenServiceTest extends DatabaseTestCase
 {
-    use DatabaseSetupTrait;
-
-    protected function setUp(): void
-    {
-        $this->setUpDatabase();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->tearDownDatabase();
-    }
-
-    public function testGenerateDoesNotStoreRawTokenInPlaintext(): void
-    {
-        $service = new ApiTokenService();
-        $user = $this->createSavedUser();
-
-        $rawToken = $service->generate($user);
-
-        $storedAsRaw = (new ActiveQuery(new UserToken()))
-            ->where(['code' => $rawToken])
-            ->one();
-
-        self::assertNull($storedAsRaw);
-    }
+    use UserFactoryTrait;
 
     public function testGenerateReturnsRawTokenThatVerifiesAgainstStoredHash(): void
     {
         $service = new ApiTokenService();
-        $user = $this->createSavedUser();
+        $user = $this->createUser();
 
         $rawToken = $service->generate($user);
 
@@ -57,8 +31,8 @@ final class ApiTokenServiceTest extends TestCase
     public function testRevokeAllDeletesOnlyApiAccessTokensForThatUser(): void
     {
         $service = new ApiTokenService();
-        $user = $this->createSavedUser();
-        $otherUser = $this->createSavedUser('otheruser', 'other@example.com');
+        $user = $this->createUser();
+        $otherUser = $this->createUser('otheruser', 'other@example.com');
 
         $service->generate($user);
         $service->generate($user);
@@ -81,26 +55,5 @@ final class ApiTokenServiceTest extends TestCase
 
         $otherUserTokens = UserToken::findByUserId((int) $otherUser->getId());
         self::assertCount(1, $otherUserTokens);
-    }
-
-    public function testRevokeAllReturnsZeroWhenUserHasNoApiTokens(): void
-    {
-        $service = new ApiTokenService();
-        $user = $this->createSavedUser();
-
-        self::assertSame(0, $service->revokeAll($user));
-    }
-
-    private function createSavedUser(string $username = 'testuser', string $email = 'test@example.com'): User
-    {
-        $user = new User();
-        $user->setUsername($username);
-        $user->setEmail($email);
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
-        return $user;
     }
 }

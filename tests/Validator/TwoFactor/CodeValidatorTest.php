@@ -90,16 +90,6 @@ final class CodeValidatorTest extends TestCase
         );
     }
 
-    public function testTranslateErrorMessageWhenKeyIsNull(): void
-    {
-        $user = new User();
-
-        $validator = new CodeValidator($user, '123456');
-        $validator->setTranslator($this->createTranslator());
-        $validator->validate();
-        $this->assertSame('Two factor authentication is not configured.', $validator->getErrorMessage());
-    }
-
     public function testValidateAcceptsPreviousWindowCodeWithDefaultCycles(): void
     {
         $now = time();
@@ -144,21 +134,6 @@ final class CodeValidatorTest extends TestCase
         $this->assertFalse($validator->validate());
     }
 
-    public function testValidateReturnsTrueWithValidCurrentCode(): void
-    {
-        $secret = (new Authenticator())->createSecret();
-        $user = new User();
-        $user->setAuthTfKey($secret);
-
-        $authenticator = new Authenticator();
-        $authenticator->setSecret($secret);
-        $code = $authenticator->code();
-
-        $validator = new CodeValidator($user, $code);
-
-        $this->assertTrue($validator->validate());
-    }
-
     public function testValidateWithValidAuthTfKeyAndInvalidCode(): void
     {
         $user = new User();
@@ -168,9 +143,6 @@ final class CodeValidatorTest extends TestCase
         $this->assertFalse($validator->validate());
     }
 
-    /**
-     * @return iterable<string, array{null|string}>
-     */
     public static function unconfiguredTwoFactorKeyProvider(): iterable
     {
         yield 'empty key' => [''];

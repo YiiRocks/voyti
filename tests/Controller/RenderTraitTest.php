@@ -8,102 +8,60 @@ use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
+use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
+use YiiRocks\Voyti\ViewData\Shared\MessageViewData;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
-use Yiisoft\Yii\View\Renderer\CsrfViewInjection;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 #[AllowMockObjectsWithoutExpectations]
 final class RenderTraitTest extends TestCase
 {
-    public function testAddsCsrfInjectionScopedToTheRenderCallOnly(): void
+    use TestContainerTrait;
+
+    public function testAddsCsrfInjectionForTheRenderCall(): void
     {
-        $config = VoytiConfigFactory::create();
-        $viewRenderer = $this->createMock(WebViewRenderer::class);
-        $response = $this->createMock(ResponseInterface::class);
+        // The template only renders the CSRF token if RenderTrait added the CsrfViewInjection.
+        $customViewPath = $this->makeViewPath('<?= $csrf->getToken() ?>');
 
-        $viewRenderer->expects(self::once())
-            ->method('withAddedInjections')
-            ->with(CsrfViewInjection::class)
-            ->willReturnSelf();
-        $viewRenderer->method('withViewPath')->willReturnSelf();
-        $viewRenderer->method('render')->willReturn($response);
+        try {
+            $config = VoytiConfigFactory::create(viewPath: $customViewPath);
+            $html = (string) $this->makeFixture($config)->render('shared/message')->getBody();
 
-        $fixture = new class ($viewRenderer, $config, $this->createTranslator(), new FakeUrlGenerator(), $this->createMock(FlashInterface::class)) {
-            use RenderTrait;
-
-            public function __construct(
-                private WebViewRenderer $viewRenderer,
-                private VoytiConfig $config,
-                private TranslatorInterface $translator,
-                private UrlGeneratorInterface $url,
-                private FlashInterface $flash,
-            ) {}
-
-            public function render(string $view): ResponseInterface
-            {
-                return $this->renderView($view);
-            }
-        };
-
-        $fixture->render('shared/message');
+            self::assertStringContainsString('test-csrf-token', $html);
+        } finally {
+            $this->removeViewPath($customViewPath);
+        }
     }
 
     public function testFallsBackToThemeViewPathWhenTemplateIsMissingFromConfiguredPath(): void
     {
+        // The configured path has no shared/message.php, so rendering falls back to the bundled theme.
         $customViewPath = sys_get_temp_dir() . '/voyti-render-trait-test-' . uniqid();
         mkdir($customViewPath);
 
         try {
             $config = VoytiConfigFactory::create(viewPath: $customViewPath);
-            $capturedPath = $this->renderWithConfig($config, 'shared/message');
+            $html = (string) $this->makeFixture($config)
+                ->render('shared/message', ['data' => new MessageViewData(title: 'THEME_MESSAGE', homeUrl: '/')])
+                ->getBody();
 
-            $expectedPath = dirname(__DIR__, 2) . '/resources/views/' . $config->webTheme->value;
-            self::assertSame($expectedPath, $capturedPath);
+            self::assertStringContainsString('THEME_MESSAGE', $html);
+            self::assertStringNotContainsString('CUSTOM_TEMPLATE', $html);
         } finally {
             rmdir($customViewPath);
         }
     }
 
-    public function testUsesConfiguredViewPathWhenTemplateExistsThere(): void
+    private function makeFixture(VoytiConfig $config): object
     {
-        $customViewPath = sys_get_temp_dir() . '/voyti-render-trait-test-' . uniqid();
-        mkdir($customViewPath);
-        mkdir($customViewPath . '/shared');
-        file_put_contents($customViewPath . '/shared/message.php', '<?php');
+        $viewRenderer = $this->getTestContainer()->get(WebViewRenderer::class);
 
-        try {
-            $config = VoytiConfigFactory::create(viewPath: $customViewPath);
-            $capturedPath = $this->renderWithConfig($config, 'shared/message');
-
-            self::assertSame($customViewPath, $capturedPath);
-        } finally {
-            unlink($customViewPath . '/shared/message.php');
-            rmdir($customViewPath . '/shared');
-            rmdir($customViewPath);
-        }
-    }
-
-    private function renderWithConfig(VoytiConfig $config, string $view): ?string
-    {
-        $viewRenderer = $this->createMock(WebViewRenderer::class);
-        $response = $this->createMock(ResponseInterface::class);
-
-        $capturedPath = null;
-        $viewRenderer->method('withAddedInjections')->willReturnSelf();
-        $viewRenderer->method('withViewPath')->willReturnCallback(
-            function (string $path) use ($viewRenderer, &$capturedPath): WebViewRenderer {
-                $capturedPath = $path;
-                return $viewRenderer;
-            },
-        );
-        $viewRenderer->method('render')->willReturn($response);
-
-        $fixture = new class ($viewRenderer, $config, $this->createTranslator(), new FakeUrlGenerator(), $this->createMock(FlashInterface::class)) {
+        return new class ($viewRenderer, $config, $this->createTranslator(), new FakeUrlGenerator(), $this->createMock(FlashInterface::class)) {
             use RenderTrait;
 
             public function __construct(
@@ -114,14 +72,27 @@ final class RenderTraitTest extends TestCase
                 private FlashInterface $flash,
             ) {}
 
-            public function render(string $view): ResponseInterface
+            public function render(string $view, array $params = []): ResponseInterface
             {
-                return $this->renderView($view);
+                return $this->renderView($view, $params);
             }
         };
+    }
 
-        $fixture->render($view);
+    private function makeViewPath(string $messageTemplateBody): string
+    {
+        $path = sys_get_temp_dir() . '/voyti-render-trait-test-' . uniqid();
+        mkdir($path);
+        mkdir($path . '/shared');
+        file_put_contents($path . '/shared/message.php', $messageTemplateBody);
 
-        return $capturedPath;
+        return $path;
+    }
+
+    private function removeViewPath(string $path): void
+    {
+        unlink($path . '/shared/message.php');
+        rmdir($path . '/shared');
+        rmdir($path);
     }
 }

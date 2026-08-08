@@ -61,6 +61,7 @@ final readonly class IndexViewData
             'email' => $filters['email'] ?? '',
             'status' => $filters['status'] ?? '',
         ];
+        /** @infection-ignore-all The (string) cast is inconsequential: perPage only feeds URL query generation, where http_build_query renders the int and its string form identically. */
         $preservedQuery = [...$normalizedFilters, 'perPage' => (string) $perPage];
 
         return new self(

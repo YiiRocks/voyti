@@ -17,8 +17,11 @@ use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use Yiisoft\Aliases\Aliases;
 use Yiisoft\Cookies\CookieEncryptor;
 use Yiisoft\Cookies\CookieSigner;
+use Yiisoft\Csrf\CsrfTokenInterface;
+use Yiisoft\Csrf\StubCsrfToken;
 use Yiisoft\Di\Container;
 use Yiisoft\Di\ContainerConfig;
 use Yiisoft\Mailer\MailerInterface;
@@ -36,7 +39,10 @@ use Yiisoft\Translator\Message\Php\MessageSource;
 use Yiisoft\Translator\SimpleMessageFormatter;
 use Yiisoft\Translator\Translator;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\View\WebView;
 use Yiisoft\Widget\WidgetFactory;
+use Yiisoft\Yii\View\Renderer\InjectionContainer\InjectionContainer;
+use Yiisoft\Yii\View\Renderer\InjectionContainer\InjectionContainerInterface;
 
 /**
  * Builds a fresh PSR-11 DI container per test from config/di.php with
@@ -105,10 +111,16 @@ trait TestContainerTrait
         $session = new FakeSession();
 
         $definitions = array_merge($definitions, [
+            // Real view stack so RenderTrait's WebViewRenderer renders the bundled templates instead
+            // of being mocked (WebViewRenderer/WebView are final). Injections (CsrfViewInjection) are
+            // resolved through the container via InjectionContainer; a stub CSRF token satisfies them.
+            Aliases::class => new Aliases(),
             AssignmentsStorageInterface::class => new SimpleAssignmentsStorage(),
             CookieEncryptor::class => new CookieEncryptor('test-secret-key-0123456789abcdef'),
             CookieSigner::class => new CookieSigner('test-secret-key-0123456789abcdef'),
+            CsrfTokenInterface::class => new StubCsrfToken('test-csrf-token'),
             CurrentRoute::class => new CurrentRoute(),
+            InjectionContainerInterface::class => InjectionContainer::class,
             EventDispatcherInterface::class => new EventCaptureDispatcher(),
             FlashInterface::class => new Flash($session),
             ItemsStorageInterface::class => new SimpleItemsStorage(),
@@ -139,6 +151,7 @@ trait TestContainerTrait
                 return $translator;
             })(),
             UrlGeneratorInterface::class => new FakeUrlGenerator(),
+            WebView::class => new WebView(),
         ]);
 
         $definitions = array_merge($definitions, $overrides);

@@ -7,46 +7,34 @@ namespace YiiRocks\Voyti\tests\Middleware;
 use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
-use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Psr\Log\NullLogger;
 use YiiRocks\Voyti\Clock\SystemClock;
 use YiiRocks\Voyti\Middleware\RememberMeMiddleware;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
-use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 use YiiRocks\Voyti\tests\Support\FakeSession;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\Support\UserSessionFactoryTrait;
 use Yiisoft\Auth\IdentityRepositoryInterface;
+use Yiisoft\Cookies\CookieEncryptor;
 use Yiisoft\Cookies\CookieMiddleware;
+use Yiisoft\Cookies\CookieSigner;
 use Yiisoft\User\CurrentUser;
 
 #[AllowMockObjectsWithoutExpectations]
-final class RememberMeMiddlewareTest extends TestCase
+final class RememberMeMiddlewareTest extends DatabaseTestCase
 {
-    use DatabaseSetupTrait;
     use UserFactoryTrait;
     use UserSessionFactoryTrait;
 
-    protected function setUp(): void
-    {
-        $this->setUpDatabase();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->tearDownDatabase();
-    }
-
     public function testProcessAlreadyAuthenticatedUserRefreshesCookieOnResponse(): void
     {
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('99');
-        $identity->method('getCookieLoginKey')->willReturn('ckey');
+        $identity = $this->createUser();
 
         $session = new FakeSession();
         $session->open();
@@ -75,9 +63,7 @@ final class RememberMeMiddlewareTest extends TestCase
 
     public function testProcessAlreadyAuthenticatedUserWithNoCookieDoesNotEmit(): void
     {
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('99');
-        $identity->method('getCookieLoginKey')->willReturn('ckey');
+        $identity = $this->createUser();
 
         $session = new FakeSession();
         $session->open();
@@ -172,13 +158,8 @@ final class RememberMeMiddlewareTest extends TestCase
         $userId = (int) $user->getId();
         $this->createUserSession($userId, 'cookie-session-id');
 
-        $identity = $this->createMock(User::class);
-        $identity->method('validateCookieLoginKey')->willReturn(true);
-        $identity->method('getId')->willReturn((string) $userId);
-        $identity->method('getIdOrZero')->willReturn($userId);
-        $identity->method('getCookieLoginKey')->willReturn('key123');
         $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
-        $identityRepository->method('findIdentity')->willReturn($identity);
+        $identityRepository->method('findIdentity')->willReturn($user);
 
         $session = new FakeSession();
         $session->setId('cookie-session-id');
@@ -200,7 +181,7 @@ final class RememberMeMiddlewareTest extends TestCase
         );
 
         $future = time() + 3600;
-        $cookie = json_encode(['id123', 'key123', $future, 'cookie-session-id']);
+        $cookie = json_encode(['id123', 'key', $future, 'cookie-session-id']);
         $request = (new ServerRequest('GET', '/'))->withCookieParams(['autoLogin' => $cookie]);
 
         $response = new Response();
@@ -225,12 +206,8 @@ final class RememberMeMiddlewareTest extends TestCase
         $userId = (int) $user->getId();
         $this->createUserSession($userId, 'cookie-session-id');
 
-        $identity = $this->createMock(User::class);
-        $identity->method('validateCookieLoginKey')->willReturn(true);
-        $identity->method('getId')->willReturn((string) $userId);
-        $identity->method('getIdOrZero')->willReturn($userId);
         $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
-        $identityRepository->method('findIdentity')->willReturn($identity);
+        $identityRepository->method('findIdentity')->willReturn($user);
 
         $session = new FakeSession();
         $session->setId('cookie-session-id');
@@ -252,7 +229,7 @@ final class RememberMeMiddlewareTest extends TestCase
         );
 
         $future = time() + 3600;
-        $cookie = json_encode(['id123', 'key123', $future, 'cookie-session-id']);
+        $cookie = json_encode(['id123', 'key', $future, 'cookie-session-id']);
         $request = (new ServerRequest('GET', '/'))->withCookieParams(['autoLogin' => $cookie]);
 
         $response = new Response();
@@ -271,12 +248,11 @@ final class RememberMeMiddlewareTest extends TestCase
 
     private function createCookieMiddleware(): CookieMiddleware
     {
-        $cookieMiddleware = $this->createMock(CookieMiddleware::class);
-        $cookieMiddleware->method('process')->willReturnCallback(
-            static fn(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface => $handler->handle($request),
+        return new CookieMiddleware(
+            new NullLogger(),
+            new CookieEncryptor('test-secret-key-0123456789abcdef'),
+            new CookieSigner('test-secret-key-0123456789abcdef'),
         );
-
-        return $cookieMiddleware;
     }
 
     private function createCurrentUser(): CurrentUser

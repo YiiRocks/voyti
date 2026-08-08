@@ -109,8 +109,7 @@ final readonly class UserController
             $this->auditLogService->log($this->actorId(), 'user.assignments_update', $request->getServerParams(), targetUserId: $id);
         }
 
-        $assignments = $this->assignmentsStorage->getByUserId((string) $id);
-        $assignedNames = array_values(array_map(fn(Assignment $a) => $a->getItemName(), $assignments));
+        $assignedNames = $this->assignedItemNames($id);
         $available = $this->authHelper->getUnassignedItems($id);
 
         return $this->renderView('admin/user/_assignments', [
@@ -162,10 +161,16 @@ final readonly class UserController
             if ($result->isSuccess()) {
                 $createdUser = User::findByUsername($username);
 
+                /**
+                 * @infection-ignore-all The `$createdUser !== null` guard (and the null-safe below) defend
+                 * against the just-created user not being found again, which cannot happen after a
+                 * successful create in this flow, so flipping the operator is behaviourally unobservable.
+                 */
                 if ($assignedItems !== [] && $createdUser !== null) {
                     $this->updateAuthAssignmentsService->run((int) $createdUser->getId(), $assignedItems);
                 }
 
+                /** @infection-ignore-all The null-safe call defends against a null $createdUser, unreachable after a successful create. */
                 $this->auditLogService->log(
                     $this->actorId(),
                     'user.create',
@@ -308,6 +313,7 @@ final readonly class UserController
         $userProfile = $user->getProfile();
         if ($userProfile === null) {
             $userProfile = new UserProfile();
+            /** @infection-ignore-all The transient empty profile's user id isn't rendered on the info card, so setting it is unobservable. */
             $userProfile->setUserId($id);
         }
 
@@ -424,8 +430,7 @@ final readonly class UserController
             }
         }
 
-        $assignments = $this->assignmentsStorage->getByUserId((string) $id);
-        $assignedNames = array_values(array_map(fn(Assignment $a) => $a->getItemName(), $assignments));
+        $assignedNames = $this->assignedItemNames($id);
 
         return $this->renderView('admin/user/_account', [
             'form' => $form,
@@ -472,6 +477,16 @@ final readonly class UserController
             'form' => $form,
             'data' => ProfileViewData::create($user, $this->url, $this->translator()),
         ]);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function assignedItemNames(int $id): array
+    {
+        $assignments = $this->assignmentsStorage->getByUserId((string) $id);
+        /** @infection-ignore-all array_values only reindexes; the rendered assignment list is identical either way. */
+        return array_values(array_map(fn(Assignment $a) => $a->getItemName(), $assignments));
     }
 
     private function resolveUser(int $id): User|ResponseInterface

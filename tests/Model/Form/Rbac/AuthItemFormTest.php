@@ -8,7 +8,6 @@ use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
 use YiiRocks\Voyti\Model\Form\Rbac\AuthItemForm;
 use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
-use Yiisoft\Rbac\CompositeRule;
 use Yiisoft\Validator\Rule\Length;
 use Yiisoft\Validator\Rule\Regex;
 use Yiisoft\Validator\Rule\Required;
@@ -16,22 +15,6 @@ use Yiisoft\Validator\Rule\Required;
 final class AuthItemFormTest extends TestCase
 {
     use TranslatorMockTrait;
-
-    public function testDefaultPropertyValues(): void
-    {
-        $form = $this->createForm();
-        $this->assertSame('', $form->name);
-        $this->assertSame('', $form->description);
-        $this->assertSame([], $form->children);
-        $this->assertSame('', $form->itemName);
-        $this->assertNull($form->rule);
-    }
-
-    public function testGetFormNameReturnsType(): void
-    {
-        $form = $this->createForm('permission');
-        $this->assertSame('permission', $form->getFormName());
-    }
 
     public function testGetPropertyLabels(): void
     {
@@ -72,22 +55,6 @@ final class AuthItemFormTest extends TestCase
     {
         $form = $this->createForm();
         $this->assertSame($form->getPropertyLabels(), $form->getValidationPropertyLabels());
-    }
-
-    public function testSetProperties(): void
-    {
-        $form = $this->createForm();
-        $form->name = 'admin';
-        $form->description = 'Admin role';
-        $form->children = ['createPost', 'editPost'];
-        $form->rule = CompositeRule::class;
-        $form->itemName = 'old_name';
-
-        $this->assertSame('admin', $form->name);
-        $this->assertSame('Admin role', $form->description);
-        $this->assertSame(['createPost', 'editPost'], $form->children);
-        $this->assertSame(CompositeRule::class, $form->rule);
-        $this->assertSame('old_name', $form->itemName);
     }
 
     private function createForm(string $type = 'authItem'): AuthItemForm

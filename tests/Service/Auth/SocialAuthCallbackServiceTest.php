@@ -6,187 +6,120 @@ namespace YiiRocks\Voyti\tests\Service\Auth;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
-use Psr\Http\Message\ResponseInterface;
-use RuntimeException;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSocialAccount;
-use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\Auth\SocialAuthCallbackService;
-use YiiRocks\Voyti\Service\Auth\SocialUserAttributesNormalizer;
-use YiiRocks\Voyti\Service\Auth\UserSocialAccountConnectService;
-use YiiRocks\Voyti\Service\Auth\UserSocialAuthenticateService;
-use YiiRocks\Voyti\Service\RememberMeCookieService;
-use YiiRocks\Voyti\Service\ServiceResult;
+use YiiRocks\Voyti\tests\Support\CurrentUserTrait;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
+use YiiRocks\Voyti\tests\Support\FakeSession;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
-use YiiRocks\Voyti\tests\TestCase;
+use YiiRocks\Voyti\tests\Support\ThrowingEventDispatcher;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Session\Flash\FlashInterface;
+use Yiisoft\Session\SessionInterface;
 use Yiisoft\User\CurrentUser;
-use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Yii\AuthClient\AuthClientInterface;
-use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 #[AllowMockObjectsWithoutExpectations]
-final class SocialAuthCallbackServiceTest extends TestCase
+final class SocialAuthCallbackServiceTest extends DatabaseTestCase
 {
+    use CurrentUserTrait;
     use TestContainerTrait;
+    use UserFactoryTrait;
 
-    private CurrentUser&MockObject $currentUser;
+    private CurrentUser $currentUser;
     private FlashInterface&MockObject $flash;
-    private SocialUserAttributesNormalizer&MockObject $normalizer;
-    private PendingSocialAccountService&MockObject $pendingSocialAccountService;
-    private RememberMeCookieService&MockObject $rememberMeCookieService;
-    private UserSocialAccountConnectService&MockObject $socialAccountConnectService;
-    private UserSocialAuthenticateService&MockObject $socialAuthenticateService;
-    private WebViewRenderer&MockObject $viewRenderer;
+    private FakeSession $session;
 
     protected function setUp(): void
     {
-        $this->viewRenderer = $this->createMock(WebViewRenderer::class);
-        $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
-        $this->currentUser = $this->createMock(CurrentUser::class);
+        parent::setUp();
+        $this->currentUser = $this->createCurrentUser();
         $this->flash = $this->createMock(FlashInterface::class);
-        $this->rememberMeCookieService = $this->createMock(RememberMeCookieService::class);
-        $this->pendingSocialAccountService = $this->createMock(PendingSocialAccountService::class);
-        $this->socialAuthenticateService = $this->createMock(UserSocialAuthenticateService::class);
-        $this->socialAccountConnectService = $this->createMock(UserSocialAccountConnectService::class);
-        $this->normalizer = $this->createMock(SocialUserAttributesNormalizer::class);
+        $this->session = new FakeSession();
     }
 
     public function testHandleCancelRedirectsToLoginWithoutEnforcingRedirect(): void
     {
-        $response = $this->mockPopupAwareRedirectResponse('//voyti/session-login', false);
+        $html = (string) $this->createService()->handleCancel($this->client('github'))->getBody();
 
-        $result = $this->createService()->handleCancel($this->client('github'));
-
-        $this->assertSame($response, $result);
+        self::assertStringContainsString('href="//voyti/session-login"', $html);
+        // Cancel must not enforce the opener redirect.
+        self::assertStringContainsString(', false)', $html);
     }
 
     public function testHandleSuccessGuestFailureRendersMessage(): void
     {
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-        $this->normalizer->method('normalize')->willReturn($this->attributes());
-        $this->socialAuthenticateService->method('run')->willReturn(ServiceResult::failure('could not authenticate'));
+        // With social-network registration disabled, the real authenticate service fails.
+        $html = (string) $this->createService([
+            VoytiConfig::class => VoytiConfigFactory::create(enableSocialNetworkRegistration: false),
+        ])->handleSuccess($this->client('github'))->getBody();
 
-        $response = $this->expectMessageRender('could not authenticate');
-
-        $result = $this->createService()->handleSuccess($this->client('github'));
-
-        $this->assertSame($response, $result);
+        self::assertStringContainsString('Social network registration is disabled', $html);
     }
 
     public function testHandleSuccessGuestRuntimeExceptionRendersMessage(): void
     {
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-        $this->normalizer->method('normalize')->willReturn($this->attributes());
-        $this->socialAuthenticateService->method('run')->willThrowException(new RuntimeException('state mismatch'));
+        // The account is already linked to an existing user, so the real authenticate service logs
+        // that user in and dispatches AfterLoginEvent - a throwing dispatcher turns that into the
+        // RuntimeException the callback catches.
+        $user = $this->createUser(email: 'linked@example.com');
+        $this->createSocialAccount(userId: (int) $user->getId());
 
-        $response = $this->expectMessageRender('state mismatch');
+        $html = (string) $this->createService([
+            EventDispatcherInterface::class => new ThrowingEventDispatcher('state mismatch'),
+        ])->handleSuccess($this->client('github'))->getBody();
 
-        $result = $this->createService()->handleSuccess($this->client('github'));
-
-        $this->assertSame($response, $result);
+        self::assertStringContainsString('state mismatch', $html);
     }
 
     public function testHandleSuccessGuestSuccessAddsCookieAndRedirectsHome(): void
     {
-        $this->normalizer->method('normalize')->willReturn($this->attributes());
-        $this->socialAuthenticateService->method('run')->willReturn(ServiceResult::success());
-        $this->pendingSocialAccountService->method('getPendingAccount')->willReturn(null);
+        // The account is linked to an existing user, so the real authenticate service logs them in;
+        // the callback then writes the remember-me cookie onto the home redirect.
+        $user = $this->createUser(email: 'linked@example.com');
+        $this->createSocialAccount(userId: (int) $user->getId());
 
-        $guestIdentity = $this->createMock(GuestIdentityInterface::class);
-        $user = $this->createMock(User::class);
-        $this->currentUser->method('getIdentity')->willReturnOnConsecutiveCalls($guestIdentity, $user);
-        $this->rememberMeCookieService->method('addCookie')->willReturnArgument(1);
-
-        $response = $this->mockPopupAwareRedirectResponse('//home');
+        // An active session id is embedded in the remember-me cookie payload.
+        $this->session->open();
+        $this->session->setId('sessionprobe');
 
         $result = $this->createService()->handleSuccess($this->client('github'));
 
-        $this->assertSame($response, $result);
+        $this->assertSame((int) $user->getId(), (int) $this->currentUser->getId());
+        $cookie = $result->getHeaderLine('Set-Cookie');
+        $this->assertStringContainsString('autoLogin', $cookie);
+        $this->assertStringContainsString('sessionprobe', $cookie);
     }
 
     public function testHandleSuccessGuestSuccessRedirectsToPendingConnectWhenAccountPending(): void
     {
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-        $this->normalizer->method('normalize')->willReturn($this->attributes());
-        $this->socialAuthenticateService->method('run')->willReturn(ServiceResult::success());
+        // An unlinked account with a code makes the real authenticate service remember it as pending.
+        $this->createSocialAccount(code: 'pending-code');
 
-        $account = $this->createMock(UserSocialAccount::class);
-        $account->method('getCode')->willReturn('pending-code');
-        $this->pendingSocialAccountService->method('getPendingAccount')->willReturn($account);
+        $html = (string) $this->createService()->handleSuccess($this->client('github'))->getBody();
 
-        $response = $this->mockPopupAwareRedirectResponse('//voyti/registration-connect?code=pending-code');
-
-        $result = $this->createService()->handleSuccess($this->client('github'));
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testHandleSuccessGuestSuccessWithoutUserIdentityRedirectsHome(): void
-    {
-        $this->normalizer->method('normalize')->willReturn($this->attributes());
-        $this->socialAuthenticateService->method('run')->willReturn(ServiceResult::success());
-        $this->pendingSocialAccountService->method('getPendingAccount')->willReturn(null);
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-
-        $response = $this->mockPopupAwareRedirectResponse('//home');
-
-        $result = $this->createService()->handleSuccess($this->client('github'));
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testHandleSuccessLoggedInFailureRendersMessage(): void
-    {
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
-        $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $this->normalizer->method('normalize')->willReturn($this->attributes());
-        $this->socialAccountConnectService->method('run')->willReturn(ServiceResult::failure('already connected'));
-
-        $response = $this->expectMessageRender('already connected');
-
-        $result = $this->createService()->handleSuccess($this->client('github'));
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testHandleSuccessLoggedInRuntimeExceptionRendersMessage(): void
-    {
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
-        $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $this->normalizer->method('normalize')->willReturn($this->attributes());
-        $this->socialAccountConnectService->method('run')->willThrowException(new RuntimeException('already connected to another account'));
-
-        $response = $this->expectMessageRender('already connected to another account');
-
-        $result = $this->createService()->handleSuccess($this->client('github'));
-
-        $this->assertSame($response, $result);
+        self::assertStringContainsString('registration-connect?code=pending-code', $html);
+        self::assertStringContainsString(', true)', $html);
     }
 
     public function testHandleSuccessLoggedInSuccessRedirectsToSocialNetworkIndex(): void
     {
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $viewer = $this->createUser(username: 'viewer', email: 'viewer@example.com');
+        $this->currentUser->login($viewer);
 
-        $this->normalizer->method('normalize')->willReturn($this->attributes());
-        $this->socialAccountConnectService->method('run')->willReturn(ServiceResult::success());
+        $html = (string) $this->createService()->handleSuccess($this->client('github'))->getBody();
 
-        $response = $this->mockPopupAwareRedirectResponse('//voyti/user-social-network');
-
-        $result = $this->createService()->handleSuccess($this->client('github'));
-
-        $this->assertSame($response, $result);
+        self::assertStringContainsString('href="//voyti/user-social-network"', $html);
+        // The real connect service linked the provider account to the viewer.
+        $account = UserSocialAccount::findByProviderAndClientId('github', 'client123');
+        $this->assertNotNull($account);
+        $this->assertSame((int) $viewer->getId(), $account->getUserId());
     }
 
-    /**
-     * @return array{id: string, email: ?string, username: ?string, name: ?string}
-     */
     private function attributes(): array
     {
         return ['id' => 'client123', 'email' => 'user@example.com', 'username' => 'user', 'name' => 'User Name'];
@@ -196,51 +129,31 @@ final class SocialAuthCallbackServiceTest extends TestCase
     {
         $client = $this->createMock(AuthClientInterface::class);
         $client->method('getName')->willReturn($name);
+        $client->method('getUserAttributes')->willReturn($this->attributes());
 
         return $client;
     }
 
-    private function createService(): SocialAuthCallbackService
+    private function createService(array $overrides = []): SocialAuthCallbackService
     {
         return $this->getTestContainer([
             CurrentUser::class => $this->currentUser,
             FlashInterface::class => $this->flash,
-            PendingSocialAccountService::class => $this->pendingSocialAccountService,
-            RememberMeCookieService::class => $this->rememberMeCookieService,
-            SocialUserAttributesNormalizer::class => $this->normalizer,
-            UserSocialAccountConnectService::class => $this->socialAccountConnectService,
-            UserSocialAuthenticateService::class => $this->socialAuthenticateService,
-            WebViewRenderer::class => $this->viewRenderer,
+            SessionInterface::class => $this->session,
+            ...$overrides,
         ])->get(SocialAuthCallbackService::class);
     }
 
-    private function expectMessageRender(string $expectedTitle): ResponseInterface&MockObject
+    private function createSocialAccount(?int $userId = null, ?string $code = null): UserSocialAccount
     {
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('shared/message', $this->callback(
-                static fn(array $params): bool => $params['data']->title === $expectedTitle,
-            ))
-            ->willReturn($response);
+        $account = new UserSocialAccount();
+        $account->setProvider('github');
+        $account->setClientId('client123');
+        $account->setUserId($userId);
+        $account->setCode($code);
+        $account->setCreatedAt(time());
+        $account->save();
 
-        return $response;
-    }
-
-    private function mockPopupAwareRedirectResponse(
-        string $expectedUrl,
-        bool $expectedEnforceRedirect = true,
-    ): ResponseInterface&MockObject {
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('renderPartial')
-            ->with(
-                $this->stringEndsWith('/resources/views/redirect.php'),
-                ['url' => $expectedUrl, 'enforceRedirect' => $expectedEnforceRedirect, 'appName' => 'app'],
-            )
-            ->willReturn($response);
-
-        return $response;
+        return $account;
     }
 }

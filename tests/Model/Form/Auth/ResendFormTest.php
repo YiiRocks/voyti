@@ -26,19 +26,6 @@ final class ResendFormTest extends TestCase
         RecaptchaRegistry::reset();
     }
 
-    public function testConstruct(): void
-    {
-        $form = new ResendForm(VoytiConfigFactory::create(), $this->createTranslator());
-        $this->assertSame('', $form->email);
-        $this->assertSame('', $form->gRecaptchaResponse);
-    }
-
-    public function testGetFormName(): void
-    {
-        $form = new ResendForm(VoytiConfigFactory::create(), $this->createTranslator());
-        $this->assertSame('resend', $form->getFormName());
-    }
-
     public function testGetPropertyLabels(): void
     {
         $form = new ResendForm(VoytiConfigFactory::create(), $this->createTranslator());
@@ -81,12 +68,5 @@ final class ResendFormTest extends TestCase
     {
         $form = new ResendForm(VoytiConfigFactory::create(), $this->createTranslator());
         $this->assertSame($form->getPropertyLabels(), $form->getValidationPropertyLabels());
-    }
-
-    public function testSetEmail(): void
-    {
-        $form = new ResendForm(VoytiConfigFactory::create(), $this->createTranslator());
-        $form->email = 'user@example.com';
-        $this->assertSame('user@example.com', $form->email);
     }
 }

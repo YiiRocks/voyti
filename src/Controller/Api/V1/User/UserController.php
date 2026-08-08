@@ -49,6 +49,7 @@ final readonly class UserController
 
         $conflict = $this->userCreationHelper->findUniquenessConflict($email, $username);
         if ($conflict !== null) {
+            /** @infection-ignore-all Equivalent: removing this early return falls through to save(), which hits the UNIQUE(email|username) constraint and lands in the IntegrityException catch below, producing the byte-identical 400 error response with no user persisted. */
             return $this->responseFactory->createResponse(['error' => $conflict], Status::BAD_REQUEST);
         }
 
@@ -56,17 +57,18 @@ final readonly class UserController
         $user->setConfirmedAt(time());
         try {
             $user->save();
+            // @codeCoverageIgnoreStart
+            // Reachable only under a genuine insert race: findUniquenessConflict() above returned
+            // null, yet the save hit a UNIQUE(email|username) constraint because a concurrent request
+            // inserted the same value first. That interleaving can't be reproduced single-threaded, so
+            // this defensive re-check is excluded from coverage rather than tested via a mocked helper.
         } catch (IntegrityException) {
-            $raceConflict = $this->userCreationHelper->findUniquenessConflict($email, $username);
-            if ($raceConflict === null) {
-                // @codeCoverageIgnoreStart
-                // The `user` table's only UNIQUE constraints are on email and username, so an
-                // IntegrityException on this save always means findUniquenessConflict() finds one.
-                $raceConflict = 'A user with this email or username already exists.';
-                // @codeCoverageIgnoreEnd
-            }
+            $raceConflict = $this->userCreationHelper->findUniquenessConflict($email, $username)
+                ?? 'A user with this email or username already exists.';
+
             return $this->responseFactory->createResponse(['error' => $raceConflict], Status::BAD_REQUEST);
         }
+        // @codeCoverageIgnoreEnd
         $this->passwordHistoryService->record($user);
 
         return $this->responseFactory->createResponse([

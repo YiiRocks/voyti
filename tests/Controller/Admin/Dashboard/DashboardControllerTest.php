@@ -7,34 +7,30 @@ namespace YiiRocks\Voyti\tests\Controller\Admin\Dashboard;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\EventDispatcher\EventDispatcherInterface;
-use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\Admin\Dashboard\DashboardController;
-use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\Helper\TimezoneHelper;
+use YiiRocks\Voyti\Model\UserAuditLog;
 use YiiRocks\Voyti\Model\UserProfile;
-use YiiRocks\Voyti\Service\Admin\DashboardService;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
-use YiiRocks\Voyti\tests\TestCase;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\User\CurrentUser;
-use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 #[AllowMockObjectsWithoutExpectations]
-final class DashboardControllerTest extends TestCase
+final class DashboardControllerTest extends DatabaseTestCase
 {
     use TestContainerTrait;
+    use UserFactoryTrait;
 
     private CurrentUser $currentUser;
-    private DashboardService&MockObject $dashboardService;
     private FlashInterface&MockObject $flash;
-    private WebViewRenderer&MockObject $viewRenderer;
 
     protected function setUp(): void
     {
-        $this->viewRenderer = $this->createMock(WebViewRenderer::class);
-        $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
+        parent::setUp();
         $this->flash = $this->createMock(FlashInterface::class);
-        $this->dashboardService = $this->createMock(DashboardService::class);
         $this->currentUser = new CurrentUser(
             $this->createMock(IdentityRepositoryInterface::class),
             $this->createMock(EventDispatcherInterface::class),
@@ -43,83 +39,50 @@ final class DashboardControllerTest extends TestCase
 
     public function testIndexPassesViewerTimezoneToDashboardService(): void
     {
+        $viewer = $this->createUser(username: 'viewer', email: 'viewer@example.com');
         $viewerProfile = new UserProfile();
+        $viewerProfile->setUserId((int) $viewer->getId());
         $viewerProfile->setTimezone('Asia/Tokyo');
-        $viewer = $this->createMock(User::class);
-        $viewer->method('getProfile')->willReturn($viewerProfile);
+        $viewerProfile->save();
         $this->currentUser->overrideIdentity($viewer);
 
-        $this->dashboardService->expects($this->once())
-            ->method('getStats')
-            ->with('Asia/Tokyo')
-            ->willReturn([
-                'userTotal' => 0,
-                'userBlocked' => 0,
-                'userUnconfirmed' => null,
-                'roleCount' => 0,
-                'permissionCount' => 0,
-                'ruleCount' => 0,
-                'newRegistrations' => ['oneDay' => 0, 'sevenDays' => 0, 'lifespan' => 0],
-                'activeSessions' => ['oneDay' => 0, 'sevenDays' => 0, 'lifespan' => 0],
-                'rememberLifespanDays' => 0,
-                'recentAuditLogs' => [],
-            ]);
+        $log = new UserAuditLog();
+        $log->setAction('user.create');
+        $log->setCreatedAt(1700000000);
+        $log->save();
 
-        $controller = $this->createController();
+        $html = (string) $this->createController()->index()->getBody();
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->method('render')->willReturn($response);
-
-        $result = $controller->index();
-
-        self::assertSame($response, $result);
+        // The viewer's profile timezone flows into DashboardService, which formats the audit-log
+        // timestamps with it, and the formatted value is rendered into the dashboard.
+        self::assertStringContainsString(
+            TimezoneHelper::formatLocalized(1700000000, $this->createTranslator()->getLocale(), 'Asia/Tokyo'),
+            $html,
+        );
     }
 
     public function testIndexRendersDashboardViewWithStats(): void
     {
-        $stats = [
-            'userTotal' => 10,
-            'userBlocked' => 2,
-            'userUnconfirmed' => 1,
-            'roleCount' => 3,
-            'permissionCount' => 4,
-            'ruleCount' => 1,
-            'newRegistrations' => ['oneDay' => 1, 'sevenDays' => 2, 'lifespan' => 3],
-            'activeSessions' => ['oneDay' => 4, 'sevenDays' => 5, 'lifespan' => 6],
-            'rememberLifespanDays' => 30,
-            'recentAuditLogs' => [],
-        ];
-        $this->dashboardService->method('getStats')->willReturn($stats);
+        $admin = $this->createUser(username: 'admin', email: 'admin@example.com');
+        $this->currentUser->overrideIdentity($admin);
+        $this->createUser(username: 'u1', email: 'u1@example.com');
+        $blocked = $this->createUser(username: 'u2', email: 'u2@example.com');
+        $blocked->setBlockedAt(time());
+        $blocked->save();
 
-        $controller = $this->createController();
+        $html = (string) $this->createController()->index()->getBody();
 
-        $response = $this->createMock(ResponseInterface::class);
-        $captured = [];
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('admin/dashboard/index', $this->callback(function (array $params) use (&$captured): bool {
-                $captured = $params;
-                return true;
-            }))
-            ->willReturn($response);
-
-        $result = $controller->index();
-
-        self::assertSame($response, $result);
-        self::assertSame($stats['recentAuditLogs'], $captured['data']->recentAuditLogs);
-        self::assertSame($stats['userTotal'], $captured['data']->tiles[0]->value);
-        self::assertNotEmpty($captured['data']->menu->items);
+        // Total users tile shows 3, the admin menu is present, and there is no recent activity yet.
+        self::assertStringContainsString('<div class="fs-2 fw-bold">3</div>', $html);
+        self::assertStringContainsString('Dashboard', $html);
+        self::assertStringContainsString('No recent activity', $html);
     }
 
     private function createController(): DashboardController
     {
         return $this->getTestContainer([
             CurrentUser::class => $this->currentUser,
-            DashboardService::class => $this->dashboardService,
             FlashInterface::class => $this->flash,
-            WebViewRenderer::class => $this->viewRenderer,
         ])->get(DashboardController::class);
     }
 }

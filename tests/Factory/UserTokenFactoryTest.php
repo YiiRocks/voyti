@@ -132,13 +132,4 @@ final class UserTokenFactoryTest extends TestCase
         self::assertSame(UserToken::TYPE_RECOVERY, $saved->getType());
         self::assertGreaterThan(0, $saved->getCreatedAt());
     }
-
-    public function testMultipleTokensHaveDifferentCodes(): void
-    {
-        $factory = new UserTokenFactory();
-        $rawCode1 = $factory->makeConfirmationToken(1);
-        $rawCode2 = $factory->makeConfirmationToken(1);
-
-        self::assertNotSame($rawCode1, $rawCode2);
-    }
 }

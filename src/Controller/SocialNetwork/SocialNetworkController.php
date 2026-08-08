@@ -59,6 +59,7 @@ final readonly class SocialNetworkController
     {
         $user = $this->currentUser->getIdentity();
         $accounts = UserSocialAccount::findByUserId((int) $user->getId());
+        /** @infection-ignore-all This list feeds only the auth-choice widget's client exclusion (array_diff_key), which has no observable effect unless the host has configured OAuth clients; the filter/map normalizations are not exercisable by the library's own suite. */
         $connectedProviders = array_filter(array_map(
             static fn(UserSocialAccount $account): string => $account->getProvider(),
             $accounts,
@@ -68,6 +69,7 @@ final readonly class SocialNetworkController
             'data' => IndexViewData::create(
                 $accounts,
                 $this->clientCollection,
+                /** @infection-ignore-all array_values only reindexes keys, immaterial to the array_flip the excluded-provider list feeds into. */
                 array_values($connectedProviders),
                 $this->config,
                 $this->url,

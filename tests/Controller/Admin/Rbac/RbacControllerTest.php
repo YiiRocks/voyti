@@ -8,18 +8,14 @@ use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
-use Psr\Http\Message\ResponseFactoryInterface;
-use Psr\Http\Message\ResponseInterface;
 use RuntimeException;
 use YiiRocks\Voyti\Controller\Admin\Rbac\RbacController;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
-use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
-use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
+use YiiRocks\Voyti\Model\UserAuditLog;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
 use YiiRocks\Voyti\tests\Support\SimpleAssignmentsStorage;
 use YiiRocks\Voyti\tests\Support\SimpleItemsStorage;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
-use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Rbac\Assignment;
 use Yiisoft\Rbac\AssignmentsStorageInterface;
 use Yiisoft\Rbac\ItemsStorageInterface;
@@ -27,43 +23,29 @@ use Yiisoft\Rbac\Manager;
 use Yiisoft\Rbac\ManagerInterface;
 use Yiisoft\Rbac\Permission;
 use Yiisoft\Rbac\Role;
-use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Validator\Result;
 use Yiisoft\Validator\ValidatorInterface;
-use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 #[AllowMockObjectsWithoutExpectations]
-final class RbacControllerTest extends TestCase
+final class RbacControllerTest extends DatabaseTestCase
 {
-    use DatabaseSetupTrait;
-    use RedirectResponseMockTrait;
     use TestContainerTrait;
 
     private AssignmentsStorageInterface $assignmentsStorage;
     private FlashInterface&MockObject $flash;
     private ItemsStorageInterface $itemsStorage;
     private ManagerInterface $manager;
-    private ResponseFactoryInterface&MockObject $responseFactory;
     private ValidatorInterface&MockObject $validator;
-    private WebViewRenderer&MockObject $viewRenderer;
 
     protected function setUp(): void
     {
-        $this->setUpDatabase();
+        parent::setUp();
         $this->itemsStorage = new SimpleItemsStorage();
         $this->assignmentsStorage = new SimpleAssignmentsStorage();
         $this->manager = new Manager($this->itemsStorage, $this->assignmentsStorage);
-        $this->viewRenderer = $this->createMock(WebViewRenderer::class);
-        $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
         $this->validator = $this->createMock(ValidatorInterface::class);
-        $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
         $this->flash = $this->createMock(FlashInterface::class);
-    }
-
-    protected function tearDown(): void
-    {
-        $this->tearDownDatabase();
     }
 
     public static function itemTypeProvider(): array
@@ -79,19 +61,13 @@ final class RbacControllerTest extends TestCase
         $this->itemsStorage->add(new Permission('other-permission'));
         $this->itemsStorage->add(new Role('some-role'));
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('admin/rbac/create', $this->callback(
-                static fn(array $params): bool => array_map(static fn($c) => $c->name, $params['data']->children) === ['other-permission'],
-            ))
-            ->willReturn($response);
+        $html = (string) $this->createController()
+            ->create(request: new ServerRequest('GET', '/'), itemType: 'permission', indexRouteName: 'admin-rbac-permissions')
+            ->getBody();
 
-        $controller = $this->createController();
-        $result = $controller->create(request: new ServerRequest('GET', '/'), itemType: 'permission', indexRouteName: 'admin-rbac-permissions');
-
-        $this->assertSame($response, $result);
+        // A permission may only take permissions (not roles) as children.
+        self::assertStringContainsString('value="other-permission"', $html);
+        self::assertStringNotContainsString('value="some-role"', $html);
     }
 
     public function testCreateGetShowsAvailableChildrenIncludingRolesAndPermissions(): void
@@ -99,39 +75,13 @@ final class RbacControllerTest extends TestCase
         $this->itemsStorage->add(new Role('other-role'));
         $this->itemsStorage->add(new Permission('some-permission'));
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('admin/rbac/create', $this->callback(
-                static fn(array $params): bool => array_map(static fn($c) => $c->name, $params['data']->children) === ['other-role', 'some-permission'],
-            ))
-            ->willReturn($response);
+        $html = (string) $this->createController()
+            ->create(request: new ServerRequest('GET', '/'), itemType: 'role', indexRouteName: 'admin-rbac-roles')
+            ->getBody();
 
-        $controller = $this->createController();
-        $result = $controller->create(request: new ServerRequest('GET', '/'), itemType: 'role', indexRouteName: 'admin-rbac-roles');
-
-        $this->assertSame($response, $result);
-    }
-
-    #[DataProvider('itemTypeProvider')]
-    public function testCreateGetShowsForm(string $itemType, string $indexRouteName, string $itemName): void
-    {
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('admin/rbac/create', $this->callback(
-                static fn(array $params): bool => $params['data']->errors === [],
-            ))
-            ->willReturn($response);
-
-        $controller = $this->createController();
-        $result = $controller->create(request: new ServerRequest('GET', '/'), itemType: $itemType, indexRouteName: $indexRouteName);
-
-        $this->assertSame($response, $result);
+        // A role may take both roles and permissions as children.
+        self::assertStringContainsString('value="other-role"', $html);
+        self::assertStringContainsString('value="some-permission"', $html);
     }
 
     #[DataProvider('itemTypeProvider')]
@@ -139,17 +89,17 @@ final class RbacControllerTest extends TestCase
     {
         $this->validator->method('validate')->willReturn(new Result());
 
-        $response = $this->mockRedirectResponse($this->responseFactory);
-
         $request = (new ServerRequest('POST', '/'))->withParsedBody([
             $itemType => ['name' => $itemName, 'description' => '', 'rule' => '', 'children' => ['']],
         ]);
 
-        $controller = $this->createController();
-        $result = $controller->create(request: $request, itemType: $itemType, indexRouteName: $indexRouteName);
+        $result = $this->createController()->create(request: $request, itemType: $itemType, indexRouteName: $indexRouteName);
 
-        $this->assertSame($response, $result);
+        $this->assertSame(302, $result->getStatusCode());
+        $this->assertSame('//voyti/' . $indexRouteName, $result->getHeaderLine('Location'));
         $this->assertNotNull($this->getItem($itemType, $itemName));
+        // The mutating action is recorded in the audit log under the item-type-specific key.
+        $this->assertNotEmpty(UserAuditLog::search(['action' => 'rbac.' . $itemType . '.create'])->all());
     }
 
     public function testCreatePostWithChildren(): void
@@ -158,16 +108,13 @@ final class RbacControllerTest extends TestCase
 
         $this->validator->method('validate')->willReturn(new Result());
 
-        $response = $this->mockRedirectResponse($this->responseFactory);
-
         $request = (new ServerRequest('POST', '/'))->withParsedBody([
             'role' => ['name' => 'parent', 'description' => '', 'rule' => '', 'children' => ['child-role']],
         ]);
 
-        $controller = $this->createController();
-        $result = $controller->create(request: $request, itemType: 'role', indexRouteName: 'admin-rbac-roles');
+        $result = $this->createController()->create(request: $request, itemType: 'role', indexRouteName: 'admin-rbac-roles');
 
-        $this->assertSame($response, $result);
+        $this->assertSame(302, $result->getStatusCode());
         $this->assertTrue($this->itemsStorage->hasChild('parent', 'child-role'));
     }
 
@@ -178,107 +125,41 @@ final class RbacControllerTest extends TestCase
         $validationResult->addError('Name is required.');
         $this->validator->method('validate')->willReturn($validationResult);
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('admin/rbac/create', $this->callback(
-                static fn(array $params): bool => $params['data']->errors !== [],
-            ))
-            ->willReturn($response);
-
         $request = (new ServerRequest('POST', '/'))->withParsedBody([
             $itemType => ['name' => '', 'description' => '', 'rule' => '', 'children' => ['']],
         ]);
 
-        $controller = $this->createController();
-        $result = $controller->create(request: $request, itemType: $itemType, indexRouteName: $indexRouteName);
+        $html = (string) $this->createController()->create(request: $request, itemType: $itemType, indexRouteName: $indexRouteName)->getBody();
 
-        $this->assertSame($response, $result);
+        self::assertStringContainsString('Name is required.', $html);
     }
 
     public function testCreatePostWithNonexistentChildShowsErrorsAndPersistsItem(): void
     {
         $this->validator->method('validate')->willReturn(new Result());
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('admin/rbac/create', $this->callback(
-                static fn(array $params): bool => ($params['data']->errors['children'] ?? []) !== [],
-            ))
-            ->willReturn($response);
-
         $request = (new ServerRequest('POST', '/'))->withParsedBody([
             'role' => ['name' => 'parent', 'description' => '', 'rule' => '', 'children' => ['missing-child']],
         ]);
 
-        $controller = $this->createController();
-        $result = $controller->create(request: $request, itemType: 'role', indexRouteName: 'admin-rbac-roles');
+        $html = (string) $this->createController()->create(request: $request, itemType: 'role', indexRouteName: 'admin-rbac-roles')->getBody();
 
-        $this->assertSame($response, $result);
+        self::assertStringContainsString('Child "missing-child" does not exist.', $html);
+        // The item itself is still persisted; only the missing child is rejected.
         $this->assertNotNull($this->itemsStorage->getRole('parent'));
-    }
-
-    public function testCreatePostWithoutChildrenKeyKeepsDefaultChildren(): void
-    {
-        $this->validator->method('validate')->willReturn(new Result());
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->method('createResponse')->willReturn($response);
-        $response->method('withHeader')->willReturnSelf();
-
-        $request = (new ServerRequest('POST', '/'))->withParsedBody([
-            'role' => ['name' => 'editor', 'description' => '', 'rule' => ''],
-        ]);
-
-        $controller = $this->createController();
-        $result = $controller->create(request: $request, itemType: 'role', indexRouteName: 'admin-rbac-roles');
-
-        $this->assertSame($response, $result);
-        $this->assertNotNull($this->itemsStorage->getRole('editor'));
-    }
-
-    public function testCreatePostWithRoleAsChildShowsErrors(): void
-    {
-        $this->itemsStorage->add(new Role('some-role'));
-
-        $this->validator->method('validate')->willReturn(new Result());
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('admin/rbac/create', $this->callback(
-                static fn(array $params): bool => ($params['data']->errors['children'] ?? []) !== [],
-            ))
-            ->willReturn($response);
-
-        $request = (new ServerRequest('POST', '/'))->withParsedBody([
-            'permission' => ['name' => 'edit-posts', 'description' => '', 'rule' => '', 'children' => ['some-role']],
-        ]);
-
-        $controller = $this->createController();
-        $result = $controller->create(request: $request, itemType: 'permission', indexRouteName: 'admin-rbac-permissions');
-
-        $this->assertSame($response, $result);
     }
 
     public function testCreatePostWithRule(): void
     {
         $this->validator->method('validate')->willReturn(new Result());
 
-        $response = $this->mockRedirectResponse($this->responseFactory);
-
         $request = (new ServerRequest('POST', '/'))->withParsedBody([
             'permission' => ['name' => 'restricted-action', 'description' => '', 'rule' => 'ownerRule', 'children' => ['']],
         ]);
 
-        $controller = $this->createController();
-        $result = $controller->create(request: $request, itemType: 'permission', indexRouteName: 'admin-rbac-permissions');
+        $result = $this->createController()->create(request: $request, itemType: 'permission', indexRouteName: 'admin-rbac-permissions');
 
-        $this->assertSame($response, $result);
+        $this->assertSame(302, $result->getStatusCode());
         $perm = $this->itemsStorage->getPermission('restricted-action');
         $this->assertNotNull($perm);
         $this->assertSame('ownerRule', $perm->getRuleName());
@@ -289,13 +170,40 @@ final class RbacControllerTest extends TestCase
     {
         $this->addItem($itemType, $itemName);
 
-        $response = $this->mockRedirectResponse($this->responseFactory);
+        $result = $this->createController()->delete(new ServerRequest('POST', '/'), $itemName, $itemType, $indexRouteName);
 
-        $controller = $this->createController();
-        $result = $controller->delete(new ServerRequest('POST', '/'), $itemName, $itemType, $indexRouteName);
-
-        $this->assertSame($response, $result);
+        $this->assertSame(302, $result->getStatusCode());
+        $this->assertSame('//voyti/' . $indexRouteName, $result->getHeaderLine('Location'));
         $this->assertNull($this->getItem($itemType, $itemName));
+        $this->assertNotEmpty(UserAuditLog::search(['action' => 'rbac.' . $itemType . '.delete'])->all());
+    }
+
+    public function testIndexFiltersByDescription(): void
+    {
+        $this->itemsStorage->add((new Role('admin'))->withDescription('platform staff'));
+        $this->itemsStorage->add((new Role('editor'))->withDescription('content team'));
+
+        $html = (string) $this->createController()
+            ->index(filterDescription: 'platform', itemType: 'role', indexRouteName: 'admin-rbac-roles')
+            ->getBody();
+
+        // The description filter narrows the item rows to the matching role only.
+        self::assertStringContainsString('col-3 text-break">admin</div>', $html);
+        self::assertStringNotContainsString('col-3 text-break">editor</div>', $html);
+    }
+
+    public function testIndexFiltersByName(): void
+    {
+        $this->itemsStorage->add(new Role('admin'));
+        $this->itemsStorage->add(new Role('editor'));
+
+        $html = (string) $this->createController()
+            ->index(filterName: 'admin', itemType: 'role', indexRouteName: 'admin-rbac-roles')
+            ->getBody();
+
+        // The name filter narrows the item rows to the matching role only.
+        self::assertStringContainsString('col-3 text-break">admin</div>', $html);
+        self::assertStringNotContainsString('col-3 text-break">editor</div>', $html);
     }
 
     #[DataProvider('itemTypeProvider')]
@@ -303,96 +211,70 @@ final class RbacControllerTest extends TestCase
     {
         $this->addItem($itemType, $itemName);
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('admin/rbac/index', $this->anything())
-            ->willReturn($response);
+        $html = (string) $this->createController()->index(itemType: $itemType, indexRouteName: $indexRouteName)->getBody();
 
-        $controller = $this->createController();
-        $result = $controller->index(itemType: $itemType, indexRouteName: $indexRouteName);
-
-        $this->assertSame($response, $result);
+        self::assertStringContainsString('>' . $itemName . '</div>', $html);
     }
 
-    public function testIndexWithFilters(): void
+    public function testIndexShowsItemsWithTheirChildren(): void
     {
-        $this->itemsStorage->add(new Role('admin'));
-        $this->itemsStorage->add(new Role('editor'));
+        $this->itemsStorage->add(new Role('parentrole'));
+        $this->itemsStorage->add(new Role('kidrole'));
+        $this->manager->addChild('parentrole', 'kidrole');
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturn($response);
+        $html = (string) $this->createController()->index(itemType: 'role', indexRouteName: 'admin-rbac-roles')->getBody();
 
-        $controller = $this->createController();
-        $result = $controller->index(filterName: 'admin', filterDescription: 'test', itemType: 'role', indexRouteName: 'admin-rbac-roles');
+        self::assertStringContainsString('>parentrole</div>', $html);
+        // The parent's children column lists its child (col-2), distinct from the child's own name column (col-3).
+        self::assertStringContainsString('col-2 text-break">kidrole</div>', $html);
+    }
 
-        $this->assertSame($response, $result);
+    public function testUpdateGetPrefillsRuleAndCheckedChildren(): void
+    {
+        $this->itemsStorage->add(new Permission('ownerRule-perm'));
+        $this->itemsStorage->add(new Role('childrole'));
+        $this->itemsStorage->add((new Role('editor'))->withRuleName('ownerRule'));
+        $this->manager->addChild('editor', 'childrole');
+
+        $html = (string) $this->createController()
+            ->update(request: new ServerRequest('GET', '/'), name: 'editor', itemType: 'role', indexRouteName: 'admin-rbac-roles')
+            ->getBody();
+
+        // The rule field is pre-filled and the already-assigned child checkbox is checked.
+        self::assertStringContainsString('value="ownerRule"', $html);
+        self::assertMatchesRegularExpression('/name="role\[children\]\[\]" value="childrole"[^>]*checked/', $html);
     }
 
     public function testUpdateGetShowsAvailableChildrenExcludingSelf(): void
     {
         $this->itemsStorage->add(new Role('editor'));
-        $this->itemsStorage->add(new Role('other-role'));
-        $this->itemsStorage->add(new Permission('some-permission'));
+        // Added out of alphabetical order to prove the candidates are sorted before rendering.
+        $this->itemsStorage->add(new Role('zzz-role'));
+        $this->itemsStorage->add(new Permission('aaa-permission'));
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('admin/rbac/update', $this->callback(
-                static fn(array $params): bool => array_map(static fn($c) => $c->name, $params['data']->children) === ['other-role', 'some-permission'],
-            ))
-            ->willReturn($response);
+        $html = (string) $this->createController()
+            ->update(request: new ServerRequest('GET', '/'), name: 'editor', itemType: 'role', indexRouteName: 'admin-rbac-roles')
+            ->getBody();
 
-        $controller = $this->createController();
-        $result = $controller->update(request: new ServerRequest('GET', '/'), name: 'editor', itemType: 'role', indexRouteName: 'admin-rbac-roles');
-
-        $this->assertSame($response, $result);
-    }
-
-    #[DataProvider('itemTypeProvider')]
-    public function testUpdateGetShowsForm(string $itemType, string $indexRouteName, string $itemName): void
-    {
-        $this->addItem($itemType, $itemName);
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('admin/rbac/update', $this->anything())
-            ->willReturn($response);
-
-        $controller = $this->createController();
-        $result = $controller->update(request: new ServerRequest('GET', '/'), name: $itemName, itemType: $itemType, indexRouteName: $indexRouteName);
-
-        $this->assertSame($response, $result);
+        self::assertStringContainsString('value="zzz-role"', $html);
+        self::assertStringContainsString('value="aaa-permission"', $html);
+        // The item can't be its own child (its name still appears in the name field, so match the child input).
+        self::assertStringNotContainsString('name="role[children][]" value="editor"', $html);
+        // Candidates are sorted by name: aaa-permission renders before zzz-role.
+        self::assertLessThan(
+            strpos($html, 'value="zzz-role"'),
+            strpos($html, 'value="aaa-permission"'),
+        );
     }
 
     #[DataProvider('itemTypeProvider')]
     public function testUpdateNonExistentShowsError(string $itemType, string $indexRouteName, string $itemName): void
     {
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturn($response);
+        $html = (string) $this->createController()
+            ->update(request: new ServerRequest('GET', '/'), name: 'nonexistent', itemType: $itemType, indexRouteName: $indexRouteName)
+            ->getBody();
 
-        $controller = $this->createController();
-        $result = $controller->update(request: new ServerRequest('GET', '/'), name: 'nonexistent', itemType: $itemType, indexRouteName: $indexRouteName);
-
-        $this->assertSame($response, $result);
+        self::assertStringContainsString('Authorization item not found', $html);
     }
 
     public function testUpdatePostAssignsAndUnassignsUsers(): void
@@ -402,20 +284,60 @@ final class RbacControllerTest extends TestCase
 
         $this->validator->method('validate')->willReturn(new Result());
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->method('createResponse')->willReturn($response);
-        $response->method('withHeader')->willReturnSelf();
-
+        // The empty-string id must be ignored, not assigned.
         $request = (new ServerRequest('POST', '/'))->withParsedBody([
-            'role' => ['name' => 'editor', 'description' => 'Updated', 'rule' => '', 'children' => [''], 'assignedUsers' => ['2']],
+            'role' => ['name' => 'editor', 'description' => 'Updated', 'rule' => '', 'children' => [''], 'assignedUsers' => ['2', '']],
         ]);
 
-        $controller = $this->createController();
-        $result = $controller->update(request: $request, name: 'editor', itemType: 'role', indexRouteName: 'admin-rbac-roles');
+        $result = $this->createController()->update(request: $request, name: 'editor', itemType: 'role', indexRouteName: 'admin-rbac-roles');
 
-        $this->assertSame($response, $result);
+        $this->assertSame(302, $result->getStatusCode());
         $this->assertNull($this->assignmentsStorage->get('editor', '1'));
         $this->assertNotNull($this->assignmentsStorage->get('editor', '2'));
+        // The empty-string id was filtered out, so no assignment was created for user "0" ((int) '').
+        $this->assertNull($this->assignmentsStorage->get('editor', '0'));
+    }
+
+    public function testUpdatePostRemovesReplacedChildren(): void
+    {
+        $this->itemsStorage->add(new Role('parent'));
+        $this->itemsStorage->add(new Role('oldchild'));
+        $this->itemsStorage->add(new Role('newchild'));
+        $this->manager->addChild('parent', 'oldchild');
+
+        $this->validator->method('validate')->willReturn(new Result());
+
+        $request = (new ServerRequest('POST', '/'))->withParsedBody([
+            'role' => ['name' => 'parent', 'description' => '', 'rule' => '', 'children' => ['newchild'], 'assignedUsers' => []],
+        ]);
+
+        $result = $this->createController()->update(request: $request, name: 'parent', itemType: 'role', indexRouteName: 'admin-rbac-roles');
+
+        $this->assertSame(302, $result->getStatusCode());
+        $this->assertTrue($this->itemsStorage->hasChild('parent', 'newchild'));
+        // The previously-assigned child is removed before the new set is applied.
+        $this->assertFalse($this->itemsStorage->hasChild('parent', 'oldchild'));
+    }
+
+    public function testUpdatePostRenamesItemAndRecordsPreviousName(): void
+    {
+        $this->itemsStorage->add(new Role('oldrole'));
+
+        $this->validator->method('validate')->willReturn(new Result());
+
+        $request = (new ServerRequest('POST', '/'))->withParsedBody([
+            'role' => ['name' => 'newrole', 'description' => '', 'rule' => '', 'children' => [], 'assignedUsers' => []],
+        ]);
+
+        $result = $this->createController()->update(request: $request, name: 'oldrole', itemType: 'role', indexRouteName: 'admin-rbac-roles');
+
+        $this->assertSame(302, $result->getStatusCode());
+        $this->assertNotNull($this->itemsStorage->getRole('newrole'));
+        $this->assertNull($this->itemsStorage->getRole('oldrole'));
+        // The audit log records the pre-rename name in its context.
+        $logs = UserAuditLog::search(['action' => 'rbac.role.update'])->all();
+        self::assertNotEmpty($logs);
+        self::assertStringContainsString('oldrole', (string) $logs[0]->getContext());
     }
 
     #[DataProvider('itemTypeProvider')]
@@ -425,16 +347,15 @@ final class RbacControllerTest extends TestCase
 
         $this->validator->method('validate')->willReturn(new Result());
 
-        $response = $this->mockRedirectResponse($this->responseFactory);
-
         $request = (new ServerRequest('POST', '/'))->withParsedBody([
             $itemType => ['name' => $itemName, 'description' => 'Updated', 'rule' => '', 'children' => [''], 'assignedUsers' => []],
         ]);
 
-        $controller = $this->createController();
-        $result = $controller->update(request: $request, name: $itemName, itemType: $itemType, indexRouteName: $indexRouteName);
+        $result = $this->createController()->update(request: $request, name: $itemName, itemType: $itemType, indexRouteName: $indexRouteName);
 
-        $this->assertSame($response, $result);
+        $this->assertSame(302, $result->getStatusCode());
+        $this->assertSame('//voyti/' . $indexRouteName, $result->getHeaderLine('Location'));
+        $this->assertNotEmpty(UserAuditLog::search(['action' => 'rbac.' . $itemType . '.update'])->all());
     }
 
     #[DataProvider('itemTypeProvider')]
@@ -459,55 +380,9 @@ final class RbacControllerTest extends TestCase
             ManagerInterface::class => $manager,
             AssignmentsStorageInterface::class => $this->assignmentsStorage,
             ValidatorInterface::class => $this->validator,
-            ResponseFactoryInterface::class => $this->responseFactory,
             FlashInterface::class => $this->flash,
-            WebViewRenderer::class => $this->viewRenderer,
-            UrlGeneratorInterface::class => new FakeUrlGenerator(),
         ])->get(RbacController::class);
         $controller->update(request: $request, name: $itemName, itemType: $itemType, indexRouteName: $indexRouteName);
-    }
-
-    public function testUpdatePostWithChildren(): void
-    {
-        $this->itemsStorage->add(new Role('editor'));
-        $this->itemsStorage->add(new Role('child-role'));
-
-        $this->validator->method('validate')->willReturn(new Result());
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->method('createResponse')->willReturn($response);
-        $response->method('withHeader')->willReturnSelf();
-
-        $request = (new ServerRequest('POST', '/'))->withParsedBody([
-            'role' => ['name' => 'editor', 'description' => '', 'rule' => '', 'children' => ['child-role'], 'assignedUsers' => []],
-        ]);
-
-        $controller = $this->createController();
-        $result = $controller->update(request: $request, name: 'editor', itemType: 'role', indexRouteName: 'admin-rbac-roles');
-
-        $this->assertSame($response, $result);
-        $this->assertTrue($this->itemsStorage->hasChild('editor', 'child-role'));
-    }
-
-    public function testUpdatePostWithEmptyDescriptionClearsDescription(): void
-    {
-        $this->itemsStorage->add((new Role('editor'))->withDescription('Original description'));
-
-        $this->validator->method('validate')->willReturn(new Result());
-
-        $response = $this->mockRedirectResponse($this->responseFactory);
-
-        $request = (new ServerRequest('POST', '/'))->withParsedBody([
-            'role' => ['name' => 'editor', 'description' => '', 'rule' => '', 'children' => [''], 'assignedUsers' => []],
-        ]);
-
-        $controller = $this->createController();
-        $result = $controller->update(request: $request, name: 'editor', itemType: 'role', indexRouteName: 'admin-rbac-roles');
-
-        $this->assertSame($response, $result);
-        $role = $this->itemsStorage->getRole('editor');
-        $this->assertNotNull($role);
-        $this->assertSame('', $role->getDescription());
     }
 
     public function testUpdatePostWithInvalidDataShowsErrors(): void
@@ -518,23 +393,13 @@ final class RbacControllerTest extends TestCase
         $validationResult->addError('Name is required.');
         $this->validator->method('validate')->willReturn($validationResult);
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('admin/rbac/update', $this->callback(
-                static fn(array $params): bool => $params['data']->errors !== [],
-            ))
-            ->willReturn($response);
-
         $request = (new ServerRequest('POST', '/'))->withParsedBody([
             'role' => ['name' => '', 'description' => '', 'rule' => '', 'children' => []],
         ]);
 
-        $controller = $this->createController();
-        $result = $controller->update(request: $request, name: 'editor', itemType: 'role', indexRouteName: 'admin-rbac-roles');
+        $html = (string) $this->createController()->update(request: $request, name: 'editor', itemType: 'role', indexRouteName: 'admin-rbac-roles')->getBody();
 
-        $this->assertSame($response, $result);
+        self::assertStringContainsString('Name is required.', $html);
     }
 
     public function testUpdatePostWithNonexistentChildShowsErrors(): void
@@ -543,23 +408,14 @@ final class RbacControllerTest extends TestCase
 
         $this->validator->method('validate')->willReturn(new Result());
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('admin/rbac/update', $this->callback(
-                static fn(array $params): bool => ($params['data']->errors['children'] ?? []) !== [],
-            ))
-            ->willReturn($response);
-
         $request = (new ServerRequest('POST', '/'))->withParsedBody([
             'role' => ['name' => 'editor', 'description' => 'Updated', 'rule' => '', 'children' => ['missing-child']],
         ]);
 
-        $controller = $this->createController();
-        $result = $controller->update(request: $request, name: 'editor', itemType: 'role', indexRouteName: 'admin-rbac-roles');
+        $html = (string) $this->createController()->update(request: $request, name: 'editor', itemType: 'role', indexRouteName: 'admin-rbac-roles')->getBody();
 
-        $this->assertSame($response, $result);
+        self::assertStringContainsString('Child "missing-child" does not exist.', $html);
+        // The item's own fields are still persisted; only the missing child is rejected.
         $role = $this->itemsStorage->getRole('editor');
         $this->assertNotNull($role);
         $this->assertSame('Updated', $role->getDescription());
@@ -572,18 +428,13 @@ final class RbacControllerTest extends TestCase
 
         $this->validator->method('validate')->willReturn(new Result());
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->method('createResponse')->willReturn($response);
-        $response->method('withHeader')->willReturnSelf();
-
         $request = (new ServerRequest('POST', '/'))->withParsedBody([
             $itemType => ['name' => $itemName, 'description' => '', 'rule' => 'someRule', 'children' => [''], 'assignedUsers' => []],
         ]);
 
-        $controller = $this->createController();
-        $result = $controller->update(request: $request, name: $itemName, itemType: $itemType, indexRouteName: $indexRouteName);
+        $result = $this->createController()->update(request: $request, name: $itemName, itemType: $itemType, indexRouteName: $indexRouteName);
 
-        $this->assertSame($response, $result);
+        $this->assertSame(302, $result->getStatusCode());
         $item = $this->getItem($itemType, $itemName);
         $this->assertNotNull($item);
         $this->assertSame('someRule', $item->getRuleName());
@@ -603,20 +454,13 @@ final class RbacControllerTest extends TestCase
         $this->itemsStorage->add(new Role('editor'));
         $this->assignmentsStorage->add(new Assignment((string) $assignedUser->getId(), 'editor', time()));
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('admin/rbac/update', $this->callback(
-                static fn(array $params): bool => count($params['data']->assignedUsers) === 1
-                    && $params['data']->assignedUsers[0]->id === (string) $assignedUser->getId(),
-            ))
-            ->willReturn($response);
+        $html = (string) $this->createController()
+            ->update(request: new ServerRequest('GET', '/'), name: 'editor', itemType: 'role', indexRouteName: 'admin-rbac-roles')
+            ->getBody();
 
-        $controller = $this->createController();
-        $result = $controller->update(request: new ServerRequest('GET', '/'), name: 'editor', itemType: 'role', indexRouteName: 'admin-rbac-roles');
-
-        $this->assertSame($response, $result);
+        // The assigned user is rendered as a checked assignment with their username.
+        self::assertStringContainsString('assigned', $html);
+        self::assertStringContainsString('name="assignedUsers[]" value="' . $assignedUser->getId() . '"', $html);
     }
 
     private function addItem(string $itemType, string $name): void
@@ -632,9 +476,7 @@ final class RbacControllerTest extends TestCase
             ManagerInterface::class => $this->manager,
             AssignmentsStorageInterface::class => $this->assignmentsStorage,
             ValidatorInterface::class => $this->validator,
-            ResponseFactoryInterface::class => $this->responseFactory,
             FlashInterface::class => $this->flash,
-            WebViewRenderer::class => $this->viewRenderer,
         ])->get(RbacController::class);
     }
 

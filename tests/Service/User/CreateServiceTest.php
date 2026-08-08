@@ -6,7 +6,6 @@ namespace YiiRocks\Voyti\tests\Service\User;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Psr\EventDispatcher\EventDispatcherInterface;
-use RuntimeException;
 use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
@@ -14,30 +13,18 @@ use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\User\CreateService;
 use YiiRocks\Voyti\Service\User\UserCreationHelper;
-use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
 use YiiRocks\Voyti\tests\Support\MailCapture;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
+use YiiRocks\Voyti\tests\Support\ThrowingEventDispatcher;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
-use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\View\View;
 
 #[AllowMockObjectsWithoutExpectations]
-final class CreateServiceTest extends TestCase
+final class CreateServiceTest extends DatabaseTestCase
 {
-    use DatabaseSetupTrait;
-
-    protected function setUp(): void
-    {
-        $this->setUpDatabase();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->tearDownDatabase();
-    }
-
     public function testRunEmailAlreadyExistsReturnsFailure(): void
     {
         $existing = new User();
@@ -64,40 +51,24 @@ final class CreateServiceTest extends TestCase
 
     public function testRunHandlesRaceLostAfterUniquenessCheckPasses(): void
     {
-        $userCreationHelper = $this->createMock(UserCreationHelper::class);
-        $userCreationHelper->method('findUniquenessConflict')->willReturn(null);
-        $userCreationHelper->method('buildUser')->willReturn(new User());
-        $userCreationHelper->method('persistAndNotify')->willThrowException(new RuntimeException('Email already exists'));
+        // The uniqueness check passes, but persistAndNotify throws (as it would when a concurrent
+        // insert wins the race). A real helper whose event dispatch throws exercises run()'s
+        // catch branch without mocking the final UserCreationHelper.
+        $passwordHasher = TestPasswordHasherFactory::create();
+        $config = VoytiConfigFactory::create();
+        $userCreationHelper = new UserCreationHelper(
+            $this->createMailService(new MailCapture()),
+            new ThrowingEventDispatcher('Email already exists'),
+            $passwordHasher,
+            $config,
+            new PasswordHistoryService($passwordHasher, $config),
+        );
 
         $service = new CreateService($userCreationHelper);
         $result = $service->run('race@example.com', 'raceuser', 'password123');
 
         self::assertTrue($result->isFailure());
         self::assertSame('Email already exists', $result->getMessage());
-    }
-
-    public function testRunUsernameAlreadyExistsReturnsFailure(): void
-    {
-        $existing = new User();
-        $existing->setUsername('existinguser');
-        $existing->setEmail('other@example.com');
-        $existing->setPasswordHash('hash');
-        $existing->setAuthKey('key');
-        $existing->setCreatedAt(time());
-        $existing->setUpdatedAt(time());
-        $existing->save();
-
-        $mailService = $this->createMailService(new MailCapture());
-        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $passwordHasher = TestPasswordHasherFactory::create();
-        $config = VoytiConfigFactory::create();
-
-        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
-        $service = new CreateService($userCreationHelper);
-        $result = $service->run('new@example.com', 'existinguser', 'password123');
-
-        self::assertTrue($result->isFailure());
-        self::assertSame('Username already exists', $result->getMessage());
     }
 
     public function testRunWithEmailConfirmationDisabled(): void

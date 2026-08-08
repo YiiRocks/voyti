@@ -38,6 +38,7 @@ final readonly class RegisterService
 
         $conflict = $this->userCreationHelper->findUniquenessConflict($email, $username);
         if ($conflict !== null) {
+            /** @infection-ignore-all Removing this early return is observationally equivalent: persist() re-guards uniqueness and rethrows a RuntimeException carrying the same conflict message, which the catch below turns into the identical failure ServiceResult with no user persisted. */
             return ServiceResult::failure($conflict, [$conflict]);
         }
 

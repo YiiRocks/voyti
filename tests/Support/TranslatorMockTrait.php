@@ -8,7 +8,7 @@ use Yiisoft\Translator\TranslatorInterface;
 
 trait TranslatorMockTrait
 {
-    private function createTranslator(): TranslatorInterface
+    protected function createTranslator(string $locale = 'en'): TranslatorInterface
     {
         $translator = $this->createStub(TranslatorInterface::class);
         $translator->method('translate')->willReturnCallback(fn(string $id) => $id);

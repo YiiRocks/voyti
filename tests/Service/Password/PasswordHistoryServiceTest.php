@@ -4,28 +4,16 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Service\Password;
 
-use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\UserPasswordHistory;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
-use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 
-final class PasswordHistoryServiceTest extends TestCase
+final class PasswordHistoryServiceTest extends DatabaseTestCase
 {
-    use DatabaseSetupTrait;
     use UserFactoryTrait;
-
-    protected function setUp(): void
-    {
-        $this->setUpDatabase();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->tearDownDatabase();
-    }
 
     public function testRecordDoesNothingWhenDisabled(): void
     {

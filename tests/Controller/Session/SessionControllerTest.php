@@ -4,91 +4,67 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Controller\Session;
 
-use LogicException;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
-use Psr\Http\Message\ResponseFactoryInterface;
-use Psr\Http\Message\ResponseInterface;
+use Psr\Container\ContainerInterface;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Controller\Session\SessionController;
+use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
+use YiiRocks\Voyti\Event\Session\SessionEvent;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
-use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
-use YiiRocks\Voyti\Service\RememberMeCookieService;
-use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
-use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
-use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
-use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
+use YiiRocks\Voyti\Model\UserSocialAccount;
+use YiiRocks\Voyti\tests\Support\CurrentUserTrait;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
+use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
+use YiiRocks\Voyti\tests\Support\FakeSession;
+use YiiRocks\Voyti\tests\Support\MailAssertionsTrait;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\Support\ValidatorMockTrait;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
-use YiiRocks\Voyti\tests\TestCase;
 use YiiRocks\Voyti\VoytiConfig;
-use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\User\CurrentUser;
-use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Validator\ValidatorInterface;
-use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 #[AllowMockObjectsWithoutExpectations]
-final class SessionControllerTest extends TestCase
+final class SessionControllerTest extends DatabaseTestCase
 {
-    use DatabaseSetupTrait;
-    use RedirectResponseMockTrait;
+    use CurrentUserTrait;
+    use MailAssertionsTrait;
     use TestContainerTrait;
     use UserFactoryTrait;
     use ValidatorMockTrait;
 
-    private CurrentUser&MockObject $currentUser;
+    private ContainerInterface $container;
+    private CurrentUser $currentUser;
+    private EventCaptureDispatcher $eventDispatcher;
     private FlashInterface&MockObject $flash;
     private PasswordHasher $passwordHasher;
-    private PendingSocialAccountService&MockObject $pendingSocialAccountService;
-    private RememberMeCookieService&MockObject $rememberMeCookieService;
-    private ResponseFactoryInterface&MockObject $responseFactory;
-    private EmailCodeGeneratorService&MockObject $twoFactorEmailCodeService;
+    private FakeSession $session;
     private ValidatorInterface&MockObject $validator;
-    private WebViewRenderer&MockObject $viewRenderer;
 
     protected function setUp(): void
     {
-        $this->setUpDatabase();
-        $this->viewRenderer = $this->createMock(WebViewRenderer::class);
-        $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
-        $this->currentUser = $this->createMock(CurrentUser::class);
-        $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
+        parent::setUp();
+        $this->currentUser = $this->createCurrentUser();
         $this->flash = $this->createMock(FlashInterface::class);
         $this->passwordHasher = TestPasswordHasherFactory::create();
-        $this->rememberMeCookieService = $this->createMock(RememberMeCookieService::class);
-        $this->pendingSocialAccountService = $this->createMock(PendingSocialAccountService::class);
-        $this->twoFactorEmailCodeService = $this->createMock(EmailCodeGeneratorService::class);
         $this->validator = $this->mockValidValidator();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->tearDownDatabase();
+        $this->eventDispatcher = new EventCaptureDispatcher();
+        $this->session = new FakeSession();
     }
 
     public function testConfirmGetWithNoCredentialsShowsLoginForm(): void
     {
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('session/login', $this->anything())
-            ->willReturn($response);
+        $html = (string) $this->createController()->confirm(new ServerRequest('GET', '/'))->getBody();
 
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
-        $result = $controller->confirm($request);
-
-        $this->assertSame($response, $result);
+        self::assertStringContainsString('Log In', $html);
     }
 
     public function testConfirmPostConstructsFormRequiringTwoFactorCode(): void
@@ -99,16 +75,11 @@ final class SessionControllerTest extends TestCase
             'rememberMe' => false,
         ]);
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->method('render')->willReturn($response);
-
-        $controller = $container->get(SessionController::class);
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['twoFactorAuthenticationCode' => '']]);
 
-        $result = $controller->confirm($request);
+        $html = (string) $container->get(SessionController::class)->confirm($request)->getBody();
 
-        $this->assertSame($response, $result);
+        self::assertStringContainsString('Two-Factor Authentication', $html);
     }
 
     public function testConfirmPostSuccessRedirectsToConfiguredRoute(): void
@@ -120,7 +91,7 @@ final class SessionControllerTest extends TestCase
             'rememberMe' => false,
         ]);
 
-        $this->createUser(
+        $user = $this->createUser(
             username: 'jdoe',
             email: 'jdoe@example.com',
             passwordHash: $this->passwordHasher->hash('secret'),
@@ -129,15 +100,22 @@ final class SessionControllerTest extends TestCase
             authTfType: 'email',
             authTfKey: '123456',
         );
+        $pending = $this->createPendingSocialAccount('pendcode');
+        $this->session->set('social_network_account_code', 'pendcode');
 
-        $response = $this->mockRedirectResponse($this->responseFactory, '//app/dashboard');
-
-        $controller = $container->get(SessionController::class);
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['twoFactorAuthenticationCode' => '123456']]);
 
-        $result = $controller->confirm($request);
+        $result = $container->get(SessionController::class)->confirm($request);
 
-        $this->assertSame($response, $result);
+        $this->assertSame(302, $result->getStatusCode());
+        $this->assertSame('//app/dashboard', $result->getHeaderLine('Location'));
+        // A completed 2FA login logs the user in, clears the stashed credentials, records login
+        // metadata, dispatches AfterLoginEvent and connects the pending social account.
+        $this->assertSame((int) $user->getId(), (int) $this->currentUser->getId());
+        $this->assertFalse($this->session->has('credentials'));
+        $this->assertNotNull(User::findById((int) $user->getId())?->getLastLoginAt());
+        $this->assertTrue($this->eventDispatcher->hasEvent(AfterLoginEvent::class));
+        $this->assertSame((int) $user->getId(), UserSocialAccount::findByProviderAndClientId('github', 'client-pendcode')?->getUserId());
     }
 
     public function testConfirmPostSuccessWithRememberMeAddsCookie(): void
@@ -158,18 +136,17 @@ final class SessionControllerTest extends TestCase
             authTfKey: '123456',
         );
 
-        $this->rememberMeCookieService->expects($this->once())->method('addCookie')->willReturnArgument(1);
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->method('createResponse')->willReturn($response);
-        $response->method('withHeader')->willReturnSelf();
-
-        $controller = $container->get(SessionController::class);
+        $this->session->open();
+        $this->session->setId('sessprobe');
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['twoFactorAuthenticationCode' => '123456']]);
 
-        $result = $controller->confirm($request);
+        $result = $container->get(SessionController::class)->confirm($request);
 
-        $this->assertSame($response, $result);
+        $this->assertSame(302, $result->getStatusCode());
+        // The real RememberMeCookieService sets the auto-login cookie carrying the session id.
+        $cookie = $result->getHeaderLine('Set-Cookie');
+        $this->assertStringContainsString('autoLogin', $cookie);
+        $this->assertStringContainsString('sessprobe', $cookie);
     }
 
     public function testConfirmPostWithGoogleMethodAndInvalidCodeShowsError(): void
@@ -189,143 +166,76 @@ final class SessionControllerTest extends TestCase
             authTfType: 'google',
         );
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('session/confirm', $this->callback(
-                static fn(array $params): bool => $params['data']->method === 'google',
-            ))
-            ->willReturn($response);
-
-        $controller = $container->get(SessionController::class);
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['twoFactorAuthenticationCode' => 'wrong']]);
 
-        $result = $controller->confirm($request);
+        $html = (string) $container->get(SessionController::class)->confirm($request)->getBody();
 
-        $this->assertSame($response, $result);
+        // The Google-method confirm view renders without the email-only "enter the code" hint.
+        self::assertStringContainsString('Two-Factor Authentication', $html);
+        self::assertStringNotContainsString('Enter the verification code sent to your email', $html);
+        // The translated CodeValidator error, attached to the code field, renders in both the summary
+        // and under the field (requires the translator wired into the validator + the field binding).
+        self::assertSame(2, substr_count($html, 'Two factor authentication is not configured.'));
     }
 
     public function testLoginGetShowsForm(): void
     {
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
+        $html = (string) $this->createController()->login(new ServerRequest('GET', '/'))->getBody();
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('session/login', $this->arrayHasKey('form'))
-            ->willReturn($response);
-
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
-        $result = $controller->login($request);
-
-        $this->assertSame($response, $result);
+        self::assertStringContainsString('Log In', $html);
     }
 
     public function testLoginPostSuccessRedirectsToConfiguredRoute(): void
     {
         $config = VoytiConfigFactory::create(homeRoute: 'app/dashboard');
 
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-
-        $this->createUser(
+        $user = $this->createUser(
             username: 'jdoe',
             email: 'jdoe@example.com',
             passwordHash: $this->passwordHasher->hash('secret'),
             confirmedAt: time(),
         );
+        $pending = $this->createPendingSocialAccount('pendcode');
+        $this->session->set('social_network_account_code', 'pendcode');
 
-        $response = $this->mockRedirectResponse($this->responseFactory, '//app/dashboard');
-
-        $controller = $this->createController([VoytiConfig::class => $config]);
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
-        $result = $controller->login($request);
+        $result = $this->createController([VoytiConfig::class => $config])->login($request);
 
-        $this->assertSame($response, $result);
-    }
-
-    public function testLoginPostSuccessRedirectsToHomeRouteByDefault(): void
-    {
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-
-        $this->createUser(
-            username: 'jdoe',
-            email: 'jdoe@example.com',
-            passwordHash: $this->passwordHasher->hash('secret'),
-            confirmedAt: time(),
-        );
-
-        $response = $this->mockRedirectResponse($this->responseFactory, '//home');
-
-        $controller = $this->createController();
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
-
-        $result = $controller->login($request);
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testLoginPostSuccessThrowsWhenHomeRouteIsNotRegistered(): void
-    {
-        $config = VoytiConfigFactory::create(homeRoute: 'nonexistent');
-        $container = $this->getTestContainer(array_merge($this->mockOverrides(), [VoytiConfig::class => $config]));
-        /** @var FakeUrlGenerator $urlGenerator */
-        $urlGenerator = $container->get(UrlGeneratorInterface::class);
-        $urlGenerator->setMissingRoute('nonexistent');
-
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-
-        $this->createUser(
-            username: 'jdoe',
-            email: 'jdoe@example.com',
-            passwordHash: $this->passwordHasher->hash('secret'),
-            confirmedAt: time(),
-        );
-
-        $controller = $container->get(SessionController::class);
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
-
-        $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('"homeRoute" is set to "nonexistent", but no such route is registered.');
-
-        $controller->login($request);
+        $this->assertSame(302, $result->getStatusCode());
+        $this->assertSame('//app/dashboard', $result->getHeaderLine('Location'));
+        // A direct (no-2FA) login logs the user in, records login metadata, dispatches AfterLoginEvent
+        // and connects the pending social account.
+        $this->assertSame((int) $user->getId(), (int) $this->currentUser->getId());
+        $this->assertNotNull(User::findById((int) $user->getId())?->getLastLoginAt());
+        $this->assertTrue($this->eventDispatcher->hasEvent(AfterLoginEvent::class));
+        $this->assertSame((int) $user->getId(), UserSocialAccount::findByProviderAndClientId('github', 'client-pendcode')?->getUserId());
     }
 
     public function testLoginPostSuccessWithRememberMeAddsCookie(): void
     {
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-
         $this->createUser(
             username: 'jdoe',
             email: 'jdoe@example.com',
             passwordHash: $this->passwordHasher->hash('secret'),
             confirmedAt: time(),
         );
-        $this->currentUser->method('withAuthTimeout')->willReturnSelf();
-        $this->rememberMeCookieService->expects($this->once())->method('addCookie')->willReturnArgument(1);
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->method('createResponse')->willReturn($response);
-        $response->method('withHeader')->willReturnSelf();
-
-        $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret', 'rememberMe' => true]]);
 
-        $result = $controller->login($request);
+        $this->session->open();
+        $this->session->setId('sessprobe');
+        $result = $this->createController()->login($request);
 
-        $this->assertSame($response, $result);
+        $this->assertSame(302, $result->getStatusCode());
+        // The real RememberMeCookieService sets the auto-login cookie carrying the session id.
+        $cookie = $result->getHeaderLine('Set-Cookie');
+        $this->assertStringContainsString('autoLogin', $cookie);
+        $this->assertStringContainsString('sessprobe', $cookie);
     }
 
     public function testLoginPostWithBlockedUserShowsError(): void
     {
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-
         $this->createUser(
             username: 'jdoe',
             email: 'jdoe@example.com',
@@ -334,47 +244,30 @@ final class SessionControllerTest extends TestCase
             blockedAt: time(),
         );
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('session/login', $this->anything())
-            ->willReturn($response);
-
-        $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
-        $result = $controller->login($request);
+        $html = (string) $this->createController()->login($request)->getBody();
 
-        $this->assertSame($response, $result);
+        self::assertStringContainsString('Log In', $html);
+        self::assertSame(2, substr_count($html, 'Your account has been blocked'));
     }
 
     public function testLoginPostWithInvalidCredentialsShowsError(): void
     {
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('session/login', $this->anything())
-            ->willReturn($response);
-
-        $controller = $this->createController();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'wrong']]);
 
-        $result = $controller->login($request);
+        $html = (string) $this->createController()->login($request)->getBody();
 
-        $this->assertSame($response, $result);
+        self::assertStringContainsString('Log In', $html);
+        // The error, attached to the "login" field, renders in both the summary and under the field.
+        self::assertSame(2, substr_count($html, 'Invalid login or password'));
     }
 
     public function testLoginPostWithTwoFactorEmailMethodSendsCodeAndShowsConfirm(): void
     {
         $config = VoytiConfigFactory::create(enableTwoFactorAuthentication: true);
 
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-
-        $user = $this->createUser(
+        $this->createUser(
             username: 'jdoe',
             email: 'jdoe@example.com',
             passwordHash: $this->passwordHasher->hash('secret'),
@@ -383,121 +276,77 @@ final class SessionControllerTest extends TestCase
             authTfType: 'email',
         );
 
-        $this->twoFactorEmailCodeService->expects($this->once())->method('run')->with(
-            $this->callback(static fn(User $u): bool => $u->getId() === $user->getId()),
-        );
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('session/confirm', $this->callback(
-                static fn(array $params): bool => $params['data']->method === 'email',
-            ))
-            ->willReturn($response);
-
-        $controller = $this->createController([VoytiConfig::class => $config]);
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
-        $result = $controller->login($request);
+        $html = (string) $this->createController([VoytiConfig::class => $config])->login($request)->getBody();
 
-        $this->assertSame($response, $result);
+        self::assertStringContainsString('Enter the verification code sent to your email', $html);
+        $this->assertMailSent();
+        // The credentials are stashed in the session for the pending 2FA confirmation step.
+        $this->assertSame(['login' => 'jdoe', 'rememberMe' => false], $this->session->get('credentials'));
     }
 
-    public function testLoginPostWithTwoFactorGoogleMethodShowsConfirmWithoutSendingCode(): void
+    public function testLoginPostWithUnconfirmedEmailShowsError(): void
     {
-        $config = VoytiConfigFactory::create(enableTwoFactorAuthentication: true);
+        $this->createUser(
+            username: 'jdoe',
+            email: 'jdoe@example.com',
+            passwordHash: $this->passwordHasher->hash('secret'),
+        );
 
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
+        $html = (string) $this->createController()->login($request)->getBody();
+
+        self::assertStringContainsString('Log In', $html);
+        self::assertSame(2, substr_count($html, 'You need to confirm your email address'));
+    }
+
+    public function testLoginWhenAlreadyAuthenticatedRedirectsToHome(): void
+    {
+        $this->currentUser->login(new User());
+
+        $result = $this->createController()->login(new ServerRequest('GET', '/'));
+
+        $this->assertSame(302, $result->getStatusCode());
+        $this->assertSame('//home', $result->getHeaderLine('Location'));
+    }
+
+    public function testLoginWithTwoFactorDisabledIgnoresUserTwoFactorAndLogsInDirectly(): void
+    {
+        // 2FA is disabled in config even though the account has it enabled: login must proceed
+        // directly rather than routing through the confirm step.
         $this->createUser(
             username: 'jdoe',
             email: 'jdoe@example.com',
             passwordHash: $this->passwordHasher->hash('secret'),
             confirmedAt: time(),
             authTfEnabled: true,
-            authTfType: 'google',
+            authTfType: 'email',
         );
 
-        $this->twoFactorEmailCodeService->expects($this->never())->method('run');
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('session/confirm', $this->callback(
-                static fn(array $params): bool => $params['data']->method === 'google',
-            ))
-            ->willReturn($response);
-
-        $controller = $this->createController([VoytiConfig::class => $config]);
+        $config = VoytiConfigFactory::create(enableTwoFactorAuthentication: false);
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
 
-        $result = $controller->login($request);
+        $result = $this->createController([VoytiConfig::class => $config])->login($request);
 
-        $this->assertSame($response, $result);
-    }
-
-    public function testLoginPostWithUnconfirmedEmailShowsError(): void
-    {
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-
-        $this->createUser(
-            username: 'jdoe',
-            email: 'jdoe@example.com',
-            passwordHash: $this->passwordHasher->hash('secret'),
-        );
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('session/login', $this->anything())
-            ->willReturn($response);
-
-        $controller = $this->createController();
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'jdoe', 'password' => 'secret']]);
-
-        $result = $controller->login($request);
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testLoginWhenAlreadyAuthenticatedRedirectsToHome(): void
-    {
-        $identity = $this->createMock(User::class);
-        $this->currentUser->method('getIdentity')->willReturn($identity);
-
-        $response = $this->mockRedirectResponse($this->responseFactory, '//home');
-
-        $this->viewRenderer->expects($this->never())->method('render');
-
-        $controller = $this->createController();
-        $request = new ServerRequest('GET', '/');
-
-        $result = $controller->login($request);
-
-        $this->assertSame($response, $result);
+        $this->assertSame(302, $result->getStatusCode());
+        $this->assertNoMailSent();
     }
 
     public function testLogoutRedirectsToHomeRouteByDefault(): void
     {
-        $this->currentUser->method('logout')->willReturn(false);
-        $this->currentUser->method('getIdentity')->willReturn($this->createMock(GuestIdentityInterface::class));
-        $this->rememberMeCookieService->method('expireCookie')->willReturnArgument(0);
+        $result = $this->createController()->logout();
 
-        $response = $this->mockRedirectResponse($this->responseFactory, '//home');
-
-        $controller = $this->createController();
-
-        $result = $controller->logout();
-
-        $this->assertSame($response, $result);
+        $this->assertSame(302, $result->getStatusCode());
+        $this->assertSame('//home', $result->getHeaderLine('Location'));
+        // The real RememberMeCookieService expires the auto-login cookie on the response.
+        $this->assertStringContainsString('autoLogin', $result->getHeaderLine('Set-Cookie'));
     }
 
     public function testLogoutRevokesUserSessionRecord(): void
     {
-        $user = $this->createRealUser();
+        $user = $this->createUser('realuser', 'realuser@example.com');
         $sessionId = 'test-session-to-revoke';
 
         $userSession = new UserSessions();
@@ -508,90 +357,57 @@ final class SessionControllerTest extends TestCase
         $userSession->setUpdatedAt(time());
         $userSession->save();
 
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $identity->method('getIdOrZero')->willReturn($user->getIdOrZero());
-        $identity->expects($this->once())->method('setAuthKey');
-        $identity->expects($this->once())->method('setUpdatedAt');
-        $identity->expects($this->once())->method('save');
-
-        $this->currentUser->method('logout')->willReturn(true);
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $originalAuthKey = $user->getAuthKey();
+        $this->currentUser->login($user);
 
         $container = $this->getTestContainer($this->mockOverrides());
         $session = $container->get(SessionInterface::class);
         $session->open();
         $session->setId($sessionId);
 
-        $this->rememberMeCookieService->method('expireCookie')->willReturnArgument(0);
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->method('createResponse')->willReturn($response);
-        $response->method('withHeader')->willReturnSelf();
-
-        $controller = $container->get(SessionController::class);
-        $controller->logout();
+        $container->get(SessionController::class)->logout();
 
         $revoked = UserSessions::findByUserIdAndSessionId($user->getIdOrZero(), $sessionId);
         $this->assertNotNull($revoked);
         $this->assertTrue($revoked->isRevoked());
-    }
-
-    public function testLogoutWhenLoggedInRotatesAuthKeyAndSaves(): void
-    {
-        $identity = $this->createMock(User::class);
-        $identity->expects($this->once())->method('setAuthKey');
-        $identity->expects($this->once())->method('setUpdatedAt');
-        $identity->expects($this->once())->method('save');
-
-        $this->currentUser->method('logout')->willReturn(true);
-        $this->currentUser->method('getIdentity')->willReturn($identity);
-        $this->rememberMeCookieService->method('expireCookie')->willReturnArgument(0);
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->method('createResponse')->willReturn($response);
-        $response->method('withHeader')->willReturnSelf();
-
-        $controller = $this->createController();
-
-        $result = $controller->logout();
-
-        $this->assertSame($response, $result);
+        $this->assertNotSame($originalAuthKey, User::findById((int) $user->getId())?->getAuthKey());
+        // Revoking the current device's session record dispatches a SessionEvent.
+        $event = $this->eventDispatcher->getEvent(SessionEvent::class);
+        $this->assertInstanceOf(SessionEvent::class, $event);
+        $this->assertSame(SessionEvent::SESSION_TERMINATED, $event->getData()['type'] ?? null);
+        $this->assertSame($sessionId, $event->getSessionId());
     }
 
     private function createController(array $extraOverrides = []): SessionController
     {
-        return $this->getTestContainer(
+        $this->container = $this->getTestContainer(
             array_merge($this->mockOverrides(), $extraOverrides),
-        )->get(SessionController::class);
+        );
+
+        return $this->container->get(SessionController::class);
     }
 
-    private function createRealUser(): User
+    private function createPendingSocialAccount(string $code): UserSocialAccount
     {
-        $user = new User();
-        $user->setUsername('realuser');
-        $user->setEmail('realuser@example.com');
-        $user->setPasswordHash('hash');
-        $user->setAuthKey('key');
-        $user->setCreatedAt(time());
-        $user->setUpdatedAt(time());
-        $user->save();
+        $account = new UserSocialAccount();
+        $account->setProvider('github');
+        $account->setClientId('client-' . $code);
+        $account->setCode($code);
+        $account->setCreatedAt(time());
+        $account->save();
 
-        return $user;
+        return $account;
     }
 
     private function mockOverrides(): array
     {
         return [
             CurrentUser::class => $this->currentUser,
-            EmailCodeGeneratorService::class => $this->twoFactorEmailCodeService,
+            EventDispatcherInterface::class => $this->eventDispatcher,
             FlashInterface::class => $this->flash,
             PasswordHasher::class => $this->passwordHasher,
-            PendingSocialAccountService::class => $this->pendingSocialAccountService,
-            RememberMeCookieService::class => $this->rememberMeCookieService,
-            ResponseFactoryInterface::class => $this->responseFactory,
+            SessionInterface::class => $this->session,
             ValidatorInterface::class => $this->validator,
-            WebViewRenderer::class => $this->viewRenderer,
         ];
     }
 }

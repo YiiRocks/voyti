@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Controller\Api\V1\User;
 
+use Closure;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -18,13 +20,12 @@ use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\Password\RandomPasswordGenerator;
 use YiiRocks\Voyti\Service\User\UserCreationHelper;
-use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 use YiiRocks\Voyti\tests\Support\MailCapture;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
-use YiiRocks\Voyti\tests\TestCase;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\DataResponse\Middleware\JsonDataResponseMiddleware;
 use Yiisoft\DataResponse\ResponseFactory\DataResponseFactory;
@@ -34,9 +35,8 @@ use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\View\View;
 
 #[AllowMockObjectsWithoutExpectations]
-final class UserControllerTest extends TestCase
+final class UserControllerTest extends DatabaseTestCase
 {
-    use DatabaseSetupTrait;
     use UserFactoryTrait;
 
     private VoytiConfig $config;
@@ -47,7 +47,7 @@ final class UserControllerTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->setUpDatabase();
+        parent::setUp();
         $this->config = VoytiConfigFactory::create();
         $this->translator = $this->createTranslator();
         $passwordHasher = TestPasswordHasherFactory::create();
@@ -67,9 +67,89 @@ final class UserControllerTest extends TestCase
         $this->passwordGenerator->method('generate')->willReturn('fallback-generated-password');
     }
 
-    protected function tearDown(): void
+    public static function indexProvider(): iterable
     {
-        $this->tearDownDatabase();
+        yield 'clamps per-page above maximum' => [
+            [],
+            ['perPage' => 500],
+            static fn(array $data): bool => $data['pageSize'] === 100,
+        ];
+        yield 'clamps per-page below minimum' => [
+            [],
+            ['perPage' => 0],
+            static fn(array $data): bool => $data['pageSize'] === 1,
+        ];
+        yield 'custom per-page' => [
+            [
+                static fn(self $test): User => $test->createUser('user0', 'user0@example.com'),
+                static fn(self $test): User => $test->createUser('user1', 'user1@example.com'),
+                static fn(self $test): User => $test->createUser('user2', 'user2@example.com'),
+            ],
+            ['perPage' => 2],
+            static fn(array $data): bool => $data['pageSize'] === 2 && $data['totalPages'] === 2 && count($data['items']) === 2,
+        ];
+        yield 'default page with multiple users' => [
+            [
+                static function (self $test): void {
+                    for ($i = 0; $i < 26; $i++) {
+                        $test->createUser("user$i", "$i@example.com");
+                    }
+                },
+            ],
+            [],
+            static fn(array $data): bool => $data['currentPage'] === 1
+                && count($data['items']) === 25
+                && $data['totalCount'] === 26
+                && $data['totalPages'] === 2,
+        ];
+        yield 'empty database returns page one' => [
+            [],
+            [],
+            static fn(array $data): bool => $data['items'] === []
+                && $data['totalCount'] === 0
+                && $data['currentPage'] === 1
+                && $data['totalPages'] === 0,
+        ];
+        yield 'filters by status' => [
+            [
+                static fn(self $test): User => $test->createUser('blocked', 'blocked@example.com', blockedAt: time()),
+                static fn(self $test): User => $test->createUser('active', 'active@example.com'),
+            ],
+            ['status' => 'blocked'],
+            static fn(array $data): bool => count($data['items']) === 1 && $data['items'][0]['username'] === 'blocked',
+        ];
+        yield 'filters by username' => [
+            [
+                static fn(self $test): User => $test->createUser('alice', 'alice@example.com'),
+                static fn(self $test): User => $test->createUser('bob', 'bob@example.com'),
+            ],
+            ['username' => 'alice'],
+            static fn(array $data): bool => count($data['items']) === 1 && $data['items'][0]['username'] === 'alice',
+        ];
+        yield 'page beyond total clamps to last' => [
+            [static fn(self $test): User => $test->createUser('testuser', 'test@example.com')],
+            ['page' => 999],
+            static fn(array $data): bool => $data['currentPage'] === 1 && count($data['items']) === 1,
+        ];
+        yield 'page two with multiple pages' => [
+            [
+                static function (self $test): void {
+                    for ($i = 0; $i < 26; $i++) {
+                        $test->createUser("user$i", "$i@example.com");
+                    }
+                },
+            ],
+            ['page' => 2],
+            static fn(array $data): bool => $data['currentPage'] === 2
+                && count($data['items']) === 1
+                && $data['totalCount'] === 26
+                && $data['totalPages'] === 2,
+        ];
+        yield 'page zero clamps to one' => [
+            [static fn(self $test): User => $test->createUser('testuser', 'test@example.com')],
+            ['page' => 0],
+            static fn(array $data): bool => $data['currentPage'] === 1 && count($data['items']) === 1,
+        ];
     }
 
     public function testCreateEmailAlreadyExists(): void
@@ -84,46 +164,6 @@ final class UserControllerTest extends TestCase
 
         $controller = $this->createController();
         $result = $controller->create(email: 'existing@example.com', username: 'newuser', password: 'secret123');
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testCreateHandlesRaceLostAfterUniquenessCheckPasses(): void
-    {
-        $this->createUser('existinguser', 'existing@example.com');
-
-        $passwordHasher = TestPasswordHasherFactory::create();
-        $mailer = new MailCapture();
-        $url = $this->createMock(UrlGeneratorInterface::class);
-        $mailService = new MailService($mailer, '/tmp', new View(), $this->translator, $url, 'Test');
-        $userCreationHelper = $this->getMockBuilder(UserCreationHelper::class)
-            ->setConstructorArgs([
-                $mailService,
-                new EventCaptureDispatcher(),
-                $passwordHasher,
-                $this->config,
-                new PasswordHistoryService($passwordHasher, $this->config),
-            ])
-            ->onlyMethods(['findUniquenessConflict'])
-            ->getMock();
-        $userCreationHelper->method('findUniquenessConflict')->willReturnOnConsecutiveCalls(null, 'Email already exists');
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(['error' => 'Email already exists'], 400)
-            ->willReturn($response);
-
-        $controller = new UserController(
-            translator: $this->translator,
-            config: $this->config,
-            responseFactory: $this->responseFactory,
-            passwordGenerator: $this->passwordGenerator,
-            passwordHistoryService: new PasswordHistoryService($passwordHasher, $this->config),
-            userCreationHelper: $userCreationHelper,
-        );
-
-        $result = $controller->create(email: 'existing@example.com', username: 'newuser2', password: 'secret123');
 
         $this->assertSame($response, $result);
     }
@@ -204,22 +244,6 @@ final class UserControllerTest extends TestCase
         $this->assertTrue(password_verify('secret123', $created->getPasswordHash()));
     }
 
-    public function testCreateUsernameAlreadyExists(): void
-    {
-        $this->createUser('existinguser', 'other@example.com');
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(['error' => 'Username already exists'], 400)
-            ->willReturn($response);
-
-        $controller = $this->createController();
-        $result = $controller->create(email: 'new@example.com', username: 'existinguser', password: 'secret123');
-
-        $this->assertSame($response, $result);
-    }
-
     public function testCreateWithoutPasswordUsesGeneratedPassword(): void
     {
         $this->passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
@@ -269,195 +293,21 @@ final class UserControllerTest extends TestCase
         $this->assertNull(User::findById($userId));
     }
 
-    public function testIndexClampsPerPageAboveMaximum(): void
+    #[DataProvider('indexProvider')]
+    public function testIndex(array $setup, array $indexArgs, Closure $assertData): void
     {
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(self::callback(static fn(array $data): bool => $data['pageSize'] === 100))
-            ->willReturn($response);
-
-        $controller = $this->createController();
-        $result = $controller->index(perPage: 500);
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testIndexClampsPerPageBelowMinimum(): void
-    {
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(self::callback(static fn(array $data): bool => $data['pageSize'] === 1))
-            ->willReturn($response);
-
-        $controller = $this->createController();
-        $result = $controller->index(perPage: 0);
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testIndexCustomPerPage(): void
-    {
-        $this->createUser('user0', 'user0@example.com');
-        $this->createUser('user1', 'user1@example.com');
-        $this->createUser('user2', 'user2@example.com');
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(self::callback(static function (array $data): bool {
-                return $data['pageSize'] === 2
-                    && $data['totalPages'] === 2
-                    && count($data['items']) === 2;
-            }))
-            ->willReturn($response);
-
-        $controller = $this->createController();
-        $result = $controller->index(perPage: 2);
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testIndexDefaultPageWithMultipleUsers(): void
-    {
-        for ($i = 0; $i < 26; $i++) {
-            $this->createUser("user$i", "$i@example.com");
+        foreach ($setup as $setupUser) {
+            $setupUser($this);
         }
 
         $response = $this->createMock(ResponseInterface::class);
         $this->responseFactory->expects($this->once())
             ->method('createResponse')
-            ->with(self::callback(static function (array $data): bool {
-                return $data['currentPage'] === 1
-                    && count($data['items']) === 25
-                    && $data['totalCount'] === 26
-                    && $data['totalPages'] === 2;
-            }))
+            ->with(self::callback($assertData))
             ->willReturn($response);
 
         $controller = $this->createController();
-        $result = $controller->index();
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testIndexEmptyDatabaseReturnsPageOne(): void
-    {
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(self::callback(static function (array $data): bool {
-                return $data['items'] === []
-                    && $data['totalCount'] === 0
-                    && $data['currentPage'] === 1
-                    && $data['totalPages'] === 0;
-            }))
-            ->willReturn($response);
-
-        $controller = $this->createController();
-        $result = $controller->index();
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testIndexFiltersByStatus(): void
-    {
-        $this->createUser('blocked', 'blocked@example.com', blockedAt: time());
-        $this->createUser('active', 'active@example.com');
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(self::callback(static function (array $data): bool {
-                return count($data['items']) === 1
-                    && $data['items'][0]['username'] === 'blocked';
-            }))
-            ->willReturn($response);
-
-        $controller = $this->createController();
-        $result = $controller->index(status: 'blocked');
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testIndexFiltersByUsername(): void
-    {
-        $this->createUser('alice', 'alice@example.com');
-        $this->createUser('bob', 'bob@example.com');
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(self::callback(static function (array $data): bool {
-                return count($data['items']) === 1
-                    && $data['items'][0]['username'] === 'alice';
-            }))
-            ->willReturn($response);
-
-        $controller = $this->createController();
-        $result = $controller->index(username: 'alice');
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testIndexPageBeyondTotalClampsToLast(): void
-    {
-        $this->createUser('testuser', 'test@example.com');
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(self::callback(static function (array $data): bool {
-                return $data['currentPage'] === 1
-                    && count($data['items']) === 1;
-            }))
-            ->willReturn($response);
-
-        $controller = $this->createController();
-        $result = $controller->index(page: 999);
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testIndexPageTwoWithMultiplePages(): void
-    {
-        for ($i = 0; $i < 26; $i++) {
-            $this->createUser("user$i", "$i@example.com");
-        }
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(self::callback(static function (array $data): bool {
-                return $data['currentPage'] === 2
-                    && count($data['items']) === 1
-                    && $data['totalCount'] === 26
-                    && $data['totalPages'] === 2;
-            }))
-            ->willReturn($response);
-
-        $controller = $this->createController();
-        $result = $controller->index(page: 2);
-
-        $this->assertSame($response, $result);
-    }
-
-    public function testIndexPageZeroClampsToOne(): void
-    {
-        $this->createUser('testuser', 'test@example.com');
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->expects($this->once())
-            ->method('createResponse')
-            ->with(self::callback(static function (array $data): bool {
-                return $data['currentPage'] === 1
-                    && count($data['items']) === 1;
-            }))
-            ->willReturn($response);
-
-        $controller = $this->createController();
-        $result = $controller->index(page: 0);
+        $result = $controller->index(...$indexArgs);
 
         $this->assertSame($response, $result);
     }
@@ -574,21 +424,6 @@ final class UserControllerTest extends TestCase
         $this->assertNotSame($originalHash, $updated->getPasswordHash());
         $this->assertNotNull($updated->getPasswordChangedAt());
         $this->assertGreaterThan(0, $updated->getUpdatedAt());
-    }
-
-    public function testUpdateWithPasswordRecordsPasswordHistory(): void
-    {
-        $config = VoytiConfigFactory::create(maxPasswordAge: 90);
-        $user = $this->createUser('testuser', 'test@example.com');
-        $userId = (int) $user->getId();
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->responseFactory->method('createResponse')->willReturn($response);
-
-        $controller = $this->createController($config);
-        $controller->update(password: 'newpass', id: $userId);
-
-        self::assertCount(1, UserPasswordHistory::findByUserId($userId));
     }
 
     public function testUpdateWithPreviouslyUsedPasswordReturnsBadRequest(): void

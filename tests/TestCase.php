@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests;
 
-use DG\BypassFinals;
 use PHPUnit\Framework\TestCase as BaseTestCase;
 use Psr\SimpleCache\CacheInterface;
 use Yiisoft\Db\Cache\SchemaCache;
@@ -20,11 +19,6 @@ use Yiisoft\Translator\TranslatorInterface;
 
 abstract class TestCase extends BaseTestCase
 {
-    public static function setUpBeforeClass(): void
-    {
-        BypassFinals::enable();
-    }
-
     protected function createSqliteConnection(): ConnectionInterface
     {
         $dsn = new Dsn('sqlite', ':memory:');
@@ -50,9 +44,6 @@ abstract class TestCase extends BaseTestCase
         return $translator;
     }
 
-    /**
-     * Normalizes CRLF line endings to LF so console output assertions are stable across platforms.
-     */
     protected function normalizeLineEndings(string $value): string
     {
         return str_replace("\r\n", "\n", $value);

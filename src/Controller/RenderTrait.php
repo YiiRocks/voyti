@@ -23,12 +23,12 @@ trait RenderTrait
     /**
      * @psalm-suppress UndefinedThisPropertyFetch
      */
-    protected function homeUrl(): string
+    private function homeUrl(): string
     {
         return $this->config->getHomeUrl($this->url);
     }
 
-    protected function renderError(string $messageKey): ResponseInterface
+    private function renderError(string $messageKey): ResponseInterface
     {
         return $this->renderView('shared/message', [
             'data' => new MessageViewData(
@@ -36,14 +36,6 @@ trait RenderTrait
                 homeUrl: $this->homeUrl(),
             ),
         ]);
-    }
-
-    /**
-     * @psalm-suppress UndefinedThisPropertyFetch
-     */
-    protected function translator(): TranslatorInterface
-    {
-        return $this->translator->withDefaultCategory('voyti');
     }
 
     /**
@@ -82,6 +74,14 @@ trait RenderTrait
         }
 
         return dirname(__DIR__, 2) . '/resources/views/' . $this->config->webTheme->value;
+    }
+
+    /**
+     * @psalm-suppress UndefinedThisPropertyFetch
+     */
+    private function translator(): TranslatorInterface
+    {
+        return $this->translator->withDefaultCategory('voyti');
     }
 
     /**

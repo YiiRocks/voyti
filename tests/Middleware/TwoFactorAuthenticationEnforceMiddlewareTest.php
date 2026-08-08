@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Middleware;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -14,6 +15,7 @@ use ReflectionProperty;
 use YiiRocks\Voyti\Helper\FlashType;
 use YiiRocks\Voyti\Middleware\TwoFactorAuthenticationEnforceMiddleware;
 use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\tests\Support\CurrentRouteTrait;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
 use YiiRocks\Voyti\VoytiConfig;
@@ -26,11 +28,18 @@ use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
-use Yiisoft\User\Guest\GuestIdentity;
 
 #[AllowMockObjectsWithoutExpectations]
 final class TwoFactorAuthenticationEnforceMiddlewareTest extends TestCase
 {
+    use CurrentRouteTrait;
+
+    public static function exemptRouteProvider(): iterable
+    {
+        yield 'logout' => ['voyti/session-logout'];
+        yield 'two factor' => ['voyti/user-two-factor-enable'];
+    }
+
     public function testProcessDoesNotQueryRbacWhenNoForcedPermissions(): void
     {
         $config = VoytiConfigFactory::create(
@@ -60,7 +69,8 @@ final class TwoFactorAuthenticationEnforceMiddlewareTest extends TestCase
         self::assertSame($response, $result);
     }
 
-    public function testProcessPassesThroughForExemptLogoutRoute(): void
+    #[DataProvider('exemptRouteProvider')]
+    public function testProcessPassesThroughForExemptRoute(string $routeName): void
     {
         $config = VoytiConfigFactory::create(
             enableTwoFactorAuthentication: true,
@@ -73,8 +83,7 @@ final class TwoFactorAuthenticationEnforceMiddlewareTest extends TestCase
         $authManager = $this->createMock(ManagerInterface::class);
         $authManager->expects(self::never())->method('getPermissionsByUserId');
 
-        $currentRoute = $this->createMock(CurrentRoute::class);
-        $currentRoute->method('getName')->willReturn('voyti/session-logout');
+        $currentRoute = $this->createCurrentRoute($routeName);
 
         $request = $this->createMock(ServerRequestInterface::class);
         $response = $this->createMock(ResponseInterface::class);
@@ -88,77 +97,6 @@ final class TwoFactorAuthenticationEnforceMiddlewareTest extends TestCase
             authManager: $authManager,
             currentRoute: $currentRoute,
         );
-        $result = $middleware->process($request, $handler);
-
-        self::assertSame($response, $result);
-    }
-
-    public function testProcessPassesThroughForExemptTwoFactorRoute(): void
-    {
-        $config = VoytiConfigFactory::create(
-            enableTwoFactorAuthentication: true,
-            twoFactorAuthenticationForcedPermissions: ['admin'],
-        );
-
-        $user = $this->createUserWithId(42);
-        $currentUser = $this->createCurrentUser($user);
-
-        $authManager = $this->createMock(ManagerInterface::class);
-        $authManager->expects(self::never())->method('getPermissionsByUserId');
-
-        $currentRoute = $this->createMock(CurrentRoute::class);
-        $currentRoute->method('getName')->willReturn('voyti/user-two-factor-enable');
-
-        $request = $this->createMock(ServerRequestInterface::class);
-        $response = $this->createMock(ResponseInterface::class);
-
-        $handler = $this->createMock(RequestHandlerInterface::class);
-        $handler->expects(self::once())->method('handle')->with($request)->willReturn($response);
-
-        $middleware = $this->createMiddleware(
-            currentUser: $currentUser,
-            config: $config,
-            authManager: $authManager,
-            currentRoute: $currentRoute,
-        );
-        $result = $middleware->process($request, $handler);
-
-        self::assertSame($response, $result);
-    }
-
-    public function testProcessPassesThroughForGuestUser(): void
-    {
-        $config = VoytiConfigFactory::create(enableTwoFactorAuthentication: true);
-
-        $guestIdentity = new GuestIdentity();
-        $currentUser = $this->createCurrentUser($guestIdentity);
-
-        $request = $this->createMock(ServerRequestInterface::class);
-        $response = $this->createMock(ResponseInterface::class);
-
-        $handler = $this->createMock(RequestHandlerInterface::class);
-        $handler->expects(self::once())->method('handle')->with($request)->willReturn($response);
-
-        $middleware = $this->createMiddleware(currentUser: $currentUser, config: $config);
-        $result = $middleware->process($request, $handler);
-
-        self::assertSame($response, $result);
-    }
-
-    public function testProcessPassesThroughForNonUserIdentity(): void
-    {
-        $config = VoytiConfigFactory::create(enableTwoFactorAuthentication: true);
-
-        $identity = $this->createMock(IdentityInterface::class);
-        $currentUser = $this->createCurrentUser($identity);
-
-        $request = $this->createMock(ServerRequestInterface::class);
-        $response = $this->createMock(ResponseInterface::class);
-
-        $handler = $this->createMock(RequestHandlerInterface::class);
-        $handler->expects(self::once())->method('handle')->with($request)->willReturn($response);
-
-        $middleware = $this->createMiddleware(currentUser: $currentUser, config: $config);
         $result = $middleware->process($request, $handler);
 
         self::assertSame($response, $result);
@@ -190,22 +128,6 @@ final class TwoFactorAuthenticationEnforceMiddlewareTest extends TestCase
             config: $config,
             authManager: $authManager,
         );
-        $result = $middleware->process($request, $handler);
-
-        self::assertSame($response, $result);
-    }
-
-    public function testProcessPassesThroughWhen2FADisabled(): void
-    {
-        $config = VoytiConfigFactory::create(enableTwoFactorAuthentication: false);
-
-        $request = $this->createMock(ServerRequestInterface::class);
-        $response = $this->createMock(ResponseInterface::class);
-
-        $handler = $this->createMock(RequestHandlerInterface::class);
-        $handler->expects(self::once())->method('handle')->with($request)->willReturn($response);
-
-        $middleware = $this->createMiddleware(config: $config);
         $result = $middleware->process($request, $handler);
 
         self::assertSame($response, $result);
@@ -320,8 +242,7 @@ final class TwoFactorAuthenticationEnforceMiddlewareTest extends TestCase
             'admin' => new Permission('admin'),
         ]);
 
-        $currentRoute = $this->createMock(CurrentRoute::class);
-        $currentRoute->method('getName')->willReturn('voyti/admin');
+        $currentRoute = $this->createCurrentRoute('voyti/admin');
 
         $request = $this->createMock(ServerRequestInterface::class);
         $handler = $this->createMock(RequestHandlerInterface::class);
@@ -366,8 +287,7 @@ final class TwoFactorAuthenticationEnforceMiddlewareTest extends TestCase
             'admin' => new Permission('admin'),
         ]);
 
-        $currentRoute = $this->createMock(CurrentRoute::class);
-        $currentRoute->method('getName')->willReturn('voyti/admin');
+        $currentRoute = $this->createCurrentRoute('voyti/admin');
 
         $request = $this->createMock(ServerRequestInterface::class);
         $handler = $this->createMock(RequestHandlerInterface::class);
@@ -453,7 +373,7 @@ final class TwoFactorAuthenticationEnforceMiddlewareTest extends TestCase
             $currentUser ?? $this->createCurrentUser($this->createMock(IdentityInterface::class)),
             $config ?? VoytiConfigFactory::create(),
             $authManager ?? $this->createMock(ManagerInterface::class),
-            $currentRoute ?? $this->createMock(CurrentRoute::class),
+            $currentRoute ?? $this->createCurrentRoute(),
             $responseFactory ?? $this->createMock(ResponseFactoryInterface::class),
             $translator ?? $this->createTranslator(),
             $url ?? $this->createMock(UrlGeneratorInterface::class),

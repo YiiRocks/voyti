@@ -6,74 +6,87 @@ namespace YiiRocks\Voyti\tests\Controller\Admin\AuditLog;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
-use Psr\Http\Message\ResponseFactoryInterface;
-use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\Admin\AuditLog\AuditLogController;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
-use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserAuditLog;
 use YiiRocks\Voyti\Model\UserProfile;
-use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\CurrentUserTrait;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
-use YiiRocks\Voyti\tests\Support\ViewCaptureTrait;
-use YiiRocks\Voyti\tests\TestCase;
-use Yiisoft\Data\Paginator\OffsetPaginator;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\User\CurrentUser;
-use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 #[AllowMockObjectsWithoutExpectations]
-final class AuditLogControllerTest extends TestCase
+final class AuditLogControllerTest extends DatabaseTestCase
 {
-    use DatabaseSetupTrait;
+    use CurrentUserTrait;
     use TestContainerTrait;
     use UserFactoryTrait;
-    use ViewCaptureTrait;
 
-    private CurrentUser&MockObject $currentUser;
+    private CurrentUser $currentUser;
     private FlashInterface&MockObject $flash;
-    private ResponseFactoryInterface&MockObject $responseFactory;
-    private WebViewRenderer&MockObject $viewRenderer;
 
     protected function setUp(): void
     {
-        $this->setUpDatabase();
-        $this->viewRenderer = $this->createMock(WebViewRenderer::class);
-        $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
-        $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
+        parent::setUp();
         $this->flash = $this->createMock(FlashInterface::class);
-        $this->currentUser = $this->createMock(CurrentUser::class);
+        $this->currentUser = $this->createCurrentUser();
     }
 
-    protected function tearDown(): void
+    public function testIndexAppliesDefaultTimezoneWhenViewerHasNoProfile(): void
     {
-        $this->tearDownDatabase();
+        $log = new UserAuditLog();
+        $log->setAction('system.cleanup');
+        $log->setCreatedAt(1700000000);
+        $log->save();
+
+        // A logged-in viewer with no profile must not break timezone resolution (nullsafe access).
+        $this->currentUser->login($this->createUser(username: 'noprofile', email: 'noprofile@example.com'));
+
+        $html = (string) $this->createController()->index()->getBody();
+
+        self::assertStringContainsString(
+            TimezoneHelper::formatLocalized(1700000000, $this->createTranslator()->getLocale(), null),
+            $html,
+        );
     }
 
-    public function testIndexFiltersByAction(): void
+    public function testIndexClampsPageBeyondLastToLastPage(): void
     {
         $this->createLog(1, 2, 'user.create');
-        $this->createLog(1, 2, 'user.delete');
 
-        [$state, $response] = $this->captureRenderedView($this->viewRenderer);
+        $html = (string) $this->createController()->index(page: 3)->getBody();
 
-        $controller = $this->createController();
-        $controller->index(filterAction: 'create');
-
-        $this->assertCount(1, $state->params['data']->logs);
+        // Requesting a page past the last clamps back to the (only) page with the log on it.
+        self::assertStringContainsString('user.create', $html);
     }
 
-    public function testIndexPresentsActorLabelWithIdOnlyWhenUserNoLongerExists(): void
+    public function testIndexFiltersByActor(): void
     {
-        $this->createLog(999999, 2, 'user.delete');
+        $this->createLog(100, 2, 'a.first');
+        $this->createLog(200, 2, 'a.second');
 
-        [$state, $response] = $this->captureRenderedView($this->viewRenderer);
+        $html = (string) $this->createController()->index(filterActorUserId: '100')->getBody();
 
-        $controller = $this->createController();
-        $controller->index();
+        self::assertStringContainsString('#100', $html);
+        self::assertStringNotContainsString('#200', $html);
+    }
 
-        self::assertSame('#999999', $state->params['data']->logs[0]['actorLabel']);
+    public function testIndexPaginatesAtFiftyPerPageWithFiltersInPageLinks(): void
+    {
+        for ($i = 0; $i < 51; $i++) {
+            $this->createLog(1, 2, 'user.login');
+        }
+
+        $html = (string) $this->createController()->index(filterAction: 'user.login')->getBody();
+
+        // A full first page holds exactly 50 rows and a second page link exists.
+        self::assertSame(50, substr_count($html, 'row py-2 border-bottom align-items-center'));
+        // Both the next-page (pageUrlPattern) and first-page (firstPageUrl) links carry the active
+        // filter as flat query keys through the URL.
+        self::assertStringContainsString('action=user.login&amp;page=2', $html);
+        self::assertStringContainsString('action=user.login&amp;page=1', $html);
     }
 
     public function testIndexPresentsLogFieldsFormattedForDisplay(): void
@@ -89,109 +102,98 @@ final class AuditLogControllerTest extends TestCase
         $log->setCreatedAt(1700000000);
         $log->save();
 
+        $viewer = $this->createUser(username: 'viewer', email: 'viewer@example.com');
         $viewerProfile = new UserProfile();
+        $viewerProfile->setUserId((int) $viewer->getId());
         $viewerProfile->setTimezone('Asia/Tokyo');
-        $viewer = $this->createMock(User::class);
-        $viewer->method('getProfile')->willReturn($viewerProfile);
-        $this->currentUser->method('getIdentity')->willReturn($viewer);
+        $viewerProfile->save();
+        $this->currentUser->login($viewer);
 
-        [$state, $response] = $this->captureRenderedView($this->viewRenderer);
+        $html = (string) $this->createController()->index()->getBody();
 
-        $controller = $this->createController();
-        $controller->index();
-
-        self::assertSame(
-            [
-                'createdAt' => TimezoneHelper::formatLocalized(
-                    1700000000,
-                    $this->createTranslator()->getLocale(),
-                    'Asia/Tokyo',
-                ),
-                'actorLabel' => 'jane_admin (#' . $actor->getIdOrZero() . ')',
-                'action' => 'rbac.role.update',
-                'targetLabel' => 'editor (#7)',
-                'context' => '{"previousName":"old-editor"}',
-            ],
-            $state->params['data']->logs[0],
+        self::assertStringContainsString(
+            TimezoneHelper::formatLocalized(1700000000, $this->createTranslator()->getLocale(), 'Asia/Tokyo'),
+            $html,
         );
-    }
-
-    public function testIndexPresentsLogWithoutTargetOrContext(): void
-    {
-        $log = new UserAuditLog();
-        $log->setAction('system.cleanup');
-        $log->setCreatedAt(1700000000);
-        $log->save();
-
-        [$state, $response] = $this->captureRenderedView($this->viewRenderer);
-
-        $controller = $this->createController();
-        $controller->index();
-
-        self::assertSame('', $state->params['data']->logs[0]['actorLabel']);
-        self::assertSame('', $state->params['data']->logs[0]['targetLabel']);
-        self::assertSame('', $state->params['data']->logs[0]['context']);
+        self::assertStringContainsString('jane_admin (#' . $actor->getIdOrZero() . ')', $html);
+        self::assertStringContainsString('rbac.role.update', $html);
+        self::assertStringContainsString('editor (#7)', $html);
+        self::assertStringContainsString('old-editor', $html);
     }
 
     public function testIndexPresentsTargetLabelWithIdOnlyWhenUserNoLongerExists(): void
     {
         $this->createLog(1, 999999, 'user.switch_identity');
 
-        [$state, $response] = $this->captureRenderedView($this->viewRenderer);
+        $html = (string) $this->createController()->index()->getBody();
 
-        $controller = $this->createController();
-        $controller->index();
+        self::assertStringContainsString('#999999', $html);
+    }
 
-        self::assertSame('#999999', $state->params['data']->logs[0]['targetLabel']);
+    public function testIndexPresentsTargetNameWhenNoTargetUserId(): void
+    {
+        $log = new UserAuditLog();
+        $log->setActorUserId(1);
+        $log->setAction('rbac.role.delete');
+        $log->setTargetName('some-role');
+        $log->setCreatedAt(time());
+        $log->save();
+
+        $html = (string) $this->createController()->index()->getBody();
+
+        // With no target user id, the raw target name is shown - and not the "name (#id)" form.
+        self::assertStringContainsString('some-role', $html);
+        self::assertStringNotContainsString('some-role (#', $html);
+    }
+
+    public function testIndexResolvesMultipleActorUsernames(): void
+    {
+        $alice = $this->createUser(username: 'alice', email: 'alice@example.com');
+        $bob = $this->createUser(username: 'bob', email: 'bob@example.com');
+        $this->createLog($alice->getIdOrZero(), 0, 'a.one');
+        $this->createLog($bob->getIdOrZero(), 0, 'a.two');
+
+        $html = (string) $this->createController()->index()->getBody();
+
+        // Both distinct actors are resolved to their usernames, not just the first.
+        self::assertStringContainsString('alice (#' . $alice->getIdOrZero() . ')', $html);
+        self::assertStringContainsString('bob (#' . $bob->getIdOrZero() . ')', $html);
     }
 
     public function testIndexResolvesTargetUsernameWhenTargetNameWasNotCaptured(): void
     {
         $target = $this->createUser(username: 'switcheduser');
 
+        // A distinct (non-existent) actor so the only source of "switcheduser" is the target label.
         $log = new UserAuditLog();
-        $log->setActorUserId(1);
+        $log->setActorUserId(888888);
         $log->setTargetUserId($target->getIdOrZero());
         $log->setAction('user.switch_identity');
         $log->setCreatedAt(time());
         $log->save();
 
-        [$state, $response] = $this->captureRenderedView($this->viewRenderer);
+        $html = (string) $this->createController()->index()->getBody();
 
-        $controller = $this->createController();
-        $controller->index();
-
-        self::assertSame('switcheduser (#' . $target->getIdOrZero() . ')', $state->params['data']->logs[0]['targetLabel']);
+        self::assertStringContainsString('switcheduser (#' . $target->getIdOrZero() . ')', $html);
     }
 
-    public function testIndexShowsLogs(): void
+    public function testIndexTreatsNonPositivePageAsFirstPage(): void
     {
         $this->createLog(1, 2, 'user.create');
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('admin/audit-log/index', $this->anything())
-            ->willReturn($response);
+        $html = (string) $this->createController()->index(page: 0)->getBody();
 
-        $controller = $this->createController();
-        $result = $controller->index();
-
-        $this->assertSame($response, $result);
+        // A non-positive page is floored to 1 rather than passed through to the paginator.
+        self::assertStringContainsString('user.create', $html);
     }
 
-    public function testIndexWithNoResultsPaginatorHasNoPages(): void
+    public function testIndexWithNoResultsHasNoPaginationItems(): void
     {
-        [$state, $response] = $this->captureRenderedView($this->viewRenderer);
+        $html = (string) $this->createController()->index()->getBody();
 
-        $controller = $this->createController();
-        $controller->index();
-
-        $this->assertInstanceOf(OffsetPaginator::class, $state->params['data']->paginator);
-        $this->assertSame(0, $state->params['data']->paginator->getTotalPages());
+        // The page renders, but with no logs there are no pagination items.
+        self::assertStringContainsString('Audit Log', $html);
+        self::assertStringNotContainsString('page-item', $html);
     }
 
     private function createController(): AuditLogController
@@ -199,7 +201,6 @@ final class AuditLogControllerTest extends TestCase
         return $this->getTestContainer([
             CurrentUser::class => $this->currentUser,
             FlashInterface::class => $this->flash,
-            WebViewRenderer::class => $this->viewRenderer,
         ])->get(AuditLogController::class);
     }
 

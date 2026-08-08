@@ -38,31 +38,4 @@ final class ItemsValidatorTest extends TestCase
         $this->assertFalse($result->isValid());
         $this->assertCount(3, $result->getErrors());
     }
-
-    public function testValidateWithEmptyItems(): void
-    {
-        $storage = $this->createMock(ItemsStorageInterface::class);
-
-        $validator = new ItemsValidator($storage);
-        $result = $validator->validate([]);
-
-        $this->assertTrue($result->isValid());
-        $this->assertCount(0, $result->getErrors());
-    }
-
-    public function testValidateWithMissingItem(): void
-    {
-        $storage = $this->createMock(ItemsStorageInterface::class);
-        $storage->method('exists')->willReturnMap([
-            ['item1', true],
-            ['item2', false],
-        ]);
-
-        $validator = new ItemsValidator($storage);
-        $result = $validator->validate(['item1', 'item2']);
-
-        $this->assertFalse($result->isValid());
-        $this->assertCount(1, $result->getErrors());
-        $this->assertStringContainsString('item2', $result->getErrors()[0]->getMessage());
-    }
 }

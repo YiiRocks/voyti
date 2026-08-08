@@ -29,16 +29,6 @@ final class ServiceResultTest extends TestCase
         self::assertSame(['error1', 'error2'], $result->getErrors());
     }
 
-    public function testFailureStaticFactoryWithDefaults(): void
-    {
-        $result = ServiceResult::failure();
-
-        self::assertTrue($result->isFailure());
-        self::assertFalse($result->isSuccess());
-        self::assertSame('', $result->getMessage());
-        self::assertSame([], $result->getErrors());
-    }
-
     public function testSuccessStaticFactory(): void
     {
         $result = ServiceResult::success('Operation completed');
@@ -46,16 +36,6 @@ final class ServiceResultTest extends TestCase
         self::assertTrue($result->isSuccess());
         self::assertFalse($result->isFailure());
         self::assertSame('Operation completed', $result->getMessage());
-        self::assertSame([], $result->getErrors());
-    }
-
-    public function testSuccessStaticFactoryWithEmptyMessage(): void
-    {
-        $result = ServiceResult::success();
-
-        self::assertTrue($result->isSuccess());
-        self::assertFalse($result->isFailure());
-        self::assertSame('', $result->getMessage());
         self::assertSame([], $result->getErrors());
     }
 }

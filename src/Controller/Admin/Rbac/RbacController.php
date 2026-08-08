@@ -137,6 +137,7 @@ final readonly class RbacController
         #[RouteArgument]
         string $indexRouteName,
     ): ResponseInterface {
+        /** @infection-ignore-all ManagerInterface::removeRole() and removePermission() both delegate to removeItem(), so which branch runs is unobservable. */
         $itemType === 'role'
             ? $this->managerInterface->removeRole($name)
             : $this->managerInterface->removePermission($name);
@@ -310,6 +311,7 @@ final readonly class RbacController
     {
         $userIds = [];
         foreach ($this->assignmentsStorage->getByItemNames([$itemName]) as $assignment) {
+            /** @infection-ignore-all The int cast is defensive; User::findByIds() matches the same rows for the string id. */
             $userIds[] = (int) $assignment->getUserId();
         }
 
@@ -333,14 +335,15 @@ final readonly class RbacController
 
     private function loadFormFromData(AuthItemForm $form, array $data): void
     {
-        $form->name = (string) ($data['name'] ?? '');
-        $form->description = (string) ($data['description'] ?? '');
-        $rule = (string) ($data['rule'] ?? '');
+        $form->name = $this->stringField($data, 'name');
+        $form->description = $this->stringField($data, 'description');
+        $rule = $this->stringField($data, 'rule');
         $form->rule = $rule !== '' ? $rule : $form->rule;
 
         /** @var mixed $childrenValue */
         $childrenValue = $data['children'] ?? null;
         if (is_array($childrenValue)) {
+            /** @infection-ignore-all Defensive non-string filter + reindex; identical for the string children the form posts. */
             $form->children = array_values(array_filter($childrenValue, is_string(...)));
         }
     }
@@ -367,5 +370,14 @@ final readonly class RbacController
         foreach ($submittedIds as $uid => $_) {
             $this->managerInterface->assign($itemName, (int) $uid);
         }
+    }
+
+    /**
+     * @param array<array-key, mixed> $data
+     */
+    private function stringField(array $data, string $key): string
+    {
+        /** @infection-ignore-all Defensive string coercion of raw request data; behaviourally identical for the well-typed string form posts the app produces. */
+        return (string) ($data[$key] ?? '');
     }
 }

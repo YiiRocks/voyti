@@ -6,70 +6,56 @@ namespace YiiRocks\Voyti\tests\Controller\SocialNetwork;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
-use Psr\Http\Message\ResponseFactoryInterface;
-use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\SocialNetwork\SocialNetworkController;
-use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSocialAccount;
-use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
-use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
+use YiiRocks\Voyti\tests\Support\CurrentUserTrait;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
-use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\User\CurrentUser;
-use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 #[AllowMockObjectsWithoutExpectations]
-final class SocialNetworkControllerTest extends TestCase
+final class SocialNetworkControllerTest extends DatabaseTestCase
 {
-    use DatabaseSetupTrait;
-    use RedirectResponseMockTrait;
+    use CurrentUserTrait;
     use TestContainerTrait;
     use UserFactoryTrait;
 
-    private CurrentUser&MockObject $currentUser;
+    private CurrentUser $currentUser;
     private FlashInterface&MockObject $flash;
     private PasswordHasher $passwordHasher;
-    private ResponseFactoryInterface&MockObject $responseFactory;
-    private WebViewRenderer&MockObject $viewRenderer;
 
     protected function setUp(): void
     {
-        $this->setUpDatabase();
-        $this->viewRenderer = $this->createMock(WebViewRenderer::class);
-        $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
-        $this->currentUser = $this->createMock(CurrentUser::class);
-        $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
+        parent::setUp();
+        $this->currentUser = $this->createCurrentUser();
         $this->flash = $this->createMock(FlashInterface::class);
         $this->passwordHasher = TestPasswordHasherFactory::create();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->tearDownDatabase();
     }
 
     public function testDeleteWithFoundAccountDeletesAndRedirects(): void
     {
         $controller = $this->createController();
 
+        // Another user's account is created first (lower id), so a lookup that ignored the id argument
+        // would return this one instead of the target - it must not be touched.
+        $otherAccount = $this->createSocialAccount(888888, provider: 'facebook', username: 'someoneelse');
+
         $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'));
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->login($user);
 
         $account = $this->createSocialAccount((int) $user->getId());
-        $accountId = $account->getId();
 
-        $response = $this->mockRedirectResponse($this->responseFactory);
+        $result = $controller->delete($account->getId());
 
-        $result = $controller->delete($accountId);
-
-        $this->assertSame($response, $result);
+        $this->assertSame(302, $result->getStatusCode());
+        $this->assertStringContainsString('user-social-network', $result->getHeaderLine('Location'));
+        // The targeted account is gone; the other user's account is untouched.
         $this->assertSame([], UserSocialAccount::findByUserId((int) $user->getId()));
+        $this->assertNotNull(UserSocialAccount::query()->where(['id' => $otherAccount->getId()])->one());
     }
 
     public function testDeleteWithNoAccountShowsNotFound(): void
@@ -77,43 +63,22 @@ final class SocialNetworkControllerTest extends TestCase
         $controller = $this->createController();
 
         $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'));
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn((string) $user->getId());
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->login($user);
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturn($response);
+        $html = (string) $controller->delete(999)->getBody();
 
-        $result = $controller->delete(999);
-
-        $this->assertSame($response, $result);
+        self::assertStringContainsString('Network not found', $html);
     }
 
     public function testIndexShowsConnectedAccounts(): void
     {
         $controller = $this->createController();
 
-        $identity = $this->createMock(User::class);
-        $identity->method('getId')->willReturn('1');
-        $this->currentUser->method('getIdentity')->willReturn($identity);
+        $this->currentUser->login($this->createUser());
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('social-network/index', $this->anything())
-            ->willReturn($response);
+        $html = (string) $controller->index()->getBody();
 
-        $result = $controller->index();
-
-        $this->assertSame($response, $result);
+        self::assertStringContainsString('Networks', $html);
     }
 
     private function createController(): SocialNetworkController
@@ -121,8 +86,6 @@ final class SocialNetworkControllerTest extends TestCase
         return $this->getTestContainer([
             CurrentUser::class => $this->currentUser,
             FlashInterface::class => $this->flash,
-            ResponseFactoryInterface::class => $this->responseFactory,
-            WebViewRenderer::class => $this->viewRenderer,
         ])->get(SocialNetworkController::class);
     }
 

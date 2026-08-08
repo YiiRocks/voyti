@@ -12,14 +12,22 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Middleware\AccessRuleMiddleware;
+use YiiRocks\Voyti\tests\Support\CurrentUserTrait;
+use YiiRocks\Voyti\tests\Support\SimpleAssignmentsStorage;
+use YiiRocks\Voyti\tests\Support\SimpleItemsStorage;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use Yiisoft\Auth\IdentityInterface;
+use Yiisoft\Rbac\Manager;
+use Yiisoft\Rbac\Permission;
+use Yiisoft\Rbac\Role;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\User\CurrentUser;
-use Yiisoft\User\Guest\GuestIdentityInterface;
 
 #[AllowMockObjectsWithoutExpectations]
 final class AccessRuleMiddlewareTest extends TestCase
 {
+    use CurrentUserTrait;
+
     public function testProcessPassesThroughForAdmin(): void
     {
         $request = $this->createMock(ServerRequestInterface::class);
@@ -29,17 +37,13 @@ final class AccessRuleMiddlewareTest extends TestCase
         $handler->expects(self::once())->method('handle')->with($request)->willReturn($response);
 
         $identity = $this->createMock(IdentityInterface::class);
-        $identity->expects(self::once())->method('getId')->willReturn('1');
+        $identity->method('getId')->willReturn('1');
 
-        $currentUser = $this->createMock(CurrentUser::class);
-        $currentUser->expects(self::once())->method('getIdentity')->willReturn($identity);
-
-        $authHelper = $this->createMock(AuthHelper::class);
-        $authHelper->expects(self::once())->method('isAdmin')->with('1')->willReturn(true);
+        $currentUser = $this->createCurrentUser($identity);
 
         $middleware = $this->createMiddleware(
             currentUser: $currentUser,
-            authHelper: $authHelper,
+            authHelper: $this->createAuthHelper(adminUserId: '1'),
         );
 
         $result = $middleware->process($request, $handler);
@@ -53,10 +57,7 @@ final class AccessRuleMiddlewareTest extends TestCase
         $handler = $this->createMock(RequestHandlerInterface::class);
         $handler->expects(self::never())->method('handle');
 
-        $guestIdentity = $this->createMock(GuestIdentityInterface::class);
-
-        $currentUser = $this->createMock(CurrentUser::class);
-        $currentUser->expects(self::once())->method('getIdentity')->willReturn($guestIdentity);
+        $currentUser = $this->createCurrentUser();
 
         $url = $this->createMock(UrlGeneratorInterface::class);
         $url->expects(self::once())->method('generate')->with('voyti/session-login')->willReturn('/voyti/login');
@@ -83,13 +84,9 @@ final class AccessRuleMiddlewareTest extends TestCase
         $handler->expects(self::never())->method('handle');
 
         $identity = $this->createMock(IdentityInterface::class);
-        $identity->expects(self::once())->method('getId')->willReturn('42');
+        $identity->method('getId')->willReturn('42');
 
-        $currentUser = $this->createMock(CurrentUser::class);
-        $currentUser->expects(self::once())->method('getIdentity')->willReturn($identity);
-
-        $authHelper = $this->createMock(AuthHelper::class);
-        $authHelper->expects(self::once())->method('isAdmin')->with('42')->willReturn(false);
+        $currentUser = $this->createCurrentUser($identity);
 
         $response = $this->createMock(ResponseInterface::class);
 
@@ -98,11 +95,28 @@ final class AccessRuleMiddlewareTest extends TestCase
 
         $middleware = $this->createMiddleware(
             currentUser: $currentUser,
-            authHelper: $authHelper,
+            authHelper: $this->createAuthHelper(),
             responseFactory: $responseFactory,
         );
 
         $middleware->process($request, $handler);
+    }
+
+    private function createAuthHelper(?string $adminUserId = null): AuthHelper
+    {
+        $config = VoytiConfigFactory::create();
+        $itemsStorage = new SimpleItemsStorage();
+        $assignmentsStorage = new SimpleAssignmentsStorage();
+        $manager = new Manager($itemsStorage, $assignmentsStorage);
+
+        if ($adminUserId !== null) {
+            $itemsStorage->add(new Permission($config->administratorPermissionName));
+            $itemsStorage->add(new Role('admin'));
+            $manager->addChild('admin', $config->administratorPermissionName);
+            $manager->assign('admin', $adminUserId);
+        }
+
+        return new AuthHelper($manager, $itemsStorage, $assignmentsStorage, $config, $this->createCurrentUser());
     }
 
     private function createMiddleware(
@@ -112,8 +126,8 @@ final class AccessRuleMiddlewareTest extends TestCase
         ?UrlGeneratorInterface $url = null,
     ): AccessRuleMiddleware {
         return new AccessRuleMiddleware(
-            $currentUser ?? $this->createMock(CurrentUser::class),
-            $authHelper ?? $this->createMock(AuthHelper::class),
+            $currentUser ?? $this->createCurrentUser(),
+            $authHelper ?? $this->createAuthHelper(),
             $responseFactory ?? $this->createMock(ResponseFactoryInterface::class),
             $url ?? $this->createMock(UrlGeneratorInterface::class),
         );

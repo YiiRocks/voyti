@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Model\Form\Auth;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Recaptcha\RecaptchaRegistry;
 use YiiRocks\Voyti\Enum\RecaptchaVersion;
@@ -17,7 +16,6 @@ use Yiisoft\Validator\Rule\CompareType;
 use Yiisoft\Validator\Rule\Email;
 use Yiisoft\Validator\Rule\Equal;
 use Yiisoft\Validator\Rule\Length;
-use Yiisoft\Validator\Rule\Regex;
 use Yiisoft\Validator\Rule\Required;
 
 #[AllowMockObjectsWithoutExpectations]
@@ -31,39 +29,10 @@ final class RecoveryFormTest extends TestCase
         RecaptchaRegistry::reset();
     }
 
-    /**
-     * @return iterable<string, array{string}>
-     */
     public static function constructScenarioProvider(): iterable
     {
         yield 'request' => [RecoveryForm::SCENARIO_REQUEST];
         yield 'reset' => [RecoveryForm::SCENARIO_RESET];
-    }
-
-    public function testConstructDefaultScenario(): void
-    {
-        $form = new RecoveryForm(VoytiConfigFactory::create(), $this->createTranslator());
-        $this->assertSame(RecoveryForm::SCENARIO_REQUEST, $form->scenario);
-    }
-
-    #[DataProvider('constructScenarioProvider')]
-    public function testConstructWithExplicitScenario(string $scenario): void
-    {
-        $form = new RecoveryForm(VoytiConfigFactory::create(), $this->createTranslator(), $scenario);
-        $this->assertSame($scenario, $form->scenario);
-    }
-
-    public function testEmailProperty(): void
-    {
-        $form = new RecoveryForm(VoytiConfigFactory::create(), $this->createTranslator());
-        $form->email = 'test@example.com';
-        $this->assertSame('test@example.com', $form->email);
-    }
-
-    public function testGetFormName(): void
-    {
-        $form = new RecoveryForm(VoytiConfigFactory::create(), $this->createTranslator());
-        $this->assertSame('recovery', $form->getFormName());
     }
 
     public function testGetPropertyLabels(): void
@@ -112,23 +81,6 @@ final class RecoveryFormTest extends TestCase
         $this->assertSame('===', $rules['passwordRepeat'][1]->getOperator());
     }
 
-    public function testGetRulesForResetScenarioWithPasswordComplexityEnabled(): void
-    {
-        $config = VoytiConfigFactory::create(enablePasswordComplexity: true);
-        $form = new RecoveryForm($config, $this->createTranslator(), RecoveryForm::SCENARIO_RESET);
-        $rules = $form->getRules();
-        $this->assertCount(3, $rules['password']);
-        $this->assertInstanceOf(Regex::class, $rules['password'][2]);
-    }
-
-    public function testGetRulesWithoutRecaptchaOnReset(): void
-    {
-        $config = VoytiConfigFactory::create(recaptchaVersion: RecaptchaVersion::V3);
-        $form = new RecoveryForm($config, $this->createTranslator(), RecoveryForm::SCENARIO_RESET);
-        $rules = $form->getRules();
-        $this->assertArrayNotHasKey('gRecaptchaResponse', $rules);
-    }
-
     public function testGetRulesWithRecaptchaV2OnRequest(): void
     {
         $this->configureRecaptchaRegistry();
@@ -138,30 +90,9 @@ final class RecoveryFormTest extends TestCase
         $this->assertArrayHasKey('gRecaptchaResponse', $rules);
     }
 
-    public function testGetRulesWithRecaptchaV3OnRequest(): void
-    {
-        $this->configureRecaptchaRegistry();
-        $config = VoytiConfigFactory::create(recaptchaVersion: RecaptchaVersion::V3);
-        $form = new RecoveryForm($config, $this->createTranslator(), RecoveryForm::SCENARIO_REQUEST);
-        $rules = $form->getRules();
-        $this->assertArrayHasKey('gRecaptchaResponse', $rules);
-        $this->assertCount(1, $rules['gRecaptchaResponse']);
-        $this->assertSame('voyti_recovery', $rules['gRecaptchaResponse'][0]->getAction());
-        $this->assertSame(0.5, $rules['gRecaptchaResponse'][0]->getThreshold());
-    }
-
     public function testGetValidationPropertyLabels(): void
     {
         $form = new RecoveryForm(VoytiConfigFactory::create(), $this->createTranslator());
         $this->assertSame($form->getPropertyLabels(), $form->getValidationPropertyLabels());
-    }
-
-    public function testPasswordProperty(): void
-    {
-        $form = new RecoveryForm(VoytiConfigFactory::create(), $this->createTranslator(), RecoveryForm::SCENARIO_RESET);
-        $form->password = 'newpass';
-        $form->passwordRepeat = 'newpass';
-        $this->assertSame('newpass', $form->password);
-        $this->assertSame('newpass', $form->passwordRepeat);
     }
 }

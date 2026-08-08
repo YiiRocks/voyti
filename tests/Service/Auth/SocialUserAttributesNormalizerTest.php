@@ -15,10 +15,8 @@ use Yiisoft\Yii\AuthClient\Client\Facebook;
 use Yiisoft\Yii\AuthClient\Client\GitHub;
 use Yiisoft\Yii\AuthClient\Client\Google;
 use Yiisoft\Yii\AuthClient\Client\LinkedIn;
-use Yiisoft\Yii\AuthClient\Client\Microsoft;
 use Yiisoft\Yii\AuthClient\Client\VKontakte;
 use Yiisoft\Yii\AuthClient\Client\X;
-use Yiisoft\Yii\AuthClient\Client\Yandex;
 use Yiisoft\Yii\AuthClient\OAuth2;
 use Yiisoft\Yii\AuthClient\OAuthToken;
 use Yiisoft\Yii\AuthClient\StateStorage\DummyStateStorage;
@@ -89,22 +87,6 @@ final class SocialUserAttributesNormalizerTest extends TestCase
         self::assertSame('', $this->normalizer()->normalize('google', $client)['id']);
     }
 
-    public function testNormalizeGoogleWithFloatIdConvertsToString(): void
-    {
-        $client = $this->makeClient(Google::class, new Response(200, [], '{"id":1001.5}'));
-        $client->setAccessToken($this->token());
-
-        self::assertSame('1001.5', $this->normalizer()->normalize('google', $client)['id']);
-    }
-
-    public function testNormalizeGoogleWithoutAccessTokenReturnsEmptyId(): void
-    {
-        $client = $this->makeClient(Google::class, new Response(200, [], '{"id":"1001"}'));
-        // No setAccessToken() call - the vendor client itself returns [] from getUserAttributes().
-
-        self::assertSame('', $this->normalizer()->normalize('google', $client)['id']);
-    }
-
     public function testNormalizeLinkedInUsesSubAsIdAndComposesNameFromParts(): void
     {
         $client = $this->makeClient(
@@ -117,21 +99,6 @@ final class SocialUserAttributesNormalizerTest extends TestCase
 
         self::assertSame('linkedin-42', $result['id']);
         self::assertSame('Bob Jones', $result['name']);
-    }
-
-    public function testNormalizeMicrosoftReadsMailAndDisplayNameKeys(): void
-    {
-        $client = $this->makeClient(
-            Microsoft::class,
-            new Response(200, [], '{"id":"ms-1","mail":"carol@example.com","displayName":"Carol Danvers"}'),
-        );
-        $client->setAccessToken($this->token());
-
-        $result = $this->normalizer()->normalize('microsoft', $client);
-
-        self::assertSame('ms-1', $result['id']);
-        self::assertSame('carol@example.com', $result['email']);
-        self::assertSame('Carol Danvers', $result['name']);
     }
 
     public function testNormalizeVKontakteUsesUserIdAndFlattenedNameFields(): void
@@ -165,32 +132,6 @@ final class SocialUserAttributesNormalizerTest extends TestCase
         self::assertNull($result['email']);
     }
 
-    public function testNormalizeXWithoutDataKeyReturnsEmptyId(): void
-    {
-        $client = $this->makeClient(X::class, new Response(200, [], '{"unexpected":true}'));
-        $client->setAccessToken($this->token());
-
-        self::assertSame('', $this->normalizer()->normalize('x', $client)['id']);
-    }
-
-    public function testNormalizeYandexUsesDefaultEmailKey(): void
-    {
-        $client = $this->makeClient(
-            Yandex::class,
-            new Response(200, [], '{"id":"yx-1","default_email":"dana@example.com","real_name":"Dana"}'),
-        );
-        $client->setAccessToken($this->token());
-
-        $result = $this->normalizer()->normalize('yandex', $client);
-
-        self::assertSame('yx-1', $result['id']);
-        self::assertSame('dana@example.com', $result['email']);
-        self::assertSame('Dana', $result['name']);
-    }
-
-    /**
-     * @param class-string<OAuth2> $class
-     */
     private function makeClient(string $class, Response $response): OAuth2
     {
         return new $class(

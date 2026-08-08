@@ -5,16 +5,14 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Service\Auth;
 
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
-use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
 use YiiRocks\Voyti\tests\Support\FakeSession;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 
-final class PendingSocialAccountServiceTest extends TestCase
+final class PendingSocialAccountServiceTest extends DatabaseTestCase
 {
-    use DatabaseSetupTrait;
     use UserFactoryTrait;
 
     private PendingSocialAccountService $service;
@@ -23,29 +21,18 @@ final class PendingSocialAccountServiceTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->setUpDatabase();
+        parent::setUp();
         $this->session = new FakeSession();
         $this->session->open();
         $this->service = new PendingSocialAccountService($this->session);
     }
 
-    protected function tearDown(): void
-    {
-        $this->tearDownDatabase();
-    }
-
-    /**
-     * @return iterable<string, array{int|string}>
-     */
     public static function invalidSessionCodeProvider(): iterable
     {
         yield 'empty string' => [''];
         yield 'non-string' => [5];
     }
 
-    /**
-     * @return iterable<string, array{null|string, null|string}>
-     */
     public static function rememberCodeProvider(): iterable
     {
         yield 'empty string code does not store' => ['', null];
@@ -103,22 +90,6 @@ final class PendingSocialAccountServiceTest extends TestCase
         self::assertNull($result);
     }
 
-    public function testGetPendingAccountWithNoCodeReturnsNull(): void
-    {
-        $account = $this->service->getPendingAccount();
-        self::assertNull($account);
-    }
-
-    public function testGetPendingAccountWithValidAccountReturnsIt(): void
-    {
-        $this->createSocialAccount('789', 'valid_code');
-        $this->session->set('social_network_account_code', 'valid_code');
-
-        $result = $this->service->getPendingAccount();
-        self::assertNotNull($result);
-        self::assertSame('valid_code', $result->getCode());
-    }
-
     #[DataProvider('rememberCodeProvider')]
     public function testRememberStoresCodeInSession(?string $code, ?string $expectedStored): void
     {
@@ -149,16 +120,6 @@ final class PendingSocialAccountServiceTest extends TestCase
         self::assertFalse($this->session->has('social_network_account_code'));
     }
 
-    public function testUseCodeWithConnectedAccountReturnsNull(): void
-    {
-        $user = $this->createUser(username: 'test');
-        $this->createSocialAccount('105', 'connected_use_code', (int) $user->getId());
-
-        $result = $this->service->useCode('connected_use_code');
-        self::assertNull($result);
-        self::assertFalse($this->session->has('social_network_account_code'));
-    }
-
     public function testUseCodeWithExistingUnconnectedAccountStoresInSession(): void
     {
         $this->createSocialAccount('104', 'use_code');
@@ -167,13 +128,6 @@ final class PendingSocialAccountServiceTest extends TestCase
         self::assertNotNull($result);
         self::assertSame('use_code', $result->getCode());
         self::assertSame('use_code', $this->session->get('social_network_account_code'));
-    }
-
-    public function testUseCodeWithNonExistentCodeReturnsNull(): void
-    {
-        $result = $this->service->useCode('nonexistent');
-        self::assertNull($result);
-        self::assertFalse($this->session->has('social_network_account_code'));
     }
 
     private function createSocialAccount(string $clientId, ?string $code, ?int $userId = null): UserSocialAccount

@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Widget;
 
-use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Service\SwitchIdentityService;
+use YiiRocks\Voyti\tests\Support\CurrentUserTrait;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
-use YiiRocks\Voyti\VoytiConfig;
+use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
+use YiiRocks\Voyti\tests\TestCase;
 use YiiRocks\Voyti\Widget\SwitchIdentity;
 use Yiisoft\Csrf\CsrfTokenInterface;
 use Yiisoft\Session\SessionInterface;
@@ -18,25 +20,11 @@ use Yiisoft\Translator\Message\Php\MessageSource;
 use Yiisoft\Translator\SimpleMessageFormatter;
 use Yiisoft\Translator\Translator;
 use Yiisoft\Translator\TranslatorInterface;
-use Yiisoft\User\CurrentUser;
 
-final class SwitchIdentityTest extends TestCase
+final class SwitchIdentityTest extends DatabaseTestCase
 {
+    use CurrentUserTrait;
     use UserFactoryTrait;
-
-    public function testRenderReturnsEmptyStringWhenNotSwitched(): void
-    {
-        $switchService = $this->createSwitchIdentityService(isSwitched: false);
-
-        $widget = new SwitchIdentity(
-            $this->createCsrfToken(),
-            $switchService,
-            $this->createRealTranslator(),
-            new FakeUrlGenerator(),
-        );
-
-        self::assertSame('', $widget->render());
-    }
 
     public function testRenderReturnsEmptyStringWhenSwitchedButOriginalUserNotFound(): void
     {
@@ -54,11 +42,9 @@ final class SwitchIdentityTest extends TestCase
 
     public function testRenderReturnsHtmlWhenSwitchedWithValidOriginalUser(): void
     {
-        $originalUser = $this->buildUser(username: 'admin');
+        $originalUser = $this->createUser(username: 'admin', email: 'admin@example.com');
 
-        $switchService = $this->createStub(SwitchIdentityService::class);
-        $switchService->method('isSwitched')->willReturn(true);
-        $switchService->method('getOriginalUser')->willReturn($originalUser);
+        $switchService = $this->createSwitchIdentityService(isSwitched: true, originalUserId: (int) $originalUser->getId());
 
         $widget = new SwitchIdentity(
             $this->createCsrfToken('test-csrf-token'),
@@ -88,7 +74,7 @@ final class SwitchIdentityTest extends TestCase
 
     /**
      * A real translator whose default category is deliberately NOT 'voyti' (unlike
-     * {@see \YiiRocks\Voyti\tests\TestCase::createTranslator()}), so a call site that forgets to
+     * {@see TestCase::createTranslator()}), so a call site that forgets to
      * pass category: 'voyti' explicitly fails this test instead of passing by coincidence.
      */
     private function createRealTranslator(): TranslatorInterface
@@ -112,12 +98,11 @@ final class SwitchIdentityTest extends TestCase
             $session->method('get')->willReturn($originalUserId);
         }
 
-        $currentUser = $this->createStub(CurrentUser::class);
+        $currentUser = $this->createCurrentUser();
 
         $eventDispatcher = $this->createStub(EventDispatcherInterface::class);
 
-        $config = $this->createStub(VoytiConfig::class);
-        $config->enableSwitchIdentities = true;
+        $config = VoytiConfigFactory::create(enableSwitchIdentities: true);
 
         return new SwitchIdentityService($config, $currentUser, $session, $eventDispatcher);
     }

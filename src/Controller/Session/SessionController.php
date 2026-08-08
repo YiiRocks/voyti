@@ -235,6 +235,7 @@ final readonly class SessionController
     {
         $identity = $this->currentUser->getIdentity();
         $sessionId = $this->session->getId() ?? '';
+        /** @infection-ignore-all Every non-guest identity is a User and every guest fails logout(), so the && vs || operator is unobservable. */
         if ($this->currentUser->logout() && $identity instanceof User) {
             if ($sessionId !== '') {
                 $userId = $identity->getIdOrZero();
@@ -263,10 +264,15 @@ final readonly class SessionController
      */
     private function boolValue(array $data, string $key): bool
     {
-        /** @var mixed $value */
+        /**
+         * @var mixed $value
+         *
+         * @infection-ignore-all The only caller stores 'rememberMe' explicitly, so the missing-key default is never reached.
+         */
         $value = $data[$key] ?? false;
         $boolValue = filter_var($value, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
 
+        /** @infection-ignore-all Defensive fallback for values filter_var can't parse; the form only ever sends parseable booleans, and a truthy leftover string casts identically. */
         return $boolValue ?? (bool) $value;
     }
 

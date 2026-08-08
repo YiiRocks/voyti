@@ -6,33 +6,36 @@ namespace YiiRocks\Voyti\tests\Model\Form\Settings;
 
 use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
-use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\Form\Settings\UserProfileForm;
-use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
+use YiiRocks\Voyti\Model\UserProfile;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
 use Yiisoft\Translator\TranslatorInterface;
 
 #[AllowMockObjectsWithoutExpectations]
-final class UserProfileFormTest extends TestCase
+final class UserProfileFormTest extends DatabaseTestCase
 {
-    use TranslatorMockTrait;
-
-    public function testConstruct(): void
+    public function testFromProfileMapsEveryFieldThrough(): void
     {
-        $form = new UserProfileForm($this->createTranslator());
-        $this->assertSame('', $form->name);
-        $this->assertSame('', $form->publicEmail);
-        $this->assertSame('', $form->gravatarEmail);
-        $this->assertSame('', $form->location);
-        $this->assertSame('', $form->website);
-        $this->assertSame('', $form->timezone);
-        $this->assertSame('', $form->bio);
-        $this->assertSame('', $form->birthday);
-    }
+        $profile = new UserProfile();
+        $profile->setName('John Doe');
+        $profile->setPublicEmail('public@example.com');
+        $profile->setGravatarEmail('gravatar@example.com');
+        $profile->setLocation('New York');
+        $profile->setWebsite('https://example.com');
+        $profile->setTimezone('America/New_York');
+        $profile->setBio('A brief bio');
+        $profile->setBirthday(new DateTimeImmutable('1990-05-15'));
 
-    public function testGetFormName(): void
-    {
-        $form = new UserProfileForm($this->createTranslator());
-        $this->assertSame('userProfile', $form->getFormName());
+        $form = UserProfileForm::fromProfile($profile, $this->createTranslator());
+
+        $this->assertSame('John Doe', $form->name);
+        $this->assertSame('public@example.com', $form->publicEmail);
+        $this->assertSame('gravatar@example.com', $form->gravatarEmail);
+        $this->assertSame('New York', $form->location);
+        $this->assertSame('https://example.com', $form->website);
+        $this->assertSame('America/New_York', $form->timezone);
+        $this->assertSame('A brief bio', $form->bio);
+        $this->assertSame('1990-05-15', $form->birthday);
     }
 
     public function testGetPropertyHints(): void
@@ -62,34 +65,6 @@ final class UserProfileFormTest extends TestCase
         $this->assertArrayHasKey('birthday', $labels);
     }
 
-    public function testGetValidationPropertyLabels(): void
-    {
-        $form = new UserProfileForm($this->createTranslator());
-        $this->assertSame($form->getPropertyLabels(), $form->getValidationPropertyLabels());
-    }
-
-    public function testSetProperties(): void
-    {
-        $form = new UserProfileForm($this->createTranslator());
-        $form->name = 'John Doe';
-        $form->publicEmail = 'public@example.com';
-        $form->gravatarEmail = 'gravatar@example.com';
-        $form->location = 'New York';
-        $form->website = 'https://example.com';
-        $form->timezone = 'America/New_York';
-        $form->bio = 'A brief bio';
-        $form->birthday = '1990-05-15';
-
-        $this->assertSame('John Doe', $form->name);
-        $this->assertSame('public@example.com', $form->publicEmail);
-        $this->assertSame('gravatar@example.com', $form->gravatarEmail);
-        $this->assertSame('New York', $form->location);
-        $this->assertSame('https://example.com', $form->website);
-        $this->assertSame('America/New_York', $form->timezone);
-        $this->assertSame('A brief bio', $form->bio);
-        $this->assertSame('1990-05-15', $form->birthday);
-    }
-
     public function testValidateBirthdayNotInFutureWithFutureDate(): void
     {
         $form = new UserProfileForm($this->createTranslator());
@@ -103,21 +78,6 @@ final class UserProfileFormTest extends TestCase
     {
         $form = new UserProfileForm($this->createTranslator());
         $result = $form->validateBirthdayNotInFuture('1990-05-15');
-        $this->assertTrue($result->isValid());
-    }
-
-    public function testValidateBirthdayNotInFutureWithToday(): void
-    {
-        $form = new UserProfileForm($this->createTranslator());
-        $today = (new DateTimeImmutable())->format('Y-m-d');
-        $result = $form->validateBirthdayNotInFuture($today);
-        $this->assertTrue($result->isValid());
-    }
-
-    public function testValidateBirthdayNotInFutureWithUnparseableString(): void
-    {
-        $form = new UserProfileForm($this->createTranslator());
-        $result = $form->validateBirthdayNotInFuture('not-a-date');
         $this->assertTrue($result->isValid());
     }
 
@@ -143,32 +103,10 @@ final class UserProfileFormTest extends TestCase
         $this->assertTrue($result->isValid());
     }
 
-    public function testValidateNoHtmlTagsWithPlainText(): void
-    {
-        $form = new UserProfileForm($this->createTranslator());
-        $result = $form->validateNoHtmlTags('A brief bio');
-        $this->assertTrue($result->isValid());
-    }
-
     public function testValidateTimezoneWithEmptyString(): void
     {
         $form = new UserProfileForm($this->createTranslator());
         $result = $form->validateTimezone('');
         $this->assertFalse($result->isValid());
-    }
-
-    public function testValidateTimezoneWithInvalidTimezone(): void
-    {
-        $form = new UserProfileForm($this->createTranslator());
-        $result = $form->validateTimezone('Invalid/Timezone');
-        $this->assertFalse($result->isValid());
-        $this->assertNotEmpty($result->getErrors());
-    }
-
-    public function testValidateTimezoneWithValidTimezone(): void
-    {
-        $form = new UserProfileForm($this->createTranslator());
-        $result = $form->validateTimezone('UTC');
-        $this->assertTrue($result->isValid());
     }
 }

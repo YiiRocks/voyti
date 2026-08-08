@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Model;
 
-use PHPUnit\Framework\Attributes\DataProvider;
 use YiiRocks\Voyti\Model\UserPasswordHistory;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Db\Connection\ConnectionInterface;
@@ -39,9 +38,6 @@ final class UserPasswordHistoryTest extends TestCase
         $this->connection = null;
     }
 
-    /**
-     * @return iterable<string, array{string, string, int|string}>
-     */
     public static function getterSetterProvider(): iterable
     {
         yield 'passwordHash' => ['setPasswordHash', 'getPasswordHash', 'hash123'];
@@ -99,14 +95,6 @@ final class UserPasswordHistoryTest extends TestCase
         self::assertCount(2, $found);
         self::assertSame('bbb-hash', $found[0]->getPasswordHash());
         self::assertSame('aaa-hash', $found[1]->getPasswordHash());
-    }
-
-    #[DataProvider('getterSetterProvider')]
-    public function testGetSetProperty(string $setter, string $getter, int|string $value): void
-    {
-        $entity = new UserPasswordHistory();
-        $entity->$setter($value);
-        self::assertSame($value, $entity->$getter());
     }
 
     public function testPrimaryKey(): void

@@ -16,20 +16,6 @@ final class RuleFormTest extends TestCase
 {
     use TranslatorMockTrait;
 
-    public function testConstruct(): void
-    {
-        $form = new RuleForm($this->createTranslator());
-        $this->assertSame('', $form->name);
-        $this->assertSame('', $form->class);
-        $this->assertSame('', $form->previousName);
-    }
-
-    public function testGetFormName(): void
-    {
-        $form = new RuleForm($this->createTranslator());
-        $this->assertSame('rule', $form->getFormName());
-    }
-
     public function testGetPropertyLabels(): void
     {
         $form = new RuleForm($this->createTranslator());
@@ -53,17 +39,5 @@ final class RuleFormTest extends TestCase
     {
         $form = new RuleForm($this->createTranslator());
         $this->assertSame($form->getPropertyLabels(), $form->getValidationPropertyLabels());
-    }
-
-    public function testSetProperties(): void
-    {
-        $form = new RuleForm($this->createTranslator());
-        $form->name = 'myRule';
-        $form->class = 'App\\Rules\\MyRule';
-        $form->previousName = 'oldRule';
-
-        $this->assertSame('myRule', $form->name);
-        $this->assertSame('App\\Rules\\MyRule', $form->class);
-        $this->assertSame('oldRule', $form->previousName);
     }
 }

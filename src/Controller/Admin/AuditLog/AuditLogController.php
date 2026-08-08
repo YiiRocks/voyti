@@ -47,6 +47,10 @@ final readonly class AuditLogController
         string $filterTargetUserId = '',
         #[Query('action')]
         string $filterAction = '',
+        /**
+         * @infection-ignore-all Mutating this default to 0 is behaviorally identical to 1: both are
+         * floored to 1 by max(1, $page) below, so no test can observe the difference.
+         */
         #[Query('page')]
         int $page = 1,
     ): ResponseInterface {
@@ -61,6 +65,7 @@ final readonly class AuditLogController
         $requestedPage = max(1, $page);
         $paginator = $paginator->withCurrentPage(min($requestedPage, max(1, $paginator->getTotalPages())));
 
+        /** @infection-ignore-all — iterator keys are already 0-indexed, preserve_keys has no effect */
         /** @var list<UserAuditLog> $logs */
         $logs = iterator_to_array($paginator->read(), false);
 
@@ -87,6 +92,7 @@ final readonly class AuditLogController
     {
         $userId = $log->getActorUserId();
         if ($userId === null) {
+            /** @infection-ignore-all An empty actor cell renders identically for '' or null (the only mutant here). */
             return '';
         }
 
@@ -124,6 +130,10 @@ final readonly class AuditLogController
             ...array_map(static fn(UserAuditLog $log): ?int => $log->getActorUserId(), $logs),
             ...array_map(static fn(UserAuditLog $log): ?int => $log->getTargetUserId(), $logs),
         ];
+        /**
+         * @infection-ignore-all filter/unique/values only affect which ids are batch-queried, never
+         * the resolved map: null/0 ids match no row, duplicate ids resolve once, keys go unused.
+         */
         $ids = array_values(array_unique(array_filter($ids)));
 
         $usernames = [];

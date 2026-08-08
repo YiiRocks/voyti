@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Console;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Console\PasswordCommand;
@@ -14,7 +14,7 @@ use YiiRocks\Voyti\Model\UserPasswordHistory;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\Password\RandomPasswordGenerator;
-use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
@@ -22,19 +22,21 @@ use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Yii\Console\ExitCode;
 
 #[AllowMockObjectsWithoutExpectations]
-final class PasswordCommandTest extends TestCase
+final class PasswordCommandTest extends DatabaseTestCase
 {
-    use DatabaseSetupTrait;
     use UserFactoryTrait;
 
-    protected function setUp(): void
+    public static function failureProvider(): iterable
     {
-        $this->setUpDatabase();
+        yield 'non-existent user' => [null, 'ghost@example.com', null, ExitCode::NOUSER, 1];
+        yield 'no options' => [null, null, null, ExitCode::USAGE, 8];
     }
 
-    protected function tearDown(): void
+    public static function identifierProvider(): iterable
     {
-        $this->tearDownDatabase();
+        yield 'by email' => ['email', 'pw_reset@example.com', 'testuser'];
+        yield 'by id' => ['id', 'self', 'testuser'];
+        yield 'by username' => ['username', 'pw_user', 'pw_user'];
     }
 
     public function testConfigureSetsCommandMetadata(): void
@@ -46,40 +48,6 @@ final class PasswordCommandTest extends TestCase
         self::assertTrue($command->getDefinition()->hasOption('email'));
         self::assertTrue($command->getDefinition()->hasOption('username'));
         self::assertTrue($command->getDefinition()->hasOption('id'));
-    }
-
-    public function testExecuteByEmail(): void
-    {
-        $user = $this->createUser(
-            username: 'testuser',
-            email: 'pw_reset@example.com',
-            passwordHash: 'old_hash',
-            createdAt: 1000,
-        );
-
-        $input = $this->createMock(InputInterface::class);
-        $input->expects(self::exactly(3))->method('getOption')->willReturnMap([
-            ['id', null],
-            ['email', 'pw_reset@example.com'],
-            ['username', null],
-        ]);
-
-        $output = $this->createMock(OutputInterface::class);
-        $output->expects(self::exactly(2))->method('writeln');
-
-        $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
-        $passwordGenerator->expects(self::once())->method('generate')->with(16)->willReturn('generated-secret');
-
-        $command = $this->createCommand(passwordGenerator: $passwordGenerator);
-        $result = $command->run($input, $output);
-
-        self::assertSame(ExitCode::OK, $result);
-
-        $reloaded = User::findById((int) $user->getId());
-        self::assertNotNull($reloaded);
-        self::assertTrue(password_verify('generated-secret', $reloaded->getPasswordHash()));
-        self::assertNotNull($reloaded->getPasswordChangedAt());
-        self::assertGreaterThan(1000, $reloaded->getUpdatedAt());
     }
 
     public function testExecuteByEmailRecordsPasswordHistory(): void
@@ -109,90 +77,61 @@ final class PasswordCommandTest extends TestCase
         self::assertCount(1, $history);
     }
 
-    public function testExecuteById(): void
+    #[DataProvider('identifierProvider')]
+    public function testExecuteByIdentifier(string $option, string $value, string $username): void
     {
         $user = $this->createUser(
-            username: 'testuser',
-            email: 'test@example.com',
+            username: $username,
+            email: 'pw_reset@example.com',
             passwordHash: 'old_hash',
             createdAt: 1000,
         );
 
+        $map = ['id' => null, 'email' => null, 'username' => null];
+        $map[$option] = $value === 'self' ? (string) $user->getId() : $value;
+
         $input = $this->createMock(InputInterface::class);
         $input->expects(self::exactly(3))->method('getOption')->willReturnMap([
-            ['id', (string) $user->getId()],
-            ['email', null],
-            ['username', null],
+            ['id', $map['id']],
+            ['email', $map['email']],
+            ['username', $map['username']],
         ]);
 
         $output = $this->createMock(OutputInterface::class);
         $output->expects(self::exactly(2))->method('writeln');
 
-        $command = $this->createCommand();
+        $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
+        $passwordGenerator->expects(self::once())->method('generate')->with(16)->willReturn('generated-secret');
+
+        $command = $this->createCommand(passwordGenerator: $passwordGenerator);
         $result = $command->run($input, $output);
 
         self::assertSame(ExitCode::OK, $result);
+
+        $reloaded = User::findById((int) $user->getId());
+        self::assertNotNull($reloaded);
+        self::assertTrue(password_verify('generated-secret', $reloaded->getPasswordHash()));
+        self::assertNotNull($reloaded->getPasswordChangedAt());
+        self::assertGreaterThan(1000, $reloaded->getUpdatedAt());
     }
 
-    public function testExecuteByUsername(): void
+    #[DataProvider('failureProvider')]
+    public function testExecuteFailure(?string $id, ?string $email, ?string $username, int $expectedCode, int $writelnCount): void
     {
-        $user = $this->createUser(
-            username: 'pw_user',
-            email: 'pw@example.com',
-            passwordHash: 'old_hash',
-            createdAt: 1000,
-        );
-
         $input = $this->createMock(InputInterface::class);
         $input->expects(self::exactly(3))->method('getOption')->willReturnMap([
-            ['id', null],
-            ['email', null],
-            ['username', 'pw_user'],
+            ['id', $id],
+            ['email', $email],
+            ['username', $username],
         ]);
 
         $output = $this->createMock(OutputInterface::class);
-        $output->expects(self::exactly(2))->method('writeln');
+        $output->expects(self::exactly($writelnCount))->method('writeln');
 
         $command = $this->createCommand();
         $result = $command->run($input, $output);
 
-        self::assertSame(ExitCode::OK, $result);
-    }
-
-    public function testExecuteWithNonExistentUser(): void
-    {
-        $input = $this->createMock(InputInterface::class);
-        $input->expects(self::exactly(3))->method('getOption')->willReturnMap([
-            ['id', null],
-            ['email', 'ghost@example.com'],
-            ['username', null],
-        ]);
-
-        $output = $this->createMock(OutputInterface::class);
-        $output->expects(self::once())->method('writeln');
-
-        $command = $this->createCommand();
-        $result = $command->run($input, $output);
-
-        self::assertSame(ExitCode::NOUSER, $result);
-    }
-
-    public function testExecuteWithNoOptions(): void
-    {
-        $input = $this->createMock(InputInterface::class);
-        $input->expects(self::exactly(3))->method('getOption')->willReturnMap([
-            ['id', null],
-            ['email', null],
-            ['username', null],
-        ]);
-
-        $output = $this->createMock(OutputInterface::class);
-        $output->expects(self::atLeast(4))->method('writeln');
-
-        $command = $this->createCommand();
-        $result = $command->run($input, $output);
-
-        self::assertSame(ExitCode::USAGE, $result);
+        self::assertSame($expectedCode, $result);
     }
 
     private function createCommand(

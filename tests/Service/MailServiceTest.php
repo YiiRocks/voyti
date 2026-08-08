@@ -159,13 +159,38 @@ final class MailServiceTest extends TestCase
         self::assertTrue($result);
     }
 
-    public function testSendWithBothHtmlAndText(): void
+    public function testUsesCustomMailPathWhenTemplateExistsThere(): void
     {
-        $result = $this->service->send('test@example.com', 'Test', 'welcome', ['username' => 'testuser', 'translator' => $this->createTranslator()]);
-        self::assertTrue($result);
-        $message = $this->mailer->getLastMessage();
-        self::assertNotNull($message);
-        self::assertNotNull($message->getHtmlBody());
-        self::assertNotNull($message->getTextBody());
+        // A custom mailPath containing the template must be used verbatim; the exact
+        // `$mailPath . '/' . $view` join is what makes is_file() find it (rather than falling back).
+        $customMailPath = sys_get_temp_dir() . '/voyti-mail-custom-' . uniqid('', true);
+        @mkdir($customMailPath . '/html', 0777, true);
+        @mkdir($customMailPath . '/text', 0777, true);
+        file_put_contents($customMailPath . '/html/welcome.php', '<?= "CUSTOM_HTML_WELCOME_MARKER" ?>');
+        file_put_contents($customMailPath . '/text/welcome.php', '<?= "CUSTOM_TEXT_WELCOME_MARKER" ?>');
+
+        try {
+            $service = new MailService(
+                $this->mailer,
+                $customMailPath,
+                new View(),
+                $this->createTranslator(),
+                $this->url,
+            );
+
+            $result = $service->send('test@example.com', 'Test', 'welcome', ['username' => 'testuser', 'translator' => $this->createTranslator()]);
+
+            self::assertTrue($result);
+            $message = $this->mailer->getLastMessage();
+            self::assertNotNull($message);
+            self::assertStringContainsString('CUSTOM_HTML_WELCOME_MARKER', (string) $message->getHtmlBody());
+            self::assertStringContainsString('CUSTOM_TEXT_WELCOME_MARKER', (string) $message->getTextBody());
+        } finally {
+            @unlink($customMailPath . '/html/welcome.php');
+            @unlink($customMailPath . '/text/welcome.php');
+            @rmdir($customMailPath . '/html');
+            @rmdir($customMailPath . '/text');
+            @rmdir($customMailPath);
+        }
     }
 }

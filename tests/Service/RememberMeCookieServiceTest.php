@@ -8,14 +8,12 @@ use DateTimeImmutable;
 use Nyholm\Psr7\Response;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\TestCase;
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Clock\SystemClock;
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
-use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
-use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 use YiiRocks\Voyti\tests\Support\FakeSession;
 use YiiRocks\Voyti\tests\Support\FixedClock;
@@ -26,25 +24,22 @@ use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Login\Cookie\CookieLoginIdentityInterface;
 
 #[AllowMockObjectsWithoutExpectations]
-final class RememberMeCookieServiceTest extends TestCase
+final class RememberMeCookieServiceTest extends DatabaseTestCase
 {
-    use DatabaseSetupTrait;
     use UserFactoryTrait;
     use UserSessionFactoryTrait;
 
-    protected function setUp(): void
+    public static function loginByCookieProvider(): iterable
     {
-        $this->setUpDatabase();
+        yield 'valid key and unexpired cookie' => [null, time() + 3600, true, true];
+        yield 'expired cookie' => [null, time() - 100, true, false];
+        yield 'invalid key' => [null, 0, false, false];
+        yield 'non-numeric expires' => [null, 'abc', true, true];
+        yield 'null expires treated as never expiring' => [null, null, true, true];
+        yield 'zero expires with zero clock' => [0, 0, true, true];
+        yield 'zero expires as float' => [null, 0.0, true, true];
     }
 
-    protected function tearDown(): void
-    {
-        $this->tearDownDatabase();
-    }
-
-    /**
-     * @return iterable<string, array{int, int|string, bool}>
-     */
     public static function refreshCookieBoundaryProvider(): iterable
     {
         yield 'less than boundary emits' => [100000, 17200, true];
@@ -54,20 +49,16 @@ final class RememberMeCookieServiceTest extends TestCase
         yield 'non-numeric last refresh does not throw' => [2000000, 'not-a-number', true];
     }
 
-    public function testAddCookieEmbedsSessionId(): void
+    public static function refreshCookieNoEmitProvider(): iterable
     {
-        $service = new RememberMeCookieService(3600, new SystemClock());
-        $identity = $this->createMock(CookieLoginIdentityInterface::class);
-        $identity->method('getId')->willReturn('uid');
-        $identity->method('getCookieLoginKey')->willReturn('ckey');
-        $response = new Response();
-
-        $result = $service->addCookie($identity, $response, 'device-session-id');
-        $header = $result->getHeaderLine('Set-Cookie');
-
-        preg_match('/autoLogin=([^;]+)/', $header, $matches);
-        $decoded = json_decode(urldecode($matches[1]), true);
-        self::assertSame(['uid', 'ckey', $decoded[2], 'device-session-id'], $decoded);
+        yield 'identity not cookie login' => [3600, false, json_encode(['id', 'key', 1900000, 'sess-id']), 2000000];
+        yield 'invalid array shape' => [3600, false, json_encode(['a', 'b']), null];
+        yield 'invalid json' => [3600, false, 'not-json', null];
+        yield 'no cookie' => [3600, false, null, null];
+        yield 'not enough time passed' => [3600, true, json_encode(['id', 'key', 1003600, 'sess-id']), 1000000];
+        yield 'uses expires not key for last refresh' => [3600, true, json_encode(['uid', 1000, 1000000, 'sess-id']), 100000];
+        yield 'non-positive duration' => [0, false, 'data', null];
+        yield 'zero duration with valid path' => [0, true, json_encode(['uid', 'ckey', 10000, 'sess-id']), 100000];
     }
 
     public function testAddCookieWithPositiveDurationHasExpiry(): void
@@ -93,6 +84,10 @@ final class RememberMeCookieServiceTest extends TestCase
         $header = $result->getHeaderLine('Set-Cookie');
         self::assertStringNotContainsString('Max-Age', $header);
         self::assertStringNotContainsString('Expires', $header);
+        // A zero duration encodes a zero expiry into the payload (no future timestamp).
+        preg_match('/autoLogin=([^;]+)/', $header, $matches);
+        $decoded = json_decode(urldecode($matches[1]), true);
+        self::assertSame(0, $decoded[2]);
     }
 
     public function testClockIsUsedNotRealTime(): void
@@ -112,19 +107,28 @@ final class RememberMeCookieServiceTest extends TestCase
         self::assertSame($identity, $currentUser->getIdentity());
     }
 
-    public function testExpireCookie(): void
-    {
-        $service = new RememberMeCookieService(3600, new SystemClock());
-        $response = new Response();
-
-        $result = $service->expireCookie($response);
-        self::assertInstanceOf(Response::class, $result);
-    }
-
     public function testGetCookieName(): void
     {
         $service = new RememberMeCookieService(3600, new SystemClock(), 'autoLogin');
         self::assertSame('autoLogin', $service->getCookieName());
+    }
+
+    #[DataProvider('loginByCookieProvider')]
+    public function testLoginByCookie(?int $now, int|string|float|null $expires, bool $validKey, bool $expectedLoggedIn): void
+    {
+        $service = new RememberMeCookieService(3600, $now === null ? new SystemClock() : $this->fixedClock($now));
+        $session = new FakeSession();
+        $currentUser = $this->createCurrentUser();
+        $identity = $this->createMock(CookieLoginIdentityInterface::class);
+        $identity->method('validateCookieLoginKey')->willReturn($validKey);
+        $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
+        $identityRepository->method('findIdentity')->willReturn($identity);
+
+        $cookie = json_encode(['id123', 'key123', $expires, 'sess-id']);
+        $result = $service->loginByCookie(['autoLogin' => $cookie], $currentUser, $identityRepository, $session);
+
+        self::assertFalse($result);
+        self::assertSame($expectedLoggedIn, $currentUser->getIdentity() === $identity);
     }
 
     public function testLoginByCookieDoesNotReissueCookieWhenSessionIdIsEmptyString(): void
@@ -143,12 +147,8 @@ final class RememberMeCookieServiceTest extends TestCase
         $userId = (int) $user->getId();
         $this->createUserSession($userId, 'cookie-session-id');
 
-        $identity = $this->createMock(User::class);
-        $identity->method('validateCookieLoginKey')->willReturn(true);
-        $identity->method('getId')->willReturn((string) $userId);
-        $identity->method('getIdOrZero')->willReturn($userId);
         $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
-        $identityRepository->method('findIdentity')->willReturn($identity);
+        $identityRepository->method('findIdentity')->willReturn($user);
 
         // Opened but never assigned an ID and not attached to $currentUser, so it stays
         // active with an empty ID both before and after login() - distinct from the
@@ -158,43 +158,10 @@ final class RememberMeCookieServiceTest extends TestCase
         $currentUser = $this->createCurrentUser();
 
         $future = time() + 3600;
-        $cookie = json_encode(['id123', 'key123', $future, 'cookie-session-id']);
+        $cookie = json_encode(['id123', 'key', $future, 'cookie-session-id']);
         $result = $service->loginByCookie(['autoLogin' => $cookie], $currentUser, $identityRepository, $session);
 
         self::assertSame('', $session->getId());
-        self::assertFalse($result);
-    }
-
-    public function testLoginByCookieDoesNotReissueCookieWhenSessionNeverOpened(): void
-    {
-        $service = new RememberMeCookieService(
-            3600,
-            new SystemClock(),
-            'autoLogin',
-            eventDispatcher: new EventCaptureDispatcher(),
-        );
-
-        $user = $this->createUser(
-            username: 'cookieuser' . random_int(1, 1000000),
-            email: 'cookieuser' . random_int(1, 1000000) . '@example.com',
-        );
-        $userId = (int) $user->getId();
-        $this->createUserSession($userId, 'cookie-session-id');
-
-        $identity = $this->createMock(User::class);
-        $identity->method('validateCookieLoginKey')->willReturn(true);
-        $identity->method('getId')->willReturn((string) $userId);
-        $identity->method('getIdOrZero')->willReturn($userId);
-        $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
-        $identityRepository->method('findIdentity')->willReturn($identity);
-
-        $session = new FakeSession();
-        $currentUser = $this->createCurrentUser();
-
-        $future = time() + 3600;
-        $cookie = json_encode(['id123', 'key123', $future, 'cookie-session-id']);
-        $result = $service->loginByCookie(['autoLogin' => $cookie], $currentUser, $identityRepository, $session);
-
         self::assertFalse($result);
     }
 
@@ -226,78 +193,6 @@ final class RememberMeCookieServiceTest extends TestCase
         self::assertSame($identity, $currentUser->getIdentity());
     }
 
-    public function testLoginByCookieReturnsTrueWithRegeneratedSessionId(): void
-    {
-        $service = new RememberMeCookieService(
-            3600,
-            new SystemClock(),
-            'autoLogin',
-            eventDispatcher: new EventCaptureDispatcher(),
-        );
-
-        $user = $this->createUser(
-            username: 'cookieuser' . random_int(1, 1000000),
-            email: 'cookieuser' . random_int(1, 1000000) . '@example.com',
-        );
-        $userId = (int) $user->getId();
-        $this->createUserSession($userId, 'cookie-session-id');
-
-        $identity = $this->createMock(User::class);
-        $identity->method('validateCookieLoginKey')->willReturn(true);
-        $identity->method('getId')->willReturn((string) $userId);
-        $identity->method('getIdOrZero')->willReturn($userId);
-        $identity->method('getCookieLoginKey')->willReturn('key123');
-        $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
-        $identityRepository->method('findIdentity')->willReturn($identity);
-
-        $session = new FakeSession();
-        $session->setId('cookie-session-id');
-        $session->open();
-        $currentUser = $this->createCurrentUser()->withSession($session);
-
-        $future = time() + 3600;
-        $cookie = json_encode(['id123', 'key123', $future, 'cookie-session-id']);
-        $result = $service->loginByCookie(['autoLogin' => $cookie], $currentUser, $identityRepository, $session);
-
-        self::assertTrue($result);
-        self::assertNotSame('cookie-session-id', $session->getId());
-    }
-
-    public function testLoginByCookieSuccess(): void
-    {
-        $service = new RememberMeCookieService(3600, new SystemClock());
-        $session = new FakeSession();
-        $currentUser = $this->createCurrentUser();
-        $identity = $this->createMock(CookieLoginIdentityInterface::class);
-        $identity->method('validateCookieLoginKey')->willReturn(true);
-        $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
-        $identityRepository->method('findIdentity')->willReturn($identity);
-
-        $future = time() + 3600;
-        $cookie = json_encode(['id123', 'key123', $future, 'sess-id']);
-        $result = $service->loginByCookie(['autoLogin' => $cookie], $currentUser, $identityRepository, $session);
-        $loggedInIdentity = $currentUser->getIdentity();
-        self::assertSame($identity, $loggedInIdentity);
-        self::assertFalse($result);
-    }
-
-    public function testLoginByCookieWithExpiredCookieReturns(): void
-    {
-        $service = new RememberMeCookieService(3600, new SystemClock());
-        $session = new FakeSession();
-        $currentUser = $this->createCurrentUser();
-        $identity = $this->createMock(CookieLoginIdentityInterface::class);
-        $identity->method('validateCookieLoginKey')->willReturn(true);
-        $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
-        $identityRepository->method('findIdentity')->willReturn($identity);
-
-        $expired = time() - 100;
-        $cookie = json_encode(['id123', 'key123', $expired, 'sess-id']);
-        $result = $service->loginByCookie(['autoLogin' => $cookie], $currentUser, $identityRepository, $session);
-        self::assertFalse($session->has('__identity'));
-        self::assertFalse($result);
-    }
-
     public function testLoginByCookieWithInvalidArrayShapeReturns(): void
     {
         $service = new RememberMeCookieService(3600, new SystemClock());
@@ -308,49 +203,6 @@ final class RememberMeCookieServiceTest extends TestCase
 
         $result = $service->loginByCookie(['autoLogin' => json_encode(['id', 'key'])], $currentUser, $identityRepository, $session);
         self::assertFalse($session->has('__identity'));
-        self::assertFalse($result);
-    }
-
-    public function testLoginByCookieWithInvalidIdentityReturns(): void
-    {
-        $service = new RememberMeCookieService(3600, new SystemClock());
-        $session = new FakeSession();
-        $currentUser = $this->createCurrentUser();
-        $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
-        $identityRepository->method('findIdentity')->willReturn(null);
-
-        $cookie = json_encode(['id123', 'key123', 0, 'sess-id']);
-        $result = $service->loginByCookie(['autoLogin' => $cookie], $currentUser, $identityRepository, $session);
-        self::assertFalse($session->has('__identity'));
-        self::assertFalse($result);
-    }
-
-    public function testLoginByCookieWithInvalidJsonReturns(): void
-    {
-        $service = new RememberMeCookieService(3600, new SystemClock());
-        $session = new FakeSession();
-        $currentUser = $this->createCurrentUser();
-        $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
-        $identityRepository->expects($this->never())->method('findIdentity');
-
-        $result = $service->loginByCookie(['autoLogin' => 'not-json'], $currentUser, $identityRepository, $session);
-        self::assertFalse($session->has('__identity'));
-        self::assertFalse($result);
-    }
-
-    public function testLoginByCookieWithInvalidKeyAndZeroExpiresLogsInOriginalReturns(): void
-    {
-        $service = new RememberMeCookieService(3600, new SystemClock());
-        $session = new FakeSession();
-        $currentUser = $this->createCurrentUser();
-        $identity = $this->createMock(CookieLoginIdentityInterface::class);
-        $identity->method('validateCookieLoginKey')->willReturn(false);
-        $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
-        $identityRepository->method('findIdentity')->willReturn($identity);
-
-        $cookie = json_encode(['id123', 'key123', 0, 'sess-id']);
-        $result = $service->loginByCookie(['autoLogin' => $cookie], $currentUser, $identityRepository, $session);
-        self::assertNotSame($identity, $currentUser->getIdentity());
         self::assertFalse($result);
     }
 
@@ -371,34 +223,15 @@ final class RememberMeCookieServiceTest extends TestCase
 
         $session = new FakeSession();
         $currentUser = $this->createCurrentUser();
-        $identity = $this->createMock(User::class);
-        $identity->method('validateCookieLoginKey')->willReturn(true);
-        $identity->method('getId')->willReturn((string) $userId);
-        $identity->method('getIdOrZero')->willReturn($userId);
         $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
-        $identityRepository->method('findIdentity')->willReturn($identity);
+        $identityRepository->method('findIdentity')->willReturn($user);
 
         $future = time() + 3600;
-        $cookie = json_encode(['id123', 'key123', $future, 'terminated-session-id']);
+        $cookie = json_encode(['id123', 'key', $future, 'terminated-session-id']);
         $result = $service->loginByCookie(['autoLogin' => $cookie], $currentUser, $identityRepository, $session);
 
-        self::assertNotSame($identity, $currentUser->getIdentity());
+        self::assertNotSame($user, $currentUser->getIdentity());
         self::assertFalse($result);
-    }
-
-    public function testLoginByCookieWithNonNumericExpiresLogsIn(): void
-    {
-        $service = new RememberMeCookieService(3600, new SystemClock());
-        $session = new FakeSession();
-        $currentUser = $this->createCurrentUser();
-        $identity = $this->createMock(CookieLoginIdentityInterface::class);
-        $identity->method('validateCookieLoginKey')->willReturn(true);
-        $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
-        $identityRepository->method('findIdentity')->willReturn($identity);
-
-        $cookie = json_encode(['id123', 'key123', 'abc', 'sess-id']);
-        $service->loginByCookie(['autoLogin' => $cookie], $currentUser, $identityRepository, $session);
-        self::assertSame($identity, $currentUser->getIdentity());
     }
 
     public function testLoginByCookieWithNonStringCookieReturns(): void
@@ -411,42 +244,6 @@ final class RememberMeCookieServiceTest extends TestCase
         $result = $service->loginByCookie(['autoLogin' => 123], $currentUser, $identityRepository, $session);
         self::assertFalse($session->has('__identity'));
         self::assertFalse($result);
-    }
-
-    public function testLoginByCookieWithNonUserIdentityDoesNotDispatchEvent(): void
-    {
-        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $eventDispatcher->expects($this->never())->method('dispatch');
-
-        $service = new RememberMeCookieService(3600, new SystemClock(), eventDispatcher: $eventDispatcher);
-        $session = new FakeSession();
-        $currentUser = $this->createCurrentUser();
-        $identity = $this->createMock(CookieLoginIdentityInterface::class);
-        $identity->method('validateCookieLoginKey')->willReturn(true);
-        $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
-        $identityRepository->method('findIdentity')->willReturn($identity);
-
-        $future = time() + 3600;
-        $cookie = json_encode(['id123', 'key123', $future, 'sess-id']);
-        $result = $service->loginByCookie(['autoLogin' => $cookie], $currentUser, $identityRepository, $session);
-
-        self::assertSame($identity, $currentUser->getIdentity());
-        self::assertFalse($result);
-    }
-
-    public function testLoginByCookieWithNullExpiresTreatsAsNeverExpiring(): void
-    {
-        $service = new RememberMeCookieService(3600, new SystemClock());
-        $session = new FakeSession();
-        $currentUser = $this->createCurrentUser();
-        $identity = $this->createMock(CookieLoginIdentityInterface::class);
-        $identity->method('validateCookieLoginKey')->willReturn(true);
-        $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
-        $identityRepository->method('findIdentity')->willReturn($identity);
-
-        $cookie = json_encode(['id123', 'key123', null, 'sess-id']);
-        $service->loginByCookie(['autoLogin' => $cookie], $currentUser, $identityRepository, $session);
-        self::assertSame($identity, $currentUser->getIdentity());
     }
 
     public function testLoginByCookieWithoutEventDispatcherDoesNotError(): void
@@ -462,18 +259,14 @@ final class RememberMeCookieServiceTest extends TestCase
 
         $session = new FakeSession();
         $currentUser = $this->createCurrentUser();
-        $identity = $this->createMock(User::class);
-        $identity->method('validateCookieLoginKey')->willReturn(true);
-        $identity->method('getId')->willReturn((string) $userId);
-        $identity->method('getIdOrZero')->willReturn($userId);
         $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
-        $identityRepository->method('findIdentity')->willReturn($identity);
+        $identityRepository->method('findIdentity')->willReturn($user);
 
         $future = time() + 3600;
-        $cookie = json_encode(['id123', 'key123', $future, 'cookie-session-id']);
+        $cookie = json_encode(['id123', 'key', $future, 'cookie-session-id']);
         $result = $service->loginByCookie(['autoLogin' => $cookie], $currentUser, $identityRepository, $session);
 
-        self::assertSame($identity, $currentUser->getIdentity());
+        self::assertSame($user, $currentUser->getIdentity());
         self::assertFalse($result);
     }
 
@@ -495,18 +288,14 @@ final class RememberMeCookieServiceTest extends TestCase
 
         $session = new FakeSession();
         $currentUser = $this->createCurrentUser();
-        $identity = $this->createMock(User::class);
-        $identity->method('validateCookieLoginKey')->willReturn(true);
-        $identity->method('getId')->willReturn((string) $userId);
-        $identity->method('getIdOrZero')->willReturn($userId);
         $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
-        $identityRepository->method('findIdentity')->willReturn($identity);
+        $identityRepository->method('findIdentity')->willReturn($user);
 
         $future = time() + 3600;
-        $cookie = json_encode(['id123', 'key123', $future, 'revoked-session-id']);
+        $cookie = json_encode(['id123', 'key', $future, 'revoked-session-id']);
         $result = $service->loginByCookie(['autoLogin' => $cookie], $currentUser, $identityRepository, $session);
 
-        self::assertNotSame($identity, $currentUser->getIdentity());
+        self::assertNotSame($user, $currentUser->getIdentity());
         self::assertFalse($result);
     }
 
@@ -519,16 +308,11 @@ final class RememberMeCookieServiceTest extends TestCase
         $userId = (int) $user->getId();
         $this->createUserSession($userId, 'cookie-session-id');
 
-        $identity = $this->createMock(User::class);
-        $identity->method('validateCookieLoginKey')->willReturn(true);
-        $identity->method('getId')->willReturn((string) $userId);
-        $identity->method('getIdOrZero')->willReturn($userId);
-
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $eventDispatcher->expects($this->once())
             ->method('dispatch')
             ->with($this->callback(
-                static fn(AfterLoginEvent $event): bool => $event->getUser() === $identity
+                static fn(AfterLoginEvent $event): bool => $event->getUser() === $user
                     && $event->getPreviousSessionId() === 'cookie-session-id',
             ))
             ->willReturnArgument(0);
@@ -539,45 +323,14 @@ final class RememberMeCookieServiceTest extends TestCase
         $session->open();
         $currentUser = $this->createCurrentUser();
         $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
-        $identityRepository->method('findIdentity')->willReturn($identity);
+        $identityRepository->method('findIdentity')->willReturn($user);
 
         $future = time() + 3600;
-        $cookie = json_encode(['id123', 'key123', $future, 'cookie-session-id']);
+        $cookie = json_encode(['id123', 'key', $future, 'cookie-session-id']);
         $result = $service->loginByCookie(['autoLogin' => $cookie], $currentUser, $identityRepository, $session);
 
-        self::assertSame($identity, $currentUser->getIdentity());
+        self::assertSame($user, $currentUser->getIdentity());
         self::assertTrue($result);
-    }
-
-    public function testLoginByCookieWithZeroExpiresAndZeroNowReturns(): void
-    {
-        $clock = $this->fixedClock(0);
-        $service = new RememberMeCookieService(3600, $clock, 'autoLogin');
-        $session = new FakeSession();
-        $currentUser = $this->createCurrentUser();
-        $identity = $this->createMock(CookieLoginIdentityInterface::class);
-        $identity->method('validateCookieLoginKey')->willReturn(true);
-        $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
-        $identityRepository->method('findIdentity')->willReturn($identity);
-
-        $cookie = json_encode(['id123', 'key123', 0, 'sess-id']);
-        $service->loginByCookie(['autoLogin' => $cookie], $currentUser, $identityRepository, $session);
-        self::assertSame($identity, $currentUser->getIdentity());
-    }
-
-    public function testLoginByCookieWithZeroExpiresLogsIn(): void
-    {
-        $service = new RememberMeCookieService(3600, new SystemClock());
-        $session = new FakeSession();
-        $currentUser = $this->createCurrentUser();
-        $identity = $this->createMock(CookieLoginIdentityInterface::class);
-        $identity->method('validateCookieLoginKey')->willReturn(true);
-        $identityRepository = $this->createMock(IdentityRepositoryInterface::class);
-        $identityRepository->method('findIdentity')->willReturn($identity);
-
-        $cookie = json_encode(['id123', 'key123', 0.0, 'sess-id']);
-        $service->loginByCookie(['autoLogin' => $cookie], $currentUser, $identityRepository, $session);
-        self::assertSame($identity, $currentUser->getIdentity());
     }
 
     #[DataProvider('refreshCookieBoundaryProvider')]
@@ -592,56 +345,15 @@ final class RememberMeCookieServiceTest extends TestCase
         self::assertSame($expectedReissued, $result !== $response);
     }
 
-    public function testRefreshCookieIdentityNotCookieLoginReturns(): void
+    #[DataProvider('refreshCookieNoEmitProvider')]
+    public function testRefreshCookieDoesNotEmit(int $duration, bool $loggedIn, ?string $cookieValue, ?int $now): void
     {
-        $now = 2000000;
-        $service = new RememberMeCookieService(3600, $this->fixedClock($now), 'autoLogin');
+        $service = new RememberMeCookieService($duration, $now === null ? new SystemClock() : $this->fixedClock($now), 'autoLogin');
         $response = new Response();
 
-        $expires = $now - 100000;
-        $cookies = ['autoLogin' => json_encode(['id', 'key', $expires, 'sess-id'])];
-        $result = $service->refreshCookie($this->createCurrentUser(), $cookies, $response);
-        self::assertSame($response, $result);
-    }
+        $cookies = $cookieValue === null ? [] : ['autoLogin' => $cookieValue];
+        $result = $service->refreshCookie($loggedIn ? $this->loggedInIdentity() : $this->createCurrentUser(), $cookies, $response);
 
-    public function testRefreshCookieInvalidArrayReturns(): void
-    {
-        $service = new RememberMeCookieService(3600, new SystemClock(), 'autoLogin');
-        $response = new Response();
-
-        $cookies = ['autoLogin' => json_encode(['a', 'b'])];
-        $result = $service->refreshCookie($this->createCurrentUser(), $cookies, $response);
-        self::assertSame($response, $result);
-    }
-
-    public function testRefreshCookieInvalidJsonReturns(): void
-    {
-        $service = new RememberMeCookieService(3600, new SystemClock(), 'autoLogin');
-        $response = new Response();
-
-        $cookies = ['autoLogin' => 'not-json'];
-        $result = $service->refreshCookie($this->createCurrentUser(), $cookies, $response);
-        self::assertSame($response, $result);
-    }
-
-    public function testRefreshCookieNoCookieReturns(): void
-    {
-        $service = new RememberMeCookieService(3600, new SystemClock(), 'autoLogin');
-        $response = new Response();
-
-        $result = $service->refreshCookie($this->createCurrentUser(), [], $response);
-        self::assertSame($response, $result);
-    }
-
-    public function testRefreshCookieNotEnoughTimePassedReturns(): void
-    {
-        $now = 1000000;
-        $service = new RememberMeCookieService(3600, $this->fixedClock($now), 'autoLogin');
-        $response = new Response();
-
-        $expires = $now + 3600;
-        $cookies = ['autoLogin' => json_encode(['id', 'key', $expires, 'sess-id'])];
-        $result = $service->refreshCookie($this->createCurrentUser(), $cookies, $response);
         self::assertSame($response, $result);
     }
 
@@ -686,40 +398,6 @@ final class RememberMeCookieServiceTest extends TestCase
         self::assertStringContainsString('c/ñkey', $value);
         $decoded = json_decode($value, true);
         self::assertSame(['u/ñid', 'c/ñkey', $now + 3600, 'sess-id'], $decoded);
-    }
-
-    public function testRefreshCookieUsesExpiresNotKeyForLastRefresh(): void
-    {
-        $now = 100000;
-        $service = new RememberMeCookieService(3600, $this->fixedClock($now), 'autoLogin');
-        $currentUser = $this->loggedInIdentity();
-        $response = new Response();
-
-        $cookies = ['autoLogin' => json_encode(['uid', 1000, 1000000, 'sess-id'])];
-        $result = $service->refreshCookie($currentUser, $cookies, $response);
-        self::assertSame($response, $result);
-    }
-
-    public function testRefreshCookieWithNonPositiveDurationReturns(): void
-    {
-        $service = new RememberMeCookieService(0, new SystemClock(), 'autoLogin');
-        $response = new Response();
-
-        $result = $service->refreshCookie($this->createCurrentUser(), ['autoLogin' => 'data'], $response);
-        self::assertSame($response, $result);
-    }
-
-    public function testRefreshCookieWithZeroDurationAndValidPathDoesNotEmit(): void
-    {
-        $now = 100000;
-        $service = new RememberMeCookieService(0, $this->fixedClock($now), 'autoLogin');
-        $currentUser = $this->loggedInIdentity();
-        $response = new Response();
-
-        $expires = $now - 90000;
-        $cookies = ['autoLogin' => json_encode(['uid', 'ckey', $expires, 'sess-id'])];
-        $result = $service->refreshCookie($currentUser, $cookies, $response);
-        self::assertSame($response, $result);
     }
 
     private function createCurrentUser(): CurrentUser

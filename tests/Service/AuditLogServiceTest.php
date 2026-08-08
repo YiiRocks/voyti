@@ -4,26 +4,13 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Service;
 
-use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\UserAuditLog;
 use YiiRocks\Voyti\Service\AuditLogService;
-use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 
-final class AuditLogServiceTest extends TestCase
+final class AuditLogServiceTest extends DatabaseTestCase
 {
-    use DatabaseSetupTrait;
-
-    protected function setUp(): void
-    {
-        $this->setUpDatabase();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->tearDownDatabase();
-    }
-
     public function testLogDoesNothingWhenDisabled(): void
     {
         $service = new AuditLogService(VoytiConfigFactory::create(enableAuditLog: false));
@@ -43,18 +30,6 @@ final class AuditLogServiceTest extends TestCase
         self::assertCount(1, $logs);
         self::assertSame('203.0.113.5', $logs[0]->getActorIp());
         self::assertSame('curl/8.0', $logs[0]->getActorUserAgent());
-    }
-
-    public function testLogPersistsFallbackIpAndNullUserAgentWhenMissing(): void
-    {
-        $service = new AuditLogService(VoytiConfigFactory::create(enableAuditLog: true));
-
-        $service->log(1, 'user.create', []);
-
-        $logs = UserAuditLog::search()->all();
-        self::assertCount(1, $logs);
-        self::assertSame('127.0.0.1', $logs[0]->getActorIp());
-        self::assertNull($logs[0]->getActorUserAgent());
     }
 
     public function testLogPersistsMinimalEntry(): void

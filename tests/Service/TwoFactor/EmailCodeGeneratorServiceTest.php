@@ -5,46 +5,35 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Service\TwoFactor;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
-use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
+use YiiRocks\Voyti\tests\Support\MailCapture;
+use YiiRocks\Voyti\tests\Support\MailServiceFactoryTrait;
+use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 
 #[AllowMockObjectsWithoutExpectations]
-final class EmailCodeGeneratorServiceTest extends TestCase
+final class EmailCodeGeneratorServiceTest extends DatabaseTestCase
 {
+    use MailServiceFactoryTrait;
+    use UserFactoryTrait;
+
     public function testRunGeneratesCodeAndSendsEmail(): void
     {
-        $mailService = $this->createMock(MailService::class);
-        $mailService->expects($this->once())
-            ->method('sendTwoFactorCode')
-            ->with('user@example.com', $this->matchesRegularExpression('/^\d{6}$/'));
+        $mailCapture = new MailCapture();
+        $service = new EmailCodeGeneratorService($this->createMailService($mailCapture));
 
-        $service = new EmailCodeGeneratorService($mailService);
-
-        $user = $this->createMock(User::class);
-        $user->method('getEmail')->willReturn('user@example.com');
-        $user->expects($this->once())->method('setAuthTfKey');
-        $user->expects($this->once())->method('save');
+        $user = $this->createUser(email: 'user@example.com');
 
         $code = $service->run($user);
 
         self::assertMatchesRegularExpression('/^\d{6}$/', $code);
-    }
+        self::assertNotNull($user->getAuthTfKey());
+        self::assertSame($user->getAuthTfKey(), User::findById((int) $user->getId())?->getAuthTfKey());
 
-    public function testRunReturnsSixDigitCode(): void
-    {
-        $mailService = $this->createMock(MailService::class);
-        $mailService->method('sendTwoFactorCode')->willReturn(true);
-
-        $service = new EmailCodeGeneratorService($mailService);
-
-        $user = $this->createMock(User::class);
-        $user->method('getEmail')->willReturn('user@example.com');
-
-        $code = $service->run($user);
-
-        self::assertIsString($code);
-        self::assertSame(6, strlen($code));
+        $message = $mailCapture->getLastMessage();
+        self::assertNotNull($message);
+        self::assertSame('user@example.com', $message->getTo());
+        self::assertStringContainsString($code, (string) $message->getHtmlBody());
     }
 }

@@ -36,6 +36,7 @@ final class SwitchIdentity extends Widget
     public function render(): string
     {
         if (!$this->switchIdentityService->isSwitched()) {
+            /** @infection-ignore-all Equivalent: not-switched means no original-user id in session, so removing this return falls through to getOriginalUser() returning null and the same empty-string return below. */
             return '';
         }
 

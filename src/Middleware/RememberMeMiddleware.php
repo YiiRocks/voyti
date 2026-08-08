@@ -58,6 +58,7 @@ final readonly class RememberMeMiddleware implements MiddlewareInterface
                 return $this->rememberMeCookieService->addCookie($identity, $response, $this->session->getId() ?? '');
             }
 
+            /** @infection-ignore-all Equivalent: this branch is only reached when the post-handle identity isn't a CookieLoginIdentity, and refreshCookie() below also returns the response unchanged for a non-cookie identity - so falling through produces the identical result. */
             return $response;
         }
 

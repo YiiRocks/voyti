@@ -7,101 +7,69 @@ namespace YiiRocks\Voyti\tests\Controller\Admin\Rbac\Rule;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
-use Psr\Http\Message\ResponseFactoryInterface;
-use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\Admin\Rbac\Rule\RuleController;
-use YiiRocks\Voyti\Helper\AuthHelper;
-use YiiRocks\Voyti\Service\AuditLogService;
-use YiiRocks\Voyti\Service\Rbac\RuleEditionService;
-use YiiRocks\Voyti\tests\Support\RedirectResponseMockTrait;
+use YiiRocks\Voyti\Model\UserAuditLog;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
+use YiiRocks\Voyti\tests\Support\SimpleItemsStorage;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
-use YiiRocks\Voyti\tests\TestCase;
+use Yiisoft\Rbac\CompositeRule;
+use Yiisoft\Rbac\ItemsStorageInterface;
+use Yiisoft\Rbac\Role;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Validator\Result;
 use Yiisoft\Validator\ValidatorInterface;
-use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 #[AllowMockObjectsWithoutExpectations]
-final class RuleControllerTest extends TestCase
+final class RuleControllerTest extends DatabaseTestCase
 {
-    use RedirectResponseMockTrait;
     use TestContainerTrait;
 
-    private AuditLogService&MockObject $auditLogService;
-    private AuthHelper&MockObject $authHelper;
     private FlashInterface&MockObject $flash;
-    private ResponseFactoryInterface&MockObject $responseFactory;
-    private RuleEditionService&MockObject $ruleEditionService;
+    private SimpleItemsStorage $itemsStorage;
     private ValidatorInterface&MockObject $validator;
-    private WebViewRenderer&MockObject $viewRenderer;
 
     protected function setUp(): void
     {
-        $this->viewRenderer = $this->createMock(WebViewRenderer::class);
-        $this->viewRenderer->method('withAddedInjections')->willReturnSelf();
+        parent::setUp();
         $this->validator = $this->createMock(ValidatorInterface::class);
-        $this->responseFactory = $this->createMock(ResponseFactoryInterface::class);
         $this->flash = $this->createMock(FlashInterface::class);
-        $this->authHelper = $this->createMock(AuthHelper::class);
-        $this->ruleEditionService = $this->createMock(RuleEditionService::class);
-        $this->auditLogService = $this->createMock(AuditLogService::class);
+        $this->itemsStorage = new SimpleItemsStorage();
     }
 
     public function testCreateGetShowsForm(): void
     {
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('admin/rbac/rule/create', $this->anything())
-            ->willReturn($response);
+        $html = (string) $this->createController()->create(request: new ServerRequest('GET', '/'))->getBody();
 
-        $controller = $this->createController();
-        $result = $controller->create(request: new ServerRequest('GET', '/'));
-
-        $this->assertSame($response, $result);
+        self::assertStringContainsString('Create rule', $html);
     }
 
     public function testCreatePostServiceFailsShowsError(): void
     {
         $this->validator->method('validate')->willReturn(new Result());
-        $this->ruleEditionService->expects($this->once())
-            ->method('create')
-            ->willReturn(false);
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturn($response);
-
+        // A non-existent class fails RuleEditionService's rule-class validation.
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['rule' => ['name' => 'myRule', 'class' => 'Invalid\\Class']]);
 
-        $controller = $this->createController();
-        $result = $controller->create(request: $request);
+        $html = (string) $this->createController()->create(request: $request)->getBody();
 
-        $this->assertSame($response, $result);
+        self::assertStringContainsString('Invalid rule class', $html);
     }
 
     public function testCreatePostSuccessful(): void
     {
         $this->validator->method('validate')->willReturn(new Result());
-        $this->ruleEditionService->expects($this->once())
-            ->method('create')
-            ->willReturn(true);
 
-        $response = $this->mockRedirectResponse($this->responseFactory);
+        // A real class implementing RuleInterface passes RuleEditionService's validation.
+        $request = new ServerRequest('POST', '/');
 
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['rule' => ['name' => 'myRule', 'class' => 'App\\Rule\\MyRule']]);
+        $result = $this->createController()->create(request: $request, formData: ['name' => 'myRule', 'class' => CompositeRule::class]);
 
-        $controller = $this->createController();
-        $result = $controller->create(request: $request);
-
-        $this->assertSame($response, $result);
+        $this->assertSame(302, $result->getStatusCode());
+        $this->assertStringContainsString('admin-rbac-rules', $result->getHeaderLine('Location'));
+        // The create is audited under the submitted rule name.
+        $logs = UserAuditLog::search(['action' => 'rbac.rule.create'])->all();
+        self::assertNotEmpty($logs);
+        self::assertSame('myRule', $logs[0]->getTargetName());
     }
 
     public function testCreatePostWithInvalidDataShowsErrors(): void
@@ -109,111 +77,72 @@ final class RuleControllerTest extends TestCase
         $validationResult = new Result();
         $validationResult->addError('Name is required.');
         $this->validator->method('validate')->willReturn($validationResult);
-        $this->ruleEditionService->expects($this->never())->method('create');
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('admin/rbac/rule/create', $this->callback(
-                static fn(array $params): bool => $params['data']->errors !== [],
-            ))
-            ->willReturn($response);
 
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['rule' => ['name' => '', 'class' => '']]);
 
-        $controller = $this->createController();
-        $result = $controller->create(request: $request);
+        $html = (string) $this->createController()->create(request: $request)->getBody();
 
-        $this->assertSame($response, $result);
+        self::assertStringContainsString('Name is required.', $html);
     }
 
     public function testDeleteRemovesRule(): void
     {
-        $this->ruleEditionService->expects($this->once())->method('remove')->with('myRule');
+        // A role references the rule; deleting the rule must clear that reference.
+        $this->itemsStorage->add((new Role('editor'))->withRuleName('myRule'));
 
-        $response = $this->mockRedirectResponse($this->responseFactory);
+        $result = $this->createController()->delete(new ServerRequest('POST', '/'), 'myRule');
 
-        $controller = $this->createController();
-        $result = $controller->delete(new ServerRequest('POST', '/'), 'myRule');
-
-        $this->assertSame($response, $result);
+        $this->assertSame(302, $result->getStatusCode());
+        $this->assertStringContainsString('admin-rbac-rules', $result->getHeaderLine('Location'));
+        $this->assertNull($this->itemsStorage->getRole('editor')?->getRuleName());
+        $logs = UserAuditLog::search(['action' => 'rbac.rule.delete'])->all();
+        self::assertNotEmpty($logs);
+        self::assertSame('myRule', $logs[0]->getTargetName());
     }
 
     public function testIndexShowsRules(): void
     {
-        $this->authHelper->method('getRuleNames')->willReturn([]);
+        $html = (string) $this->createController()->index()->getBody();
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('admin/rbac/rule/index', $this->anything())
-            ->willReturn($response);
-
-        $controller = $this->createController();
-        $result = $controller->index();
-
-        $this->assertSame($response, $result);
+        self::assertStringContainsString('Rules', $html);
+        self::assertStringContainsString('Create rule', $html);
     }
 
     public function testUpdateGetShowsForm(): void
     {
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('admin/rbac/rule/update', $this->anything())
-            ->willReturn($response);
+        $html = (string) $this->createController()->update(request: new ServerRequest('GET', '/'), name: 'existingRule')->getBody();
 
-        $controller = $this->createController();
-        $result = $controller->update(request: new ServerRequest('GET', '/'), name: 'existingRule');
-
-        $this->assertSame($response, $result);
+        self::assertStringContainsString('Update rule', $html);
     }
 
     public function testUpdatePostServiceFailsShowsError(): void
     {
         $this->validator->method('validate')->willReturn(new Result());
-        $this->ruleEditionService->expects($this->once())
-            ->method('update')
-            ->willReturn(false);
 
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->expects($this->once())
-            ->method('withViewPath')
-            ->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->willReturn($response);
-
+        // A non-existent class fails RuleEditionService's rule-class validation.
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['rule' => ['name' => 'updatedRule', 'class' => 'Invalid\\Class']]);
 
-        $controller = $this->createController();
-        $result = $controller->update(request: $request, name: 'oldRule');
+        $html = (string) $this->createController()->update(request: $request, name: 'oldRule')->getBody();
 
-        $this->assertSame($response, $result);
+        self::assertStringContainsString('Invalid rule class', $html);
     }
 
     public function testUpdatePostSuccessful(): void
     {
         $this->validator->method('validate')->willReturn(new Result());
-        $this->ruleEditionService->expects($this->once())
-            ->method('update')
-            ->willReturn(true);
 
-        $response = $this->mockRedirectResponse($this->responseFactory);
+        // A real class implementing RuleInterface passes RuleEditionService's validation.
+        $request = new ServerRequest('POST', '/');
 
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['rule' => ['name' => 'updatedRule', 'class' => 'App\\Rule\\UpdatedRule']]);
+        $result = $this->createController()->update(request: $request, name: 'oldRule', formData: ['name' => 'updatedRule', 'class' => CompositeRule::class]);
 
-        $controller = $this->createController();
-        $result = $controller->update(request: $request, name: 'oldRule');
-
-        $this->assertSame($response, $result);
+        $this->assertSame(302, $result->getStatusCode());
+        $this->assertStringContainsString('admin-rbac-rules', $result->getHeaderLine('Location'));
+        // The update is audited under the new name, recording the previous name in its context.
+        $logs = UserAuditLog::search(['action' => 'rbac.rule.update'])->all();
+        self::assertNotEmpty($logs);
+        self::assertSame('updatedRule', $logs[0]->getTargetName());
+        self::assertStringContainsString('oldRule', (string) $logs[0]->getContext());
     }
 
     public function testUpdatePostWithInvalidDataShowsErrors(): void
@@ -221,35 +150,20 @@ final class RuleControllerTest extends TestCase
         $validationResult = new Result();
         $validationResult->addError('Name is required.');
         $this->validator->method('validate')->willReturn($validationResult);
-        $this->ruleEditionService->expects($this->never())->method('update');
-
-        $response = $this->createMock(ResponseInterface::class);
-        $this->viewRenderer->method('withViewPath')->willReturnSelf();
-        $this->viewRenderer->expects($this->once())
-            ->method('render')
-            ->with('admin/rbac/rule/update', $this->callback(
-                static fn(array $params): bool => $params['data']->errors !== [],
-            ))
-            ->willReturn($response);
 
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['rule' => ['name' => '', 'class' => '']]);
 
-        $controller = $this->createController();
-        $result = $controller->update(request: $request, name: 'oldRule');
+        $html = (string) $this->createController()->update(request: $request, name: 'oldRule')->getBody();
 
-        $this->assertSame($response, $result);
+        self::assertStringContainsString('Name is required.', $html);
     }
 
     private function createController(): RuleController
     {
         return $this->getTestContainer([
-            AuthHelper::class => $this->authHelper,
-            AuditLogService::class => $this->auditLogService,
             FlashInterface::class => $this->flash,
-            ResponseFactoryInterface::class => $this->responseFactory,
-            RuleEditionService::class => $this->ruleEditionService,
+            ItemsStorageInterface::class => $this->itemsStorage,
             ValidatorInterface::class => $this->validator,
-            WebViewRenderer::class => $this->viewRenderer,
         ])->get(RuleController::class);
     }
 }

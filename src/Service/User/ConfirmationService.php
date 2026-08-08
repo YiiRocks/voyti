@@ -26,6 +26,7 @@ final readonly class ConfirmationService
     public function confirmWithCode(string $code, User $user): bool
     {
         if ($user->isConfirmed()) {
+            /** @infection-ignore-all Equivalent: removing this early return falls through to run(), which re-checks isConfirmed() first and returns the same false with no side effects. */
             return false;
         }
 

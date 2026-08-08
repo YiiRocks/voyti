@@ -44,9 +44,6 @@ final class UserAuditLogTest extends TestCase
         $this->connection = null;
     }
 
-    /**
-     * @return iterable<string, array{string, string, int|string}>
-     */
     public static function getterSetterProvider(): iterable
     {
         yield 'action' => ['setAction', 'getAction', 'user.create'];

@@ -26,14 +26,14 @@ final readonly class SessionRow
 
     public static function create(UserSessions $session, ?string $timezone, string $locale): self
     {
-        $isRevoked = $session->isRevoked();
+        $revokedAt = $session->getRevokedAt();
 
         return new self(
             ip: $session->getIp() ?? '',
             userAgent: $session->getUserAgent() ?? '',
             lastSeenDisplay: TimezoneHelper::formatLocalized($session->getUpdatedAt(), $locale, $timezone),
-            isRevoked: $isRevoked,
-            revokedAtDisplay: $isRevoked ? TimezoneHelper::formatLocalized($session->getRevokedAt() ?? 0, $locale, $timezone) : null,
+            isRevoked: $revokedAt !== null,
+            revokedAtDisplay: $revokedAt !== null ? TimezoneHelper::formatLocalized($revokedAt, $locale, $timezone) : null,
         );
     }
 }

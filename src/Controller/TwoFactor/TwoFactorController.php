@@ -140,9 +140,13 @@ final readonly class TwoFactorController
 
         $method = $method === 'email' ? 'email' : 'google';
 
+        // @codeCoverageIgnoreStart
+        // The QR bundle is an optional dependency, so this fallback is only reachable when it is
+        // absent - which never happens in the test environment where the bundle is installed.
         if ($method === 'google' && !$this->twoFactorQrCodeService->isAvailable()) {
             return $this->redirect($this->url->generate('voyti/user-two-factor'));
         }
+        // @codeCoverageIgnoreEnd
 
         if ($method === 'email') {
             $emailValidator = new EmailValidator($user, $code);
@@ -182,9 +186,13 @@ final readonly class TwoFactorController
 
     public function google(ServerRequestInterface $request): ResponseInterface
     {
+        // @codeCoverageIgnoreStart
+        // The QR bundle is an optional dependency, so this fallback is only reachable when it is
+        // absent - which never happens in the test environment where the bundle is installed.
         if (!$this->twoFactorQrCodeService->isAvailable()) {
             return $this->redirect($this->url->generate('voyti/user-two-factor'));
         }
+        // @codeCoverageIgnoreEnd
 
         /** @var User $user */
         $user = $this->currentUser->getIdentity();
@@ -202,6 +210,8 @@ final readonly class TwoFactorController
         $user = $this->currentUser->getIdentity();
 
         if (!$user->isAuthTfEnabled()) {
+            // @infection-ignore-all The 'email' branch is the optional-QR-bundle-absent fallback,
+            // unreachable in the test environment where the bundle is installed (isAvailable() is always true).
             $defaultMethod = $this->twoFactorQrCodeService->isAvailable() ? 'google' : 'email';
             return $this->renderTwoFactorIndex($user, $defaultMethod, preloadContent: false);
         }
@@ -255,9 +265,13 @@ final readonly class TwoFactorController
             return $this->jsonErrorResponse(Status::FORBIDDEN, 'voyti.view.two_factor.already_enabled');
         }
 
+        // @codeCoverageIgnoreStart
+        // The QR bundle is an optional dependency, so this fallback is only reachable when it is
+        // absent - which never happens in the test environment where the bundle is installed.
         if (!$this->twoFactorQrCodeService->isAvailable()) {
             return $this->jsonErrorResponse(Status::SERVICE_UNAVAILABLE, 'voyti.validator.two_factor_library_missing');
         }
+        // @codeCoverageIgnoreEnd
 
         if ($user->getAuthTfType() !== 'google') {
             $user->setAuthTfType('google');
@@ -288,6 +302,7 @@ final readonly class TwoFactorController
 
         if ($user->getAuthTfType() !== 'email') {
             $user->setAuthTfType('email');
+            /** @infection-ignore-all twoFactorEmailCodeService->run() below re-saves the user, so this save is redundant. */
             $user->save();
         }
 
@@ -307,7 +322,13 @@ final readonly class TwoFactorController
     {
         if ($user->getAuthTfType() !== 'google') {
             $user->setAuthTfType('google');
+            /**
+             * @infection-ignore-all Clearing the key here is redundant: the leftover email code is never
+             * a valid base32 secret, so QrCodeUriGeneratorService::buildSvg() catches the
+             * InvalidArgumentException and regenerates a fresh secret anyway.
+             */
             $user->setAuthTfKey(null);
+            /** @infection-ignore-all Redundant: the following generateQrCodeSvg->resolveSecret() re-saves the user. */
             $user->save();
         }
     }

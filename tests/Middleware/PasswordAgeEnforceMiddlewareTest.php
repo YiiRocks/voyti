@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Middleware;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -12,6 +13,8 @@ use Psr\Http\Server\RequestHandlerInterface;
 use YiiRocks\Voyti\Middleware\PasswordAgeEnforceMiddleware;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\Password\ExpireService;
+use YiiRocks\Voyti\tests\Support\CurrentRouteTrait;
+use YiiRocks\Voyti\tests\Support\CurrentUserTrait;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
 use YiiRocks\Voyti\VoytiConfig;
@@ -20,50 +23,36 @@ use Yiisoft\Router\CurrentRoute;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
-use Yiisoft\User\Guest\GuestIdentityInterface;
 
 #[AllowMockObjectsWithoutExpectations]
 final class PasswordAgeEnforceMiddlewareTest extends TestCase
 {
-    public function testProcessPassesThroughForExemptAccountSettingsRoute(): void
+    use CurrentRouteTrait;
+    use CurrentUserTrait;
+
+    public static function exemptRouteProvider(): iterable
     {
-        $config = VoytiConfigFactory::create(
-            maxPasswordAge: 90,
-        );
-
-        $user = new User();
-        $user->setPasswordChangedAt(time() - 91 * 86400);
-
-        $currentUser = $this->createMock(CurrentUser::class);
-        $currentUser->expects(self::once())->method('getIdentity')->willReturn($user);
-
-        $currentRoute = $this->createMock(CurrentRoute::class);
-        $currentRoute->method('getName')->willReturn('voyti/user-account');
-
-        $request = $this->createMock(ServerRequestInterface::class);
-        $response = $this->createMock(ResponseInterface::class);
-
-        $handler = $this->createMock(RequestHandlerInterface::class);
-        $handler->expects(self::once())->method('handle')->with($request)->willReturn($response);
-
-        $middleware = $this->createMiddleware(currentUser: $currentUser, config: $config, currentRoute: $currentRoute);
-        $result = $middleware->process($request, $handler);
-
-        self::assertSame($response, $result);
+        yield 'account settings' => ['voyti/user-account'];
+        yield 'logout' => ['voyti/session-logout'];
     }
 
-    public function testProcessPassesThroughForExemptLogoutRoute(): void
+    public static function expiredPasswordProvider(): iterable
+    {
+        yield 'password expired' => [time() - 91 * 86400];
+        yield 'password never changed' => [null];
+    }
+
+    #[DataProvider('exemptRouteProvider')]
+    public function testProcessPassesThroughForExemptRoute(string $routeName): void
     {
         $config = VoytiConfigFactory::create(maxPasswordAge: 90);
 
         $user = new User();
         $user->setPasswordChangedAt(time() - 91 * 86400);
 
-        $currentUser = $this->createMock(CurrentUser::class);
-        $currentUser->expects(self::once())->method('getIdentity')->willReturn($user);
+        $currentUser = $this->createCurrentUser($user);
 
-        $currentRoute = $this->createMock(CurrentRoute::class);
-        $currentRoute->method('getName')->willReturn('voyti/session-logout');
+        $currentRoute = $this->createCurrentRoute($routeName);
 
         $request = $this->createMock(ServerRequestInterface::class);
         $response = $this->createMock(ResponseInterface::class);
@@ -87,10 +76,7 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
         $handler = $this->createMock(RequestHandlerInterface::class);
         $handler->expects(self::once())->method('handle')->with($request)->willReturn($response);
 
-        $guestIdentity = $this->createMock(GuestIdentityInterface::class);
-
-        $currentUser = $this->createMock(CurrentUser::class);
-        $currentUser->expects(self::once())->method('getIdentity')->willReturn($guestIdentity);
+        $currentUser = $this->createCurrentUser();
 
         $middleware = $this->createMiddleware(currentUser: $currentUser, config: $config);
         $result = $middleware->process($request, $handler);
@@ -108,10 +94,7 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
         $handler = $this->createMock(RequestHandlerInterface::class);
         $handler->expects(self::once())->method('handle')->with($request)->willReturn($response);
 
-        $identity = $this->createMock(IdentityInterface::class);
-
-        $currentUser = $this->createMock(CurrentUser::class);
-        $currentUser->expects(self::once())->method('getIdentity')->willReturn($identity);
+        $currentUser = $this->createCurrentUser($this->createMock(IdentityInterface::class));
 
         $middleware = $this->createMiddleware(currentUser: $currentUser, config: $config);
         $result = $middleware->process($request, $handler);
@@ -126,8 +109,7 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
         $user = new User();
         $user->setPasswordChangedAt(time() - 9999 * 86400);
 
-        $currentUser = $this->createMock(CurrentUser::class);
-        $currentUser->expects(self::once())->method('getIdentity')->willReturn($user);
+        $currentUser = $this->createCurrentUser($user);
 
         $request = $this->createMock(ServerRequestInterface::class);
         $response = $this->createMock(ResponseInterface::class);
@@ -148,8 +130,7 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
         $user = new User();
         $user->setPasswordChangedAt(time());
 
-        $currentUser = $this->createMock(CurrentUser::class);
-        $currentUser->expects(self::once())->method('getIdentity')->willReturn($user);
+        $currentUser = $this->createCurrentUser($user);
 
         $request = $this->createMock(ServerRequestInterface::class);
         $response = $this->createMock(ResponseInterface::class);
@@ -163,51 +144,17 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
         self::assertSame($response, $result);
     }
 
-    public function testProcessRedirectsWhenPasswordExpired(): void
+    #[DataProvider('expiredPasswordProvider')]
+    public function testProcessRedirectsWhenPasswordExpired(?int $passwordChangedAt): void
     {
-        $config = VoytiConfigFactory::create(
-            maxPasswordAge: 90,
-        );
+        $config = VoytiConfigFactory::create(maxPasswordAge: 90);
 
         $user = new User();
-        $user->setPasswordChangedAt(time() - 91 * 86400);
+        if ($passwordChangedAt !== null) {
+            $user->setPasswordChangedAt($passwordChangedAt);
+        }
 
-        $currentUser = $this->createMock(CurrentUser::class);
-        $currentUser->expects(self::once())->method('getIdentity')->willReturn($user);
-
-        $request = $this->createMock(ServerRequestInterface::class);
-        $handler = $this->createMock(RequestHandlerInterface::class);
-        $handler->expects(self::never())->method('handle');
-
-        $url = $this->createMock(UrlGeneratorInterface::class);
-        $url->expects(self::once())->method('generate')->with('voyti/user-account')->willReturn('/voyti/user-account');
-
-        $response = $this->createMock(ResponseInterface::class);
-        $response->expects(self::once())->method('withHeader')->with('Location', '/voyti/user-account')->willReturnSelf();
-
-        $responseFactory = $this->createMock(ResponseFactoryInterface::class);
-        $responseFactory->expects(self::once())->method('createResponse')->with(302)->willReturn($response);
-
-        $middleware = $this->createMiddleware(
-            currentUser: $currentUser,
-            config: $config,
-            responseFactory: $responseFactory,
-            url: $url,
-        );
-
-        $middleware->process($request, $handler);
-    }
-
-    public function testProcessRedirectsWhenPasswordNeverChanged(): void
-    {
-        $config = VoytiConfigFactory::create(
-            maxPasswordAge: 90,
-        );
-
-        $user = new User();
-
-        $currentUser = $this->createMock(CurrentUser::class);
-        $currentUser->expects(self::once())->method('getIdentity')->willReturn($user);
+        $currentUser = $this->createCurrentUser($user);
 
         $request = $this->createMock(ServerRequestInterface::class);
         $handler = $this->createMock(RequestHandlerInterface::class);
@@ -243,9 +190,9 @@ final class PasswordAgeEnforceMiddlewareTest extends TestCase
         $config ??= VoytiConfigFactory::create();
 
         return new PasswordAgeEnforceMiddleware(
-            $currentUser ?? $this->createMock(CurrentUser::class),
+            $currentUser ?? $this->createCurrentUser(),
             new ExpireService($config),
-            $currentRoute ?? $this->createMock(CurrentRoute::class),
+            $currentRoute ?? $this->createCurrentRoute(),
             $translator ?? $this->createTranslator(),
             $responseFactory ?? $this->createMock(ResponseFactoryInterface::class),
             $url ?? $this->createMock(UrlGeneratorInterface::class),

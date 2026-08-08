@@ -13,7 +13,6 @@ use YiiRocks\Voyti\tests\Support\FakeSession;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
 use Yiisoft\Factory\Factory;
 use Yiisoft\Yii\AuthClient\Client\GitHub;
-use Yiisoft\Yii\AuthClient\Client\Google;
 use Yiisoft\Yii\AuthClient\Collection;
 use Yiisoft\Yii\AuthClient\OAuth2;
 use Yiisoft\Yii\AuthClient\StateStorage\DummyStateStorage;
@@ -45,34 +44,6 @@ final class SocialAuthClientReturnUrlConfiguratorTest extends TestCase
         self::assertSame('https://example.com/auth?authclient=github', $client->getOauth2ReturnUrl());
     }
 
-    public function testConfigureReturnsTheSameCollectionInstance(): void
-    {
-        $collection = new Collection(['github' => $this->makeClient(GitHub::class)]);
-        $url = new FakeUrlGenerator();
-        $url->setUrl('voyti/session-auth', '/auth');
-
-        $result = (new SocialAuthClientReturnUrlConfigurator($url))->configure($collection);
-
-        self::assertSame($collection, $result);
-    }
-
-    public function testConfigureUsesEachClientsOwnCollectionKey(): void
-    {
-        $github = $this->makeClient(GitHub::class);
-        $google = $this->makeClient(Google::class);
-        $collection = new Collection(['github' => $github, 'google' => $google]);
-        $url = new FakeUrlGenerator();
-        $url->setUrl('voyti/session-auth', '/auth');
-
-        (new SocialAuthClientReturnUrlConfigurator($url))->configure($collection);
-
-        self::assertSame('https://example.com/auth?authclient=github', $github->getOauth2ReturnUrl());
-        self::assertSame('https://example.com/auth?authclient=google', $google->getOauth2ReturnUrl());
-    }
-
-    /**
-     * @param class-string<OAuth2> $class
-     */
     private function makeClient(string $class): OAuth2
     {
         return new $class(

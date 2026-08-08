@@ -44,6 +44,7 @@ final readonly class IndexViewData
     ): self {
         $authChoice = null;
         if ($clientCollection !== null) {
+            /** @infection-ignore-all The auth-choice widget (route + cosmetic button styling) only renders when the host has configured OAuth clients, so its construction has no behavioural effect the library's own suite can observe. */
             $authChoice = AuthChoice::widget()
                 ->authRoute('voyti/session-auth')
                 ->linkAttributes(['class' => LinkButtonHelper::submitButtonClass()]);

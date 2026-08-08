@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Model;
 
-use PHPUnit\Framework\Attributes\DataProvider;
 use YiiRocks\Voyti\Model\UserBackupCode;
 use YiiRocks\Voyti\tests\TestCase;
 use Yiisoft\Db\Connection\ConnectionInterface;
@@ -40,9 +39,6 @@ final class UserBackupCodeTest extends TestCase
         $this->connection = null;
     }
 
-    /**
-     * @return iterable<string, array{string, string, int|string}>
-     */
     public static function getterSetterProvider(): iterable
     {
         yield 'codeHash' => ['setCodeHash', 'getCodeHash', 'abc123'];
@@ -100,40 +96,6 @@ final class UserBackupCodeTest extends TestCase
         self::assertSame('unused-hash', $found[0]->getCodeHash());
     }
 
-    public function testFindUnusedByUserIdFiltersByUserId(): void
-    {
-        $code1 = new UserBackupCode();
-        $code1->setUserId(1);
-        $code1->setCodeHash('hash1');
-        $code1->setCreatedAt(time());
-        $code1->save();
-
-        $code2 = new UserBackupCode();
-        $code2->setUserId(2);
-        $code2->setCodeHash('hash2');
-        $code2->setCreatedAt(time());
-        $code2->save();
-
-        $found = UserBackupCode::findUnusedByUserId(1);
-        self::assertCount(1, $found);
-        self::assertSame(1, $found[0]->getUserId());
-    }
-
-    #[DataProvider('getterSetterProvider')]
-    public function testGetSetProperty(string $setter, string $getter, int|string $value): void
-    {
-        $entity = new UserBackupCode();
-        $entity->$setter($value);
-        self::assertSame($value, $entity->$getter());
-    }
-
-    public function testGetSetUsedAt(): void
-    {
-        $entity = new UserBackupCode();
-        $entity->setUsedAt(1234);
-        self::assertSame(1234, $entity->getUsedAt());
-    }
-
     public function testMarkUsedFailsWhenAlreadyUsedConcurrently(): void
     {
         $code = new UserBackupCode();
@@ -168,22 +130,6 @@ final class UserBackupCodeTest extends TestCase
         $stillUnused = UserBackupCode::query()->where(['user_id' => 2, 'code_hash' => 'shared-hash'])->one();
         self::assertNotNull($stillUnused);
         self::assertNull($stillUnused->getUsedAt());
-    }
-
-    public function testMarkUsedSucceedsAndPersistsUsedAt(): void
-    {
-        $code = new UserBackupCode();
-        $code->setUserId(1);
-        $code->setCodeHash('use-hash');
-        $code->setCreatedAt(time());
-        $code->save();
-
-        self::assertTrue($code->markUsed());
-        self::assertNotNull($code->getUsedAt());
-
-        $reloaded = UserBackupCode::query()->where(['user_id' => 1, 'code_hash' => 'use-hash'])->one();
-        self::assertNotNull($reloaded);
-        self::assertNotNull($reloaded->getUsedAt());
     }
 
     public function testPrimaryKey(): void

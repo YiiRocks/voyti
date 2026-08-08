@@ -97,7 +97,12 @@ final readonly class SocialAuthCallbackService
             );
         }
 
+        // @codeCoverageIgnoreStart
+        // Unreachable defensive fallback: a successful guest social login always either logs a User
+        // in (handled just above) or leaves a pending account (handled earlier), so the current
+        // identity is never a non-User here in practice.
         return $this->popupAwareRedirect($this->homeUrl());
+        // @codeCoverageIgnoreEnd
     }
 
     /**

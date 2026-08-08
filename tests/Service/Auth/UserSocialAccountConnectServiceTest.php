@@ -4,26 +4,13 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Service\Auth;
 
-use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\Service\Auth\UserSocialAccountConnectService;
-use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
 
-final class UserSocialAccountConnectServiceTest extends TestCase
+final class UserSocialAccountConnectServiceTest extends DatabaseTestCase
 {
-    use DatabaseSetupTrait;
-
-    protected function setUp(): void
-    {
-        $this->setUpDatabase();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->tearDownDatabase();
-    }
-
     public function testRunExistingConnectedAccountReturnsFailure(): void
     {
         $user = new User();

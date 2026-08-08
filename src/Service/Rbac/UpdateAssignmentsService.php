@@ -23,7 +23,11 @@ final readonly class UpdateAssignmentsService
 
     public function run(int $userId, array $items): bool
     {
-        /** @var list<string> $itemsList */
+        /**
+         * @var list<string> $itemsList
+         *
+         * @infection-ignore-all array_values only reindexes keys after the filter; every downstream consumer iterates by value, so the reindex is immaterial.
+         */
         $itemsList = array_values(array_filter($items, is_string(...)));
 
         $validationResult = $this->itemsValidator->validate($itemsList);

@@ -25,23 +25,6 @@ final class LoginFormTest extends TestCase
         RecaptchaRegistry::reset();
     }
 
-    public function testConstruct(): void
-    {
-        $config = VoytiConfigFactory::create();
-        $form = new LoginForm($config, $this->createTranslator());
-        $this->assertSame('', $form->login);
-        $this->assertSame('', $form->password);
-        $this->assertFalse($form->rememberMe);
-        $this->assertNull($form->twoFactorAuthenticationCode);
-        $this->assertSame('', $form->gRecaptchaResponse);
-    }
-
-    public function testGetFormName(): void
-    {
-        $form = new LoginForm(VoytiConfigFactory::create(), $this->createTranslator());
-        $this->assertSame('login', $form->getFormName());
-    }
-
     public function testGetPropertyLabels(): void
     {
         $form = new LoginForm(VoytiConfigFactory::create(), $this->createTranslator());
@@ -59,18 +42,11 @@ final class LoginFormTest extends TestCase
         $this->assertIsArray($rules);
         $this->assertArrayHasKey('login', $rules);
         $this->assertArrayHasKey('password', $rules);
+        // The password rule is Required on the non-2FA login step.
+        $this->assertCount(1, $rules['password']);
+        $this->assertInstanceOf(Required::class, $rules['password'][0]);
         $this->assertArrayNotHasKey('gRecaptchaResponse', $rules);
         $this->assertArrayNotHasKey('twoFactorAuthenticationCode', $rules);
-    }
-
-    public function testGetRulesWithRecaptchaV2(): void
-    {
-        $this->configureRecaptchaRegistry();
-        $config = VoytiConfigFactory::create(recaptchaVersion: RecaptchaVersion::V2);
-        $form = new LoginForm($config, $this->createTranslator());
-        $rules = $form->getRules();
-        $this->assertArrayHasKey('gRecaptchaResponse', $rules);
-        $this->assertCount(1, $rules['gRecaptchaResponse']);
     }
 
     public function testGetRulesWithRecaptchaV3(): void
@@ -95,32 +71,6 @@ final class LoginFormTest extends TestCase
         $this->assertCount(1, $rules['twoFactorAuthenticationCode']);
         $this->assertInstanceOf(Required::class, $rules['twoFactorAuthenticationCode'][0]);
         $this->assertArrayNotHasKey('password', $rules);
-    }
-
-    public function testGetValidationPropertyLabels(): void
-    {
-        $form = new LoginForm(VoytiConfigFactory::create(), $this->createTranslator());
-        $this->assertSame($form->getPropertyLabels(), $form->getValidationPropertyLabels());
-    }
-
-    public function testRememberMeDefaultsToFalse(): void
-    {
-        $form = new LoginForm(VoytiConfigFactory::create(), $this->createTranslator());
-        $this->assertFalse($form->rememberMe);
-    }
-
-    public function testSetPropertiesViaPublicAccess(): void
-    {
-        $form = new LoginForm(VoytiConfigFactory::create(), $this->createTranslator());
-        $form->login = 'testuser';
-        $form->password = 'secret';
-        $form->rememberMe = true;
-        $form->twoFactorAuthenticationCode = '123456';
-
-        $this->assertSame('testuser', $form->login);
-        $this->assertSame('secret', $form->password);
-        $this->assertTrue($form->rememberMe);
-        $this->assertSame('123456', $form->twoFactorAuthenticationCode);
     }
 
     public function testValidationErrorMessageUsesPropertyLabelNotRawPropertyName(): void

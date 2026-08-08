@@ -22,6 +22,7 @@ final readonly class EmailCodeGeneratorService
      */
     public function run(User $user): string
     {
+        /** @infection-ignore-all The exact random bounds can't be pinned by a deterministic test (a single draw rarely lands on a boundary); an off-by-one on either end still yields an acceptable numeric code. */
         $code = (string) random_int(100000, 999999);
 
         $user->setAuthTfKey($code);

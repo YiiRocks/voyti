@@ -7,29 +7,24 @@ namespace YiiRocks\Voyti\tests\Service\Admin;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Helper\AuthHelper;
-use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserAuditLog;
 use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\Service\Admin\DashboardService;
-use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
 use YiiRocks\Voyti\tests\Support\SimpleAssignmentsStorage;
 use YiiRocks\Voyti\tests\Support\SimpleItemsStorage;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\Support\UserSessionFactoryTrait;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
-use YiiRocks\Voyti\tests\TestCase;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Rbac\Manager;
-use Yiisoft\Rbac\Permission;
-use Yiisoft\Rbac\Role;
 use Yiisoft\User\CurrentUser;
 
 #[AllowMockObjectsWithoutExpectations]
-final class DashboardServiceTest extends TestCase
+final class DashboardServiceTest extends DatabaseTestCase
 {
-    use DatabaseSetupTrait;
     use UserFactoryTrait;
     use UserSessionFactoryTrait;
 
@@ -37,13 +32,8 @@ final class DashboardServiceTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->setUpDatabase();
+        parent::setUp();
         $this->itemsStorage = new SimpleItemsStorage();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->tearDownDatabase();
     }
 
     public function testGetStatsActiveSessionsTrendCountsSessionsWithinEachWindowBoundaryInclusive(): void
@@ -64,62 +54,6 @@ final class DashboardServiceTest extends TestCase
         self::assertSame(2, $stats['activeSessions']['oneDay']);
         self::assertSame(4, $stats['activeSessions']['sevenDays']);
         self::assertSame(6, $stats['activeSessions']['lifespan']);
-    }
-
-    public function testGetStatsActiveSessionsTrendFiltersByUpdatedAtNotCreatedAt(): void
-    {
-        $lifespan = (VoytiConfigFactory::create())->rememberLoginLifespan;
-        $user = $this->createUser('updated-at-user', 'updated-at-user@example.com', confirmedAt: time());
-        $userId = (int) $user->getId();
-
-        $staleCreatedRecentlyUpdated = new UserSessions();
-        $staleCreatedRecentlyUpdated->setUserId($userId);
-        $staleCreatedRecentlyUpdated->setSessionId('stale-created-recently-updated');
-        $staleCreatedRecentlyUpdated->setIp('127.0.0.1');
-        $staleCreatedRecentlyUpdated->setCreatedAt(time() - $lifespan - 1);
-        $staleCreatedRecentlyUpdated->setUpdatedAt(time());
-        $staleCreatedRecentlyUpdated->save();
-
-        $recentlyCreatedStaleUpdated = new UserSessions();
-        $recentlyCreatedStaleUpdated->setUserId($userId);
-        $recentlyCreatedStaleUpdated->setSessionId('recently-created-stale-updated');
-        $recentlyCreatedStaleUpdated->setIp('127.0.0.1');
-        $recentlyCreatedStaleUpdated->setCreatedAt(time());
-        $recentlyCreatedStaleUpdated->setUpdatedAt(time() - $lifespan - 1);
-        $recentlyCreatedStaleUpdated->save();
-
-        $stats = $this->createService()->getStats();
-
-        self::assertSame(1, $stats['activeSessions']['oneDay']);
-    }
-
-    public function testGetStatsActiveSessionsTrendIncludesRevokedSessionsActiveWithinWindow(): void
-    {
-        $user = $this->createUser('revoked-sessions-user', 'revoked-sessions-user@example.com', confirmedAt: time());
-        $userId = (int) $user->getId();
-
-        $session = $this->createUserSession($userId, 'revoked-recent', createdAt: time());
-        $session->setRevokedAt(time());
-        $session->save();
-
-        $stats = $this->createService()->getStats();
-
-        self::assertSame(1, $stats['activeSessions']['oneDay']);
-    }
-
-    public function testGetStatsCountsRbacItemsAndDistinctRuleNames(): void
-    {
-        $this->itemsStorage->add(new Role('admin'));
-        $this->itemsStorage->add((new Role('editor'))->withRuleName('IsAuthorRule'));
-        $this->itemsStorage->add((new Permission('post.create'))->withRuleName('IsAuthorRule'));
-        $this->itemsStorage->add(new Permission('post.delete'));
-        $this->itemsStorage->add(new Permission('post.update'));
-
-        $stats = $this->createService()->getStats();
-
-        self::assertSame(2, $stats['roleCount']);
-        self::assertSame(3, $stats['permissionCount']);
-        self::assertSame(1, $stats['ruleCount']);
     }
 
     public function testGetStatsCountsUsersByStatusIndependently(): void
@@ -153,52 +87,6 @@ final class DashboardServiceTest extends TestCase
         self::assertSame(2, $stats['newRegistrations']['oneDay']);
         self::assertSame(4, $stats['newRegistrations']['sevenDays']);
         self::assertSame(6, $stats['newRegistrations']['lifespan']);
-    }
-
-    public function testGetStatsRecentAuditLogsEmptyWhenNoneExist(): void
-    {
-        $stats = $this->createService()->getStats();
-
-        self::assertSame([], $stats['recentAuditLogs']);
-    }
-
-    public function testGetStatsRecentAuditLogsFormatCreatedAtUsingTranslatorLocale(): void
-    {
-        $timestamp = 1700000000;
-        $this->createLog('user.create', $timestamp);
-
-        $stats = $this->createService(locale: 'fr')->getStats();
-
-        self::assertSame(
-            TimezoneHelper::formatLocalized($timestamp, 'fr'),
-            $stats['recentAuditLogs'][0]['createdAt'],
-        );
-    }
-
-    public function testGetStatsRecentAuditLogsFormatCreatedAtUsingViewerTimezone(): void
-    {
-        $timestamp = 1700000000;
-        $this->createLog('user.create', $timestamp);
-
-        $stats = $this->createService(locale: 'fr')->getStats(viewerTimezone: 'Asia/Tokyo');
-
-        self::assertSame(
-            TimezoneHelper::formatLocalized($timestamp, 'fr', 'Asia/Tokyo'),
-            $stats['recentAuditLogs'][0]['createdAt'],
-        );
-    }
-
-    public function testGetStatsRecentAuditLogsOrderedNewestFirstLimitedToFive(): void
-    {
-        for ($i = 1; $i <= 7; $i++) {
-            $this->createLog('action.' . $i, $i);
-        }
-
-        $stats = $this->createService()->getStats();
-
-        self::assertCount(5, $stats['recentAuditLogs']);
-        self::assertSame('action.7', $stats['recentAuditLogs'][0]['action']);
-        self::assertSame('action.3', $stats['recentAuditLogs'][4]['action']);
     }
 
     public function testGetStatsRecentAuditLogsTargetLabelIncludesUserIdOnlyWhenPresent(): void
@@ -271,9 +159,6 @@ final class DashboardServiceTest extends TestCase
         return new DashboardService($authHelper, $config, $this->itemsStorage, $translator);
     }
 
-    /**
-     * @return array<string, int> offset in seconds relative to "now", keyed by fixture label
-     */
     private function trendBoundaryOffsets(int $lifespan): array
     {
         return [

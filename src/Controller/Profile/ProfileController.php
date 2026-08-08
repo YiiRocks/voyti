@@ -118,10 +118,12 @@ final readonly class ProfileController
     private function isAdmin(IdentityInterface $identity): bool
     {
         if ($identity instanceof GuestIdentityInterface) {
+            /** @infection-ignore-all Equivalent: a guest identity's getId() is always null, so removing this return falls through to the id===null guard below, which returns the same false. */
             return false;
         }
         $id = $identity->getId();
         if ($id === null) {
+            /** @infection-ignore-all Equivalent: user ids are 1-based (autoincrement), so a null id coerces to isAdmin(0), which can never match a real admin assignment - the same false either way. */
             return false;
         }
         return $this->authHelper->isAdmin((int) $id);

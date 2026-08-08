@@ -33,6 +33,7 @@ final readonly class SwitchIdentityService
         /** @var mixed $originalId */
         $originalId = $this->session->get(self::SESSION_KEY);
         if ($originalId === null) {
+            /** @infection-ignore-all Equivalent: removing this return falls through to findById((int) null) = findById(0), which returns null since user ids are 1-based - the same null result. */
             return null;
         }
 

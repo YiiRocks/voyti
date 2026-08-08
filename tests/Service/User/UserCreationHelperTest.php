@@ -8,13 +8,13 @@ use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use RuntimeException;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\User\UserCreationHelper;
-use YiiRocks\Voyti\tests\Support\DatabaseSetupTrait;
+use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
+use YiiRocks\Voyti\tests\Support\MailCapture;
+use YiiRocks\Voyti\tests\Support\MailServiceFactoryTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
-use YiiRocks\Voyti\tests\TestCase;
 
 /**
  * Covers `UserCreationHelper::persist()`'s handling of the uniqueness-check-then-persist race: two
@@ -22,19 +22,9 @@ use YiiRocks\Voyti\tests\TestCase;
  * `persistAndNotify()` call hits a real DB-level unique-constraint violation.
  */
 #[AllowMockObjectsWithoutExpectations]
-final class UserCreationHelperTest extends TestCase
+final class UserCreationHelperTest extends DatabaseTestCase
 {
-    use DatabaseSetupTrait;
-
-    protected function setUp(): void
-    {
-        $this->setUpDatabase();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->tearDownDatabase();
-    }
+    use MailServiceFactoryTrait;
 
     public function testPersistAndNotifyLeavesOnlyTheWinningUserPersisted(): void
     {
@@ -93,7 +83,7 @@ final class UserCreationHelperTest extends TestCase
         $passwordHasher = TestPasswordHasherFactory::create();
 
         return new UserCreationHelper(
-            $this->createMock(MailService::class),
+            $this->createMailService(new MailCapture()),
             $this->createMock(EventDispatcherInterface::class),
             $passwordHasher,
             $config,

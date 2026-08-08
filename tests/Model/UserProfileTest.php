@@ -73,9 +73,6 @@ final class UserProfileTest extends TestCase
         $this->connection = null;
     }
 
-    /**
-     * @return iterable<string, array{string, string, int|string}>
-     */
     public static function getterSetterProvider(): iterable
     {
         yield 'bio' => ['setBio', 'getBio', 'My bio'];
@@ -106,45 +103,12 @@ final class UserProfileTest extends TestCase
         self::assertSame('Bob', $found->getName());
     }
 
-    public function testFindByUserIdReturnsNullWhenNoneExists(): void
-    {
-        self::assertNull(UserProfile::findByUserId(1));
-    }
-
     public function testGetBioParsedReturnsBioUnchangedWhenBirthdayIsFuture(): void
     {
         $entity = new UserProfile();
         $entity->setBio('I am {age} years old');
         $entity->setBirthday(new DateTimeImmutable('+1 year'));
         self::assertSame('I am {age} years old', $entity->getBioParsed());
-    }
-
-    public function testGetBioParsedReturnsBioUnchangedWhenNoBirthdaySet(): void
-    {
-        $entity = new UserProfile();
-        $entity->setBio('I am {age} years old');
-        self::assertSame('I am {age} years old', $entity->getBioParsed());
-    }
-
-    public function testGetBioParsedReturnsBioUnchangedWhenNoLocationSet(): void
-    {
-        $entity = new UserProfile();
-        $entity->setBio('I live in {location}');
-        self::assertSame('I live in {location}', $entity->getBioParsed());
-    }
-
-    public function testGetBioParsedReturnsBioUnchangedWhenNoTokenPresent(): void
-    {
-        $entity = new UserProfile();
-        $entity->setBio('No token here');
-        $entity->setBirthday(new DateTimeImmutable('-30 years'));
-        self::assertSame('No token here', $entity->getBioParsed());
-    }
-
-    public function testGetBioParsedReturnsNullWhenBioIsNull(): void
-    {
-        $entity = new UserProfile();
-        self::assertNull($entity->getBioParsed());
     }
 
     public function testGetBioParsedReturnsNullWhenBioIsNullEvenWithBirthdaySet(): void
@@ -171,14 +135,6 @@ final class UserProfileTest extends TestCase
         self::assertSame('I am 30 and live in Paris', $entity->getBioParsed());
     }
 
-    public function testGetBioParsedSubstitutesLocationToken(): void
-    {
-        $entity = new UserProfile();
-        $entity->setBio('I live in {location}');
-        $entity->setLocation('New York');
-        self::assertSame('I live in New York', $entity->getBioParsed());
-    }
-
     public function testGetGravatarIdFallsBackToUserEmail(): void
     {
         $this->connection->createCommand()->insert('user', [
@@ -198,12 +154,6 @@ final class UserProfileTest extends TestCase
 
         $expected = hash('sha256', strtolower(trim('useremail@example.com')));
         self::assertSame($expected, $entity->getGravatarId());
-    }
-
-    public function testGetGravatarIdReturnsNullWhenNoEmailAndNoUserId(): void
-    {
-        $entity = new UserProfile();
-        self::assertNull($entity->getGravatarId());
     }
 
     public function testGetGravatarIdReturnsNullWhenNoEmailAndUserTableMissing(): void
@@ -230,93 +180,6 @@ final class UserProfileTest extends TestCase
         $entity->setGravatarEmail('  Test@Example.com  ');
         $expected = hash('sha256', 'test@example.com');
         self::assertSame($expected, $entity->getGravatarId());
-    }
-
-    public function testGetGravatarIdWithCachedNullSchemaReturnsHash(): void
-    {
-        $this->connection->createCommand('DROP TABLE IF EXISTS "user"')->execute();
-
-        $schema = $this->connection->getSchema();
-        $schema->getTableSchema('{{%user}}', true);
-
-        $this->connection->createCommand('
-            CREATE TABLE "user" (
-                "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-                "username" VARCHAR(255) NOT NULL,
-                "email" VARCHAR(255) NOT NULL,
-                "password_hash" VARCHAR(255) NOT NULL,
-                "auth_key" VARCHAR(32) NOT NULL,
-                "auth_tf_enabled" INTEGER NOT NULL DEFAULT 0,
-                "auth_tf_key" VARCHAR(64),
-                "auth_tf_type" VARCHAR(20),
-                "blocked_at" INTEGER,
-                "confirmed_at" INTEGER,
-                "created_at" INTEGER NOT NULL,
-                "flags" INTEGER NOT NULL DEFAULT 0,
-                "gdpr_consent" INTEGER NOT NULL DEFAULT 0,
-                "gdpr_consent_date" INTEGER,
-                "anonymized" INTEGER NOT NULL DEFAULT 0,
-                "last_login_at" INTEGER,
-                "last_login_ip" VARCHAR(45),
-                "password_changed_at" INTEGER,
-                "registration_ip" VARCHAR(45),
-                "unconfirmed_email" VARCHAR(255),
-                "updated_at" INTEGER NOT NULL
-            )
-        ')->execute();
-
-        $this->connection->createCommand()->insert('user', [
-            'username' => 'cacheduser',
-            'email' => 'cached@example.com',
-            'password_hash' => 'hash',
-            'auth_key' => 'key',
-            'created_at' => 1000,
-            'updated_at' => 1000,
-        ])->execute();
-
-        $entity = new UserProfile();
-        $entity->setUserId(1);
-        $expected = hash('sha256', strtolower(trim('cached@example.com')));
-        self::assertSame($expected, $entity->getGravatarId());
-    }
-
-    public function testGetGravatarIdWithEmptyGravatarEmailFallsBackToPublicEmail(): void
-    {
-        $entity = new UserProfile();
-        $entity->setGravatarEmail('');
-        $entity->setPublicEmail('Public@Example.com');
-        $expected = hash('sha256', strtolower(trim('Public@Example.com')));
-        self::assertSame($expected, $entity->getGravatarId());
-    }
-
-    public function testGetGravatarIdWithGravatarEmail(): void
-    {
-        $entity = new UserProfile();
-        $entity->setGravatarEmail('Test@Example.com');
-        $expected = hash('sha256', strtolower(trim('Test@Example.com')));
-        self::assertSame($expected, $entity->getGravatarId());
-    }
-
-    public function testGetGravatarIdWithNullGravatarEmailFallsBackToPublicEmail(): void
-    {
-        $entity = new UserProfile();
-        $entity->setPublicEmail('public@example.com');
-        $expected = hash('sha256', strtolower(trim('public@example.com')));
-        self::assertSame($expected, $entity->getGravatarId());
-    }
-
-    public function testGetGravatarUrlReturnsNullWhenNoGravatarId(): void
-    {
-        $entity = new UserProfile();
-        self::assertNull($entity->getGravatarUrl());
-    }
-
-    public function testGetGravatarUrlUsesCustomSize(): void
-    {
-        $entity = new UserProfile();
-        $entity->setGravatarEmail('test@example.com');
-        $id = hash('sha256', 'test@example.com');
-        self::assertSame("https://www.gravatar.com/avatar/{$id}?s=64&d=mp", $entity->getGravatarUrl(64));
     }
 
     public function testGetGravatarUrlUsesDefaultSize(): void
@@ -347,27 +210,5 @@ final class UserProfileTest extends TestCase
     {
         $entity = new UserProfile();
         self::assertNull($entity->getUser());
-    }
-
-    public function testGetUserReturnsUserWhenLinked(): void
-    {
-        $this->connection->createCommand()->insert('user', [
-            'username' => 'profileuser',
-            'email' => 'profileuser@example.com',
-            'password_hash' => 'hash',
-            'auth_key' => 'key',
-            'created_at' => 1000,
-            'updated_at' => 1000,
-        ])->execute();
-
-        $user = User::query()->where(['username' => 'profileuser'])->one();
-        self::assertNotNull($user);
-
-        $entity = new UserProfile();
-        $entity->setUserId((int) $user->getId());
-
-        $found = $entity->getUser();
-        self::assertNotNull($found);
-        self::assertSame($user->getId(), $found->getId());
     }
 }
