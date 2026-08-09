@@ -25,6 +25,7 @@ use Yiisoft\User\CurrentUser;
  */
 final readonly class UserSocialAuthenticateService
 {
+    private const int MAX_USERNAME_SUFFIX = 1000;
     private const string SESSION_KEY = 'oauth_client_data';
 
     public function __construct(
@@ -108,9 +109,14 @@ final readonly class UserSocialAuthenticateService
 
         $username = $base;
         $suffix = 2;
-        while (User::findByUsername($username) !== null) {
-            $username = $base . '_' . $suffix;
-            $suffix++;
+        // Free bases return immediately, and the search below only runs when the base is taken. The
+        // bound caps the sequential suffix search so the loop always terminates, even under an inverted
+        // condition, instead of spinning forever on an already-saturated username space.
+        if (User::findByUsername($username) !== null) {
+            while (User::findByUsername($username) !== null && $suffix <= self::MAX_USERNAME_SUFFIX) {
+                $username = $base . '_' . $suffix;
+                $suffix++;
+            }
         }
 
         return $username;

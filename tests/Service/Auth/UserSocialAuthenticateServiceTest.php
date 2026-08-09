@@ -191,6 +191,16 @@ final class UserSocialAuthenticateServiceTest extends DatabaseTestCase
         $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true), $currentUser2)
             ->run('github', 'dupe_account2', ['username' => 'dupe2', 'email' => 'new_dupe2@example.com']);
         self::assertSame('dupe2_3', User::findByEmail('new_dupe2@example.com')?->getUsername());
+
+        // Saturated through _999: caps at the suffix bound
+        $currentUser3 = $this->createCurrentUser();
+        $this->createUser('bound', 'bound@example.com');
+        for ($i = 2; $i < 1000; $i++) {
+            $this->createUser("bound_{$i}", "bound_{$i}@example.com");
+        }
+        $this->createService(VoytiConfigFactory::create(enableSocialNetworkRegistration: true), $currentUser3)
+            ->run('github', 'bound_client', ['username' => 'bound', 'email' => 'bound_new@example.com']);
+        self::assertSame('bound_1000', User::findByEmail('bound_new@example.com')?->getUsername());
     }
 
     public function testRunUsernameHandling(): void
