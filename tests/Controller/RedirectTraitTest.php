@@ -30,14 +30,14 @@ final class RedirectTraitTest extends TestCase
         self::assertSame('/account', $result->getHeaderLine('Location'));
     }
 
-    private function makeFixture(FlashNotifier $toast, TranslatorInterface $translator): object
+    private function makeFixture(FlashNotifier $flashNotifier, TranslatorInterface $translator): object
     {
-        return new class (new Psr17Factory(), $toast, $translator) {
+        return new class (new Psr17Factory(), $flashNotifier, $translator) {
             use RedirectTrait;
 
             public function __construct(
                 private ResponseFactoryInterface $responseFactory,
-                private FlashNotifier $toast,
+                private FlashNotifier $flashNotifier,
                 private TranslatorInterface $translator,
             ) {}
 

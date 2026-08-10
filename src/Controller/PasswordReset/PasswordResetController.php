@@ -44,7 +44,7 @@ final readonly class PasswordResetController
         private VoytiConfig $config,
         private FormHydrator $formHydrator,
         private ResponseFactoryInterface $responseFactory,
-        private FlashNotifier $toast,
+        private FlashNotifier $flashNotifier,
     ) {}
 
     public function confirm(
@@ -100,7 +100,7 @@ final readonly class PasswordResetController
 
         if ($this->formHydrator->populateFromPostAndValidate($form, $request)) {
             $serviceResult = $this->passwordRecoveryService->run($form->email);
-            $this->toast->add(FlashType::SUCCESS, $serviceResult->getMessage());
+            $this->flashNotifier->add(FlashType::SUCCESS, $serviceResult->getMessage());
 
             return $this->redirect($this->url->generate('voyti/session-login'));
         }

@@ -29,7 +29,7 @@ final readonly class DashboardController
         private UrlGeneratorInterface $url,
         private VoytiConfig $config,
         private DashboardService $dashboardService,
-        private FlashNotifier $toast,
+        private FlashNotifier $flashNotifier,
         private CurrentUser $currentUser,
     ) {}
 

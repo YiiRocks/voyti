@@ -49,7 +49,7 @@ final readonly class TwoFactorController
         private ResponseFactoryInterface $responseFactory,
         private QrCodeUriGeneratorService $twoFactorQrCodeService,
         private EmailCodeGeneratorService $twoFactorEmailCodeService,
-        private FlashNotifier $toast,
+        private FlashNotifier $flashNotifier,
         private BackupCodeService $backupCodeService,
         private CodeValidator $codeValidator,
         private EmailValidator $emailValidator,

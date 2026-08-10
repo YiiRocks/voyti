@@ -42,7 +42,7 @@ final readonly class AccountController
         private FormHydrator $formHydrator,
         private CurrentUser $currentUser,
         private ResponseFactoryInterface $responseFactory,
-        private FlashNotifier $toast,
+        private FlashNotifier $flashNotifier,
         private PasswordHistoryService $passwordHistoryService,
     ) {}
 

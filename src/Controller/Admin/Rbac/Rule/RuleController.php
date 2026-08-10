@@ -47,7 +47,7 @@ final readonly class RuleController
         private ValidatorInterface $validator,
         private RuleEditionService $authRuleEditionService,
         private ResponseFactoryInterface $responseFactory,
-        private FlashNotifier $toast,
+        private FlashNotifier $flashNotifier,
         private VoytiConfig $config,
         private AuditLogService $auditLogService,
         private CurrentUser $currentUser,

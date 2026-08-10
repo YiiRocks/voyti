@@ -47,7 +47,7 @@ final readonly class ProfileController
         private EventDispatcherInterface $eventDispatcher,
         private FormHydrator $formHydrator,
         private ResponseFactoryInterface $responseFactory,
-        private FlashNotifier $toast,
+        private FlashNotifier $flashNotifier,
     ) {}
 
     public function show(#[RouteArgument] int $id): ResponseInterface

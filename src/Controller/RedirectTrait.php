@@ -25,7 +25,7 @@ trait RedirectTrait
     private function redirectWithFlash(string $url, string $messageKey): ResponseInterface
     {
         $message = $this->translator->translate($messageKey, category: 'voyti');
-        $this->toast->add(FlashType::SUCCESS, $message);
+        $this->flashNotifier->add(FlashType::SUCCESS, $message);
 
         return $this->redirect($url);
     }

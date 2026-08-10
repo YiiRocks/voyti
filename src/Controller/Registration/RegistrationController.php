@@ -46,7 +46,7 @@ final readonly class RegistrationController
         private PendingSocialAccountService $pendingSocialAccountService,
         private FormHydrator $formHydrator,
         private ResponseFactoryInterface $responseFactory,
-        private FlashNotifier $toast,
+        private FlashNotifier $flashNotifier,
         private ?Collection $clientCollection,
     ) {}
 

@@ -87,7 +87,7 @@ final readonly class UserController
         private ResponseFactoryInterface $responseFactory,
         private ItemsStorageInterface $itemsStorage,
         private AssignmentsStorageInterface $assignmentsStorage,
-        private FlashNotifier $toast,
+        private FlashNotifier $flashNotifier,
         private PasswordHistoryService $passwordHistoryService,
         private AuditLogService $auditLogService,
     ) {}
@@ -332,7 +332,7 @@ final readonly class UserController
         $result = $this->switchIdentityService->run($id, $request->getServerParams());
         if ($result->isSuccess()) {
             $this->auditLogService->log($actorId, 'user.switch_identity', $request->getServerParams(), targetUserId: $id);
-            $this->toast->add(
+            $this->flashNotifier->add(
                 FlashType::SUCCESS,
                 $this->translator->translate('voyti.admin.impersonate_identity_success', category: 'voyti'),
             );
@@ -347,7 +347,7 @@ final readonly class UserController
     {
         $result = $this->switchIdentityService->restore($request->getServerParams());
         if ($result->isSuccess()) {
-            $this->toast->add(
+            $this->flashNotifier->add(
                 FlashType::SUCCESS,
                 $this->translator->translate('voyti.admin.impersonate_identity_restored', category: 'voyti'),
             );

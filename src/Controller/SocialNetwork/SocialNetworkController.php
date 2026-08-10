@@ -35,7 +35,7 @@ final readonly class SocialNetworkController
         private ?Collection $clientCollection,
         private CurrentUser $currentUser,
         private ResponseFactoryInterface $responseFactory,
-        private FlashNotifier $toast,
+        private FlashNotifier $flashNotifier,
     ) {}
 
     public function delete(#[RouteArgument] int $id): ResponseInterface

@@ -40,7 +40,7 @@ final readonly class SessionController
         private SessionInterface $session,
         private VoytiConfig $config,
         private EventDispatcherInterface $eventDispatcher,
-        private FlashNotifier $toast,
+        private FlashNotifier $flashNotifier,
     ) {}
 
     public function index(): ResponseInterface

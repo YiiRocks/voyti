@@ -56,7 +56,7 @@ final readonly class PrivacyController
         private CurrentUser $currentUser,
         private ResponseFactoryInterface $responseFactory,
         private TerminateUserSessionsService $terminateUserSessionsService,
-        private FlashNotifier $toast,
+        private FlashNotifier $flashNotifier,
     ) {}
 
     public function anonymize(ServerRequestInterface $request): ResponseInterface

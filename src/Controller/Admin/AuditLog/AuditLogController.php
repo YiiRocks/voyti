@@ -36,7 +36,7 @@ final readonly class AuditLogController
         private UrlGeneratorInterface $url,
         private ResponseFactoryInterface $responseFactory,
         private VoytiConfig $config,
-        private FlashNotifier $toast,
+        private FlashNotifier $flashNotifier,
         private CurrentUser $currentUser,
     ) {}
 

@@ -56,7 +56,7 @@ final readonly class RbacController
         private ItemsStorageInterface $itemsStorage,
         private ManagerInterface $managerInterface,
         private AssignmentsStorageInterface $assignmentsStorage,
-        private FlashNotifier $toast,
+        private FlashNotifier $flashNotifier,
         private VoytiConfig $config,
         private AuditLogService $auditLogService,
         private CurrentUser $currentUser,

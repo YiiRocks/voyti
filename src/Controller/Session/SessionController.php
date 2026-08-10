@@ -67,7 +67,7 @@ final readonly class SessionController
         private PendingSocialAccountService $pendingSocialAccountService,
         private FormHydrator $formHydrator,
         private EmailCodeGeneratorService $twoFactorEmailCodeService,
-        private FlashNotifier $toast,
+        private FlashNotifier $flashNotifier,
         private BackupCodeService $backupCodeService,
         private CodeValidator $codeValidator,
         private EmailValidator $emailValidator,
