@@ -20,9 +20,12 @@ final class PrivacyViewDataTest extends TestCase
 
     public function testAnonymizeCreateAssignsAnonymizeUrl(): void
     {
-        $data = AnonymizeViewData::create(new FakeUrlGenerator());
+        $config = VoytiConfigFactory::create();
+
+        $data = AnonymizeViewData::create($config, new FakeUrlGenerator(), $this->createTranslator());
 
         self::assertSame('//voyti/user-privacy-anonymize', $data->formSubmitUrl);
+        self::assertNotEmpty($data->menu->items);
     }
 
     public function testDeleteCreateAssignsDeleteUrl(): void
@@ -38,11 +41,13 @@ final class PrivacyViewDataTest extends TestCase
         $form->consent = true;
         $form->consentDate = 1700000000;
         $form->timezone = 'UTC';
+        $config = VoytiConfigFactory::create();
 
-        $data = GdprConsentViewData::create($form, new FakeUrlGenerator(), 'en');
+        $data = GdprConsentViewData::create($form, $config, new FakeUrlGenerator(), $this->createTranslator());
 
         self::assertTrue($data->isLocked);
         self::assertNotNull($data->consentDateDisplay);
+        self::assertNotEmpty($data->menu->items);
     }
 
     public function testGdprConsentCreateWhenLockedWithoutConsentDate(): void
@@ -50,11 +55,13 @@ final class PrivacyViewDataTest extends TestCase
         $form = new GdprConsentForm($this->createTranslator());
         $form->consent = true;
         $form->consentDate = null;
+        $config = VoytiConfigFactory::create();
 
-        $data = GdprConsentViewData::create($form, new FakeUrlGenerator(), 'en');
+        $data = GdprConsentViewData::create($form, $config, new FakeUrlGenerator(), $this->createTranslator());
 
         self::assertTrue($data->isLocked);
         self::assertNull($data->consentDateDisplay);
+        self::assertNotEmpty($data->menu->items);
     }
 
     public function testIndexCreateWithDeleteEnabledGdprDisabled(): void

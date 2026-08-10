@@ -86,7 +86,10 @@ final readonly class PrivacyController
             }
         }
 
-        return $this->renderView('privacy/anonymize', ['form' => $form, 'data' => AnonymizeViewData::create($this->url)]);
+        return $this->renderView('privacy/anonymize', [
+            'form' => $form,
+            'data' => AnonymizeViewData::create($this->config, $this->url, $this->translator()),
+        ]);
     }
 
     public function delete(ServerRequestInterface $request): ResponseInterface
@@ -167,7 +170,12 @@ final readonly class PrivacyController
 
         return $this->renderView('privacy/gdpr-consent', [
             'form' => $form,
-            'data' => GdprConsentViewData::create($form, $this->url, $this->translator->getLocale()),
+            'data' => GdprConsentViewData::create(
+                $form,
+                $this->config,
+                $this->url,
+                $this->translator(),
+            ),
         ]);
     }
 

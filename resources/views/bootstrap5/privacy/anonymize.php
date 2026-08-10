@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use YiiRocks\Voyti\Model\Form\Settings\ConsentForm;
 use YiiRocks\Voyti\ViewData\Privacy\AnonymizeViewData;
+use YiiRocks\Voyti\ViewData\Shared\FlashViewData;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Translator\TranslatorInterface;
@@ -15,6 +16,7 @@ use Yiisoft\Yii\View\Renderer\Csrf;
  * @var ConsentForm $form
  * @var AnonymizeViewData $data
  * @var TranslatorInterface $translator
+ * @var FlashViewData $flash
  * @var Csrf $csrf
  */
 
@@ -22,6 +24,8 @@ use Yiisoft\Yii\View\Renderer\Csrf;
 $this->setTitle($translator->translate('voyti.view.anonymize.title'));
 
 echo Html::div()->open();
+/** @psalm-suppress InvalidScope */
+echo $this->render('../shared/_menu', ['menu' => $data->menu]);
 echo Html::H1($translator->translate('voyti.view.anonymize.title'));
 
 echo Html::p()->class('alert alert-warning')->open();

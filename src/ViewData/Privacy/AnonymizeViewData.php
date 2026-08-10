@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\ViewData\Privacy;
 
+use YiiRocks\Voyti\ViewData\Shared\MenuViewData;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\UrlGeneratorInterface;
+use Yiisoft\Translator\TranslatorInterface;
 
 /**
  * Data for the `privacy/anonymize` screen.
@@ -12,11 +15,18 @@ use Yiisoft\Router\UrlGeneratorInterface;
 final readonly class AnonymizeViewData
 {
     private function __construct(
+        public MenuViewData $menu,
         public string $formSubmitUrl,
     ) {}
 
-    public static function create(UrlGeneratorInterface $url): self
-    {
-        return new self(formSubmitUrl: $url->generate('voyti/user-privacy-anonymize'));
+    public static function create(
+        VoytiConfig $config,
+        UrlGeneratorInterface $url,
+        TranslatorInterface $translator,
+    ): self {
+        return new self(
+            menu: MenuViewData::forAccount($config, $url, $translator),
+            formSubmitUrl: $url->generate('voyti/user-privacy-anonymize'),
+        );
     }
 }

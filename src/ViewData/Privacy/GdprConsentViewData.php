@@ -6,7 +6,10 @@ namespace YiiRocks\Voyti\ViewData\Privacy;
 
 use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\Model\Form\Settings\GdprConsentForm;
+use YiiRocks\Voyti\ViewData\Shared\MenuViewData;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\UrlGeneratorInterface;
+use Yiisoft\Translator\TranslatorInterface;
 
 /**
  * Data for the `privacy/gdpr-consent` screen.
@@ -19,20 +22,26 @@ final readonly class GdprConsentViewData
      * @param string|null $consentDateDisplay a localized date string, set only when $isLocked
      */
     private function __construct(
+        public MenuViewData $menu,
         public string $formSubmitUrl,
         public bool $isLocked,
         public ?string $consentDateDisplay,
     ) {}
 
-    public static function create(GdprConsentForm $form, UrlGeneratorInterface $url, string $locale): self
-    {
+    public static function create(
+        GdprConsentForm $form,
+        VoytiConfig $config,
+        UrlGeneratorInterface $url,
+        TranslatorInterface $translator,
+    ): self {
         $isLocked = $form->consent;
 
         return new self(
+            menu: MenuViewData::forAccount($config, $url, $translator),
             formSubmitUrl: $url->generate('voyti/user-privacy-gdpr-consent'),
             isLocked: $isLocked,
             consentDateDisplay: $isLocked && $form->consentDate !== null
-                ? TimezoneHelper::formatLocalized($form->consentDate, $locale, $form->timezone)
+                ? TimezoneHelper::formatLocalized($form->consentDate, $translator->getLocale(), $form->timezone)
                 : null,
         );
     }
