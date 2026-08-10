@@ -14,6 +14,7 @@ use YiiRocks\Voyti\Helper\FlashType;
 use YiiRocks\Voyti\Model\Form\Auth\RecoveryForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
+use YiiRocks\Voyti\Service\FlashNotifier;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
 use YiiRocks\Voyti\Service\Password\ResetService;
 use YiiRocks\Voyti\ViewData\PasswordReset\RequestViewData;
@@ -45,6 +46,7 @@ final readonly class PasswordResetController
         private FormHydrator $formHydrator,
         private ResponseFactoryInterface $responseFactory,
         private FlashInterface $flash,
+        private FlashNotifier $toast,
     ) {}
 
     public function confirm(
@@ -100,7 +102,7 @@ final readonly class PasswordResetController
 
         if ($this->formHydrator->populateFromPostAndValidate($form, $request)) {
             $serviceResult = $this->passwordRecoveryService->run($form->email);
-            $this->flash->set(FlashType::SUCCESS, $serviceResult->getMessage());
+            $this->toast->add(FlashType::SUCCESS, $serviceResult->getMessage());
 
             return $this->redirect($this->url->generate('voyti/session-login'));
         }

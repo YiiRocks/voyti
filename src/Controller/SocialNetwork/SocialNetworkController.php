@@ -9,6 +9,7 @@ use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Model\UserSocialAccount;
+use YiiRocks\Voyti\Service\FlashNotifier;
 use YiiRocks\Voyti\ViewData\SocialNetwork\IndexViewData;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
@@ -36,6 +37,7 @@ final readonly class SocialNetworkController
         private CurrentUser $currentUser,
         private ResponseFactoryInterface $responseFactory,
         private FlashInterface $flash,
+        private FlashNotifier $toast,
     ) {}
 
     public function delete(#[RouteArgument] int $id): ResponseInterface

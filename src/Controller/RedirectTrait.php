@@ -10,8 +10,8 @@ use Yiisoft\Http\Header;
 use Yiisoft\Http\Status;
 
 /**
- * Adds redirect-response helpers to a controller, including a variant that queues a flash
- * message before redirecting. Requires the consumer to have `$responseFactory`, `$flash`, and
+ * Adds redirect-response helpers to a controller, including a variant that queues a toast
+ * message before redirecting. Requires the consumer to have `$responseFactory`, `$toast`, and
  * `$translator` properties.
  */
 trait RedirectTrait
@@ -24,7 +24,8 @@ trait RedirectTrait
 
     private function redirectWithFlash(string $url, string $messageKey): ResponseInterface
     {
-        $this->flash->set(FlashType::SUCCESS, $this->translator->translate($messageKey, category: 'voyti'));
+        $message = $this->translator->translate($messageKey, category: 'voyti');
+        $this->toast->add(FlashType::SUCCESS, $message);
 
         return $this->redirect($url);
     }

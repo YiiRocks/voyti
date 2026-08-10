@@ -8,6 +8,7 @@ use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\Admin\DashboardService;
+use YiiRocks\Voyti\Service\FlashNotifier;
 use YiiRocks\Voyti\ViewData\Admin\Dashboard\IndexViewData;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -30,6 +31,7 @@ final readonly class DashboardController
         private VoytiConfig $config,
         private DashboardService $dashboardService,
         private FlashInterface $flash,
+        private FlashNotifier $toast,
         private CurrentUser $currentUser,
     ) {}
 

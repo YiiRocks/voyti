@@ -16,6 +16,7 @@ use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Model\Form\Settings\UserProfileForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserProfile;
+use YiiRocks\Voyti\Service\FlashNotifier;
 use YiiRocks\Voyti\ViewData\Profile\UpdateViewData;
 use YiiRocks\Voyti\ViewData\Shared\ProfileCardViewData;
 use YiiRocks\Voyti\VoytiConfig;
@@ -48,6 +49,7 @@ final readonly class ProfileController
         private FormHydrator $formHydrator,
         private ResponseFactoryInterface $responseFactory,
         private FlashInterface $flash,
+        private FlashNotifier $toast,
     ) {}
 
     public function show(#[RouteArgument] int $id): ResponseInterface

@@ -12,6 +12,7 @@ use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Model\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\EmailChangeService;
+use YiiRocks\Voyti\Service\FlashNotifier;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\ViewData\Account\UpdateViewData;
 use YiiRocks\Voyti\ViewData\Shared\MessageViewData;
@@ -43,6 +44,7 @@ final readonly class AccountController
         private CurrentUser $currentUser,
         private ResponseFactoryInterface $responseFactory,
         private FlashInterface $flash,
+        private FlashNotifier $toast,
         private PasswordHistoryService $passwordHistoryService,
     ) {}
 

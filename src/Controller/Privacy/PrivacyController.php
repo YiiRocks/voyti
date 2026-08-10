@@ -17,6 +17,7 @@ use YiiRocks\Voyti\Model\Form\Settings\GdprConsentForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\Model\UserSocialAccount;
+use YiiRocks\Voyti\Service\FlashNotifier;
 use YiiRocks\Voyti\Service\UserSession\TerminateUserSessionsService;
 use YiiRocks\Voyti\ViewData\Privacy\AnonymizeViewData;
 use YiiRocks\Voyti\ViewData\Privacy\DeleteViewData;
@@ -57,6 +58,7 @@ final readonly class PrivacyController
         private ResponseFactoryInterface $responseFactory,
         private TerminateUserSessionsService $terminateUserSessionsService,
         private FlashInterface $flash,
+        private FlashNotifier $toast,
     ) {}
 
     public function anonymize(ServerRequestInterface $request): ResponseInterface

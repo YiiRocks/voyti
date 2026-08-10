@@ -14,6 +14,7 @@ use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Model\Form\Rbac\AuthItemForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\AuditLogService;
+use YiiRocks\Voyti\Service\FlashNotifier;
 use YiiRocks\Voyti\ViewData\Admin\Rbac\CreateViewData;
 use YiiRocks\Voyti\ViewData\Admin\Rbac\IndexViewData;
 use YiiRocks\Voyti\ViewData\Admin\Rbac\UpdateViewData;
@@ -57,6 +58,7 @@ final readonly class RbacController
         private ManagerInterface $managerInterface,
         private AssignmentsStorageInterface $assignmentsStorage,
         private FlashInterface $flash,
+        private FlashNotifier $toast,
         private VoytiConfig $config,
         private AuditLogService $auditLogService,
         private CurrentUser $currentUser,

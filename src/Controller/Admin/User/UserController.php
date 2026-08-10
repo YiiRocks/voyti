@@ -20,6 +20,7 @@ use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserProfile;
 use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\Service\AuditLogService;
+use YiiRocks\Voyti\Service\FlashNotifier;
 use YiiRocks\Voyti\Service\Password\ExpireService;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
@@ -88,6 +89,7 @@ final readonly class UserController
         private ItemsStorageInterface $itemsStorage,
         private AssignmentsStorageInterface $assignmentsStorage,
         private FlashInterface $flash,
+        private FlashNotifier $toast,
         private PasswordHistoryService $passwordHistoryService,
         private AuditLogService $auditLogService,
     ) {}
@@ -332,7 +334,7 @@ final readonly class UserController
         $result = $this->switchIdentityService->run($id, $request->getServerParams());
         if ($result->isSuccess()) {
             $this->auditLogService->log($actorId, 'user.switch_identity', $request->getServerParams(), targetUserId: $id);
-            $this->flash->set(
+            $this->toast->add(
                 FlashType::SUCCESS,
                 $this->translator->translate('voyti.admin.impersonate_identity_success', category: 'voyti'),
             );
@@ -347,7 +349,7 @@ final readonly class UserController
     {
         $result = $this->switchIdentityService->restore($request->getServerParams());
         if ($result->isSuccess()) {
-            $this->flash->set(
+            $this->toast->add(
                 FlashType::SUCCESS,
                 $this->translator->translate('voyti.admin.impersonate_identity_restored', category: 'voyti'),
             );

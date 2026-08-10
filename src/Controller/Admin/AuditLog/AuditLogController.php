@@ -11,6 +11,7 @@ use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserAuditLog;
+use YiiRocks\Voyti\Service\FlashNotifier;
 use YiiRocks\Voyti\ViewData\Admin\AuditLog\IndexViewData;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Data\Db\QueryDataReader;
@@ -37,6 +38,7 @@ final readonly class AuditLogController
         private ResponseFactoryInterface $responseFactory,
         private VoytiConfig $config,
         private FlashInterface $flash,
+        private FlashNotifier $toast,
         private CurrentUser $currentUser,
     ) {}
 

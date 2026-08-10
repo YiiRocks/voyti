@@ -27,7 +27,7 @@ echo Html::div()->open();
 /** @psalm-suppress InvalidScope */
 echo $this->render('../shared/_menu', ['menu' => $data->menu]);
 /** @psalm-suppress InvalidScope */
-echo $this->render('../shared/_flash', ['flash' => $flash]);
+echo $this->render('../shared/_flash', ['flash' => $flash, 'toast' => $toast ?? null]);
 
 echo Html::H1($translator->translate('voyti.view.edit_profile.title'));
 echo Html::div()->class('card border-primary mb-4')->open();

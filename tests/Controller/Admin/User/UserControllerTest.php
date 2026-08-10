@@ -17,6 +17,7 @@ use YiiRocks\Voyti\Model\UserAuditLog;
 use YiiRocks\Voyti\Model\UserProfile;
 use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\Model\UserToken;
+use YiiRocks\Voyti\Service\FlashNotifier;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\tests\Support\CurrentUserTrait;
 use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
@@ -410,9 +411,8 @@ final class UserControllerTest extends DatabaseTestCase
 
         // Success: switches and redirects
         $target = $this->createUser(username: 'switchtarget', email: 'switchtarget@example.com');
-        $flash = $this->createMock(FlashInterface::class);
-        $flash->expects($this->once())->method('set');
-        $result = $this->createController(overrides: [FlashInterface::class => $flash])->switchIdentity(new ServerRequest('POST', '/'), (int) $target->getId());
+        $this->flash->expects($this->once())->method('add')->with('toast.success');
+        $result = $this->createController()->switchIdentity(new ServerRequest('POST', '/'), (int) $target->getId());
         $this->assertSame(302, $result->getStatusCode());
         $this->assertSame('//voyti/user', $result->getHeaderLine('Location'));
     }
@@ -445,9 +445,8 @@ final class UserControllerTest extends DatabaseTestCase
         $original = $this->createUser(username: 'original', email: 'original@example.com');
         $session = new FakeSession();
         $session->set('voyti_original_admin_user', (string) $original->getId());
-        $flash = $this->createMock(FlashInterface::class);
-        $flash->expects($this->once())->method('set');
-        $result = $this->createController(overrides: [SessionInterface::class => $session, FlashInterface::class => $flash])
+        $this->flash->expects($this->once())->method('add')->with('toast.success');
+        $result = $this->createController(overrides: [SessionInterface::class => $session])
             ->switchIdentityRestore(new ServerRequest('POST', '/'));
         $this->assertSame(302, $result->getStatusCode());
         $this->assertFalse($session->has('voyti_original_admin_user'));
@@ -577,7 +576,7 @@ final class UserControllerTest extends DatabaseTestCase
         $definitions = [
             AssignmentsStorageInterface::class => $this->assignmentsStorage,
             CurrentUser::class => $this->currentUser,
-            FlashInterface::class => $this->flash,
+            FlashNotifier::class => new FlashNotifier($this->flash),
             ItemsStorageInterface::class => $this->itemsStorage,
             PasswordGeneratorInterface::class => $this->passwordGenerator,
             ValidatorInterface::class => $this->validator,

@@ -62,6 +62,7 @@
     "suggest": {
         "chillerlan/2fa-qrcode-bundle": "Time-based One-Time Password (TOTP) 2 Factor Authentication with QR code provisioning",
         "yiirocks/recaptcha": "Google reCAPTCHA v2 and v3 field + server-side validator for Yii3",
+        "yiirocks/toast-bootstrap5": "Bootstrap 5 toast notifications for flash messages",
         "yiisoft/data-response": "Required for the REST API (voyti-routes-api): JSON response formatting for the user CRUD endpoints",
         "yiisoft/yii-auth-client": "Social/OAuth2 login via Google, GitHub, Facebook, and more",
         "yiisoft/yii-runner-console": "Allows to run console application",
@@ -76,6 +77,7 @@
         "rector/rector": "^2.1.1",
         "vimeo/psalm": "^6.0",
         "yiirocks/recaptcha": "^1.0",
+        "yiirocks/toast-bootstrap5": "^1.0",
         "yiisoft/code-style": "^1.1",
         "yiisoft/config": "^1.6",
         "yiisoft/data-response": "^2.2",

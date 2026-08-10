@@ -18,6 +18,7 @@ use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\Auth\SocialAuthCallbackService;
+use YiiRocks\Voyti\Service\FlashNotifier;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\Service\TwoFactor\BackupCodeService;
 use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
@@ -68,6 +69,7 @@ final readonly class SessionController
         private FormHydrator $formHydrator,
         private EmailCodeGeneratorService $twoFactorEmailCodeService,
         private FlashInterface $flash,
+        private FlashNotifier $toast,
         private BackupCodeService $backupCodeService,
         private CodeValidator $codeValidator,
         private EmailValidator $emailValidator,

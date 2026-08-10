@@ -13,6 +13,7 @@ use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Model\Form\Rbac\RuleForm;
 use YiiRocks\Voyti\Service\AuditLogService;
+use YiiRocks\Voyti\Service\FlashNotifier;
 use YiiRocks\Voyti\Service\Rbac\RuleEditionService;
 use YiiRocks\Voyti\ViewData\Admin\Rbac\Rule\CreateViewData;
 use YiiRocks\Voyti\ViewData\Admin\Rbac\Rule\IndexViewData;
@@ -48,6 +49,7 @@ final readonly class RuleController
         private RuleEditionService $authRuleEditionService,
         private ResponseFactoryInterface $responseFactory,
         private FlashInterface $flash,
+        private FlashNotifier $toast,
         private VoytiConfig $config,
         private AuditLogService $auditLogService,
         private CurrentUser $currentUser,

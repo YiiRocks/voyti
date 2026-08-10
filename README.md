@@ -37,10 +37,11 @@ Stats for Nerds
 - **GDPR Compliance** — Consent management, data export, anonymized deletion with admin notification
 - **Password Policies** — Minimum complexity requirements, max age enforcement via middleware
 - **Email Change Confirmation** — Three modes: immediate, confirm new address, confirm both old and new
-- **REST API** — Optional JSON API for user CRUD
+- **REST API** — JSON API for user CRUD
 - **Bot Protection** — Google reCAPTCHA v2/v3 for registration and login forms
 - **i18n** — Built-in translations for multiple languages
 - **Themed Views** — Bootstrap 5 views shipped by default; mail templates separate and independently overridable
+- **Toast Notifications** — Native Bootstrap toast support with automatic fallback to flash messages
 
 ## Requirements
 

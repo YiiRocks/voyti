@@ -12,6 +12,7 @@ use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Event\Session\SessionEvent;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
+use YiiRocks\Voyti\Service\FlashNotifier;
 use YiiRocks\Voyti\ViewData\Account\SessionsViewData;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
@@ -41,6 +42,7 @@ final readonly class SessionController
         private VoytiConfig $config,
         private EventDispatcherInterface $eventDispatcher,
         private FlashInterface $flash,
+        private FlashNotifier $toast,
     ) {}
 
     public function index(): ResponseInterface

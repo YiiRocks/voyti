@@ -8,9 +8,9 @@ use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use YiiRocks\Voyti\Controller\PasswordReset\PasswordResetController;
-use YiiRocks\Voyti\Helper\FlashType;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
+use YiiRocks\Voyti\Service\FlashNotifier;
 use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
@@ -49,8 +49,8 @@ final class PasswordResetControllerTest extends DatabaseTestCase
     {
         $user = $this->createUser(username: 'recoveryuser', email: 'test@example.com');
 
-        // The service's outcome message is surfaced as a success flash.
-        $this->flash->expects($this->once())->method('set')->with(FlashType::SUCCESS, 'Recovery message sent');
+        // The service's outcome message is surfaced as a success toast.
+        $this->flash->expects($this->once())->method('add')->with('toast.success', 'Recovery message sent');
 
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['recovery' => ['email' => 'test@example.com']]);
 
@@ -140,7 +140,7 @@ final class PasswordResetControllerTest extends DatabaseTestCase
     private function baseOverrides(): array
     {
         return [
-            FlashInterface::class => $this->flash,
+            FlashNotifier::class => new FlashNotifier($this->flash),
         ];
     }
 

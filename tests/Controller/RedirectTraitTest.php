@@ -9,35 +9,35 @@ use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\RedirectTrait;
-use YiiRocks\Voyti\Helper\FlashType;
+use YiiRocks\Voyti\Service\FlashNotifier;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 
 final class RedirectTraitTest extends TestCase
 {
-    public function testRedirectWithFlashSetsSuccessFlashAndRedirects(): void
+    public function testRedirectWithFlashQueuesSuccessMessageAndRedirects(): void
     {
         $flash = $this->createMock(FlashInterface::class);
-        $flash->expects($this->once())->method('set')->with(FlashType::SUCCESS, 'Saved.');
+        $flash->expects($this->once())->method('add')->with('toast.success', 'Saved.');
 
         $translator = $this->createStub(TranslatorInterface::class);
         $translator->method('translate')->willReturn('Saved.');
 
-        $fixture = $this->makeFixture($flash, $translator);
+        $fixture = $this->makeFixture(new FlashNotifier($flash), $translator);
         $result = $fixture->callRedirectWithFlash('/account', 'voyti.settings.saved');
 
         self::assertSame(302, $result->getStatusCode());
         self::assertSame('/account', $result->getHeaderLine('Location'));
     }
 
-    private function makeFixture(FlashInterface $flash, TranslatorInterface $translator): object
+    private function makeFixture(FlashNotifier $toast, TranslatorInterface $translator): object
     {
-        return new class (new Psr17Factory(), $flash, $translator) {
+        return new class (new Psr17Factory(), $toast, $translator) {
             use RedirectTrait;
 
             public function __construct(
                 private ResponseFactoryInterface $responseFactory,
-                private FlashInterface $flash,
+                private FlashNotifier $toast,
                 private TranslatorInterface $translator,
             ) {}
 

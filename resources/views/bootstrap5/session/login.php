@@ -25,7 +25,7 @@ $this->setTitle($translator->translate('voyti.view.login.title'));
 
 echo Html::div()->open();
 /** @psalm-suppress InvalidScope */
-echo $this->render('../shared/_flash', ['flash' => $flash]);
+echo $this->render('../shared/_flash', ['flash' => $flash, 'toast' => $toast ?? null]);
 echo Html::H1($translator->translate('voyti.view.login.title'));
 
 echo Html::form()

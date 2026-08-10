@@ -11,6 +11,7 @@ use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Model\Form\Settings\TwoFactorCodeForm;
 use YiiRocks\Voyti\Model\User;
+use YiiRocks\Voyti\Service\FlashNotifier;
 use YiiRocks\Voyti\Service\TwoFactor\BackupCodeService;
 use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
 use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
@@ -50,6 +51,7 @@ final readonly class TwoFactorController
         private QrCodeUriGeneratorService $twoFactorQrCodeService,
         private EmailCodeGeneratorService $twoFactorEmailCodeService,
         private FlashInterface $flash,
+        private FlashNotifier $toast,
         private BackupCodeService $backupCodeService,
         private CodeValidator $codeValidator,
         private EmailValidator $emailValidator,

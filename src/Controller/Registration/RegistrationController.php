@@ -13,6 +13,7 @@ use YiiRocks\Voyti\Model\Form\Auth\RegistrationForm;
 use YiiRocks\Voyti\Model\Form\Auth\ResendForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
+use YiiRocks\Voyti\Service\FlashNotifier;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\RegisterService;
 use YiiRocks\Voyti\ViewData\Registration\ConnectViewData;
@@ -47,6 +48,7 @@ final readonly class RegistrationController
         private FormHydrator $formHydrator,
         private ResponseFactoryInterface $responseFactory,
         private FlashInterface $flash,
+        private FlashNotifier $toast,
         private ?Collection $clientCollection,
     ) {}
 
