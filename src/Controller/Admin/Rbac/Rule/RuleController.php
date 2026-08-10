@@ -23,7 +23,6 @@ use Yiisoft\Http\Method;
 use Yiisoft\Input\Http\Attribute\Parameter\Body;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
-use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\Validator\ValidatorInterface;
@@ -48,7 +47,6 @@ final readonly class RuleController
         private ValidatorInterface $validator,
         private RuleEditionService $authRuleEditionService,
         private ResponseFactoryInterface $responseFactory,
-        private FlashInterface $flash,
         private FlashNotifier $toast,
         private VoytiConfig $config,
         private AuditLogService $auditLogService,

@@ -29,7 +29,6 @@ use Yiisoft\Rbac\Permission;
 use Yiisoft\Rbac\Role;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
-use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\Validator\ValidatorInterface;
@@ -57,7 +56,6 @@ final readonly class RbacController
         private ItemsStorageInterface $itemsStorage,
         private ManagerInterface $managerInterface,
         private AssignmentsStorageInterface $assignmentsStorage,
-        private FlashInterface $flash,
         private FlashNotifier $toast,
         private VoytiConfig $config,
         private AuditLogService $auditLogService,

@@ -12,23 +12,15 @@ use Yiisoft\Session\Flash\FlashInterface;
  */
 final readonly class FlashViewData
 {
-    public function __construct(
-        public ?string $warning,
-        public ?string $success,
-    ) {}
+    public ?string $success;
+    public ?string $warning;
 
-    public static function fromFlash(FlashInterface $flash): self
+    public function __construct(FlashInterface $flash)
     {
-        return new self(
-            warning: self::nonEmpty($flash->get(FlashType::WARNING)),
-            success: self::nonEmpty($flash->get(FlashType::SUCCESS)),
-        );
-    }
+        $warning = (string) $flash->get(FlashType::WARNING);
+        $this->warning = $warning === '' ? null : $warning;
 
-    private static function nonEmpty(mixed $value): ?string
-    {
-        $value = (string) $value;
-
-        return $value === '' ? null : $value;
+        $success = (string) $flash->get(FlashType::SUCCESS);
+        $this->success = $success === '' ? null : $success;
     }
 }

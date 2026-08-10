@@ -12,7 +12,6 @@ use YiiRocks\Voyti\Service\FlashNotifier;
 use YiiRocks\Voyti\ViewData\Admin\Dashboard\IndexViewData;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\UrlGeneratorInterface;
-use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
@@ -30,7 +29,6 @@ final readonly class DashboardController
         private UrlGeneratorInterface $url,
         private VoytiConfig $config,
         private DashboardService $dashboardService,
-        private FlashInterface $flash,
         private FlashNotifier $toast,
         private CurrentUser $currentUser,
     ) {}

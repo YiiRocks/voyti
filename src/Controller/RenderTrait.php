@@ -5,18 +5,19 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Controller;
 
 use Psr\Http\Message\ResponseInterface;
-use YiiRocks\Voyti\ViewData\Shared\FlashViewData;
 use YiiRocks\Voyti\ViewData\Shared\MessageViewData;
+use YiiRocks\Voyti\ViewData\Shared\VoytiCommonParametersInjection;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Yii\View\Renderer\CsrfViewInjection;
 
 /**
- * Adds view-rendering helpers to a controller, injecting common view params (a `voyti`-category-bound
- * translator and resolved flash messages) and providing an error-message view shortcut. Requires the
- * consumer to have `$viewRenderer`, `$config`, `$translator`, `$url`, and `$flash` properties.
- * Templates never receive `VoytiConfig` or `UrlGeneratorInterface` directly - every other value a
- * template needs travels through an explicit `ViewData` object built by the controller.
+ * Adds view-rendering helpers to a controller: render methods with configurable view paths, and a
+ * voyti-category-bound translator utility for ViewData construction. Global view parameters
+ * (voyti flash messages, voyti-bound translator, and CSRF token) are injected by the container
+ * and automatically available in all views. Requires the consumer to have `$viewRenderer`, `$config`,
+ * and `$url` properties. Templates never receive `VoytiConfig` or `UrlGeneratorInterface` directly -
+ * every other value a template needs travels through an explicit `ViewData` object built by the controller.
  */
 trait RenderTrait
 {
@@ -47,9 +48,9 @@ trait RenderTrait
     private function renderFragment(string $view, array $params = []): ResponseInterface
     {
         return $this->viewRenderer
-            ->withAddedInjections(CsrfViewInjection::class)
+            ->withAddedInjections(CsrfViewInjection::class, VoytiCommonParametersInjection::class)
             ->withViewPath($this->resolveViewPath($view))
-            ->renderPartial($view, $this->withDefaultViewParams($params));
+            ->renderPartial($view, $params);
     }
 
     /**
@@ -58,9 +59,9 @@ trait RenderTrait
     private function renderView(string $view, array $params = []): ResponseInterface
     {
         return $this->viewRenderer
-            ->withAddedInjections(CsrfViewInjection::class)
+            ->withAddedInjections(CsrfViewInjection::class, VoytiCommonParametersInjection::class)
             ->withViewPath($this->resolveViewPath($view))
-            ->render($view, $this->withDefaultViewParams($params));
+            ->render($view, $params);
     }
 
     /**
@@ -82,22 +83,5 @@ trait RenderTrait
     private function translator(): TranslatorInterface
     {
         return $this->translator->withDefaultCategory('voyti');
-    }
-
-    /**
-     * @param array<string, mixed> $params
-     *
-     * @return array<string, mixed>
-     */
-    private function withDefaultViewParams(array $params): array
-    {
-        if (!isset($params['translator'])) {
-            $params['translator'] = $this->translator();
-        }
-        if (!isset($params['flash'])) {
-            $params['flash'] = FlashViewData::fromFlash($this->flash);
-        }
-
-        return $params;
     }
 }

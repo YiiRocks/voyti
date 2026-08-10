@@ -27,7 +27,6 @@ use Yiisoft\Http\Status;
 use Yiisoft\Input\Http\Attribute\Parameter\Body;
 use Yiisoft\Json\Json;
 use Yiisoft\Router\UrlGeneratorInterface;
-use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
@@ -50,7 +49,6 @@ final readonly class TwoFactorController
         private ResponseFactoryInterface $responseFactory,
         private QrCodeUriGeneratorService $twoFactorQrCodeService,
         private EmailCodeGeneratorService $twoFactorEmailCodeService,
-        private FlashInterface $flash,
         private FlashNotifier $toast,
         private BackupCodeService $backupCodeService,
         private CodeValidator $codeValidator,

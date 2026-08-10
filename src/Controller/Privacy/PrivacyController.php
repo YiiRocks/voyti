@@ -32,7 +32,6 @@ use Yiisoft\Json\Json;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Security\Random;
-use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
@@ -57,7 +56,6 @@ final readonly class PrivacyController
         private CurrentUser $currentUser,
         private ResponseFactoryInterface $responseFactory,
         private TerminateUserSessionsService $terminateUserSessionsService,
-        private FlashInterface $flash,
         private FlashNotifier $toast,
     ) {}
 

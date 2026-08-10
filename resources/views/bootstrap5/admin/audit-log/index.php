@@ -24,7 +24,7 @@ echo Html::div()->open();
 /** @psalm-suppress InvalidScope */
 echo $this->render('../../shared/_admin-menu', ['menu' => $data->menu]);
 /** @psalm-suppress InvalidScope */
-echo $this->render('../../shared/_flash', ['flash' => $flash, 'toast' => $toast ?? null]);
+echo $this->render('../../shared/_flash');
 
 echo Html::H1($translator->translate('voyti.view.audit_log.title'));
 

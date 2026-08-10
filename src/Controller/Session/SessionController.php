@@ -31,7 +31,6 @@ use Yiisoft\FormModel\FormHydrator;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Security\Random;
-use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
@@ -68,7 +67,6 @@ final readonly class SessionController
         private PendingSocialAccountService $pendingSocialAccountService,
         private FormHydrator $formHydrator,
         private EmailCodeGeneratorService $twoFactorEmailCodeService,
-        private FlashInterface $flash,
         private FlashNotifier $toast,
         private BackupCodeService $backupCodeService,
         private CodeValidator $codeValidator,

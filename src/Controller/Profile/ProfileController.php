@@ -24,7 +24,6 @@ use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\FormModel\FormHydrator;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
-use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
@@ -48,7 +47,6 @@ final readonly class ProfileController
         private EventDispatcherInterface $eventDispatcher,
         private FormHydrator $formHydrator,
         private ResponseFactoryInterface $responseFactory,
-        private FlashInterface $flash,
         private FlashNotifier $toast,
     ) {}
 

@@ -23,7 +23,6 @@ use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\FormModel\FormHydrator;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
-use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Yii\AuthClient\Collection;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
@@ -47,7 +46,6 @@ final readonly class RegistrationController
         private PendingSocialAccountService $pendingSocialAccountService,
         private FormHydrator $formHydrator,
         private ResponseFactoryInterface $responseFactory,
-        private FlashInterface $flash,
         private FlashNotifier $toast,
         private ?Collection $clientCollection,
     ) {}

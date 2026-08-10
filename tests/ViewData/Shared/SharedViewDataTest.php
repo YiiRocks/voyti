@@ -33,13 +33,13 @@ final class SharedViewDataTest extends TestCase
         $flash = $this->createMock(FlashInterface::class);
         $flash->method('get')->willReturnMap([
             [FlashType::WARNING, 42],
-            [FlashType::SUCCESS, null],
+            [FlashType::SUCCESS, 99],
         ]);
 
-        $data = FlashViewData::fromFlash($flash);
+        $data = new FlashViewData($flash);
 
         self::assertSame('42', $data->warning);
-        self::assertNull($data->success);
+        self::assertSame('99', $data->success);
     }
 
     public function testMenuForAccountIncludesPrivacyWhenAccountDeleteAllowedWithoutGdpr(): void

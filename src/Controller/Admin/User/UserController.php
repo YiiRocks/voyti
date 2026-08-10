@@ -50,7 +50,6 @@ use Yiisoft\Rbac\AssignmentsStorageInterface;
 use Yiisoft\Rbac\ItemsStorageInterface;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
-use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
@@ -88,7 +87,6 @@ final readonly class UserController
         private ResponseFactoryInterface $responseFactory,
         private ItemsStorageInterface $itemsStorage,
         private AssignmentsStorageInterface $assignmentsStorage,
-        private FlashInterface $flash,
         private FlashNotifier $toast,
         private PasswordHistoryService $passwordHistoryService,
         private AuditLogService $auditLogService,

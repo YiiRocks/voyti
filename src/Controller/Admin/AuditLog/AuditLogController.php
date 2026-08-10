@@ -18,7 +18,6 @@ use Yiisoft\Data\Db\QueryDataReader;
 use Yiisoft\Data\Paginator\OffsetPaginator;
 use Yiisoft\Input\Http\Attribute\Parameter\Query;
 use Yiisoft\Router\UrlGeneratorInterface;
-use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
@@ -37,7 +36,6 @@ final readonly class AuditLogController
         private UrlGeneratorInterface $url,
         private ResponseFactoryInterface $responseFactory,
         private VoytiConfig $config,
-        private FlashInterface $flash,
         private FlashNotifier $toast,
         private CurrentUser $currentUser,
     ) {}

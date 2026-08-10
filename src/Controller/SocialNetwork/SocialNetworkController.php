@@ -14,7 +14,6 @@ use YiiRocks\Voyti\ViewData\SocialNetwork\IndexViewData;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
-use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\Yii\AuthClient\Collection;
@@ -36,7 +35,6 @@ final readonly class SocialNetworkController
         private ?Collection $clientCollection,
         private CurrentUser $currentUser,
         private ResponseFactoryInterface $responseFactory,
-        private FlashInterface $flash,
         private FlashNotifier $toast,
     ) {}
 

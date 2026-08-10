@@ -25,7 +25,7 @@ echo Html::div()->open();
 /** @psalm-suppress InvalidScope */
 echo $this->render('../../shared/_admin-menu', ['menu' => $data->menu]);
 /** @psalm-suppress InvalidScope */
-echo $this->render('../../shared/_flash', ['flash' => $flash, 'toast' => $toast ?? null]);
+echo $this->render('../../shared/_flash');
 
 echo Html::H3()->class('mb-3')->open();
 echo $translator->translate('voyti.view.admin.sessions');

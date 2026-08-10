@@ -17,7 +17,6 @@ use YiiRocks\Voyti\ViewData\Account\SessionsViewData;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
-use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
@@ -41,7 +40,6 @@ final readonly class SessionController
         private SessionInterface $session,
         private VoytiConfig $config,
         private EventDispatcherInterface $eventDispatcher,
-        private FlashInterface $flash,
         private FlashNotifier $toast,
     ) {}
 
