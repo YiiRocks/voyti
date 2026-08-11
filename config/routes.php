@@ -4,15 +4,10 @@ declare(strict_types=1);
 
 use YiiRocks\Voyti\Controller;
 use YiiRocks\Voyti\Middleware\AccessRuleMiddleware;
-use YiiRocks\Voyti\Middleware\PasswordAgeEnforceMiddleware;
-use YiiRocks\Voyti\Middleware\RememberMeMiddleware;
 use YiiRocks\Voyti\Middleware\RequireLoginMiddleware;
-use YiiRocks\Voyti\Middleware\SessionRevocationEnforceMiddleware;
-use YiiRocks\Voyti\Middleware\TwoFactorAuthenticationEnforceMiddleware;
-use Yiisoft\Csrf\CsrfMiddleware;
+use YiiRocks\Voyti\VoytiRoutes;
 use Yiisoft\Router\Group;
 use Yiisoft\Router\Route;
-use Yiisoft\Session\SessionMiddleware;
 use Yiisoft\Yii\AuthClient\AuthAction;
 
 $voytiParams = $params['yiirocks/voyti'] ?? [];
@@ -77,7 +72,6 @@ $ruleRoutes = [
 $sessionRoutes = [
     Route::methods(['GET', 'POST'], 'login')->name('voyti/session-login')->action([Controller\Session\SessionController::class, 'login']),
     Route::post('logout')->name('voyti/session-logout')->action([Controller\Session\SessionController::class, 'logout']),
-    Route::methods(['GET', 'POST'], 'confirm')->name('voyti/session-confirm')->action([Controller\Session\SessionController::class, 'confirm']),
 ];
 
 // only register the social-auth callback route when yiisoft/yii-auth-client is installed,
@@ -122,20 +116,6 @@ if ($voytiParams['allowAccountDelete'] ?? false) {
     $settingsRoutes[] = Route::methods(['GET', 'POST'], 'privacy/delete')->name('voyti/user-privacy-delete')->action([Controller\Privacy\PrivacyController::class, 'delete']);
 }
 
-if ($voytiParams['enableTwoFactorAuthentication'] ?? false) {
-    $settingsRoutes[] = Route::methods(['GET', 'POST'], 'two-factor/')->name('voyti/user-two-factor')->action([Controller\TwoFactor\TwoFactorController::class, 'index']);
-    $settingsRoutes[] = Route::post('two-factor/enable')->name('voyti/user-two-factor-enable')->action([Controller\TwoFactor\TwoFactorController::class, 'enable']);
-    $settingsRoutes[] = Route::post('two-factor/disable/')->name('voyti/user-two-factor-disable')->action([Controller\TwoFactor\TwoFactorController::class, 'disable']);
-    $settingsRoutes[] = Route::post('two-factor/disable/send-code')->name('voyti/user-two-factor-disable-send-code')->action([Controller\TwoFactor\TwoFactorController::class, 'disableSendCode']);
-    $settingsRoutes[] = Route::get('two-factor/email/')->name('voyti/user-two-factor-email')->action([Controller\TwoFactor\TwoFactorController::class, 'email']);
-    $settingsRoutes[] = Route::post('two-factor/email/send-code')->name('voyti/user-two-factor-email-send-code')->action([Controller\TwoFactor\TwoFactorController::class, 'sendEmailCode']);
-    if (class_exists('chillerlan\TwoFactorQRCode\TwoFactorQRCode')) {
-        $settingsRoutes[] = Route::get('two-factor/google/')->name('voyti/user-two-factor-google')->action([Controller\TwoFactor\TwoFactorController::class, 'google']);
-        $settingsRoutes[] = Route::post('two-factor/google/renew')->name('voyti/user-two-factor-google-renew')->action([Controller\TwoFactor\TwoFactorController::class, 'renew']);
-    }
-    $settingsRoutes[] = Route::post('two-factor/backup-codes/regenerate')->name('voyti/user-two-factor-regenerate-backup-codes')->action([Controller\TwoFactor\TwoFactorController::class, 'regenerateBackupCodes']);
-}
-
 $routes = [
     // Public profile view (not part of the settings/ resource — no auth required)
     Route::get('profile/{id:\d+}')->name('voyti/profile')->action([Controller\Profile\ProfileController::class, 'show']),
@@ -170,16 +150,8 @@ if ($voytiParams['enableSwitchIdentities'] ?? true) {
     $routes[] = Route::post('admin/users/switch-identity/restore')->name('voyti/admin-users-switch-identity-restore')->action([Controller\Admin\User\UserController::class, 'switchIdentityRestore']);
 }
 
-$webMiddlewares = [SessionMiddleware::class, RememberMeMiddleware::class, CsrfMiddleware::class, SessionRevocationEnforceMiddleware::class];
-if (($voytiParams['maxPasswordAge'] ?? 0) > 0) {
-    $webMiddlewares[] = PasswordAgeEnforceMiddleware::class;
-}
-if ($voytiParams['enableTwoFactorAuthentication'] ?? false) {
-    $webMiddlewares[] = TwoFactorAuthenticationEnforceMiddleware::class;
-}
-
 return [
     Group::create()
-        ->middleware(...$webMiddlewares)
+        ->middleware(...VoytiRoutes::webMiddleware($voytiParams))
         ->routes(...$routes),
 ];

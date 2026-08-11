@@ -11,6 +11,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Controller\ActorIdTrait;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
+use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Helper\FlashType;
 use YiiRocks\Voyti\Model\Form\Auth\RegistrationForm;
@@ -200,6 +201,7 @@ final readonly class UserController
         $user = User::findById($id);
         if ($user !== null) {
             $user->delete();
+            $this->eventDispatcher->dispatch(new UserEvent($user, UserEvent::DELETE));
             $this->auditLogService->log(
                 $this->actorId(),
                 'user.delete',

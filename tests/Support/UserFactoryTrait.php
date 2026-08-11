@@ -15,9 +15,6 @@ trait UserFactoryTrait
     private function buildUser(
         string $username = 'testuser',
         ?string $email = null,
-        bool $authTfEnabled = false,
-        ?string $authTfType = null,
-        ?string $authTfKey = null,
     ): User {
         $user = new User();
         $user->setUsername($username);
@@ -26,9 +23,6 @@ trait UserFactoryTrait
         $user->setAuthKey('key');
         $user->setCreatedAt(time());
         $user->setUpdatedAt(time());
-        $user->setAuthTfEnabled($authTfEnabled);
-        $user->setAuthTfType($authTfType);
-        $user->setAuthTfKey($authTfKey);
 
         return $user;
     }
@@ -41,9 +35,6 @@ trait UserFactoryTrait
         ?int $confirmedAt = null,
         ?int $blockedAt = null,
         ?string $lastLoginIp = null,
-        bool $authTfEnabled = false,
-        ?string $authTfType = null,
-        ?string $authTfKey = null,
         bool $gdprConsent = false,
         ?int $gdprConsentDate = null,
     ): User {
@@ -65,9 +56,6 @@ trait UserFactoryTrait
         if ($lastLoginIp !== null) {
             $user->setLastLoginIp($lastLoginIp);
         }
-        $user->setAuthTfEnabled($authTfEnabled);
-        $user->setAuthTfType($authTfType);
-        $user->setAuthTfKey($authTfKey);
         if ($gdprConsent) {
             $user->setGdprConsent(true);
             $user->setGdprConsentDate($gdprConsentDate);

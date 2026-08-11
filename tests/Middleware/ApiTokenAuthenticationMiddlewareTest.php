@@ -6,6 +6,7 @@ namespace YiiRocks\Voyti\tests\Middleware;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
+use Nyholm\Psr7\Response;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -61,15 +62,8 @@ final class ApiTokenAuthenticationMiddlewareTest extends TestCase
 
         $currentUser = $this->createCurrentUser();
 
-        $unauthorizedResponse = $this->createMock(ResponseInterface::class);
-        $challengedResponse = $this->createMock(ResponseInterface::class);
-        $unauthorizedResponse->expects(self::once())
-            ->method('withHeader')
-            ->with('WWW-Authenticate', 'Bearer realm="api"')
-            ->willReturn($challengedResponse);
-
         $responseFactory = $this->createMock(ResponseFactoryInterface::class);
-        $responseFactory->expects(self::once())->method('createResponse')->with(401)->willReturn($unauthorizedResponse);
+        $responseFactory->expects(self::once())->method('createResponse')->with(401)->willReturn(new Response(401));
 
         $handler = $this->createMock(RequestHandlerInterface::class);
         $handler->expects(self::never())->method('handle');
@@ -82,7 +76,8 @@ final class ApiTokenAuthenticationMiddlewareTest extends TestCase
 
         $result = $middleware->process($request, $handler);
 
-        self::assertSame($challengedResponse, $result);
+        self::assertSame(401, $result->getStatusCode());
+        self::assertStringContainsString('Bearer realm="api"', (string)($result->getHeader('WWW-Authenticate')[0] ?? ''));
         self::assertTrue($currentUser->isGuest());
     }
 

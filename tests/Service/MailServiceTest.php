@@ -176,10 +176,4 @@ final class MailServiceTest extends TestCase
 
         self::assertFalse($result);
     }
-
-    public function testSendTwoFactorCode(): void
-    {
-        $result = $this->service->sendTwoFactorCode('test@example.com', '123456');
-        self::assertTrue($result);
-    }
 }

@@ -9,7 +9,6 @@ return [
     'voyti.security.need_email_confirmation' => 'Debe confirmar su dirección de correo electrónico',
     'voyti.security.logged_out' => 'Sesión cerrada',
     'voyti.security.password_expired' => 'Su contraseña ha caducado. Por favor, establezca una nueva.',
-    'voyti.security.two_factor_required' => 'La autenticación de dos factores es obligatoria para su cuenta. Por favor, actívela para continuar.',
     'voyti.security.authenticated' => 'Autenticado',
     'voyti.security.social_auth_cancelled' => 'El inicio de sesión social fue cancelado.',
 
@@ -41,8 +40,6 @@ return [
     'voyti.settings.email_change_failed' => 'Error al cambiar el correo electrónico',
     'voyti.settings.network_disconnected' => 'La red ha sido desconectada',
     'voyti.settings.network_not_found' => 'Red no encontrada',
-    'voyti.settings.two_factor_enabled' => 'La autenticación de dos factores ha sido habilitada',
-    'voyti.settings.two_factor_disabled' => 'La autenticación de dos factores ha sido deshabilitada',
     'voyti.settings.session_not_found' => 'Sesión no encontrada',
     'voyti.settings.session_terminated' => 'La sesión ha sido cerrada',
     'voyti.settings.password_previously_used' => 'Esta contraseña se ha usado recientemente. Por favor, elija una diferente.',
@@ -90,19 +87,13 @@ return [
     'voyti.recovery.message_sent_if_exists' => 'Si el correo electrónico existe, se ha enviado un mensaje de recuperación',
     'voyti.recovery.message_sent' => 'Mensaje de recuperación enviado',
 
-    // TwoFactorCodeValidator
-    'voyti.validator.two_factor_not_configured' => 'La autenticación de dos factores no está configurada.',
-    'voyti.validator.two_factor_library_missing' => 'La biblioteca 2FA (chillerlan/2fa-qrcode-bundle) no está instalada.',
-    'voyti.validator.invalid_verification_code' => 'Código de verificación no válido.',
     'voyti.validator.password_complexity' => 'La contraseña debe contener al menos una letra mayúscula, una minúscula, un dígito y un carácter especial.',
-    'voyti.validator.email_two_factor_not_configured' => 'La autenticación de dos factores por correo electrónico no está configurada.',
 
     // Mail subjects
     'voyti.mail.welcome_subject' => 'Bienvenido a {app}',
     'voyti.mail.confirmation_subject' => 'Confirme su cuenta en {app}',
     'voyti.mail.reconfirmation_subject' => 'Confirme el cambio de correo electrónico en {app}',
     'voyti.mail.recovery_subject' => 'Complete el restablecimiento de contraseña en {app}',
-    'voyti.mail.two_factor_subject' => 'Código para la autenticación de dos factores en {app}',
     'voyti.mail.admin_notification_subject' => 'Nuevo registro de usuario en {app}',
 
     // Mail view templates
@@ -115,8 +106,6 @@ return [
     'voyti.mail.click_to_reset_password' => 'Haga clic en el siguiente enlace para restablecer su contraseña:',
     'voyti.mail.confirm_account_heading' => 'Confirme su cuenta',
     'voyti.mail.click_to_confirm_account' => 'Haga clic en el siguiente enlace para confirmar su cuenta:',
-    'voyti.mail.twofactor_heading' => 'Código de autenticación de dos factores',
-    'voyti.mail.your_twofactor_code' => 'Su código de autenticación de dos factores es:',
 
     // Navigation / Menu
     'voyti.menu.dashboard' => 'Panel de control',
@@ -124,7 +113,6 @@ return [
     'voyti.menu.account' => 'Cuenta',
     'voyti.menu.networks' => 'Redes',
     'voyti.menu.sessions' => 'Sesiones',
-    'voyti.menu.two_factor' => 'Autenticación de dos factores',
     'voyti.menu.logout' => 'Cerrar sesión',
 
     // Login view
@@ -137,35 +125,6 @@ return [
     'voyti.view.login.remember_me_label' => 'Recordarme',
     'voyti.view.login.social_divider' => 'O inicia sesión con',
 
-    // Two-factor confirm view
-    'voyti.view.two_factor.title' => 'Autenticación de dos factores',
-    'voyti.view.two_factor_google.button_label' => 'Google Authenticator',
-    'voyti.view.two_factor.code_label' => 'Código de autenticación',
-    'voyti.view.two_factor.verify_button' => 'Verificar',
-    'voyti.view.two_factor.enabled_with_method' => 'La autenticación de dos factores por {method} está habilitada',
-    'voyti.view.two_factor.disable' => 'Deshabilitar',
-    'voyti.view.two_factor.disable_confirm_intro' => 'Para deshabilitar la autenticación de dos factores, necesitamos verificar que realmente eres tú. Se enviará un código de verificación a tu correo electrónico.',
-    'voyti.view.two_factor.disable_send_code' => 'Enviar código para deshabilitar',
-    'voyti.view.two_factor.scan_qr' => 'Escanee este código QR con su aplicación de autenticación',
-    'voyti.view.two_factor.manual_entry' => 'O introduzca esta clave manualmente:',
-    'voyti.view.two_factor.enter_code' => 'Introduzca el código de verificación',
-    'voyti.view.two_factor.enable' => 'Habilitar',
-    'voyti.view.two_factor.renew' => 'Renovar',
-    'voyti.view.two_factor.renew_error' => 'No se pudo generar una nueva clave. Inténtelo de nuevo.',
-    'voyti.view.two_factor.loading' => 'Cargando…',
-    'voyti.view.two_factor.already_enabled' => 'La autenticación de dos factores ya está habilitada.',
-    'voyti.view.two_factor.backup_codes_title' => 'Códigos de respaldo',
-    'voyti.view.two_factor.backup_codes_intro' => 'Guarde estos códigos de respaldo de un solo uso en un lugar seguro. Cada uno se puede usar una vez para iniciar sesión si pierde el acceso a su autenticador o correo electrónico.',
-    'voyti.view.two_factor.backup_codes_continue' => 'Continuar',
-    'voyti.view.two_factor.backup_code_hint' => '¿Perdió el acceso a su dispositivo o correo electrónico? Puede introducir uno de sus códigos de respaldo en su lugar.',
-    'voyti.view.two_factor.regenerate_backup_codes' => 'Regenerar códigos de respaldo',
-    'voyti.view.two_factor.regenerate_backup_codes_intro' => 'Generar un nuevo conjunto de códigos de respaldo invalida todos los existentes. Introduzca su código de verificación actual o un código de respaldo para confirmar.',
-    'voyti.view.two_factor.no_backup_codes_remaining' => 'No le quedan códigos de respaldo. Genere un nuevo conjunto para asegurarse de poder recuperar el acceso si pierde su dispositivo.',
-    'voyti.view.two_factor_email.button_label' => 'Correo electrónico',
-    'voyti.view.two_factor_email.method_name' => 'correo electrónico',
-    'voyti.view.two_factor_email.enter_code' => 'Introduzca el código de verificación enviado a su correo electrónico',
-    'voyti.view.two_factor_email.confirm_intro' => 'Se enviará un código de verificación a la dirección de correo electrónico indicada a continuación.',
-    'voyti.view.two_factor_email.send_button' => 'Enviar código',
     // Registration views
     'voyti.view.registration.register_title' => 'Crear cuenta',
     'voyti.view.registration.gdpr_consent_label' => 'Acepto el tratamiento de mis datos personales',
@@ -210,7 +169,6 @@ return [
     'voyti.view.anonymize.button' => 'Anonimizar mi cuenta',
 
     // Account settings (2FA)
-    'voyti.view.account.two_factor_title' => 'Autenticación de dos factores',
 
     // Delete account view
     'voyti.view.delete_account.title' => 'Eliminar mi cuenta',

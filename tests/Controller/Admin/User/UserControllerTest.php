@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Controller\Admin\User\UserController;
+use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserAuditLog;
@@ -21,6 +22,7 @@ use YiiRocks\Voyti\Service\FlashNotifier;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\tests\Support\CurrentUserTrait;
 use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
+use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 use YiiRocks\Voyti\tests\Support\FakeSession;
 use YiiRocks\Voyti\tests\Support\SimpleAssignmentsStorage;
 use YiiRocks\Voyti\tests\Support\SimpleItemsStorage;
@@ -55,6 +57,7 @@ final class UserControllerTest extends DatabaseTestCase
 
     private SimpleAssignmentsStorage $assignmentsStorage;
     private CurrentUser $currentUser;
+    private EventCaptureDispatcher $eventDispatcher;
     private FlashInterface&MockObject $flash;
     private SimpleItemsStorage $itemsStorage;
     private PasswordGeneratorInterface&MockObject $passwordGenerator;
@@ -65,6 +68,7 @@ final class UserControllerTest extends DatabaseTestCase
     {
         parent::setUp();
         $this->currentUser = $this->createCurrentUser();
+        $this->eventDispatcher = new EventCaptureDispatcher();
         $this->flash = $this->createMock(FlashInterface::class);
         $this->passwordHasher = TestPasswordHasherFactory::create();
         $this->passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
@@ -286,6 +290,9 @@ final class UserControllerTest extends DatabaseTestCase
         $this->assertStringContainsString('admin-users', $result->getHeaderLine('Location'));
         $this->assertNull(User::findById($userId));
         $this->assertNotEmpty(UserAuditLog::search(['action' => 'user.delete'])->all());
+        $deleteEvent = $this->eventDispatcher->getEvent(UserEvent::class);
+        $this->assertInstanceOf(UserEvent::class, $deleteEvent);
+        $this->assertSame(UserEvent::DELETE, $deleteEvent->getType());
 
         // Delete own user: shows error
         $admin2 = $this->createUser(username: 'delete_admin2', email: 'delete_admin2@example.com');
@@ -576,6 +583,7 @@ final class UserControllerTest extends DatabaseTestCase
         $definitions = [
             AssignmentsStorageInterface::class => $this->assignmentsStorage,
             CurrentUser::class => $this->currentUser,
+            EventDispatcherInterface::class => $this->eventDispatcher,
             FlashNotifier::class => new FlashNotifier($this->flash),
             ItemsStorageInterface::class => $this->itemsStorage,
             PasswordGeneratorInterface::class => $this->passwordGenerator,

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Controller\Api\V1\User;
 
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseInterface;
+use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
@@ -35,6 +37,7 @@ final readonly class UserController
         private PasswordGeneratorInterface $passwordGenerator,
         private PasswordHistoryService $passwordHistoryService,
         private UserCreationHelper $userCreationHelper,
+        private EventDispatcherInterface $eventDispatcher,
     ) {}
 
     public function create(
@@ -76,6 +79,7 @@ final readonly class UserController
         }
 
         $user->delete();
+        $this->eventDispatcher->dispatch(new UserEvent($user, UserEvent::DELETE));
         return $this->responseFactory->createResponse([
             'message' => $this->translator->translate('voyti.api.user_deleted', category: 'voyti'),
         ]);

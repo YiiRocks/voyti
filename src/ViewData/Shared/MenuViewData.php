@@ -34,8 +34,13 @@ final readonly class MenuViewData
             new MenuLinkViewData($translator->translate('voyti.menu.sessions'), $url->generate('voyti/user-account-sessions')),
         ];
 
-        if ($config->enableTwoFactorAuthentication) {
-            $items[] = new MenuLinkViewData($translator->translate('voyti.menu.two_factor'), $url->generate('voyti/user-two-factor'));
+        // Packages (e.g. yiirocks/voyti-2fa) contribute account-menu links via the accountMenuItems
+        // config, so core needs no knowledge of them.
+        foreach ($config->accountMenuItems as $item) {
+            $items[] = new MenuLinkViewData(
+                $translator->translate($item['label'], category: $item['category']),
+                $url->generate($item['route']),
+            );
         }
 
         if ($config->enableGdprCompliance || $config->allowAccountDelete) {

@@ -13,6 +13,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use YiiRocks\Voyti\Controller\Api\V1\User\UserController;
+use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserPasswordHistory;
 use YiiRocks\Voyti\Service\MailService;
@@ -40,6 +41,7 @@ final class UserControllerTest extends DatabaseTestCase
     use UserFactoryTrait;
 
     private VoytiConfig $config;
+    private EventCaptureDispatcher $eventDispatcher;
     private PasswordGeneratorInterface&MockObject $passwordGenerator;
     private DataResponseFactoryInterface&MockObject $responseFactory;
     private TranslatorInterface $translator;
@@ -49,6 +51,7 @@ final class UserControllerTest extends DatabaseTestCase
     {
         parent::setUp();
         $this->config = VoytiConfigFactory::create();
+        $this->eventDispatcher = new EventCaptureDispatcher();
         $this->translator = $this->createTranslator();
         $passwordHasher = TestPasswordHasherFactory::create();
         $passwordHistoryService = new PasswordHistoryService($passwordHasher, $this->config);
@@ -160,6 +163,9 @@ final class UserControllerTest extends DatabaseTestCase
                 $result = $test->createController()->delete($userId);
                 $test->assertSame($response, $result);
                 $test->assertNull(User::findById($userId));
+                $event = $test->eventDispatcher->getEvent(UserEvent::class);
+                $test->assertInstanceOf(UserEvent::class, $event);
+                $test->assertSame(UserEvent::DELETE, $event->getType());
             },
         ];
         yield 'not found returns error' => [
@@ -275,6 +281,7 @@ final class UserControllerTest extends DatabaseTestCase
             passwordGenerator: new RandomPasswordGenerator(),
             passwordHistoryService: new PasswordHistoryService(TestPasswordHasherFactory::create(), $this->config),
             userCreationHelper: $this->userCreationHelper,
+            eventDispatcher: $this->eventDispatcher,
         );
 
         $response = $controller->create(email: 'real@example.com', username: 'realuser', password: 'secret123');
@@ -531,6 +538,7 @@ final class UserControllerTest extends DatabaseTestCase
             passwordGenerator: $this->passwordGenerator,
             passwordHistoryService: new PasswordHistoryService(TestPasswordHasherFactory::create(), $config),
             userCreationHelper: $this->userCreationHelper,
+            eventDispatcher: $this->eventDispatcher,
         );
     }
 }

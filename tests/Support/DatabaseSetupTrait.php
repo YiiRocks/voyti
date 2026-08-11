@@ -66,7 +66,6 @@ trait DatabaseSetupTrait
             $this->dbConnection->createCommand('DROP TABLE IF EXISTS "yii_rbac_item"')->execute();
             $this->dbConnection->createCommand('DROP TABLE IF EXISTS "user_audit_log"')->execute();
             $this->dbConnection->createCommand('DROP TABLE IF EXISTS "user_password_history"')->execute();
-            $this->dbConnection->createCommand('DROP TABLE IF EXISTS "user_backup_code"')->execute();
             $this->dbConnection->createCommand('DROP TABLE IF EXISTS "user_sessions"')->execute();
             $this->dbConnection->createCommand('DROP TABLE IF EXISTS "user_token"')->execute();
             $this->dbConnection->createCommand('DROP TABLE IF EXISTS "user_social_account"')->execute();

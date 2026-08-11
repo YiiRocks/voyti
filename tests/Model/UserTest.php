@@ -6,7 +6,6 @@ namespace YiiRocks\Voyti\tests\Model;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Model\UserBackupCode;
 use YiiRocks\Voyti\Model\UserPasswordHistory;
 use YiiRocks\Voyti\Model\UserProfile;
 use YiiRocks\Voyti\Model\UserSessions;
@@ -37,9 +36,6 @@ final class UserTest extends TestCase
                 "email" VARCHAR(255) NOT NULL,
                 "password_hash" VARCHAR(255) NOT NULL,
                 "auth_key" VARCHAR(32) NOT NULL,
-                "auth_tf_enabled" INTEGER NOT NULL DEFAULT 0,
-                "auth_tf_key" VARCHAR(64),
-                "auth_tf_type" VARCHAR(20),
                 "blocked_at" INTEGER,
                 "confirmed_at" INTEGER,
                 "created_at" INTEGER NOT NULL,
@@ -105,15 +101,6 @@ final class UserTest extends TestCase
         ')->execute();
 
         $this->connection->createCommand('
-            CREATE TABLE "user_backup_code" (
-                "user_id" INTEGER NOT NULL,
-                "code_hash" VARCHAR(255) NOT NULL,
-                "used_at" INTEGER,
-                "created_at" INTEGER NOT NULL
-            )
-        ')->execute();
-
-        $this->connection->createCommand('
             CREATE TABLE "user_password_history" (
                 "user_id" INTEGER NOT NULL,
                 "password_hash" VARCHAR(255) NOT NULL,
@@ -126,7 +113,6 @@ final class UserTest extends TestCase
     {
         if ($this->connection !== null) {
             $this->connection->createCommand('DROP TABLE IF EXISTS "user_password_history"')->execute();
-            $this->connection->createCommand('DROP TABLE IF EXISTS "user_backup_code"')->execute();
             $this->connection->createCommand('DROP TABLE IF EXISTS "user_sessions"')->execute();
             $this->connection->createCommand('DROP TABLE IF EXISTS "user_token"')->execute();
             $this->connection->createCommand('DROP TABLE IF EXISTS "user_social_account"')->execute();
@@ -137,11 +123,27 @@ final class UserTest extends TestCase
         $this->connection = null;
     }
 
+    public static function booleanFlagProvider(): iterable
+    {
+        yield 'anonymized' => ['setAnonymized', 'isAnonymized'];
+        yield 'gdpr consent' => ['setGdprConsent', 'isGdprConsent'];
+    }
+
+    public static function findByUsernameOrEmailProvider(): iterable
+    {
+        yield 'by email' => ['alice@example.com', 'alice', 'alice@example.com'];
+        yield 'by username' => ['alice', 'alice', 'alice@example.com'];
+    }
+
+    public static function getPasswordAgeProvider(): iterable
+    {
+        yield 'just under day' => [-86399, 0];
+        yield 'null password changed at' => [null, 9999];
+    }
+
     public static function getterSetterProvider(): iterable
     {
         yield 'authKey' => ['setAuthKey', 'getAuthKey', 'auth_key_value'];
-        yield 'authTfKey' => ['setAuthTfKey', 'getAuthTfKey', 'tfkey123'];
-        yield 'authTfType' => ['setAuthTfType', 'getAuthTfType', 'totp'];
         yield 'blockedAt' => ['setBlockedAt', 'getBlockedAt', 12345];
         yield 'confirmedAt' => ['setConfirmedAt', 'getConfirmedAt', 12345];
         yield 'createdAt' => ['setCreatedAt', 'getCreatedAt', 1234567890];
@@ -165,6 +167,21 @@ final class UserTest extends TestCase
         yield 'with empty list' => ['normal_user', [], false];
     }
 
+    public static function isSwitchDisabledForProvider(): iterable
+    {
+        yield 'other active user' => [false, false, false];
+        yield 'blocked user' => [true, false, true];
+        yield 'same user' => [false, true, true];
+    }
+
+    #[DataProvider('booleanFlagProvider')]
+    public function testBooleanFlags(string $setter, string $getter): void
+    {
+        $entity = new User();
+        $entity->$setter(1);
+        self::assertTrue($entity->$getter());
+    }
+
     public function testDefaultValues(): void
     {
         $entity = new User();
@@ -183,9 +200,6 @@ final class UserTest extends TestCase
         self::assertNull($entity->getLastLoginAt());
         self::assertNull($entity->getLastLoginIp());
         self::assertNull($entity->getPasswordChangedAt());
-        self::assertNull($entity->getAuthTfKey());
-        self::assertNull($entity->getAuthTfType());
-        self::assertFalse($entity->isAuthTfEnabled());
         self::assertFalse($entity->isGdprConsent());
         self::assertFalse($entity->isAnonymized());
         self::assertNull($entity->getGdprConsentDate());
@@ -203,7 +217,6 @@ final class UserTest extends TestCase
         self::assertCount(0, UserSocialAccount::findByUserId($userId));
         self::assertCount(0, UserToken::findByUserId($userId));
         self::assertCount(0, UserSessions::findByUserId($userId));
-        self::assertCount(0, UserBackupCode::findUnusedByUserId($userId));
         self::assertCount(0, UserPasswordHistory::findByUserId($userId));
     }
 
@@ -241,39 +254,25 @@ final class UserTest extends TestCase
         self::assertCount(2, $result);
     }
 
-    public function testFindByUsernameOrEmailMatchesByEmail(): void
+    #[DataProvider('findByUsernameOrEmailProvider')]
+    public function testFindByUsernameOrEmail(string $lookupValue, string $expectedUsername, string $expectedEmail): void
     {
         $this->createUser('alice', 'alice@example.com', createdAt: time());
 
-        $user = User::findByUsernameOrEmail('alice@example.com');
+        $user = User::findByUsernameOrEmail($lookupValue);
 
         self::assertNotNull($user);
-        self::assertSame('alice', $user->getUsername());
+        self::assertSame($expectedUsername, $user->getUsername());
+        self::assertSame($expectedEmail, $user->getEmail());
     }
 
-    public function testFindByUsernameOrEmailMatchesByUsername(): void
-    {
-        $this->createUser('alice', 'alice@example.com', createdAt: time());
-
-        $user = User::findByUsernameOrEmail('alice');
-
-        self::assertNotNull($user);
-        self::assertSame('alice@example.com', $user->getEmail());
-    }
-
-    public function testGetPasswordAgeJustUnderDay(): void
+    #[DataProvider('getPasswordAgeProvider')]
+    public function testGetPasswordAge(?int $offset, int $expectedAge): void
     {
         $entity = new User();
-        $entity->setPasswordChangedAt(time() - 86399);
-        $age = $entity->getPasswordAge();
-        self::assertSame(0, $age);
-    }
-
-    public function testGetPasswordAgeWithNullPasswordChangedAt(): void
-    {
-        $entity = new User();
-        $entity->setPasswordChangedAt(null);
-        self::assertSame(9999, $entity->getPasswordAge());
+        $passwordChangedAt = $offset === null ? null : time() + $offset;
+        $entity->setPasswordChangedAt($passwordChangedAt);
+        self::assertSame($expectedAge, $entity->getPasswordAge());
     }
 
     #[DataProvider('getterSetterProvider')]
@@ -369,38 +368,19 @@ final class UserTest extends TestCase
         self::assertSame($expected, $entity->isAdminByList($adminList));
     }
 
-    public function testIsAnonymizedWithOne(): void
-    {
-        $entity = new User();
-        $entity->setAnonymized(1);
-        self::assertTrue($entity->isAnonymized());
-    }
-
-    public function testIsGdprConsentWithOne(): void
-    {
-        $entity = new User();
-        $entity->setGdprConsent(1);
-        self::assertTrue($entity->isGdprConsent());
-    }
-
-    public function testIsSwitchDisabledForReturnsFalseForOtherActiveUser(): void
+    #[DataProvider('isSwitchDisabledForProvider')]
+    public function testIsSwitchDisabledFor(bool $shouldBlock, bool $targetIsSelf, bool $expected): void
     {
         $user = $this->createUser('alice', 'alice@example.com', createdAt: time());
-        self::assertFalse($user->isSwitchDisabledFor((int) $user->getId() + 1));
-    }
 
-    public function testIsSwitchDisabledForReturnsTrueForBlockedUser(): void
-    {
-        $user = $this->createUser('alice', 'alice@example.com', createdAt: time());
-        $user->setBlockedAt(time());
-        $user->save();
-        self::assertTrue($user->isSwitchDisabledFor((int) $user->getId() + 1));
-    }
+        if ($shouldBlock) {
+            $user->setBlockedAt(time());
+            $user->save();
+        }
 
-    public function testIsSwitchDisabledForReturnsTrueForSameUser(): void
-    {
-        $user = $this->createUser('alice', 'alice@example.com', createdAt: time());
-        self::assertTrue($user->isSwitchDisabledFor((int) $user->getId()));
+        $targetId = $targetIsSelf ? (int) $user->getId() : (int) $user->getId() + 1;
+
+        self::assertSame($expected, $user->isSwitchDisabledFor($targetId));
     }
 
     public function testSearchQueryCountReflectsStatusFilter(): void
@@ -492,12 +472,6 @@ final class UserTest extends TestCase
         $session->setCreatedAt(time());
         $session->setUpdatedAt(time());
         $session->save();
-
-        $backupCode = new UserBackupCode();
-        $backupCode->setUserId($userId);
-        $backupCode->setCodeHash('hash-' . $userId);
-        $backupCode->setCreatedAt(time());
-        $backupCode->save();
 
         $passwordHistory = new UserPasswordHistory();
         $passwordHistory->setUserId($userId);

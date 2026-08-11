@@ -29,9 +29,6 @@ final class UserProfileTest extends TestCase
                 "email" VARCHAR(255) NOT NULL,
                 "password_hash" VARCHAR(255) NOT NULL,
                 "auth_key" VARCHAR(32) NOT NULL,
-                "auth_tf_enabled" INTEGER NOT NULL DEFAULT 0,
-                "auth_tf_key" VARCHAR(64),
-                "auth_tf_type" VARCHAR(20),
                 "blocked_at" INTEGER,
                 "confirmed_at" INTEGER,
                 "created_at" INTEGER NOT NULL,
@@ -73,6 +70,14 @@ final class UserProfileTest extends TestCase
         $this->connection = null;
     }
 
+    public static function getBioParsedProvider(): iterable
+    {
+        yield 'future birthday unchanged' => ['I am {age} years old', '+1 year', null, 'I am {age} years old'];
+        yield 'null bio returns null' => [null, '-30 years', null, null];
+        yield 'age token substitution' => ['I am {age} years old', '-30 years', null, 'I am 30 years old'];
+        yield 'both tokens substitution' => ['I am {age} and live in {location}', '-30 years', 'Paris', 'I am 30 and live in Paris'];
+    }
+
     public static function getterSetterProvider(): iterable
     {
         yield 'bio' => ['setBio', 'getBio', 'My bio'];
@@ -103,36 +108,22 @@ final class UserProfileTest extends TestCase
         self::assertSame('Bob', $found->getName());
     }
 
-    public function testGetBioParsedReturnsBioUnchangedWhenBirthdayIsFuture(): void
+    #[DataProvider('getBioParsedProvider')]
+    public function testGetBioParsed(?string $bio, string $birthdayModifier, ?string $location, ?string $expected): void
     {
         $entity = new UserProfile();
-        $entity->setBio('I am {age} years old');
-        $entity->setBirthday(new DateTimeImmutable('+1 year'));
-        self::assertSame('I am {age} years old', $entity->getBioParsed());
-    }
 
-    public function testGetBioParsedReturnsNullWhenBioIsNullEvenWithBirthdaySet(): void
-    {
-        $entity = new UserProfile();
-        $entity->setBirthday(new DateTimeImmutable('-30 years'));
-        self::assertNull($entity->getBioParsed());
-    }
+        if ($bio !== null) {
+            $entity->setBio($bio);
+        }
 
-    public function testGetBioParsedSubstitutesAgeToken(): void
-    {
-        $entity = new UserProfile();
-        $entity->setBio('I am {age} years old');
-        $entity->setBirthday(new DateTimeImmutable('-30 years'));
-        self::assertSame('I am 30 years old', $entity->getBioParsed());
-    }
+        $entity->setBirthday(new DateTimeImmutable($birthdayModifier));
 
-    public function testGetBioParsedSubstitutesBothTokens(): void
-    {
-        $entity = new UserProfile();
-        $entity->setBio('I am {age} and live in {location}');
-        $entity->setBirthday(new DateTimeImmutable('-30 years'));
-        $entity->setLocation('Paris');
-        self::assertSame('I am 30 and live in Paris', $entity->getBioParsed());
+        if ($location !== null) {
+            $entity->setLocation($location);
+        }
+
+        self::assertSame($expected, $entity->getBioParsed());
     }
 
     public function testGetGravatarIdFallsBackToUserEmail(): void

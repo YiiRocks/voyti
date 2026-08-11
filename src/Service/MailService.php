@@ -14,7 +14,7 @@ use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\View\View;
 
 /**
- * Sends the module's transactional emails (confirmation, recovery, welcome, two-factor code, etc.)
+ * Sends the module's transactional emails (confirmation, recovery, welcome, etc.)
  * by rendering HTML/text view pairs from `mailPath` and dispatching them via {@see MailerInterface}.
  */
 final readonly class MailService
@@ -118,20 +118,6 @@ final readonly class MailService
                     'voyti/password-reset-confirm',
                     ['id' => $userId, 'code' => $code],
                 ),
-                'translator' => $this->translator,
-            ],
-        );
-    }
-
-    public function sendTwoFactorCode(string $email, string $code): bool
-    {
-        $subject = $this->getMailSubject('two_factor_subject');
-        return $this->send(
-            $email,
-            $subject,
-            'twofactorcode',
-            [
-                'code' => $code,
                 'translator' => $this->translator,
             ],
         );

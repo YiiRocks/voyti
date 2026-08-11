@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Console;
 
 use Override;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use YiiRocks\Voyti\Event\User\UserEvent;
 use Yiisoft\Yii\Console\ExitCode;
 
 /**
@@ -16,6 +18,12 @@ use Yiisoft\Yii\Console\ExitCode;
 final class DeleteUserCommand extends Command
 {
     use UserLookupTrait;
+
+    public function __construct(
+        private readonly EventDispatcherInterface $eventDispatcher,
+    ) {
+        parent::__construct();
+    }
 
     #[Override]
     protected function configure(): void
@@ -40,6 +48,7 @@ final class DeleteUserCommand extends Command
         }
 
         $user->delete();
+        $this->eventDispatcher->dispatch(new UserEvent($user, UserEvent::DELETE));
         $output->writeln('<info>User deleted.</info>');
         return ExitCode::OK;
     }

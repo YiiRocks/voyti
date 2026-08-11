@@ -9,7 +9,6 @@ return [
     'voyti.security.need_email_confirmation' => 'Vous devez confirmer votre adresse e-mail',
     'voyti.security.logged_out' => 'Déconnecté',
     'voyti.security.password_expired' => 'Votre mot de passe a expiré. Veuillez en définir un nouveau.',
-    'voyti.security.two_factor_required' => "L'authentification à deux facteurs est obligatoire pour votre compte. Veuillez l'activer pour continuer.",
     'voyti.security.authenticated' => 'Authentifié',
     'voyti.security.social_auth_cancelled' => 'La connexion sociale a été annulée.',
 
@@ -41,8 +40,6 @@ return [
     'voyti.settings.email_change_failed' => "Échec de la modification de l'e-mail",
     'voyti.settings.network_disconnected' => 'Le réseau a été déconnecté',
     'voyti.settings.network_not_found' => 'Réseau introuvable',
-    'voyti.settings.two_factor_enabled' => "L'authentification à deux facteurs a été activée",
-    'voyti.settings.two_factor_disabled' => "L'authentification à deux facteurs a été désactivée",
     'voyti.settings.session_not_found' => 'Session introuvable',
     'voyti.settings.session_terminated' => 'La session a été déconnectée',
     'voyti.settings.password_previously_used' => 'Ce mot de passe a été utilisé récemment. Veuillez en choisir un autre.',
@@ -90,19 +87,13 @@ return [
     'voyti.recovery.message_sent_if_exists' => "Si l'e-mail existe, un message de récupération a été envoyé",
     'voyti.recovery.message_sent' => 'Message de récupération envoyé',
 
-    // TwoFactorCodeValidator
-    'voyti.validator.two_factor_not_configured' => "L'authentification à deux facteurs n'est pas configurée.",
-    'voyti.validator.two_factor_library_missing' => "La bibliothèque 2FA (chillerlan/2fa-qrcode-bundle) n'est pas installée.",
-    'voyti.validator.invalid_verification_code' => 'Code de vérification invalide.',
     'voyti.validator.password_complexity' => 'Le mot de passe doit contenir au moins une majuscule, une minuscule, un chiffre et un caractère spécial.',
-    'voyti.validator.email_two_factor_not_configured' => "L'authentification à deux facteurs par e-mail n'est pas configurée.",
 
     // Mail subjects
     'voyti.mail.welcome_subject' => 'Bienvenue sur {app}',
     'voyti.mail.confirmation_subject' => 'Confirmez votre compte sur {app}',
     'voyti.mail.reconfirmation_subject' => "Confirmez le changement d'e-mail sur {app}",
     'voyti.mail.recovery_subject' => 'Terminez la réinitialisation du mot de passe sur {app}',
-    'voyti.mail.two_factor_subject' => "Code d'authentification à deux facteurs sur {app}",
     'voyti.mail.admin_notification_subject' => 'Nouvelle inscription sur {app}',
 
     // Mail view templates
@@ -115,8 +106,6 @@ return [
     'voyti.mail.click_to_reset_password' => 'Cliquez sur le lien ci-dessous pour réinitialiser votre mot de passe :',
     'voyti.mail.confirm_account_heading' => 'Confirmez votre compte',
     'voyti.mail.click_to_confirm_account' => 'Cliquez sur le lien ci-dessous pour confirmer votre compte :',
-    'voyti.mail.twofactor_heading' => "Code d'authentification à deux facteurs",
-    'voyti.mail.your_twofactor_code' => "Votre code d'authentification à deux facteurs est :",
 
     // Navigation / Menu
     'voyti.menu.dashboard' => 'Tableau de bord',
@@ -124,7 +113,6 @@ return [
     'voyti.menu.account' => 'Compte',
     'voyti.menu.networks' => 'Réseaux',
     'voyti.menu.sessions' => 'Sessions',
-    'voyti.menu.two_factor' => 'Authentification à deux facteurs',
     'voyti.menu.logout' => 'Se déconnecter',
 
     // Login view
@@ -137,35 +125,6 @@ return [
     'voyti.view.login.remember_me_label' => 'Se souvenir de moi',
     'voyti.view.login.social_divider' => 'Ou se connecter avec',
 
-    // Two-factor confirm view
-    'voyti.view.two_factor.title' => 'Authentification à deux facteurs',
-    'voyti.view.two_factor_google.button_label' => 'Google Authenticator',
-    'voyti.view.two_factor.code_label' => "Code d'authentification",
-    'voyti.view.two_factor.verify_button' => 'Vérifier',
-    'voyti.view.two_factor.enabled_with_method' => "L'authentification à deux facteurs via {method} est activée",
-    'voyti.view.two_factor.disable' => 'Désactiver',
-    'voyti.view.two_factor.disable_confirm_intro' => "Pour désactiver l'authentification à deux facteurs, nous devons vérifier qu'il s'agit bien de vous. Un code de vérification sera envoyé à votre e-mail.",
-    'voyti.view.two_factor.disable_send_code' => 'Envoyer le code pour désactiver',
-    'voyti.view.two_factor.scan_qr' => 'Scannez ce code QR avec votre application d\'authentification',
-    'voyti.view.two_factor.manual_entry' => 'Ou saisissez cette clé manuellement :',
-    'voyti.view.two_factor.enter_code' => 'Saisissez le code de vérification',
-    'voyti.view.two_factor.enable' => 'Activer',
-    'voyti.view.two_factor.renew' => 'Renouveler',
-    'voyti.view.two_factor.renew_error' => 'Impossible de générer une nouvelle clé. Veuillez réessayer.',
-    'voyti.view.two_factor.loading' => 'Chargement…',
-    'voyti.view.two_factor.already_enabled' => "L'authentification à deux facteurs est déjà activée.",
-    'voyti.view.two_factor.backup_codes_title' => 'Codes de secours',
-    'voyti.view.two_factor.backup_codes_intro' => 'Conservez ces codes de secours à usage unique en lieu sûr. Chacun peut être utilisé une fois pour vous connecter si vous perdez l\'accès à votre application d\'authentification ou à votre e-mail.',
-    'voyti.view.two_factor.backup_codes_continue' => 'Continuer',
-    'voyti.view.two_factor.backup_code_hint' => 'Vous avez perdu l\'accès à votre appareil ou à votre e-mail ? Vous pouvez saisir l\'un de vos codes de secours à la place.',
-    'voyti.view.two_factor.regenerate_backup_codes' => 'Régénérer les codes de secours',
-    'voyti.view.two_factor.regenerate_backup_codes_intro' => "La génération d'un nouveau jeu de codes de secours invalide tous les codes existants. Saisissez votre code de vérification actuel ou un code de secours pour confirmer.",
-    'voyti.view.two_factor.no_backup_codes_remaining' => "Il ne vous reste plus de codes de secours. Régénérez-en un nouveau jeu pour vous assurer de pouvoir toujours récupérer l'accès si vous perdez votre appareil.",
-    'voyti.view.two_factor_email.button_label' => 'E-mail',
-    'voyti.view.two_factor_email.method_name' => 'e-mail',
-    'voyti.view.two_factor_email.enter_code' => 'Saisissez le code de vérification envoyé à votre e-mail',
-    'voyti.view.two_factor_email.confirm_intro' => "Un code de vérification sera envoyé à l'adresse e-mail ci-dessous.",
-    'voyti.view.two_factor_email.send_button' => 'Envoyer le code',
     // Registration views
     'voyti.view.registration.register_title' => 'Créer un compte',
     'voyti.view.registration.gdpr_consent_label' => "J'accepte le traitement de mes données personnelles",
@@ -210,7 +169,6 @@ return [
     'voyti.view.anonymize.button' => 'Anonymiser mon compte',
 
     // Account settings (2FA)
-    'voyti.view.account.two_factor_title' => 'Authentification à deux facteurs',
 
     // Delete account view
     'voyti.view.delete_account.title' => 'Supprimer mon compte',

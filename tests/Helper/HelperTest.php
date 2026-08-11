@@ -73,6 +73,27 @@ final class HelperTest extends TestCase
         yield 'future birthday' => ['+10 years', null];
     }
 
+    public static function authGetRuleNamesProvider(): iterable
+    {
+        yield 'empty items' => [[], []];
+        yield 'unique rules' => [
+            [
+                'admin' => (new Role('admin'))->withRuleName('isAdmin'),
+                'editor' => (new Role('editor'))->withRuleName('isEditor'),
+                'write' => (new Permission('write'))->withRuleName('canWrite'),
+                'user' => new Role('user'),
+            ],
+            ['isAdmin', 'isEditor', 'canWrite'],
+        ];
+        yield 'duplicate rule names' => [
+            [
+                'admin' => (new Role('admin'))->withRuleName('isAdmin'),
+                'superadmin' => (new Role('superadmin'))->withRuleName('isAdmin'),
+            ],
+            ['isAdmin'],
+        ];
+    }
+
     public static function authHasRoleProvider(): iterable
     {
         yield 'role missing' => [[], false];
@@ -93,6 +114,12 @@ final class HelperTest extends TestCase
         yield 'reset button without theme' => [ResetButton::class, null, ''];
         yield 'reset button themed' => [ResetButton::class, ['btn btn-outline-primary'], 'btn btn-outline-primary'];
         yield 'submit button themed' => [SubmitButton::class, ['btn btn-primary'], 'btn btn-primary'];
+    }
+
+    public static function recaptchaRenderConfiguredProvider(): iterable
+    {
+        yield 'v2' => [RecaptchaVersion::V2, 'data-sitekey="v2-site-key"', 'grecaptcha.execute', null];
+        yield 'v3' => [RecaptchaVersion::V3, 'grecaptcha.execute', 'data-sitekey="v2-site-key"', '"action":"voyti_recaptchaTestForm"'];
     }
 
     public static function recaptchaRenderWithoutConfiguredKeyProvider(): iterable
@@ -121,57 +148,15 @@ final class HelperTest extends TestCase
         self::assertNull(AgeHelper::calculate(null));
     }
 
-    public function testAuthGetRuleNamesReturnsEmptyWhenNoItems(): void
+    #[DataProvider('authGetRuleNamesProvider')]
+    public function testAuthGetRuleNames(array $items, array $expectedRules): void
     {
         $itemsStorage = $this->createMock(ItemsStorageInterface::class);
-        $itemsStorage->expects(self::once())->method('getAll')->willReturn([]);
+        $itemsStorage->expects(self::once())->method('getAll')->willReturn($items);
 
         $helper = $this->createAuthHelper(itemsStorage: $itemsStorage);
 
-        self::assertSame([], $helper->getRuleNames());
-    }
-
-    public function testAuthGetRuleNamesReturnsUniqueRuleNames(): void
-    {
-        $role1 = new Role('admin');
-        $role1 = $role1->withRuleName('isAdmin');
-        $role2 = new Role('editor');
-        $role2 = $role2->withRuleName('isEditor');
-        $permission = new Permission('write');
-        $permission = $permission->withRuleName('canWrite');
-        $roleNoRule = new Role('user');
-
-        $itemsStorage = $this->createMock(ItemsStorageInterface::class);
-        $itemsStorage->expects(self::once())->method('getAll')->willReturn([
-            'admin' => $role1,
-            'editor' => $role2,
-            'write' => $permission,
-            'user' => $roleNoRule,
-        ]);
-
-        $helper = $this->createAuthHelper(itemsStorage: $itemsStorage);
-        $rules = $helper->getRuleNames();
-
-        sort($rules);
-        self::assertSame(['canWrite', 'isAdmin', 'isEditor'], $rules);
-    }
-
-    public function testAuthGetRuleNamesReturnsUniqueValues(): void
-    {
-        $role1 = (new Role('admin'))->withRuleName('isAdmin');
-        $role2 = (new Role('superadmin'))->withRuleName('isAdmin');
-
-        $itemsStorage = $this->createMock(ItemsStorageInterface::class);
-        $itemsStorage->expects(self::once())->method('getAll')->willReturn([
-            'admin' => $role1,
-            'superadmin' => $role2,
-        ]);
-
-        $helper = $this->createAuthHelper(itemsStorage: $itemsStorage);
-        $rules = $helper->getRuleNames();
-
-        self::assertCount(1, $rules);
-        self::assertSame(['isAdmin'], $rules);
+        self::assertSame($expectedRules, $helper->getRuleNames());
     }
 
     public function testAuthGetUnassignedItemsFiltersAssigned(): void
@@ -268,31 +253,22 @@ final class HelperTest extends TestCase
         self::assertSame('', RecaptchaHelper::render($form, $config));
     }
 
-    public function testRecaptchaRenderV2ProducesV2MarkupWithConfiguredKey(): void
+    #[DataProvider('recaptchaRenderConfiguredProvider')]
+    public function testRecaptchaRenderWithConfiguredKey(RecaptchaVersion $version, string $shouldContain, string $shouldNotContain, ?string $alsoContains): void
     {
         $this->configureRecaptchaRegistry();
 
-        $config = VoytiConfigFactory::create(recaptchaVersion: RecaptchaVersion::V2);
+        $config = VoytiConfigFactory::create(recaptchaVersion: $version);
         $form = new RecaptchaTestForm();
 
         $html = RecaptchaHelper::render($form, $config);
 
-        self::assertStringContainsString('data-sitekey="v2-site-key"', $html);
-        self::assertStringNotContainsString('grecaptcha.execute', $html);
-    }
+        self::assertStringContainsString($shouldContain, $html);
+        self::assertStringNotContainsString($shouldNotContain, $html);
 
-    public function testRecaptchaRenderV3ProducesV3MarkupWithConfiguredKey(): void
-    {
-        $this->configureRecaptchaRegistry();
-
-        $config = VoytiConfigFactory::create(recaptchaVersion: RecaptchaVersion::V3);
-        $form = new RecaptchaTestForm();
-
-        $html = RecaptchaHelper::render($form, $config);
-
-        self::assertStringContainsString('grecaptcha.execute', $html);
-        self::assertStringContainsString('"action":"voyti_recaptchaTestForm"', $html);
-        self::assertStringNotContainsString('data-sitekey="v2-site-key"', $html);
+        if ($alsoContains !== null) {
+            self::assertStringContainsString($alsoContains, $html);
+        }
     }
 
     #[DataProvider('timezoneLocalizedDateFormatProvider')]

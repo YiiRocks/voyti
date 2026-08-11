@@ -30,7 +30,7 @@ Stats for Nerds
 - **User Management** — Registration, email confirmation, login/logout with remember-me, password recovery, password expiration
 - **Profile Management** — User profiles with gravatar, timezone, bio, and a personal website link
 - **Social Authentication** — OAuth2 login via Google, GitHub, Facebook, and more
-- **Two-Factor Authentication** — TOTP (authenticator app) with QR code provisioning and email 2FA, with enforced-per-permission support, plus one-time backup codes for account recovery
+- **Two-Factor Authentication** — TOTP (authenticator app) with QR code provisioning, email 2FA, WebAuthn, per-permission enforcement and recovery codes
 - **RBAC Management** — Full admin UI for roles, permissions, and rules with parent-child hierarchy, assignment management, and filtering
 - **Identity Switching** — Admins can temporarily switch into another user's identity for support or debugging, then restore their own session with one click
 - **Session Management** — Session tracking and termination

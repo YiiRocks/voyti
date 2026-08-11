@@ -9,7 +9,6 @@ return [
     'voyti.security.need_email_confirmation' => 'You need to confirm your email address',
     'voyti.security.logged_out' => 'Logged out',
     'voyti.security.password_expired' => 'Your password has expired. Please set a new one.',
-    'voyti.security.two_factor_required' => 'Two-factor authentication is required for your account. Please enable it to continue.',
     'voyti.security.authenticated' => 'Authenticated',
     'voyti.security.social_auth_cancelled' => 'Social sign-in was cancelled.',
 
@@ -41,8 +40,6 @@ return [
     'voyti.settings.email_change_failed' => 'Failed to change email',
     'voyti.settings.network_disconnected' => 'Network has been disconnected',
     'voyti.settings.network_not_found' => 'Network not found',
-    'voyti.settings.two_factor_enabled' => 'Two-factor authentication has been enabled',
-    'voyti.settings.two_factor_disabled' => 'Two-factor authentication has been disabled',
     'voyti.settings.session_not_found' => 'Session not found',
     'voyti.settings.session_terminated' => 'Session has been logged out',
     'voyti.settings.password_previously_used' => 'This password has been used recently. Please choose a different one.',
@@ -90,19 +87,13 @@ return [
     'voyti.recovery.message_sent_if_exists' => 'If the email exists, a recovery message has been sent',
     'voyti.recovery.message_sent' => 'Recovery message sent',
 
-    // TwoFactorCodeValidator
-    'voyti.validator.two_factor_not_configured' => 'Two factor authentication is not configured.',
-    'voyti.validator.two_factor_library_missing' => '2FA library (chillerlan/2fa-qrcode-bundle) is not installed.',
-    'voyti.validator.invalid_verification_code' => 'Invalid verification code.',
     'voyti.validator.password_complexity' => 'Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character.',
-    'voyti.validator.email_two_factor_not_configured' => 'Email two factor authentication is not configured.',
 
     // Mail subjects
     'voyti.mail.welcome_subject' => 'Welcome to {app}',
     'voyti.mail.confirmation_subject' => 'Confirm account on {app}',
     'voyti.mail.reconfirmation_subject' => 'Confirm email change on {app}',
     'voyti.mail.recovery_subject' => 'Complete password reset on {app}',
-    'voyti.mail.two_factor_subject' => 'Code for two factor authentication on {app}',
     'voyti.mail.admin_notification_subject' => 'New user registration on {app}',
 
     // Mail view templates
@@ -115,8 +106,6 @@ return [
     'voyti.mail.click_to_reset_password' => 'Click the link below to reset your password:',
     'voyti.mail.confirm_account_heading' => 'Confirm your account',
     'voyti.mail.click_to_confirm_account' => 'Click the link below to confirm your account:',
-    'voyti.mail.twofactor_heading' => 'Two-factor authentication code',
-    'voyti.mail.your_twofactor_code' => 'Your two-factor authentication code is:',
 
     // Navigation / Menu
     'voyti.menu.dashboard' => 'Dashboard',
@@ -124,7 +113,6 @@ return [
     'voyti.menu.account' => 'Account',
     'voyti.menu.networks' => 'Networks',
     'voyti.menu.sessions' => 'Sessions',
-    'voyti.menu.two_factor' => 'Two-Factor Auth',
     'voyti.menu.logout' => 'Log out',
 
     // Login view
@@ -137,35 +125,6 @@ return [
     'voyti.view.login.remember_me_label' => 'Remember me',
     'voyti.view.login.social_divider' => 'Or sign in with',
 
-    // Two-factor confirm view
-    'voyti.view.two_factor.title' => 'Two-Factor Authentication',
-    'voyti.view.two_factor_google.button_label' => 'Google Authenticator',
-    'voyti.view.two_factor.code_label' => 'Authentication Code',
-    'voyti.view.two_factor.verify_button' => 'Verify',
-    'voyti.view.two_factor.enabled_with_method' => 'Two-factor authentication via {method} is enabled',
-    'voyti.view.two_factor.disable' => 'Disable',
-    'voyti.view.two_factor.disable_confirm_intro' => 'To disable two-factor authentication, we need to verify it is really you. A verification code will be sent to your email.',
-    'voyti.view.two_factor.disable_send_code' => 'Send Code to Disable',
-    'voyti.view.two_factor.scan_qr' => 'Scan this QR code with your authenticator app',
-    'voyti.view.two_factor.manual_entry' => 'Or enter this key manually:',
-    'voyti.view.two_factor.enter_code' => 'Enter the verification code',
-    'voyti.view.two_factor.enable' => 'Enable',
-    'voyti.view.two_factor.renew' => 'Renew',
-    'voyti.view.two_factor.renew_error' => 'Could not generate a new key. Please try again.',
-    'voyti.view.two_factor.loading' => 'Loading…',
-    'voyti.view.two_factor.already_enabled' => 'Two-factor authentication is already enabled.',
-    'voyti.view.two_factor.backup_codes_title' => 'Backup Codes',
-    'voyti.view.two_factor.backup_codes_intro' => 'Save these one-time backup codes somewhere safe. Each can be used once to sign in if you lose access to your authenticator or email.',
-    'voyti.view.two_factor.backup_codes_continue' => 'Continue',
-    'voyti.view.two_factor.backup_code_hint' => 'Lost access to your device or email? You can enter one of your backup codes instead.',
-    'voyti.view.two_factor.regenerate_backup_codes' => 'Regenerate Backup Codes',
-    'voyti.view.two_factor.regenerate_backup_codes_intro' => 'Generating a new set of backup codes invalidates all existing ones. Enter your current verification code or a backup code to confirm.',
-    'voyti.view.two_factor.no_backup_codes_remaining' => 'You have no backup codes remaining. Regenerate a new set to make sure you can still recover access if you lose your device.',
-    'voyti.view.two_factor_email.button_label' => 'Email',
-    'voyti.view.two_factor_email.method_name' => 'email',
-    'voyti.view.two_factor_email.enter_code' => 'Enter the verification code sent to your email',
-    'voyti.view.two_factor_email.confirm_intro' => 'A verification code will be sent to the email address below.',
-    'voyti.view.two_factor_email.send_button' => 'Send Code',
     // Registration views
     'voyti.view.registration.register_title' => 'Create account',
     'voyti.view.registration.gdpr_consent_label' => 'I agree processing of my personal data',
@@ -210,7 +169,6 @@ return [
     'voyti.view.anonymize.button' => 'Anonymize my account',
 
     // Account settings (2FA)
-    'voyti.view.account.two_factor_title' => 'Two-Factor Authentication',
 
     // Delete account view
     'voyti.view.delete_account.title' => 'Delete my account',

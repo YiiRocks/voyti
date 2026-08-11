@@ -16,7 +16,7 @@ use Yiisoft\Validator\Rule\Required;
 use Yiisoft\Validator\RulesProviderInterface;
 
 /**
- * Backs the login page: username/email, password, remember-me, and optionally a two-factor code.
+ * Backs the login page: username/email, password, and remember-me.
  */
 final class LoginForm extends FormModel implements LabelsProviderInterface, RulesProviderInterface
 {
@@ -26,12 +26,10 @@ final class LoginForm extends FormModel implements LabelsProviderInterface, Rule
     public string $login = '';
     public string $password = '';
     public bool $rememberMe = false;
-    public ?string $twoFactorAuthenticationCode = null;
 
     public function __construct(
         private readonly VoytiConfig $config,
         private readonly TranslatorInterface $translator,
-        private readonly bool $requireTwoFactorAuthenticationCode = false,
     ) {}
 
     /**
@@ -48,7 +46,7 @@ final class LoginForm extends FormModel implements LabelsProviderInterface, Rule
     /**
      * @return string[]
      *
-     * @psalm-return array{login: string, password: string, rememberMe: string, twoFactorAuthenticationCode: string}
+     * @psalm-return array{login: string, password: string, rememberMe: string}
      */
     #[Override]
     public function getPropertyLabels(): array
@@ -57,10 +55,6 @@ final class LoginForm extends FormModel implements LabelsProviderInterface, Rule
             'login' => $this->translator->translate('voyti.view.login.login_label', category: 'voyti'),
             'password' => $this->translator->translate('voyti.view.login.password_label', category: 'voyti'),
             'rememberMe' => $this->translator->translate('voyti.view.login.remember_me_label', category: 'voyti'),
-            'twoFactorAuthenticationCode' => $this->translator->translate(
-                'voyti.view.two_factor.code_label',
-                category: 'voyti',
-            ),
         ];
     }
 
@@ -70,18 +64,7 @@ final class LoginForm extends FormModel implements LabelsProviderInterface, Rule
         $parser = new ObjectParser($this);
         $rules = $parser->getRules();
 
-        if ($this->requireTwoFactorAuthenticationCode) {
-            // Accepts either a 6-digit TOTP/email code or an alphanumeric backup code
-            // (SessionController::confirm() falls back to BackupCodeService::consume()),
-            // so no format-specific rule can be enforced here beyond presence.
-            $rules['twoFactorAuthenticationCode'] = [new Required()];
-            // The password was already verified during the initial login step; the 2FA step
-            // doesn't ask for it again. $password has no #[Required] attribute so this branch
-            // can leave it optional - ObjectDataSet re-merges attribute rules for any property
-            // unset() from here, which would silently undo that.
-        } else {
-            $rules['password'] = [new Required()];
-        }
+        $rules['password'] = [new Required()];
 
         $recaptchaRules = RecaptchaHelper::rules($this->config, $this->getFormName());
         if ($recaptchaRules !== []) {

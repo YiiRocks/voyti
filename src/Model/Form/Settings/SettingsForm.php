@@ -70,7 +70,6 @@ final class SettingsForm extends FormModel implements LabelsProviderInterface, R
      *     name: string,
      *     bio: string,
      *     currentPassword: string,
-     *     authTfEnabled: string,
      * }
      */
     #[Override]
@@ -85,7 +84,6 @@ final class SettingsForm extends FormModel implements LabelsProviderInterface, R
             'name' => $this->translator->translate('voyti.view.name_label', category: 'voyti'),
             'bio' => $this->translator->translate('voyti.view.bio_label', category: 'voyti'),
             'currentPassword' => $this->translator->translate('voyti.view.current_password_label', category: 'voyti'),
-            'authTfEnabled' => $this->translator->translate('voyti.view.account.two_factor_title', category: 'voyti'),
         ];
     }
 

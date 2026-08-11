@@ -8,6 +8,7 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Log\LoggerInterface;
 use YiiRocks\Voyti\Adapter\IdentityAdapter;
 use YiiRocks\Voyti\Clock\SystemClock;
+use YiiRocks\Voyti\Controller\Session\SessionController;
 use YiiRocks\Voyti\Enum\EmailChangeConfirmation;
 use YiiRocks\Voyti\Enum\ProfileVisibility;
 use YiiRocks\Voyti\Enum\RecaptchaVersion;
@@ -18,7 +19,6 @@ use YiiRocks\Voyti\Listener;
 use YiiRocks\Voyti\Middleware\PasswordAgeEnforceMiddleware;
 use YiiRocks\Voyti\Middleware\RememberMeMiddleware;
 use YiiRocks\Voyti\Middleware\SessionRevocationEnforceMiddleware;
-use YiiRocks\Voyti\Middleware\TwoFactorAuthenticationEnforceMiddleware;
 use YiiRocks\Voyti\Middleware\VoytiMiddleware;
 use YiiRocks\Voyti\Service\Admin\DashboardService;
 use YiiRocks\Voyti\Service\AuditLogService;
@@ -39,9 +39,6 @@ use YiiRocks\Voyti\Service\Rbac\RuleEditionService;
 use YiiRocks\Voyti\Service\Rbac\UpdateAssignmentsService;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\Service\SwitchIdentityService;
-use YiiRocks\Voyti\Service\TwoFactor\BackupCodeService;
-use YiiRocks\Voyti\Service\TwoFactor\EmailCodeGeneratorService;
-use YiiRocks\Voyti\Service\TwoFactor\QrCodeUriGeneratorService;
 use YiiRocks\Voyti\Service\User\ApiTokenService;
 use YiiRocks\Voyti\Service\User\BlockService;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
@@ -59,6 +56,7 @@ use Yiisoft\Auth\IdentityWithTokenRepositoryInterface;
 use Yiisoft\Cookies\CookieEncryptor;
 use Yiisoft\Cookies\CookieMiddleware;
 use Yiisoft\Cookies\CookieSigner;
+use Yiisoft\Definitions\Reference;
 use Yiisoft\Input\Http\HydratorAttributeParametersResolver;
 use Yiisoft\Input\Http\RequestInputParametersResolver;
 use Yiisoft\Mailer\MailerInterface;
@@ -71,7 +69,6 @@ use Yiisoft\Rbac\ItemsStorageInterface;
 use Yiisoft\Rbac\ManagerInterface;
 use Yiisoft\Router\CurrentRoute;
 use Yiisoft\Router\UrlGeneratorInterface;
-use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\Translator\CategorySource;
 use Yiisoft\Translator\Message\Php\MessageSource;
@@ -109,8 +106,7 @@ return [
         enableGdprCompliance: $params['yiirocks/voyti']['enableGdprCompliance'] ?? false,
         gdprExportProperties: $params['yiirocks/voyti']['gdprExportProperties'] ?? [],
         gdprAnonymizePrefix: $params['yiirocks/voyti']['gdprAnonymizePrefix'] ?? 'GDPR',
-        enableTwoFactorAuthentication: $params['yiirocks/voyti']['enableTwoFactorAuthentication'] ?? false,
-        twoFactorAuthenticationForcedPermissions: $params['yiirocks/voyti']['twoFactorAuthenticationForcedPermissions'] ?? [],
+        accountMenuItems: $params['yiirocks/voyti']['accountMenuItems'] ?? [],
         enableRegistration: $params['yiirocks/voyti']['enableRegistration'] ?? true,
         enableSocialNetworkRegistration: $params['yiirocks/voyti']['enableSocialNetworkRegistration'] ?? true,
         enableEmailConfirmation: $params['yiirocks/voyti']['enableEmailConfirmation'] ?? true,
@@ -147,13 +143,24 @@ return [
     IdentityRepositoryInterface::class => IdentityAdapter::class,
     IdentityWithTokenRepositoryInterface::class => IdentityAdapter::class,
 
-    // PSR-15 middleware: VoytiMiddleware chains the remember-me and enforcement middleware.
-    VoytiMiddleware::class => fn(
-        RememberMeMiddleware $rememberMe,
-        PasswordAgeEnforceMiddleware $passwordAge,
-        SessionRevocationEnforceMiddleware $sessionRevocation,
-        TwoFactorAuthenticationEnforceMiddleware $twoFactorAuth,
-    ) => new VoytiMiddleware($rememberMe, $sessionRevocation, $passwordAge, $twoFactorAuth),
+    // PSR-15 middleware: VoytiMiddleware chains remember-me plus every enforcement middleware tagged
+    // `voyti.enforce-middleware`. Core tags session-revocation and password-age (below); packages
+    // such as yiirocks/voyti-2fa tag their own, joining the chain with no host wiring.
+    SessionRevocationEnforceMiddleware::class => [
+        'class' => SessionRevocationEnforceMiddleware::class,
+        'tags' => ['voyti.enforce-middleware'],
+    ],
+    PasswordAgeEnforceMiddleware::class => [
+        'class' => PasswordAgeEnforceMiddleware::class,
+        'tags' => ['voyti.enforce-middleware'],
+    ],
+    VoytiMiddleware::class => [
+        'class' => VoytiMiddleware::class,
+        '__construct()' => [
+            'rememberMe' => Reference::to(RememberMeMiddleware::class),
+            'enforcementMiddlewares' => Reference::to('tag@voyti.enforce-middleware'),
+        ],
+    ],
 
     // Cookie encryption middleware for remember-me cookies
     CookieEncryptor::class => static fn() => new CookieEncryptor($cookieSecretKey()),
@@ -267,16 +274,15 @@ return [
     ) => new UserSessionDecorator($eventDispatcher, $config, $session),
     TerminateUserSessionsService::class => TerminateUserSessionsService::class,
 
-    // Two-factor authentication: email codes, TOTP QR URIs, backup codes.
-    EmailCodeGeneratorService::class => fn(
-        MailService $mailService,
-    ) => new EmailCodeGeneratorService($mailService),
-    QrCodeUriGeneratorService::class => fn(
-        VoytiConfig $config,
-    ) => new QrCodeUriGeneratorService($config),
-    BackupCodeService::class => fn() => new BackupCodeService(
-        new PasswordHasher(PASSWORD_BCRYPT, ['cost' => 6]),
-    ),
+    // Login challenges: steps that may interrupt a password login before the session is established
+    // (e.g. two-factor from yiirocks/voyti-2fa). Packages tag their challenge with
+    // `voyti.login-challenge`; SessionController consults them all, in registration order.
+    SessionController::class => [
+        'class' => SessionController::class,
+        '__construct()' => [
+            'loginChallenges' => Reference::to('tag@voyti.login-challenge'),
+        ],
+    ],
 
     ...(class_exists(Collection::class) ? [
         AuthAction::class => static fn(

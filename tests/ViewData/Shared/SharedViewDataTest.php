@@ -42,6 +42,24 @@ final class SharedViewDataTest extends TestCase
         self::assertSame('99', $data->success);
     }
 
+    public function testMenuForAccountIncludesConfiguredItemsAndPrivacyWhenEnabled(): void
+    {
+        $config = VoytiConfigFactory::create(
+            accountMenuItems: [
+                ['label' => 'voyti-2fa.menu.two_factor', 'category' => 'voyti-2fa', 'route' => 'voyti/user-two-factor'],
+            ],
+            enableGdprCompliance: true,
+        );
+
+        $menu = MenuViewData::forAccount($config, new FakeUrlGenerator(), $this->createTranslator());
+
+        $labels = array_map(static fn($item) => $item->label, $menu->items);
+
+        // A package-contributed account-menu item appears in the menu.
+        self::assertContains('voyti-2fa.menu.two_factor', $labels);
+        self::assertContains('voyti.view.settings.privacy', $labels);
+    }
+
     public function testMenuForAccountIncludesPrivacyWhenAccountDeleteAllowedWithoutGdpr(): void
     {
         $config = VoytiConfigFactory::create(enableGdprCompliance: false, allowAccountDelete: true);
@@ -50,18 +68,6 @@ final class SharedViewDataTest extends TestCase
 
         $labels = array_map(static fn($item) => $item->label, $menu->items);
 
-        self::assertContains('voyti.view.settings.privacy', $labels);
-    }
-
-    public function testMenuForAccountIncludesTwoFactorAndPrivacyWhenEnabled(): void
-    {
-        $config = VoytiConfigFactory::create(enableTwoFactorAuthentication: true, enableGdprCompliance: true);
-
-        $menu = MenuViewData::forAccount($config, new FakeUrlGenerator(), $this->createTranslator());
-
-        $labels = array_map(static fn($item) => $item->label, $menu->items);
-
-        self::assertContains('voyti.menu.two_factor', $labels);
         self::assertContains('voyti.view.settings.privacy', $labels);
     }
 

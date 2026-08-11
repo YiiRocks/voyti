@@ -32,7 +32,6 @@ final class LoginFormTest extends TestCase
         $this->assertArrayHasKey('login', $labels);
         $this->assertArrayHasKey('password', $labels);
         $this->assertArrayHasKey('rememberMe', $labels);
-        $this->assertArrayHasKey('twoFactorAuthenticationCode', $labels);
     }
 
     public function testGetRulesReturnsLoginRules(): void
@@ -61,16 +60,6 @@ final class LoginFormTest extends TestCase
         $this->assertInstanceOf(RecaptchaV3Rule::class, $rule);
         $this->assertSame(0.5, $rule->getThreshold());
         $this->assertSame('voyti_login', $rule->getAction());
-    }
-
-    public function testGetRulesWithRequireTwoFactorAuthenticationCode(): void
-    {
-        $form = new LoginForm(VoytiConfigFactory::create(), $this->createTranslator(), requireTwoFactorAuthenticationCode: true);
-        $rules = $form->getRules();
-        $this->assertArrayHasKey('twoFactorAuthenticationCode', $rules);
-        $this->assertCount(1, $rules['twoFactorAuthenticationCode']);
-        $this->assertInstanceOf(Required::class, $rules['twoFactorAuthenticationCode'][0]);
-        $this->assertArrayNotHasKey('password', $rules);
     }
 
     public function testValidationErrorMessageUsesPropertyLabelNotRawPropertyName(): void

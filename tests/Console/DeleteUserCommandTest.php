@@ -9,8 +9,10 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use YiiRocks\Voyti\Console\DeleteUserCommand;
+use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
+use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use Yiisoft\Yii\Console\ExitCode;
 
@@ -18,6 +20,14 @@ use Yiisoft\Yii\Console\ExitCode;
 final class DeleteUserCommandTest extends DatabaseTestCase
 {
     use UserFactoryTrait;
+
+    private EventCaptureDispatcher $eventDispatcher;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->eventDispatcher = new EventCaptureDispatcher();
+    }
 
     public static function identifierProvider(): iterable
     {
@@ -61,6 +71,10 @@ final class DeleteUserCommandTest extends DatabaseTestCase
         self::assertSame(ExitCode::OK, $result);
         self::assertNull(User::findByUsername('testuser'));
         self::assertNull(User::findByEmail('del@example.com'));
+        // Deletion dispatches UserEvent::DELETE so packages (e.g. yiirocks/voyti-2fa) can cascade.
+        $event = $this->eventDispatcher->getEvent(UserEvent::class);
+        self::assertInstanceOf(UserEvent::class, $event);
+        self::assertSame(UserEvent::DELETE, $event->getType());
     }
 
     public function testExecuteWithNonExistentUser(): void
@@ -83,6 +97,6 @@ final class DeleteUserCommandTest extends DatabaseTestCase
 
     private function createCommand(): DeleteUserCommand
     {
-        return new DeleteUserCommand();
+        return new DeleteUserCommand($this->eventDispatcher);
     }
 }

@@ -9,7 +9,6 @@ return [
     'voyti.security.need_email_confirmation' => 'U moet uw e-mailadres bevestigen',
     'voyti.security.logged_out' => 'Uitgelogd',
     'voyti.security.password_expired' => 'Uw wachtwoord is verlopen. Stel een nieuw wachtwoord in.',
-    'voyti.security.two_factor_required' => 'Tweefactorauthenticatie is verplicht voor uw account. Schakel deze in om door te gaan.',
     'voyti.security.authenticated' => 'Geverifieerd',
     'voyti.security.social_auth_cancelled' => 'Sociale aanmelding is geannuleerd.',
 
@@ -41,8 +40,6 @@ return [
     'voyti.settings.email_change_failed' => 'E-mailadres kon niet worden gewijzigd',
     'voyti.settings.network_disconnected' => 'Netwerk is ontkoppeld',
     'voyti.settings.network_not_found' => 'Netwerk niet gevonden',
-    'voyti.settings.two_factor_enabled' => 'Tweefactorauthenticatie is ingeschakeld',
-    'voyti.settings.two_factor_disabled' => 'Tweefactorauthenticatie is uitgeschakeld',
     'voyti.settings.session_not_found' => 'Sessie niet gevonden',
     'voyti.settings.session_terminated' => 'Sessie is afgemeld',
     'voyti.settings.password_previously_used' => 'Dit wachtwoord is onlangs al gebruikt. Kies een ander wachtwoord.',
@@ -90,19 +87,13 @@ return [
     'voyti.recovery.message_sent_if_exists' => 'Als het e-mailadres bestaat, is er een herstelbericht verzonden',
     'voyti.recovery.message_sent' => 'Herstelbericht verzonden',
 
-    // TwoFactorCodeValidator
-    'voyti.validator.two_factor_not_configured' => 'Tweefactorauthenticatie is niet geconfigureerd.',
-    'voyti.validator.two_factor_library_missing' => '2FA-bibliotheek (chillerlan/2fa-qrcode-bundle) is niet geïnstalleerd.',
-    'voyti.validator.invalid_verification_code' => 'Ongeldige verificatiecode.',
     'voyti.validator.password_complexity' => 'Het wachtwoord moet minstens één hoofdletter, één kleine letter, één cijfer en één speciaal teken bevatten.',
-    'voyti.validator.email_two_factor_not_configured' => 'E-mail tweefactorauthenticatie is niet geconfigureerd.',
 
     // Mail subjects
     'voyti.mail.welcome_subject' => 'Welkom bij {app}',
     'voyti.mail.confirmation_subject' => 'Account bevestigen op {app}',
     'voyti.mail.reconfirmation_subject' => 'E-mailwijziging bevestigen op {app}',
     'voyti.mail.recovery_subject' => 'Voltooi wachtwoordherstel op {app}',
-    'voyti.mail.two_factor_subject' => 'Code voor tweefactorauthenticatie op {app}',
     'voyti.mail.admin_notification_subject' => 'Nieuwe gebruiker geregistreerd op {app}',
 
     // Mail view templates
@@ -115,8 +106,6 @@ return [
     'voyti.mail.click_to_reset_password' => 'Klik op onderstaande link om uw wachtwoord te resetten:',
     'voyti.mail.confirm_account_heading' => 'Bevestig uw account',
     'voyti.mail.click_to_confirm_account' => 'Klik op onderstaande link om uw account te bevestigen:',
-    'voyti.mail.twofactor_heading' => 'Tweefactorauthenticatiecode',
-    'voyti.mail.your_twofactor_code' => 'Uw tweefactorauthenticatiecode is:',
 
     // Navigation / Menu
     'voyti.menu.dashboard' => 'Dashboard',
@@ -124,7 +113,6 @@ return [
     'voyti.menu.account' => 'Account',
     'voyti.menu.networks' => 'Netwerken',
     'voyti.menu.sessions' => 'Sessies',
-    'voyti.menu.two_factor' => 'Tweefactorauthenticatie',
     'voyti.menu.logout' => 'Uitloggen',
 
     // Login view
@@ -137,35 +125,6 @@ return [
     'voyti.view.login.remember_me_label' => 'Onthoud mij',
     'voyti.view.login.social_divider' => 'Of aanmelden met',
 
-    // Two-factor confirm view
-    'voyti.view.two_factor.title' => 'Tweefactorauthenticatie',
-    'voyti.view.two_factor_google.button_label' => 'Google Authenticator',
-    'voyti.view.two_factor.code_label' => 'Authenticatiecode',
-    'voyti.view.two_factor.verify_button' => 'Verifiëren',
-    'voyti.view.two_factor.enabled_with_method' => 'Tweefactorauthenticatie via {method} is ingeschakeld',
-    'voyti.view.two_factor.disable' => 'Uitschakelen',
-    'voyti.view.two_factor.disable_confirm_intro' => 'Om tweefactorauthenticatie uit te schakelen, moeten we verifiëren dat u het echt bent. Er wordt een verificatiecode naar uw e-mailadres gestuurd.',
-    'voyti.view.two_factor.disable_send_code' => 'Code versturen om uit te schakelen',
-    'voyti.view.two_factor.scan_qr' => 'Scan deze QR-code met uw authenticator-app',
-    'voyti.view.two_factor.manual_entry' => 'Of voer deze sleutel handmatig in:',
-    'voyti.view.two_factor.enter_code' => 'Voer de verificatiecode in',
-    'voyti.view.two_factor.enable' => 'Inschakelen',
-    'voyti.view.two_factor.renew' => 'Vernieuwen',
-    'voyti.view.two_factor.renew_error' => 'Er kon geen nieuwe sleutel worden gegenereerd. Probeer het opnieuw.',
-    'voyti.view.two_factor.loading' => 'Bezig met laden…',
-    'voyti.view.two_factor.already_enabled' => 'Tweefactorauthenticatie is al ingeschakeld.',
-    'voyti.view.two_factor.backup_codes_title' => 'Back-upcodes',
-    'voyti.view.two_factor.backup_codes_intro' => 'Bewaar deze eenmalige back-upcodes op een veilige plek. Elke code kan één keer worden gebruikt om in te loggen als u geen toegang meer heeft tot uw authenticator of e-mail.',
-    'voyti.view.two_factor.backup_codes_continue' => 'Doorgaan',
-    'voyti.view.two_factor.backup_code_hint' => 'Geen toegang meer tot uw apparaat of e-mail? U kunt in plaats daarvan een van uw back-upcodes invoeren.',
-    'voyti.view.two_factor.regenerate_backup_codes' => 'Back-upcodes opnieuw genereren',
-    'voyti.view.two_factor.regenerate_backup_codes_intro' => 'Het genereren van nieuwe back-upcodes maakt alle bestaande codes ongeldig. Voer uw huidige verificatiecode of een back-upcode in om te bevestigen.',
-    'voyti.view.two_factor.no_backup_codes_remaining' => 'U heeft geen back-upcodes meer over. Genereer een nieuwe set zodat u toegang kunt herstellen als u uw apparaat kwijtraakt.',
-    'voyti.view.two_factor_email.button_label' => 'E-mail',
-    'voyti.view.two_factor_email.method_name' => 'e-mail',
-    'voyti.view.two_factor_email.enter_code' => 'Voer de per e-mail verzonden verificatiecode in',
-    'voyti.view.two_factor_email.confirm_intro' => 'Er wordt een verificatiecode verzonden naar onderstaand e-mailadres.',
-    'voyti.view.two_factor_email.send_button' => 'Code verzenden',
     // Registration views
     'voyti.view.registration.register_title' => 'Account aanmaken',
     'voyti.view.registration.gdpr_consent_label' => 'Ik ga akkoord met de verwerking van mijn persoonsgegevens',
@@ -210,7 +169,6 @@ return [
     'voyti.view.anonymize.button' => 'Mijn account anonimiseren',
 
     // Account settings (2FA)
-    'voyti.view.account.two_factor_title' => 'Tweefactorauthenticatie',
 
     // Delete account view
     'voyti.view.delete_account.title' => 'Mijn account verwijderen',

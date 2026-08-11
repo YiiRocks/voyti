@@ -33,9 +33,6 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
     public ?string $password = null;
     private int|bool $anonymized = false;
     private string $auth_key = '';
-    private int|bool $auth_tf_enabled = false;
-    private ?string $auth_tf_key = null;
-    private ?string $auth_tf_type = null;
     private ?int $blocked_at = null;
     private ?int $confirmed_at = null;
     private int $created_at = 0;
@@ -62,7 +59,6 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
         UserSocialAccount::deleteAllByUserId($userId);
         UserToken::deleteAllByUserId($userId);
         UserSessions::deleteAllByUserId($userId);
-        UserBackupCode::deleteAllByUserId($userId);
         UserPasswordHistory::deleteAllByUserId($userId);
 
         return parent::delete();
@@ -121,16 +117,6 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
     public function getAuthKey(): string
     {
         return $this->auth_key;
-    }
-
-    public function getAuthTfKey(): ?string
-    {
-        return $this->auth_tf_key;
-    }
-
-    public function getAuthTfType(): ?string
-    {
-        return $this->auth_tf_type;
     }
 
     public function getBlockedAt(): ?int
@@ -262,11 +248,6 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
         return (bool) $this->anonymized;
     }
 
-    public function isAuthTfEnabled(): bool
-    {
-        return (bool) $this->auth_tf_enabled;
-    }
-
     public function isBlocked(): bool
     {
         return $this->blocked_at !== null;
@@ -334,21 +315,6 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
     public function setAuthKey(string $authKey): void
     {
         $this->auth_key = $authKey;
-    }
-
-    public function setAuthTfEnabled(int|bool $authTfEnabled): void
-    {
-        $this->auth_tf_enabled = $authTfEnabled;
-    }
-
-    public function setAuthTfKey(?string $authTfKey): void
-    {
-        $this->auth_tf_key = $authTfKey;
-    }
-
-    public function setAuthTfType(?string $authTfType): void
-    {
-        $this->auth_tf_type = $authTfType;
     }
 
     public function setBlockedAt(?int $blockedAt): void

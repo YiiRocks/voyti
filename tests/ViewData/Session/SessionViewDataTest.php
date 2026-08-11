@@ -9,7 +9,6 @@ use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
-use YiiRocks\Voyti\ViewData\Session\ConfirmViewData;
 use YiiRocks\Voyti\ViewData\Session\LoginViewData;
 use Yiisoft\Yii\AuthClient\Collection;
 use Yiisoft\Yii\AuthClient\Widget\AuthChoice;
@@ -18,20 +17,11 @@ final class SessionViewDataTest extends TestCase
 {
     use TestContainerTrait;
 
-    public function testConfirmCreateAssignsMethodAndConfirmUrl(): void
-    {
-        $data = ConfirmViewData::create('email', new FakeUrlGenerator());
-
-        self::assertSame('email', $data->method);
-        self::assertSame('//voyti/session-confirm', $data->formSubmitUrl);
-    }
-
     public function testLoginCreateWithRegistrationDisabled(): void
     {
         $config = VoytiConfigFactory::create(enableRegistration: false);
         $form = new LoginForm($config, $this->createTranslator());
 
-        // null clientCollection: yiisoft/yii-auth-client (optional) isn't installed.
         $data = LoginViewData::create($form, $config, new FakeUrlGenerator(), null);
 
         self::assertFalse($data->showRegisterLink);
@@ -40,7 +30,6 @@ final class SessionViewDataTest extends TestCase
 
     public function testLoginCreateWithRegistrationEnabled(): void
     {
-        // Triggers WidgetFactory::initialize() so AuthChoice::widget() can resolve below.
         $this->getTestContainer();
 
         $config = VoytiConfigFactory::create(enableRegistration: true);

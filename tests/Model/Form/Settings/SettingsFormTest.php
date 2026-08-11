@@ -39,7 +39,6 @@ final class SettingsFormTest extends TestCase
         $this->assertArrayHasKey('name', $labels);
         $this->assertArrayHasKey('bio', $labels);
         $this->assertArrayHasKey('currentPassword', $labels);
-        $this->assertArrayHasKey('authTfEnabled', $labels);
     }
 
     public function testGetRulesWithPasswordComplexityDisabled(): void

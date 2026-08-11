@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Model;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\tests\TestCase;
@@ -27,9 +28,6 @@ final class UserSocialAccountTest extends TestCase
                 "email" VARCHAR(255) NOT NULL,
                 "password_hash" VARCHAR(255) NOT NULL,
                 "auth_key" VARCHAR(32) NOT NULL,
-                "auth_tf_enabled" INTEGER NOT NULL DEFAULT 0,
-                "auth_tf_key" VARCHAR(64),
-                "auth_tf_type" VARCHAR(20),
                 "blocked_at" INTEGER,
                 "confirmed_at" INTEGER,
                 "created_at" INTEGER NOT NULL,
@@ -69,6 +67,12 @@ final class UserSocialAccountTest extends TestCase
         }
         ConnectionProvider::clear();
         $this->connection = null;
+    }
+
+    public static function getDecodedDataProvider(): iterable
+    {
+        yield 'decoded array' => ['{"name":"John","age":30}', ['name' => 'John', 'age' => 30]];
+        yield 'null when no data' => [null, null];
     }
 
     public function testConnectWithNonPersistedUser(): void
@@ -167,8 +171,6 @@ final class UserSocialAccountTest extends TestCase
 
     public function testFindByProviderAndClientIdReturnsMatch(): void
     {
-        // The other-provider row is inserted first, so a lookup that ignored the provider filter would
-        // return it instead of the github one.
         $this->createAccount('gitlab', 'client-1', 'code-b');
         $this->createAccount('github', 'client-1', 'code-a');
 
@@ -193,32 +195,19 @@ final class UserSocialAccountTest extends TestCase
         self::assertCount(2, $accounts);
     }
 
-    public function testGetDecodedDataCachesResult(): void
+    #[DataProvider('getDecodedDataProvider')]
+    public function testGetDecodedData(?string $data, ?array $expected): void
     {
         $entity = new UserSocialAccount();
-        $entity->setData('{"key":"val"}');
 
-        $first = $entity->getDecodedData();
-        $second = $entity->getDecodedData();
+        if ($data !== null) {
+            $entity->setData($data);
+        }
 
-        self::assertSame($first, $second);
-    }
-
-    public function testGetDecodedDataReturnsDecodedArray(): void
-    {
-        $entity = new UserSocialAccount();
-        $entity->setData('{"name":"John","age":30}');
         $decoded = $entity->getDecodedData();
+        self::assertSame($expected, $decoded);
 
-        self::assertIsArray($decoded);
-        self::assertSame('John', $decoded['name']);
-        self::assertSame(30, $decoded['age']);
-    }
-
-    public function testGetDecodedDataReturnsNullWhenNoData(): void
-    {
-        $entity = new UserSocialAccount();
-        self::assertNull($entity->getDecodedData());
+        self::assertSame($decoded, $entity->getDecodedData());
     }
 
     public function testGetSetId(): void

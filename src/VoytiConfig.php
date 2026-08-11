@@ -27,9 +27,13 @@ final readonly class VoytiConfig
         /** @psalm-var list<string> */
         public array $gdprExportProperties,
         public string $gdprAnonymizePrefix,
-        public bool $enableTwoFactorAuthentication,
-        /** @psalm-var array<array-key, string> */
-        public array $twoFactorAuthenticationForcedPermissions,
+        /**
+         * Extra account-menu links contributed by packages (e.g. yiirocks/voyti-2fa), merged in via
+         * the `accountMenuItems` param so core needs no knowledge of them.
+         *
+         * @psalm-var list<array{label: string, category: string, route: string}>
+         */
+        public array $accountMenuItems,
         public bool $enableRegistration,
         public bool $enableSocialNetworkRegistration,
         public bool $enableEmailConfirmation,

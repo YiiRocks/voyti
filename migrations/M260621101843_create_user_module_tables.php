@@ -25,7 +25,6 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
     {
         $b->dropTable('{{%user_audit_log}}');
         $b->dropTable('{{%user_password_history}}');
-        $b->dropTable('{{%user_backup_code}}');
         $b->dropTable('{{%user_sessions}}');
         $b->dropTable('{{%user_token}}');
         $b->dropTable('{{%user_social_account}}');
@@ -41,9 +40,6 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
             'email' => ColumnBuilder::string(255)->notNull(),
             'password_hash' => ColumnBuilder::string(255)->notNull(),
             'auth_key' => ColumnBuilder::string(32)->notNull(),
-            'auth_tf_enabled' => ColumnBuilder::boolean()->notNull()->defaultValue(false),
-            'auth_tf_key' => ColumnBuilder::string(64),
-            'auth_tf_type' => ColumnBuilder::string(20),
             'blocked_at' => ColumnBuilder::integer(),
             'confirmed_at' => ColumnBuilder::integer(),
             'created_at' => ColumnBuilder::integer()->notNull(),
@@ -106,15 +102,6 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
             'FOREIGN KEY ([[user_id]]) REFERENCES {{%user}} ([[id]]) ON DELETE CASCADE ON UPDATE RESTRICT',
         ]);
 
-        $b->createTable('{{%user_backup_code}}', [
-            'user_id' => ColumnBuilder::integer()->notNull(),
-            'code_hash' => ColumnBuilder::string(255)->notNull(),
-            'used_at' => ColumnBuilder::integer(),
-            'created_at' => ColumnBuilder::integer()->notNull(),
-            'PRIMARY KEY ([[user_id]], [[code_hash]])',
-            'FOREIGN KEY ([[user_id]]) REFERENCES {{%user}} ([[id]]) ON DELETE CASCADE ON UPDATE RESTRICT',
-        ]);
-
         $b->createTable('{{%user_password_history}}', [
             'user_id' => ColumnBuilder::integer()->notNull(),
             'password_hash' => ColumnBuilder::string(255)->notNull(),
@@ -145,7 +132,6 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
         $b->createIndex('{{%user_sessions}}', 'idx-user-sessions-user-id', ['user_id']);
         $b->createIndex('{{%user_sessions}}', 'idx-user-sessions-session-id', ['session_id']);
         $b->createIndex('{{%user_sessions}}', 'idx-user-sessions-updated-at', ['updated_at']);
-        $b->createIndex('{{%user_backup_code}}', 'idx-user-backup-code-user-id', ['user_id']);
         $b->createIndex('{{%user_password_history}}', 'idx-user-password-history-user-id', ['user_id']);
         $b->createIndex('{{%user_audit_log}}', 'idx-user-audit-log-actor-user-id', ['actor_user_id']);
         $b->createIndex('{{%user_audit_log}}', 'idx-user-audit-log-target-user-id', ['target_user_id']);

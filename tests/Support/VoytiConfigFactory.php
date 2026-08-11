@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Support;
 
+use ReflectionClass;
 use YiiRocks\Voyti\VoytiConfig;
 
 /**
@@ -24,6 +25,15 @@ final class VoytiConfigFactory
     {
         $params = require dirname(__DIR__, 2) . '/config/params.php';
 
-        return $params['yiirocks/voyti'];
+        // Keep only keys that map to a VoytiConfig constructor parameter, in case config/params.php
+        // carries params VoytiConfig does not accept.
+        $constructorParameters = array_column(
+            (new ReflectionClass(VoytiConfig::class))->getConstructor()?->getParameters() ?? [],
+            'name',
+        );
+
+        $voytiParams = $params['yiirocks/voyti'];
+
+        return array_intersect_key($voytiParams, array_flip($constructorParameters));
     }
 }

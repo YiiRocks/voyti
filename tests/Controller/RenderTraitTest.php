@@ -57,6 +57,23 @@ final class RenderTraitTest extends TestCase
         }
     }
 
+    public function testRenderFragmentRendersWithoutTheLayout(): void
+    {
+        // A fragment renders the template body only (no page shell) - used by AJAX method setup
+        // fragments in the method packages.
+        $customViewPath = $this->makeViewPath('FRAGMENT_BODY');
+
+        try {
+            $config = VoytiConfigFactory::create(viewPath: $customViewPath);
+            $html = (string) $this->makeFixture($config)->fragment('shared/message')->getBody();
+
+            self::assertStringContainsString('FRAGMENT_BODY', $html);
+            self::assertStringNotContainsString('<html', $html);
+        } finally {
+            $this->removeViewPath($customViewPath);
+        }
+    }
+
     private function makeFixture(VoytiConfig $config): object
     {
         $viewRenderer = $this->getTestContainer()->get(WebViewRenderer::class);
@@ -75,6 +92,11 @@ final class RenderTraitTest extends TestCase
             public function render(string $view, array $params = []): ResponseInterface
             {
                 return $this->renderView($view, $params);
+            }
+
+            public function fragment(string $view, array $params = []): ResponseInterface
+            {
+                return $this->renderFragment($view, $params);
             }
         };
     }

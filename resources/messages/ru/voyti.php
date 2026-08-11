@@ -9,7 +9,6 @@ return [
     'voyti.security.need_email_confirmation' => 'Вам необходимо подтвердить ваш email-адрес',
     'voyti.security.logged_out' => 'Вы вышли из системы',
     'voyti.security.password_expired' => 'Срок действия вашего пароля истёк. Пожалуйста, установите новый.',
-    'voyti.security.two_factor_required' => 'Для вашей учётной записи требуется двухфакторная аутентификация. Пожалуйста, включите её, чтобы продолжить.',
     'voyti.security.authenticated' => 'Аутентифицирован',
     'voyti.security.social_auth_cancelled' => 'Вход через социальную сеть отменён.',
 
@@ -41,8 +40,6 @@ return [
     'voyti.settings.email_change_failed' => 'Не удалось изменить email-адрес',
     'voyti.settings.network_disconnected' => 'Сеть отключена',
     'voyti.settings.network_not_found' => 'Сеть не найдена',
-    'voyti.settings.two_factor_enabled' => 'Двухфакторная аутентификация включена',
-    'voyti.settings.two_factor_disabled' => 'Двухфакторная аутентификация отключена',
     'voyti.settings.session_not_found' => 'Сеанс не найден',
     'voyti.settings.session_terminated' => 'Сеанс завершён',
     'voyti.settings.password_previously_used' => 'Этот пароль недавно уже использовался. Пожалуйста, выберите другой.',
@@ -90,19 +87,13 @@ return [
     'voyti.recovery.message_sent_if_exists' => 'Если указанный email существует, сообщение для восстановления отправлено',
     'voyti.recovery.message_sent' => 'Сообщение для восстановления отправлено',
 
-    // TwoFactorCodeValidator
-    'voyti.validator.two_factor_not_configured' => 'Двухфакторная аутентификация не настроена.',
-    'voyti.validator.two_factor_library_missing' => 'Библиотека 2FA (chillerlan/2fa-qrcode-bundle) не установлена.',
-    'voyti.validator.invalid_verification_code' => 'Неверный проверочный код.',
     'voyti.validator.password_complexity' => 'Пароль должен содержать хотя бы одну заглавную букву, одну строчную букву, одну цифру и один специальный символ.',
-    'voyti.validator.email_two_factor_not_configured' => 'Двухфакторная аутентификация по электронной почте не настроена.',
 
     // Mail subjects
     'voyti.mail.welcome_subject' => 'Добро пожаловать в {app}',
     'voyti.mail.confirmation_subject' => 'Подтверждение аккаунта на {app}',
     'voyti.mail.reconfirmation_subject' => 'Подтверждение смены email на {app}',
     'voyti.mail.recovery_subject' => 'Завершение сброса пароля на {app}',
-    'voyti.mail.two_factor_subject' => 'Код для двухфакторной аутентификации на {app}',
     'voyti.mail.admin_notification_subject' => 'Новая регистрация пользователя на {app}',
 
     // Mail view templates
@@ -115,8 +106,6 @@ return [
     'voyti.mail.click_to_reset_password' => 'Нажмите на ссылку ниже, чтобы сбросить ваш пароль:',
     'voyti.mail.confirm_account_heading' => 'Подтверждение аккаунта',
     'voyti.mail.click_to_confirm_account' => 'Нажмите на ссылку ниже, чтобы подтвердить ваш аккаунт:',
-    'voyti.mail.twofactor_heading' => 'Код двухфакторной аутентификации',
-    'voyti.mail.your_twofactor_code' => 'Ваш код двухфакторной аутентификации:',
 
     // Navigation / Menu
     'voyti.menu.dashboard' => 'Панель управления',
@@ -124,7 +113,6 @@ return [
     'voyti.menu.account' => 'Аккаунт',
     'voyti.menu.networks' => 'Сети',
     'voyti.menu.sessions' => 'Сеансы',
-    'voyti.menu.two_factor' => '2FA',
     'voyti.menu.logout' => 'Выйти',
 
     // Login view
@@ -137,35 +125,6 @@ return [
     'voyti.view.login.remember_me_label' => 'Запомнить меня',
     'voyti.view.login.social_divider' => 'Или войдите через',
 
-    // Two-factor confirm view
-    'voyti.view.two_factor.title' => 'Двухфакторная аутентификация',
-    'voyti.view.two_factor_google.button_label' => 'Google Authenticator',
-    'voyti.view.two_factor.code_label' => 'Код аутентификации',
-    'voyti.view.two_factor.verify_button' => 'Проверить',
-    'voyti.view.two_factor.enabled_with_method' => 'Двухфакторная аутентификация по {method} включена',
-    'voyti.view.two_factor.disable' => 'Отключить',
-    'voyti.view.two_factor.disable_confirm_intro' => 'Чтобы отключить двухфакторную аутентификацию, нам нужно подтвердить, что это действительно вы. Код подтверждения будет отправлен на вашу электронную почту.',
-    'voyti.view.two_factor.disable_send_code' => 'Отправить код для отключения',
-    'voyti.view.two_factor.scan_qr' => 'Сканируйте этот QR-код с помощью приложения-аутентификатора',
-    'voyti.view.two_factor.manual_entry' => 'Или введите этот ключ вручную:',
-    'voyti.view.two_factor.enter_code' => 'Введите проверочный код',
-    'voyti.view.two_factor.enable' => 'Включить',
-    'voyti.view.two_factor.renew' => 'Обновить',
-    'voyti.view.two_factor.renew_error' => 'Не удалось создать новый ключ. Пожалуйста, попробуйте снова.',
-    'voyti.view.two_factor.loading' => 'Загрузка…',
-    'voyti.view.two_factor.already_enabled' => 'Двухфакторная аутентификация уже включена.',
-    'voyti.view.two_factor.backup_codes_title' => 'Резервные коды',
-    'voyti.view.two_factor.backup_codes_intro' => 'Сохраните эти одноразовые резервные коды в надёжном месте. Каждый код можно использовать один раз для входа, если вы потеряете доступ к своему аутентификатору или почте.',
-    'voyti.view.two_factor.backup_codes_continue' => 'Продолжить',
-    'voyti.view.two_factor.backup_code_hint' => 'Потеряли доступ к устройству или почте? Вы можете ввести один из резервных кодов вместо обычного.',
-    'voyti.view.two_factor.regenerate_backup_codes' => 'Обновить резервные коды',
-    'voyti.view.two_factor.regenerate_backup_codes_intro' => 'При создании нового набора резервных кодов все существующие коды становятся недействительными. Введите текущий код подтверждения или резервный код, чтобы продолжить.',
-    'voyti.view.two_factor.no_backup_codes_remaining' => 'У вас не осталось резервных кодов. Создайте новый набор, чтобы сохранить возможность восстановить доступ при потере устройства.',
-    'voyti.view.two_factor_email.button_label' => 'Email',
-    'voyti.view.two_factor_email.method_name' => 'email',
-    'voyti.view.two_factor_email.enter_code' => 'Введите проверочный код, отправленный на ваш email',
-    'voyti.view.two_factor_email.confirm_intro' => 'Проверочный код будет отправлен на указанный ниже адрес электронной почты.',
-    'voyti.view.two_factor_email.send_button' => 'Отправить код',
     // Registration views
     'voyti.view.registration.register_title' => 'Создать аккаунт',
     'voyti.view.registration.gdpr_consent_label' => 'Я согласен на обработку моих персональных данных',
@@ -210,7 +169,6 @@ return [
     'voyti.view.anonymize.button' => 'Анонимизировать мой аккаунт',
 
     // Account settings (2FA)
-    'voyti.view.account.two_factor_title' => 'Двухфакторная аутентификация',
 
     // Delete account view
     'voyti.view.delete_account.title' => 'Удалить мой аккаунт',
