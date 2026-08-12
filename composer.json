@@ -59,15 +59,6 @@
         "yiisoft/yii-dataview": "^1.1",
         "yiisoft/yii-view-renderer": "^7.1"
     },
-    "suggest": {
-        "yiirocks/recaptcha": "Google reCAPTCHA v2 and v3 field + server-side validator for Yii3",
-        "yiirocks/toast-bootstrap5": "Bootstrap 5 toast notifications for flash messages",
-        "yiirocks/voyti-2fa-email": "Email-code two-factor authentication method",
-        "yiirocks/voyti-2fa-totp": "TOTP authenticator-app 2FA method with QR code provisioning",
-        "yiirocks/voyti-2fa-webauthn": "WebAuthn/passkey two-factor authentication method",
-        "yiisoft/data-response": "Required for the REST API (voyti-routes-api): JSON response formatting for the user CRUD endpoints",
-        "yiisoft/yii-auth-client": "Social/OAuth2 login via Google, GitHub, Facebook, and more"
-    },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "@stable",
         "infection/infection": "^0.34.0",
@@ -84,6 +75,15 @@
         "yiisoft/di": "*",
         "yiisoft/router-fastroute": "^4.0",
         "yiisoft/yii-auth-client": "dev-master"
+    },
+    "suggest": {
+        "yiirocks/recaptcha": "Google reCAPTCHA v2 and v3 field + server-side validator for Yii3",
+        "yiirocks/toast-bootstrap5": "Bootstrap 5 toast notifications for flash messages",
+        "yiirocks/voyti-2fa-email": "Email-code two-factor authentication method",
+        "yiirocks/voyti-2fa-totp": "TOTP authenticator-app 2FA method with QR code provisioning",
+        "yiirocks/voyti-2fa-webauthn": "WebAuthn/passkey two-factor authentication method",
+        "yiisoft/data-response": "Required for the REST API (voyti-routes-api): JSON response formatting for the user CRUD endpoints",
+        "yiisoft/yii-auth-client": "Social/OAuth2 login via Google, GitHub, Facebook, and more"
     },
     "autoload": {
         "psr-4": {
