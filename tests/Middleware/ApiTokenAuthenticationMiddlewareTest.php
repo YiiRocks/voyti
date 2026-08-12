@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Middleware;
 
+use Nyholm\Psr7\Response;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
-use Nyholm\Psr7\Response;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -77,7 +77,7 @@ final class ApiTokenAuthenticationMiddlewareTest extends TestCase
         $result = $middleware->process($request, $handler);
 
         self::assertSame(401, $result->getStatusCode());
-        self::assertStringContainsString('Bearer realm="api"', (string)($result->getHeader('WWW-Authenticate')[0] ?? ''));
+        self::assertStringContainsString('Bearer realm="api"', (string) ($result->getHeader('WWW-Authenticate')[0] ?? ''));
         self::assertTrue($currentUser->isGuest());
     }
 
