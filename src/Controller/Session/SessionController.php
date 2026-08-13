@@ -12,6 +12,8 @@ use YiiRocks\Voyti\Auth\LoginChallengeInterface;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Event\Session\SessionEvent;
+use YiiRocks\Voyti\Helper\LinkButtonHelper;
+use YiiRocks\Voyti\Helper\RecaptchaHelper;
 use YiiRocks\Voyti\Model\Form\Auth\LoginForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
@@ -19,7 +21,6 @@ use YiiRocks\Voyti\Service\Auth\LoginCompletionService;
 use YiiRocks\Voyti\Service\Auth\SocialAuthCallbackService;
 use YiiRocks\Voyti\Service\FlashNotifier;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
-use YiiRocks\Voyti\ViewData\Session\LoginViewData;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\FormModel\FormHydrator;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -31,6 +32,7 @@ use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
 use Yiisoft\Yii\AuthClient\AuthAction;
 use Yiisoft\Yii\AuthClient\Collection;
+use Yiisoft\Yii\AuthClient\Widget\AuthChoice;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 /**
@@ -102,9 +104,24 @@ final readonly class SessionController
             }
         }
 
+        $authChoice = null;
+        if ($this->clientCollection !== null) {
+            /** @infection-ignore-all The auth-choice widget (route + cosmetic button styling) only renders when the host has configured OAuth clients, so its construction has no behavioural effect the library's own suite can observe. */
+            $authChoice = AuthChoice::widget()
+                ->authRoute('voyti/session-auth')
+                ->linkAttributes(['class' => LinkButtonHelper::submitButtonClass()]);
+        }
+
         return $this->renderView('session/login', [
             'form' => $form,
-            'data' => LoginViewData::create($form, $this->config, $this->url, $this->clientCollection),
+            'data' => [
+                'formSubmitUrl' => $this->url->generate('voyti/session-login'),
+                'forgotPasswordUrl' => $this->url->generate('voyti/password-reset-request'),
+                'showRegisterLink' => $this->config->enableRegistration,
+                'registerUrl' => $this->url->generate('voyti/registration-register'),
+                'recaptchaFieldHtml' => RecaptchaHelper::render($form, $this->config),
+                'authChoice' => $authChoice,
+            ],
         ]);
     }
 

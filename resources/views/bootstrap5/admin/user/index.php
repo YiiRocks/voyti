@@ -3,9 +3,7 @@
 declare(strict_types=1);
 
 use YiiRocks\Voyti\Helper\LinkButtonHelper;
-use YiiRocks\Voyti\ViewData\Admin\User\IndexViewData;
-use YiiRocks\Voyti\ViewData\Admin\User\UserRow;
-use YiiRocks\Voyti\ViewData\Shared\FlashViewData;
+use Yiisoft\Data\Paginator\OffsetPaginator;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Translator\TranslatorInterface;
@@ -15,9 +13,40 @@ use Yiisoft\Yii\View\Renderer\Csrf;
 
 /**
  * @var WebView $this
- * @var IndexViewData $data
+ * @var array{
+ *   menu: list<array{label: string, url: string, alignEnd: bool, routeName: string|null}>,
+ *   createUserUrl: string,
+ *   filterActionUrl: string,
+ *   filters: array{username: string, email: string, status: string},
+ *   perPage: int,
+ *   users: list<array{
+ *     id: int,
+ *     username: string,
+ *     email: string,
+ *     statusLabel: string,
+ *     statusBadgeClass: string,
+ *     showConfirmAction: bool,
+ *     showForcePasswordChangeAction: bool,
+ *     showSwitchIdentityAction: bool,
+ *     switchIdentityDisabled: bool,
+ *     showUrl: string,
+ *     updateUrl: string,
+ *     updateProfileUrl: string,
+ *     sessionsUrl: string,
+ *     confirmUrl: string,
+ *     forcePasswordChangeUrl: string,
+ *     passwordResetUrl: string,
+ *     switchIdentityUrl: string,
+ *     blockToggleUrl: string,
+ *     blockToggleLabel: string,
+ *     deleteUrl: string,
+ *   }>,
+ *   paginator: OffsetPaginator,
+ *   pageUrlPattern: string,
+ *   firstPageUrl: string,
+ * } $data
  * @var TranslatorInterface $translator
- * @var FlashViewData $flash
+ * @var array{success: string|null, warning: string|null} $flash
  * @var Csrf $csrf
  */
 
@@ -26,17 +55,17 @@ $this->setTitle($translator->translate('voyti.view.admin.title'));
 
 echo Html::div()->open();
 /** @psalm-suppress InvalidScope */
-echo $this->render('../../shared/_admin-menu', ['menu' => $data->menu]);
+echo $this->render('../../shared/_admin-menu', ['menu' => $data['menu']]);
 /** @psalm-suppress InvalidScope */
 echo $this->render('../../shared/_flash');
 
 echo Html::div()->class('d-flex justify-content-between align-items-center mb-3')->open();
 echo Html::H1($translator->translate('voyti.view.admin.title'));
-echo Html::a($translator->translate('voyti.view.admin.create_user_link'), $data->createUserUrl)->class(LinkButtonHelper::submitButtonClass());
+echo Html::a($translator->translate('voyti.view.admin.create_user_link'), $data['createUserUrl'])->class(LinkButtonHelper::submitButtonClass());
 echo Html::div()->close();
 
 echo Html::form()
-    ->action($data->filterActionUrl)
+    ->action($data['filterActionUrl'])
     ->method('get')
     ->open();
 
@@ -44,11 +73,11 @@ $tabindex = 0;
 
 echo Html::div()->class('row mb-3 g-2')->open();
 echo Html::div()->class('col')->open();
-echo Html::input('text')->class('form-control')->name('username')->value($data->filters['username'])->addAttributes(['placeholder' => $translator->translate('voyti.view.username_header')])->attribute('tabindex', ++$tabindex);
+echo Html::input('text')->class('form-control')->name('username')->value($data['filters']['username'])->addAttributes(['placeholder' => $translator->translate('voyti.view.username_header')])->attribute('tabindex', ++$tabindex);
 echo Html::div()->close();
 
 echo Html::div()->class('col')->open();
-echo Html::input('text')->class('form-control')->name('email')->value($data->filters['email'])->addAttributes(['placeholder' => $translator->translate('voyti.view.email_header')])->attribute('tabindex', ++$tabindex);
+echo Html::input('text')->class('form-control')->name('email')->value($data['filters']['email'])->addAttributes(['placeholder' => $translator->translate('voyti.view.email_header')])->attribute('tabindex', ++$tabindex);
 echo Html::div()->close();
 
 echo Html::div()->class('col')->open();
@@ -60,7 +89,7 @@ echo Html::select('status')
         'unconfirmed' => $translator->translate('voyti.view.status_pending'),
         'blocked' => $translator->translate('voyti.view.status_blocked'),
     ])
-    ->value($data->filters['status'])
+    ->value($data['filters']['status'])
     ->attribute('tabindex', ++$tabindex);
 echo Html::div()->close();
 
@@ -73,7 +102,7 @@ echo Html::select('perPage')
         '50' => '50',
         '100' => '100',
     ])
-    ->value((string) $data->perPage)
+    ->value((string) $data['perPage'])
     ->attribute('aria-label', $translator->translate('voyti.view.per_page_label'))
     ->attribute('tabindex', ++$tabindex);
 echo Html::div()->close();
@@ -98,21 +127,20 @@ echo Html::div($translator->translate('voyti.view.status_header'))->class('col-2
 echo Html::div($translator->translate('voyti.view.actions_header'))->class('col-3 text-end');
 echo Html::div()->close();
 
-foreach ($data->users as $user) {
-    /** @var UserRow $user */
+foreach ($data['users'] as $user) {
     echo Html::div()->class('row py-2 border-bottom align-items-center')->open();
-    echo Html::div($user->id)->class('col-1');
-    echo Html::div($user->username)->class('col-3 text-break');
-    echo Html::div($user->email)->class('col-3 text-break');
+    echo Html::div($user['id'])->class('col-1');
+    echo Html::div($user['username'])->class('col-3 text-break');
+    echo Html::div($user['email'])->class('col-3 text-break');
     echo Html::div()->class('col-2')->open();
 
-    echo Html::span($user->statusLabel)->class('badge', $user->statusBadgeClass);
+    echo Html::span($user['statusLabel'])->class('badge', $user['statusBadgeClass']);
 
     echo Html::div()->close();
 
     echo Html::div()->class('col-3 text-end')->open();
 
-    echo Html::a($translator->translate('voyti.view.info_link'), $user->showUrl)->class('btn', 'btn-sm', 'btn-outline-secondary', 'me-1');
+    echo Html::a($translator->translate('voyti.view.info_link'), $user['showUrl'])->class('btn', 'btn-sm', 'btn-outline-secondary', 'me-1');
 
     echo Html::div()->class('dropdown', 'd-inline-block')->open();
     echo Html::button($translator->translate('voyti.view.actions_header'))
@@ -123,21 +151,21 @@ foreach ($data->users as $user) {
     echo Html::ul()->class('dropdown-menu', 'dropdown-menu-end')->open();
 
     echo Html::li(
-        Html::a($translator->translate('voyti.view.update_link'), $user->updateUrl)->class('dropdown-item'),
+        Html::a($translator->translate('voyti.view.update_link'), $user['updateUrl'])->class('dropdown-item'),
     );
 
     echo Html::li(
-        Html::a($translator->translate('voyti.view.update_profile_link'), $user->updateProfileUrl)->class('dropdown-item'),
+        Html::a($translator->translate('voyti.view.update_profile_link'), $user['updateProfileUrl'])->class('dropdown-item'),
     );
 
     echo Html::li(
-        Html::a($translator->translate('voyti.view.admin.sessions_link'), $user->sessionsUrl)->class('dropdown-item'),
+        Html::a($translator->translate('voyti.view.admin.sessions_link'), $user['sessionsUrl'])->class('dropdown-item'),
     );
 
-    if ($user->showConfirmAction) {
+    if ($user['showConfirmAction']) {
         echo Html::li()->open();
         echo Html::form()
-            ->post($user->confirmUrl)
+            ->post($user['confirmUrl'])
             ->csrf($csrf)
             ->open();
         echo Html::submitButton($translator->translate('voyti.view.confirm_button'))->class('dropdown-item')->attribute('tabindex', 1);
@@ -145,10 +173,10 @@ foreach ($data->users as $user) {
         echo Html::li()->close();
     }
 
-    if ($user->showForcePasswordChangeAction) {
+    if ($user['showForcePasswordChangeAction']) {
         echo Html::li()->open();
         echo Html::form()
-            ->post($user->forcePasswordChangeUrl)
+            ->post($user['forcePasswordChangeUrl'])
             ->csrf($csrf)
             ->open();
         echo Html::submitButton($translator->translate('voyti.view.force_password_change_button'))->class('dropdown-item')->attribute('tabindex', 1);
@@ -158,23 +186,23 @@ foreach ($data->users as $user) {
 
     echo Html::li()->open();
     echo Html::form()
-        ->post($user->passwordResetUrl)
+        ->post($user['passwordResetUrl'])
         ->csrf($csrf)
         ->open();
     echo Html::submitButton($translator->translate('voyti.view.reset_password_button'))->class('dropdown-item')->attribute('tabindex', 1);
     echo Html::form()->close();
     echo Html::li()->close();
 
-    if ($user->showSwitchIdentityAction) {
+    if ($user['showSwitchIdentityAction']) {
         echo Html::li()->open();
         echo Html::form()
-            ->post($user->switchIdentityUrl)
+            ->post($user['switchIdentityUrl'])
             ->csrf($csrf)
             ->open();
         echo Html::submitButton($translator->translate('voyti.view.admin.impersonate_button'))
             ->class('dropdown-item')
             ->attribute('tabindex', 1)
-            ->disabled($user->switchIdentityDisabled);
+            ->disabled($user['switchIdentityDisabled']);
         echo Html::form()->close();
         echo Html::li()->close();
     }
@@ -183,16 +211,16 @@ foreach ($data->users as $user) {
 
     echo Html::li()->open();
     echo Html::form()
-        ->post($user->blockToggleUrl)
+        ->post($user['blockToggleUrl'])
         ->csrf($csrf)
         ->open();
-    echo Html::submitButton($user->blockToggleLabel)->class('dropdown-item', 'text-warning')->attribute('tabindex', 1);
+    echo Html::submitButton($user['blockToggleLabel'])->class('dropdown-item', 'text-warning')->attribute('tabindex', 1);
     echo Html::form()->close();
     echo Html::li()->close();
 
     echo Html::li()->open();
     echo Html::form()
-        ->post($user->deleteUrl)
+        ->post($user['deleteUrl'])
         ->csrf($csrf)
         ->open();
     echo Html::submitButton($translator->translate('voyti.view.delete_button'))->class('dropdown-item', 'text-danger')->attribute('tabindex', 1);
@@ -206,9 +234,9 @@ foreach ($data->users as $user) {
 }
 
 echo OffsetPagination::create(
-    $data->paginator,
-    $data->pageUrlPattern,
-    $data->firstPageUrl,
+    $data['paginator'],
+    $data['pageUrlPattern'],
+    $data['firstPageUrl'],
 )
     ->containerAttributes(['aria-label' => $translator->translate('voyti.view.pagination_navigation')])
     ->listTag('ul')

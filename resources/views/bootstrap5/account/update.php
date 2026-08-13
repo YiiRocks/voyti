@@ -3,8 +3,6 @@
 declare(strict_types=1);
 
 use YiiRocks\Voyti\Model\Form\Settings\SettingsForm;
-use YiiRocks\Voyti\ViewData\Account\UpdateViewData;
-use YiiRocks\Voyti\ViewData\Shared\FlashViewData;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Translator\TranslatorInterface;
@@ -14,9 +12,12 @@ use Yiisoft\Yii\View\Renderer\Csrf;
 /**
  * @var WebView $this
  * @var SettingsForm $form
- * @var UpdateViewData $data
+ * @var array{
+ *   menu: list<array{label: string, url: string, alignEnd: bool, routeName: string|null}>,
+ *   formSubmitUrl: string,
+ * } $data
  * @var TranslatorInterface $translator
- * @var FlashViewData $flash
+ * @var array{success: string|null, warning: string|null} $flash
  * @var Csrf $csrf
  */
 
@@ -25,14 +26,14 @@ $this->setTitle($translator->translate('voyti.view.account.title'));
 
 echo Html::div()->open();
 /** @psalm-suppress InvalidScope */
-echo $this->render('../shared/_menu', ['menu' => $data->menu]);
+echo $this->render('../shared/_menu', ['menu' => $data['menu']]);
 /** @psalm-suppress InvalidScope */
 echo $this->render('../shared/_flash');
 
 echo Html::H1($translator->translate('voyti.view.account.title'));
 
 echo Html::form()
-    ->post($data->formSubmitUrl)
+    ->post($data['formSubmitUrl'])
     ->csrf($csrf)
     ->open();
 

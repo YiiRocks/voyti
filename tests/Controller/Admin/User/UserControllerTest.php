@@ -114,6 +114,9 @@ final class UserControllerTest extends DatabaseTestCase
             static function (string $html): void {
                 self::assertSame(2, substr_count($html, self::USER_ROW));
                 self::assertStringContainsString('page-item', $html);
+                self::assertStringContainsString('perPage=2&amp;page=1', $html);
+                self::assertStringContainsString('perPage=2&amp;page=2', $html);
+                self::assertStringNotContainsString('0%5B', $html);
             },
         ];
         yield 'default per-page' => [
@@ -132,6 +135,21 @@ final class UserControllerTest extends DatabaseTestCase
             static function (string $html): void {
                 self::assertStringContainsString('col-3 text-break">alice</div>', $html);
                 self::assertStringNotContainsString('col-3 text-break">bob</div>', $html);
+                self::assertStringContainsString('value="alice"', $html);
+            },
+        ];
+        yield 'filters by email' => [
+            [static fn(self $test): User => $test->createUser('mailuser', 'filtermail@example.com')],
+            ['email' => 'filtermail@example.com'],
+            static function (string $html): void {
+                self::assertStringContainsString('value="filtermail@example.com"', $html);
+            },
+        ];
+        yield 'filters by status' => [
+            [static fn(self $test): User => $test->createUser('blockedfilter', 'blockedfilter@example.com', blockedAt: time())],
+            ['status' => 'blocked'],
+            static function (string $html): void {
+                self::assertStringContainsString('value="blocked" selected', $html);
             },
         ];
         yield 'floors non-positive page to first page' => [
@@ -197,9 +215,12 @@ final class UserControllerTest extends DatabaseTestCase
         $user = $this->createUser(email: 'testuser@example.com');
         $userId = (int) $user->getId();
 
-        // GET: shows assignments
+        // GET: shows assignments, posting to the user's id, with available items listed
+        $this->itemsStorage->add(new Role('editor'));
         $html = (string) $this->createController()->assignments(new ServerRequest('GET', '/'), $userId)->getBody();
         self::assertStringContainsString('Assignments', $html);
+        self::assertStringContainsString('admin-users-assignments?id=' . $userId, $html);
+        self::assertStringContainsString('value="editor"', $html);
 
         // POST: updates assignments
         $this->itemsStorage->add(new Role('admin'));
@@ -332,6 +353,52 @@ final class UserControllerTest extends DatabaseTestCase
         $assertHtml($html);
     }
 
+    public function testIndexUserRows(): void
+    {
+        // Blocked user: renders blocked badge and Unblock toggle
+        $blockedUser = $this->createUser(username: 'blockeduser', email: 'blockeduser@example.com', blockedAt: time());
+        $html = (string) $this->createController()->index()->getBody();
+        self::assertStringContainsString('class="badge bg-danger">Blocked', $html);
+        self::assertStringContainsString('>Unblock</button>', $html);
+        self::assertStringNotContainsString('>Block</button>', $html);
+
+        // Confirmed user: renders active badge, no confirm action
+        $confirmedUser = $this->createUser(username: 'confirmeduser', email: 'confirmeduser@example.com', confirmedAt: time());
+        $userId = (int) $confirmedUser->getId();
+        $html = (string) $this->createController()->index()->getBody();
+        self::assertStringContainsString('class="badge bg-success">Active', $html);
+        self::assertStringNotContainsString('admin-users-confirm?id=' . $userId, $html);
+
+        // While impersonating: no switch-identity actions render
+        $switchedUser = $this->createUser(username: 'switcheduser', email: 'switcheduser@example.com');
+        $userId = (int) $switchedUser->getId();
+        $session = new FakeSession();
+        $session->set('voyti_original_admin_user', '999999');
+        $html = (string) $this->createController(overrides: [SessionInterface::class => $session])->index()->getBody();
+        self::assertStringNotContainsString('admin-users-switch-identity?id=' . $userId, $html);
+
+        // Pending user: renders all action URLs with row id
+        $rowUser = $this->createUser(username: 'rowuser', email: 'rowuser@example.com');
+        $userId = (int) $rowUser->getId();
+        $html = (string) $this->createController()->index()->getBody();
+        self::assertStringContainsString('admin-users-show?id=' . $userId, $html);
+        self::assertStringContainsString('admin-users-update?id=' . $userId, $html);
+        self::assertStringContainsString('admin-users-update-profile?id=' . $userId, $html);
+        self::assertStringContainsString('admin-users-sessions?id=' . $userId, $html);
+        self::assertStringContainsString('admin-users-confirm?id=' . $userId, $html);
+        self::assertStringContainsString('admin-users-password-reset?id=' . $userId, $html);
+        self::assertStringContainsString('admin-users-switch-identity?id=' . $userId, $html);
+        self::assertStringContainsString('admin-users-block?id=' . $userId, $html);
+        self::assertStringContainsString('admin-users-delete?id=' . $userId, $html);
+        self::assertStringNotContainsString('admin-users-force-password-change?id=' . $userId, $html);
+
+        // With password aging: renders force-password-change action
+        $fpwUser = $this->createUser(username: 'fpwuser', email: 'fpwuser@example.com');
+        $userId = (int) $fpwUser->getId();
+        $html = (string) $this->createController(VoytiConfigFactory::create(maxPasswordAge: 90))->index()->getBody();
+        self::assertStringContainsString('admin-users-force-password-change?id=' . $userId, $html);
+    }
+
     public function testInfo(): void
     {
         // Shows user with profile
@@ -352,6 +419,20 @@ final class UserControllerTest extends DatabaseTestCase
             TimezoneHelper::formatLocalized($user->getCreatedAt(), $this->createTranslator()->getLocale(), 'Asia/Tokyo'),
             $html,
         );
+        // The profile card shows the profile name (not the username) as display name.
+        self::assertStringContainsString('John', $html);
+        // Pending (unconfirmed, unblocked) user shows the pending status badge.
+        self::assertStringContainsString('class="badge bg-warning text-dark">Pending', $html);
+
+        // Blocked user shows the blocked badge (the isBlocked match arm wins over isConfirmed).
+        $blocked = $this->createUser(username: 'blockedinfo', email: 'blockedinfo@example.com', blockedAt: time());
+        $html = (string) $this->createController()->show((int) $blocked->getId())->getBody();
+        self::assertStringContainsString('class="badge bg-danger">Blocked', $html);
+
+        // Confirmed user shows the active badge.
+        $confirmed = $this->createUser(username: 'confirminfo', email: 'confirminfo@example.com', confirmedAt: time());
+        $html = (string) $this->createController()->show((int) $confirmed->getId())->getBody();
+        self::assertStringContainsString('class="badge bg-success">Active', $html);
 
         // Shows user without profile
         $noProfileUser = $this->createUser(username: 'noprofileuser');
@@ -379,6 +460,9 @@ final class UserControllerTest extends DatabaseTestCase
         $this->currentUser->login($admin1);
         $html = (string) $this->createController()->sessions((int) $user->getId())->getBody();
         self::assertStringContainsString('Session management', $html);
+        self::assertStringContainsString('admin-users-terminate-sessions?id=' . (int) $user->getId(), $html);
+        // A non-revoked session renders as active (kills the isRevoked boolean flip).
+        self::assertStringContainsString('>Active</button>', $html);
 
         // Shows sessions with timezone formatting
         $targetUser = $this->createUser(username: 'sess_target', email: 'sesstarget@example.com');
@@ -392,9 +476,20 @@ final class UserControllerTest extends DatabaseTestCase
         $session->setUserId((int) $targetUser->getId());
         $session->setSessionId('abc');
         $session->setIp('203.0.113.1');
+        $session->setUserAgent('curl/8.0');
         $session->setCreatedAt($updatedAt);
         $session->setUpdatedAt($updatedAt);
         $session->save();
+
+        $revoked = new UserSessions();
+        $revoked->setUserId((int) $targetUser->getId());
+        $revoked->setSessionId('revoked');
+        $revoked->setIp('203.0.113.2');
+        $revoked->setUserAgent('Mozilla/5.0');
+        $revoked->setCreatedAt($updatedAt);
+        $revoked->setUpdatedAt($updatedAt);
+        $revoked->setRevokedAt($updatedAt);
+        $revoked->save();
 
         $admin2 = $this->createUser(username: 'sess_admin2', email: 'sessadmin2@example.com');
         $this->currentUser->login($admin2);
@@ -408,15 +503,20 @@ final class UserControllerTest extends DatabaseTestCase
             TimezoneHelper::formatLocalized($updatedAt, $this->createTranslator()->getLocale(), 'Asia/Tokyo'),
             $html,
         );
+        // The session's user agent is rendered (kills the userAgent ?? '' coalesce flip).
+        self::assertStringContainsString('curl/8.0', $html);
+        self::assertStringContainsString('Mozilla/5.0', $html);
+        // A revoked session renders as revoked (kills the isRevoked boolean flip).
+        self::assertStringContainsString('>Revoked</button>', $html);
     }
 
     public function testSwitchIdentity(): void
     {
-        // Failure: nonexistent user shows error
+        // Nonexistent user: shows error
         $html = (string) $this->createController()->switchIdentity(new ServerRequest('POST', '/'), 999999)->getBody();
         self::assertStringContainsString('User not found', $html);
 
-        // Success: switches and redirects
+        // Successful switch: redirects and shows flash
         $target = $this->createUser(username: 'switchtarget', email: 'switchtarget@example.com');
         $this->flash->expects($this->once())->method('add')->with('toast.success');
         $result = $this->createController()->switchIdentity(new ServerRequest('POST', '/'), (int) $target->getId());
@@ -490,6 +590,7 @@ final class UserControllerTest extends DatabaseTestCase
         $user = $this->createUser(username: 'edituser', email: 'edituser@example.com');
         $html = (string) $this->createController()->update(new ServerRequest('GET', '/'), (int) $user->getId())->getBody();
         self::assertStringContainsString('Update user: edituser', $html);
+        self::assertStringContainsString('admin-users-update?id=' . (int) $user->getId(), $html);
 
         // POST success: updates user
         $userId = (int) $user->getId();
@@ -556,6 +657,7 @@ final class UserControllerTest extends DatabaseTestCase
         $user = $this->createUser(email: 'testuser@example.com');
         $html = (string) $this->createController()->updateProfile(new ServerRequest('GET', '/'), (int) $user->getId())->getBody();
         self::assertStringContainsString('Update profile', $html);
+        self::assertStringContainsString('admin-users-update-profile?id=' . (int) $user->getId(), $html);
 
         // POST: creates profile bound to user and redirects
         $userId = (int) $user->getId();

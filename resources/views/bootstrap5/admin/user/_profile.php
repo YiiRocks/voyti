@@ -3,8 +3,6 @@
 declare(strict_types=1);
 
 use YiiRocks\Voyti\Model\Form\Settings\UserProfileForm;
-use YiiRocks\Voyti\ViewData\Admin\User\ProfileViewData;
-use YiiRocks\Voyti\ViewData\Shared\FlashViewData;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Translator\TranslatorInterface;
@@ -14,9 +12,13 @@ use Yiisoft\Yii\View\Renderer\Csrf;
 /**
  * @var WebView $this
  * @var UserProfileForm $form
- * @var ProfileViewData $data
+ * @var array{
+ *   menu: list<array{label: string, url: string, alignEnd: bool, routeName: string|null}>,
+ *   formSubmitUrl: string,
+ *   timezoneOptions: array<string, string>,
+ * } $data
  * @var TranslatorInterface $translator
- * @var FlashViewData $flash
+ * @var array{success: string|null, warning: string|null} $flash
  * @var Csrf $csrf
  */
 
@@ -25,14 +27,14 @@ $this->setTitle($translator->translate('voyti.view.admin.update_profile_title'))
 
 echo Html::div()->open();
 /** @psalm-suppress InvalidScope */
-echo $this->render('../../shared/_admin-menu', ['menu' => $data->menu]);
+echo $this->render('../../shared/_admin-menu', ['menu' => $data['menu']]);
 /** @psalm-suppress InvalidScope */
 echo $this->render('../../shared/_flash');
 
 echo Html::H1($translator->translate('voyti.view.admin.update_profile_title'));
 
 echo Html::form()
-    ->post($data->formSubmitUrl)
+    ->post($data['formSubmitUrl'])
     ->csrf($csrf)
     ->open();
 
@@ -54,7 +56,7 @@ echo Field::text($form, 'website')->tabIndex(++$tabindex);
 
 echo Field::select($form, 'timezone')
     ->prompt('')
-    ->optionsData($data->timezoneOptions)
+    ->optionsData($data['timezoneOptions'])
     ->tabIndex(++$tabindex);
 
 echo Field::textarea($form, 'bio')->tabIndex(++$tabindex);

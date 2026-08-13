@@ -11,7 +11,6 @@ use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
-use YiiRocks\Voyti\ViewData\Shared\MessageViewData;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -47,7 +46,7 @@ final class RenderTraitTest extends TestCase
         try {
             $config = VoytiConfigFactory::create(viewPath: $customViewPath);
             $html = (string) $this->makeFixture($config)
-                ->render('shared/message', ['data' => new MessageViewData(title: 'THEME_MESSAGE', homeUrl: '/')])
+                ->render('shared/message', ['data' => ['title' => 'THEME_MESSAGE', 'homeUrl' => '/']])
                 ->getBody();
 
             self::assertStringContainsString('THEME_MESSAGE', $html);

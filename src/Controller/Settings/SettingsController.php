@@ -6,9 +6,10 @@ namespace YiiRocks\Voyti\Controller\Settings;
 
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\RenderTrait;
+use YiiRocks\Voyti\Helper\TimezoneHelper;
+use YiiRocks\Voyti\Helper\Views\MenuView;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\FlashNotifier;
-use YiiRocks\Voyti\ViewData\Settings\IndexViewData;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
@@ -36,14 +37,19 @@ final readonly class SettingsController
     {
         /** @var User $user */
         $user = $this->currentUser->getIdentity();
+        $profile = $user->getProfile();
 
         return $this->renderView('settings/index', [
-            'data' => IndexViewData::create(
-                $this->config,
-                $this->url,
-                $this->translator(),
-                $user,
-            ),
+            'data' => [
+                'menu' => MenuView::account($this->config, $this->url, $this->translator()),
+                'displayName' => $profile?->getName() ?? $user->getUsername(),
+                'email' => $user->getEmail(),
+                'memberSinceDisplay' => TimezoneHelper::formatLocalized(
+                    $user->getCreatedAt(),
+                    $this->translator()->getLocale(),
+                    $profile?->getTimezone(),
+                ),
+            ],
         ]);
     }
 }

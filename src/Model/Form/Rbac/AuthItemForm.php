@@ -21,6 +21,9 @@ use Yiisoft\Validator\RulesProviderInterface;
  */
 final class AuthItemForm extends FormModel implements LabelsProviderInterface, RulesProviderInterface
 {
+    /**
+     * @var list<string> selected child item names submitted as a checkbox group
+     */
     public array $children = [];
     #[Length(max: 191)]
     public string $description = '';

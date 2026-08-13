@@ -7,6 +7,7 @@ namespace YiiRocks\Voyti\tests\Controller\Settings;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use YiiRocks\Voyti\Controller\Settings\SettingsController;
+use YiiRocks\Voyti\Model\UserProfile;
 use YiiRocks\Voyti\tests\Support\CurrentUserTrait;
 use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
@@ -36,6 +37,16 @@ final class SettingsControllerTest extends DatabaseTestCase
         $html = (string) $this->createController($this->createCurrentUser($user))->index()->getBody();
 
         self::assertStringContainsString('Member since', $html);
+
+        // A profile name takes precedence over the username for the display name.
+        $user2 = $this->createUser(username: 'withprofile', email: 'withprofile@example.com');
+        $profile = new UserProfile();
+        $profile->setUserId((int) $user2->getId());
+        $profile->setName('Jane Doe');
+        $profile->save();
+        $html = (string) $this->createController($this->createCurrentUser($user2))->index()->getBody();
+        self::assertStringContainsString('Jane Doe', $html);
+        self::assertStringNotContainsString('Welcome, withprofile', $html);
     }
 
     private function createController(?CurrentUser $currentUser = null): SettingsController

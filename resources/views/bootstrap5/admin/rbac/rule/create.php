@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use YiiRocks\Voyti\Model\Form\Rbac\RuleForm;
-use YiiRocks\Voyti\ViewData\Admin\Rbac\Rule\CreateViewData;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Translator\TranslatorInterface;
@@ -13,7 +12,11 @@ use Yiisoft\Yii\View\Renderer\Csrf;
 /**
  * @var WebView $this
  * @var RuleForm $form
- * @var CreateViewData $data
+ * @var array{
+ *   menu: list<array{label: string, url: string, alignEnd: bool, routeName: string|null}>,
+ *   formSubmitUrl: string,
+ *   errors: array<string, list<string>>,
+ * } $data
  * @var TranslatorInterface $translator
  * @var Csrf $csrf
  */
@@ -23,18 +26,19 @@ $this->setTitle($translator->translate('voyti.view.rule.create_title'));
 
 echo Html::div()->open();
 /** @psalm-suppress InvalidScope */
-echo $this->render('../../../shared/_admin-menu', ['menu' => $data->menu]);
+echo $this->render('../../../shared/_admin-menu', ['menu' => $data['menu']]);
 
 echo Html::H1($translator->translate('voyti.view.rule.create_title'));
 
 echo Html::form()
-    ->post($data->formSubmitUrl)
+    ->post($data['formSubmitUrl'])
     ->csrf($csrf)
     ->open();
 
-if (!empty($data->errors)) {
+/** @psalm-suppress RiskyTruthyFalsyComparison */
+if (!empty($data['errors'])) {
     echo Html::div()->class('alert alert-danger')->open();
-    foreach ($data->errors as $fieldErrors) {
+    foreach ($data['errors'] as $fieldErrors) {
         foreach ($fieldErrors as $error) {
             echo Html::div($error);
         }

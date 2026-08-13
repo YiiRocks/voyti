@@ -34,16 +34,22 @@ final class AuditLogControllerTest extends DatabaseTestCase
         $this->currentUser = $this->createCurrentUser();
     }
 
-    public function testIndexFilterAndPagination(): void
+    public function testIndexFilteringAndPagination(): void
     {
-        // Filters by actor
+        // Filter by actor, echoing filter value back into form
         $this->createLog(100, 2, 'a.first');
         $this->createLog(200, 2, 'a.second');
         $html = (string) $this->createController()->index(filterActorUserId: '100')->getBody();
         self::assertStringContainsString('#100', $html);
         self::assertStringNotContainsString('#200', $html);
+        self::assertStringContainsString('value="100"', $html);
 
-        // Paginates with filter in links
+        // Filter by target, echoing filter value back into form
+        $html = (string) $this->createController()->index(filterTargetUserId: '2')->getBody();
+        self::assertStringContainsString('#2', $html);
+        self::assertStringContainsString('value="2"', $html);
+
+        // Pagination with filter in links
         for ($i = 0; $i < 51; $i++) {
             $this->createLog(1, 2, 'user.login');
         }
@@ -55,7 +61,7 @@ final class AuditLogControllerTest extends DatabaseTestCase
 
     public function testIndexFormatting(): void
     {
-        // Default timezone when viewer has no profile
+        // Timezone: default when viewer has no profile
         $log1 = new UserAuditLog();
         $log1->setAction('system.cleanup');
         $log1->setCreatedAt(1700000000);
@@ -67,7 +73,7 @@ final class AuditLogControllerTest extends DatabaseTestCase
             $html,
         );
 
-        // With timezone in viewer profile
+        // Timezone: uses viewer profile timezone
         $actor = $this->createUser(username: 'jane_admin');
         $log2 = new UserAuditLog();
         $log2->setActorUserId($actor->getIdOrZero());
@@ -94,9 +100,9 @@ final class AuditLogControllerTest extends DatabaseTestCase
         self::assertStringContainsString('old-editor', $html);
     }
 
-    public function testIndexPagination(): void
+    public function testIndexPaginationEdgeCases(): void
     {
-        // Clamps page beyond last
+        // Clamp page beyond last
         $this->createLog(1, 2, 'user.create');
         $html = (string) $this->createController()->index(page: 3)->getBody();
         self::assertStringContainsString('user.create', $html);
@@ -105,10 +111,12 @@ final class AuditLogControllerTest extends DatabaseTestCase
         $html = (string) $this->createController()->index(page: 0)->getBody();
         self::assertStringContainsString('user.create', $html);
 
-        // No results has no pagination
+        // No results: no pagination controls, empty filters show empty input values
         $html = (string) $this->createController()->index()->getBody();
         self::assertStringContainsString('Audit Log', $html);
         self::assertStringNotContainsString('page-item', $html);
+        self::assertStringContainsString('name="actorUserId" value', $html);
+        self::assertStringContainsString('name="targetUserId" value', $html);
     }
 
     public function testIndexTargetLabeling(): void
@@ -124,7 +132,7 @@ final class AuditLogControllerTest extends DatabaseTestCase
         $html = (string) $this->createController()->index()->getBody();
         self::assertStringContainsString('#999999', $html);
 
-        // Target name when no target user id
+        // Target name only when no target user id
         $log = new UserAuditLog();
         $log->setActorUserId(1);
         $log->setAction('rbac.role.delete');
@@ -134,6 +142,30 @@ final class AuditLogControllerTest extends DatabaseTestCase
         $html = (string) $this->createController()->index()->getBody();
         self::assertStringContainsString('some-role', $html);
         self::assertStringNotContainsString('some-role (#', $html);
+
+        // Falls back to username when targetName is null but targetUserId exists
+        $bob = $this->createUser(username: 'bob', email: 'bob@example.com');
+        $logWithNullName = new UserAuditLog();
+        $logWithNullName->setActorUserId(1);
+        $logWithNullName->setTargetUserId($bob->getIdOrZero());
+        $logWithNullName->setAction('user.delete');
+        $logWithNullName->setTargetName(null);
+        $logWithNullName->setCreatedAt(time());
+        $logWithNullName->save();
+        $html = (string) $this->createController()->index()->getBody();
+        self::assertStringContainsString('bob (#' . $bob->getIdOrZero() . ')', $html);
+
+        // Falls back to username when targetName is empty string but targetUserId exists
+        $charlie = $this->createUser(username: 'charlie', email: 'charlie@example.com');
+        $logWithEmptyName = new UserAuditLog();
+        $logWithEmptyName->setActorUserId(1);
+        $logWithEmptyName->setTargetUserId($charlie->getIdOrZero());
+        $logWithEmptyName->setAction('user.delete');
+        $logWithEmptyName->setTargetName('');
+        $logWithEmptyName->setCreatedAt(time());
+        $logWithEmptyName->save();
+        $html = (string) $this->createController()->index()->getBody();
+        self::assertStringContainsString('charlie (#' . $charlie->getIdOrZero() . ')', $html);
     }
 
     private function createController(): AuditLogController

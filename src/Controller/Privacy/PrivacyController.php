@@ -12,6 +12,8 @@ use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Event\Gdpr\GdprEvent;
 use YiiRocks\Voyti\Event\User\UserEvent;
+use YiiRocks\Voyti\Helper\TimezoneHelper;
+use YiiRocks\Voyti\Helper\Views\MenuView;
 use YiiRocks\Voyti\Model\Form\Settings\ConsentForm;
 use YiiRocks\Voyti\Model\Form\Settings\GdprConsentForm;
 use YiiRocks\Voyti\Model\User;
@@ -19,11 +21,6 @@ use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\Service\FlashNotifier;
 use YiiRocks\Voyti\Service\UserSession\TerminateUserSessionsService;
-use YiiRocks\Voyti\ViewData\Privacy\AnonymizeViewData;
-use YiiRocks\Voyti\ViewData\Privacy\DeleteViewData;
-use YiiRocks\Voyti\ViewData\Privacy\GdprConsentViewData;
-use YiiRocks\Voyti\ViewData\Privacy\IndexViewData;
-use YiiRocks\Voyti\ViewData\Shared\MessageViewData;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\FormModel\FormHydrator;
 use Yiisoft\Http\Header;
@@ -78,17 +75,20 @@ final readonly class PrivacyController
                 $this->eventDispatcher->dispatch(new GdprEvent($user));
                 $this->terminateUserSessionsService->run($user->getIdOrZero());
                 return $this->renderView('shared/message', [
-                    'data' => new MessageViewData(
-                        title: $this->translator->translate('voyti.settings.personal_info_removed', category: 'voyti'),
-                        homeUrl: $this->homeUrl(),
-                    ),
+                    'data' => [
+                        'title' => $this->translator->translate('voyti.settings.personal_info_removed', category: 'voyti'),
+                        'homeUrl' => $this->homeUrl(),
+                    ],
                 ]);
             }
         }
 
         return $this->renderView('privacy/anonymize', [
             'form' => $form,
-            'data' => AnonymizeViewData::create($this->config, $this->url, $this->translator()),
+            'data' => [
+                'menu' => MenuView::account($this->config, $this->url, $this->translator()),
+                'formSubmitUrl' => $this->url->generate('voyti/user-privacy-anonymize'),
+            ],
         ]);
     }
 
@@ -106,15 +106,18 @@ final readonly class PrivacyController
                 $this->eventDispatcher->dispatch(new UserEvent($user, UserEvent::DELETE));
                 $this->terminateUserSessionsService->run($userId);
                 return $this->renderView('shared/message', [
-                    'data' => new MessageViewData(
-                        title: $this->translator->translate('voyti.settings.account_deleted', category: 'voyti'),
-                        homeUrl: $this->homeUrl(),
-                    ),
+                    'data' => [
+                        'title' => $this->translator->translate('voyti.settings.account_deleted', category: 'voyti'),
+                        'homeUrl' => $this->homeUrl(),
+                    ],
                 ]);
             }
         }
 
-        return $this->renderView('privacy/delete', ['form' => $form, 'data' => DeleteViewData::create($this->url)]);
+        return $this->renderView('privacy/delete', [
+            'form' => $form,
+            'data' => ['formSubmitUrl' => $this->url->generate('voyti/user-privacy-delete')],
+        ]);
     }
 
     public function export(): ResponseInterface
@@ -123,7 +126,49 @@ final readonly class PrivacyController
         $user = $this->currentUser->getIdentity();
 
         $values = array_map(
-            fn(string $property): mixed => $this->exportValue($user, $property),
+            static function (string $property) use ($user): mixed {
+                /** @infection-ignore-all MatchArmRemoval: optional exportable match arms; tests verify core functionality, not every possible export option. */
+                return match ($property) {
+                    'email' => $user->getEmail(),
+                    'username' => $user->getUsername(),
+                    /** @infection-ignore-all MatchArmRemoval: optional exportable fields; tests focus on core functionality. */
+                    'userProfile.public_email' => $user->getProfile()?->getPublicEmail(),
+                    /** @infection-ignore-all MatchArmRemoval: optional exportable fields; tests focus on core functionality. */
+                    'userProfile.name' => $user->getProfile()?->getName(),
+                    /** @infection-ignore-all MatchArmRemoval: optional exportable fields; tests focus on core functionality. */
+                    'userProfile.gravatar_email' => $user->getProfile()?->getGravatarEmail(),
+                    /** @infection-ignore-all MatchArmRemoval: optional exportable fields; tests focus on core functionality. */
+                    'userProfile.location' => $user->getProfile()?->getLocation(),
+                    /** @infection-ignore-all MatchArmRemoval: optional exportable fields; tests focus on core functionality. */
+                    'userProfile.website' => $user->getProfile()?->getWebsite(),
+                    /** @infection-ignore-all MatchArmRemoval: optional exportable fields; tests focus on core functionality. */
+                    'userProfile.bio' => $user->getProfile()?->getBio(),
+                    /** @infection-ignore-all MatchArmRemoval: optional exportable fields; tests focus on core functionality. */
+                    'userProfile.birthday' => $user->getProfile()?->getBirthday()?->format('Y-m-d'),
+                    /** @infection-ignore-all MatchArmRemoval: optional exportable arrays; tests focus on core functionality. */
+                    'userSessions' => array_map(
+                        static fn(UserSessions $entry): array => [
+                            'ip' => $entry->getIp(),
+                            'user_agent' => $entry->getUserAgent(),
+                            'created_at' => $entry->getCreatedAt(),
+                            'updated_at' => $entry->getUpdatedAt(),
+                        ],
+                        UserSessions::findByUserId($user->getIdOrZero()),
+                    ),
+                    /** @infection-ignore-all MatchArmRemoval: optional exportable arrays; tests focus on core functionality. */
+                    'userSocialAccount' => array_map(
+                        static fn(UserSocialAccount $account): array => [
+                            'provider' => $account->getProvider(),
+                            'username' => $account->getUsername(),
+                            'email' => $account->getEmail(),
+                            'created_at' => $account->getCreatedAt(),
+                            'data' => $account->getDecodedData(),
+                        ],
+                        UserSocialAccount::findByUserId($user->getIdOrZero()),
+                    ),
+                    default => null,
+                };
+            },
             $this->config->gdprExportProperties,
         );
         /** @var array<array-key, mixed> $data */
@@ -168,70 +213,36 @@ final readonly class PrivacyController
             );
         }
 
+        $isLocked = $form->consent;
+
+        $consentDateDisplay = null;
+        if ($isLocked && $form->consentDate !== null) {
+            $consentDateDisplay = TimezoneHelper::formatLocalized($form->consentDate, $this->translator()->getLocale(), $form->timezone);
+        }
+
         return $this->renderView('privacy/gdpr-consent', [
             'form' => $form,
-            'data' => GdprConsentViewData::create(
-                $form,
-                $this->config,
-                $this->url,
-                $this->translator(),
-            ),
+            'data' => [
+                'menu' => MenuView::account($this->config, $this->url, $this->translator()),
+                'formSubmitUrl' => $this->url->generate('voyti/user-privacy-gdpr-consent'),
+                'isLocked' => $isLocked,
+                'consentDateDisplay' => $consentDateDisplay,
+            ],
         ]);
     }
 
     public function index(): ResponseInterface
     {
         return $this->renderView('privacy/index', [
-            'data' => IndexViewData::create(
-                $this->config,
-                $this->url,
-                $this->translator(),
-            ),
+            'data' => [
+                'menu' => MenuView::account($this->config, $this->url, $this->translator()),
+                'showGdprLinks' => $this->config->enableGdprCompliance,
+                'gdprConsentUrl' => $this->config->enableGdprCompliance ? $this->url->generate('voyti/user-privacy-gdpr-consent') : '',
+                'exportUrl' => $this->config->enableGdprCompliance ? $this->url->generate('voyti/user-privacy-export') : '',
+                'anonymizeUrl' => $this->config->enableGdprCompliance ? $this->url->generate('voyti/user-privacy-anonymize') : '',
+                'showDeleteLink' => $this->config->allowAccountDelete,
+                'deleteUrl' => $this->config->allowAccountDelete ? $this->url->generate('voyti/user-privacy-delete') : '',
+            ],
         ]);
-    }
-
-    private function exportValue(User $user, string $property): mixed
-    {
-        /** @infection-ignore-all MatchArmRemoval: optional exportable match arms; tests verify core functionality, not every possible export option. */
-        return match ($property) {
-            'email' => $user->getEmail(),
-            'username' => $user->getUsername(),
-            /** @infection-ignore-all MatchArmRemoval: optional exportable fields; tests focus on core functionality. */
-            'userProfile.public_email' => $user->getProfile()?->getPublicEmail(),
-            /** @infection-ignore-all MatchArmRemoval: optional exportable fields; tests focus on core functionality. */
-            'userProfile.name' => $user->getProfile()?->getName(),
-            /** @infection-ignore-all MatchArmRemoval: optional exportable fields; tests focus on core functionality. */
-            'userProfile.gravatar_email' => $user->getProfile()?->getGravatarEmail(),
-            /** @infection-ignore-all MatchArmRemoval: optional exportable fields; tests focus on core functionality. */
-            'userProfile.location' => $user->getProfile()?->getLocation(),
-            /** @infection-ignore-all MatchArmRemoval: optional exportable fields; tests focus on core functionality. */
-            'userProfile.website' => $user->getProfile()?->getWebsite(),
-            /** @infection-ignore-all MatchArmRemoval: optional exportable fields; tests focus on core functionality. */
-            'userProfile.bio' => $user->getProfile()?->getBio(),
-            /** @infection-ignore-all MatchArmRemoval: optional exportable fields; tests focus on core functionality. */
-            'userProfile.birthday' => $user->getProfile()?->getBirthday()?->format('Y-m-d'),
-            /** @infection-ignore-all MatchArmRemoval: optional exportable arrays; tests focus on core functionality. */
-            'userSessions' => array_map(
-                static fn(UserSessions $entry): array => [
-                    'ip' => $entry->getIp(),
-                    'user_agent' => $entry->getUserAgent(),
-                    'created_at' => $entry->getCreatedAt(),
-                    'updated_at' => $entry->getUpdatedAt(),
-                ],
-                UserSessions::findByUserId($user->getIdOrZero()),
-            ),
-            /** @infection-ignore-all MatchArmRemoval: optional exportable arrays; tests focus on core functionality. */
-            'userSocialAccount' => array_map(
-                static fn(UserSocialAccount $account): array => [
-                    'provider' => $account->getProvider(),
-                    'username' => $account->getUsername(),
-                    'email' => $account->getEmail(),
-                    'created_at' => $account->getCreatedAt(),
-                    'data' => $account->getDecodedData(),
-                ],
-                UserSocialAccount::findByUserId($user->getIdOrZero()),
-            ),
-            default => null,
-        };
     }
 }

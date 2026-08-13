@@ -5,19 +5,18 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Controller;
 
 use Psr\Http\Message\ResponseInterface;
-use YiiRocks\Voyti\ViewData\Shared\MessageViewData;
-use YiiRocks\Voyti\ViewData\Shared\VoytiCommonParametersInjection;
+use YiiRocks\Voyti\Helper\Views\VoytiCommonParametersInjection;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Yii\View\Renderer\CsrfViewInjection;
 
 /**
  * Adds view-rendering helpers to a controller: render methods with configurable view paths, and a
- * voyti-category-bound translator utility for ViewData construction. Global view parameters
- * (voyti flash messages, voyti-bound translator, and CSRF token) are injected by the container
- * and automatically available in all views. Requires the consumer to have `$viewRenderer`, `$config`,
- * and `$url` properties. Templates never receive `VoytiConfig` or `UrlGeneratorInterface` directly -
- * every other value a template needs travels through an explicit `ViewData` object built by the controller.
+ * voyti-category-bound translator utility. Global view parameters (voyti flash messages,
+ * voyti-bound translator, and CSRF token) are injected by the container and automatically
+ * available in all views. Requires the consumer to have `$viewRenderer`, `$config`, and `$url`
+ * properties. Templates never receive `VoytiConfig` or `UrlGeneratorInterface` directly - every
+ * other value a template needs travels through the params array built by the controller.
  */
 trait RenderTrait
 {
@@ -32,10 +31,10 @@ trait RenderTrait
     private function renderError(string $messageKey): ResponseInterface
     {
         return $this->renderView('shared/message', [
-            'data' => new MessageViewData(
-                title: $this->translator->translate($messageKey, category: 'voyti'),
-                homeUrl: $this->homeUrl(),
-            ),
+            'data' => [
+                'title' => $this->translator->translate($messageKey, category: 'voyti'),
+                'homeUrl' => $this->homeUrl(),
+            ],
         ]);
     }
 

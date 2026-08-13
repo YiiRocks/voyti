@@ -88,15 +88,21 @@ final class RuleControllerTest extends DatabaseTestCase
 
     public function testIndex(): void
     {
+        $this->itemsStorage->add((new Role('editor'))->withRuleName('myRule'));
+
         $html = (string) $this->createController()->index()->getBody();
         self::assertStringContainsString('Rules', $html);
         self::assertStringContainsString('Create rule', $html);
+        self::assertStringContainsString('class="col-9">myRule</div>', $html);
+        self::assertStringContainsString('href="//voyti/admin-rbac-rules-update?name=myRule"', $html);
+        self::assertStringContainsString('action="//voyti/admin-rbac-rules-delete?name=myRule"', $html);
     }
 
     public function testUpdateGetShowsForm(): void
     {
         $html = (string) $this->createController()->update(request: new ServerRequest('GET', '/'), name: 'existingRule')->getBody();
         self::assertStringContainsString('Update rule', $html);
+        self::assertStringContainsString('action="//voyti/admin-rbac-rules-update?name=existingRule"', $html);
     }
 
     public function testUpdatePostErrors(): void

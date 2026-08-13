@@ -9,10 +9,10 @@ use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
+use YiiRocks\Voyti\Helper\Views\MenuView;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserAuditLog;
 use YiiRocks\Voyti\Service\FlashNotifier;
-use YiiRocks\Voyti\ViewData\Admin\AuditLog\IndexViewData;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Data\Db\QueryDataReader;
 use Yiisoft\Data\Paginator\OffsetPaginator;
@@ -20,6 +20,7 @@ use Yiisoft\Input\Http\Attribute\Parameter\Query;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
+use Yiisoft\Yii\DataView\Pagination\PaginationContext;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 /**
@@ -76,49 +77,58 @@ final readonly class AuditLogController
 
         $usernames = $this->resolveUsernames($logs);
 
-        return $this->renderView('admin/audit-log/index', [
-            'data' => IndexViewData::create(
-                array_map(fn(UserAuditLog $log): array => $this->presentLog($log, $viewerTimezone, $usernames), $logs),
-                $paginator,
-                $filters,
-                $this->url,
-                $this->translator(),
-            ),
-        ]);
-    }
-
-    /**
-     * @param array<int, string> $usernames
-     */
-    private function actorLabel(UserAuditLog $log, array $usernames): string
-    {
-        $userId = $log->getActorUserId();
-        if ($userId === null) {
-            /** @infection-ignore-all An empty actor cell renders identically for '' or null (the only mutant here). */
-            return '';
-        }
-
-        return array_key_exists($userId, $usernames) ? $usernames[$userId] . ' (#' . $userId . ')' : '#' . $userId;
-    }
-
-    /**
-     * @param array<int, string> $usernames
-     *
-     * @return array{createdAt: string, actorLabel: string, action: string, targetLabel: string, context: string}
-     */
-    private function presentLog(UserAuditLog $log, ?string $viewerTimezone, array $usernames): array
-    {
-        return [
-            'createdAt' => TimezoneHelper::formatLocalized(
-                $log->getCreatedAt(),
-                $this->translator->getLocale(),
-                $viewerTimezone,
-            ),
-            'actorLabel' => $this->actorLabel($log, $usernames),
-            'action' => $log->getAction(),
-            'targetLabel' => $this->targetLabel($log, $usernames),
-            'context' => $log->getContext() ?? '',
+        $normalizedFilters = [
+            'actorUserId' => $filters['actor_user_id'] ?? '',
+            'targetUserId' => $filters['target_user_id'] ?? '',
+            'action' => $filters['action'] ?? '',
         ];
+
+        return $this->renderView('admin/audit-log/index', [
+            'data' => [
+                'menu' => MenuView::admin($this->url, $this->translator()),
+                'filterActionUrl' => $this->url->generate('voyti/admin-audit-log'),
+                'filters' => $normalizedFilters,
+                'logs' => array_map(
+                    function (UserAuditLog $log) use ($usernames, $viewerTimezone): array {
+                        $actorUserId = $log->getActorUserId();
+                        $actorLabel = '';
+                        if ($actorUserId !== null) {
+                            $actorLabel = array_key_exists($actorUserId, $usernames)
+                                ? $usernames[$actorUserId] . ' (#' . $actorUserId . ')'
+                                : '#' . $actorUserId;
+                        }
+
+                        $targetUserId = $log->getTargetUserId();
+                        $targetLabel = '';
+                        if ($targetUserId !== null) {
+                            $targetName = $log->getTargetName();
+                            $targetName = $targetName !== null && $targetName !== ''
+                                ? $targetName
+                                : ($usernames[$targetUserId] ?? null);
+                            $targetLabel = $targetName !== null ? $targetName . ' (#' . $targetUserId . ')' : '#' . $targetUserId;
+                        } else {
+                            $targetLabel = $log->getTargetName() ?? '';
+                        }
+
+                        return [
+                            'createdAt' => TimezoneHelper::formatLocalized(
+                                $log->getCreatedAt(),
+                                $this->translator->getLocale(),
+                                $viewerTimezone,
+                            ),
+                            'actorLabel' => $actorLabel,
+                            'action' => $log->getAction(),
+                            'targetLabel' => $targetLabel,
+                            'context' => $log->getContext() ?? '',
+                        ];
+                    },
+                    $logs,
+                ),
+                'paginator' => $paginator,
+                'pageUrlPattern' => $this->url->generate('voyti/admin-audit-log', [], [...$normalizedFilters, 'page' => PaginationContext::URL_PLACEHOLDER]),
+                'firstPageUrl' => $this->url->generate('voyti/admin-audit-log', [], [...$normalizedFilters, 'page' => '1']),
+            ],
+        ]);
     }
 
     /**
@@ -145,22 +155,5 @@ final readonly class AuditLogController
         }
         /** @infection-ignore-all ArrayOneItem: return statement is straightforward; mutations would break username resolution. */
         return $usernames;
-    }
-
-    /**
-     * @param array<int, string> $usernames
-     */
-    private function targetLabel(UserAuditLog $log, array $usernames): string
-    {
-        $userId = $log->getTargetUserId();
-        if ($userId === null) {
-            return $log->getTargetName() ?? '';
-        }
-
-        $name = $log->getTargetName();
-        /** @infection-ignore-all LogicalAnd: both conditions are necessary to validate non-empty target names before fallback. */
-        $name = $name !== null && $name !== '' ? $name : ($usernames[$userId] ?? null);
-
-        return $name !== null ? $name . ' (#' . $userId . ')' : '#' . $userId;
     }
 }

@@ -10,7 +10,6 @@ use RuntimeException;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
-use YiiRocks\Voyti\ViewData\Shared\MessageViewData;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\Flash\FlashInterface;
@@ -125,7 +124,7 @@ final readonly class SocialAuthCallbackService
     private function renderMessage(string $title): ResponseInterface
     {
         return $this->renderView('shared/message', [
-            'data' => new MessageViewData(title: $title, homeUrl: $this->homeUrl()),
+            'data' => ['title' => $title, 'homeUrl' => $this->homeUrl()],
         ]);
     }
 }

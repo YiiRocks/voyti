@@ -31,6 +31,10 @@ use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\Support\ValidatorMockTrait;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\VoytiConfig;
+use Yiisoft\Assets\AssetBundle;
+use Yiisoft\Assets\AssetLoaderInterface;
+use Yiisoft\Assets\AssetPublisherInterface;
+use Yiisoft\Assets\AssetUtil;
 use Yiisoft\Http\Header;
 use Yiisoft\Http\Status;
 use Yiisoft\Security\PasswordHasher;
@@ -38,6 +42,8 @@ use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\Validator\ValidatorInterface;
+use Yiisoft\Yii\AuthClient\Collection;
+use Yiisoft\Yii\AuthClient\OAuth2Interface;
 
 #[AllowMockObjectsWithoutExpectations]
 final class SessionControllerTest extends DatabaseTestCase
@@ -72,6 +78,18 @@ final class SessionControllerTest extends DatabaseTestCase
         // GET shows login form
         $html = (string) $this->createController()->login(new ServerRequest('GET', '/'))->getBody();
         self::assertStringContainsString('Log In', $html);
+
+        // GET with configured OAuth clients: renders the social-login connect buttons
+        $client = $this->createMock(OAuth2Interface::class);
+        $client->method('getName')->willReturn('github');
+        $client->method('getTitle')->willReturn('GitHub');
+        $collection = new Collection(['github' => $client]);
+        $html = (string) $this->createController([
+            Collection::class => $collection,
+            ...$this->assetStubs(),
+        ])->login(new ServerRequest('GET', '/'))->getBody();
+        self::assertStringContainsString('voyti/session-auth?authclient=github', $html);
+        self::assertStringContainsString('GitHub', $html);
 
         // POST success: redirects, logs in, records metadata, connects pending social account
         $config = VoytiConfigFactory::create(homeRoute: 'app/dashboard');
@@ -238,6 +256,49 @@ final class SessionControllerTest extends DatabaseTestCase
         $this->assertInstanceOf(SessionEvent::class, $event);
         $this->assertSame(SessionEvent::SESSION_TERMINATED, $event->getData()['type'] ?? null);
         $this->assertSame($sessionId, $event->getSessionId());
+    }
+
+    /**
+     * Stubs for the asset stack so the AuthChoice widget's asset registration can run without
+     * real path aliases or filesystem publishing in the test environment.
+     *
+     * @return array{class-string, object}
+     */
+    private function assetStubs(): array
+    {
+        return [
+            AssetLoaderInterface::class => new class implements AssetLoaderInterface {
+                public function getAssetUrl(AssetBundle $bundle, string $assetPath): string
+                {
+                    return '/assets/' . $assetPath;
+                }
+
+                public function loadBundle(string $name, array $config = []): AssetBundle
+                {
+                    if ($config !== []) {
+                        return AssetUtil::createAsset($name, $config);
+                    }
+
+                    return new $name();
+                }
+            },
+            AssetPublisherInterface::class => new class implements AssetPublisherInterface {
+                public function publish(AssetBundle $bundle): array
+                {
+                    return ['', '/assets'];
+                }
+
+                public function getPublishedPath(string $sourcePath): ?string
+                {
+                    return $sourcePath;
+                }
+
+                public function getPublishedUrl(string $sourcePath): ?string
+                {
+                    return '/assets';
+                }
+            },
+        ];
     }
 
     private function createController(array $extraOverrides = []): SessionController

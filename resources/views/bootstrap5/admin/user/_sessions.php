@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-use YiiRocks\Voyti\ViewData\Admin\User\SessionsViewData;
-use YiiRocks\Voyti\ViewData\Shared\FlashViewData;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Translator\TranslatorInterface;
@@ -12,9 +10,19 @@ use Yiisoft\Yii\View\Renderer\Csrf;
 
 /**
  * @var WebView $this
- * @var SessionsViewData $data
+ * @var array{
+ *   menu: list<array{label: string, url: string, alignEnd: bool, routeName: string|null}>,
+ *   sessions: list<array{
+ *     ip: string,
+ *     userAgent: string,
+ *     lastSeenDisplay: string,
+ *     isRevoked: bool,
+ *     revokedAtDisplay: string|null,
+ *   }>,
+ *   formSubmitUrl: string,
+ * } $data
  * @var TranslatorInterface $translator
- * @var FlashViewData $flash
+ * @var array{success: string|null, warning: string|null} $flash
  * @var Csrf $csrf
  */
 
@@ -23,7 +31,7 @@ $this->setTitle($translator->translate('voyti.view.admin.sessions'));
 
 echo Html::div()->open();
 /** @psalm-suppress InvalidScope */
-echo $this->render('../../shared/_admin-menu', ['menu' => $data->menu]);
+echo $this->render('../../shared/_admin-menu', ['menu' => $data['menu']]);
 /** @psalm-suppress InvalidScope */
 echo $this->render('../../shared/_flash');
 
@@ -38,17 +46,17 @@ echo Html::div($translator->translate('voyti.view.sessions.last_seen'))->class('
 echo Html::div()->class('col-2');
 echo Html::div()->close();
 
-foreach ($data->sessions as $session) {
+foreach ($data['sessions'] as $session) {
     echo Html::div()->class('row py-2 border-bottom align-items-center')->open();
-    echo Html::div($session->ip)->class('col-3 text-break');
-    echo Html::div($session->userAgent)->class('col-5 text-break');
-    echo Html::div($session->lastSeenDisplay)->class('col-2');
+    echo Html::div($session['ip'])->class('col-3 text-break');
+    echo Html::div($session['userAgent'])->class('col-5 text-break');
+    echo Html::div($session['lastSeenDisplay'])->class('col-2');
     echo Html::div()->class('col-2 text-end')->open();
-    if ($session->isRevoked) {
+    if ($session['isRevoked']) {
         $revokedButton = Html::button($translator->translate('voyti.view.sessions.revoked'))
             ->class('btn', 'btn-sm', 'btn-outline-secondary')
             ->disabled();
-        echo Html::span($revokedButton)->attribute('title', $session->revokedAtDisplay);
+        echo Html::span($revokedButton)->attribute('title', $session['revokedAtDisplay']);
     } else {
         echo Html::button($translator->translate('voyti.view.sessions.active'))
             ->class('btn', 'btn-sm', 'btn-outline-success')
@@ -59,7 +67,7 @@ foreach ($data->sessions as $session) {
 }
 
 echo Html::form()
-    ->post($data->formSubmitUrl)
+    ->post($data['formSubmitUrl'])
     ->csrf($csrf)
     ->open();
 

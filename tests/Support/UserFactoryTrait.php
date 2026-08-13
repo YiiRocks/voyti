@@ -9,7 +9,7 @@ use YiiRocks\Voyti\Model\User;
 trait UserFactoryTrait
 {
     /**
-     * Builds an in-memory `User`, without persisting it - for ViewData/unit tests that receive a
+     * Builds an in-memory `User`, without persisting it - for unit tests that receive a
      * `User` as a plain argument and never look it up from the database.
      */
     private function buildUser(

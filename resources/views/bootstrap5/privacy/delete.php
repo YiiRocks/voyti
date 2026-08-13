@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use YiiRocks\Voyti\Model\Form\Settings\ConsentForm;
-use YiiRocks\Voyti\ViewData\Privacy\DeleteViewData;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Translator\TranslatorInterface;
@@ -13,7 +12,9 @@ use Yiisoft\Yii\View\Renderer\Csrf;
 /**
  * @var WebView $this
  * @var ConsentForm $form
- * @var DeleteViewData $data
+ * @var array{
+ *   formSubmitUrl: string,
+ * } $data
  * @var TranslatorInterface $translator
  * @var Csrf $csrf
  */
@@ -29,7 +30,7 @@ echo $translator->translate('voyti.view.delete_account.warning');
 echo Html::p()->close();
 
 echo Html::form()
-    ->post($data->formSubmitUrl)
+    ->post($data['formSubmitUrl'])
     ->csrf($csrf)
     ->open();
 

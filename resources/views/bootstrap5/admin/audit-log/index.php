@@ -2,8 +2,7 @@
 
 declare(strict_types=1);
 
-use YiiRocks\Voyti\ViewData\Admin\AuditLog\IndexViewData;
-use YiiRocks\Voyti\ViewData\Shared\FlashViewData;
+use Yiisoft\Data\Paginator\OffsetPaginator;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Translator\TranslatorInterface;
@@ -12,9 +11,17 @@ use Yiisoft\Yii\DataView\Pagination\OffsetPagination;
 
 /**
  * @var WebView $this
- * @var IndexViewData $data
+ * @var array{
+ *   menu: list<array{label: string, url: string, alignEnd: bool, routeName: string|null}>,
+ *   filterActionUrl: string,
+ *   filters: array{actorUserId: string, targetUserId: string, action: string},
+ *   logs: list<array{createdAt: string, actorLabel: string, action: string, targetLabel: string, context: string}>,
+ *   paginator: OffsetPaginator,
+ *   pageUrlPattern: string,
+ *   firstPageUrl: string,
+ * } $data
  * @var TranslatorInterface $translator
- * @var FlashViewData $flash
+ * @var array{success: string|null, warning: string|null} $flash
  */
 
 /** @psalm-suppress InvalidScope */
@@ -22,14 +29,14 @@ $this->setTitle($translator->translate('voyti.view.audit_log.title'));
 
 echo Html::div()->open();
 /** @psalm-suppress InvalidScope */
-echo $this->render('../../shared/_admin-menu', ['menu' => $data->menu]);
+echo $this->render('../../shared/_admin-menu', ['menu' => $data['menu']]);
 /** @psalm-suppress InvalidScope */
 echo $this->render('../../shared/_flash');
 
 echo Html::H1($translator->translate('voyti.view.audit_log.title'));
 
 echo Html::form()
-    ->action($data->filterActionUrl)
+    ->action($data['filterActionUrl'])
     ->method('get')
     ->open();
 
@@ -37,15 +44,15 @@ $tabindex = 0;
 
 echo Html::div()->class('row mb-3 g-2')->open();
 echo Html::div()->class('col')->open();
-echo Html::input('text')->class('form-control')->name('actorUserId')->value($data->filters['actorUserId'])->addAttributes(['placeholder' => $translator->translate('voyti.view.audit_log.actor_header')])->attribute('tabindex', ++$tabindex);
+echo Html::input('text')->class('form-control')->name('actorUserId')->value($data['filters']['actorUserId'])->addAttributes(['placeholder' => $translator->translate('voyti.view.audit_log.actor_header')])->attribute('tabindex', ++$tabindex);
 echo Html::div()->close();
 
 echo Html::div()->class('col')->open();
-echo Html::input('text')->class('form-control')->name('targetUserId')->value($data->filters['targetUserId'])->addAttributes(['placeholder' => $translator->translate('voyti.view.audit_log.target_header')])->attribute('tabindex', ++$tabindex);
+echo Html::input('text')->class('form-control')->name('targetUserId')->value($data['filters']['targetUserId'])->addAttributes(['placeholder' => $translator->translate('voyti.view.audit_log.target_header')])->attribute('tabindex', ++$tabindex);
 echo Html::div()->close();
 
 echo Html::div()->class('col')->open();
-echo Html::input('text')->class('form-control')->name('action')->value($data->filters['action'])->addAttributes(['placeholder' => $translator->translate('voyti.view.audit_log.action_header')])->attribute('tabindex', ++$tabindex);
+echo Html::input('text')->class('form-control')->name('action')->value($data['filters']['action'])->addAttributes(['placeholder' => $translator->translate('voyti.view.audit_log.action_header')])->attribute('tabindex', ++$tabindex);
 echo Html::div()->close();
 
 echo Html::div()->class('col-auto')->open();
@@ -68,7 +75,7 @@ echo Html::div($translator->translate('voyti.view.audit_log.target_header'))->cl
 echo Html::div($translator->translate('voyti.view.audit_log.context_header'))->class('col-4');
 echo Html::div()->close();
 
-foreach ($data->logs as $log) {
+foreach ($data['logs'] as $log) {
     echo Html::div()->class('row py-2 border-bottom align-items-center')->open();
     echo Html::div($log['createdAt'])->class('col-2');
     echo Html::div($log['actorLabel'])->class('col-2');
@@ -79,9 +86,9 @@ foreach ($data->logs as $log) {
 }
 
 echo OffsetPagination::create(
-    $data->paginator,
-    $data->pageUrlPattern,
-    $data->firstPageUrl,
+    $data['paginator'],
+    $data['pageUrlPattern'],
+    $data['firstPageUrl'],
 )
     ->containerAttributes(['aria-label' => $translator->translate('voyti.view.pagination_navigation')])
     ->listTag('ul')

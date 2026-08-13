@@ -14,6 +14,12 @@ use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Helper\FlashType;
+use YiiRocks\Voyti\Helper\TimezoneHelper;
+use YiiRocks\Voyti\Helper\UserStatusHelper;
+use YiiRocks\Voyti\Helper\Views\AssignableItemRowView;
+use YiiRocks\Voyti\Helper\Views\MenuView;
+use YiiRocks\Voyti\Helper\Views\ProfileCardView;
+use YiiRocks\Voyti\Helper\Views\SessionRowView;
 use YiiRocks\Voyti\Model\Form\Auth\RegistrationForm;
 use YiiRocks\Voyti\Model\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Model\Form\Settings\UserProfileForm;
@@ -31,14 +37,6 @@ use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\Service\User\BlockService;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\CreateService;
-use YiiRocks\Voyti\ViewData\Admin\User\AccountViewData;
-use YiiRocks\Voyti\ViewData\Admin\User\AssignmentsViewData;
-use YiiRocks\Voyti\ViewData\Admin\User\CreateViewData;
-use YiiRocks\Voyti\ViewData\Admin\User\IndexViewData;
-use YiiRocks\Voyti\ViewData\Admin\User\InfoViewData;
-use YiiRocks\Voyti\ViewData\Admin\User\ProfileViewData;
-use YiiRocks\Voyti\ViewData\Admin\User\SessionsViewData;
-use YiiRocks\Voyti\ViewData\Shared\MessageViewData;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Data\Db\QueryDataReader;
 use Yiisoft\Data\Paginator\OffsetPaginator;
@@ -53,6 +51,7 @@ use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
+use Yiisoft\Yii\DataView\Pagination\PaginationContext;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 /**
@@ -114,7 +113,12 @@ final readonly class UserController
         $available = $this->authHelper->getUnassignedItems($id);
 
         return $this->renderView('admin/user/_assignments', [
-            'data' => AssignmentsViewData::create($user, $assignedNames, $available, $this->url, $this->translator()),
+            'data' => [
+                'menu' => MenuView::admin($this->url, $this->translator()),
+                'formSubmitUrl' => $this->url->generate('voyti/admin-users-assignments', ['id' => $user->getId()]),
+                'assignedItemNames' => $assignedNames,
+                'availableItemNames' => array_keys($available),
+            ],
         ]);
     }
 
@@ -188,7 +192,14 @@ final readonly class UserController
 
         return $this->renderView('admin/user/create', [
             'form' => $form,
-            'data' => CreateViewData::create($form, $this->itemsStorage->getAll(), [], $errors, $this->url, $this->translator()),
+            'data' => [
+                'menu' => MenuView::admin($this->url, $this->translator()),
+                'formSubmitUrl' => $this->url->generate('voyti/admin-users-create'),
+                'usernameValue' => $form->username,
+                'emailValue' => $form->email,
+                'items' => AssignableItemRowView::fromItems($this->itemsStorage->getAll(), []),
+                'errors' => $errors,
+            ],
         ]);
     }
 
@@ -261,18 +272,35 @@ final readonly class UserController
         /** @var list<User> $users */
         $users = iterator_to_array($paginator->read(), false);
 
+        $isSwitched = $this->switchIdentityService->isSwitched();
+        $currentUserId = (int) $this->currentUser->getIdentity()->getId();
+        $normalizedFilters = [
+            'username' => $filters['username'] ?? '',
+            'email' => $filters['email'] ?? '',
+            'status' => $filters['status'] ?? '',
+        ];
+        /** @infection-ignore-all The (string) cast is inconsequential: perPage only feeds URL query generation, where http_build_query renders the int and its string form identically. */
+        $preservedQuery = [...$normalizedFilters, 'perPage' => (string) $pageSize];
+
         return $this->renderView('admin/user/index', [
-            'data' => IndexViewData::create(
-                $users,
-                $paginator,
-                $filters,
-                $pageSize,
-                $this->config,
-                $this->url,
-                $this->translator(),
-                $this->switchIdentityService->isSwitched(),
-                (int) $this->currentUser->getIdentity()->getId(),
-            ),
+            'data' => [
+                'menu' => MenuView::admin($this->url, $this->translator()),
+                'createUserUrl' => $this->url->generate('voyti/admin-users-create'),
+                'filterActionUrl' => $this->url->generate('voyti/admin-users'),
+                'filters' => $normalizedFilters,
+                'perPage' => $pageSize,
+                'users' => array_map(
+                    fn(User $user) => $this->buildUserRow($user, $isSwitched, $currentUserId),
+                    $users,
+                ),
+                'paginator' => $paginator,
+                'pageUrlPattern' => $this->url->generate(
+                    'voyti/admin-users',
+                    [],
+                    [...$preservedQuery, 'page' => PaginationContext::URL_PLACEHOLDER],
+                ),
+                'firstPageUrl' => $this->url->generate('voyti/admin-users', [], [...$preservedQuery, 'page' => '1']),
+            ],
         ]);
     }
 
@@ -284,7 +312,7 @@ final readonly class UserController
             $this->auditLogService->log($this->actorId(), 'user.password_reset_triggered', $request->getServerParams(), targetUserId: $id);
 
             return $this->renderView('shared/message', [
-                'data' => new MessageViewData(title: $result->getMessage(), homeUrl: $this->homeUrl()),
+                'data' => ['title' => $result->getMessage(), 'homeUrl' => $this->homeUrl()],
             ]);
         }
         return $this->renderError('voyti.admin.user_not_found');
@@ -300,9 +328,17 @@ final readonly class UserController
         $sessions = UserSessions::findByUserId($id);
         $viewer = $this->currentUser->getIdentity();
         $viewerTimezone = $viewer instanceof User ? $viewer->getProfile()?->getTimezone() : null;
+        $locale = $this->translator()->getLocale();
 
         return $this->renderView('admin/user/_sessions', [
-            'data' => SessionsViewData::create($user, $sessions, $this->url, $this->translator(), $viewerTimezone),
+            'data' => [
+                'menu' => MenuView::admin($this->url, $this->translator()),
+                'sessions' => array_map(
+                    static fn(UserSessions $session): array => SessionRowView::create($session, $viewerTimezone, $locale),
+                    $sessions,
+                ),
+                'formSubmitUrl' => $this->url->generate('voyti/admin-users-terminate-sessions', ['id' => $user->getId()]),
+            ],
         ]);
     }
 
@@ -324,7 +360,18 @@ final readonly class UserController
         $viewerTimezone = $viewer instanceof User ? $viewer->getProfile()?->getTimezone() : null;
 
         return $this->renderView('admin/user/_info', [
-            'data' => InfoViewData::create($user, $userProfile, $this->url, $this->translator(), $viewerTimezone),
+            'data' => [
+                'menu' => MenuView::admin($this->url, $this->translator()),
+                'username' => $user->getUsername(),
+                'profile' => ProfileCardView::create(
+                    $user,
+                    $userProfile,
+                    $this->translator(),
+                    showAdminFields: true,
+                    viewerTimezone: $viewerTimezone,
+                    profilePreviewClass: 'list-group list-group-flush',
+                ),
+            ],
         ]);
     }
 
@@ -437,15 +484,18 @@ final readonly class UserController
 
         return $this->renderView('admin/user/_account', [
             'form' => $form,
-            'data' => AccountViewData::create(
-                $user,
-                $form,
-                $this->itemsStorage->getAll(),
-                $assignedNames,
-                $errors,
-                $this->url,
-                $this->translator(),
-            ),
+            'data' => [
+                'menu' => MenuView::admin($this->url, $this->translator()),
+                'title' => $this->translator()->translate(
+                    'voyti.view.admin.update_user_title',
+                    ['username' => $user->getUsername()],
+                ),
+                'formSubmitUrl' => $this->url->generate('voyti/admin-users-update', ['id' => $user->getId()]),
+                'usernameValue' => $form->username,
+                'emailValue' => $form->email,
+                'items' => AssignableItemRowView::fromItems($this->itemsStorage->getAll(), $assignedNames),
+                'errors' => $errors,
+            ],
         ]);
     }
 
@@ -478,7 +528,11 @@ final readonly class UserController
 
         return $this->renderView('admin/user/_profile', [
             'form' => $form,
-            'data' => ProfileViewData::create($user, $this->url, $this->translator()),
+            'data' => [
+                'menu' => MenuView::admin($this->url, $this->translator()),
+                'formSubmitUrl' => $this->url->generate('voyti/admin-users-update-profile', ['id' => $user->getId()]),
+                'timezoneOptions' => TimezoneHelper::getAll(),
+            ],
         ]);
     }
 
@@ -490,6 +544,40 @@ final readonly class UserController
         $assignments = $this->assignmentsStorage->getByUserId((string) $id);
         /** @infection-ignore-all array_values only reindexes; the rendered assignment list is identical either way. */
         return array_values(array_map(fn(Assignment $a) => $a->getItemName(), $assignments));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildUserRow(User $user, bool $isSwitched, int $currentUserId): array
+    {
+        $id = $user->getIdOrZero();
+        [$statusLabel, $statusBadgeClass] = UserStatusHelper::labelAndBadgeClass($user, $this->translator());
+
+        return [
+            'id' => $id,
+            'username' => $user->getUsername(),
+            'email' => $user->getEmail(),
+            'statusLabel' => $statusLabel,
+            'statusBadgeClass' => $statusBadgeClass,
+            'showConfirmAction' => !$user->isConfirmed(),
+            'showForcePasswordChangeAction' => $this->config->maxPasswordAge > 0,
+            'showSwitchIdentityAction' => $this->config->enableSwitchIdentities && !$isSwitched,
+            'switchIdentityDisabled' => $user->isSwitchDisabledFor($currentUserId),
+            'showUrl' => $this->url->generate('voyti/admin-users-show', ['id' => $id]),
+            'updateUrl' => $this->url->generate('voyti/admin-users-update', ['id' => $id]),
+            'updateProfileUrl' => $this->url->generate('voyti/admin-users-update-profile', ['id' => $id]),
+            'sessionsUrl' => $this->url->generate('voyti/admin-users-sessions', ['id' => $id]),
+            'confirmUrl' => $this->url->generate('voyti/admin-users-confirm', ['id' => $id]),
+            'forcePasswordChangeUrl' => $this->url->generate('voyti/admin-users-force-password-change', ['id' => $id]),
+            'passwordResetUrl' => $this->url->generate('voyti/admin-users-password-reset', ['id' => $id]),
+            'switchIdentityUrl' => $this->url->generate('voyti/admin-users-switch-identity', ['id' => $id]),
+            'blockToggleUrl' => $this->url->generate('voyti/admin-users-block', ['id' => $id]),
+            'blockToggleLabel' => $this->translator()->translate(
+                $user->isBlocked() ? 'voyti.view.unblock_button' : 'voyti.view.block_button',
+            ),
+            'deleteUrl' => $this->url->generate('voyti/admin-users-delete', ['id' => $id]),
+        ];
     }
 
     private function resolveUser(int $id): User|ResponseInterface

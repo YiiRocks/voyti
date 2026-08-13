@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use YiiRocks\Voyti\Model\Form\Auth\ResendForm;
-use YiiRocks\Voyti\ViewData\Registration\ResendViewData;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Translator\TranslatorInterface;
@@ -13,7 +12,10 @@ use Yiisoft\Yii\View\Renderer\Csrf;
 /**
  * @var WebView $this
  * @var ResendForm $form
- * @var ResendViewData $data
+ * @var array{
+ *   formSubmitUrl: string,
+ *   recaptchaFieldHtml: string,
+ * } $data
  * @var TranslatorInterface $translator
  * @var Csrf $csrf
  */
@@ -25,7 +27,7 @@ echo Html::div()->open();
 echo Html::H1($translator->translate('voyti.view.registration.resend_title'));
 
 echo Html::form()
-    ->post($data->formSubmitUrl)
+    ->post($data['formSubmitUrl'])
     ->csrf($csrf)
     ->open();
 
@@ -33,7 +35,7 @@ $tabindex = 0;
 
 echo Field::email($form, 'email')->tabIndex(++$tabindex);
 
-echo $data->recaptchaFieldHtml;
+echo $data['recaptchaFieldHtml'];
 
 echo Field::buttonGroup()
     ->buttonsData([

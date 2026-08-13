@@ -237,6 +237,12 @@ final class PrivacyControllerTest extends DatabaseTestCase
             $html,
         );
 
+        // GET consented but without a consent date: locked with no date to display
+        $userNoDate = $this->createUser(username: 'gdpr_nodate', email: 'gdpr_nodate@example.com', gdprConsent: true, confirmedAt: time());
+        $this->currentUser->login($userNoDate);
+        $html = (string) $controller->gdprConsent(new ServerRequest('GET', '/'))->getBody();
+        self::assertStringContainsString('already given consent on . This cannot be undone.', $html);
+
         // POST not consented: saves consent and redirects
         $controller = $this->createController(VoytiConfigFactory::create(enableGdprCompliance: true));
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['gdpr-consent' => ['consent' => '1']]);
@@ -264,9 +270,28 @@ final class PrivacyControllerTest extends DatabaseTestCase
 
     public function testIndexShowsView(): void
     {
-        $html = (string) $this->createController()->index()->getBody();
+        // GDPR compliance and account deletion enabled: all action links render with their URLs.
+        $html = (string) $this->createController(VoytiConfigFactory::create(
+            enableGdprCompliance: true,
+            allowAccountDelete: true,
+        ))->index()->getBody();
 
         self::assertStringContainsString('Privacy', $html);
+        self::assertStringContainsString('voyti/user-privacy-gdpr-consent', $html);
+        self::assertStringContainsString('voyti/user-privacy-export', $html);
+        self::assertStringContainsString('voyti/user-privacy-anonymize', $html);
+        self::assertStringContainsString('voyti/user-privacy-delete', $html);
+
+        // Both features disabled: no action links render.
+        $html = (string) $this->createController(VoytiConfigFactory::create(
+            enableGdprCompliance: false,
+            allowAccountDelete: false,
+        ))->index()->getBody();
+        self::assertStringContainsString('Privacy', $html);
+        self::assertStringNotContainsString('user-privacy-gdpr-consent', $html);
+        self::assertStringNotContainsString('user-privacy-export', $html);
+        self::assertStringNotContainsString('user-privacy-anonymize', $html);
+        self::assertStringNotContainsString('user-privacy-delete', $html);
     }
 
     private function createController(?VoytiConfig $config = null): PrivacyController

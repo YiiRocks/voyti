@@ -11,13 +11,11 @@ use YiiRocks\Voyti\Controller\ActorIdTrait;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Helper\AuthHelper;
+use YiiRocks\Voyti\Helper\Views\MenuView;
 use YiiRocks\Voyti\Model\Form\Rbac\RuleForm;
 use YiiRocks\Voyti\Service\AuditLogService;
 use YiiRocks\Voyti\Service\FlashNotifier;
 use YiiRocks\Voyti\Service\Rbac\RuleEditionService;
-use YiiRocks\Voyti\ViewData\Admin\Rbac\Rule\CreateViewData;
-use YiiRocks\Voyti\ViewData\Admin\Rbac\Rule\IndexViewData;
-use YiiRocks\Voyti\ViewData\Admin\Rbac\Rule\UpdateViewData;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Http\Method;
 use Yiisoft\Input\Http\Attribute\Parameter\Body;
@@ -82,7 +80,11 @@ final readonly class RuleController
 
         return $this->renderView('admin/rbac/rule/create', [
             'form' => $form,
-            'data' => CreateViewData::create($errors, $this->url, $this->translator()),
+            'data' => [
+                'menu' => MenuView::admin($this->url, $this->translator()),
+                'formSubmitUrl' => $this->url->generate('voyti/admin-rbac-rules-create'),
+                'errors' => $errors,
+            ],
         ]);
     }
 
@@ -99,7 +101,18 @@ final readonly class RuleController
         $rules = $this->authHelper->getRuleNames();
 
         return $this->renderView('admin/rbac/rule/index', [
-            'data' => IndexViewData::create($rules, $this->url, $this->translator()),
+            'data' => [
+                'menu' => MenuView::admin($this->url, $this->translator()),
+                'createUrl' => $this->url->generate('voyti/admin-rbac-rules-create'),
+                'rules' => array_map(
+                    fn(string $name): array => [
+                        'name' => $name,
+                        'updateUrl' => $this->url->generate('voyti/admin-rbac-rules-update', ['name' => $name]),
+                        'formSubmitUrl' => $this->url->generate('voyti/admin-rbac-rules-delete', ['name' => $name]),
+                    ],
+                    $rules,
+                ),
+            ],
         ]);
     }
 
@@ -147,7 +160,11 @@ final readonly class RuleController
 
         return $this->renderView('admin/rbac/rule/update', [
             'form' => $form,
-            'data' => UpdateViewData::create($form, $errors, $this->url, $this->translator()),
+            'data' => [
+                'menu' => MenuView::admin($this->url, $this->translator()),
+                'formSubmitUrl' => $this->url->generate('voyti/admin-rbac-rules-update', ['name' => $form->previousName]),
+                'errors' => $errors,
+            ],
         ]);
     }
 }

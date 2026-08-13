@@ -13,9 +13,15 @@ use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
+use Yiisoft\Assets\AssetBundle;
+use Yiisoft\Assets\AssetLoaderInterface;
+use Yiisoft\Assets\AssetPublisherInterface;
+use Yiisoft\Assets\AssetUtil;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\User\CurrentUser;
+use Yiisoft\Yii\AuthClient\Collection;
+use Yiisoft\Yii\AuthClient\OAuth2Interface;
 
 #[AllowMockObjectsWithoutExpectations]
 final class SocialNetworkControllerTest extends DatabaseTestCase
@@ -74,18 +80,117 @@ final class SocialNetworkControllerTest extends DatabaseTestCase
     {
         $controller = $this->createController();
 
-        $this->currentUser->login($this->createUser());
+        $user = $this->createUser();
+        $this->currentUser->login($user);
+        $account = $this->createSocialAccount((int) $user->getId());
 
         $html = (string) $controller->index()->getBody();
 
         self::assertStringContainsString('Networks', $html);
+        self::assertStringContainsString('github', $html);
+        self::assertStringContainsString(
+            '//voyti/user-social-network-delete?id=' . $account->getId(),
+            $html,
+        );
     }
 
-    private function createController(): SocialNetworkController
+    public function testIndexWithConfiguredClientsHidesConnectedProviders(): void
+    {
+        $github = $this->createMock(OAuth2Interface::class);
+        $github->method('getName')->willReturn('github');
+        $github->method('getTitle')->willReturn('GitHub');
+        $google = $this->createMock(OAuth2Interface::class);
+        $google->method('getName')->willReturn('google');
+        $google->method('getTitle')->willReturn('Google');
+        $collection = new Collection(['github' => $github, 'google' => $google]);
+
+        $controller = $this->createController([
+            Collection::class => $collection,
+            ...$this->assetStubs(),
+        ]);
+
+        $user = $this->createUser();
+        $this->currentUser->login($user);
+        $this->createSocialAccount((int) $user->getId(), provider: 'github');
+
+        $html = (string) $controller->index()->getBody();
+
+        // The connected provider shows its title once (as the account row, not as a connect
+        // button), while the unconnected provider is offered as a connect button.
+        self::assertSame(1, substr_count($html, 'GitHub'));
+        self::assertStringContainsString('Google', $html);
+        self::assertStringContainsString('voyti/session-auth?authclient=google', $html);
+    }
+
+    public function testIndexWithNullClientCollectionFallsBackToProviderKey(): void
+    {
+        $controller = $this->createController([
+            SocialNetworkController::class => [
+                'class' => SocialNetworkController::class,
+                '__construct()' => ['clientCollection' => null],
+            ],
+        ]);
+
+        $user = $this->createUser();
+        $this->currentUser->login($user);
+        $this->createSocialAccount((int) $user->getId());
+
+        $html = (string) $controller->index()->getBody();
+
+        // Without a client collection the raw provider key is shown and no connect widget renders.
+        self::assertStringContainsString('github', $html);
+        self::assertStringNotContainsString('session-auth', $html);
+    }
+
+    /**
+     * Stubs for the asset stack so the AuthChoice widget's asset registration can run without
+     * real path aliases or filesystem publishing in the test environment.
+     *
+     * @return array{class-string, object}
+     */
+    private function assetStubs(): array
+    {
+        return [
+            AssetLoaderInterface::class => new class implements AssetLoaderInterface {
+                public function getAssetUrl(AssetBundle $bundle, string $assetPath): string
+                {
+                    return '/assets/' . $assetPath;
+                }
+
+                public function loadBundle(string $name, array $config = []): AssetBundle
+                {
+                    if ($config !== []) {
+                        return AssetUtil::createAsset($name, $config);
+                    }
+
+                    return new $name();
+                }
+            },
+            AssetPublisherInterface::class => new class implements AssetPublisherInterface {
+                public function publish(AssetBundle $bundle): array
+                {
+                    return ['', '/assets'];
+                }
+
+                public function getPublishedPath(string $sourcePath): ?string
+                {
+                    return $sourcePath;
+                }
+
+                public function getPublishedUrl(string $sourcePath): ?string
+                {
+                    return '/assets';
+                }
+            },
+        ];
+    }
+
+    private function createController(array $overrides = []): SocialNetworkController
     {
         return $this->getTestContainer([
             CurrentUser::class => $this->currentUser,
             FlashInterface::class => $this->flash,
+            ...$overrides,
         ])->get(SocialNetworkController::class);
     }
 

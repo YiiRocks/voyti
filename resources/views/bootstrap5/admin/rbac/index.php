@@ -3,9 +3,6 @@
 declare(strict_types=1);
 
 use YiiRocks\Voyti\Helper\LinkButtonHelper;
-use YiiRocks\Voyti\ViewData\Admin\Rbac\IndexViewData;
-use YiiRocks\Voyti\ViewData\Admin\Rbac\RbacItemRow;
-use YiiRocks\Voyti\ViewData\Shared\FlashViewData;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Translator\TranslatorInterface;
@@ -14,9 +11,18 @@ use Yiisoft\Yii\View\Renderer\Csrf;
 
 /**
  * @var WebView $this
- * @var IndexViewData $data
+ * @var array{
+ *   menu: list<array{label: string, url: string, alignEnd: bool, routeName: string|null}>,
+ *   title: string,
+ *   createLinkLabel: string,
+ *   createUrl: string,
+ *   filterUrl: string,
+ *   filterName: string,
+ *   filterDescription: string,
+ *   items: list<array{name: string, description: string, childrenDisplay: string, updateUrl: string, formSubmitUrl: string}>,
+ * } $data
  * @var TranslatorInterface $translator
- * @var FlashViewData $flash
+ * @var array{success: string|null, warning: string|null} $flash
  * @var Csrf $csrf
  */
 
@@ -24,21 +30,21 @@ $descriptionColClass = 'col-4';
 $actionsColClass = 'col-3 text-end';
 
 /** @psalm-suppress InvalidScope */
-$this->setTitle($data->title);
+$this->setTitle($data['title']);
 
 echo Html::div()->open();
 /** @psalm-suppress InvalidScope */
-echo $this->render('../../shared/_admin-menu', ['menu' => $data->menu]);
+echo $this->render('../../shared/_admin-menu', ['menu' => $data['menu']]);
 /** @psalm-suppress InvalidScope */
 echo $this->render('../../shared/_flash');
 
 echo Html::div()->class('d-flex justify-content-between align-items-center mb-3')->open();
-echo Html::H1($data->title);
-echo Html::a($data->createLinkLabel, $data->createUrl)->class(LinkButtonHelper::submitButtonClass());
+echo Html::H1($data['title']);
+echo Html::a($data['createLinkLabel'], $data['createUrl'])->class(LinkButtonHelper::submitButtonClass());
 echo Html::div()->close();
 
 echo Html::form()
-    ->get($data->filterUrl)
+    ->get($data['filterUrl'])
     ->class('mb-3')
     ->open();
 
@@ -46,11 +52,11 @@ $tabindex = 0;
 
 echo Html::div()->class('row g-2')->open();
 echo Html::div()->class('col')->open();
-echo Html::textInput()->class('form-control')->name('name')->value($data->filterName)->addAttributes(['placeholder' => $translator->translate('voyti.view.name_label')])->attribute('tabindex', ++$tabindex);
+echo Html::textInput()->class('form-control')->name('name')->value($data['filterName'])->addAttributes(['placeholder' => $translator->translate('voyti.view.name_label')])->attribute('tabindex', ++$tabindex);
 echo Html::div()->close();
 
 echo Html::div()->class('col')->open();
-echo Html::textInput()->class('form-control')->name('description')->value($data->filterDescription)->addAttributes(['placeholder' => $translator->translate('voyti.view.description_label')])->attribute('tabindex', ++$tabindex);
+echo Html::textInput()->class('form-control')->name('description')->value($data['filterDescription'])->addAttributes(['placeholder' => $translator->translate('voyti.view.description_label')])->attribute('tabindex', ++$tabindex);
 echo Html::div()->close();
 
 echo Html::div()->class('col-auto')->open();
@@ -71,17 +77,16 @@ echo Html::div($translator->translate('voyti.view.children_header'))->class('col
 echo Html::div($translator->translate('voyti.view.actions_header'))->class($actionsColClass);
 echo Html::div()->close();
 
-foreach ($data->items as $item) {
-    /** @var RbacItemRow $item */
+foreach ($data['items'] as $item) {
     echo Html::div()->class('row py-2 border-bottom align-items-center')->open();
-    echo Html::div($item->name)->class('col-3 text-break');
-    echo Html::div($item->description)->class($descriptionColClass . ' text-break');
-    echo Html::div($item->childrenDisplay)->class('col-2 text-break');
+    echo Html::div($item['name'])->class('col-3 text-break');
+    echo Html::div($item['description'])->class($descriptionColClass . ' text-break');
+    echo Html::div($item['childrenDisplay'])->class('col-2 text-break');
     echo Html::div()->class($actionsColClass)->open();
-    echo Html::a($translator->translate('voyti.view.update_link'), $item->updateUrl)->class('btn', 'btn-sm', 'btn-outline-secondary', 'me-1');
+    echo Html::a($translator->translate('voyti.view.update_link'), $item['updateUrl'])->class('btn', 'btn-sm', 'btn-outline-secondary', 'me-1');
 
     echo Html::form()
-        ->post($item->formSubmitUrl)
+        ->post($item['formSubmitUrl'])
         ->csrf($csrf)
         ->class('d-inline')
         ->open();

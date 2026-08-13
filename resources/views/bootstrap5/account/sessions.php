@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-use YiiRocks\Voyti\ViewData\Account\SessionsViewData;
-use YiiRocks\Voyti\ViewData\Shared\FlashViewData;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Translator\TranslatorInterface;
@@ -12,9 +10,16 @@ use Yiisoft\Yii\View\Renderer\Csrf;
 
 /**
  * @var WebView $this
- * @var SessionsViewData $data
+ * @var array{
+ *   menu: list<array{label: string, url: string, alignEnd: bool, routeName: string|null}>,
+ *   sessions: list<array{
+ *     session: array{ip: string, userAgent: string, lastSeenDisplay: string},
+ *     isCurrentSession: bool,
+ *     formSubmitUrl: string,
+ *   }>,
+ * } $data
  * @var TranslatorInterface $translator
- * @var FlashViewData $flash
+ * @var array{success: string|null, warning: string|null} $flash
  * @var Csrf $csrf
  */
 
@@ -23,7 +28,7 @@ $this->setTitle($translator->translate('voyti.view.sessions.title'));
 
 echo Html::div()->open();
 /** @psalm-suppress InvalidScope */
-echo $this->render('../shared/_menu', ['menu' => $data->menu]);
+echo $this->render('../shared/_menu', ['menu' => $data['menu']]);
 /** @psalm-suppress InvalidScope */
 echo $this->render('../shared/_flash');
 
@@ -36,20 +41,20 @@ echo Html::div($translator->translate('voyti.view.sessions.last_seen'))->class('
 echo Html::div()->class('col-2');
 echo Html::div()->close();
 
-foreach ($data->sessions as $row) {
+foreach ($data['sessions'] as $row) {
     echo Html::div()->class('row py-2 border-bottom align-items-center')->open();
-    echo Html::div($row->session->ip)->class('col-3 text-break');
-    echo Html::div($row->session->userAgent)->class('col-5 text-break');
-    echo Html::div($row->session->lastSeenDisplay)->class('col-2');
+    echo Html::div($row['session']['ip'])->class('col-3 text-break');
+    echo Html::div($row['session']['userAgent'])->class('col-5 text-break');
+    echo Html::div($row['session']['lastSeenDisplay'])->class('col-2');
 
     echo Html::div()->class('col-2 text-end')->open();
-    if ($row->isCurrentSession) {
+    if ($row['isCurrentSession']) {
         echo Html::button($translator->translate('voyti.view.sessions.this_device'))
             ->class('btn', 'btn-sm', 'btn-outline-primary')
             ->disabled();
     } else {
         echo Html::form()
-            ->post($row->formSubmitUrl)
+            ->post($row['formSubmitUrl'])
             ->csrf($csrf)
             ->open();
         echo Field::buttonGroup()
@@ -63,7 +68,7 @@ foreach ($data->sessions as $row) {
     echo Html::div()->close();
 }
 
-if ($data->sessions === []) {
+if ($data['sessions'] === []) {
     echo Html::p($translator->translate('voyti.view.sessions.none'));
 }
 

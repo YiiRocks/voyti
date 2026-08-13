@@ -3,8 +3,6 @@
 declare(strict_types=1);
 
 use YiiRocks\Voyti\Model\Form\Settings\UserProfileForm;
-use YiiRocks\Voyti\ViewData\Profile\UpdateViewData;
-use YiiRocks\Voyti\ViewData\Shared\FlashViewData;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Translator\TranslatorInterface;
@@ -14,9 +12,28 @@ use Yiisoft\Yii\View\Renderer\Csrf;
 /**
  * @var WebView $this
  * @var UserProfileForm $form
- * @var UpdateViewData $data
+ * @var array{
+ *   menu: list<array{label: string, url: string, alignEnd: bool, routeName: string|null}>,
+ *   updateUrl: string,
+ *   profile: array{
+ *     displayName: string,
+ *     gravatarUrl: string|null,
+ *     showAdminFields: bool,
+ *     email: string|null,
+ *     registeredDisplay: string|null,
+ *     statusLabel: string|null,
+ *     statusBadgeClass: string|null,
+ *     publicEmail: string|null,
+ *     location: string|null,
+ *     website: string|null,
+ *     timezone: string|null,
+ *     bio: string|null,
+ *     profilePreviewClass: string,
+ *   },
+ *   timezoneOptions: array<string, string>,
+ * } $data
  * @var TranslatorInterface $translator
- * @var FlashViewData $flash
+ * @var array{success: string|null, warning: string|null} $flash
  * @var Csrf $csrf
  */
 
@@ -25,7 +42,7 @@ $this->setTitle($translator->translate('voyti.view.edit_profile.title'));
 
 echo Html::div()->open();
 /** @psalm-suppress InvalidScope */
-echo $this->render('../shared/_menu', ['menu' => $data->menu]);
+echo $this->render('../shared/_menu', ['menu' => $data['menu']]);
 /** @psalm-suppress InvalidScope */
 echo $this->render('../shared/_flash');
 
@@ -36,13 +53,13 @@ echo Html::H2($translator->translate('voyti.view.userProfile.title'))->class('h5
 echo Html::div()->close();
 /** @psalm-suppress InvalidScope */
 echo $this->render('../shared/view_profile', [
-    'profile' => $data->profile,
+    'profile' => $data['profile'],
     'translator' => $translator,
 ]);
 echo Html::div()->close();
 
 echo Html::form()
-    ->post($data->updateUrl)
+    ->post($data['updateUrl'])
     ->csrf($csrf)
     ->open();
 
@@ -64,7 +81,7 @@ echo Field::text($form, 'website')->tabIndex(++$tabindex);
 
 echo Field::select($form, 'timezone')
     ->prompt('')
-    ->optionsData($data->timezoneOptions)
+    ->optionsData($data['timezoneOptions'])
     ->tabIndex(++$tabindex);
 
 echo Field::textarea($form, 'bio')->tabIndex(++$tabindex);

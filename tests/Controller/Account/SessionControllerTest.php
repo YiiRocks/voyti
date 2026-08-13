@@ -48,6 +48,10 @@ final class SessionControllerTest extends DatabaseTestCase
 
         $this->createUserSession($user->getIdOrZero(), 'current-session', '203.0.113.1');
         $this->createUserSession($user->getIdOrZero(), 'other-session', '203.0.113.2');
+        // A revoked session must be filtered out of the list entirely.
+        $revoked = $this->createUserSession($user->getIdOrZero(), 'revoked-session', '203.0.113.9');
+        $revoked->setRevokedAt(time());
+        $revoked->save();
 
         $controller = $this->createController();
         $session = $this->getTestContainer()->get(SessionInterface::class);
@@ -56,10 +60,15 @@ final class SessionControllerTest extends DatabaseTestCase
 
         $html = (string) $controller->index()->getBody();
 
-        // Both sessions render, and exactly one is flagged as the current device.
+        // Both active sessions render, exactly one is flagged as the current device, and the
+        // revoked session does not appear at all.
         self::assertStringContainsString('203.0.113.1', $html);
         self::assertStringContainsString('203.0.113.2', $html);
+        self::assertStringNotContainsString('203.0.113.9', $html);
         self::assertSame(1, substr_count($html, 'This device'));
+        // Only the non-current session gets a terminate form, and its URL carries the session id.
+        self::assertStringContainsString('sessionId=other-session', $html);
+        self::assertStringNotContainsString('sessionId=current-session', $html);
     }
 
     public function testTerminateCurrentSessionLogsOutAndRedirectsToLogin(): void

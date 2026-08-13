@@ -9,6 +9,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
+use YiiRocks\Voyti\Helper\RecaptchaHelper;
 use YiiRocks\Voyti\Model\Form\Auth\RegistrationForm;
 use YiiRocks\Voyti\Model\Form\Auth\ResendForm;
 use YiiRocks\Voyti\Model\User;
@@ -16,9 +17,6 @@ use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\FlashNotifier;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\RegisterService;
-use YiiRocks\Voyti\ViewData\Registration\ConnectViewData;
-use YiiRocks\Voyti\ViewData\Registration\RegisterViewData;
-use YiiRocks\Voyti\ViewData\Registration\ResendViewData;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\FormModel\FormHydrator;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
@@ -76,8 +74,17 @@ final readonly class RegistrationController
             return $this->renderError('voyti.settings.network_not_found');
         }
 
+        $provider = $account->getProvider();
+        $providerTitle = $this->clientCollection?->hasClient($provider) === true
+            ? $this->clientCollection->getClient($provider)->getTitle()
+            : $provider;
+
         return $this->renderView('registration/connect', [
-            'data' => ConnectViewData::create($account, $this->clientCollection, $this->url),
+            'data' => [
+                'providerTitle' => $providerTitle,
+                'loginUrl' => $this->url->generate('voyti/session-login'),
+                'registerUrl' => $this->url->generate('voyti/registration-register'),
+            ],
         ]);
     }
 
@@ -124,7 +131,12 @@ final readonly class RegistrationController
 
         return $this->renderView('registration/register', [
             'form' => $form,
-            'data' => RegisterViewData::create($form, $this->config, $this->url),
+            'data' => [
+                'formSubmitUrl' => $this->url->generate('voyti/registration-register'),
+                'loginUrl' => $this->url->generate('voyti/session-login'),
+                'showGdprConsent' => $this->config->enableGdprCompliance,
+                'recaptchaFieldHtml' => RecaptchaHelper::render($form, $this->config),
+            ],
         ]);
     }
 
@@ -148,7 +160,10 @@ final readonly class RegistrationController
 
         return $this->renderView('registration/resend', [
             'form' => $form,
-            'data' => ResendViewData::create($form, $this->config, $this->url),
+            'data' => [
+                'formSubmitUrl' => $this->url->generate('voyti/registration-resend'),
+                'recaptchaFieldHtml' => RecaptchaHelper::render($form, $this->config),
+            ],
         ]);
     }
 }

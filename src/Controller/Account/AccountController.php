@@ -9,13 +9,12 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
+use YiiRocks\Voyti\Helper\Views\MenuView;
 use YiiRocks\Voyti\Model\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\EmailChangeService;
 use YiiRocks\Voyti\Service\FlashNotifier;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
-use YiiRocks\Voyti\ViewData\Account\UpdateViewData;
-use YiiRocks\Voyti\ViewData\Shared\MessageViewData;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\FormModel\FormHydrator;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
@@ -53,10 +52,10 @@ final readonly class AccountController
 
         if ($this->emailChangeService->run($code, $user)) {
             return $this->renderView('shared/message', [
-                'data' => new MessageViewData(
-                    title: $this->translator->translate('voyti.settings.email_changed', category: 'voyti'),
-                    homeUrl: $this->homeUrl(),
-                ),
+                'data' => [
+                    'title' => $this->translator->translate('voyti.settings.email_changed', category: 'voyti'),
+                    'homeUrl' => $this->homeUrl(),
+                ],
             ]);
         }
 
@@ -108,11 +107,10 @@ final readonly class AccountController
 
         return $this->renderView('account/update', [
             'form' => $form,
-            'data' => UpdateViewData::create(
-                $this->config,
-                $this->url,
-                $this->translator(),
-            ),
+            'data' => [
+                'menu' => MenuView::account($this->config, $this->url, $this->translator()),
+                'formSubmitUrl' => $this->url->generate('voyti/user-account'),
+            ],
         ]);
     }
 }

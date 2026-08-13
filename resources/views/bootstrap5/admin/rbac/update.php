@@ -3,9 +3,6 @@
 declare(strict_types=1);
 
 use YiiRocks\Voyti\Model\Form\Rbac\AuthItemForm;
-use YiiRocks\Voyti\ViewData\Admin\Rbac\AssignedUserRow;
-use YiiRocks\Voyti\ViewData\Admin\Rbac\UpdateViewData;
-use YiiRocks\Voyti\ViewData\Shared\AssignableItemRow;
 use Yiisoft\FormModel\Field;
 use Yiisoft\Html\Html;
 use Yiisoft\Translator\TranslatorInterface;
@@ -15,28 +12,36 @@ use Yiisoft\Yii\View\Renderer\Csrf;
 /**
  * @var WebView $this
  * @var AuthItemForm $form
- * @var UpdateViewData $data
+ * @var array{
+ *   menu: list<array{label: string, url: string, alignEnd: bool, routeName: string|null}>,
+ *   title: string,
+ *   formSubmitUrl: string,
+ *   children: list<array{name: string, checked: bool}>,
+ *   assignedUsers: list<array{id: string, username: string}>,
+ *   errors: array<string, list<string>>,
+ * } $data
  * @var TranslatorInterface $translator
  * @var Csrf $csrf
  */
 
 /** @psalm-suppress InvalidScope */
-$this->setTitle($data->title);
+$this->setTitle($data['title']);
 
 echo Html::div()->open();
 /** @psalm-suppress InvalidScope */
-echo $this->render('../../shared/_admin-menu', ['menu' => $data->menu]);
+echo $this->render('../../shared/_admin-menu', ['menu' => $data['menu']]);
 
-echo Html::H1($data->title);
+echo Html::H1($data['title']);
 
 echo Html::form()
-    ->post($data->formSubmitUrl)
+    ->post($data['formSubmitUrl'])
     ->csrf($csrf)
     ->open();
 
-if (!empty($data->errors)) {
+/** @psalm-suppress RiskyTruthyFalsyComparison */
+if (!empty($data['errors'])) {
     echo Html::div()->class('alert alert-danger')->open();
-    foreach ($data->errors as $fieldErrors) {
+    foreach ($data['errors'] as $fieldErrors) {
         foreach ($fieldErrors as $error) {
             echo Html::div($error);
         }
@@ -54,16 +59,15 @@ echo Field::text($form, 'rule')->tabIndex(++$tabindex);
 
 echo Html::h3($translator->translate('voyti.view.children_header'))->class('mb-3');
 echo Html::div()->class('mb-3')->open();
-foreach ($data->children as $child) {
-    /** @var AssignableItemRow $child */
+foreach ($data['children'] as $child) {
     echo Html::div()->class('form-check')->open();
     echo Html::input('checkbox')
         ->class('form-check-input')
         ->name($form->getFormName() . '[children][]')
-        ->value($child->name)
-        ->addAttributes($child->checked ? ['checked' => true] : [])
+        ->value($child['name'])
+        ->addAttributes($child['checked'] ? ['checked' => true] : [])
         ->attribute('tabindex', ++$tabindex);
-    echo Html::label($child->name)->class('form-check-label');
+    echo Html::label($child['name'])->class('form-check-label');
     echo Html::div()->close();
 }
 echo Html::div()->close();
@@ -72,11 +76,10 @@ echo Html::h3($translator->translate('voyti.view.assignments.title'))->class('mb
 
 echo Html::div()->class('mb-3')->open();
 echo Html::div($translator->translate('voyti.view.assignments.assigned'))->class('fw-bold mb-2');
-foreach ($data->assignedUsers as $user) {
-    /** @var AssignedUserRow $user */
+foreach ($data['assignedUsers'] as $user) {
     echo Html::div()->class('form-check')->open();
-    echo Html::input('checkbox')->class('form-check-input')->name('assignedUsers[]')->value($user->id)->addAttributes(['checked' => true])->attribute('tabindex', ++$tabindex);
-    echo Html::label($user->username)->class('form-check-label');
+    echo Html::input('checkbox')->class('form-check-input')->name('assignedUsers[]')->value($user['id'])->addAttributes(['checked' => true])->attribute('tabindex', ++$tabindex);
+    echo Html::label($user['username'])->class('form-check-label');
     echo Html::div()->close();
 }
 echo Html::div()->close();

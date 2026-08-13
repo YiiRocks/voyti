@@ -21,6 +21,8 @@ use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\Validator\ValidatorInterface;
+use Yiisoft\Yii\AuthClient\Collection;
+use Yiisoft\Yii\AuthClient\OAuth2Interface;
 
 #[AllowMockObjectsWithoutExpectations]
 final class RegistrationControllerTest extends DatabaseTestCase
@@ -91,6 +93,32 @@ final class RegistrationControllerTest extends DatabaseTestCase
         $account->save();
         $html = (string) $this->createController()->connect('code123')->getBody();
         self::assertStringContainsString('Connect account', $html);
+
+        // Valid code with a configured provider client: shows the provider title from the client
+        $client = $this->createMock(OAuth2Interface::class);
+        $client->method('getName')->willReturn('github');
+        $client->method('getTitle')->willReturn('GitHub');
+        $collection = new Collection(['github' => $client]);
+
+        $account2 = new UserSocialAccount();
+        $account2->setProvider('github');
+        $account2->setClientId('client-2');
+        $account2->setCode('code456');
+        $account2->setCreatedAt(time());
+        $account2->save();
+        $html = (string) $this->createController(clientCollection: $collection)->connect('code456')->getBody();
+        self::assertStringContainsString('GitHub', $html);
+
+        // Valid code with a null client collection (host without yii-auth-client): falls back to the provider key
+        $account3 = new UserSocialAccount();
+        $account3->setProvider('github');
+        $account3->setClientId('client-3');
+        $account3->setCode('code789');
+        $account3->setCreatedAt(time());
+        $account3->save();
+        $html = (string) $this->createControllerWithNullCollection()->connect('code789')->getBody();
+        self::assertStringContainsString('Connect account', $html);
+        self::assertStringContainsString('github', $html);
     }
 
     public function testRegister(): void
@@ -171,11 +199,32 @@ final class RegistrationControllerTest extends DatabaseTestCase
         return $overrides;
     }
 
-    private function createController(?VoytiConfig $config = null): RegistrationController
+    private function createController(?VoytiConfig $config = null, ?Collection $clientCollection = null): RegistrationController
+    {
+        $overrides = [
+            ...$this->baseOverrides($config),
+            ValidatorInterface::class => $this->validator,
+        ];
+
+        if ($clientCollection !== null) {
+            $overrides[Collection::class] = $clientCollection;
+        }
+
+        return $this->getTestContainer($overrides)->get(RegistrationController::class);
+    }
+
+    /**
+     * Controller with a null client collection, as a host that has not installed yii-auth-client gets.
+     */
+    private function createControllerWithNullCollection(?VoytiConfig $config = null): RegistrationController
     {
         return $this->getTestContainer([
             ...$this->baseOverrides($config),
             ValidatorInterface::class => $this->validator,
+            RegistrationController::class => [
+                'class' => RegistrationController::class,
+                '__construct()' => ['clientCollection' => null],
+            ],
         ])->get(RegistrationController::class);
     }
 

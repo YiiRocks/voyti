@@ -10,10 +10,11 @@ use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Event\Session\SessionEvent;
+use YiiRocks\Voyti\Helper\Views\MenuView;
+use YiiRocks\Voyti\Helper\Views\SessionRowView;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\Service\FlashNotifier;
-use YiiRocks\Voyti\ViewData\Account\SessionsViewData;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
@@ -48,15 +49,34 @@ final readonly class SessionController
         /** @var User $user */
         $user = $this->currentUser->getIdentity();
 
-        return $this->renderView('account/sessions', [
-            'data' => SessionsViewData::create(
+        $currentSessionId = $this->session->getId();
+        $timezone = $user->getProfile()?->getTimezone();
+        $locale = $this->translator()->getLocale();
+        $url = $this->url;
+
+        /** @infection-ignore-all array_values only reindexes keys after the filter; the sessions view iterates rows by value, so the reindex is immaterial. */
+        $sessions = array_values(
+            array_filter(
                 UserSessions::findByUserId($user->getIdOrZero()),
-                $this->session->getId(),
-                $user->getProfile()?->getTimezone(),
-                $this->config,
-                $this->url,
-                $this->translator(),
+                static fn(UserSessions $session): bool => !$session->isRevoked(),
             ),
+        );
+
+        return $this->renderView('account/sessions', [
+            'data' => [
+                'menu' => MenuView::account($this->config, $this->url, $this->translator()),
+                'sessions' => array_map(
+                    static fn(UserSessions $session): array => [
+                        'session' => SessionRowView::create($session, $timezone, $locale),
+                        'isCurrentSession' => $session->getSessionId() === $currentSessionId,
+                        'formSubmitUrl' => $url->generate(
+                            'voyti/user-account-sessions-terminate',
+                            ['sessionId' => $session->getSessionId()],
+                        ),
+                    ],
+                    $sessions,
+                ),
+            ],
         ]);
     }
 

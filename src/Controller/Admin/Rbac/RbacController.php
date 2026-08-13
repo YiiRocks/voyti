@@ -11,13 +11,12 @@ use RuntimeException;
 use YiiRocks\Voyti\Controller\ActorIdTrait;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
+use YiiRocks\Voyti\Helper\Views\AssignableItemRowView;
+use YiiRocks\Voyti\Helper\Views\MenuView;
 use YiiRocks\Voyti\Model\Form\Rbac\AuthItemForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\AuditLogService;
 use YiiRocks\Voyti\Service\FlashNotifier;
-use YiiRocks\Voyti\ViewData\Admin\Rbac\CreateViewData;
-use YiiRocks\Voyti\ViewData\Admin\Rbac\IndexViewData;
-use YiiRocks\Voyti\ViewData\Admin\Rbac\UpdateViewData;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Http\Method;
 use Yiisoft\Input\Http\Attribute\Parameter\Query;
@@ -124,7 +123,13 @@ final readonly class RbacController
 
         return $this->renderView('admin/rbac/create', [
             'form' => $form,
-            'data' => CreateViewData::create($itemType, $form, $availableChildren, $errors, $this->url, $this->translator()),
+            'data' => [
+                'menu' => MenuView::admin($this->url, $this->translator()),
+                'title' => $this->translator()->translate('voyti.view.' . $itemType . '.create_title'),
+                'formSubmitUrl' => $this->url->generate($this->routeName($itemType, 'create')),
+                'children' => AssignableItemRowView::fromItems($availableChildren, $form->children),
+                'errors' => $errors,
+            ],
         ]);
     }
 
@@ -188,16 +193,29 @@ final readonly class RbacController
             $itemChildren[$item->getName()] = array_keys($this->itemsStorage->getDirectChildren($item->getName()));
         }
 
+        $rows = array_map(
+            fn(Item $item): array => [
+                'name' => $item->getName(),
+                'description' => $item->getDescription(),
+                'childrenDisplay' => implode(', ', $itemChildren[$item->getName()] ?? []),
+                'updateUrl' => $this->url->generate($this->routeName($itemType, 'update'), ['name' => $item->getName()]),
+                'formSubmitUrl' => $this->url->generate($this->routeName($itemType, 'delete'), ['name' => $item->getName()]),
+            ],
+            /** @infection-ignore-all array_values only reindexes keys after the filter; the index view iterates rows by value, so the reindex is immaterial. */
+            array_values($items),
+        );
+
         return $this->renderView('admin/rbac/index', [
-            'data' => IndexViewData::create(
-                $itemType,
-                $items,
-                $itemChildren,
-                $filterName,
-                $filterDescription,
-                $this->url,
-                $this->translator(),
-            ),
+            'data' => [
+                'menu' => MenuView::admin($this->url, $this->translator()),
+                'title' => $this->translator()->translate('voyti.view.' . $itemType . '.title'),
+                'createLinkLabel' => $this->translator()->translate('voyti.view.' . $itemType . '.create_link'),
+                'createUrl' => $this->url->generate($this->routeName($itemType, 'create')),
+                'filterUrl' => $this->url->generate($this->routeName($itemType, 'index')),
+                'filterName' => $filterName,
+                'filterDescription' => $filterDescription,
+                'items' => $rows,
+            ],
         ]);
     }
 
@@ -295,7 +313,18 @@ final readonly class RbacController
 
         return $this->renderView('admin/rbac/update', [
             'form' => $form,
-            'data' => UpdateViewData::create($itemType, $form, $availableChildren, $users, $errors, $this->url, $this->translator()),
+            'data' => [
+                'menu' => MenuView::admin($this->url, $this->translator()),
+                'title' => $this->translator()->translate('voyti.view.' . $itemType . '.update_title', ['name' => $form->itemName]),
+                'formSubmitUrl' => $this->url->generate($this->routeName($itemType, 'update'), ['name' => $form->itemName]),
+                'children' => AssignableItemRowView::fromItems($availableChildren, $form->children),
+                'assignedUsers' => array_map(
+                    /** @infection-ignore-all The (string) cast is defensive; User::getId() already returns a string for persisted users, so the cast is a no-op. */
+                    static fn(User $user): array => ['id' => (string) $user->getId(), 'username' => $user->getUsername()],
+                    $users,
+                ),
+                'errors' => $errors,
+            ],
         ]);
     }
 
@@ -348,7 +377,9 @@ final readonly class RbacController
         $childrenValue = $data['children'] ?? null;
         if (is_array($childrenValue)) {
             /** @infection-ignore-all Reindex after filtering; harmless if all values are already strings. */
-            $form->children = array_values(array_filter($childrenValue, is_string(...)));
+            /** @var list<string> $children */
+            $children = array_values(array_filter($childrenValue, is_string(...)));
+            $form->children = $children;
         }
     }
 
@@ -374,5 +405,11 @@ final readonly class RbacController
         foreach ($submittedIds as $uid => $_) {
             $this->managerInterface->assign($itemName, (int) $uid);
         }
+    }
+
+    private function routeName(string $itemType, string $action): string
+    {
+        $suffix = $action === 'index' ? '' : '-' . $action;
+        return 'voyti/admin-rbac-' . $itemType . 's' . $suffix;
     }
 }

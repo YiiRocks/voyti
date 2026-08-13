@@ -2,17 +2,21 @@
 
 declare(strict_types=1);
 
-use YiiRocks\Voyti\ViewData\Admin\Dashboard\IndexViewData;
-use YiiRocks\Voyti\ViewData\Shared\FlashViewData;
 use Yiisoft\Html\Html;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\View\WebView;
 
 /**
  * @var WebView $this
- * @var IndexViewData $data
+ * @var array{
+ *   menu: list<array{label: string, url: string, alignEnd: bool, routeName: string|null}>,
+ *   tiles: list<array{labelKey: string, value: int, url: string, borderClass: string}>,
+ *   trendWidgets: list<array{titleKey: string, periods: list<array{labelKey: string, value: int, params: array<string, int>}>}>,
+ *   recentAuditLogs: list<array{createdAt: string, action: string, targetLabel: string}>,
+ *   auditLogUrl: string,
+ * } $data
  * @var TranslatorInterface $translator
- * @var FlashViewData $flash
+ * @var array{success: string|null, warning: string|null} $flash
  */
 
 /** @psalm-suppress InvalidScope */
@@ -20,23 +24,23 @@ $this->setTitle($translator->translate('voyti.view.dashboard.title'));
 
 echo Html::div()->open();
 /** @psalm-suppress InvalidScope */
-echo $this->render('../../shared/_admin-menu', ['menu' => $data->menu]);
+echo $this->render('../../shared/_admin-menu', ['menu' => $data['menu']]);
 /** @psalm-suppress InvalidScope */
 echo $this->render('../../shared/_flash');
 
 echo Html::H1($translator->translate('voyti.view.dashboard.title'));
 
 echo Html::div()->class('row row-cols-2 row-cols-md-3 row-cols-lg-6 g-3 mb-4')->open();
-foreach ($data->tiles as $tile) {
+foreach ($data['tiles'] as $tile) {
     echo Html::div()->class('col')->open();
     echo Html::a()
-        ->href($tile->url)
+        ->href($tile['url'])
         ->class('text-decoration-none')
         ->open();
-    echo Html::div()->class('card h-100 text-center ' . $tile->borderClass)->open();
+    echo Html::div()->class('card h-100 text-center ' . $tile['borderClass'])->open();
     echo Html::div()->class('card-body')->open();
-    echo Html::div((string) $tile->value)->class('fs-2 fw-bold');
-    echo Html::div($translator->translate($tile->labelKey))->class('text-muted small');
+    echo Html::div((string) $tile['value'])->class('fs-2 fw-bold');
+    echo Html::div($translator->translate($tile['labelKey']))->class('text-muted small');
     echo Html::div()->close();
     echo Html::div()->close();
     echo Html::a()->close();
@@ -45,18 +49,18 @@ foreach ($data->tiles as $tile) {
 echo Html::div()->close();
 
 echo Html::div()->class('row row-cols-1 row-cols-md-2 g-3 mb-4')->open();
-foreach ($data->trendWidgets as $widget) {
+foreach ($data['trendWidgets'] as $widget) {
     echo Html::div()->class('col')->open();
     echo Html::div()->class('card h-100')->open();
     echo Html::div()->class('card-header')->open();
-    echo Html::H2($translator->translate($widget->titleKey))->class('h5 mb-0');
+    echo Html::H2($translator->translate($widget['titleKey']))->class('h5 mb-0');
     echo Html::div()->close();
     echo Html::div()->class('card-body')->open();
     echo Html::div()->class('row row-cols-3 text-center g-2')->open();
-    foreach ($widget->periods as $period) {
+    foreach ($widget['periods'] as $period) {
         echo Html::div()->class('col')->open();
-        echo Html::div((string) $period->value)->class('fs-3 fw-bold');
-        echo Html::div($translator->translate($period->labelKey, $period->params))->class('text-muted small');
+        echo Html::div((string) $period['value'])->class('fs-3 fw-bold');
+        echo Html::div($translator->translate($period['labelKey'], $period['params']))->class('text-muted small');
         echo Html::div()->close();
     }
     echo Html::div()->close();
@@ -66,18 +70,18 @@ foreach ($data->trendWidgets as $widget) {
 }
 echo Html::div()->close();
 
-echo Html::a()->href($data->auditLogUrl)->class('text-decoration-none')->open();
+echo Html::a()->href($data['auditLogUrl'])->class('text-decoration-none')->open();
 echo Html::div()->class('card')->open();
 echo Html::div()->class('card-header')->open();
 echo Html::H2($translator->translate('voyti.view.dashboard.recent_activity'))->class('h5 mb-0');
 echo Html::div()->close();
 echo Html::div()->class('card-body')->open();
 
-if ($data->recentAuditLogs === []) {
+if ($data['recentAuditLogs'] === []) {
     echo Html::p($translator->translate('voyti.view.dashboard.no_recent_activity'))->class('text-muted mb-0');
 } else {
-    $lastKey = array_key_last($data->recentAuditLogs);
-    foreach ($data->recentAuditLogs as $key => $log) {
+    $lastKey = array_key_last($data['recentAuditLogs']);
+    foreach ($data['recentAuditLogs'] as $key => $log) {
         echo Html::div()->class('row py-2 align-items-center' . ($key !== $lastKey ? ' border-bottom' : ''))->open();
         echo Html::div($log['createdAt'])->class('col-3 col-md-2 text-muted small');
         echo Html::div($log['action'])->class('col-9 col-md-4 text-break');

@@ -73,28 +73,18 @@ final class ProfileControllerTest extends DatabaseTestCase
         yield 'users no auth forbidden' => [ProfileVisibility::USERS, null, null, 'Forbidden'];
     }
 
-    public function testIsAdminReturnsFalseForGuestIdentity(): void
+    public function testIsAdminReturnsFalseForNonAdminUsers(): void
     {
+        // Guest identity: never admin, so admin-only profile is forbidden
         $controller = $this->createController(
             VoytiConfigFactory::create(profileVisibility: ProfileVisibility::ADMIN),
         );
-
         $html = (string) $controller->show(1)->getBody();
-
-        // A guest is never admin, so an admin-only profile is forbidden.
         self::assertStringContainsString('Forbidden', $html);
-    }
 
-    public function testIsAdminReturnsFalseForIdentityWithNullId(): void
-    {
+        // Logged-in identity with null ID: also not admin, profile forbidden
         $this->currentUser->login(new User());
-
-        $controller = $this->createController(
-            VoytiConfigFactory::create(profileVisibility: ProfileVisibility::ADMIN),
-        );
-
         $html = (string) $controller->show(1)->getBody();
-
         self::assertStringContainsString('Forbidden', $html);
     }
 
@@ -114,6 +104,9 @@ final class ProfileControllerTest extends DatabaseTestCase
 
         // The owner's profile card renders (its display name is the owner's username).
         self::assertStringContainsString('profileuser', $html);
+        // The owner-view card never shows admin-only fields (email/registered/status block).
+        self::assertStringNotContainsString('<b>Email</b>', $html);
+        self::assertStringNotContainsString('<b>Status</b>', $html);
     }
 
     #[DataProvider('showProfileForbiddenOrNotFoundProvider')]

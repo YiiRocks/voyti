@@ -9,7 +9,7 @@ use YiiRocks\Voyti\Model\UserSessions;
 trait UserSessionFactoryTrait
 {
     /**
-     * Builds an in-memory `UserSessions`, without persisting it - for ViewData/unit tests that
+     * Builds an in-memory `UserSessions`, without persisting it - for unit tests that
      * receive a `UserSessions` as a plain argument and never look it up from the database.
      */
     private function buildUserSession(

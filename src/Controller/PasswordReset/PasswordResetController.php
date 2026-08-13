@@ -11,13 +11,13 @@ use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Helper\FlashType;
+use YiiRocks\Voyti\Helper\RecaptchaHelper;
 use YiiRocks\Voyti\Model\Form\Auth\RecoveryForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\Service\FlashNotifier;
 use YiiRocks\Voyti\Service\Password\RecoveryService;
 use YiiRocks\Voyti\Service\Password\ResetService;
-use YiiRocks\Voyti\ViewData\PasswordReset\RequestViewData;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\FormModel\FormHydrator;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
@@ -107,7 +107,11 @@ final readonly class PasswordResetController
 
         return $this->renderView('password-reset/request', [
             'form' => $form,
-            'data' => RequestViewData::create($form, $this->config, $this->url),
+            'data' => [
+                'formSubmitUrl' => $this->url->generate('voyti/password-reset-request'),
+                'loginUrl' => $this->url->generate('voyti/session-login'),
+                'recaptchaFieldHtml' => RecaptchaHelper::render($form, $this->config),
+            ],
         ]);
     }
 }

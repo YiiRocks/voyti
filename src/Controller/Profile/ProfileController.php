@@ -13,12 +13,13 @@ use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Enum\ProfileVisibility;
 use YiiRocks\Voyti\Event\User\UserProfileEvent;
 use YiiRocks\Voyti\Helper\AuthHelper;
+use YiiRocks\Voyti\Helper\TimezoneHelper;
+use YiiRocks\Voyti\Helper\Views\MenuView;
+use YiiRocks\Voyti\Helper\Views\ProfileCardView;
 use YiiRocks\Voyti\Model\Form\Settings\UserProfileForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserProfile;
 use YiiRocks\Voyti\Service\FlashNotifier;
-use YiiRocks\Voyti\ViewData\Profile\UpdateViewData;
-use YiiRocks\Voyti\ViewData\Shared\ProfileCardViewData;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\FormModel\FormHydrator;
@@ -76,7 +77,7 @@ final readonly class ProfileController
         $user = User::findById($id);
 
         return $this->renderView('profile/show', [
-            'profile' => ProfileCardViewData::create($user, $userProfile, $this->translator()),
+            'profile' => ProfileCardView::create($user, $userProfile, $this->translator()),
         ]);
     }
 
@@ -105,13 +106,17 @@ final readonly class ProfileController
 
         return $this->renderView('profile/update', [
             'form' => $form,
-            'data' => UpdateViewData::create(
-                $user,
-                $userProfile,
-                $this->config,
-                $this->url,
-                $this->translator(),
-            ),
+            'data' => [
+                'menu' => MenuView::account($this->config, $this->url, $this->translator()),
+                'updateUrl' => $this->url->generate('voyti/user-profile'),
+                'profile' => ProfileCardView::create(
+                    $user,
+                    $userProfile,
+                    $this->translator(),
+                    profilePreviewClass: 'list-group list-group-flush',
+                ),
+                'timezoneOptions' => TimezoneHelper::getAll(),
+            ],
         ]);
     }
 
