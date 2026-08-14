@@ -34,9 +34,9 @@ final class UserToken extends ActiveRecord
         (new self())->deleteAll(['user_id' => $userId]);
     }
 
-    public static function deleteAllByUserIdAndType(int $userId, int $type): void
+    public static function deleteAllByUserIdAndType(int $userId, int $type): int
     {
-        (new self())->deleteAll(['user_id' => $userId, 'type' => $type]);
+        return (new self())->deleteAll(['user_id' => $userId, 'type' => $type]);
     }
 
     public static function findByCodeAndType(string $code, int $type): ?UserToken

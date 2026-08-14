@@ -112,7 +112,7 @@ final class UserTokenTest extends TestCase
         $otherUserConfirmationToken->setCreatedAt(time());
         $otherUserConfirmationToken->save();
 
-        UserToken::deleteAllByUserIdAndType(1, UserToken::TYPE_CONFIRMATION);
+        self::assertSame(1, UserToken::deleteAllByUserIdAndType(1, UserToken::TYPE_CONFIRMATION));
 
         $remaining = UserToken::findByUserId(1);
         self::assertCount(1, $remaining);
