@@ -40,8 +40,7 @@ final class UserTest extends TestCase
                 "confirmed_at" INTEGER,
                 "created_at" INTEGER NOT NULL,
                 "flags" INTEGER NOT NULL DEFAULT 0,
-                "gdpr_consent" INTEGER NOT NULL DEFAULT 0,
-                "gdpr_consent_date" INTEGER,
+                "data_processing_consent_date" INTEGER,
                 "anonymized" INTEGER NOT NULL DEFAULT 0,
                 "last_login_at" INTEGER,
                 "last_login_ip" VARCHAR(45),
@@ -126,7 +125,6 @@ final class UserTest extends TestCase
     public static function booleanFlagProvider(): iterable
     {
         yield 'anonymized' => ['setAnonymized', 'isAnonymized'];
-        yield 'gdpr consent' => ['setGdprConsent', 'isGdprConsent'];
     }
 
     public static function findByUsernameOrEmailProvider(): iterable
@@ -149,7 +147,7 @@ final class UserTest extends TestCase
         yield 'createdAt' => ['setCreatedAt', 'getCreatedAt', 1234567890];
         yield 'email' => ['setEmail', 'getEmail', 'user@example.com'];
         yield 'flags' => ['setFlags', 'getFlags', 5];
-        yield 'gdprConsentDate' => ['setGdprConsentDate', 'getGdprConsentDate', 12345];
+        yield 'dataProcessingConsentDate' => ['setDataProcessingConsentDate', 'getDataProcessingConsentDate', 12345];
         yield 'lastLoginAt' => ['setLastLoginAt', 'getLastLoginAt', 12345];
         yield 'lastLoginIp' => ['setLastLoginIp', 'getLastLoginIp', '10.0.0.1'];
         yield 'passwordChangedAt' => ['setPasswordChangedAt', 'getPasswordChangedAt', 12345];
@@ -200,9 +198,9 @@ final class UserTest extends TestCase
         self::assertNull($entity->getLastLoginAt());
         self::assertNull($entity->getLastLoginIp());
         self::assertNull($entity->getPasswordChangedAt());
-        self::assertFalse($entity->isGdprConsent());
+        self::assertFalse($entity->hasDataProcessingConsent());
         self::assertFalse($entity->isAnonymized());
-        self::assertNull($entity->getGdprConsentDate());
+        self::assertNull($entity->getDataProcessingConsentDate());
     }
 
     public function testDeleteCascadesRelatedRows(): void

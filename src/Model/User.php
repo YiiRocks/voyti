@@ -36,10 +36,9 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
     private ?int $blocked_at = null;
     private ?int $confirmed_at = null;
     private int $created_at = 0;
+    private ?int $data_processing_consent_date = null;
     private string $email = '';
     private int $flags = 0;
-    private int|bool $gdpr_consent = false;
-    private ?int $gdpr_consent_date = null;
     private ?int $id = null;
     private ?int $last_login_at = null;
     private ?string $last_login_ip = null;
@@ -140,6 +139,11 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
         return $this->created_at;
     }
 
+    public function getDataProcessingConsentDate(): ?int
+    {
+        return $this->data_processing_consent_date;
+    }
+
     public function getEmail(): string
     {
         return $this->email;
@@ -148,11 +152,6 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
     public function getFlags(): int
     {
         return $this->flags;
-    }
-
-    public function getGdprConsentDate(): ?int
-    {
-        return $this->gdpr_consent_date;
     }
 
     /**
@@ -238,6 +237,11 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
         return $this->username;
     }
 
+    public function hasDataProcessingConsent(): bool
+    {
+        return $this->data_processing_consent_date !== null;
+    }
+
     public function isAdminByList(array $administrators): bool
     {
         return in_array($this->username, $administrators, true);
@@ -256,11 +260,6 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
     public function isConfirmed(): bool
     {
         return $this->confirmed_at !== null;
-    }
-
-    public function isGdprConsent(): bool
-    {
-        return (bool) $this->gdpr_consent;
     }
 
     public function isSwitchDisabledFor(int $currentUserId): bool
@@ -332,6 +331,11 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
         $this->created_at = $createdAt;
     }
 
+    public function setDataProcessingConsentDate(?int $dataProcessingConsentDate): void
+    {
+        $this->data_processing_consent_date = $dataProcessingConsentDate;
+    }
+
     public function setEmail(string $email): void
     {
         $this->email = $email;
@@ -340,16 +344,6 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
     public function setFlags(int $flags): void
     {
         $this->flags = $flags;
-    }
-
-    public function setGdprConsent(int|bool $gdprConsent): void
-    {
-        $this->gdpr_consent = $gdprConsent;
-    }
-
-    public function setGdprConsentDate(?int $gdprConsentDate): void
-    {
-        $this->gdpr_consent_date = $gdprConsentDate;
     }
 
     public function setLastLoginAt(?int $lastLoginAt): void

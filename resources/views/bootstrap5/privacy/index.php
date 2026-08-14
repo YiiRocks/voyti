@@ -10,12 +10,9 @@ use Yiisoft\View\WebView;
  * @var WebView $this
  * @var array{
  *   menu: list<array{label: string, url: string, alignEnd: bool, routeName: string|null}>,
- *   showGdprLinks: bool,
- *   gdprConsentUrl: string,
- *   exportUrl: string,
- *   anonymizeUrl: string,
  *   showDeleteLink: bool,
- *   deleteUrl: string,
+ *   deleteUrl: ?string,
+ *   privacyLinks: list<array{label: string, url: string}>,
  * } $data
  * @var TranslatorInterface $translator
  */
@@ -31,10 +28,8 @@ echo Html::H1($translator->translate('voyti.view.privacy.title'));
 
 echo Html::div()->class('list-group')->open();
 
-if ($data['showGdprLinks']) {
-    echo Html::a($translator->translate('voyti.view.privacy.manage_gdpr_consent'), $data['gdprConsentUrl'])->class('list-group-item', 'list-group-item-action');
-    echo Html::a($translator->translate('voyti.view.privacy.export_data'), $data['exportUrl'])->class('list-group-item', 'list-group-item-action');
-    echo Html::a($translator->translate('voyti.view.privacy.anonymize_data'), $data['anonymizeUrl'])->class('list-group-item', 'list-group-item-action');
+foreach ($data['privacyLinks'] as $link) {
+    echo Html::a($link['label'], $link['url'])->class('list-group-item', 'list-group-item-action');
 }
 
 if ($data['showDeleteLink']) {

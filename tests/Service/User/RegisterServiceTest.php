@@ -9,7 +9,6 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserPasswordHistory;
 use YiiRocks\Voyti\Model\UserProfile;
-use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\User\RegisterService;
 use YiiRocks\Voyti\Service\User\UserCreationHelper;
@@ -25,12 +24,28 @@ final class RegisterServiceTest extends DatabaseTestCase
 {
     use MailServiceFactoryTrait;
 
+    public function testRunDataProcessingConsent(): void
+    {
+        $mailService = $this->createMailService(new MailCapture());
+        $passwordHasher = TestPasswordHasherFactory::create();
+        $config = VoytiConfigFactory::create(enableEmailConfirmation: true);
+
+        // Consent always stored when provided
+        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
+        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
+        $service = new RegisterService($userCreationHelper, $config);
+        $result = $service->run(['email' => 'consent@example.com', 'username' => 'consentuser', 'password' => 'mypassword', 'dataProcessingConsent' => '1']);
+        self::assertTrue($result->isSuccess());
+        $saved = User::findByEmail('consent@example.com');
+        self::assertTrue($saved->hasDataProcessingConsent());
+        self::assertNotNull($saved->getDataProcessingConsentDate());
+    }
+
     public function testRunErrors(): void
     {
         $mailService = $this->createMailService(new MailCapture());
         $passwordHasher = TestPasswordHasherFactory::create();
         $config = VoytiConfigFactory::create();
-        $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
 
         // Email already exists: short-circuits before user creation
         $existing = new User();
@@ -43,7 +58,7 @@ final class RegisterServiceTest extends DatabaseTestCase
         $existing->save();
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
-        $service = new RegisterService($userCreationHelper, $config, $passwordGenerator);
+        $service = new RegisterService($userCreationHelper, $config);
         $result = $service->run(['email' => 'existing@example.com', 'username' => 'testuser']);
         self::assertTrue($result->isFailure());
         self::assertSame('Email already exists', $result->getMessage());
@@ -60,7 +75,7 @@ final class RegisterServiceTest extends DatabaseTestCase
         $existing2->save();
         $eventDispatcher2 = $this->createMock(EventDispatcherInterface::class);
         $userCreationHelper2 = new UserCreationHelper($mailService, $eventDispatcher2, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
-        $service2 = new RegisterService($userCreationHelper2, $config, $passwordGenerator);
+        $service2 = new RegisterService($userCreationHelper2, $config);
         $result2 = $service2->run(['email' => 'new@example.com', 'username' => 'existinguser']);
         self::assertTrue($result2->isFailure());
         self::assertSame('Username already exists', $result2->getMessage());
@@ -73,51 +88,11 @@ final class RegisterServiceTest extends DatabaseTestCase
             $config,
             new PasswordHistoryService($passwordHasher, $config),
         );
-        $service3 = new RegisterService($userCreationHelper3, $config, $passwordGenerator);
+        $service3 = new RegisterService($userCreationHelper3, $config);
         $result3 = $service3->run(['email' => 'race@example.com', 'username' => 'raceuser', 'password' => 'secret123']);
         self::assertTrue($result3->isFailure());
         self::assertSame('Email already exists', $result3->getMessage());
         self::assertSame(['Email already exists'], $result3->getErrors());
-    }
-
-    public function testRunGdprConsent(): void
-    {
-        $mailService = $this->createMailService(new MailCapture());
-        $passwordHasher = TestPasswordHasherFactory::create();
-        $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
-        $passwordGenerator->method('generate')->willReturn('genpwd');
-
-        // GDPR compliance disabled: consent is not stored even if explicitly given
-        $config = VoytiConfigFactory::create(enableEmailConfirmation: true, enableGdprCompliance: false);
-        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
-        $service = new RegisterService($userCreationHelper, $config, $passwordGenerator);
-        $result = $service->run(['email' => 'disabledgdpr@example.com', 'username' => 'disabledgdpruser', 'password' => 'mypassword', 'gdprConsent' => true]);
-        self::assertTrue($result->isSuccess());
-        $saved = User::findByEmail('disabledgdpr@example.com');
-        self::assertFalse($saved->isGdprConsent());
-        self::assertNull($saved->getGdprConsentDate());
-
-        // GDPR enabled with consent given: casts truthy non-bool to bool
-        $config = VoytiConfigFactory::create(enableEmailConfirmation: true, enableGdprCompliance: true);
-        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
-        $service = new RegisterService($userCreationHelper, $config, $passwordGenerator);
-        $result = $service->run(['email' => 'gdpr@example.com', 'username' => 'gdpruser', 'password' => 'mypassword', 'gdprConsent' => '1']);
-        self::assertTrue($result->isSuccess());
-        $saved = User::findByEmail('gdpr@example.com');
-        self::assertTrue($saved->isGdprConsent());
-        self::assertNotNull($saved->getGdprConsentDate());
-
-        // GDPR enabled but consent key absent: defaults to no-consent
-        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
-        $service = new RegisterService($userCreationHelper, $config, $passwordGenerator);
-        $result = $service->run(['email' => 'absentgdpr@example.com', 'username' => 'absentgdpruser', 'password' => 'mypassword']);
-        self::assertTrue($result->isSuccess());
-        $saved = User::findByEmail('absentgdpr@example.com');
-        self::assertFalse($saved->isGdprConsent());
-        self::assertNull($saved->getGdprConsentDate());
     }
 
     public function testRunPassword(): void
@@ -126,38 +101,38 @@ final class RegisterServiceTest extends DatabaseTestCase
         $passwordHasher = TestPasswordHasherFactory::create();
         $config = VoytiConfigFactory::create(enableEmailConfirmation: true, maxPasswordAge: 90);
 
-        // Generated password: requests 12-char, records in history
-        $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
-        $passwordGenerator->expects($this->once())->method('generate')->with(12)->willReturn('auto-generated-pwd');
+        // User-provided password: records in history and creates profile
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
-        $service = new RegisterService($userCreationHelper, $config, $passwordGenerator);
-        $result = $service->run(['email' => 'genpass@example.com', 'username' => 'genpassuser', 'password' => ''], ['REMOTE_ADDR' => '203.0.113.9']);
+        $service = new RegisterService($userCreationHelper, $config);
+        $result = $service->run(['email' => 'userpass@example.com', 'username' => 'userpassuser', 'password' => 'userpassword123'], ['REMOTE_ADDR' => '203.0.113.9']);
         self::assertTrue($result->isSuccess());
+        // Confirmation required: persist() must report true, not just an empty success.
         self::assertSame('voyti.registration.account_created_check_email', $result->getMessage());
-        $saved = User::findByEmail('genpass@example.com');
+        $saved = User::findByEmail('userpass@example.com');
         self::assertSame('203.0.113.9', $saved->getRegistrationIp());
         self::assertNotEmpty(UserPasswordHistory::findByUserId((int) $saved->getId()));
         self::assertNotNull(UserProfile::findByUserId((int) $saved->getId()));
+    }
 
-        // User-provided password: never calls generator
-        $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
-        $passwordGenerator->expects($this->never())->method('generate');
+    public function testRunWithMissingDataDefaultsToEmptyStrings(): void
+    {
+        $mailService = $this->createMailService(new MailCapture());
+        $passwordHasher = TestPasswordHasherFactory::create();
+        $config = VoytiConfigFactory::create(enableEmailConfirmation: true);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
-        $service = new RegisterService($userCreationHelper, $config, $passwordGenerator);
-        $result = $service->run(['email' => 'userpass@example.com', 'username' => 'userpassuser', 'password' => 'userpassword123']);
-        self::assertTrue($result->isSuccess());
+        $service = new RegisterService($userCreationHelper, $config);
 
-        // Missing data: falls back to empty defaults
-        $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
-        $passwordGenerator->method('generate')->willReturn('genpwd');
-        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
-        $service = new RegisterService($userCreationHelper, $config, $passwordGenerator);
+        // None of username/email/password keys are present: each must default to '' rather than
+        // triggering an undefined-array-key access (which would emit a warning under a mutated
+        // isset()||is_string() check, since the guarded key is never dereferenced when absent).
         $result = $service->run([]);
+
         self::assertTrue($result->isSuccess());
-        self::assertSame('voyti.registration.account_created_check_email', $result->getMessage());
+        $saved = User::findByEmail('');
+        self::assertNotNull($saved);
+        self::assertSame('', $saved->getUsername());
     }
 
     public function testRunWithoutEmailConfirmation(): void
@@ -166,11 +141,9 @@ final class RegisterServiceTest extends DatabaseTestCase
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $passwordHasher = TestPasswordHasherFactory::create();
         $config = VoytiConfigFactory::create(enableEmailConfirmation: false, maxPasswordAge: 90);
-        $passwordGenerator = $this->createMock(PasswordGeneratorInterface::class);
-        $passwordGenerator->method('generate')->willReturn('genpwd');
 
         $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
-        $service = new RegisterService($userCreationHelper, $config, $passwordGenerator);
+        $service = new RegisterService($userCreationHelper, $config);
 
         $result = $service->run(['email' => 'noconfirm@example.com', 'username' => 'noconfirmuser', 'password' => 'mypassword']);
 

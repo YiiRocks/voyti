@@ -20,7 +20,7 @@ final class RuleForm extends FormModel implements LabelsProviderInterface, Rules
     #[Required]
     public string $class = '';
     #[Required]
-    #[Regex(pattern: '/^\w[\w.:\-]+\w$/')]
+    #[Regex(pattern: '/^\w[\w.:\-]+\w$/', skipOnEmpty: true)]
     public string $name = '';
     public string $previousName = '';
 

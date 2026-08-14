@@ -40,8 +40,6 @@ $tabindex = 0;
 
 echo Field::password($form, 'password')->tabIndex(++$tabindex);
 
-echo Field::checkbox($form, 'consent')->tabIndex(++$tabindex);
-
 echo Field::buttonGroup()
     ->buttonsData([
         [$translator->translate('voyti.view.reset_button'), 'type' => 'reset', 'tabindex' => $tabindex + 2],

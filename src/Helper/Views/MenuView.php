@@ -39,7 +39,7 @@ final class MenuView
             );
         }
 
-        if ($config->enableGdprCompliance || $config->allowAccountDelete) {
+        if ($config->allowAccountDelete || $config->privacyMenuItems !== []) {
             $items[] = self::link($translator->translate('voyti.view.settings.privacy'), $url->generate('voyti/user-privacy'));
         }
 

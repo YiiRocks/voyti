@@ -7,7 +7,6 @@ namespace YiiRocks\Voyti\tests\Event;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
 use YiiRocks\Voyti\Event\Auth\AfterRegisterEvent;
-use YiiRocks\Voyti\Event\Gdpr\GdprEvent;
 use YiiRocks\Voyti\Event\Security\ResetPasswordEvent;
 use YiiRocks\Voyti\Event\Session\SessionEvent;
 use YiiRocks\Voyti\Event\User\UserEvent;
@@ -32,15 +31,6 @@ final class EventTest extends TestCase
         $user = new User();
 
         $event = new AfterRegisterEvent($user);
-
-        self::assertSame($user, $event->getUser());
-    }
-
-    public function testGdprEventConstructorAndGetters(): void
-    {
-        $user = new User();
-
-        $event = new GdprEvent($user);
 
         self::assertSame($user, $event->getUser());
     }

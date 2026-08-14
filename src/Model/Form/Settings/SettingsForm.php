@@ -29,15 +29,15 @@ final class SettingsForm extends FormModel implements LabelsProviderInterface, R
 {
     #[Required]
     #[Email(checkDns: true, enableIdn: true, skipOnEmpty: true)]
-    #[Length(max: 255)]
+    #[Length(max: 255, skipOnEmpty: true)]
     public string $email = '';
     #[Length(min: 6, max: 72, skipOnEmpty: true)]
     public string $password = '';
-    #[Equal(targetProperty: 'password', strict: true, type: CompareType::STRING)]
+    #[Equal(targetProperty: 'password', strict: true, type: CompareType::STRING, skipOnEmpty: true)]
     public string $passwordRepeat = '';
     #[Required]
-    #[Length(min: 3, max: 255)]
-    #[Regex(pattern: '/^[-a-zA-Z0-9_\.@]+$/')]
+    #[Length(min: 3, max: 255, skipOnEmpty: true)]
+    #[Regex(pattern: '/^[-a-zA-Z0-9_\.@]+$/', skipOnEmpty: true)]
     public string $username = '';
 
     private ?User $user = null;

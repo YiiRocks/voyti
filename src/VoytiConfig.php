@@ -23,10 +23,6 @@ final readonly class VoytiConfig
     public function __construct(
         public string $appName,
         public RecaptchaVersion $recaptchaVersion,
-        public bool $enableGdprCompliance,
-        /** @psalm-var list<string> */
-        public array $gdprExportProperties,
-        public string $gdprAnonymizePrefix,
         /**
          * Extra account-menu links contributed by packages (e.g. yiirocks/voyti-2fa), merged in via
          * the `accountMenuItems` param so core needs no knowledge of them.
@@ -45,6 +41,15 @@ final readonly class VoytiConfig
         public bool $allowPasswordRecovery,
         public bool $allowAdminPasswordRecovery,
         public bool $allowAccountDelete,
+        /**
+         * Extra links contributed by privacy-related packages (e.g. yiirocks/voyti-gdpr) to the
+         * Privacy settings hub, merged in via the `privacyMenuItems` param so core needs no
+         * knowledge of them. Privacy itself is shown whenever this is non-empty or
+         * {@see self::$allowAccountDelete} is true.
+         *
+         * @psalm-var list<array{label: string, category: string, route: string}>
+         */
+        public array $privacyMenuItems,
         public EmailChangeConfirmation $emailChangeConfirmation,
         public int $rememberLoginLifespan,
         public int $tokenConfirmationLifespan,

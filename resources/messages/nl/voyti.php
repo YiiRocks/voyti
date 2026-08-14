@@ -35,7 +35,6 @@ return [
     'voyti.settings.account_details_updated' => 'Uw accountgegevens zijn bijgewerkt',
     'voyti.settings.personal_info_removed' => 'Uw persoonlijke gegevens zijn verwijderd',
     'voyti.settings.account_deleted' => 'Uw account is verwijderd',
-    'voyti.settings.gdpr_consent_saved' => 'AVG-toestemming is opgeslagen',
     'voyti.settings.email_changed' => 'Uw e-mailadres is gewijzigd',
     'voyti.settings.email_change_failed' => 'E-mailadres kon niet worden gewijzigd',
     'voyti.settings.network_disconnected' => 'Netwerk is ontkoppeld',
@@ -120,7 +119,7 @@ return [
 
     // Registration views
     'voyti.view.registration.register_title' => 'Account aanmaken',
-    'voyti.view.registration.gdpr_consent_label' => 'Ik ga akkoord met de verwerking van mijn persoonsgegevens',
+    'voyti.view.registration.data_processing_consent_label' => 'Ik ga akkoord met de verwerking van mijn persoonsgegevens',
     'voyti.view.registration.register_button' => 'Registreren',
     'voyti.view.registration.already_have_account' => 'Heeft u al een account?',
     'voyti.view.registration.resend_title' => 'Bevestigingslink opnieuw verzenden',
@@ -146,19 +145,12 @@ return [
     'voyti.view.account.title' => 'Accountinstellingen',
     'voyti.view.networks.title' => 'Netwerken',
     'voyti.view.privacy.title' => 'Privacy',
-    'voyti.view.privacy.manage_gdpr_consent' => 'AVG-toestemming beheren',
-    'voyti.view.privacy.export_data' => 'Mijn gegevens exporteren',
-    'voyti.view.privacy.anonymize_data' => 'Mijn account anonimiseren',
     'voyti.view.privacy.delete_account' => 'Mijn account verwijderen',
     'voyti.view.settings.privacy' => 'Privacy',
 
     // GDPR views
-    'voyti.view.gdpr.consent_title' => 'AVG-toestemming',
-    'voyti.view.gdpr.consent_label' => 'Ik geef toestemming voor de verwerking van mijn persoonsgegevens',
-    'voyti.view.gdpr.consent_locked' => 'U heeft al toestemming gegeven op {date}. Dit kan niet ongedaan worden gemaakt.',
     'voyti.view.anonymize.title' => 'Mijn account anonimiseren',
     'voyti.view.anonymize.warning' => 'Waarschuwing: Deze actie anonimiseert uw account (e-mail en gebruikersnaam worden vervangen) en blokkeert de toegang permanent. Dit kan niet ongedaan worden gemaakt.',
-    'voyti.view.anonymize.confirm_label' => 'Ik begrijp dat deze actie onomkeerbaar is',
     'voyti.view.anonymize.button' => 'Mijn account anonimiseren',
 
     // Account settings (2FA)

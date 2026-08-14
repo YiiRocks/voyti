@@ -15,7 +15,6 @@ use Yiisoft\Yii\View\Renderer\Csrf;
  * @var array{
  *   formSubmitUrl: string,
  *   loginUrl: string,
- *   showGdprConsent: bool,
  *   recaptchaFieldHtml: string,
  * } $data
  * @var TranslatorInterface $translator
@@ -45,9 +44,7 @@ echo Field::password($form, 'password')->tabIndex(++$tabindex);
 
 echo Field::password($form, 'passwordRepeat')->tabIndex(++$tabindex);
 
-if ($data['showGdprConsent']) {
-    echo Field::checkbox($form, 'gdprConsent')->tabIndex(++$tabindex);
-}
+echo Field::checkbox($form, 'dataProcessingConsent')->tabIndex(++$tabindex);
 
 echo $data['recaptchaFieldHtml'];
 

@@ -35,8 +35,7 @@ trait UserFactoryTrait
         ?int $confirmedAt = null,
         ?int $blockedAt = null,
         ?string $lastLoginIp = null,
-        bool $gdprConsent = false,
-        ?int $gdprConsentDate = null,
+        ?int $dataProcessingConsentDate = null,
     ): User {
         $timestamp = $createdAt ?? time();
 
@@ -56,9 +55,8 @@ trait UserFactoryTrait
         if ($lastLoginIp !== null) {
             $user->setLastLoginIp($lastLoginIp);
         }
-        if ($gdprConsent) {
-            $user->setGdprConsent(true);
-            $user->setGdprConsentDate($gdprConsentDate);
+        if ($dataProcessingConsentDate !== null) {
+            $user->setDataProcessingConsentDate($dataProcessingConsentDate);
         }
         $user->save();
 

@@ -29,8 +29,8 @@ final class AuthItemForm extends FormModel implements LabelsProviderInterface, R
     public string $description = '';
     public string $itemName = '';
     #[Required]
-    #[Regex(pattern: '/^\w[\w.:\-]+\w$/u')]
-    #[Length(min: 1, max: 126)]
+    #[Regex(pattern: '/^\w[\w.:\-]+\w$/u', skipOnEmpty: true)]
+    #[Length(min: 1, max: 126, skipOnEmpty: true)]
     public string $name = '';
     public ?string $rule = null;
 

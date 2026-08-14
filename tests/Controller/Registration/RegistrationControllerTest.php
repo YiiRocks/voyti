@@ -135,11 +135,11 @@ final class RegistrationControllerTest extends DatabaseTestCase
         $pending->setCreatedAt(time());
         $pending->save();
         $container = $this->getTestContainer([
-            ...$this->baseOverrides(VoytiConfigFactory::create(enableGdprCompliance: true)),
+            ...$this->baseOverrides(VoytiConfigFactory::create()),
             ValidatorInterface::class => $this->validator,
         ]);
         $container->get(SessionInterface::class)->set('social_network_account_code', 'regpend');
-        $request = (new ServerRequest('POST', '/'))->withParsedBody(['register' => ['username' => 'testuser', 'email' => 'test@example.com', 'password' => 'password123', 'passwordRepeat' => 'password123', 'gdprConsent' => '1']]);
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['register' => ['username' => 'testuser', 'email' => 'test@example.com', 'password' => 'password123', 'passwordRepeat' => 'password123', 'dataProcessingConsent' => '1']]);
         $result = $container->get(RegistrationController::class)->register($request);
         $this->assertSame(302, $result->getStatusCode());
         $this->assertStringContainsString('session-login', $result->getHeaderLine('Location'));
@@ -147,7 +147,7 @@ final class RegistrationControllerTest extends DatabaseTestCase
         $this->assertNotNull($user);
         $this->assertSame('testuser', $user->getUsername());
         $this->assertTrue(TestPasswordHasherFactory::create()->validate('password123', $user->getPasswordHash()));
-        $this->assertTrue($user->isGdprConsent());
+        $this->assertTrue($user->hasDataProcessingConsent());
         $this->assertSame((int) $user->getId(), UserSocialAccount::findByProviderAndClientId('github', 'client-reg')?->getUserId());
 
         // POST with service failure: re-renders form with error

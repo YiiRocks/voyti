@@ -35,16 +35,16 @@ final class RegistrationFormTest extends TestCase
         $this->assertArrayHasKey('email', $labels);
         $this->assertArrayHasKey('password', $labels);
         $this->assertArrayHasKey('passwordRepeat', $labels);
-        $this->assertArrayHasKey('gdprConsent', $labels);
+        $this->assertArrayHasKey('dataProcessingConsent', $labels);
     }
 
-    public function testGetRulesWithGdprEnabled(): void
+    public function testGetRulesRequiresDataProcessingConsent(): void
     {
-        $config = VoytiConfigFactory::create(enableGdprCompliance: true);
+        $config = VoytiConfigFactory::create();
         $form = new RegistrationForm($config, $this->createTranslator());
         $rules = $form->getRules();
-        $this->assertArrayHasKey('gdprConsent', $rules);
-        $rule = $rules['gdprConsent'][0];
+        $this->assertArrayHasKey('dataProcessingConsent', $rules);
+        $rule = $rules['dataProcessingConsent'][0];
         $this->assertInstanceOf(TrueValue::class, $rule);
         $this->assertTrue($rule->getTrueValue());
     }
@@ -54,7 +54,7 @@ final class RegistrationFormTest extends TestCase
         $config = VoytiConfigFactory::create(enablePasswordComplexity: false);
         $form = new RegistrationForm($config, $this->createTranslator());
         $rules = $form->getRules();
-        $this->assertCount(1, $rules['password']);
+        $this->assertCount(2, $rules['password']);
     }
 
     public function testGetRulesWithPasswordComplexityEnabled(): void
@@ -62,8 +62,8 @@ final class RegistrationFormTest extends TestCase
         $config = VoytiConfigFactory::create(enablePasswordComplexity: true);
         $form = new RegistrationForm($config, $this->createTranslator());
         $rules = $form->getRules();
-        $this->assertCount(2, $rules['password']);
-        $this->assertInstanceOf(Regex::class, $rules['password'][1]);
+        $this->assertCount(3, $rules['password']);
+        $this->assertInstanceOf(Regex::class, $rules['password'][2]);
     }
 
     public function testGetRulesWithRecaptchaV2(): void

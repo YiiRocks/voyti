@@ -36,10 +36,10 @@ final class MenuViewTest extends TestCase
         self::assertSame('voyti/session-logout', $logout['routeName']);
     }
 
-    public function testAccountIncludesPrivacyLinkWhenGdprComplianceEnabled(): void
+    public function testAccountIncludesPrivacyLinkWhenAccountDeleteAllowed(): void
     {
         $menu = MenuView::account(
-            VoytiConfigFactory::create(enableGdprCompliance: true),
+            VoytiConfigFactory::create(allowAccountDelete: true),
             new FakeUrlGenerator(),
             $this->createTranslator(),
         );
@@ -47,10 +47,26 @@ final class MenuViewTest extends TestCase
         self::assertContains('Privacy', array_column($menu, 'label'));
     }
 
-    public function testAccountOmitsPrivacyLinkWhenNeitherGdprNorDeleteAllowed(): void
+    public function testAccountIncludesPrivacyLinkWhenPrivacyMenuItemsContributed(): void
     {
         $menu = MenuView::account(
-            VoytiConfigFactory::create(enableGdprCompliance: false, allowAccountDelete: false),
+            VoytiConfigFactory::create(
+                allowAccountDelete: false,
+                privacyMenuItems: [
+                    ['label' => 'voyti.view.privacy.title', 'category' => 'voyti', 'route' => 'voyti/user-privacy'],
+                ],
+            ),
+            new FakeUrlGenerator(),
+            $this->createTranslator(),
+        );
+
+        self::assertContains('Privacy', array_column($menu, 'label'));
+    }
+
+    public function testAccountOmitsPrivacyLinkWhenAccountDeleteNotAllowedAndNoPrivacyMenuItems(): void
+    {
+        $menu = MenuView::account(
+            VoytiConfigFactory::create(allowAccountDelete: false, privacyMenuItems: []),
             new FakeUrlGenerator(),
             $this->createTranslator(),
         );

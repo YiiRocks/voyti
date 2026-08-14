@@ -102,17 +102,11 @@ $settingsRoutes = [
     Route::post('sessions/terminate/{sessionId}')->name('voyti/user-account-sessions-terminate')->action([Controller\Account\SessionController::class, 'terminate']),
 ];
 
-if (($voytiParams['enableGdprCompliance'] ?? false) || ($voytiParams['allowAccountDelete'] ?? false)) {
+$allowAccountDelete = $voytiParams['allowAccountDelete'] ?? false;
+if ($allowAccountDelete || ($voytiParams['privacyMenuItems'] ?? []) !== []) {
     $settingsRoutes[] = Route::get('privacy/')->name('voyti/user-privacy')->action([Controller\Privacy\PrivacyController::class, 'index']);
 }
-
-if ($voytiParams['enableGdprCompliance'] ?? false) {
-    $settingsRoutes[] = Route::methods(['GET', 'POST'], 'privacy/gdpr-consent')->name('voyti/user-privacy-gdpr-consent')->action([Controller\Privacy\PrivacyController::class, 'gdprConsent']);
-    $settingsRoutes[] = Route::get('privacy/export')->name('voyti/user-privacy-export')->action([Controller\Privacy\PrivacyController::class, 'export']);
-    $settingsRoutes[] = Route::methods(['GET', 'POST'], 'privacy/anonymize')->name('voyti/user-privacy-anonymize')->action([Controller\Privacy\PrivacyController::class, 'anonymize']);
-}
-
-if ($voytiParams['allowAccountDelete'] ?? false) {
+if ($allowAccountDelete) {
     $settingsRoutes[] = Route::methods(['GET', 'POST'], 'privacy/delete')->name('voyti/user-privacy-delete')->action([Controller\Privacy\PrivacyController::class, 'delete']);
 }
 

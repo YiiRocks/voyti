@@ -23,26 +23,26 @@ use Yiisoft\Validator\RuleInterface;
 use Yiisoft\Validator\RulesProviderInterface;
 
 /**
- * Backs the registration page: username, email, password, and optional GDPR consent.
+ * Backs the registration page: username, email, password, and personal data processing consent.
  */
 final class RegistrationForm extends FormModel implements LabelsProviderInterface, RulesProviderInterface
 {
+    public bool $dataProcessingConsent = false;
     #[Required]
-    #[Email]
-    #[Length(max: 255)]
+    #[Email(skipOnEmpty: true)]
+    #[Length(max: 255, skipOnEmpty: true)]
     public string $email = '';
-
-    public bool $gdprConsent = false;
 
     public string $gRecaptchaResponse = '';
 
-    #[Length(min: 6, max: 72)]
+    #[Required]
+    #[Length(min: 6, max: 72, skipOnEmpty: true)]
     public string $password = '';
     #[Equal(targetProperty: 'password', strict: true, type: CompareType::STRING)]
     public string $passwordRepeat = '';
     #[Required]
-    #[Length(min: 3, max: 255)]
-    #[Regex(pattern: '/^[-a-zA-Z0-9_\.@]+$/')]
+    #[Length(min: 3, max: 255, skipOnEmpty: true)]
+    #[Regex(pattern: '/^[-a-zA-Z0-9_\.@]+$/', skipOnEmpty: true)]
     public string $username = '';
 
     public function __construct(
@@ -69,7 +69,7 @@ final class RegistrationForm extends FormModel implements LabelsProviderInterfac
      *     email: string,
      *     password: string,
      *     passwordRepeat: string,
-     *     gdprConsent: string,
+     *     dataProcessingConsent: string,
      * }
      */
     #[Override]
@@ -80,8 +80,8 @@ final class RegistrationForm extends FormModel implements LabelsProviderInterfac
             'email' => $this->translator->translate('voyti.view.email_label', category: 'voyti'),
             'password' => $this->translator->translate('voyti.view.password_label', category: 'voyti'),
             'passwordRepeat' => $this->translator->translate('voyti.view.password_repeat_label', category: 'voyti'),
-            'gdprConsent' => $this->translator->translate(
-                'voyti.view.registration.gdpr_consent_label',
+            'dataProcessingConsent' => $this->translator->translate(
+                'voyti.view.registration.data_processing_consent_label',
                 category: 'voyti',
             ),
         ];
@@ -100,9 +100,7 @@ final class RegistrationForm extends FormModel implements LabelsProviderInterfac
             PasswordComplexityRule::rules($this->config, $this->translator),
         );
 
-        if ($this->config->enableGdprCompliance) {
-            $rules['gdprConsent'] = [new TrueValue(trueValue: true)];
-        }
+        $rules['dataProcessingConsent'] = [new TrueValue(trueValue: true)];
 
         $recaptchaRules = RecaptchaHelper::rules($this->config, $this->getFormName());
         if ($recaptchaRules !== []) {

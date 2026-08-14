@@ -35,7 +35,6 @@ return [
     'voyti.settings.account_details_updated' => 'Your account details have been updated',
     'voyti.settings.personal_info_removed' => 'Your personal information has been removed',
     'voyti.settings.account_deleted' => 'Your account has been deleted',
-    'voyti.settings.gdpr_consent_saved' => 'GDPR consent has been saved',
     'voyti.settings.email_changed' => 'Your email has been changed',
     'voyti.settings.email_change_failed' => 'Failed to change email',
     'voyti.settings.network_disconnected' => 'Network has been disconnected',
@@ -120,7 +119,7 @@ return [
 
     // Registration views
     'voyti.view.registration.register_title' => 'Create account',
-    'voyti.view.registration.gdpr_consent_label' => 'I agree processing of my personal data',
+    'voyti.view.registration.data_processing_consent_label' => 'I agree to processing of my personal data',
     'voyti.view.registration.register_button' => 'Register',
     'voyti.view.registration.already_have_account' => 'Already have an account?',
     'voyti.view.registration.resend_title' => 'Resend confirmation link',
@@ -146,19 +145,12 @@ return [
     'voyti.view.account.title' => 'Account settings',
     'voyti.view.networks.title' => 'Networks',
     'voyti.view.privacy.title' => 'Privacy',
-    'voyti.view.privacy.manage_gdpr_consent' => 'Manage GDPR consent',
-    'voyti.view.privacy.export_data' => 'Export my data',
-    'voyti.view.privacy.anonymize_data' => 'Anonymize my account',
     'voyti.view.privacy.delete_account' => 'Delete my account',
     'voyti.view.settings.privacy' => 'Privacy',
 
     // GDPR views
-    'voyti.view.gdpr.consent_title' => 'GDPR Consent',
-    'voyti.view.gdpr.consent_label' => 'I consent to processing of my personal data',
-    'voyti.view.gdpr.consent_locked' => 'You have already given consent on {date}. This cannot be undone.',
     'voyti.view.anonymize.title' => 'Anonymize my account',
     'voyti.view.anonymize.warning' => 'Warning: This action anonymizes your account (your email and username are replaced) and permanently blocks access. This cannot be undone.',
-    'voyti.view.anonymize.confirm_label' => 'I understand this action is irreversible',
     'voyti.view.anonymize.button' => 'Anonymize my account',
 
     // Account settings (2FA)

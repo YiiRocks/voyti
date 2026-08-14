@@ -6,21 +6,19 @@ namespace YiiRocks\Voyti\Service\User;
 
 use RuntimeException;
 use YiiRocks\Voyti\Helper\LoginMetadataHelper;
-use YiiRocks\Voyti\Service\Password\PasswordGeneratorInterface;
 use YiiRocks\Voyti\Service\ServiceResult;
 use YiiRocks\Voyti\VoytiConfig;
 
 /**
- * Handles self-registration from raw form data: generates a password if none was supplied,
- * enforces email/username uniqueness, applies GDPR consent and registration IP per
- * {@see VoytiConfig}, and delegates persistence/notification to {@see UserCreationHelper}.
+ * Handles self-registration from raw form data: enforces email/username uniqueness,
+ * applies personal data processing consent and registration IP, and delegates
+ * persistence/notification to {@see UserCreationHelper}.
  */
 final readonly class RegisterService
 {
     public function __construct(
         private UserCreationHelper $userCreationHelper,
         private VoytiConfig $config,
-        private PasswordGeneratorInterface $passwordGenerator,
     ) {}
 
     /**
@@ -31,10 +29,7 @@ final readonly class RegisterService
     {
         $username = isset($data['username']) && is_string($data['username']) ? $data['username'] : '';
         $email = isset($data['email']) && is_string($data['email']) ? $data['email'] : '';
-        $password = isset($data['password']) && is_string($data['password']) && $data['password'] !== ''
-            ? $data['password']
-            : $this->passwordGenerator->generate(12);
-        $gdprConsent = (bool) ($data['gdprConsent'] ?? false);
+        $password = isset($data['password']) && is_string($data['password']) ? $data['password'] : '';
 
         $conflict = $this->userCreationHelper->findUniquenessConflict($email, $username);
         if ($conflict !== null) {
@@ -44,10 +39,7 @@ final readonly class RegisterService
 
         $user = $this->userCreationHelper->buildUser($email, $username, $password);
         $user->setRegistrationIp(LoginMetadataHelper::remoteAddr($serverParams));
-        $user->setGdprConsent($this->config->enableGdprCompliance ? $gdprConsent : false);
-        if ($this->config->enableGdprCompliance && $gdprConsent) {
-            $user->setGdprConsentDate(time());
-        }
+        $user->setDataProcessingConsentDate(time());
 
         try {
             $emailConfirmationRequired = $this->userCreationHelper->persistAndNotify($user);

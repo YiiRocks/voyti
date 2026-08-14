@@ -23,7 +23,7 @@ final class ResendForm extends FormModel implements LabelsProviderInterface, Rul
 {
     #[Required]
     #[Email(checkDns: true, enableIdn: true, skipOnEmpty: true)]
-    #[Length(max: 255)]
+    #[Length(max: 255, skipOnEmpty: true)]
     public string $email = '';
 
     public string $gRecaptchaResponse = '';

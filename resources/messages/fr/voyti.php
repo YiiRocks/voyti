@@ -35,7 +35,6 @@ return [
     'voyti.settings.account_details_updated' => 'Les détails de votre compte ont été mis à jour',
     'voyti.settings.personal_info_removed' => 'Vos informations personnelles ont été supprimées',
     'voyti.settings.account_deleted' => 'Votre compte a été supprimé',
-    'voyti.settings.gdpr_consent_saved' => 'Le consentement RGPD a été enregistré',
     'voyti.settings.email_changed' => 'Votre e-mail a été modifié',
     'voyti.settings.email_change_failed' => "Échec de la modification de l'e-mail",
     'voyti.settings.network_disconnected' => 'Le réseau a été déconnecté',
@@ -120,7 +119,7 @@ return [
 
     // Registration views
     'voyti.view.registration.register_title' => 'Créer un compte',
-    'voyti.view.registration.gdpr_consent_label' => "J'accepte le traitement de mes données personnelles",
+    'voyti.view.registration.data_processing_consent_label' => "J'accepte le traitement de mes données personnelles",
     'voyti.view.registration.register_button' => "S'inscrire",
     'voyti.view.registration.already_have_account' => 'Vous avez déjà un compte ?',
     'voyti.view.registration.resend_title' => 'Renvoyer le lien de confirmation',
@@ -146,19 +145,12 @@ return [
     'voyti.view.account.title' => 'Paramètres du compte',
     'voyti.view.networks.title' => 'Réseaux',
     'voyti.view.privacy.title' => 'Confidentialité',
-    'voyti.view.privacy.manage_gdpr_consent' => 'Gérer le consentement RGPD',
-    'voyti.view.privacy.export_data' => 'Exporter mes données',
-    'voyti.view.privacy.anonymize_data' => 'Anonymiser mon compte',
     'voyti.view.privacy.delete_account' => 'Supprimer mon compte',
     'voyti.view.settings.privacy' => 'Confidentialité',
 
     // GDPR views
-    'voyti.view.gdpr.consent_title' => 'Consentement RGPD',
-    'voyti.view.gdpr.consent_label' => 'Je consens au traitement de mes données personnelles',
-    'voyti.view.gdpr.consent_locked' => 'Vous avez déjà donné votre consentement le {date}. Cela ne peut pas être annulé.',
     'voyti.view.anonymize.title' => 'Anonymiser mon compte',
     'voyti.view.anonymize.warning' => 'Attention : cette action anonymise votre compte (votre e-mail et votre nom d\'utilisateur sont remplacés) et bloque définitivement l\'accès. Cela ne peut pas être annulé.',
-    'voyti.view.anonymize.confirm_label' => 'Je comprends que cette action est irréversible',
     'voyti.view.anonymize.button' => 'Anonymiser mon compte',
 
     // Account settings (2FA)

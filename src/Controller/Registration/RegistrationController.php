@@ -102,7 +102,6 @@ final readonly class RegistrationController
                     'username' => $form->username,
                     'email' => $form->email,
                     'password' => $form->password,
-                    'gdprConsent' => $form->gdprConsent,
                 ],
                 $request->getServerParams(),
             );
@@ -134,7 +133,6 @@ final readonly class RegistrationController
             'data' => [
                 'formSubmitUrl' => $this->url->generate('voyti/registration-register'),
                 'loginUrl' => $this->url->generate('voyti/session-login'),
-                'showGdprConsent' => $this->config->enableGdprCompliance,
                 'recaptchaFieldHtml' => RecaptchaHelper::render($form, $this->config),
             ],
         ]);

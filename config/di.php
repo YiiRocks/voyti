@@ -101,10 +101,8 @@ return [
     VoytiConfig::class => static fn() => new VoytiConfig(
         appName: $params['yiirocks/voyti']['appName'] ?? 'Voyti',
         recaptchaVersion: $params['yiirocks/voyti']['recaptchaVersion'] ?? RecaptchaVersion::V3,
-        enableGdprCompliance: $params['yiirocks/voyti']['enableGdprCompliance'] ?? false,
-        gdprExportProperties: $params['yiirocks/voyti']['gdprExportProperties'] ?? [],
-        gdprAnonymizePrefix: $params['yiirocks/voyti']['gdprAnonymizePrefix'] ?? 'GDPR',
         accountMenuItems: $params['yiirocks/voyti']['accountMenuItems'] ?? [],
+        privacyMenuItems: $params['yiirocks/voyti']['privacyMenuItems'] ?? [],
         enableRegistration: $params['yiirocks/voyti']['enableRegistration'] ?? true,
         enableSocialNetworkRegistration: $params['yiirocks/voyti']['enableSocialNetworkRegistration'] ?? true,
         enableEmailConfirmation: $params['yiirocks/voyti']['enableEmailConfirmation'] ?? true,

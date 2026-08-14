@@ -10,32 +10,22 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
-use YiiRocks\Voyti\Event\Gdpr\GdprEvent;
 use YiiRocks\Voyti\Event\User\UserEvent;
-use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\Helper\Views\MenuView;
 use YiiRocks\Voyti\Model\Form\Settings\ConsentForm;
-use YiiRocks\Voyti\Model\Form\Settings\GdprConsentForm;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Model\UserSessions;
-use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\Service\FlashNotifier;
 use YiiRocks\Voyti\Service\UserSession\TerminateUserSessionsService;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\FormModel\FormHydrator;
-use Yiisoft\Http\Header;
-use Yiisoft\Http\Status;
-use Yiisoft\Json\Json;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Security\PasswordHasher;
-use Yiisoft\Security\Random;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 /**
- * Handles GDPR-related self-service actions on the current user's account: consent capture,
- * data export, anonymization, and account deletion.
+ * Handles account deletion (privacy/self-service action).
  */
 final readonly class PrivacyController
 {
@@ -48,53 +38,17 @@ final readonly class PrivacyController
         private PasswordHasher $passwordHasher,
         private EventDispatcherInterface $eventDispatcher,
         private UrlGeneratorInterface $url,
-        private VoytiConfig $config,
         private FormHydrator $formHydrator,
         private CurrentUser $currentUser,
         private ResponseFactoryInterface $responseFactory,
         private TerminateUserSessionsService $terminateUserSessionsService,
         private FlashNotifier $flashNotifier,
+        private VoytiConfig $config,
     ) {}
-
-    public function anonymize(ServerRequestInterface $request): ResponseInterface
-    {
-        $form = new ConsentForm($this->translator, 'anonymize', 'voyti.view.anonymize.confirm_label');
-
-        if ($this->formHydrator->populateFromPostAndValidate($form, $request)) {
-            /** @var User $user */
-            $user = $this->currentUser->getIdentity();
-
-            if ($this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
-                $prefix = $this->config->gdprAnonymizePrefix . ($user->getId() ?? '');
-                $user->setEmail($prefix . '@example.com');
-                $user->setUsername($prefix);
-                $user->setAnonymized(true);
-                $user->setBlockedAt(time());
-                $user->setAuthKey(Random::string());
-                $user->save();
-                $this->eventDispatcher->dispatch(new GdprEvent($user));
-                $this->terminateUserSessionsService->run($user->getIdOrZero());
-                return $this->renderView('shared/message', [
-                    'data' => [
-                        'title' => $this->translator->translate('voyti.settings.personal_info_removed', category: 'voyti'),
-                        'homeUrl' => $this->homeUrl(),
-                    ],
-                ]);
-            }
-        }
-
-        return $this->renderView('privacy/anonymize', [
-            'form' => $form,
-            'data' => [
-                'menu' => MenuView::account($this->config, $this->url, $this->translator()),
-                'formSubmitUrl' => $this->url->generate('voyti/user-privacy-anonymize'),
-            ],
-        ]);
-    }
 
     public function delete(ServerRequestInterface $request): ResponseInterface
     {
-        $form = new ConsentForm($this->translator, 'delete-account', 'voyti.view.delete_account.confirm_label');
+        $form = new ConsentForm($this->translator, 'delete-account', 'voyti.view.delete_account.confirm_label', 'voyti');
 
         if ($this->formHydrator->populateFromPostAndValidate($form, $request)) {
             /** @var User $user */
@@ -120,128 +74,20 @@ final readonly class PrivacyController
         ]);
     }
 
-    public function export(): ResponseInterface
-    {
-        /** @var User $user */
-        $user = $this->currentUser->getIdentity();
-
-        $values = array_map(
-            static function (string $property) use ($user): mixed {
-                /** @infection-ignore-all MatchArmRemoval: optional exportable match arms; tests verify core functionality, not every possible export option. */
-                return match ($property) {
-                    'email' => $user->getEmail(),
-                    'username' => $user->getUsername(),
-                    /** @infection-ignore-all MatchArmRemoval: optional exportable fields; tests focus on core functionality. */
-                    'userProfile.public_email' => $user->getProfile()?->getPublicEmail(),
-                    /** @infection-ignore-all MatchArmRemoval: optional exportable fields; tests focus on core functionality. */
-                    'userProfile.name' => $user->getProfile()?->getName(),
-                    /** @infection-ignore-all MatchArmRemoval: optional exportable fields; tests focus on core functionality. */
-                    'userProfile.gravatar_email' => $user->getProfile()?->getGravatarEmail(),
-                    /** @infection-ignore-all MatchArmRemoval: optional exportable fields; tests focus on core functionality. */
-                    'userProfile.location' => $user->getProfile()?->getLocation(),
-                    /** @infection-ignore-all MatchArmRemoval: optional exportable fields; tests focus on core functionality. */
-                    'userProfile.website' => $user->getProfile()?->getWebsite(),
-                    /** @infection-ignore-all MatchArmRemoval: optional exportable fields; tests focus on core functionality. */
-                    'userProfile.bio' => $user->getProfile()?->getBio(),
-                    /** @infection-ignore-all MatchArmRemoval: optional exportable fields; tests focus on core functionality. */
-                    'userProfile.birthday' => $user->getProfile()?->getBirthday()?->format('Y-m-d'),
-                    /** @infection-ignore-all MatchArmRemoval: optional exportable arrays; tests focus on core functionality. */
-                    'userSessions' => array_map(
-                        static fn(UserSessions $entry): array => [
-                            'ip' => $entry->getIp(),
-                            'user_agent' => $entry->getUserAgent(),
-                            'created_at' => $entry->getCreatedAt(),
-                            'updated_at' => $entry->getUpdatedAt(),
-                        ],
-                        UserSessions::findByUserId($user->getIdOrZero()),
-                    ),
-                    /** @infection-ignore-all MatchArmRemoval: optional exportable arrays; tests focus on core functionality. */
-                    'userSocialAccount' => array_map(
-                        static fn(UserSocialAccount $account): array => [
-                            'provider' => $account->getProvider(),
-                            'username' => $account->getUsername(),
-                            'email' => $account->getEmail(),
-                            'created_at' => $account->getCreatedAt(),
-                            'data' => $account->getDecodedData(),
-                        ],
-                        UserSocialAccount::findByUserId($user->getIdOrZero()),
-                    ),
-                    default => null,
-                };
-            },
-            $this->config->gdprExportProperties,
-        );
-        /** @var array<array-key, mixed> $data */
-        $data = array_filter(
-            array_combine($this->config->gdprExportProperties, $values),
-            static fn(mixed $v): bool => $v !== null,
-        );
-
-        /** @infection-ignore-all Changing JSON_* flags (via BitwiseOr mutations) doesn't affect observable behavior: output is still valid JSON with identical data structure, just different formatting. */
-        $json = Json::encode(
-            $data,
-            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
-        );
-
-        $response = $this->responseFactory->createResponse(Status::OK)
-            ->withHeader(Header::CONTENT_TYPE, 'application/json; charset=UTF-8')
-            ->withHeader(Header::CONTENT_DISPOSITION, 'attachment; filename="user-data-export.json"');
-        $response->getBody()->write($json);
-
-        return $response;
-    }
-
-    public function gdprConsent(ServerRequestInterface $request): ResponseInterface
-    {
-        /** @var User $user */
-        $user = $this->currentUser->getIdentity();
-
-        $form = new GdprConsentForm($this->translator);
-        $form->consent = $user->isGdprConsent();
-        $form->consentDate = $user->getGdprConsentDate();
-        $form->timezone = $user->getProfile()?->getTimezone();
-
-        if ($this->formHydrator->populateFromPostAndValidate($form, $request, map: ['consent' => 'consent'])) {
-            if ($form->consent && !$user->isGdprConsent()) {
-                $user->setGdprConsent(true);
-                $user->setGdprConsentDate(time());
-                $user->save();
-            }
-            return $this->redirectWithFlash(
-                $this->url->generate('voyti/user-privacy-gdpr-consent'),
-                'voyti.settings.gdpr_consent_saved',
-            );
-        }
-
-        $isLocked = $form->consent;
-
-        $consentDateDisplay = null;
-        if ($isLocked && $form->consentDate !== null) {
-            $consentDateDisplay = TimezoneHelper::formatLocalized($form->consentDate, $this->translator()->getLocale(), $form->timezone);
-        }
-
-        return $this->renderView('privacy/gdpr-consent', [
-            'form' => $form,
-            'data' => [
-                'menu' => MenuView::account($this->config, $this->url, $this->translator()),
-                'formSubmitUrl' => $this->url->generate('voyti/user-privacy-gdpr-consent'),
-                'isLocked' => $isLocked,
-                'consentDateDisplay' => $consentDateDisplay,
-            ],
-        ]);
-    }
-
     public function index(): ResponseInterface
     {
         return $this->renderView('privacy/index', [
             'data' => [
                 'menu' => MenuView::account($this->config, $this->url, $this->translator()),
-                'showGdprLinks' => $this->config->enableGdprCompliance,
-                'gdprConsentUrl' => $this->config->enableGdprCompliance ? $this->url->generate('voyti/user-privacy-gdpr-consent') : '',
-                'exportUrl' => $this->config->enableGdprCompliance ? $this->url->generate('voyti/user-privacy-export') : '',
-                'anonymizeUrl' => $this->config->enableGdprCompliance ? $this->url->generate('voyti/user-privacy-anonymize') : '',
                 'showDeleteLink' => $this->config->allowAccountDelete,
-                'deleteUrl' => $this->config->allowAccountDelete ? $this->url->generate('voyti/user-privacy-delete') : '',
+                'deleteUrl' => $this->config->allowAccountDelete ? $this->url->generate('voyti/user-privacy-delete') : null,
+                'privacyLinks' => array_map(
+                    fn(array $item): array => [
+                        'label' => $this->translator->translate($item['label'], category: $item['category']),
+                        'url' => $this->url->generate($item['route']),
+                    ],
+                    $this->config->privacyMenuItems,
+                ),
             ],
         ]);
     }
