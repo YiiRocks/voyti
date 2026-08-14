@@ -76,13 +76,6 @@ return [
     'voyti.auth_item.updated' => 'Элемент авторизации обновлён',
     'voyti.auth_item.deleted' => 'Элемент авторизации удалён',
 
-    // API AdminController
-    'voyti.api.not_found' => 'Не найдено',
-    'voyti.api.user_created' => 'Пользователь создан',
-    'voyti.api.user_updated' => 'Пользователь обновлён',
-    'voyti.api.password_previously_used' => 'Этот пароль недавно уже использовался. Пожалуйста, выберите другой.',
-    'voyti.api.user_deleted' => 'Пользователь удалён',
-
     // PasswordRecoveryService
     'voyti.recovery.message_sent_if_exists' => 'Если указанный email существует, сообщение для восстановления отправлено',
     'voyti.recovery.message_sent' => 'Сообщение для восстановления отправлено',

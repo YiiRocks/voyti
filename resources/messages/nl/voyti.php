@@ -76,13 +76,6 @@ return [
     'voyti.auth_item.updated' => 'Autorisatie-item is bijgewerkt',
     'voyti.auth_item.deleted' => 'Autorisatie-item is verwijderd',
 
-    // API AdminController
-    'voyti.api.not_found' => 'Niet gevonden',
-    'voyti.api.user_created' => 'Gebruiker aangemaakt',
-    'voyti.api.user_updated' => 'Gebruiker bijgewerkt',
-    'voyti.api.password_previously_used' => 'Dit wachtwoord is onlangs al gebruikt. Kies een ander wachtwoord.',
-    'voyti.api.user_deleted' => 'Gebruiker verwijderd',
-
     // PasswordRecoveryService
     'voyti.recovery.message_sent_if_exists' => 'Als het e-mailadres bestaat, is er een herstelbericht verzonden',
     'voyti.recovery.message_sent' => 'Herstelbericht verzonden',

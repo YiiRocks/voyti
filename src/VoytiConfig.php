@@ -55,7 +55,6 @@ final readonly class VoytiConfig
         public WebTheme $webTheme,
         public ?string $viewPath,
         public string $mailPath,
-        public int $apiTokenLifespan,
         public bool $enableAuditLog,
     ) {}
 

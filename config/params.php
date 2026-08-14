@@ -50,7 +50,6 @@ return [
         'webTheme' => WebTheme::BOOTSTRAP5,
         'viewPath' => null,
         'mailPath' => VoytiConfig::DEFAULT_MAIL_PATH,
-        'apiTokenLifespan' => 0,
         'enableAuditLog' => true,
     ],
 
@@ -60,8 +59,6 @@ return [
             'voyti:delete' => Console\DeleteUserCommand::class,
             'voyti:confirm' => Console\ConfirmUserCommand::class,
             'voyti:password' => Console\PasswordCommand::class,
-            'voyti:api-token:generate' => Console\GenerateApiTokenCommand::class,
-            'voyti:api-token:revoke' => Console\RevokeApiTokenCommand::class,
         ],
     ],
 ];

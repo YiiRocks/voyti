@@ -76,13 +76,6 @@ return [
     'voyti.auth_item.updated' => 'Authorization item has been updated',
     'voyti.auth_item.deleted' => 'Authorization item has been removed',
 
-    // API AdminController
-    'voyti.api.not_found' => 'Not found',
-    'voyti.api.user_created' => 'User created',
-    'voyti.api.user_updated' => 'User updated',
-    'voyti.api.password_previously_used' => 'This password has been used recently. Please choose a different one.',
-    'voyti.api.user_deleted' => 'User deleted',
-
     // PasswordRecoveryService
     'voyti.recovery.message_sent_if_exists' => 'If the email exists, a recovery message has been sent',
     'voyti.recovery.message_sent' => 'Recovery message sent',

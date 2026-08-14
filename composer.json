@@ -70,7 +70,6 @@
         "yiirocks/toast-bootstrap5": "^1.0",
         "yiisoft/code-style": "^1.1",
         "yiisoft/config": "^1.6",
-        "yiisoft/data-response": "^2.2",
         "yiisoft/db-sqlite": "^2.0",
         "yiisoft/di": "*",
         "yiisoft/router-fastroute": "^4.0",
@@ -82,7 +81,7 @@
         "yiirocks/voyti-2fa-email": "Email-code two-factor authentication method",
         "yiirocks/voyti-2fa-totp": "TOTP authenticator-app 2FA method with QR code provisioning",
         "yiirocks/voyti-2fa-webauthn": "WebAuthn/passkey two-factor authentication method",
-        "yiisoft/data-response": "Required for the REST API (voyti-routes-api): JSON response formatting for the user CRUD endpoints",
+        "yiirocks/voyti-api": "REST API for the Voyti user-management extension: JSON user CRUD endpoints, bearer-token auth, OpenAPI 3.1 spec, and API-token console commands",
         "yiisoft/yii-auth-client": "Social/OAuth2 login via Google, GitHub, Facebook, and more"
     },
     "autoload": {
@@ -128,7 +127,6 @@
             "events": "events.php",
             "di": "di.php",
             "voyti-routes": "routes.php",
-            "voyti-routes-api": "routes-api.php",
             "bootstrap": "bootstrap.php"
         }
     },

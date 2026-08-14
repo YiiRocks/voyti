@@ -5,25 +5,21 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Adapter;
 
 use Override;
-use Psr\Clock\ClockInterface;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Model\UserToken;
-use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Auth\IdentityInterface;
 use Yiisoft\Auth\IdentityRepositoryInterface;
-use Yiisoft\Auth\IdentityWithTokenRepositoryInterface;
 
 /**
- * Bridges `yiisoft/auth`'s identity-repository contracts to {@see User} and {@see UserToken}, resolving
- * identities by ID and by API token (honoring {@see VoytiConfig::$apiTokenLifespan} expiry).
+ * Bridges `yiisoft/auth`'s identity-repository contract to {@see User}, resolving identities by ID
+ * (session/remember-me lookups). API-token resolution lives in the `yiirocks/voyti-api` package,
+ * which extends this adapter to add expiry enforcement.
+ *
+ * @psalm-suppress ClassMustBeFinal — intentionally non-final: it is extended by
+ * `yiirocks/voyti-api`'s `ApiTokenIdentityAdapter`, which is not installed when this package's own
+ * Psalm run happens.
  */
-final readonly class IdentityAdapter implements IdentityRepositoryInterface, IdentityWithTokenRepositoryInterface
+readonly class IdentityAdapter implements IdentityRepositoryInterface
 {
-    public function __construct(
-        private VoytiConfig $config,
-        private ClockInterface $clock,
-    ) {}
-
     /**
      * @return User|null
      */
@@ -31,24 +27,5 @@ final readonly class IdentityAdapter implements IdentityRepositoryInterface, Ide
     public function findIdentity(string $id): ?IdentityInterface
     {
         return User::findById((int) $id);
-    }
-
-    #[Override]
-    public function findIdentityByToken(string $token, ?string $type = null): ?IdentityInterface
-    {
-        $userToken = UserToken::findByCodeAndType($token, UserToken::TYPE_API_ACCESS);
-
-        if ($userToken === null) {
-            return null;
-        }
-
-        if (
-            $this->config->apiTokenLifespan > 0
-            && ($this->clock->now()->getTimestamp() - $userToken->getCreatedAt()) > $this->config->apiTokenLifespan
-        ) {
-            return null;
-        }
-
-        return $userToken->getUser();
     }
 }

@@ -39,7 +39,6 @@ use YiiRocks\Voyti\Service\Rbac\RuleEditionService;
 use YiiRocks\Voyti\Service\Rbac\UpdateAssignmentsService;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\Service\SwitchIdentityService;
-use YiiRocks\Voyti\Service\User\ApiTokenService;
 use YiiRocks\Voyti\Service\User\BlockService;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\CreateService;
@@ -52,7 +51,6 @@ use YiiRocks\Voyti\Validator\Rbac\RuleValidator;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Aliases\Aliases;
 use Yiisoft\Auth\IdentityRepositoryInterface;
-use Yiisoft\Auth\IdentityWithTokenRepositoryInterface;
 use Yiisoft\Cookies\CookieEncryptor;
 use Yiisoft\Cookies\CookieMiddleware;
 use Yiisoft\Cookies\CookieSigner;
@@ -128,7 +126,6 @@ return [
         webTheme: $params['yiirocks/voyti']['webTheme'] ?? WebTheme::BOOTSTRAP5,
         viewPath: $params['yiirocks/voyti']['viewPath'] ?? null,
         mailPath: $params['yiirocks/voyti']['mailPath'] ?? VoytiConfig::DEFAULT_MAIL_PATH,
-        apiTokenLifespan: $params['yiirocks/voyti']['apiTokenLifespan'] ?? 0,
         enableAuditLog: $params['yiirocks/voyti']['enableAuditLog'] ?? true,
     ),
 
@@ -141,7 +138,6 @@ return [
         RequestInputParametersResolver $requestInputResolver,
     ) => new CompositeParametersResolver($hydratorResolver, $requestInputResolver),
     IdentityRepositoryInterface::class => IdentityAdapter::class,
-    IdentityWithTokenRepositoryInterface::class => IdentityAdapter::class,
 
     // PSR-15 middleware: VoytiMiddleware chains remember-me plus every enforcement middleware tagged
     // `voyti.enforce-middleware`. Core tags session-revocation and password-age (below); packages
@@ -266,7 +262,6 @@ return [
         SessionInterface $session,
         EventDispatcherInterface $eventDispatcher,
     ) => new SwitchIdentityService($config, $currentUser, $session, $eventDispatcher),
-    ApiTokenService::class => ApiTokenService::class,
     UserSessionDecorator::class => fn(
         EventDispatcherInterface $eventDispatcher,
         VoytiConfig $config,

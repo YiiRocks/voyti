@@ -76,13 +76,6 @@ return [
     'voyti.auth_item.updated' => 'El elemento de autorización ha sido actualizado',
     'voyti.auth_item.deleted' => 'El elemento de autorización ha sido eliminado',
 
-    // API AdminController
-    'voyti.api.not_found' => 'No encontrado',
-    'voyti.api.user_created' => 'Usuario creado',
-    'voyti.api.user_updated' => 'Usuario actualizado',
-    'voyti.api.password_previously_used' => 'Esta contraseña se ha usado recientemente. Por favor, elija una diferente.',
-    'voyti.api.user_deleted' => 'Usuario eliminado',
-
     // PasswordRecoveryService
     'voyti.recovery.message_sent_if_exists' => 'Si el correo electrónico existe, se ha enviado un mensaje de recuperación',
     'voyti.recovery.message_sent' => 'Mensaje de recuperación enviado',

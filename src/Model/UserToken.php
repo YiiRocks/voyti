@@ -18,6 +18,7 @@ use Yiisoft\ActiveRecord\Trait\PrivatePropertiesTrait;
 final class UserToken extends ActiveRecord
 {
     use PrivatePropertiesTrait;
+    // Used by yiirocks/voyti-api for bearer-token authentication
     public const int TYPE_API_ACCESS = 4;
     public const int TYPE_CONFIRM_NEW_EMAIL = 2;
     public const int TYPE_CONFIRM_OLD_EMAIL = 3;
