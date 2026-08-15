@@ -10,7 +10,6 @@ return [
     'voyti.security.logged_out' => 'Déconnecté',
     'voyti.security.password_expired' => 'Votre mot de passe a expiré. Veuillez en définir un nouveau.',
     'voyti.security.authenticated' => 'Authentifié',
-    'voyti.security.social_auth_cancelled' => 'La connexion sociale a été annulée.',
 
     // RegistrationController
     'voyti.registration.disabled' => "L'inscription est désactivée",
@@ -37,8 +36,6 @@ return [
     'voyti.settings.account_deleted' => 'Votre compte a été supprimé',
     'voyti.settings.email_changed' => 'Votre e-mail a été modifié',
     'voyti.settings.email_change_failed' => "Échec de la modification de l'e-mail",
-    'voyti.settings.network_disconnected' => 'Le réseau a été déconnecté',
-    'voyti.settings.network_not_found' => 'Réseau introuvable',
     'voyti.settings.session_not_found' => 'Session introuvable',
     'voyti.settings.session_terminated' => 'La session a été déconnectée',
     'voyti.settings.password_previously_used' => 'Ce mot de passe a été utilisé récemment. Veuillez en choisir un autre.',
@@ -103,7 +100,6 @@ return [
     'voyti.menu.dashboard' => 'Tableau de bord',
     'voyti.menu.userProfile' => 'Profil',
     'voyti.menu.account' => 'Compte',
-    'voyti.menu.networks' => 'Réseaux',
     'voyti.menu.sessions' => 'Sessions',
     'voyti.menu.logout' => 'Se déconnecter',
 
@@ -123,11 +119,6 @@ return [
     'voyti.view.registration.register_button' => "S'inscrire",
     'voyti.view.registration.already_have_account' => 'Vous avez déjà un compte ?',
     'voyti.view.registration.resend_title' => 'Renvoyer le lien de confirmation',
-    'voyti.view.registration.connect_title' => 'Connecter le compte',
-    'voyti.view.registration.connect_provider' => 'Connectez votre compte {provider}',
-    'voyti.view.registration.connect_message' => 'Vous pouvez connecter votre compte social ou en créer un nouveau.',
-    'voyti.view.registration.connect_login' => 'Connexion',
-    'voyti.view.registration.connect_register' => "S'inscrire",
 
     // Recovery views
     'voyti.view.recovery.request_title' => 'Récupérer le mot de passe',
@@ -143,7 +134,6 @@ return [
     'voyti.view.edit_profile.title' => 'Modifier le profil',
     'voyti.view.userProfile.title' => 'Aperçu du profil',
     'voyti.view.account.title' => 'Paramètres du compte',
-    'voyti.view.networks.title' => 'Réseaux',
     'voyti.view.privacy.title' => 'Confidentialité',
     'voyti.view.privacy.delete_account' => 'Supprimer mon compte',
     'voyti.view.settings.privacy' => 'Confidentialité',
@@ -288,10 +278,8 @@ return [
     'voyti.view.reset_password_button' => 'Envoyer le lien de réinitialisation du mot de passe',
     'voyti.view.update_profile_link' => 'Mettre à jour le profil',
     'voyti.view.send_button' => 'Envoyer',
-    'voyti.view.disconnect_button' => 'Déconnecter',
 
     // Widgets
-    'voyti.view.networks.no_networks' => 'Aucun réseau connecté',
 
     // Shared message view
     'voyti.view.go_home' => "Retour à l'accueil",

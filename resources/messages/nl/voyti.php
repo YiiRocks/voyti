@@ -10,7 +10,6 @@ return [
     'voyti.security.logged_out' => 'Uitgelogd',
     'voyti.security.password_expired' => 'Uw wachtwoord is verlopen. Stel een nieuw wachtwoord in.',
     'voyti.security.authenticated' => 'Geverifieerd',
-    'voyti.security.social_auth_cancelled' => 'Sociale aanmelding is geannuleerd.',
 
     // RegistrationController
     'voyti.registration.disabled' => 'Registratie is uitgeschakeld',
@@ -37,8 +36,6 @@ return [
     'voyti.settings.account_deleted' => 'Uw account is verwijderd',
     'voyti.settings.email_changed' => 'Uw e-mailadres is gewijzigd',
     'voyti.settings.email_change_failed' => 'E-mailadres kon niet worden gewijzigd',
-    'voyti.settings.network_disconnected' => 'Netwerk is ontkoppeld',
-    'voyti.settings.network_not_found' => 'Netwerk niet gevonden',
     'voyti.settings.session_not_found' => 'Sessie niet gevonden',
     'voyti.settings.session_terminated' => 'Sessie is afgemeld',
     'voyti.settings.password_previously_used' => 'Dit wachtwoord is onlangs al gebruikt. Kies een ander wachtwoord.',
@@ -103,7 +100,6 @@ return [
     'voyti.menu.dashboard' => 'Dashboard',
     'voyti.menu.userProfile' => 'Profiel',
     'voyti.menu.account' => 'Account',
-    'voyti.menu.networks' => 'Netwerken',
     'voyti.menu.sessions' => 'Sessies',
     'voyti.menu.logout' => 'Uitloggen',
 
@@ -123,11 +119,6 @@ return [
     'voyti.view.registration.register_button' => 'Registreren',
     'voyti.view.registration.already_have_account' => 'Heeft u al een account?',
     'voyti.view.registration.resend_title' => 'Bevestigingslink opnieuw verzenden',
-    'voyti.view.registration.connect_title' => 'Account koppelen',
-    'voyti.view.registration.connect_provider' => 'Koppel uw {provider}-account',
-    'voyti.view.registration.connect_message' => 'U kunt uw sociale account koppelen of een nieuw account registreren.',
-    'voyti.view.registration.connect_login' => 'Inloggen',
-    'voyti.view.registration.connect_register' => 'Registreren',
 
     // Recovery views
     'voyti.view.recovery.request_title' => 'Wachtwoord herstellen',
@@ -143,7 +134,6 @@ return [
     'voyti.view.edit_profile.title' => 'Profiel bewerken',
     'voyti.view.userProfile.title' => 'Profielvoorbeeld',
     'voyti.view.account.title' => 'Accountinstellingen',
-    'voyti.view.networks.title' => 'Netwerken',
     'voyti.view.privacy.title' => 'Privacy',
     'voyti.view.privacy.delete_account' => 'Mijn account verwijderen',
     'voyti.view.settings.privacy' => 'Privacy',
@@ -287,10 +277,8 @@ return [
     'voyti.view.reset_password_button' => 'Wachtwoordherstellink verzenden',
     'voyti.view.update_profile_link' => 'Profiel bijwerken',
     'voyti.view.send_button' => 'Verzenden',
-    'voyti.view.disconnect_button' => 'Ontkoppelen',
 
     // Widgets
-    'voyti.view.networks.no_networks' => 'Geen gekoppelde netwerken',
 
     // Shared message view
     'voyti.view.go_home' => 'Naar startpagina',

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
-use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Log\LoggerInterface;
 use YiiRocks\Voyti\Adapter\IdentityAdapter;
 use YiiRocks\Voyti\Clock\SystemClock;
+use YiiRocks\Voyti\Controller\Registration\RegistrationController;
 use YiiRocks\Voyti\Controller\Session\SessionController;
 use YiiRocks\Voyti\Enum\EmailChangeConfirmation;
 use YiiRocks\Voyti\Enum\ProfileVisibility;
@@ -22,11 +22,7 @@ use YiiRocks\Voyti\Middleware\SessionRevocationEnforceMiddleware;
 use YiiRocks\Voyti\Middleware\VoytiMiddleware;
 use YiiRocks\Voyti\Service\Admin\DashboardService;
 use YiiRocks\Voyti\Service\AuditLogService;
-use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
-use YiiRocks\Voyti\Service\Auth\SocialAuthCallbackService;
-use YiiRocks\Voyti\Service\Auth\SocialAuthClientReturnUrlConfigurator;
-use YiiRocks\Voyti\Service\Auth\SocialUserAttributesNormalizer;
-use YiiRocks\Voyti\Service\Auth\UserSocialAuthenticateService;
+use YiiRocks\Voyti\Service\Auth\LoginCompletionService;
 use YiiRocks\Voyti\Service\EmailChangeService;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\Password\ExpireService;
@@ -49,7 +45,6 @@ use YiiRocks\Voyti\Service\UserSession\UserSessionDecorator;
 use YiiRocks\Voyti\Validator\Rbac\ItemsValidator;
 use YiiRocks\Voyti\Validator\Rbac\RuleValidator;
 use YiiRocks\Voyti\VoytiConfig;
-use Yiisoft\Aliases\Aliases;
 use Yiisoft\Auth\IdentityRepositoryInterface;
 use Yiisoft\Cookies\CookieEncryptor;
 use Yiisoft\Cookies\CookieMiddleware;
@@ -65,7 +60,6 @@ use Yiisoft\Rbac\Db\AssignmentsStorage;
 use Yiisoft\Rbac\Db\ItemsStorage;
 use Yiisoft\Rbac\ItemsStorageInterface;
 use Yiisoft\Rbac\ManagerInterface;
-use Yiisoft\Router\CurrentRoute;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\Translator\CategorySource;
@@ -74,9 +68,6 @@ use Yiisoft\Translator\SimpleMessageFormatter;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\View\View;
-use Yiisoft\View\WebView;
-use Yiisoft\Yii\AuthClient\AuthAction;
-use Yiisoft\Yii\AuthClient\Collection;
 
 /** @var array $params */
 
@@ -104,7 +95,6 @@ return [
         accountMenuItems: $params['yiirocks/voyti']['accountMenuItems'] ?? [],
         privacyMenuItems: $params['yiirocks/voyti']['privacyMenuItems'] ?? [],
         enableRegistration: $params['yiirocks/voyti']['enableRegistration'] ?? true,
-        enableSocialNetworkRegistration: $params['yiirocks/voyti']['enableSocialNetworkRegistration'] ?? true,
         enableEmailConfirmation: $params['yiirocks/voyti']['enableEmailConfirmation'] ?? true,
         enableSwitchIdentities: $params['yiirocks/voyti']['enableSwitchIdentities'] ?? true,
         homeRoute: $params['yiirocks/voyti']['homeRoute'] ?? 'home',
@@ -277,44 +267,25 @@ return [
         ],
     ],
 
-    ...(class_exists(Collection::class) ? [
-        AuthAction::class => static fn(
-            Collection $clientCollection,
-            Aliases $aliases,
-            WebView $view,
-            ResponseFactoryInterface $responseFactory,
-            CurrentRoute $currentRoute,
-            SocialAuthClientReturnUrlConfigurator $returnUrlConfigurator,
-            SocialAuthCallbackService $callback,
-        ) => (new AuthAction(
-            $returnUrlConfigurator->configure($clientCollection),
-            $aliases,
-            $view,
-            $responseFactory,
-            $currentRoute,
-        ))
-            ->withSuccessCallback($callback->handleSuccess(...))
-            ->withCancelCallback($callback->handleCancel(...)),
-    ] : []),
+    // Post-registration hooks: side effects run against a newly registered user (e.g. connecting a
+    // pending social account from yiirocks/voyti-social-auth). Packages tag their hook with
+    // `voyti.post-registration-hook`; RegistrationController consults them all, in registration order.
+    RegistrationController::class => [
+        'class' => RegistrationController::class,
+        '__construct()' => [
+            'postRegistrationHooks' => Reference::to('tag@voyti.post-registration-hook'),
+        ],
+    ],
 
-    SocialUserAttributesNormalizer::class => SocialUserAttributesNormalizer::class,
-    PendingSocialAccountService::class => PendingSocialAccountService::class,
-    SocialAuthCallbackService::class => SocialAuthCallbackService::class,
-    UserSocialAuthenticateService::class => fn(
-        VoytiConfig $config,
-        CurrentUser $currentUser,
-        SessionInterface $session,
-        EventDispatcherInterface $eventDispatcher,
-        UserCreationHelper $userCreationHelper,
-        PendingSocialAccountService $pendingSocialAccountService,
-    ) => new UserSocialAuthenticateService(
-        $config,
-        $currentUser,
-        $session,
-        $eventDispatcher,
-        $userCreationHelper,
-        $pendingSocialAccountService,
-    ),
+    // Post-login hooks: side effects run against a user whose login has just completed (e.g.
+    // connecting a pending social account from yiirocks/voyti-social-auth). Packages tag their hook
+    // with `voyti.post-login-hook`; LoginCompletionService consults them all, in registration order.
+    LoginCompletionService::class => [
+        'class' => LoginCompletionService::class,
+        '__construct()' => [
+            'postLoginHooks' => Reference::to('tag@voyti.post-login-hook'),
+        ],
+    ],
 
     // Event listeners bound to their concrete class for autowiring; wiring to events is in events.php.
     Listener\AdminNotificationListener::class => Listener\AdminNotificationListener::class,

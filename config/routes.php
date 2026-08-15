@@ -8,7 +8,6 @@ use YiiRocks\Voyti\Middleware\RequireLoginMiddleware;
 use YiiRocks\Voyti\VoytiRoutes;
 use Yiisoft\Router\Group;
 use Yiisoft\Router\Route;
-use Yiisoft\Yii\AuthClient\AuthAction;
 
 $voytiParams = $params['yiirocks/voyti'] ?? [];
 
@@ -74,16 +73,10 @@ $sessionRoutes = [
     Route::post('logout')->name('voyti/session-logout')->action([Controller\Session\SessionController::class, 'logout']),
 ];
 
-// only register the social-auth callback route when yiisoft/yii-auth-client is installed,
-if (class_exists(AuthAction::class)) {
-    $sessionRoutes[] = Route::get('auth/{authclient}')->name('voyti/session-auth')->action(AuthAction::class);
-}
-
 $registrationRoutes = [
     Route::methods(['GET', 'POST'], 'register')->name('voyti/registration-register')->action([Controller\Registration\RegistrationController::class, 'register']),
     Route::methods(['GET', 'POST'], 'confirm/{id:\d+}/{code}')->name('voyti/registration-confirm')->action([Controller\Registration\RegistrationController::class, 'confirm']),
     Route::methods(['GET', 'POST'], 'resend')->name('voyti/registration-resend')->action([Controller\Registration\RegistrationController::class, 'resend']),
-    Route::get('connect/{code}')->name('voyti/registration-connect')->action([Controller\Registration\RegistrationController::class, 'connect']),
 ];
 
 $passwordResetRoutes = [
@@ -96,8 +89,6 @@ $settingsRoutes = [
     Route::methods(['GET', 'POST'], 'profile')->name('voyti/user-profile')->action([Controller\Profile\ProfileController::class, 'update']),
     Route::methods(['GET', 'POST'], 'account')->name('voyti/user-account')->action([Controller\Account\AccountController::class, 'update']),
     Route::get('account/confirm/{code}')->name('voyti/user-account-confirm')->action([Controller\Account\AccountController::class, 'confirm']),
-    Route::get('networks/')->name('voyti/user-social-network')->action([Controller\SocialNetwork\SocialNetworkController::class, 'index']),
-    Route::post('networks/disconnect/{id:\d+}')->name('voyti/user-social-network-delete')->action([Controller\SocialNetwork\SocialNetworkController::class, 'delete']),
     Route::get('sessions/')->name('voyti/user-account-sessions')->action([Controller\Account\SessionController::class, 'index']),
     Route::post('sessions/terminate/{sessionId}')->name('voyti/user-account-sessions-terminate')->action([Controller\Account\SessionController::class, 'terminate']),
 ];

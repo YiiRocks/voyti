@@ -26,12 +26,11 @@ final class MenuView
             self::link($translator->translate('voyti.menu.dashboard'), $url->generate('voyti/user')),
             self::link($translator->translate('voyti.menu.userProfile'), $url->generate('voyti/user-profile')),
             self::link($translator->translate('voyti.menu.account'), $url->generate('voyti/user-account')),
-            self::link($translator->translate('voyti.menu.networks'), $url->generate('voyti/user-social-network')),
             self::link($translator->translate('voyti.menu.sessions'), $url->generate('voyti/user-account-sessions')),
         ];
 
-        // Packages (e.g. yiirocks/voyti-2fa) contribute account-menu links via the accountMenuItems
-        // config, so core needs no knowledge of them.
+        // Packages (e.g. yiirocks/voyti-2fa, yiirocks/voyti-social-auth) contribute account-menu
+        // links via the accountMenuItems config, so core needs no knowledge of them.
         foreach ($config->accountMenuItems as $item) {
             $items[] = self::link(
                 $translator->translate($item['label'], category: $item['category']),

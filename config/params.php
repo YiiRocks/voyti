@@ -16,7 +16,6 @@ return [
         'accountMenuItems' => [],
         'privacyMenuItems' => [],
         'enableRegistration' => true,
-        'enableSocialNetworkRegistration' => true,
         'enableEmailConfirmation' => true,
         'enableSwitchIdentities' => true,
         'homeRoute' => 'home',

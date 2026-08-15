@@ -18,7 +18,6 @@ use YiiRocks\Voyti\Model\Form\Auth\LoginForm;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\Service\Auth\LoginCompletionService;
-use YiiRocks\Voyti\Service\Auth\SocialAuthCallbackService;
 use YiiRocks\Voyti\Service\FlashNotifier;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\VoytiConfig;
@@ -30,7 +29,6 @@ use Yiisoft\Session\SessionInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\User\Guest\GuestIdentityInterface;
-use Yiisoft\Yii\AuthClient\AuthAction;
 use Yiisoft\Yii\AuthClient\Collection;
 use Yiisoft\Yii\AuthClient\Widget\AuthChoice;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
@@ -39,8 +37,13 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
  * Handles login and logout. A successful password login can be interrupted by a
  * {@see LoginChallengeInterface} (collected via the `voyti.login-challenge` tag - e.g. the two-factor
  * step from `yiirocks/voyti-2fa`) before the session is established. The social-auth redirect/callback
- * flow itself is handled by {@see AuthAction} and {@see SocialAuthCallbackService}, wired directly as
- * the `voyti/session-auth` route action.
+ * flow itself is handled entirely by `yiirocks/voyti-social-auth` (its `AuthAction`/callback-service
+ * wiring), reached via the `voyti/session-auth` route contributed by that package - core has no
+ * compile-time knowledge of it.
+ *
+ * @psalm-suppress UndefinedClass Collection comes from yiisoft/yii-auth-client, a peer dependency
+ * core has no compile-time knowledge of at all - $clientCollection only resolves non-null when
+ * yiirocks/voyti-social-auth is installed (it binds Collection via its own config/di.php).
  */
 final readonly class SessionController
 {
@@ -58,12 +61,12 @@ final readonly class SessionController
         private SessionInterface $session,
         private RememberMeCookieService $rememberMeCookieService,
         private VoytiConfig $config,
-        private ?Collection $clientCollection,
         private LoginCompletionService $loginCompletionService,
         /** @var iterable<LoginChallengeInterface> */
         private iterable $loginChallenges,
         private FormHydrator $formHydrator,
         private FlashNotifier $flashNotifier,
+        private ?Collection $clientCollection = null,
     ) {}
 
     public function login(ServerRequestInterface $request): ResponseInterface
@@ -104,14 +107,6 @@ final readonly class SessionController
             }
         }
 
-        $authChoice = null;
-        if ($this->clientCollection !== null) {
-            /** @infection-ignore-all The auth-choice widget (route + cosmetic button styling) only renders when the host has configured OAuth clients, so its construction has no behavioural effect the library's own suite can observe. */
-            $authChoice = AuthChoice::widget()
-                ->authRoute('voyti/session-auth')
-                ->linkAttributes(['class' => LinkButtonHelper::submitButtonClass()]);
-        }
-
         return $this->renderView('session/login', [
             'form' => $form,
             'data' => [
@@ -120,7 +115,7 @@ final readonly class SessionController
                 'showRegisterLink' => $this->config->enableRegistration,
                 'registerUrl' => $this->url->generate('voyti/registration-register'),
                 'recaptchaFieldHtml' => RecaptchaHelper::render($form, $this->config),
-                'authChoice' => $authChoice,
+                'authChoice' => $this->buildAuthChoice(),
             ],
         ]);
     }
@@ -151,6 +146,28 @@ final readonly class SessionController
         return $this->rememberMeCookieService->expireCookie(
             $this->redirectWithFlash($this->config->getHomeUrl($this->url), 'voyti.security.logged_out'),
         );
+    }
+
+    /**
+     * @psalm-suppress UndefinedClass AuthChoice comes from yiisoft/yii-auth-client - see the
+     * class docblock's suppress comment for Collection.
+     * @psalm-suppress MixedAssignment, MixedMethodCall, MixedReturnStatement Cascades from the
+     * same undefined-class gap.
+     */
+    private function buildAuthChoice(): ?AuthChoice
+    {
+        if ($this->clientCollection === null) {
+            return null;
+        }
+
+        // @codeCoverageIgnoreStart
+        // $clientCollection only resolves non-null when yiirocks/voyti-social-auth is installed (it
+        // binds Collection via its own config/di.php) - core's own test suite has no way to exercise
+        // this branch, only that package's test suite (which constructs a real Collection) can.
+        return AuthChoice::widget()
+            ->authRoute('voyti/session-auth')
+            ->linkAttributes(['class' => LinkButtonHelper::submitButtonClass()]);
+        // @codeCoverageIgnoreEnd
     }
 
     private function homeRedirectResponse(): ResponseInterface

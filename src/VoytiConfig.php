@@ -31,7 +31,6 @@ final readonly class VoytiConfig
          */
         public array $accountMenuItems,
         public bool $enableRegistration,
-        public bool $enableSocialNetworkRegistration,
         public bool $enableEmailConfirmation,
         public bool $enableSwitchIdentities,
         public string $homeRoute,

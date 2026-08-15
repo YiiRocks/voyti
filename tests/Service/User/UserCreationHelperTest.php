@@ -46,6 +46,35 @@ final class UserCreationHelperTest extends DatabaseTestCase
         self::assertNull(User::findByUsername('loser'));
     }
 
+    public function testPersistAndNotifySkippingConfirmationPersistsAsAlreadyConfirmed(): void
+    {
+        // Even with email confirmation required, skipping it (e.g. because an external identity
+        // provider already verified the address - the only caller today is
+        // yiirocks/voyti-social-auth's auto-registration path) persists the user as confirmed
+        // immediately and sends the welcome mail instead of a confirmation token/mail.
+        $mailer = new MailCapture();
+        $config = VoytiConfigFactory::create(enableEmailConfirmation: true);
+        $passwordHasher = TestPasswordHasherFactory::create();
+        $helper = new UserCreationHelper(
+            $this->createMailService($mailer),
+            $this->createMock(EventDispatcherInterface::class),
+            $passwordHasher,
+            $config,
+            new PasswordHistoryService($passwordHasher, $config),
+        );
+
+        $user = $helper->buildUser('skip-confirm@example.com', 'skipconfirm', 'password123');
+
+        $requiresConfirmation = $helper->persistAndNotifySkippingConfirmation($user);
+
+        self::assertFalse($requiresConfirmation);
+        $saved = User::findByUsername('skipconfirm');
+        self::assertNotNull($saved);
+        self::assertNotNull($saved->getConfirmedAt());
+        self::assertNotNull($mailer->getLastMessage());
+        self::assertSame('Welcome to App', $mailer->getLastMessage()->getSubject());
+    }
+
     public function testPersistAndNotifyThrowsWithEmailConflictMessageOnRace(): void
     {
         $helper = $this->createHelper();

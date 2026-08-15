@@ -10,7 +10,6 @@ return [
     'voyti.security.logged_out' => 'Abgemeldet',
     'voyti.security.password_expired' => 'Ihr Passwort ist abgelaufen. Bitte legen Sie ein neues fest.',
     'voyti.security.authenticated' => 'Authentifiziert',
-    'voyti.security.social_auth_cancelled' => 'Die Anmeldung über den sozialen Anbieter wurde abgebrochen.',
 
     // RegistrationController
     'voyti.registration.disabled' => 'Die Registrierung ist deaktiviert',
@@ -37,8 +36,6 @@ return [
     'voyti.settings.account_deleted' => 'Ihr Konto wurde gelöscht',
     'voyti.settings.email_changed' => 'Ihre E-Mail-Adresse wurde geändert',
     'voyti.settings.email_change_failed' => 'E-Mail-Adresse konnte nicht geändert werden',
-    'voyti.settings.network_disconnected' => 'Das Netzwerk wurde getrennt',
-    'voyti.settings.network_not_found' => 'Netzwerk nicht gefunden',
     'voyti.settings.session_not_found' => 'Sitzung nicht gefunden',
     'voyti.settings.session_terminated' => 'Sitzung wurde abgemeldet',
     'voyti.settings.password_previously_used' => 'Dieses Passwort wurde kürzlich bereits verwendet. Bitte wählen Sie ein anderes.',
@@ -103,7 +100,6 @@ return [
     'voyti.menu.dashboard' => 'Dashboard',
     'voyti.menu.userProfile' => 'Profil',
     'voyti.menu.account' => 'Konto',
-    'voyti.menu.networks' => 'Netzwerke',
     'voyti.menu.sessions' => 'Sitzungen',
     'voyti.menu.logout' => 'Abmelden',
 
@@ -123,11 +119,6 @@ return [
     'voyti.view.registration.register_button' => 'Registrieren',
     'voyti.view.registration.already_have_account' => 'Bereits ein Konto?',
     'voyti.view.registration.resend_title' => 'Bestätigungslink erneut senden',
-    'voyti.view.registration.connect_title' => 'Konto verbinden',
-    'voyti.view.registration.connect_provider' => 'Verbinden Sie Ihr {provider}-Konto',
-    'voyti.view.registration.connect_message' => 'Sie können Ihr Social-Media-Konto verbinden oder ein neues Konto registrieren.',
-    'voyti.view.registration.connect_login' => 'Anmelden',
-    'voyti.view.registration.connect_register' => 'Registrieren',
 
     // Recovery views
     'voyti.view.recovery.request_title' => 'Passwort wiederherstellen',
@@ -143,7 +134,6 @@ return [
     'voyti.view.edit_profile.title' => 'Profil bearbeiten',
     'voyti.view.userProfile.title' => 'Profilvorschau',
     'voyti.view.account.title' => 'Kontoeinstellungen',
-    'voyti.view.networks.title' => 'Netzwerke',
     'voyti.view.privacy.title' => 'Datenschutz',
     'voyti.view.privacy.delete_account' => 'Mein Konto löschen',
     'voyti.view.settings.privacy' => 'Datenschutz',
@@ -287,10 +277,8 @@ return [
     'voyti.view.reset_password_button' => 'Passwort-Reset-Link senden',
     'voyti.view.update_profile_link' => 'Profil aktualisieren',
     'voyti.view.send_button' => 'Senden',
-    'voyti.view.disconnect_button' => 'Trennen',
 
     // Widgets
-    'voyti.view.networks.no_networks' => 'Keine verbundenen Netzwerke',
 
     // Shared message view
     'voyti.view.go_home' => 'Zur Startseite',

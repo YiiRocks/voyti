@@ -9,11 +9,9 @@ use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserPasswordHistory;
 use YiiRocks\Voyti\Model\UserProfile;
 use YiiRocks\Voyti\Model\UserSessions;
-use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\TestCase;
-use Yiisoft\ActiveRecord\ActiveQueryInterface;
 use Yiisoft\Db\Connection\ConnectionInterface;
 use Yiisoft\Db\Connection\ConnectionProvider;
 
@@ -66,20 +64,6 @@ final class UserTest extends TestCase
         ')->execute();
 
         $this->connection->createCommand('
-            CREATE TABLE "user_social_account" (
-                "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-                "user_id" INTEGER,
-                "provider" VARCHAR(255) NOT NULL,
-                "client_id" VARCHAR(255) NOT NULL,
-                "code" VARCHAR(32),
-                "email" VARCHAR(255),
-                "username" VARCHAR(255),
-                "data" TEXT,
-                "created_at" INTEGER NOT NULL
-            )
-        ')->execute();
-
-        $this->connection->createCommand('
             CREATE TABLE "user_token" (
                 "user_id" INTEGER NOT NULL,
                 "code" VARCHAR(64) NOT NULL,
@@ -114,7 +98,6 @@ final class UserTest extends TestCase
             $this->connection->createCommand('DROP TABLE IF EXISTS "user_password_history"')->execute();
             $this->connection->createCommand('DROP TABLE IF EXISTS "user_sessions"')->execute();
             $this->connection->createCommand('DROP TABLE IF EXISTS "user_token"')->execute();
-            $this->connection->createCommand('DROP TABLE IF EXISTS "user_social_account"')->execute();
             $this->connection->createCommand('DROP TABLE IF EXISTS "user_profile"')->execute();
             $this->connection->createCommand('DROP TABLE IF EXISTS "user"')->execute();
         }
@@ -212,7 +195,6 @@ final class UserTest extends TestCase
 
         $user->delete();
 
-        self::assertCount(0, UserSocialAccount::findByUserId($userId));
         self::assertCount(0, UserToken::findByUserId($userId));
         self::assertCount(0, UserSessions::findByUserId($userId));
         self::assertCount(0, UserPasswordHistory::findByUserId($userId));
@@ -279,38 +261,6 @@ final class UserTest extends TestCase
         $entity = new User();
         $entity->$setter($value);
         self::assertSame($value, $entity->$getter());
-    }
-
-    public function testGetSocialNetworkAccountsReturnsQuery(): void
-    {
-        $entity = new User();
-        $entity->setUsername('social_test');
-        $entity->setEmail('social_test@example.com');
-        $entity->setPasswordHash('hash');
-        $entity->setAuthKey('key');
-        $entity->setCreatedAt(1000);
-        $entity->setUpdatedAt(1000);
-        $entity->save();
-
-        $userId = (int) $entity->getId();
-
-        $account = new UserSocialAccount();
-        $account->setUserId($userId);
-        $account->setProvider('github');
-        $account->setClientId('client123');
-        $account->setCreatedAt(1000);
-        $account->save();
-
-        $loaded = User::query()->where(['username' => 'social_test'])->one();
-        self::assertNotNull($loaded);
-
-        $query = $loaded->getSocialNetworkAccounts();
-        self::assertInstanceOf(ActiveQueryInterface::class, $query);
-
-        $accounts = $query->all();
-        self::assertCount(1, $accounts);
-        self::assertInstanceOf(UserSocialAccount::class, $accounts[0]);
-        self::assertSame('github', $accounts[0]->getProvider());
     }
 
     public function testGetTokensReturnsEmptyArrayWhenNone(): void
@@ -449,13 +399,6 @@ final class UserTest extends TestCase
 
     private function createRelatedRows(int $userId): void
     {
-        $socialAccount = new UserSocialAccount();
-        $socialAccount->setUserId($userId);
-        $socialAccount->setProvider('github');
-        $socialAccount->setClientId('client-' . $userId);
-        $socialAccount->setCreatedAt(time());
-        $socialAccount->save();
-
         $token = new UserToken();
         $token->setUserId($userId);
         $token->setCode('code-' . $userId);

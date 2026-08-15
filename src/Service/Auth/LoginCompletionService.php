@@ -8,6 +8,7 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use YiiRocks\Voyti\Auth\PostLoginHookInterface;
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
 use YiiRocks\Voyti\Helper\LoginMetadataHelper;
 use YiiRocks\Voyti\Model\User;
@@ -21,9 +22,11 @@ use Yiisoft\User\CurrentUser;
 
 /**
  * Finalizes an authenticated login once every check (password, and any login challenge such as
- * two-factor) has passed: establishes the session, records login metadata, connects a pending social
- * account, dispatches {@see AfterLoginEvent}, and redirects home with an optional remember-me cookie.
- * Shared by the plain login flow and by challenge handlers that complete login after their own step.
+ * two-factor) has passed: establishes the session, records login metadata, runs every
+ * {@see PostLoginHookInterface} (collected via the `voyti.post-login-hook` tag - e.g. connecting a
+ * pending social account from `yiirocks/voyti-social-auth`), dispatches {@see AfterLoginEvent}, and
+ * redirects home with an optional remember-me cookie. Shared by the plain login flow and by challenge
+ * handlers that complete login after their own step.
  */
 final readonly class LoginCompletionService
 {
@@ -32,7 +35,8 @@ final readonly class LoginCompletionService
         private EventDispatcherInterface $eventDispatcher,
         private ResponseFactoryInterface $responseFactory,
         private RememberMeCookieService $rememberMeCookieService,
-        private PendingSocialAccountService $pendingSocialAccountService,
+        /** @var iterable<PostLoginHookInterface> */
+        private iterable $postLoginHooks,
         private SessionInterface $session,
         private UrlGeneratorInterface $url,
         private VoytiConfig $config,
@@ -46,7 +50,9 @@ final readonly class LoginCompletionService
             : $this->currentUser;
         $currentUser->login($user);
         LoginMetadataHelper::recordLogin($user, $request->getServerParams());
-        $this->pendingSocialAccountService->connect($user);
+        foreach ($this->postLoginHooks as $postLoginHook) {
+            $postLoginHook->handle($user);
+        }
         $this->eventDispatcher->dispatch(
             new AfterLoginEvent(
                 $user,

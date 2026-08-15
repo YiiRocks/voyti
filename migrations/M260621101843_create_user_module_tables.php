@@ -27,7 +27,6 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
         $b->dropTable('{{%user_password_history}}');
         $b->dropTable('{{%user_sessions}}');
         $b->dropTable('{{%user_token}}');
-        $b->dropTable('{{%user_social_account}}');
         $b->dropTable('{{%user_profile}}');
         $b->dropTable('{{%user}}');
     }
@@ -64,19 +63,6 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
             'public_email' => ColumnBuilder::string(255),
             'timezone' => ColumnBuilder::string(40),
             'website' => ColumnBuilder::string(255),
-            'FOREIGN KEY ([[user_id]]) REFERENCES {{%user}} ([[id]]) ON DELETE CASCADE ON UPDATE RESTRICT',
-        ]);
-
-        $b->createTable('{{%user_social_account}}', [
-            'id' => ColumnBuilder::primaryKey(),
-            'user_id' => ColumnBuilder::integer(),
-            'provider' => ColumnBuilder::string(255)->notNull(),
-            'client_id' => ColumnBuilder::string(255)->notNull(),
-            'code' => ColumnBuilder::string(32),
-            'email' => ColumnBuilder::string(255),
-            'username' => ColumnBuilder::string(255),
-            'data' => ColumnBuilder::text(),
-            'created_at' => ColumnBuilder::integer()->notNull(),
             'FOREIGN KEY ([[user_id]]) REFERENCES {{%user}} ([[id]]) ON DELETE CASCADE ON UPDATE RESTRICT',
         ]);
 
@@ -124,9 +110,6 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
         $b->createIndex('{{%user}}', 'idx-user-email', ['email'], 'UNIQUE');
         $b->createIndex('{{%user}}', 'idx-user-username', ['username'], 'UNIQUE');
         $b->createIndex('{{%user_profile}}', 'idx-user-profile-user-id', ['user_id'], 'UNIQUE');
-        $b->createIndex('{{%user_social_account}}', 'idx-user-social-account-user-id', ['user_id']);
-        $b->createIndex('{{%user_social_account}}', 'idx-user-social-account-provider-client-id', ['provider', 'client_id'], 'UNIQUE');
-        $b->createIndex('{{%user_social_account}}', 'idx-user-social-account-code', ['code'], 'UNIQUE');
         $b->createIndex('{{%user_token}}', 'idx-user-token-user-id', ['user_id']);
         $b->createIndex('{{%user_sessions}}', 'idx-user-sessions-user-id', ['user_id']);
         $b->createIndex('{{%user_sessions}}', 'idx-user-sessions-session-id', ['session_id']);

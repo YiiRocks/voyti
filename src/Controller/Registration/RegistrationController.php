@@ -7,13 +7,13 @@ namespace YiiRocks\Voyti\Controller\Registration;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use YiiRocks\Voyti\Auth\PostRegistrationHookInterface;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Helper\RecaptchaHelper;
 use YiiRocks\Voyti\Model\Form\Auth\RegistrationForm;
 use YiiRocks\Voyti\Model\Form\Auth\ResendForm;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Service\Auth\PendingSocialAccountService;
 use YiiRocks\Voyti\Service\FlashNotifier;
 use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\RegisterService;
@@ -22,12 +22,14 @@ use Yiisoft\FormModel\FormHydrator;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
-use Yiisoft\Yii\AuthClient\Collection;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 /**
- * Handles new-account registration: the registration form, email confirmation, resending the
- * confirmation email, and connecting a pending social account created during signup.
+ * Handles new-account registration: the registration form, email confirmation, and resending the
+ * confirmation email. A successful registration is followed by a
+ * {@see PostRegistrationHookInterface} sweep (collected via the `voyti.post-registration-hook` tag -
+ * e.g. connecting a pending social account from `yiirocks/voyti-social-auth`), so core needs no
+ * knowledge of what packages hook into it.
  */
 final readonly class RegistrationController
 {
@@ -41,11 +43,11 @@ final readonly class RegistrationController
         private ConfirmationService $confirmationService,
         private UrlGeneratorInterface $url,
         private VoytiConfig $config,
-        private PendingSocialAccountService $pendingSocialAccountService,
+        /** @var iterable<PostRegistrationHookInterface> */
+        private iterable $postRegistrationHooks,
         private FormHydrator $formHydrator,
         private ResponseFactoryInterface $responseFactory,
         private FlashNotifier $flashNotifier,
-        private ?Collection $clientCollection,
     ) {}
 
     public function confirm(#[RouteArgument] int $id, #[RouteArgument] string $code): ResponseInterface
@@ -65,27 +67,6 @@ final readonly class RegistrationController
         }
 
         return $this->renderError('voyti.registration.confirmation_link_invalid');
-    }
-
-    public function connect(#[RouteArgument] string $code): ResponseInterface
-    {
-        $account = $this->pendingSocialAccountService->useCode($code);
-        if ($account === null) {
-            return $this->renderError('voyti.settings.network_not_found');
-        }
-
-        $provider = $account->getProvider();
-        $providerTitle = $this->clientCollection?->hasClient($provider) === true
-            ? $this->clientCollection->getClient($provider)->getTitle()
-            : $provider;
-
-        return $this->renderView('registration/connect', [
-            'data' => [
-                'providerTitle' => $providerTitle,
-                'loginUrl' => $this->url->generate('voyti/session-login'),
-                'registerUrl' => $this->url->generate('voyti/registration-register'),
-            ],
-        ]);
     }
 
     public function register(ServerRequestInterface $request): ResponseInterface
@@ -109,7 +90,9 @@ final readonly class RegistrationController
             if ($serviceResult->isSuccess()) {
                 $user = User::findByEmail($form->email);
                 if ($user !== null) {
-                    $this->pendingSocialAccountService->connect($user);
+                    foreach ($this->postRegistrationHooks as $postRegistrationHook) {
+                        $postRegistrationHook->handle($user);
+                    }
                 }
 
                 return $this->redirectWithFlash(

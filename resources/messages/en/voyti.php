@@ -10,7 +10,6 @@ return [
     'voyti.security.logged_out' => 'Logged out',
     'voyti.security.password_expired' => 'Your password has expired. Please set a new one.',
     'voyti.security.authenticated' => 'Authenticated',
-    'voyti.security.social_auth_cancelled' => 'Social sign-in was cancelled.',
 
     // RegistrationController
     'voyti.registration.disabled' => 'Registration is disabled',
@@ -37,8 +36,6 @@ return [
     'voyti.settings.account_deleted' => 'Your account has been deleted',
     'voyti.settings.email_changed' => 'Your email has been changed',
     'voyti.settings.email_change_failed' => 'Failed to change email',
-    'voyti.settings.network_disconnected' => 'Network has been disconnected',
-    'voyti.settings.network_not_found' => 'Network not found',
     'voyti.settings.session_not_found' => 'Session not found',
     'voyti.settings.session_terminated' => 'Session has been logged out',
     'voyti.settings.password_previously_used' => 'This password has been used recently. Please choose a different one.',
@@ -103,7 +100,6 @@ return [
     'voyti.menu.dashboard' => 'Dashboard',
     'voyti.menu.userProfile' => 'Profile',
     'voyti.menu.account' => 'Account',
-    'voyti.menu.networks' => 'Networks',
     'voyti.menu.sessions' => 'Sessions',
     'voyti.menu.logout' => 'Log out',
 
@@ -123,11 +119,6 @@ return [
     'voyti.view.registration.register_button' => 'Register',
     'voyti.view.registration.already_have_account' => 'Already have an account?',
     'voyti.view.registration.resend_title' => 'Resend confirmation link',
-    'voyti.view.registration.connect_title' => 'Connect account',
-    'voyti.view.registration.connect_provider' => 'Connect your {provider} account',
-    'voyti.view.registration.connect_message' => 'You can connect your social account or register a new one.',
-    'voyti.view.registration.connect_login' => 'Login',
-    'voyti.view.registration.connect_register' => 'Register',
 
     // Recovery views
     'voyti.view.recovery.request_title' => 'Recover password',
@@ -143,7 +134,6 @@ return [
     'voyti.view.edit_profile.title' => 'Edit Profile',
     'voyti.view.userProfile.title' => 'Profile preview',
     'voyti.view.account.title' => 'Account settings',
-    'voyti.view.networks.title' => 'Networks',
     'voyti.view.privacy.title' => 'Privacy',
     'voyti.view.privacy.delete_account' => 'Delete my account',
     'voyti.view.settings.privacy' => 'Privacy',
@@ -288,10 +278,8 @@ return [
     'voyti.view.reset_password_button' => 'Send password reset link',
     'voyti.view.update_profile_link' => 'Update profile',
     'voyti.view.send_button' => 'Send',
-    'voyti.view.disconnect_button' => 'Disconnect',
 
     // Widgets
-    'voyti.view.networks.no_networks' => 'No connected networks',
 
     // Shared message view
     'voyti.view.go_home' => 'Go home',

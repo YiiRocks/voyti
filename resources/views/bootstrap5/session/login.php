@@ -24,6 +24,10 @@ use Yiisoft\Yii\View\Renderer\Csrf;
  * @var TranslatorInterface $translator
  * @var array{success: string|null, warning: string|null} $flash
  * @var Csrf $csrf
+ *
+ * @psalm-suppress UndefinedDocblockClass AuthChoice comes from yiisoft/yii-auth-client, a peer
+ * dependency only yiirocks/voyti-social-auth actually requires - core has no compile-time
+ * knowledge of it at all.
  */
 
 /** @psalm-suppress InvalidScope */
@@ -70,6 +74,7 @@ if ($data['showRegisterLink']) {
 }
 echo Html::div()->close();
 
+/** @psalm-suppress UndefinedDocblockClass AuthChoice - see the $data docblock's suppress comment above. */
 if ($data['authChoice'] !== null && $data['authChoice']->getClients() !== []) {
     echo Html::div()->class('mt-4')->open();
 
@@ -80,6 +85,10 @@ if ($data['authChoice'] !== null && $data['authChoice']->getClients() !== []) {
     echo Html::div()->close();
 
     echo Html::div()->class('text-center')->open();
+    /**
+     * @psalm-suppress UndefinedDocblockClass AuthChoice - see the $data docblock's suppress comment above.
+     * @psalm-suppress MixedArgument render()'s return type is unknown for the same reason.
+     */
     echo $data['authChoice']->render();
     echo Html::div()->close();
 

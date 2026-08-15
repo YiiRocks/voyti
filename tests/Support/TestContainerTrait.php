@@ -84,29 +84,6 @@ trait TestContainerTrait
         $validatorCategorySource = $validatorDefinitions['yii.validator.categorySource']['definition']();
         $definitions = array_merge($validatorDefinitions, $definitions);
 
-        // Voyti binds no Collection/StateStorageInterface of its own - those come from
-        // yii-auth-client's own config/di.php, which yiisoft/config auto-merges in for any host
-        // that installs the (optional) package. Replicate that merge here so AuthAction's
-        // dependency chain resolves the same way it would in a real application.
-        $authClientInstallPath = InstalledVersions::getInstallPath('yiisoft/yii-auth-client');
-        $authClientParams = require $authClientInstallPath . '/config/params.php';
-        $authClientDiPath = $authClientInstallPath . '/config/di.php';
-        $authClientDefinitions = (static function (array $params) use ($authClientDiPath): array {
-            return require $authClientDiPath;
-        })($authClientParams);
-        $definitions = array_merge($authClientDefinitions, $definitions);
-
-        // yii-auth-client's AuthChoice widget needs AssetManager, which needs AssetLoaderInterface -
-        // both come from yiisoft/assets's own config/di.php (a real dependency of yii-auth-client,
-        // auto-merged by yiisoft/config in a real application). Replicate that merge here too.
-        $assetsInstallPath = InstalledVersions::getInstallPath('yiisoft/assets');
-        $assetsParams = require $assetsInstallPath . '/config/params.php';
-        $assetsDiPath = $assetsInstallPath . '/config/di.php';
-        $assetsDefinitions = (static function (array $params) use ($assetsDiPath): array {
-            return require $assetsDiPath;
-        })($assetsParams);
-        $definitions = array_merge($assetsDefinitions, $definitions);
-
         $psr17Factory = new Psr17Factory();
         $session = new FakeSession();
 

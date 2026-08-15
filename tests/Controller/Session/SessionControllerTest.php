@@ -14,12 +14,13 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Auth\LoginChallengeInterface;
+use YiiRocks\Voyti\Auth\PostLoginHookInterface;
 use YiiRocks\Voyti\Controller\Session\SessionController;
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
 use YiiRocks\Voyti\Event\Session\SessionEvent;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
-use YiiRocks\Voyti\Model\UserSocialAccount;
+use YiiRocks\Voyti\Service\Auth\LoginCompletionService;
 use YiiRocks\Voyti\tests\Support\CurrentUserTrait;
 use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
@@ -31,10 +32,6 @@ use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\Support\ValidatorMockTrait;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\VoytiConfig;
-use Yiisoft\Assets\AssetBundle;
-use Yiisoft\Assets\AssetLoaderInterface;
-use Yiisoft\Assets\AssetPublisherInterface;
-use Yiisoft\Assets\AssetUtil;
 use Yiisoft\Http\Header;
 use Yiisoft\Http\Status;
 use Yiisoft\Security\PasswordHasher;
@@ -42,8 +39,6 @@ use Yiisoft\Session\Flash\FlashInterface;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\Validator\ValidatorInterface;
-use Yiisoft\Yii\AuthClient\Collection;
-use Yiisoft\Yii\AuthClient\OAuth2Interface;
 
 #[AllowMockObjectsWithoutExpectations]
 final class SessionControllerTest extends DatabaseTestCase
@@ -79,19 +74,7 @@ final class SessionControllerTest extends DatabaseTestCase
         $html = (string) $this->createController()->login(new ServerRequest('GET', '/'))->getBody();
         self::assertStringContainsString('Log In', $html);
 
-        // GET with configured OAuth clients: renders the social-login connect buttons
-        $client = $this->createMock(OAuth2Interface::class);
-        $client->method('getName')->willReturn('github');
-        $client->method('getTitle')->willReturn('GitHub');
-        $collection = new Collection(['github' => $client]);
-        $html = (string) $this->createController([
-            Collection::class => $collection,
-            ...$this->assetStubs(),
-        ])->login(new ServerRequest('GET', '/'))->getBody();
-        self::assertStringContainsString('voyti/session-auth?authclient=github', $html);
-        self::assertStringContainsString('GitHub', $html);
-
-        // POST success: redirects, logs in, records metadata, connects pending social account
+        // POST success: redirects, logs in, records metadata
         $config = VoytiConfigFactory::create(homeRoute: 'app/dashboard');
         $user1 = $this->createUser(
             username: 'login_success',
@@ -99,16 +82,15 @@ final class SessionControllerTest extends DatabaseTestCase
             passwordHash: $this->passwordHasher->hash('secret'),
             confirmedAt: time(),
         );
-        $pending = $this->createPendingSocialAccount('pendcode');
-        $this->session->set('social_network_account_code', 'pendcode');
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'login_success', 'password' => 'secret']]);
         $result = $this->createController([VoytiConfig::class => $config])->login($request);
         $this->assertSame(302, $result->getStatusCode());
         $this->assertSame('//app/dashboard', $result->getHeaderLine('Location'));
         $this->assertSame((int) $user1->getId(), (int) $this->currentUser->getId());
-        $this->assertNotNull(User::findById((int) $user1->getId())?->getLastLoginAt());
+        $reloaded = User::findById((int) $user1->getId());
+        $this->assertNotNull($reloaded?->getLastLoginAt());
+        $this->assertSame('127.0.0.1', $reloaded->getLastLoginIp());
         $this->assertTrue($this->eventDispatcher->hasEvent(AfterLoginEvent::class));
-        $this->assertSame((int) $user1->getId(), UserSocialAccount::findByProviderAndClientId('github', 'client-pendcode')?->getUserId());
 
         // POST with invalid credentials: shows error (fresh controller for unauthenticated state)
         $freshUser = $this->createCurrentUser();
@@ -165,6 +147,40 @@ final class SessionControllerTest extends DatabaseTestCase
         $result = $this->createControllerWithChallenges([$nullChallenge])->login($request);
         $this->assertSame(302, $result->getStatusCode());
         $this->assertSame((int) $user->getId(), (int) $this->currentUser->getId());
+    }
+
+    public function testLoginConsultsPostLoginHooks(): void
+    {
+        // Packages such as yiirocks/voyti-social-auth hook into login completion via this seam
+        // (e.g. connecting a pending social account); core only needs to prove every registered
+        // hook is invoked with the just-logged-in user, in order.
+        $hook = new class implements PostLoginHookInterface {
+            /** @var list<string|null> */
+            public array $calledWith = [];
+
+            public function handle(User $user): void
+            {
+                $this->calledWith[] = $user->getId();
+            }
+        };
+        $user = $this->createUser(
+            username: 'login_hook',
+            email: 'login_hook@example.com',
+            passwordHash: $this->passwordHasher->hash('secret'),
+            confirmedAt: time(),
+        );
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'login_hook', 'password' => 'secret']]);
+
+        $container = $this->getTestContainer(array_merge($this->mockOverrides(), [
+            LoginCompletionService::class => [
+                'class' => LoginCompletionService::class,
+                '__construct()' => ['postLoginHooks' => [$hook]],
+            ],
+        ]));
+        $result = $container->get(SessionController::class)->login($request);
+
+        $this->assertSame(302, $result->getStatusCode());
+        $this->assertSame([(string) $user->getId()], $hook->calledWith);
     }
 
     public function testLoginWhenAlreadyAuthenticated(): void
@@ -258,49 +274,6 @@ final class SessionControllerTest extends DatabaseTestCase
         $this->assertSame($sessionId, $event->getSessionId());
     }
 
-    /**
-     * Stubs for the asset stack so the AuthChoice widget's asset registration can run without
-     * real path aliases or filesystem publishing in the test environment.
-     *
-     * @return array{class-string, object}
-     */
-    private function assetStubs(): array
-    {
-        return [
-            AssetLoaderInterface::class => new class implements AssetLoaderInterface {
-                public function getAssetUrl(AssetBundle $bundle, string $assetPath): string
-                {
-                    return '/assets/' . $assetPath;
-                }
-
-                public function loadBundle(string $name, array $config = []): AssetBundle
-                {
-                    if ($config !== []) {
-                        return AssetUtil::createAsset($name, $config);
-                    }
-
-                    return new $name();
-                }
-            },
-            AssetPublisherInterface::class => new class implements AssetPublisherInterface {
-                public function publish(AssetBundle $bundle): array
-                {
-                    return ['', '/assets'];
-                }
-
-                public function getPublishedPath(string $sourcePath): ?string
-                {
-                    return $sourcePath;
-                }
-
-                public function getPublishedUrl(string $sourcePath): ?string
-                {
-                    return '/assets';
-                }
-            },
-        ];
-    }
-
     private function createController(array $extraOverrides = []): SessionController
     {
         $this->container = $this->getTestContainer(
@@ -323,18 +296,6 @@ final class SessionControllerTest extends DatabaseTestCase
         ]));
 
         return $container->get(SessionController::class);
-    }
-
-    private function createPendingSocialAccount(string $code): UserSocialAccount
-    {
-        $account = new UserSocialAccount();
-        $account->setProvider('github');
-        $account->setClientId('client-' . $code);
-        $account->setCode($code);
-        $account->setCreatedAt(time());
-        $account->save();
-
-        return $account;
     }
 
     private function mockOverrides(): array

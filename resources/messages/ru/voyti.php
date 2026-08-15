@@ -10,7 +10,6 @@ return [
     'voyti.security.logged_out' => 'Вы вышли из системы',
     'voyti.security.password_expired' => 'Срок действия вашего пароля истёк. Пожалуйста, установите новый.',
     'voyti.security.authenticated' => 'Аутентифицирован',
-    'voyti.security.social_auth_cancelled' => 'Вход через социальную сеть отменён.',
 
     // RegistrationController
     'voyti.registration.disabled' => 'Регистрация отключена',
@@ -37,8 +36,6 @@ return [
     'voyti.settings.account_deleted' => 'Ваш аккаунт удалён',
     'voyti.settings.email_changed' => 'Ваш email-адрес изменён',
     'voyti.settings.email_change_failed' => 'Не удалось изменить email-адрес',
-    'voyti.settings.network_disconnected' => 'Сеть отключена',
-    'voyti.settings.network_not_found' => 'Сеть не найдена',
     'voyti.settings.session_not_found' => 'Сеанс не найден',
     'voyti.settings.session_terminated' => 'Сеанс завершён',
     'voyti.settings.password_previously_used' => 'Этот пароль недавно уже использовался. Пожалуйста, выберите другой.',
@@ -103,7 +100,6 @@ return [
     'voyti.menu.dashboard' => 'Панель управления',
     'voyti.menu.userProfile' => 'Профиль',
     'voyti.menu.account' => 'Аккаунт',
-    'voyti.menu.networks' => 'Сети',
     'voyti.menu.sessions' => 'Сеансы',
     'voyti.menu.logout' => 'Выйти',
 
@@ -123,11 +119,6 @@ return [
     'voyti.view.registration.register_button' => 'Зарегистрироваться',
     'voyti.view.registration.already_have_account' => 'Уже есть аккаунт?',
     'voyti.view.registration.resend_title' => 'Отправить ссылку подтверждения повторно',
-    'voyti.view.registration.connect_title' => 'Привязать аккаунт',
-    'voyti.view.registration.connect_provider' => 'Привязать ваш аккаунт {provider}',
-    'voyti.view.registration.connect_message' => 'Вы можете привязать свой социальный аккаунт или зарегистрировать новый.',
-    'voyti.view.registration.connect_login' => 'Войти',
-    'voyti.view.registration.connect_register' => 'Регистрация',
 
     // Recovery views
     'voyti.view.recovery.request_title' => 'Восстановление пароля',
@@ -143,7 +134,6 @@ return [
     'voyti.view.edit_profile.title' => 'Редактировать профиль',
     'voyti.view.userProfile.title' => 'Просмотр профиля',
     'voyti.view.account.title' => 'Настройки аккаунта',
-    'voyti.view.networks.title' => 'Сети',
     'voyti.view.privacy.title' => 'Конфиденциальность',
     'voyti.view.privacy.delete_account' => 'Удалить мой аккаунт',
     'voyti.view.settings.privacy' => 'Конфиденциальность',
@@ -287,10 +277,8 @@ return [
     'voyti.view.reset_password_button' => 'Отправить ссылку для сброса пароля',
     'voyti.view.update_profile_link' => 'Редактировать профиль',
     'voyti.view.send_button' => 'Отправить',
-    'voyti.view.disconnect_button' => 'Отключить',
 
     // Widgets
-    'voyti.view.networks.no_networks' => 'Нет подключённых сетей',
 
     // Shared message view
     'voyti.view.go_home' => 'На главную',

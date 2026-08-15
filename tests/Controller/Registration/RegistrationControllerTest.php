@@ -7,9 +7,9 @@ namespace YiiRocks\Voyti\tests\Controller\Registration;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
+use YiiRocks\Voyti\Auth\PostRegistrationHookInterface;
 use YiiRocks\Voyti\Controller\Registration\RegistrationController;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Model\UserSocialAccount;
 use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
@@ -19,10 +19,7 @@ use YiiRocks\Voyti\tests\Support\ValidatorMockTrait;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Session\Flash\FlashInterface;
-use Yiisoft\Session\SessionInterface;
 use Yiisoft\Validator\ValidatorInterface;
-use Yiisoft\Yii\AuthClient\Collection;
-use Yiisoft\Yii\AuthClient\OAuth2Interface;
 
 #[AllowMockObjectsWithoutExpectations]
 final class RegistrationControllerTest extends DatabaseTestCase
@@ -78,67 +75,17 @@ final class RegistrationControllerTest extends DatabaseTestCase
         self::assertStringContainsString('Invalid confirmation link', $html);
     }
 
-    public function testConnect(): void
-    {
-        // Invalid code: shows error
-        $html = (string) $this->createController()->connect('code123')->getBody();
-        self::assertStringContainsString('Network not found', $html);
-
-        // Valid code: shows form
-        $account = new UserSocialAccount();
-        $account->setProvider('github');
-        $account->setClientId('client-1');
-        $account->setCode('code123');
-        $account->setCreatedAt(time());
-        $account->save();
-        $html = (string) $this->createController()->connect('code123')->getBody();
-        self::assertStringContainsString('Connect account', $html);
-
-        // Valid code with a configured provider client: shows the provider title from the client
-        $client = $this->createMock(OAuth2Interface::class);
-        $client->method('getName')->willReturn('github');
-        $client->method('getTitle')->willReturn('GitHub');
-        $collection = new Collection(['github' => $client]);
-
-        $account2 = new UserSocialAccount();
-        $account2->setProvider('github');
-        $account2->setClientId('client-2');
-        $account2->setCode('code456');
-        $account2->setCreatedAt(time());
-        $account2->save();
-        $html = (string) $this->createController(clientCollection: $collection)->connect('code456')->getBody();
-        self::assertStringContainsString('GitHub', $html);
-
-        // Valid code with a null client collection (host without yii-auth-client): falls back to the provider key
-        $account3 = new UserSocialAccount();
-        $account3->setProvider('github');
-        $account3->setClientId('client-3');
-        $account3->setCode('code789');
-        $account3->setCreatedAt(time());
-        $account3->save();
-        $html = (string) $this->createControllerWithNullCollection()->connect('code789')->getBody();
-        self::assertStringContainsString('Connect account', $html);
-        self::assertStringContainsString('github', $html);
-    }
-
     public function testRegister(): void
     {
         // GET shows form
         $html = (string) $this->createController()->register(new ServerRequest('GET', '/'))->getBody();
         self::assertStringContainsString('Create account', $html);
 
-        // POST success: creates user, connects pending social account
-        $pending = new UserSocialAccount();
-        $pending->setProvider('github');
-        $pending->setClientId('client-reg');
-        $pending->setCode('regpend');
-        $pending->setCreatedAt(time());
-        $pending->save();
+        // POST success: creates user
         $container = $this->getTestContainer([
             ...$this->baseOverrides(VoytiConfigFactory::create()),
             ValidatorInterface::class => $this->validator,
         ]);
-        $container->get(SessionInterface::class)->set('social_network_account_code', 'regpend');
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['register' => ['username' => 'testuser', 'email' => 'test@example.com', 'password' => 'password123', 'passwordRepeat' => 'password123', 'dataProcessingConsent' => '1']]);
         $result = $container->get(RegistrationController::class)->register($request);
         $this->assertSame(302, $result->getStatusCode());
@@ -148,7 +95,6 @@ final class RegistrationControllerTest extends DatabaseTestCase
         $this->assertSame('testuser', $user->getUsername());
         $this->assertTrue(TestPasswordHasherFactory::create()->validate('password123', $user->getPasswordHash()));
         $this->assertTrue($user->hasDataProcessingConsent());
-        $this->assertSame((int) $user->getId(), UserSocialAccount::findByProviderAndClientId('github', 'client-reg')?->getUserId());
 
         // POST with service failure: re-renders form with error
         $this->createUser('existing', 'existing@example.com');
@@ -165,6 +111,37 @@ final class RegistrationControllerTest extends DatabaseTestCase
         // Disabled config: shows error
         $html = (string) $this->createController(VoytiConfigFactory::create(enableRegistration: false))->register(new ServerRequest('GET', '/'))->getBody();
         self::assertStringContainsString('Registration is disabled', $html);
+    }
+
+    public function testRegisterConsultsPostRegistrationHooks(): void
+    {
+        // Packages such as yiirocks/voyti-social-auth hook into a successful registration via this
+        // seam (e.g. connecting a pending social account); core only needs to prove every registered
+        // hook is invoked with the newly registered user.
+        $hook = new class implements PostRegistrationHookInterface {
+            /** @var list<string|null> */
+            public array $calledWith = [];
+
+            public function handle(User $user): void
+            {
+                $this->calledWith[] = $user->getId();
+            }
+        };
+
+        $container = $this->getTestContainer([
+            ...$this->baseOverrides(VoytiConfigFactory::create()),
+            ValidatorInterface::class => $this->validator,
+            RegistrationController::class => [
+                'class' => RegistrationController::class,
+                '__construct()' => ['postRegistrationHooks' => [$hook]],
+            ],
+        ]);
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['register' => ['username' => 'hookuser', 'email' => 'hookuser@example.com', 'password' => 'password123', 'passwordRepeat' => 'password123']]);
+        $container->get(RegistrationController::class)->register($request);
+
+        $user = User::findByEmail('hookuser@example.com');
+        $this->assertNotNull($user);
+        $this->assertSame([$user->getId()], $hook->calledWith);
     }
 
     public function testResend(): void
@@ -199,33 +176,14 @@ final class RegistrationControllerTest extends DatabaseTestCase
         return $overrides;
     }
 
-    private function createController(?VoytiConfig $config = null, ?Collection $clientCollection = null): RegistrationController
+    private function createController(?VoytiConfig $config = null): RegistrationController
     {
         $overrides = [
             ...$this->baseOverrides($config),
             ValidatorInterface::class => $this->validator,
         ];
 
-        if ($clientCollection !== null) {
-            $overrides[Collection::class] = $clientCollection;
-        }
-
         return $this->getTestContainer($overrides)->get(RegistrationController::class);
-    }
-
-    /**
-     * Controller with a null client collection, as a host that has not installed yii-auth-client gets.
-     */
-    private function createControllerWithNullCollection(?VoytiConfig $config = null): RegistrationController
-    {
-        return $this->getTestContainer([
-            ...$this->baseOverrides($config),
-            ValidatorInterface::class => $this->validator,
-            RegistrationController::class => [
-                'class' => RegistrationController::class,
-                '__construct()' => ['clientCollection' => null],
-            ],
-        ])->get(RegistrationController::class);
     }
 
     /**
