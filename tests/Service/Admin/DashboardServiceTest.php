@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Service\Admin;
 
+use Composer\InstalledVersions;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Model\User;
@@ -34,6 +36,14 @@ final class DashboardServiceTest extends DatabaseTestCase
     {
         parent::setUp();
         $this->itemsStorage = new SimpleItemsStorage();
+    }
+
+    public static function rememberLifespanRoundingProvider(): array
+    {
+        return [
+            'rounds down below half a day' => [100000, 1],
+            'rounds up above half a day' => [130000, 2],
+        ];
     }
 
     public function testGetStatsActiveSessionsTrendCountsSessionsWithinEachWindowBoundaryInclusive(): void
@@ -109,14 +119,12 @@ final class DashboardServiceTest extends DatabaseTestCase
         self::assertSame('', $stats['recentAuditLogs'][1]['targetLabel']);
     }
 
-    public function testGetStatsRecommendedPackagesFeatureFlagAndStructure(): void
+    public function testGetStatsRecommendedPackages(): void
     {
-        // Feature flag disabled — empty array
         $config = VoytiConfigFactory::create(enableRecommendations: false);
         $stats = $this->createService($config)->getStats();
         self::assertSame([], $stats['recommendedPackages']);
 
-        // Feature flag enabled — validate all packages, structure, and URLs
         $stats = $this->createService()->getStats();
         $packages = $stats['recommendedPackages'];
         $packageNames = array_column($packages, 'packageName');
@@ -134,7 +142,6 @@ final class DashboardServiceTest extends DatabaseTestCase
             self::assertContains($expected, $packageNames);
         }
 
-        // Validate structure and URLs for each package
         $validSlugs = ['api', 'gdpr', 'social', 'two-factor'];
         foreach ($packages as $package) {
             self::assertArrayHasKey('packageName', $package);
@@ -147,6 +154,10 @@ final class DashboardServiceTest extends DatabaseTestCase
             self::assertIsString($package['descriptionKey']);
             self::assertIsString($package['composerUrl']);
             self::assertIsString($package['docsUrl']);
+            self::assertStringStartsWith('voyti.view.dashboard.package_', $package['labelKey']);
+            self::assertStringStartsWith('voyti.view.dashboard.package_', $package['descriptionKey']);
+            self::assertStringEndsWith('_label', $package['labelKey']);
+            self::assertStringEndsWith('_description', $package['descriptionKey']);
 
             self::assertStringStartsWith(
                 'https://packagist.org/packages/',
@@ -159,37 +170,24 @@ final class DashboardServiceTest extends DatabaseTestCase
             $slug = str_replace('https://www.yii.rocks/voyti/', '', rtrim($package['docsUrl'], '/'));
             self::assertContains($slug, $validSlugs);
         }
+
+        $packageNames = $this->withInstalledPackage(
+            'yiirocks/voyti-2fa-totp',
+            fn(): array => array_column($this->createService()->getStats()['recommendedPackages'], 'packageName'),
+        );
+        self::assertNotContains('yiirocks/voyti-2fa-email', $packageNames);
+        self::assertContains('yiirocks/voyti-2fa-webauthn', $packageNames);
+        self::assertContains('yiirocks/voyti-api', $packageNames);
     }
 
-    public function testGetStatsRecommendedPackagesKeysAreValid(): void
+    #[DataProvider('rememberLifespanRoundingProvider')]
+    public function testGetStatsRememberLifespanDaysRounding(int $lifespan, int $expectedDays): void
     {
-        $stats = $this->createService()->getStats();
-        $packages = $stats['recommendedPackages'];
-
-        foreach ($packages as $package) {
-            self::assertStringStartsWith('voyti.view.dashboard.package_', $package['labelKey']);
-            self::assertStringStartsWith('voyti.view.dashboard.package_', $package['descriptionKey']);
-            self::assertStringEndsWith('_label', $package['labelKey']);
-            self::assertStringEndsWith('_description', $package['descriptionKey']);
-        }
-    }
-
-    public function testGetStatsRememberLifespanDaysRoundsDownBelowHalfADay(): void
-    {
-        $config = VoytiConfigFactory::create(rememberLoginLifespan: 100000);
+        $config = VoytiConfigFactory::create(rememberLoginLifespan: $lifespan);
 
         $stats = $this->createService($config)->getStats();
 
-        self::assertSame(1, $stats['rememberLifespanDays']);
-    }
-
-    public function testGetStatsRememberLifespanDaysRoundsUpAboveHalfADay(): void
-    {
-        $config = VoytiConfigFactory::create(rememberLoginLifespan: 130000);
-
-        $stats = $this->createService($config)->getStats();
-
-        self::assertSame(2, $stats['rememberLifespanDays']);
+        self::assertSame($expectedDays, $stats['rememberLifespanDays']);
     }
 
     public function testGetStatsUserUnconfirmedIsNullWhenEmailConfirmationDisabled(): void
@@ -235,5 +233,36 @@ final class DashboardServiceTest extends DatabaseTestCase
             'at-lifespan-cutoff' => -$lifespan,
             'outside-lifespan' => -$lifespan - 1,
         ];
+    }
+
+    /**
+     * Temporarily fakes an installed Composer package via `InstalledVersions::reload()`
+     * (the mechanism Composer itself documents for this) so a package-detection code path
+     * can be exercised without actually requiring the package.
+     */
+    private function withInstalledPackage(string $packageName, callable $callback): mixed
+    {
+        $original = InstalledVersions::getAllRawData()[0];
+
+        InstalledVersions::reload([
+            'root' => $original['root'],
+            'versions' => $original['versions'] + [
+                $packageName => [
+                    'pretty_version' => '1.0.0',
+                    'version' => '1.0.0.0',
+                    'reference' => null,
+                    'type' => 'library',
+                    'install_path' => __DIR__,
+                    'aliases' => [],
+                    'dev_requirement' => false,
+                ],
+            ],
+        ]);
+
+        try {
+            return $callback();
+        } finally {
+            InstalledVersions::reload($original);
+        }
     }
 }

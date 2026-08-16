@@ -145,9 +145,14 @@ final readonly class DashboardService
             return [];
         }
 
+        $other2faInstalled = InstalledVersions::isInstalled('yiirocks/voyti-2fa-totp')
+            || InstalledVersions::isInstalled('yiirocks/voyti-2fa-webauthn');
         $recommended = [];
         foreach ($this->detectAvailablePackages() as $package) {
             if (!InstalledVersions::isInstalled($package['packageName'])) {
+                if ($other2faInstalled && $package['packageName'] === 'yiirocks/voyti-2fa-email') {
+                    continue;
+                }
                 $recommended[] = [
                     'packageName' => $package['packageName'],
                     'labelKey' => $package['labelKey'],
