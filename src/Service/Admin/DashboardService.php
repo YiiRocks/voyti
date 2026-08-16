@@ -86,7 +86,7 @@ final readonly class DashboardService
     }
 
     /**
-     * @return list<array{packageName: string, labelKey: string, descriptionKey: string, docsSlug: string}>
+     * @return list<array{packageName: string, labelKey: string, descriptionKey: string, docsUrl: string}>
      */
     private function detectAvailablePackages(): array
     {
@@ -95,43 +95,43 @@ final readonly class DashboardService
                 'packageName' => 'yiirocks/voyti-api',
                 'labelKey' => 'voyti.view.dashboard.package_api_label',
                 'descriptionKey' => 'voyti.view.dashboard.package_api_description',
-                'docsSlug' => 'api',
+                'docsUrl' => 'https://www.yii.rocks/voyti/api/',
             ],
             [
                 'packageName' => 'yiirocks/voyti-gdpr',
                 'labelKey' => 'voyti.view.dashboard.package_gdpr_label',
                 'descriptionKey' => 'voyti.view.dashboard.package_gdpr_description',
-                'docsSlug' => 'gdpr',
+                'docsUrl' => 'https://www.yii.rocks/voyti/gdpr/',
             ],
             [
                 'packageName' => 'yiirocks/voyti-social-auth',
                 'labelKey' => 'voyti.view.dashboard.package_social_auth_label',
                 'descriptionKey' => 'voyti.view.dashboard.package_social_auth_description',
-                'docsSlug' => 'social',
+                'docsUrl' => 'https://www.yii.rocks/voyti/social/',
             ],
             [
                 'packageName' => 'yiirocks/recaptcha',
                 'labelKey' => 'voyti.view.dashboard.package_recaptcha_label',
                 'descriptionKey' => 'voyti.view.dashboard.package_recaptcha_description',
-                'docsSlug' => 'recaptcha',
+                'docsUrl' => 'https://www.yii.rocks/recaptcha/',
             ],
             [
                 'packageName' => 'yiirocks/voyti-2fa-email',
                 'labelKey' => 'voyti.view.dashboard.package_2fa_email_label',
                 'descriptionKey' => 'voyti.view.dashboard.package_2fa_email_description',
-                'docsSlug' => 'two-factor',
+                'docsUrl' => 'https://www.yii.rocks/voyti/two-factor/',
             ],
             [
                 'packageName' => 'yiirocks/voyti-2fa-totp',
                 'labelKey' => 'voyti.view.dashboard.package_2fa_totp_label',
                 'descriptionKey' => 'voyti.view.dashboard.package_2fa_totp_description',
-                'docsSlug' => 'two-factor',
+                'docsUrl' => 'https://www.yii.rocks/voyti/two-factor/',
             ],
             [
                 'packageName' => 'yiirocks/voyti-2fa-webauthn',
                 'labelKey' => 'voyti.view.dashboard.package_2fa_webauthn_label',
                 'descriptionKey' => 'voyti.view.dashboard.package_2fa_webauthn_description',
-                'docsSlug' => 'two-factor',
+                'docsUrl' => 'https://www.yii.rocks/voyti/two-factor/',
             ],
         ];
     }
@@ -153,7 +153,7 @@ final readonly class DashboardService
                     'labelKey' => $package['labelKey'],
                     'descriptionKey' => $package['descriptionKey'],
                     'composerUrl' => sprintf('https://packagist.org/packages/%s', $package['packageName']),
-                    'docsUrl' => sprintf('https://www.yii.rocks/voyti/%s/', $package['docsSlug']),
+                    'docsUrl' => $package['docsUrl'],
                 ];
             }
         }
