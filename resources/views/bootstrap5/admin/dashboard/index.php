@@ -12,6 +12,7 @@ use Yiisoft\View\WebView;
  *   menu: list<array{label: string, url: string, alignEnd: bool, routeName: string|null}>,
  *   tiles: list<array{labelKey: string, value: int, url: string, borderClass: string}>,
  *   trendWidgets: list<array{titleKey: string, periods: list<array{labelKey: string, value: int, params: array<string, int>}>}>,
+ *   recommendedPackages: list<array{packageName: string, labelKey: string, descriptionKey: string, composerUrl: string, docsUrl: string}>,
  *   recentAuditLogs: list<array{createdAt: string, action: string, targetLabel: string}>,
  *   auditLogUrl: string,
  * } $data
@@ -93,5 +94,36 @@ if ($data['recentAuditLogs'] === []) {
 echo Html::div()->close();
 echo Html::div()->close();
 echo Html::a()->close();
+
+if ($data['recommendedPackages'] !== []) {
+    echo Html::H2($translator->translate('voyti.view.dashboard.recommended_addons'))->class('h5 mb-3 mt-4');
+    echo Html::div()->class('row row-cols-1 row-cols-md-2 g-3')->open();
+    foreach ($data['recommendedPackages'] as $package) {
+        echo Html::div()->class('col')->open();
+        echo Html::div()->class('card h-100')->open();
+        echo Html::div()->class('card-header')->open();
+        echo Html::H3($translator->translate($package['labelKey']))->class('h6 mb-0');
+        echo Html::div()->close();
+        echo Html::div()->class('card-body')->open();
+        echo Html::p($translator->translate($package['descriptionKey']))->class('text-muted small mb-0');
+        echo Html::div()->close();
+        echo Html::div()->class('card-footer bg-transparent')->open();
+        echo Html::a($translator->translate('voyti.view.dashboard.view_on_packagist'))
+            ->href($package['composerUrl'])
+            ->class('btn btn-sm btn-link')
+            ->target('_blank')
+            ->rel('noopener noreferrer');
+        echo ' ';
+        echo Html::a($translator->translate('voyti.view.dashboard.documentation'))
+            ->href($package['docsUrl'])
+            ->class('btn btn-sm btn-link')
+            ->target('_blank')
+            ->rel('noopener noreferrer');
+        echo Html::div()->close();
+        echo Html::div()->close();
+        echo Html::div()->close();
+    }
+    echo Html::div()->close();
+}
 
 echo Html::div()->close();

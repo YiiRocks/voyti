@@ -44,6 +44,7 @@ final readonly class DashboardController
                 'menu' => MenuView::admin($this->url, $this->translator()),
                 'tiles' => $this->buildTiles($stats),
                 'trendWidgets' => $this->buildTrendWidgets($stats),
+                'recommendedPackages' => $stats['recommendedPackages'],
                 'recentAuditLogs' => $stats['recentAuditLogs'],
                 'auditLogUrl' => $this->url->generate('voyti/admin-audit-log'),
             ],

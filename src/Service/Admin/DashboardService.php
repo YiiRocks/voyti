@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service\Admin;
 
+use Composer\InstalledVersions;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\Model\User;
@@ -41,6 +42,7 @@ final readonly class DashboardService
      *     activeSessions: array{oneDay: int, sevenDays: int, lifespan: int},
      *     rememberLifespanDays: int,
      *     recentAuditLogs: list<array{createdAt: string, action: string, targetLabel: string}>,
+     *     recommendedPackages: list<array{packageName: string, labelKey: string, descriptionKey: string, composerUrl: string, docsUrl: string}>,
      * }
      */
     public function getStats(?string $viewerTimezone = null): array
@@ -60,6 +62,7 @@ final readonly class DashboardService
             'activeSessions' => $this->activeSessionsTrend($now),
             'rememberLifespanDays' => (int) round($this->config->rememberLoginLifespan / self::SECONDS_PER_DAY),
             'recentAuditLogs' => $this->recentAuditLogs($viewerTimezone),
+            'recommendedPackages' => $this->getRecommendedPackages(),
         ];
     }
 
@@ -80,6 +83,75 @@ final readonly class DashboardService
             /** @infection-ignore-all Cast is unobservable. */
             'lifespan' => (int) UserSessions::query()->andWhere(['>=', 'updated_at', $now - $this->config->rememberLoginLifespan])->count(),
         ];
+    }
+
+    /**
+     * @return list<array{packageName: string, labelKey: string, descriptionKey: string, docsSlug: string}>
+     */
+    private function detectAvailablePackages(): array
+    {
+        return [
+            [
+                'packageName' => 'yiirocks/voyti-api',
+                'labelKey' => 'voyti.view.dashboard.package_api_label',
+                'descriptionKey' => 'voyti.view.dashboard.package_api_description',
+                'docsSlug' => 'api',
+            ],
+            [
+                'packageName' => 'yiirocks/voyti-gdpr',
+                'labelKey' => 'voyti.view.dashboard.package_gdpr_label',
+                'descriptionKey' => 'voyti.view.dashboard.package_gdpr_description',
+                'docsSlug' => 'gdpr',
+            ],
+            [
+                'packageName' => 'yiirocks/voyti-social-auth',
+                'labelKey' => 'voyti.view.dashboard.package_social_auth_label',
+                'descriptionKey' => 'voyti.view.dashboard.package_social_auth_description',
+                'docsSlug' => 'social',
+            ],
+            [
+                'packageName' => 'yiirocks/voyti-2fa-email',
+                'labelKey' => 'voyti.view.dashboard.package_2fa_email_label',
+                'descriptionKey' => 'voyti.view.dashboard.package_2fa_email_description',
+                'docsSlug' => 'two-factor',
+            ],
+            [
+                'packageName' => 'yiirocks/voyti-2fa-totp',
+                'labelKey' => 'voyti.view.dashboard.package_2fa_totp_label',
+                'descriptionKey' => 'voyti.view.dashboard.package_2fa_totp_description',
+                'docsSlug' => 'two-factor',
+            ],
+            [
+                'packageName' => 'yiirocks/voyti-2fa-webauthn',
+                'labelKey' => 'voyti.view.dashboard.package_2fa_webauthn_label',
+                'descriptionKey' => 'voyti.view.dashboard.package_2fa_webauthn_description',
+                'docsSlug' => 'two-factor',
+            ],
+        ];
+    }
+
+    /**
+     * @return list<array{packageName: string, labelKey: string, descriptionKey: string, composerUrl: string, docsUrl: string}>
+     */
+    private function getRecommendedPackages(): array
+    {
+        if (!$this->config->enableRecommendations) {
+            return [];
+        }
+
+        $recommended = [];
+        foreach ($this->detectAvailablePackages() as $package) {
+            if (!InstalledVersions::isInstalled($package['packageName'])) {
+                $recommended[] = [
+                    'packageName' => $package['packageName'],
+                    'labelKey' => $package['labelKey'],
+                    'descriptionKey' => $package['descriptionKey'],
+                    'composerUrl' => sprintf('https://packagist.org/packages/%s', $package['packageName']),
+                    'docsUrl' => sprintf('https://www.yii.rocks/voyti/%s/', $package['docsSlug']),
+                ];
+            }
+        }
+        return $recommended;
     }
 
     /**

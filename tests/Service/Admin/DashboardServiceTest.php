@@ -109,6 +109,71 @@ final class DashboardServiceTest extends DatabaseTestCase
         self::assertSame('', $stats['recentAuditLogs'][1]['targetLabel']);
     }
 
+    public function testGetStatsRecommendedPackagesFeatureFlagAndStructure(): void
+    {
+        // Feature flag disabled — empty array
+        $config = VoytiConfigFactory::create(enableRecommendations: false);
+        $stats = $this->createService($config)->getStats();
+        self::assertSame([], $stats['recommendedPackages']);
+
+        // Feature flag enabled — validate all packages, structure, and URLs
+        $stats = $this->createService()->getStats();
+        $packages = $stats['recommendedPackages'];
+        $packageNames = array_column($packages, 'packageName');
+
+        // Verify all sibling packages are included
+        $expectedPackages = [
+            'yiirocks/voyti-api',
+            'yiirocks/voyti-gdpr',
+            'yiirocks/voyti-social-auth',
+            'yiirocks/voyti-2fa-email',
+            'yiirocks/voyti-2fa-totp',
+            'yiirocks/voyti-2fa-webauthn',
+        ];
+        foreach ($expectedPackages as $expected) {
+            self::assertContains($expected, $packageNames);
+        }
+
+        // Validate structure and URLs for each package
+        $validSlugs = ['api', 'gdpr', 'social', 'two-factor'];
+        foreach ($packages as $package) {
+            self::assertArrayHasKey('packageName', $package);
+            self::assertArrayHasKey('labelKey', $package);
+            self::assertArrayHasKey('descriptionKey', $package);
+            self::assertArrayHasKey('composerUrl', $package);
+            self::assertArrayHasKey('docsUrl', $package);
+            self::assertIsString($package['packageName']);
+            self::assertIsString($package['labelKey']);
+            self::assertIsString($package['descriptionKey']);
+            self::assertIsString($package['composerUrl']);
+            self::assertIsString($package['docsUrl']);
+
+            self::assertStringStartsWith(
+                'https://packagist.org/packages/',
+                $package['composerUrl'],
+            );
+            self::assertStringEndsWith($package['packageName'], $package['composerUrl']);
+
+            self::assertStringStartsWith('https://www.yii.rocks/voyti/', $package['docsUrl']);
+            self::assertStringEndsWith('/', $package['docsUrl']);
+            $slug = str_replace('https://www.yii.rocks/voyti/', '', rtrim($package['docsUrl'], '/'));
+            self::assertContains($slug, $validSlugs);
+        }
+    }
+
+    public function testGetStatsRecommendedPackagesKeysAreValid(): void
+    {
+        $stats = $this->createService()->getStats();
+        $packages = $stats['recommendedPackages'];
+
+        foreach ($packages as $package) {
+            self::assertStringStartsWith('voyti.view.dashboard.package_', $package['labelKey']);
+            self::assertStringStartsWith('voyti.view.dashboard.package_', $package['descriptionKey']);
+            self::assertStringEndsWith('_label', $package['labelKey']);
+            self::assertStringEndsWith('_description', $package['descriptionKey']);
+        }
+    }
+
     public function testGetStatsRememberLifespanDaysRoundsDownBelowHalfADay(): void
     {
         $config = VoytiConfigFactory::create(rememberLoginLifespan: 100000);
