@@ -205,6 +205,8 @@ return [
     'voyti.view.dashboard.package_gdpr_description' => 'Пользователи скачивают, удаляют или анонимизируют свои данные. соответствие упрощено.',
     'voyti.view.dashboard.package_social_auth_label' => 'Социальная аутентификация',
     'voyti.view.dashboard.package_social_auth_description' => 'Без паролей. пользователи входят через Google, GitHub, Facebook и других одним кликом.',
+    'voyti.view.dashboard.package_recaptcha_label' => 'Защита reCAPTCHA',
+    'voyti.view.dashboard.package_recaptcha_description' => 'Защитите регистрацию и восстановление пароля от злоупотреблений с помощью Google reCAPTCHA v2 и v3.',
     'voyti.view.dashboard.package_2fa_email_label' => 'Двухфакторная аутентификация (e-mail)',
     'voyti.view.dashboard.package_2fa_email_description' => 'Дополнительная безопасность с кодами e-mail. мгновенно защищает от кражи паролей.',
     'voyti.view.dashboard.package_2fa_totp_label' => 'Двухфакторная аутентификация (TOTP)',

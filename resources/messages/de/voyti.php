@@ -205,6 +205,8 @@ return [
     'voyti.view.dashboard.package_gdpr_description' => 'Benutzer können ihre Daten herunterladen, löschen oder anonymisieren. Compliance vereinfacht.',
     'voyti.view.dashboard.package_social_auth_label' => 'Social Login',
     'voyti.view.dashboard.package_social_auth_description' => 'Keine Passwörter mehr. Benutzer melden sich mit Google, GitHub, Facebook und mehr an.',
+    'voyti.view.dashboard.package_recaptcha_label' => 'reCAPTCHA Protection',
+    'voyti.view.dashboard.package_recaptcha_description' => 'Schützen Sie Registrierung und Passwortwiederherstellung vor Missbrauch mit Google reCAPTCHA v2 und v3.',
     'voyti.view.dashboard.package_2fa_email_label' => 'Zwei-Faktor-Auth (E-Mail)',
     'voyti.view.dashboard.package_2fa_email_description' => 'Zusätzliche Sicherheit mit E-Mail-Codes. schützt sofort vor Passwortdiebstahl.',
     'voyti.view.dashboard.package_2fa_totp_label' => 'Zwei-Faktor-Auth (TOTP)',

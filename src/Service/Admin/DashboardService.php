@@ -110,6 +110,12 @@ final readonly class DashboardService
                 'docsSlug' => 'social',
             ],
             [
+                'packageName' => 'yiirocks/recaptcha',
+                'labelKey' => 'voyti.view.dashboard.package_recaptcha_label',
+                'descriptionKey' => 'voyti.view.dashboard.package_recaptcha_description',
+                'docsSlug' => 'recaptcha',
+            ],
+            [
                 'packageName' => 'yiirocks/voyti-2fa-email',
                 'labelKey' => 'voyti.view.dashboard.package_2fa_email_label',
                 'descriptionKey' => 'voyti.view.dashboard.package_2fa_email_description',
