@@ -51,8 +51,6 @@ Stats for Nerds
 
 ## Installation
 
-The package could be installed via composer:
-
 ```bash
 composer require yiirocks/voyti
 ```
