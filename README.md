@@ -59,23 +59,4 @@ composer require yiirocks/voyti
 
 ## Documentation
 
-Installation steps, the full configuration reference, routes, middleware, social auth setup, RBAC, console
-commands, and events are all covered at [Yii.Rocks](https://www.yii.rocks/voyti/).
-
-## Testing
-
-```bash
-# Unit tests
-composer phpunit
-
-# Mutation testing
-composer infection
-
-# Static analysis
-composer psalm
-
-# Code style fixer
-composer php-cs-fixer
-```
-
-See [docs/internals.md](docs/internals.md) for details on the testing/QA tooling.
+The complete reference guide is available at [Yii.Rocks](https://www.yii.rocks/voyti/).
