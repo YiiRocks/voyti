@@ -10,6 +10,8 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Auth\PostLoginHookInterface;
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
+use YiiRocks\Voyti\Event\Auth\BeforeLoginEvent;
+use YiiRocks\Voyti\Exception\ActionPreventedException;
 use YiiRocks\Voyti\Helper\LoginMetadataHelper;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\RememberMeCookieService;
@@ -22,7 +24,9 @@ use Yiisoft\User\CurrentUser;
 
 /**
  * Finalizes an authenticated login once every check (password, and any login challenge such as
- * two-factor) has passed: establishes the session, records login metadata, runs every
+ * two-factor) has passed: dispatches the cancellable {@see BeforeLoginEvent} (a listener may throw
+ * {@see ActionPreventedException} to prevent the login, e.g. fraud detection - the caller is
+ * responsible for catching it), establishes the session, records login metadata, runs every
  * {@see PostLoginHookInterface} (collected via the `voyti.post-login-hook` tag - e.g. connecting a
  * pending social account from `yiirocks/voyti-social-auth`), dispatches {@see AfterLoginEvent}, and
  * redirects home with an optional remember-me cookie. Shared by the plain login flow and by challenge
@@ -44,6 +48,8 @@ final readonly class LoginCompletionService
 
     public function complete(User $user, bool $rememberMe, ServerRequestInterface $request): ResponseInterface
     {
+        $this->eventDispatcher->dispatch(new BeforeLoginEvent($user, $request->getServerParams()));
+
         $previousSessionId = $this->session->getId();
         $currentUser = $rememberMe
             ? $this->currentUser->withAuthTimeout($this->config->rememberLoginLifespan)

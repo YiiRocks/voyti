@@ -11,7 +11,12 @@ use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Auth\LoginChallengeInterface;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
+use YiiRocks\Voyti\Event\Auth\BeforeLoginFormValidationEvent;
+use YiiRocks\Voyti\Event\Auth\FailedLoginEvent;
+use YiiRocks\Voyti\Event\Auth\LoginFormValidationFailedEvent;
+use YiiRocks\Voyti\Event\Auth\LogoutEvent;
 use YiiRocks\Voyti\Event\Session\SessionEvent;
+use YiiRocks\Voyti\Exception\ActionPreventedException;
 use YiiRocks\Voyti\Helper\LinkButtonHelper;
 use YiiRocks\Voyti\Helper\RecaptchaHelper;
 use YiiRocks\Voyti\Model\Form\Auth\LoginForm;
@@ -76,34 +81,66 @@ final readonly class SessionController
         }
 
         $form = new LoginForm($this->config, $this->translator);
+        $serverParams = $request->getServerParams();
 
-        if ($this->formHydrator->populateFromPostAndValidate($form, $request, map: ['rememberMe' => 'rememberMe'])) {
-            $user = User::findByUsernameOrEmail($form->login);
+        if ($this->formHydrator->populateFromPost($form, $request, map: ['rememberMe' => 'rememberMe'])) {
+            $formData = $this->parsedBody($request);
+            $this->eventDispatcher->dispatch(new BeforeLoginFormValidationEvent($formData, $serverParams));
+            $validationResult = $this->formHydrator->validate($form);
 
-            if ($user === null || !$this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
-                $form->addError(
-                    $this->translator->translate('voyti.security.invalid_login', category: 'voyti'),
-                    ['login'],
-                );
-            } elseif ($user->isBlocked()) {
-                $form->addError(
-                    $this->translator->translate('voyti.security.account_blocked', category: 'voyti'),
-                    ['login'],
-                );
-            } elseif ($this->config->enableEmailConfirmation && !$user->isConfirmed()) {
-                $form->addError(
-                    $this->translator->translate('voyti.security.need_email_confirmation', category: 'voyti'),
-                    ['login'],
-                );
-            } else {
-                foreach ($this->loginChallenges as $loginChallenge) {
-                    $response = $loginChallenge->challenge($user, $form->rememberMe, $request);
-                    if ($response !== null) {
-                        return $response;
+            if ($validationResult->isValid()) {
+                $user = User::findByUsernameOrEmail($form->login);
+
+                if ($user === null) {
+                    $form->addError(
+                        $this->translator->translate('voyti.security.invalid_login', category: 'voyti'),
+                        ['login'],
+                    );
+                    $this->eventDispatcher->dispatch(
+                        new FailedLoginEvent($this->loginIdentifier($form), 'user_not_found', $serverParams),
+                    );
+                } elseif (!$this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
+                    $form->addError(
+                        $this->translator->translate('voyti.security.invalid_login', category: 'voyti'),
+                        ['login'],
+                    );
+                    $this->eventDispatcher->dispatch(
+                        new FailedLoginEvent($this->loginIdentifier($form), 'invalid_password', $serverParams),
+                    );
+                } elseif ($user->isBlocked()) {
+                    $form->addError(
+                        $this->translator->translate('voyti.security.account_blocked', category: 'voyti'),
+                        ['login'],
+                    );
+                    $this->eventDispatcher->dispatch(
+                        new FailedLoginEvent($this->loginIdentifier($form), 'account_blocked', $serverParams),
+                    );
+                } elseif ($this->config->enableEmailConfirmation && !$user->isConfirmed()) {
+                    $form->addError(
+                        $this->translator->translate('voyti.security.need_email_confirmation', category: 'voyti'),
+                        ['login'],
+                    );
+                } else {
+                    foreach ($this->loginChallenges as $loginChallenge) {
+                        $response = $loginChallenge->challenge($user, $form->rememberMe, $request);
+                        if ($response !== null) {
+                            return $response;
+                        }
+                    }
+
+                    try {
+                        return $this->loginCompletionService->complete($user, $form->rememberMe, $request);
+                    } catch (ActionPreventedException $exception) {
+                        $form->addError($exception->getMessage(), $exception->getErrorDetails());
                     }
                 }
-
-                return $this->loginCompletionService->complete($user, $form->rememberMe, $request);
+            } else {
+                $this->eventDispatcher->dispatch(
+                    new LoginFormValidationFailedEvent($formData, $validationResult->getErrorMessages(), $serverParams),
+                );
+                $this->eventDispatcher->dispatch(
+                    new FailedLoginEvent($this->loginIdentifier($form), 'validation_failed', $serverParams),
+                );
             }
         }
 
@@ -126,6 +163,8 @@ final readonly class SessionController
         $sessionId = $this->session->getId() ?? '';
         /** @infection-ignore-all Every non-guest identity is a User and every guest fails logout(), so the && vs || operator is unobservable. */
         if ($this->currentUser->logout() && $identity instanceof User) {
+            $this->eventDispatcher->dispatch(new LogoutEvent($identity, $sessionId));
+
             if ($sessionId !== '') {
                 $userId = $identity->getIdOrZero();
                 $userSession = UserSessions::findByUserIdAndSessionId($userId, $sessionId);
@@ -173,5 +212,20 @@ final readonly class SessionController
     private function homeRedirectResponse(): ResponseInterface
     {
         return $this->redirect($this->config->getHomeUrl($this->url));
+    }
+
+    private function loginIdentifier(LoginForm $form): ?string
+    {
+        return $form->login !== '' ? $form->login : null;
+    }
+
+    /**
+     * @return array<array-key, mixed>
+     */
+    private function parsedBody(ServerRequestInterface $request): array
+    {
+        $body = $request->getParsedBody();
+
+        return is_array($body) ? $body : [];
     }
 }

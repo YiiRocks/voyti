@@ -17,7 +17,13 @@ use YiiRocks\Voyti\Auth\LoginChallengeInterface;
 use YiiRocks\Voyti\Auth\PostLoginHookInterface;
 use YiiRocks\Voyti\Controller\Session\SessionController;
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
+use YiiRocks\Voyti\Event\Auth\BeforeLoginEvent;
+use YiiRocks\Voyti\Event\Auth\BeforeLoginFormValidationEvent;
+use YiiRocks\Voyti\Event\Auth\FailedLoginEvent;
+use YiiRocks\Voyti\Event\Auth\LoginFormValidationFailedEvent;
+use YiiRocks\Voyti\Event\Auth\LogoutEvent;
 use YiiRocks\Voyti\Event\Session\SessionEvent;
+use YiiRocks\Voyti\Exception\ActionPreventedException;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
 use YiiRocks\Voyti\Service\Auth\LoginCompletionService;
@@ -92,12 +98,75 @@ final class SessionControllerTest extends DatabaseTestCase
         $this->assertSame('127.0.0.1', $reloaded->getLastLoginIp());
         $this->assertTrue($this->eventDispatcher->hasEvent(AfterLoginEvent::class));
 
+        // A successful login also dispatches the form-validation and pre-session events, in order,
+        // with the raw submitted form data and the about-to-log-in user - and never FailedLoginEvent.
+        $beforeFormEvent = $this->eventDispatcher->getEvent(BeforeLoginFormValidationEvent::class);
+        $this->assertInstanceOf(BeforeLoginFormValidationEvent::class, $beforeFormEvent);
+        $this->assertSame(
+            ['login' => 'login_success', 'password' => 'secret'],
+            $beforeFormEvent->getFormData()['login'] ?? null,
+        );
+        $beforeLoginEvent = $this->eventDispatcher->getEvent(BeforeLoginEvent::class);
+        $this->assertInstanceOf(BeforeLoginEvent::class, $beforeLoginEvent);
+        $this->assertSame($user1->getId(), $beforeLoginEvent->getUser()->getId());
+        $this->assertSame($request->getServerParams(), $beforeLoginEvent->getServerParams());
+        $this->assertSame($request->getServerParams(), $beforeFormEvent->getServerParams());
+        $this->assertFalse($this->eventDispatcher->hasEvent(FailedLoginEvent::class));
+
         // POST with invalid credentials: shows error (fresh controller for unauthenticated state)
         $freshUser = $this->createCurrentUser();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'login_bad', 'password' => 'wrong']]);
         $html = (string) $this->createController([CurrentUser::class => $freshUser])->login($request)->getBody();
         self::assertStringContainsString('Log In', $html);
         self::assertSame(2, substr_count($html, 'Invalid login or password'));
+
+        // Unknown login dispatches FailedLoginEvent with reason 'user_not_found'.
+        $failedEvent = $this->eventDispatcher->getEvent(FailedLoginEvent::class);
+        $this->assertInstanceOf(FailedLoginEvent::class, $failedEvent);
+        $this->assertSame('login_bad', $failedEvent->getEmail());
+        $this->assertSame('user_not_found', $failedEvent->getReason());
+
+        // Wrong password for a known user shows the same error and dispatches FailedLoginEvent with
+        // reason 'invalid_password'.
+        $freshUser2 = $this->createCurrentUser();
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'login_success', 'password' => 'wrong']]);
+        $eventDispatcher = new EventCaptureDispatcher();
+        $wrongPasswordHtml = (string) $this->createController([CurrentUser::class => $freshUser2, EventDispatcherInterface::class => $eventDispatcher])
+            ->login($request)
+            ->getBody();
+        self::assertSame(2, substr_count($wrongPasswordHtml, 'Invalid login or password'));
+        $wrongPasswordEvent = $eventDispatcher->getEvent(FailedLoginEvent::class);
+        $this->assertInstanceOf(FailedLoginEvent::class, $wrongPasswordEvent);
+        $this->assertSame('invalid_password', $wrongPasswordEvent->getReason());
+    }
+
+    public function testLoginBeforeLoginEventPreventsLogin(): void
+    {
+        // A listener throwing ActionPreventedException from the cancellable BeforeLoginEvent stops
+        // the login before the session is established, and its message surfaces as a form error.
+        $this->createUser(
+            username: 'login_cancel',
+            email: 'login_cancel@example.com',
+            passwordHash: $this->passwordHasher->hash('secret'),
+            confirmedAt: time(),
+        );
+        $cancellingDispatcher = new class implements EventDispatcherInterface {
+            public function dispatch(object $event): object
+            {
+                if ($event instanceof BeforeLoginEvent) {
+                    throw new ActionPreventedException('Login blocked by policy', ['login']);
+                }
+
+                return $event;
+            }
+        };
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => 'login_cancel', 'password' => 'secret']]);
+        $html = (string) $this->createController([EventDispatcherInterface::class => $cancellingDispatcher])
+            ->login($request)
+            ->getBody();
+
+        $this->assertNull($this->currentUser->getId());
+        self::assertStringContainsString('Login blocked by policy', $html);
     }
 
     public function testLoginConsultsLoginChallenges(): void
@@ -207,6 +276,9 @@ final class SessionControllerTest extends DatabaseTestCase
         $html = (string) $this->createController()->login($request)->getBody();
         self::assertStringContainsString('Log In', $html);
         self::assertSame(2, substr_count($html, 'Your account has been blocked'));
+        $blockedEvent = $this->eventDispatcher->getEvent(FailedLoginEvent::class);
+        $this->assertInstanceOf(FailedLoginEvent::class, $blockedEvent);
+        $this->assertSame('account_blocked', $blockedEvent->getReason());
 
         // Unconfirmed email: shows error
         $user2 = $this->createUser(
@@ -218,6 +290,31 @@ final class SessionControllerTest extends DatabaseTestCase
         $html = (string) $this->createController()->login($request)->getBody();
         self::assertStringContainsString('Log In', $html);
         self::assertSame(2, substr_count($html, 'You need to confirm your email address'));
+    }
+
+    public function testLoginWithFormValidationFailureDispatchesEvents(): void
+    {
+        // Real validation (blank required fields) fails: dispatches LoginFormValidationFailedEvent
+        // with the validator's error messages, plus FailedLoginEvent with reason 'validation_failed'.
+        $container = $this->getTestContainer(array_merge(
+            array_diff_key($this->mockOverrides(), [ValidatorInterface::class => null]),
+            [CurrentUser::class => $this->createCurrentUser()],
+        ));
+        $request = (new ServerRequest('POST', '/'))->withParsedBody(['login' => ['login' => '', 'password' => '']]);
+        $container->get(SessionController::class)->login($request);
+
+        /** @var EventCaptureDispatcher $eventDispatcher */
+        $eventDispatcher = $container->get(EventDispatcherInterface::class);
+        $validationFailedEvent = $eventDispatcher->getEvent(LoginFormValidationFailedEvent::class);
+        $this->assertInstanceOf(LoginFormValidationFailedEvent::class, $validationFailedEvent);
+        $this->assertNotEmpty($validationFailedEvent->getErrors());
+        $this->assertSame($request->getParsedBody(), $validationFailedEvent->getFormData());
+        $this->assertSame($request->getServerParams(), $validationFailedEvent->getServerParams());
+        $failedLoginEvent = $eventDispatcher->getEvent(FailedLoginEvent::class);
+        $this->assertInstanceOf(FailedLoginEvent::class, $failedLoginEvent);
+        $this->assertSame('validation_failed', $failedLoginEvent->getReason());
+        $this->assertNull($failedLoginEvent->getEmail());
+        $this->assertSame($request->getServerParams(), $failedLoginEvent->getServerParams());
     }
 
     public function testLoginWithRememberMe(): void
@@ -272,6 +369,12 @@ final class SessionControllerTest extends DatabaseTestCase
         $this->assertInstanceOf(SessionEvent::class, $event);
         $this->assertSame(SessionEvent::SESSION_TERMINATED, $event->getData()['type'] ?? null);
         $this->assertSame($sessionId, $event->getSessionId());
+
+        // LogoutEvent fires alongside SessionEvent, distinguishing intentional logout.
+        $logoutEvent = $this->eventDispatcher->getEvent(LogoutEvent::class);
+        $this->assertInstanceOf(LogoutEvent::class, $logoutEvent);
+        $this->assertSame($user->getId(), $logoutEvent->getUser()->getId());
+        $this->assertSame($sessionId, $logoutEvent->getSessionId());
     }
 
     private function createController(array $extraOverrides = []): SessionController

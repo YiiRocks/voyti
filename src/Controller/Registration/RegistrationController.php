@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Controller\Registration;
 
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Auth\PostRegistrationHookInterface;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
+use YiiRocks\Voyti\Event\Auth\BeforeRegisterFormValidationEvent;
+use YiiRocks\Voyti\Event\Auth\RegisterFormValidationFailedEvent;
 use YiiRocks\Voyti\Helper\RecaptchaHelper;
 use YiiRocks\Voyti\Model\Form\Auth\RegistrationForm;
 use YiiRocks\Voyti\Model\Form\Auth\ResendForm;
@@ -48,6 +51,7 @@ final readonly class RegistrationController
         private FormHydrator $formHydrator,
         private ResponseFactoryInterface $responseFactory,
         private FlashNotifier $flashNotifier,
+        private EventDispatcherInterface $eventDispatcher,
     ) {}
 
     public function confirm(#[RouteArgument] int $id, #[RouteArgument] string $code): ResponseInterface
@@ -76,39 +80,50 @@ final readonly class RegistrationController
         }
 
         $form = new RegistrationForm($this->config, $this->translator);
+        $serverParams = $request->getServerParams();
 
-        if ($this->formHydrator->populateFromPostAndValidate($form, $request)) {
-            $serviceResult = $this->userRegisterService->run(
-                [
-                    'username' => $form->username,
-                    'email' => $form->email,
-                    'password' => $form->password,
-                ],
-                $request->getServerParams(),
-            );
+        if ($this->formHydrator->populateFromPost($form, $request)) {
+            $formData = $this->parsedBody($request);
+            $this->eventDispatcher->dispatch(new BeforeRegisterFormValidationEvent($formData, $serverParams));
+            $validationResult = $this->formHydrator->validate($form);
 
-            if ($serviceResult->isSuccess()) {
-                $user = User::findByEmail($form->email);
-                if ($user !== null) {
-                    foreach ($this->postRegistrationHooks as $postRegistrationHook) {
-                        $postRegistrationHook->handle($user);
+            if ($validationResult->isValid()) {
+                $serviceResult = $this->userRegisterService->run(
+                    [
+                        'username' => $form->username,
+                        'email' => $form->email,
+                        'password' => $form->password,
+                    ],
+                    $serverParams,
+                );
+
+                if ($serviceResult->isSuccess()) {
+                    $user = User::findByEmail($form->email);
+                    if ($user !== null) {
+                        foreach ($this->postRegistrationHooks as $postRegistrationHook) {
+                            $postRegistrationHook->handle($user);
+                        }
                     }
-                }
 
-                return $this->redirectWithFlash(
-                    $this->url->generate('voyti/session-login'),
-                    $serviceResult->getMessage(),
+                    return $this->redirectWithFlash(
+                        $this->url->generate('voyti/session-login'),
+                        $serviceResult->getMessage(),
+                    );
+                }
+                $errors = $serviceResult->getErrors();
+                array_walk(
+                    $errors,
+                    function (mixed $error) use ($form): void {
+                        if (is_string($error)) {
+                            $form->addError($error, []);
+                        }
+                    },
+                );
+            } else {
+                $this->eventDispatcher->dispatch(
+                    new RegisterFormValidationFailedEvent($formData, $validationResult->getErrorMessages(), $serverParams),
                 );
             }
-            $errors = $serviceResult->getErrors();
-            array_walk(
-                $errors,
-                function (mixed $error) use ($form): void {
-                    if (is_string($error)) {
-                        $form->addError($error, []);
-                    }
-                },
-            );
         }
 
         return $this->renderView('registration/register', [
@@ -146,5 +161,15 @@ final readonly class RegistrationController
                 'recaptchaFieldHtml' => RecaptchaHelper::render($form, $this->config),
             ],
         ]);
+    }
+
+    /**
+     * @return array<array-key, mixed>
+     */
+    private function parsedBody(ServerRequestInterface $request): array
+    {
+        $body = $request->getParsedBody();
+
+        return is_array($body) ? $body : [];
     }
 }

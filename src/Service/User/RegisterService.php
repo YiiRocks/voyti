@@ -4,19 +4,25 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service\User;
 
+use Psr\EventDispatcher\EventDispatcherInterface;
 use RuntimeException;
+use YiiRocks\Voyti\Event\Auth\BeforeRegisterEvent;
+use YiiRocks\Voyti\Exception\ActionPreventedException;
 use YiiRocks\Voyti\Helper\LoginMetadataHelper;
 use YiiRocks\Voyti\Service\ServiceResult;
 use YiiRocks\Voyti\VoytiConfig;
 
 /**
  * Handles self-registration from raw form data: enforces email/username uniqueness,
- * applies personal data processing consent and registration IP, and delegates
- * persistence/notification to {@see UserCreationHelper}.
+ * applies personal data processing consent and registration IP, dispatches the cancellable
+ * {@see BeforeRegisterEvent} once the user is hydrated but not yet persisted (a listener may throw
+ * {@see ActionPreventedException} to reject the registration), and delegates persistence/notification
+ * to {@see UserCreationHelper}.
  */
 final readonly class RegisterService
 {
     public function __construct(
+        private EventDispatcherInterface $eventDispatcher,
         private UserCreationHelper $userCreationHelper,
         private VoytiConfig $config,
     ) {}
@@ -42,7 +48,11 @@ final readonly class RegisterService
         $user->setDataProcessingConsentDate(time());
 
         try {
+            $this->eventDispatcher->dispatch(new BeforeRegisterEvent($data, $user));
             $emailConfirmationRequired = $this->userCreationHelper->persistAndNotify($user);
+        } catch (ActionPreventedException $exception) {
+            $errorDetails = $exception->getErrorDetails() !== [] ? $exception->getErrorDetails() : [$exception->getMessage()];
+            return ServiceResult::failure($exception->getMessage(), $errorDetails);
         } catch (RuntimeException $exception) {
             return ServiceResult::failure($exception->getMessage(), [$exception->getMessage()]);
         }

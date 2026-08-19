@@ -7,11 +7,16 @@ namespace YiiRocks\Voyti\tests\Controller\Registration;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Auth\PostRegistrationHookInterface;
 use YiiRocks\Voyti\Controller\Registration\RegistrationController;
+use YiiRocks\Voyti\Event\Auth\BeforeRegisterEvent;
+use YiiRocks\Voyti\Event\Auth\BeforeRegisterFormValidationEvent;
+use YiiRocks\Voyti\Event\Auth\RegisterFormValidationFailedEvent;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
+use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
@@ -96,6 +101,19 @@ final class RegistrationControllerTest extends DatabaseTestCase
         $this->assertTrue(TestPasswordHasherFactory::create()->validate('password123', $user->getPasswordHash()));
         $this->assertTrue($user->hasDataProcessingConsent());
 
+        // A successful registration dispatches the form-validation and pre-persist events, in order,
+        // with the raw submitted form data and the hydrated (not-yet-saved at dispatch time) user.
+        /** @var EventCaptureDispatcher $eventDispatcher */
+        $eventDispatcher = $container->get(EventDispatcherInterface::class);
+        $beforeFormEvent = $eventDispatcher->getEvent(BeforeRegisterFormValidationEvent::class);
+        $this->assertInstanceOf(BeforeRegisterFormValidationEvent::class, $beforeFormEvent);
+        $this->assertSame('testuser', $beforeFormEvent->getFormData()['register']['username'] ?? null);
+        $this->assertSame($request->getServerParams(), $beforeFormEvent->getServerParams());
+        $beforeRegisterEvent = $eventDispatcher->getEvent(BeforeRegisterEvent::class);
+        $this->assertInstanceOf(BeforeRegisterEvent::class, $beforeRegisterEvent);
+        $this->assertSame('testuser', $beforeRegisterEvent->getUser()->getUsername());
+        $this->assertSame('test@example.com', $beforeRegisterEvent->getFormData()['email'] ?? null);
+
         // POST with service failure: re-renders form with error
         $this->createUser('existing', 'existing@example.com');
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['register' => ['username' => 'existing2', 'email' => 'existing@example.com', 'password' => 'password123', 'passwordRepeat' => 'password123']]);
@@ -103,10 +121,19 @@ final class RegistrationControllerTest extends DatabaseTestCase
         self::assertStringContainsString('Create account', $html);
         self::assertStringContainsString('Email already exists', $html);
 
-        // POST with validation errors: re-renders form
+        // POST with validation errors: re-renders form and dispatches RegisterFormValidationFailedEvent
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['register' => ['username' => '', 'email' => '', 'password' => '', 'passwordRepeat' => '']]);
-        $html = (string) $this->createControllerWithRealValidation()->register($request)->getBody();
+        $realValidationContainer = $this->getTestContainer($this->baseOverrides());
+        $html = (string) $realValidationContainer->get(RegistrationController::class)->register($request)->getBody();
         self::assertStringContainsString('Create account', $html);
+        /** @var EventCaptureDispatcher $realValidationEventDispatcher */
+        $realValidationEventDispatcher = $realValidationContainer->get(EventDispatcherInterface::class);
+        $validationFailedEvent = $realValidationEventDispatcher->getEvent(RegisterFormValidationFailedEvent::class);
+        $this->assertInstanceOf(RegisterFormValidationFailedEvent::class, $validationFailedEvent);
+        $this->assertNotEmpty($validationFailedEvent->getErrors());
+        $this->assertSame($request->getParsedBody(), $validationFailedEvent->getFormData());
+        $this->assertSame($request->getServerParams(), $validationFailedEvent->getServerParams());
+        $this->assertFalse($realValidationEventDispatcher->hasEvent(BeforeRegisterEvent::class));
 
         // Disabled config: shows error
         $html = (string) $this->createController(VoytiConfigFactory::create(enableRegistration: false))->register(new ServerRequest('GET', '/'))->getBody();
@@ -184,14 +211,5 @@ final class RegistrationControllerTest extends DatabaseTestCase
         ];
 
         return $this->getTestContainer($overrides)->get(RegistrationController::class);
-    }
-
-    /**
-     * Uses the real ValidatorInterface instead of the fast valid-by-default mock, for tests whose point is that a
-     * real validation rule rejects the input.
-     */
-    private function createControllerWithRealValidation(?VoytiConfig $config = null): RegistrationController
-    {
-        return $this->getTestContainer($this->baseOverrides($config))->get(RegistrationController::class);
     }
 }

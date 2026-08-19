@@ -6,6 +6,8 @@ namespace YiiRocks\Voyti\tests\Service\User;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Psr\EventDispatcher\EventDispatcherInterface;
+use YiiRocks\Voyti\Event\Auth\BeforeRegisterEvent;
+use YiiRocks\Voyti\Exception\ActionPreventedException;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserPasswordHistory;
 use YiiRocks\Voyti\Model\UserProfile;
@@ -24,6 +26,51 @@ final class RegisterServiceTest extends DatabaseTestCase
 {
     use MailServiceFactoryTrait;
 
+    public function testRunBeforeRegisterEventPreventsRegistration(): void
+    {
+        $mailService = $this->createMailService(new MailCapture());
+        $passwordHasher = TestPasswordHasherFactory::create();
+        $config = VoytiConfigFactory::create();
+
+        // A listener throwing ActionPreventedException with error details: those details become the
+        // ServiceResult's errors, and the user is never persisted.
+        $cancellingDispatcher = new class implements EventDispatcherInterface {
+            public function dispatch(object $event): object
+            {
+                if ($event instanceof BeforeRegisterEvent) {
+                    throw new ActionPreventedException('Registration blocked by policy', ['email']);
+                }
+
+                return $event;
+            }
+        };
+        $userCreationHelper = new UserCreationHelper($mailService, $cancellingDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
+        $service = new RegisterService($cancellingDispatcher, $userCreationHelper, $config);
+        $result = $service->run(['email' => 'blocked@example.com', 'username' => 'blockeduser', 'password' => 'password123']);
+        self::assertTrue($result->isFailure());
+        self::assertSame('Registration blocked by policy', $result->getMessage());
+        self::assertSame(['email'], $result->getErrors());
+        self::assertNull(User::findByEmail('blocked@example.com'));
+
+        // No error details supplied: the exception message itself becomes the sole error, mirroring
+        // the RuntimeException race-condition fallback.
+        $cancellingDispatcherNoDetails = new class implements EventDispatcherInterface {
+            public function dispatch(object $event): object
+            {
+                if ($event instanceof BeforeRegisterEvent) {
+                    throw new ActionPreventedException('Registration blocked by policy');
+                }
+
+                return $event;
+            }
+        };
+        $userCreationHelper2 = new UserCreationHelper($mailService, $cancellingDispatcherNoDetails, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
+        $service2 = new RegisterService($cancellingDispatcherNoDetails, $userCreationHelper2, $config);
+        $result2 = $service2->run(['email' => 'blocked2@example.com', 'username' => 'blockeduser2', 'password' => 'password123']);
+        self::assertTrue($result2->isFailure());
+        self::assertSame(['Registration blocked by policy'], $result2->getErrors());
+    }
+
     public function testRunDataProcessingConsent(): void
     {
         $mailService = $this->createMailService(new MailCapture());
@@ -33,7 +80,7 @@ final class RegisterServiceTest extends DatabaseTestCase
         // Consent always stored when provided
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
-        $service = new RegisterService($userCreationHelper, $config);
+        $service = new RegisterService($eventDispatcher, $userCreationHelper, $config);
         $result = $service->run(['email' => 'consent@example.com', 'username' => 'consentuser', 'password' => 'mypassword', 'dataProcessingConsent' => '1']);
         self::assertTrue($result->isSuccess());
         $saved = User::findByEmail('consent@example.com');
@@ -58,7 +105,7 @@ final class RegisterServiceTest extends DatabaseTestCase
         $existing->save();
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
-        $service = new RegisterService($userCreationHelper, $config);
+        $service = new RegisterService($eventDispatcher, $userCreationHelper, $config);
         $result = $service->run(['email' => 'existing@example.com', 'username' => 'testuser']);
         self::assertTrue($result->isFailure());
         self::assertSame('Email already exists', $result->getMessage());
@@ -75,20 +122,21 @@ final class RegisterServiceTest extends DatabaseTestCase
         $existing2->save();
         $eventDispatcher2 = $this->createMock(EventDispatcherInterface::class);
         $userCreationHelper2 = new UserCreationHelper($mailService, $eventDispatcher2, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
-        $service2 = new RegisterService($userCreationHelper2, $config);
+        $service2 = new RegisterService($eventDispatcher2, $userCreationHelper2, $config);
         $result2 = $service2->run(['email' => 'new@example.com', 'username' => 'existinguser']);
         self::assertTrue($result2->isFailure());
         self::assertSame('Username already exists', $result2->getMessage());
 
         // Race condition: uniqueness passes but persistence fails
+        $eventDispatcher3 = new ThrowingEventDispatcher('Email already exists');
         $userCreationHelper3 = new UserCreationHelper(
             $mailService,
-            new ThrowingEventDispatcher('Email already exists'),
+            $eventDispatcher3,
             $passwordHasher,
             $config,
             new PasswordHistoryService($passwordHasher, $config),
         );
-        $service3 = new RegisterService($userCreationHelper3, $config);
+        $service3 = new RegisterService($eventDispatcher3, $userCreationHelper3, $config);
         $result3 = $service3->run(['email' => 'race@example.com', 'username' => 'raceuser', 'password' => 'secret123']);
         self::assertTrue($result3->isFailure());
         self::assertSame('Email already exists', $result3->getMessage());
@@ -104,7 +152,7 @@ final class RegisterServiceTest extends DatabaseTestCase
         // User-provided password: records in history and creates profile
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
-        $service = new RegisterService($userCreationHelper, $config);
+        $service = new RegisterService($eventDispatcher, $userCreationHelper, $config);
         $result = $service->run(['email' => 'userpass@example.com', 'username' => 'userpassuser', 'password' => 'userpassword123'], ['REMOTE_ADDR' => '203.0.113.9']);
         self::assertTrue($result->isSuccess());
         // Confirmation required: persist() must report true, not just an empty success.
@@ -122,7 +170,7 @@ final class RegisterServiceTest extends DatabaseTestCase
         $config = VoytiConfigFactory::create(enableEmailConfirmation: true);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
-        $service = new RegisterService($userCreationHelper, $config);
+        $service = new RegisterService($eventDispatcher, $userCreationHelper, $config);
 
         // None of username/email/password keys are present: each must default to '' rather than
         // triggering an undefined-array-key access (which would emit a warning under a mutated
@@ -143,7 +191,7 @@ final class RegisterServiceTest extends DatabaseTestCase
         $config = VoytiConfigFactory::create(enableEmailConfirmation: false, maxPasswordAge: 90);
 
         $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
-        $service = new RegisterService($userCreationHelper, $config);
+        $service = new RegisterService($eventDispatcher, $userCreationHelper, $config);
 
         $result = $service->run(['email' => 'noconfirm@example.com', 'username' => 'noconfirmuser', 'password' => 'mypassword']);
 
