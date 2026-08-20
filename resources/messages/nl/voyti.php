@@ -205,6 +205,8 @@ return [
     'voyti.view.dashboard.package_gdpr_description' => 'Gebruikers downloaden, verwijderen of anonimiseren hun gegevens. compliance vereenvoudigd.',
     'voyti.view.dashboard.package_social_auth_label' => 'Sociale aanmelding',
     'voyti.view.dashboard.package_social_auth_description' => 'Geen wachtwoorden meer. gebruikers melden zich aan met Google, GitHub, Facebook en meer in één klik.',
+    'voyti.view.dashboard.package_lockout_label' => 'Brute-Force-beveiliging',
+    'voyti.view.dashboard.package_lockout_description' => 'Volg mislukte aanmeld- en registratiepogingen per IP-adres en blokkeer verdere pogingen zodra een drempel wordt bereikt.',
     'voyti.view.dashboard.package_recaptcha_label' => 'reCAPTCHA-beveiliging',
     'voyti.view.dashboard.package_recaptcha_description' => 'Bescherm registratie en wachtwoordherstel tegen misbruik met Google reCAPTCHA v2 en v3.',
     'voyti.view.dashboard.package_2fa_email_label' => 'Twee-factor-authenticatie (e-mail)',

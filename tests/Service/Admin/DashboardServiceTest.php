@@ -8,6 +8,7 @@ use Composer\InstalledVersions;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\EventDispatcher\EventDispatcherInterface;
+use ReflectionMethod;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserAuditLog;
@@ -133,6 +134,7 @@ final class DashboardServiceTest extends DatabaseTestCase
         $expectedPackages = [
             'yiirocks/voyti-api',
             'yiirocks/voyti-gdpr',
+            'yiirocks/voyti-lockout',
             'yiirocks/voyti-social-auth',
             'yiirocks/voyti-2fa-email',
             'yiirocks/voyti-2fa-totp',
@@ -142,7 +144,7 @@ final class DashboardServiceTest extends DatabaseTestCase
             self::assertContains($expected, $packageNames);
         }
 
-        $validSlugs = ['api', 'gdpr', 'social', 'two-factor'];
+        $validSlugs = ['api', 'gdpr', 'lockout', 'social', 'two-factor'];
         foreach ($packages as $package) {
             self::assertArrayHasKey('packageName', $package);
             self::assertArrayHasKey('labelKey', $package);
@@ -178,6 +180,22 @@ final class DashboardServiceTest extends DatabaseTestCase
         self::assertNotContains('yiirocks/voyti-2fa-email', $packageNames);
         self::assertContains('yiirocks/voyti-2fa-webauthn', $packageNames);
         self::assertContains('yiirocks/voyti-api', $packageNames);
+
+        // yiirocks/recaptcha is a require-dev dependency of this repo, so it is always
+        // installed and never surfaces in getStats()['recommendedPackages']; the private
+        // package catalog is exercised directly via reflection instead.
+        $method = new ReflectionMethod($this->createService(), 'detectAvailablePackages');
+        $catalog = $method->invoke($this->createService());
+        $recaptcha = null;
+        foreach ($catalog as $package) {
+            if ($package['packageName'] === 'yiirocks/recaptcha') {
+                $recaptcha = $package;
+            }
+        }
+        self::assertNotNull($recaptcha);
+        self::assertSame('voyti.view.dashboard.package_recaptcha_label', $recaptcha['labelKey']);
+        self::assertSame('voyti.view.dashboard.package_recaptcha_description', $recaptcha['descriptionKey']);
+        self::assertSame('https://www.yii.rocks/recaptcha/', $recaptcha['docsUrl']);
     }
 
     #[DataProvider('rememberLifespanRoundingProvider')]

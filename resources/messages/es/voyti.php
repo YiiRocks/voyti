@@ -205,6 +205,8 @@ return [
     'voyti.view.dashboard.package_gdpr_description' => 'Los usuarios descargan, eliminan o anonimizzan sus datos. cumplimiento simplificado.',
     'voyti.view.dashboard.package_social_auth_label' => 'Inicio de sesión social',
     'voyti.view.dashboard.package_social_auth_description' => 'Sin contraseñas. los usuarios inician sesión con Google, GitHub, Facebook y más de un clic.',
+    'voyti.view.dashboard.package_lockout_label' => 'Protección contra ataques de fuerza bruta',
+    'voyti.view.dashboard.package_lockout_description' => 'Realice un seguimiento de los intentos fallidos de inicio de sesión y registro por dirección IP y bloquee más intentos una vez alcanzado el umbral.',
     'voyti.view.dashboard.package_recaptcha_label' => 'Protección con reCAPTCHA',
     'voyti.view.dashboard.package_recaptcha_description' => 'Proteja el registro y recuperación de contraseña contra abusos con Google reCAPTCHA v2 y v3.',
     'voyti.view.dashboard.package_2fa_email_label' => 'Autenticación de dos factores (correo)',

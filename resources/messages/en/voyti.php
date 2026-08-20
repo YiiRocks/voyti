@@ -205,6 +205,8 @@ return [
     'voyti.view.dashboard.package_gdpr_description' => 'Users can download, delete, or anonymize their data. Simplify compliance and build trust.',
     'voyti.view.dashboard.package_social_auth_label' => 'Social Login',
     'voyti.view.dashboard.package_social_auth_description' => 'Skip passwords. Users log in with Google, GitHub, Facebook, and others in one click.',
+    'voyti.view.dashboard.package_lockout_label' => 'Brute-Force Protection',
+    'voyti.view.dashboard.package_lockout_description' => 'Track failed login and registration attempts per IP address and block further attempts once a threshold is reached.',
     'voyti.view.dashboard.package_recaptcha_label' => 'reCAPTCHA Protection',
     'voyti.view.dashboard.package_recaptcha_description' => 'Protect registration and password recovery from abuse with Google reCAPTCHA v2 and v3.',
     'voyti.view.dashboard.package_2fa_email_label' => 'Two-Factor Auth (Email)',

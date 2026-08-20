@@ -92,24 +92,6 @@ final readonly class DashboardService
     {
         return [
             [
-                'packageName' => 'yiirocks/voyti-api',
-                'labelKey' => 'voyti.view.dashboard.package_api_label',
-                'descriptionKey' => 'voyti.view.dashboard.package_api_description',
-                'docsUrl' => 'https://www.yii.rocks/voyti/api/',
-            ],
-            [
-                'packageName' => 'yiirocks/voyti-gdpr',
-                'labelKey' => 'voyti.view.dashboard.package_gdpr_label',
-                'descriptionKey' => 'voyti.view.dashboard.package_gdpr_description',
-                'docsUrl' => 'https://www.yii.rocks/voyti/gdpr/',
-            ],
-            [
-                'packageName' => 'yiirocks/voyti-social-auth',
-                'labelKey' => 'voyti.view.dashboard.package_social_auth_label',
-                'descriptionKey' => 'voyti.view.dashboard.package_social_auth_description',
-                'docsUrl' => 'https://www.yii.rocks/voyti/social/',
-            ],
-            [
                 'packageName' => 'yiirocks/recaptcha',
                 'labelKey' => 'voyti.view.dashboard.package_recaptcha_label',
                 'descriptionKey' => 'voyti.view.dashboard.package_recaptcha_description',
@@ -132,6 +114,30 @@ final readonly class DashboardService
                 'labelKey' => 'voyti.view.dashboard.package_2fa_webauthn_label',
                 'descriptionKey' => 'voyti.view.dashboard.package_2fa_webauthn_description',
                 'docsUrl' => 'https://www.yii.rocks/voyti/two-factor/',
+            ],
+            [
+                'packageName' => 'yiirocks/voyti-api',
+                'labelKey' => 'voyti.view.dashboard.package_api_label',
+                'descriptionKey' => 'voyti.view.dashboard.package_api_description',
+                'docsUrl' => 'https://www.yii.rocks/voyti/api/',
+            ],
+            [
+                'packageName' => 'yiirocks/voyti-gdpr',
+                'labelKey' => 'voyti.view.dashboard.package_gdpr_label',
+                'descriptionKey' => 'voyti.view.dashboard.package_gdpr_description',
+                'docsUrl' => 'https://www.yii.rocks/voyti/gdpr/',
+            ],
+            [
+                'packageName' => 'yiirocks/voyti-lockout',
+                'labelKey' => 'voyti.view.dashboard.package_lockout_label',
+                'descriptionKey' => 'voyti.view.dashboard.package_lockout_description',
+                'docsUrl' => 'https://www.yii.rocks/voyti/lockout/',
+            ],
+            [
+                'packageName' => 'yiirocks/voyti-social-auth',
+                'labelKey' => 'voyti.view.dashboard.package_social_auth_label',
+                'descriptionKey' => 'voyti.view.dashboard.package_social_auth_description',
+                'docsUrl' => 'https://www.yii.rocks/voyti/social/',
             ],
         ];
     }
