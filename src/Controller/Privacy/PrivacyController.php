@@ -70,7 +70,10 @@ final readonly class PrivacyController
 
         return $this->renderView('privacy/delete', [
             'form' => $form,
-            'data' => ['formSubmitUrl' => $this->url->generate('voyti/user-privacy-delete')],
+            'data' => [
+                'menu' => MenuView::account($this->config, $this->url, $this->translator()),
+                'formSubmitUrl' => $this->url->generate('voyti/user-privacy-delete'),
+            ],
         ]);
     }
 
