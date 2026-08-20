@@ -8,7 +8,6 @@ use LogicException;
 use YiiRocks\Voyti\Enum\EmailChangeConfirmation;
 use YiiRocks\Voyti\Enum\ProfileVisibility;
 use YiiRocks\Voyti\Enum\RecaptchaVersion;
-use YiiRocks\Voyti\Enum\WebTheme;
 use Yiisoft\Router\RouteNotFoundException;
 use Yiisoft\Router\UrlGeneratorInterface;
 
@@ -57,7 +56,6 @@ final readonly class VoytiConfig
         public string $administratorPermissionName,
         public ProfileVisibility $profileVisibility,
         public int $maxPasswordAge,
-        public WebTheme $webTheme,
         public ?string $viewPath,
         public string $mailPath,
         public bool $enableAuditLog,

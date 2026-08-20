@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Helper;
 
+use Composer\InstalledVersions;
 use DateTimeImmutable;
 use DateTimeZone;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
+use RuntimeException;
 use YiiRocks\Recaptcha\RecaptchaRegistry;
 use YiiRocks\Voyti\Enum\RecaptchaVersion;
 use YiiRocks\Voyti\Helper\AgeHelper;
@@ -18,6 +20,7 @@ use YiiRocks\Voyti\Helper\LinkButtonHelper;
 use YiiRocks\Voyti\Helper\LoginMetadataHelper;
 use YiiRocks\Voyti\Helper\RecaptchaHelper;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
+use YiiRocks\Voyti\Helper\ViewsPackageHelper;
 use YiiRocks\Voyti\tests\Support\RecaptchaRegistryTrait;
 use YiiRocks\Voyti\tests\Support\SimpleAssignmentsStorage;
 use YiiRocks\Voyti\tests\Support\SimpleItemsStorage;
@@ -338,6 +341,28 @@ final class HelperTest extends TestCase
         self::assertSame($expected, TimezoneHelper::isValid($timezone));
     }
 
+    public function testViewsPackagePathReturnsInstalledViewsPackagePath(): void
+    {
+        self::assertSame(
+            InstalledVersions::getInstallPath('yiirocks/voyti-views-bootstrap5') . '/views',
+            ViewsPackageHelper::viewsPath(),
+        );
+    }
+
+    public function testViewsPackagePathThrowsWhenMultipleViewsPackagesAreInstalled(): void
+    {
+        $this->withInstalledPackage('yiirocks/voyti-views-tailwind', function (): void {
+            $this->expectException(RuntimeException::class);
+            $this->expectExceptionMessage(
+                'Multiple packages provide "yiirocks/voyti-views": '
+                . 'yiirocks/voyti-views-bootstrap5, yiirocks/voyti-views-tailwind. '
+                . 'Only one views package may be installed at a time.',
+            );
+
+            ViewsPackageHelper::viewsPath();
+        });
+    }
+
     public static function timezoneIsValidProvider(): iterable
     {
         yield 'empty string' => ['', false];
@@ -393,5 +418,36 @@ final class HelperTest extends TestCase
             assignmentsStorage: $assignmentsStorage,
             config: VoytiConfigFactory::create(administratorPermissionName: 'admin'),
         );
+    }
+
+    /**
+     * Temporarily fakes an installed Composer package via `InstalledVersions::reload()` (the
+     * mechanism Composer itself documents for this) so a package-detection code path can be
+     * exercised without actually requiring the package.
+     */
+    private function withInstalledPackage(string $packageName, callable $callback): void
+    {
+        $original = InstalledVersions::getAllRawData()[0];
+
+        InstalledVersions::reload([
+            'root' => $original['root'],
+            'versions' => $original['versions'] + [
+                $packageName => [
+                    'pretty_version' => '1.0.0',
+                    'version' => '1.0.0.0',
+                    'reference' => null,
+                    'type' => 'library',
+                    'install_path' => __DIR__,
+                    'aliases' => [],
+                    'dev_requirement' => false,
+                ],
+            ],
+        ]);
+
+        try {
+            $callback();
+        } finally {
+            InstalledVersions::reload($original);
+        }
     }
 }

@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Widget;
 
 use Override;
+use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Service\SwitchIdentityService;
+use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Csrf\CsrfTokenInterface;
-use Yiisoft\Html\Html;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Widget\Widget;
+use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 /**
  * Renders the "you're impersonating this user, click to restore" banner. Host apps can drop this
@@ -21,15 +23,20 @@ use Yiisoft\Widget\Widget;
  * ```
  *
  * Dependencies are resolved through the DI container by {@see Widget::widget()}. Renders an
- * empty string if the current user isn't impersonating anyone.
+ * empty string if the current user isn't impersonating anyone. Markup lives in the installed
+ * views package (`shared/_switch-identity`), not here - see {@see RenderTrait}.
  */
 final class SwitchIdentity extends Widget
 {
+    use RenderTrait;
+
     public function __construct(
         private readonly CsrfTokenInterface $csrfToken,
         private readonly SwitchIdentityService $switchIdentityService,
         private readonly TranslatorInterface $translator,
         private readonly UrlGeneratorInterface $url,
+        private readonly VoytiConfig $config,
+        private readonly WebViewRenderer $viewRenderer,
     ) {}
 
     #[Override]
@@ -45,21 +52,17 @@ final class SwitchIdentity extends Widget
             return '';
         }
 
-        $message = $this->translator->translate(
-            'voyti.view.admin.impersonating_banner',
-            ['username' => $originalUser->getUsername()],
-            category: 'voyti',
-        );
-        $restoreUrl = $this->url->generate('voyti/admin-users-switch-identity-restore');
-        $restoreButtonLabel = $this->translator->translate('voyti.view.admin.restore_button', category: 'voyti');
-
-        $html = Html::div()->class('alert alert-warning d-flex justify-content-between align-items-center')->open();
-        $html .= Html::span($message)->render();
-        $html .= Html::form()->post($restoreUrl)->csrf($this->csrfToken->getValue())->open();
-        $html .= Html::submitButton($restoreButtonLabel)->class('btn', 'btn-warning', 'btn-sm')->render();
-        $html .= Html::form()->close();
-        $html .= Html::div()->close();
-
-        return $html;
+        return (string) $this->renderFragment('shared/_switch-identity', [
+            'data' => [
+                'message' => $this->translator->translate(
+                    'voyti.view.admin.impersonating_banner',
+                    ['username' => $originalUser->getUsername()],
+                    category: 'voyti',
+                ),
+                'restoreUrl' => $this->url->generate('voyti/admin-users-switch-identity-restore'),
+                'restoreButtonLabel' => $this->translator->translate('voyti.view.admin.restore_button', category: 'voyti'),
+                'csrfToken' => $this->csrfToken->getValue(),
+            ],
+        ])->getBody();
     }
 }

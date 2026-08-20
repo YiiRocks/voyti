@@ -9,6 +9,7 @@ use YiiRocks\Voyti\Service\SwitchIdentityService;
 use YiiRocks\Voyti\tests\Support\CurrentUserTrait;
 use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
+use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\tests\TestCase;
@@ -20,10 +21,12 @@ use Yiisoft\Translator\Message\Php\MessageSource;
 use Yiisoft\Translator\SimpleMessageFormatter;
 use Yiisoft\Translator\Translator;
 use Yiisoft\Translator\TranslatorInterface;
+use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 final class SwitchIdentityTest extends DatabaseTestCase
 {
     use CurrentUserTrait;
+    use TestContainerTrait;
     use UserFactoryTrait;
 
     public function testRenderReturnsEmptyStringWhenSwitchedButOriginalUserNotFound(): void
@@ -35,6 +38,8 @@ final class SwitchIdentityTest extends DatabaseTestCase
             $switchService,
             $this->createRealTranslator(),
             new FakeUrlGenerator(),
+            VoytiConfigFactory::create(),
+            $this->createViewRenderer(),
         );
 
         self::assertSame('', $widget->render());
@@ -51,6 +56,8 @@ final class SwitchIdentityTest extends DatabaseTestCase
             $switchService,
             $this->createRealTranslator(),
             new FakeUrlGenerator(),
+            VoytiConfigFactory::create(),
+            $this->createViewRenderer(),
         );
 
         $html = $widget->render();
@@ -105,5 +112,10 @@ final class SwitchIdentityTest extends DatabaseTestCase
         $config = VoytiConfigFactory::create(enableSwitchIdentities: true);
 
         return new SwitchIdentityService($config, $currentUser, $session, $eventDispatcher);
+    }
+
+    private function createViewRenderer(): WebViewRenderer
+    {
+        return $this->getTestContainer()->get(WebViewRenderer::class);
     }
 }

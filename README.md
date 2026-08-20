@@ -52,7 +52,7 @@ Stats for Nerds
 ## Installation
 
 ```bash
-composer require yiirocks/voyti
+composer require yiirocks/voyti yiirocks/voyti-views-bootstrap5
 ```
 
 ## Documentation

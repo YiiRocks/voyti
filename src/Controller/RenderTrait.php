@@ -6,6 +6,7 @@ namespace YiiRocks\Voyti\Controller;
 
 use Psr\Http\Message\ResponseInterface;
 use YiiRocks\Voyti\Helper\Views\VoytiCommonParametersInjection;
+use YiiRocks\Voyti\Helper\ViewsPackageHelper;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Yii\View\Renderer\CsrfViewInjection;
@@ -65,7 +66,8 @@ trait RenderTrait
 
     /**
      * Uses the configured `viewPath` if it has an override for `$view`, otherwise falls back to
-     * the module's bundled views so a host only needs to provide the templates it customizes.
+     * the installed views package's bundled views (see {@see ViewsPackageHelper}) so a host only
+     * needs to provide the templates it customizes.
      */
     private function resolveViewPath(string $view): string
     {
@@ -73,7 +75,7 @@ trait RenderTrait
             return $this->config->viewPath;
         }
 
-        return dirname(__DIR__, 2) . '/resources/views/' . $this->config->webTheme->value;
+        return ViewsPackageHelper::viewsPath();
     }
 
     /**

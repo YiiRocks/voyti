@@ -30,7 +30,8 @@
         "2fa",
         "two-factor-authentication",
         "gdpr",
-        "data-export"
+        "data-export",
+        "usuario"
     ],
     "homepage": "https://www.yii.rocks/voyti/",
     "license": "BSD-3-Clause",
@@ -78,7 +79,8 @@
         "yiisoft/widget": "^2.2",
         "yiisoft/yii-console": "^2.3",
         "yiisoft/yii-dataview": "^1.1",
-        "yiisoft/yii-view-renderer": "^7.1"
+        "yiisoft/yii-view-renderer": "^7.1",
+        "yiirocks/voyti-views": "^1.0"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "@stable",
@@ -89,6 +91,7 @@
         "vimeo/psalm": "^6.0",
         "yiirocks/recaptcha": "^1.0",
         "yiirocks/toast-bootstrap5": "^1.0",
+        "yiirocks/voyti-views-bootstrap5": "^1.0",
         "yiisoft/code-style": "^1.1",
         "yiisoft/config": "^1.6",
         "yiisoft/db-sqlite": "^2.0",
@@ -102,6 +105,8 @@
         "yiirocks/voyti-2fa-totp": "TOTP authenticator-app 2FA method with QR code provisioning",
         "yiirocks/voyti-2fa-webauthn": "WebAuthn/passkey two-factor authentication method",
         "yiirocks/voyti-api": "REST API for the Voyti user-management extension: JSON user CRUD endpoints, bearer-token auth, OpenAPI 3.1 spec, and API-token console commands",
+        "yiirocks/voyti-gdpr": "GDPR compliance addon: data export, account anonymization",
+        "yiirocks/voyti-lockout": "Brute-force protection for login and registration endpoints",
         "yiirocks/voyti-social-auth": "Social/OAuth2 login via Google, GitHub, Facebook, and more"
     },
     "autoload": {
