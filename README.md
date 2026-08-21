@@ -30,17 +30,19 @@ Stats for Nerds
 - **User Management** — Registration, email confirmation, login/logout with remember-me, password recovery, password expiration
 - **Profile Management** — User profiles with gravatar, timezone, bio, and a personal website link
 - **Social Authentication** — OAuth2 login via Google, GitHub, Facebook, and more
-- **Two-Factor Authentication** — TOTP (authenticator app) with QR code provisioning, email 2FA, WebAuthn, per-permission enforcement and recovery codes
+- **Two-Factor Authentication** — Email codes, TOTP (authenticator app) with QR provisioning, or WebAuthn/passkeys - with enforced-per-permission support and one-time backup codes for account recovery
 - **RBAC Management** — Full admin UI for roles, permissions, and rules with parent-child hierarchy, assignment management, and filtering
 - **Identity Switching** — Admins can temporarily switch into another user's identity for support or debugging, then restore their own session with one click
 - **Session Management** — Session tracking and termination
-- **GDPR Compliance** — Consent management, data export, anonymized deletion with admin notification
+- **GDPR Data Handling** — Data export and account anonymization
 - **Password Policies** — Minimum complexity requirements, max age enforcement via middleware
 - **Email Change Confirmation** — Three modes: immediate, confirm new address, confirm both old and new
-- **REST API** — JSON user CRUD
+- **REST API** — JSON user CRUD (Bearer-token auth)
 - **Bot Protection** — Google reCAPTCHA v2/v3 for registration and login forms
+- **Brute-Force Protection** — Exponential backoff delays for failed login and registration attempts, tracked per IP address
 - **i18n** — Built-in translations for multiple languages
-- **Themed Views** — Bootstrap 5 views shipped by default; mail templates separate and independently overridable
+- **Pluggable Views** — View-agnostic core with Bootstrap 5 views available; alternative UI frameworks can implement the standard interface
+- **Email Customization** — Mail templates are independently overridable for complete control over transactional email content and styling
 - **Toast Notifications** — Native Bootstrap toast support with automatic fallback to flash messages
 
 ## Requirements
@@ -48,6 +50,10 @@ Stats for Nerds
 - PHP 8.3+
 - ext-intl
 - Various yiisoft packages (automatic installation via composer)
+
+## Views Implementation
+
+Voyti's core is view-agnostic; you need a views implementation package to render any pages. `yiirocks/voyti-views-bootstrap5` is the reference implementation using Bootstrap 5. You can substitute an alternative views package if you prefer a different UI framework, as long as it implements the `yiirocks/voyti-views` interface.
 
 ## Installation
 
