@@ -9,47 +9,43 @@ use RuntimeException;
 use YiiRocks\Voyti\Controller\RenderTrait;
 
 /**
- * Locates the installed package providing the `yiirocks/voyti-views` virtual package (e.g.
- * `yiirocks/voyti-views-bootstrap5`), by convention named `yiirocks/voyti-views-*`. This lets
- * {@see RenderTrait} and every module that ships bundled views
- * (voyti-gdpr, voyti-social-auth, voyti-2fa and its method packages) resolve the same shared
- * views directory without depending on a specific implementation, so a host can swap
- * `voyti-views-bootstrap5` for an alternative theme package.
+ * Locates the installed package providing views for {@see RenderTrait} and every module that
+ * ships bundled views (voyti-gdpr, voyti-social-auth, voyti-2fa and its method packages). Any
+ * vendor may publish one (e.g. `acme/voyti-views-tailwind`) as long as its package name's local
+ * part starts with `voyti-views-`, so a host can swap `voyti-views-bootstrap5` for an alternative
+ * theme package. Detection here only checks the name; a views package is expected to also declare
+ * `"provide": {"yiirocks/voyti-views": "..."}`, but that isn't re-verified here.
  */
 final class ViewsPackageHelper
 {
+    private static ?string $viewsPath = null;
+
     public static function viewsPath(): string
     {
-        $found = [];
-        foreach (InstalledVersions::getInstalledPackages() as $package) {
-            if (!str_starts_with($package, 'yiirocks/voyti-views-')) {
-                continue;
-            }
+        /** @infection-ignore-all AssignCoalesce: memoization only affects performance across repeated calls; resolveViewsPath() is deterministic, so it's unobservable within a single test run. */
+        return self::$viewsPath ??= self::resolveViewsPath();
+    }
 
+    private static function resolveViewsPath(): string
+    {
+        $packages = array_filter(
+            InstalledVersions::getInstalledPackages(),
+            static fn(string $package): bool => str_starts_with(explode('/', $package)[1] ?? '', 'voyti-views-'),
+        );
+
+        foreach ($packages as $package) {
             $path = InstalledVersions::getInstallPath($package);
             if ($path !== null) {
-                $found[$package] = $path;
+                return $path . '/views';
             }
-        }
-
-        if (count($found) > 1) {
-            throw new RuntimeException(sprintf(
-                'Multiple packages provide "yiirocks/voyti-views": %s. Only one views package may be '
-                . 'installed at a time.',
-                implode(', ', array_keys($found)),
-            ));
-        }
-
-        if ($found !== []) {
-            return reset($found) . '/views';
         }
 
         // @codeCoverageIgnoreStart
-        // Defensive fallback: voyti's own composer.json requires the virtual "yiirocks/voyti-views"
-        // package, so Composer itself guarantees a concrete package satisfying it is installed
-        // whenever this code runs; unreachable in practice, kept only to satisfy the return type.
+        // Reachable in production (Composer requirements can be manually avoided/overruled), but
+        // not exercisable here: InstalledVersions::reload() only supplements the real
+        // installed-packages data rather than suppressing it.
         throw new RuntimeException(
-            'No package providing "yiirocks/voyti-views" is installed. Require a views package, '
+            'No views package is installed. Require a package named "<vendor>/voyti-views-*", '
             . 'e.g. "yiirocks/voyti-views-bootstrap5".',
         );
         // @codeCoverageIgnoreEnd
