@@ -35,6 +35,7 @@ return [
         'viewPath' => null,
         'mailPath' => VoytiConfig::DEFAULT_MAIL_PATH,
         'enableAuditLog' => true,
+        'rememberMeCookieDomain' => null,
     ],
 
     'yiisoft/yii-console' => [

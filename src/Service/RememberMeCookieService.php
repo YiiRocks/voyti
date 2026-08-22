@@ -42,6 +42,7 @@ final readonly class RememberMeCookieService
         private ClockInterface $clock,
         private string $cookieName = 'autoLogin',
         private ?EventDispatcherInterface $eventDispatcher = null,
+        private ?string $cookieDomain = null,
     ) {}
 
     public function addCookie(
@@ -51,12 +52,17 @@ final readonly class RememberMeCookieService
     ): ResponseInterface {
         $value = $this->buildPayload($identity, $sessionId);
 
-        if ($this->duration > 0) {
-            $interval = new DateInterval('PT' . $this->duration . 'S');
-            return (new Cookie($this->cookieName, $value))->withMaxAge($interval)->addToResponse($response);
+        $cookie = new Cookie($this->cookieName, $value);
+        if ($this->cookieDomain !== null) {
+            $cookie = $cookie->withDomain($this->cookieDomain);
         }
 
-        return (new Cookie($this->cookieName, $value))->addToResponse($response);
+        if ($this->duration > 0) {
+            $interval = new DateInterval('PT' . $this->duration . 'S');
+            return $cookie->withMaxAge($interval)->addToResponse($response);
+        }
+
+        return $cookie->addToResponse($response);
     }
 
     public function expireCookie(ResponseInterface $response): ResponseInterface

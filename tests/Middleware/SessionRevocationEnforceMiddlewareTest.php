@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Middleware;
 
+use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use YiiRocks\Voyti\Clock\SystemClock;
 use YiiRocks\Voyti\Middleware\SessionRevocationEnforceMiddleware;
 use YiiRocks\Voyti\Model\UserSessions;
+use YiiRocks\Voyti\Service\RememberMeCookieService;
 use YiiRocks\Voyti\tests\Support\CurrentRouteTrait;
 use YiiRocks\Voyti\tests\Support\CurrentUserTrait;
 use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
@@ -50,25 +53,20 @@ final class SessionRevocationEnforceMiddlewareTest extends DatabaseTestCase
         $url = $this->createMock(UrlGeneratorInterface::class);
         $url->expects(self::once())->method('generate')->with('voyti/session-login')->willReturn('/voyti/session-login');
 
-        $response = $this->createMock(ResponseInterface::class);
-        $response->expects(self::once())->method('withHeader')->with('Location', '/voyti/session-login')->willReturnSelf();
-
-        $responseFactory = $this->createMock(ResponseFactoryInterface::class);
-        $responseFactory->expects(self::once())->method('createResponse')->with(302)->willReturn($response);
-
         $session = $this->createOpenSession('revoked-session-id');
 
         $middleware = $this->createMiddleware(
             currentUser: $currentUser,
             currentRoute: $currentRoute,
-            responseFactory: $responseFactory,
             session: $session,
             url: $url,
         );
 
-        $middleware->process($request, $handler);
+        $result = $middleware->process($request, $handler);
 
         self::assertTrue($currentUser->isGuest());
+        self::assertSame('/voyti/session-login', $result->getHeaderLine('Location'));
+        self::assertStringContainsString('autoLogin', $result->getHeaderLine('Set-Cookie'));
     }
 
     public function testProcessLogsOutAndRedirectsWhenSessionRowRevoked(): void
@@ -95,25 +93,20 @@ final class SessionRevocationEnforceMiddlewareTest extends DatabaseTestCase
         $url = $this->createMock(UrlGeneratorInterface::class);
         $url->expects(self::once())->method('generate')->with('voyti/session-login')->willReturn('/voyti/session-login');
 
-        $response = $this->createMock(ResponseInterface::class);
-        $response->expects(self::once())->method('withHeader')->with('Location', '/voyti/session-login')->willReturnSelf();
-
-        $responseFactory = $this->createMock(ResponseFactoryInterface::class);
-        $responseFactory->expects(self::once())->method('createResponse')->with(302)->willReturn($response);
-
         $session = $this->createOpenSession('revoked-session-id');
 
         $middleware = $this->createMiddleware(
             currentUser: $currentUser,
             currentRoute: $currentRoute,
-            responseFactory: $responseFactory,
             session: $session,
             url: $url,
         );
 
-        $middleware->process($request, $handler);
+        $result = $middleware->process($request, $handler);
 
         self::assertTrue($currentUser->isGuest());
+        self::assertSame('/voyti/session-login', $result->getHeaderLine('Location'));
+        self::assertStringContainsString('autoLogin', $result->getHeaderLine('Set-Cookie'));
     }
 
     #[DataProvider('exemptRouteProvider')]
@@ -222,7 +215,8 @@ final class SessionRevocationEnforceMiddlewareTest extends DatabaseTestCase
         return new SessionRevocationEnforceMiddleware(
             $currentUser ?? $this->createCurrentUser(),
             $currentRoute ?? $this->createCurrentRoute(),
-            $responseFactory ?? $this->createMock(ResponseFactoryInterface::class),
+            new RememberMeCookieService(3600, new SystemClock()),
+            $responseFactory ?? new Psr17Factory(),
             $session ?? new FakeSession(),
             $url ?? $this->createMock(UrlGeneratorInterface::class),
         );

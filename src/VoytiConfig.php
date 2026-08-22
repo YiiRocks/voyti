@@ -11,6 +11,8 @@ use YiiRocks\Voyti\Enum\RecaptchaVersion;
 use Yiisoft\Router\RouteNotFoundException;
 use Yiisoft\Router\UrlGeneratorInterface;
 
+use function sprintf;
+
 /**
  * Single source of truth for all module settings: an immutable value object injected into
  * services instead of raw params.
@@ -59,6 +61,7 @@ final readonly class VoytiConfig
         public ?string $viewPath,
         public string $mailPath,
         public bool $enableAuditLog,
+        public ?string $rememberMeCookieDomain,
     ) {}
 
     /**

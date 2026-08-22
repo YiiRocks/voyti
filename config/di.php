@@ -114,6 +114,7 @@ return [
         viewPath: $params['yiirocks/voyti']['viewPath'] ?? null,
         mailPath: $params['yiirocks/voyti']['mailPath'] ?? VoytiConfig::DEFAULT_MAIL_PATH,
         enableAuditLog: $params['yiirocks/voyti']['enableAuditLog'] ?? true,
+        rememberMeCookieDomain: $params['yiirocks/voyti']['rememberMeCookieDomain'] ?? null,
     ),
 
     // Default now() source; hosts with their own PSR-20 clock package can override this binding.
@@ -242,6 +243,7 @@ return [
         $config->rememberLoginLifespan,
         clock: $clock,
         eventDispatcher: $eventDispatcher,
+        cookieDomain: $config->rememberMeCookieDomain,
     ),
     SwitchIdentityService::class => fn(
         VoytiConfig $config,

@@ -86,6 +86,21 @@ final class RememberMeCookieServiceTest extends DatabaseTestCase
         self::assertSame(0, $decoded[2]);
     }
 
+    public function testAddCookieAppliesConfiguredDomain(): void
+    {
+        $identity = $this->createMock(CookieLoginIdentityInterface::class);
+
+        // No domain configured (default): cookie is host-only, matching historical behavior.
+        $service = new RememberMeCookieService(3600, new SystemClock());
+        $response = $service->addCookie($identity, new Response(), 'sess-1');
+        self::assertStringNotContainsString('Domain=', $response->getHeaderLine('Set-Cookie'));
+
+        // Domain configured: cookie carries the Domain attribute, enabling subdomain sharing.
+        $service = new RememberMeCookieService(3600, new SystemClock(), cookieDomain: '.example.com');
+        $response = $service->addCookie($identity, new Response(), 'sess-1');
+        self::assertStringContainsString('Domain=.example.com', $response->getHeaderLine('Set-Cookie'));
+    }
+
     public function testClockIsUsedNotRealTime(): void
     {
         $fakeNow = 1000;

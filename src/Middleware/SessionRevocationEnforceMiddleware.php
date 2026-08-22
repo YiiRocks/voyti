@@ -12,6 +12,7 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserSessions;
+use YiiRocks\Voyti\Service\RememberMeCookieService;
 use Yiisoft\Http\Header;
 use Yiisoft\Http\Status;
 use Yiisoft\Router\CurrentRoute;
@@ -23,7 +24,9 @@ use Yiisoft\User\Guest\GuestIdentityInterface;
 /**
  * Terminating a session only flags its {@see UserSessions} row as revoked — the browser's PHP
  * session stays valid until it expires naturally. This middleware closes that gap by
- * force-logging-out once the row is gone or revoked.
+ * force-logging-out once the row is gone or revoked, also expiring the remember-me cookie so a
+ * dead cookie doesn't linger in the browser silently failing on every future visit (most visible
+ * with cross-domain SSO logout, where another domain's session gets revoked out from under it).
  */
 final readonly class SessionRevocationEnforceMiddleware implements MiddlewareInterface
 {
@@ -36,6 +39,7 @@ final readonly class SessionRevocationEnforceMiddleware implements MiddlewareInt
     public function __construct(
         private CurrentUser $currentUser,
         private CurrentRoute $currentRoute,
+        private RememberMeCookieService $rememberMeCookieService,
         private ResponseFactoryInterface $responseFactory,
         private SessionInterface $session,
         private UrlGeneratorInterface $url,
@@ -63,8 +67,9 @@ final readonly class SessionRevocationEnforceMiddleware implements MiddlewareInt
 
         if ($userSession === null || $userSession->isRevoked()) {
             $this->currentUser->logout();
-            $response = $this->responseFactory->createResponse(Status::FOUND);
-            return $response->withHeader(Header::LOCATION, $this->url->generate('voyti/session-login'));
+            $response = $this->responseFactory->createResponse(Status::FOUND)
+                ->withHeader(Header::LOCATION, $this->url->generate('voyti/session-login'));
+            return $this->rememberMeCookieService->expireCookie($response);
         }
 
         $userSession->setUpdatedAt(time());
