@@ -91,48 +91,53 @@ final readonly class SessionController
             if ($validationResult->isValid()) {
                 $user = User::findByUsernameOrEmail($form->login);
 
-                if ($user === null) {
-                    $form->addError(
-                        $this->translator->translate('voyti.security.invalid_login', category: 'voyti'),
-                        ['login'],
-                    );
-                    $this->eventDispatcher->dispatch(
-                        new FailedLoginEvent($this->loginIdentifier($form), 'user_not_found', $serverParams),
-                    );
-                } elseif (!$this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
-                    $form->addError(
-                        $this->translator->translate('voyti.security.invalid_login', category: 'voyti'),
-                        ['login'],
-                    );
-                    $this->eventDispatcher->dispatch(
-                        new FailedLoginEvent($this->loginIdentifier($form), 'invalid_password', $serverParams),
-                    );
-                } elseif ($user->isBlocked()) {
-                    $form->addError(
-                        $this->translator->translate('voyti.security.account_blocked', category: 'voyti'),
-                        ['login'],
-                    );
-                    $this->eventDispatcher->dispatch(
-                        new FailedLoginEvent($this->loginIdentifier($form), 'account_blocked', $serverParams),
-                    );
-                } elseif ($this->config->enableEmailConfirmation && !$user->isConfirmed()) {
-                    $form->addError(
-                        $this->translator->translate('voyti.security.need_email_confirmation', category: 'voyti'),
-                        ['login'],
-                    );
-                } else {
-                    foreach ($this->loginChallenges as $loginChallenge) {
-                        $response = $loginChallenge->challenge($user, $form->rememberMe, $request);
-                        if ($response !== null) {
-                            return $response;
-                        }
-                    }
+                try {
+                    $this->loginCompletionService->checkBeforeLogin($user, $request);
 
-                    try {
-                        return $this->loginCompletionService->complete($user, $form->rememberMe, $request);
-                    } catch (ActionPreventedException $exception) {
-                        $form->addError($exception->getMessage(), $exception->getErrorDetails());
+                    if ($user === null) {
+                        $form->addError(
+                            $this->translator->translate('voyti.security.invalid_login', category: 'voyti'),
+                            ['login'],
+                        );
+                        $this->eventDispatcher->dispatch(
+                            new FailedLoginEvent($this->loginIdentifier($form), 'user_not_found', $serverParams),
+                        );
+                    } elseif (!$this->passwordHasher->validate($form->password, $user->getPasswordHash())) {
+                        $form->addError(
+                            $this->translator->translate('voyti.security.invalid_login', category: 'voyti'),
+                            ['login'],
+                        );
+                        $this->eventDispatcher->dispatch(
+                            new FailedLoginEvent($this->loginIdentifier($form), 'invalid_password', $serverParams),
+                        );
+                    } elseif ($user->isBlocked()) {
+                        $form->addError(
+                            $this->translator->translate('voyti.security.account_blocked', category: 'voyti'),
+                            ['login'],
+                        );
+                        $this->eventDispatcher->dispatch(
+                            new FailedLoginEvent($this->loginIdentifier($form), 'account_blocked', $serverParams),
+                        );
+                    } elseif ($this->config->enableEmailConfirmation && !$user->isConfirmed()) {
+                        $form->addError(
+                            $this->translator->translate('voyti.security.need_email_confirmation', category: 'voyti'),
+                            ['login'],
+                        );
+                    } else {
+                        foreach ($this->loginChallenges as $loginChallenge) {
+                            $response = $loginChallenge->challenge($user, $form->rememberMe, $request);
+                            if ($response !== null) {
+                                return $response;
+                            }
+                        }
+
+                        return $this->loginCompletionService->finalize($user, $form->rememberMe, $request);
                     }
+                } catch (ActionPreventedException $exception) {
+                    $form->addError($exception->getMessage(), $exception->getErrorDetails());
+                    $this->eventDispatcher->dispatch(
+                        new FailedLoginEvent($this->loginIdentifier($form), 'locked_out', $serverParams),
+                    );
                 }
             } else {
                 $this->eventDispatcher->dispatch(

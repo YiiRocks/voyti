@@ -8,10 +8,9 @@ use YiiRocks\Voyti\Exception\ActionPreventedException;
 use YiiRocks\Voyti\Model\User;
 
 /**
- * Dispatched in `LoginCompletionService::complete()` after every login precondition (password, login
- * challenge) has passed but before the session is established, carrying the about-to-log-in `User`
- * and the request's server params. Cancellable: a listener may throw {@see ActionPreventedException}
- * to prevent the login (e.g. fraud detection).
+ * Dispatched by `LoginCompletionService::checkBeforeLogin()` before the password is checked. `$user`
+ * is null when the submitted username didn't resolve to an account. Cancellable: a listener may throw
+ * {@see ActionPreventedException} to prevent the login.
  */
 final readonly class BeforeLoginEvent
 {
@@ -19,7 +18,7 @@ final readonly class BeforeLoginEvent
      * @param array<array-key, mixed> $serverParams
      */
     public function __construct(
-        private User $user,
+        private ?User $user,
         private array $serverParams = [],
     ) {}
 
@@ -31,7 +30,7 @@ final readonly class BeforeLoginEvent
         return $this->serverParams;
     }
 
-    public function getUser(): User
+    public function getUser(): ?User
     {
         return $this->user;
     }

@@ -108,7 +108,7 @@ final class SessionControllerTest extends DatabaseTestCase
         );
         $beforeLoginEvent = $this->eventDispatcher->getEvent(BeforeLoginEvent::class);
         $this->assertInstanceOf(BeforeLoginEvent::class, $beforeLoginEvent);
-        $this->assertSame($user1->getId(), $beforeLoginEvent->getUser()->getId());
+        $this->assertSame($user1->getId(), $beforeLoginEvent->getUser()?->getId());
         $this->assertSame($request->getServerParams(), $beforeLoginEvent->getServerParams());
         $this->assertSame($request->getServerParams(), $beforeFormEvent->getServerParams());
         $this->assertFalse($this->eventDispatcher->hasEvent(FailedLoginEvent::class));
@@ -143,7 +143,8 @@ final class SessionControllerTest extends DatabaseTestCase
     public function testLoginBeforeLoginEventPreventsLogin(): void
     {
         // A listener throwing ActionPreventedException from the cancellable BeforeLoginEvent stops
-        // the login before the session is established, and its message surfaces as a form error.
+        // the login before the session is established, its message surfaces as a form error, and a
+        // FailedLoginEvent with reason 'locked_out' is dispatched.
         $this->createUser(
             username: 'login_cancel',
             email: 'login_cancel@example.com',
@@ -151,8 +152,12 @@ final class SessionControllerTest extends DatabaseTestCase
             confirmedAt: time(),
         );
         $cancellingDispatcher = new class implements EventDispatcherInterface {
+            /** @var list<object> */
+            public array $dispatched = [];
+
             public function dispatch(object $event): object
             {
+                $this->dispatched[] = $event;
                 if ($event instanceof BeforeLoginEvent) {
                     throw new ActionPreventedException('Login blocked by policy', ['login']);
                 }
@@ -167,6 +172,14 @@ final class SessionControllerTest extends DatabaseTestCase
 
         $this->assertNull($this->currentUser->getId());
         self::assertStringContainsString('Login blocked by policy', $html);
+        $failedLoginEvent = null;
+        foreach ($cancellingDispatcher->dispatched as $event) {
+            if ($event instanceof FailedLoginEvent) {
+                $failedLoginEvent = $event;
+            }
+        }
+        $this->assertInstanceOf(FailedLoginEvent::class, $failedLoginEvent);
+        $this->assertSame('locked_out', $failedLoginEvent->getReason());
     }
 
     public function testLoginConsultsLoginChallenges(): void
