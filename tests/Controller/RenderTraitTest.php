@@ -6,6 +6,7 @@ namespace YiiRocks\Voyti\tests\Controller;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Psr\Http\Message\ResponseInterface;
+use RuntimeException;
 use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\tests\Support\FakeUrlGenerator;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
@@ -71,6 +72,19 @@ final class RenderTraitTest extends TestCase
         } finally {
             $this->removeViewPath($customViewPath);
         }
+    }
+
+    public function testResolveViewPathThrowsWhenNoViewsPackageIsAnnounced(): void
+    {
+        $config = VoytiConfigFactory::create(viewPath: null, viewsPackagePaths: []);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage(
+            'No views package is installed. Require a package that announces itself via the '
+            . '"viewsPackagePaths" param, e.g. "yiirocks/voyti-views-bootstrap5".',
+        );
+
+        $this->makeFixture($config)->render('shared/message');
     }
 
     private function makeFixture(VoytiConfig $config): object

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Helper;
 
-use Composer\InstalledVersions;
 use DateTimeImmutable;
 use DateTimeZone;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
@@ -19,7 +18,6 @@ use YiiRocks\Voyti\Helper\LinkButtonHelper;
 use YiiRocks\Voyti\Helper\LoginMetadataHelper;
 use YiiRocks\Voyti\Helper\RecaptchaHelper;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
-use YiiRocks\Voyti\Helper\ViewsPackageHelper;
 use YiiRocks\Voyti\tests\Support\RecaptchaRegistryTrait;
 use YiiRocks\Voyti\tests\Support\SimpleAssignmentsStorage;
 use YiiRocks\Voyti\tests\Support\SimpleItemsStorage;
@@ -338,14 +336,6 @@ final class HelperTest extends TestCase
     public function testTimezoneIsValid(string $timezone, bool $expected): void
     {
         self::assertSame($expected, TimezoneHelper::isValid($timezone));
-    }
-
-    public function testViewsPackagePathReturnsInstalledViewsPackagePath(): void
-    {
-        self::assertSame(
-            InstalledVersions::getInstallPath('yiirocks/voyti-views-bootstrap5') . '/views',
-            ViewsPackageHelper::viewsPath(),
-        );
     }
 
     public static function timezoneIsValidProvider(): iterable

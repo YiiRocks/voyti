@@ -89,32 +89,39 @@ $cookieSecretKey = static function () use ($params): string {
 return [
     // Module configuration, built once from the host's `yiirocks/voyti` params array.
     VoytiConfig::class => static fn() => new VoytiConfig(
+        // General
         appName: $params['yiirocks/voyti']['appName'] ?? 'Voyti',
-        recaptchaVersion: $params['yiirocks/voyti']['recaptchaVersion'] ?? RecaptchaVersion::V3,
-        accountMenuItems: $params['yiirocks/voyti']['accountMenuItems'] ?? [],
+        homeRoute: $params['yiirocks/voyti']['homeRoute'] ?? 'home',
+        // Authentication & Registration
         enableRegistration: $params['yiirocks/voyti']['enableRegistration'] ?? true,
         enableEmailConfirmation: $params['yiirocks/voyti']['enableEmailConfirmation'] ?? true,
-        enablePasswordComplexity: $params['yiirocks/voyti']['enablePasswordComplexity'] ?? false,
-        enableRecommendations: $params['yiirocks/voyti']['enableRecommendations'] ?? true,
-        enableSwitchIdentities: $params['yiirocks/voyti']['enableSwitchIdentities'] ?? true,
-        homeRoute: $params['yiirocks/voyti']['homeRoute'] ?? 'home',
-        mailAdminOnRegister: $params['yiirocks/voyti']['mailAdminOnRegister'] ?? null,
-        passwordHistoryLimit: $params['yiirocks/voyti']['passwordHistoryLimit'] ?? 10,
         allowPasswordRecovery: $params['yiirocks/voyti']['allowPasswordRecovery'] ?? true,
         allowAdminPasswordRecovery: $params['yiirocks/voyti']['allowAdminPasswordRecovery'] ?? false,
         allowAccountDelete: $params['yiirocks/voyti']['allowAccountDelete'] ?? false,
-        privacyMenuItems: $params['yiirocks/voyti']['privacyMenuItems'] ?? [],
         emailChangeConfirmation: $params['yiirocks/voyti']['emailChangeConfirmation'] ?? EmailChangeConfirmation::NEW,
         rememberLoginLifespan: $params['yiirocks/voyti']['rememberLoginLifespan'] ?? 2592000,
         tokenConfirmationLifespan: $params['yiirocks/voyti']['tokenConfirmationLifespan'] ?? 86400,
         tokenRecoveryLifespan: $params['yiirocks/voyti']['tokenRecoveryLifespan'] ?? 21600,
+        enableSwitchIdentities: $params['yiirocks/voyti']['enableSwitchIdentities'] ?? true,
+        mailAdminOnRegister: $params['yiirocks/voyti']['mailAdminOnRegister'] ?? null,
+        recaptchaVersion: $params['yiirocks/voyti']['recaptchaVersion'] ?? RecaptchaVersion::V3,
+        // Session & Security
+        maxPasswordAge: $params['yiirocks/voyti']['maxPasswordAge'] ?? 0,
+        enablePasswordComplexity: $params['yiirocks/voyti']['enablePasswordComplexity'] ?? false,
+        passwordHistoryLimit: $params['yiirocks/voyti']['passwordHistoryLimit'] ?? 10,
         administratorPermissionName: $params['yiirocks/voyti']['administratorPermissionName'] ?? 'voyti-admin',
         profileVisibility: $params['yiirocks/voyti']['profileVisibility'] ?? ProfileVisibility::USERS,
-        maxPasswordAge: $params['yiirocks/voyti']['maxPasswordAge'] ?? 0,
-        viewPath: $params['yiirocks/voyti']['viewPath'] ?? null,
-        mailPath: $params['yiirocks/voyti']['mailPath'] ?? VoytiConfig::DEFAULT_MAIL_PATH,
         enableAuditLog: $params['yiirocks/voyti']['enableAuditLog'] ?? true,
         rememberMeCookieDomain: $params['yiirocks/voyti']['rememberMeCookieDomain'] ?? null,
+        // Views & Mail
+        viewPath: $params['yiirocks/voyti']['viewPath'] ?? null,
+        mailPath: $params['yiirocks/voyti']['mailPath'] ?? VoytiConfig::DEFAULT_MAIL_PATH,
+        // Admin Dashboard
+        enableRecommendations: $params['yiirocks/voyti']['enableRecommendations'] ?? true,
+        // Contributed by other packages - not meant to be set by host apps directly
+        accountMenuItems: $params['yiirocks/voyti']['accountMenuItems'] ?? [],
+        privacyMenuItems: $params['yiirocks/voyti']['privacyMenuItems'] ?? [],
+        viewsPackagePaths: $params['yiirocks/voyti']['viewsPackagePaths'] ?? [],
     ),
 
     // Default now() source; hosts with their own PSR-20 clock package can override this binding.

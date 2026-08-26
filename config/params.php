@@ -10,32 +10,39 @@ use YiiRocks\Voyti\VoytiConfig;
 
 return [
     'yiirocks/voyti' => [
+        // General
         'appName' => 'Voyti',
-        'recaptchaVersion' => RecaptchaVersion::V3,
-        'accountMenuItems' => [],
+        'homeRoute' => 'home',
+        // Authentication & Registration
         'enableRegistration' => true,
         'enableEmailConfirmation' => true,
-        'enablePasswordComplexity' => false,
-        'enableRecommendations' => true,
-        'enableSwitchIdentities' => true,
-        'homeRoute' => 'home',
-        'mailAdminOnRegister' => null,
-        'passwordHistoryLimit' => 10,
         'allowPasswordRecovery' => true,
         'allowAdminPasswordRecovery' => false,
         'allowAccountDelete' => false,
-        'privacyMenuItems' => [],
         'emailChangeConfirmation' => EmailChangeConfirmation::NEW,
         'rememberLoginLifespan' => 2592000,
         'tokenConfirmationLifespan' => 86400,
         'tokenRecoveryLifespan' => 21600,
+        'enableSwitchIdentities' => true,
+        'mailAdminOnRegister' => null,
+        'recaptchaVersion' => RecaptchaVersion::V3,
+        // Session & Security
+        'maxPasswordAge' => 0,
+        'enablePasswordComplexity' => false,
+        'passwordHistoryLimit' => 10,
         'administratorPermissionName' => 'voyti-admin',
         'profileVisibility' => ProfileVisibility::USERS,
-        'maxPasswordAge' => 0,
-        'viewPath' => null,
-        'mailPath' => VoytiConfig::DEFAULT_MAIL_PATH,
         'enableAuditLog' => true,
         'rememberMeCookieDomain' => null,
+        // Views & Mail
+        'viewPath' => null,
+        'mailPath' => VoytiConfig::DEFAULT_MAIL_PATH,
+        // Admin Dashboard
+        'enableRecommendations' => true,
+        // Contributed by other packages - not meant to be set by host apps directly
+        'accountMenuItems' => [],
+        'privacyMenuItems' => [],
+        'viewsPackagePaths' => [],
     ],
 
     'yiisoft/yii-console' => [

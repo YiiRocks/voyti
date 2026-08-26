@@ -22,46 +22,46 @@ final readonly class VoytiConfig
     public const string DEFAULT_MAIL_PATH = __DIR__ . '/../resources/mail';
 
     public function __construct(
+        // General
         public string $appName,
-        public RecaptchaVersion $recaptchaVersion,
-        /**
-         * Extra account-menu links contributed by packages (e.g. yiirocks/voyti-2fa), merged in via
-         * the `accountMenuItems` param so core needs no knowledge of them.
-         *
-         * @psalm-var list<array{label: string, category: string, route: string}>
-         */
-        public array $accountMenuItems,
+        public string $homeRoute,
+        // Authentication & Registration
         public bool $enableRegistration,
         public bool $enableEmailConfirmation,
-        public bool $enablePasswordComplexity,
-        public bool $enableRecommendations,
-        public bool $enableSwitchIdentities,
-        public string $homeRoute,
-        public ?string $mailAdminOnRegister,
-        public int $passwordHistoryLimit,
         public bool $allowPasswordRecovery,
         public bool $allowAdminPasswordRecovery,
         public bool $allowAccountDelete,
-        /**
-         * Extra links contributed by privacy-related packages (e.g. yiirocks/voyti-gdpr) to the
-         * Privacy settings hub, merged in via the `privacyMenuItems` param so core needs no
-         * knowledge of them. Privacy itself is shown whenever this is non-empty or
-         * {@see self::$allowAccountDelete} is true.
-         *
-         * @psalm-var list<array{label: string, category: string, route: string}>
-         */
-        public array $privacyMenuItems,
         public EmailChangeConfirmation $emailChangeConfirmation,
         public int $rememberLoginLifespan,
         public int $tokenConfirmationLifespan,
         public int $tokenRecoveryLifespan,
+        public bool $enableSwitchIdentities,
+        public ?string $mailAdminOnRegister,
+        public RecaptchaVersion $recaptchaVersion,
+        // Session & Security
+        public int $maxPasswordAge,
+        public bool $enablePasswordComplexity,
+        public int $passwordHistoryLimit,
         public string $administratorPermissionName,
         public ProfileVisibility $profileVisibility,
-        public int $maxPasswordAge,
-        public ?string $viewPath,
-        public string $mailPath,
         public bool $enableAuditLog,
         public ?string $rememberMeCookieDomain,
+        // Views & Mail
+        public ?string $viewPath,
+        public string $mailPath,
+        // Admin Dashboard
+        public bool $enableRecommendations,
+        // Contributed by other packages - not meant to be set by host apps directly
+        /** @psalm-var list<array{label: string, category: string, route: string}> */
+        public array $accountMenuItems,
+        /** @psalm-var list<array{label: string, category: string, route: string}> */
+        public array $privacyMenuItems,
+        /**
+         * A list, not a single value, so multiple views packages merge by appending instead of a config error.
+         *
+         * @psalm-var list<string>
+         */
+        public array $viewsPackagePaths,
     ) {}
 
     /**

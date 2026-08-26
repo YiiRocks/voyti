@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Controller;
 
 use Psr\Http\Message\ResponseInterface;
+use RuntimeException;
 use YiiRocks\Voyti\Helper\Views\VoytiCommonParametersInjection;
-use YiiRocks\Voyti\Helper\ViewsPackageHelper;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\Yii\View\Renderer\CsrfViewInjection;
@@ -66,8 +66,9 @@ trait RenderTrait
 
     /**
      * Uses the configured `viewPath` if it has an override for `$view`, otherwise falls back to
-     * the installed views package's bundled views (see {@see ViewsPackageHelper}) so a host only
-     * needs to provide the templates it customizes.
+     * the first views package's bundled views - announced via the `viewsPackagePaths` param, see
+     * {@see VoytiConfig::$viewsPackagePaths} - so a host only needs to provide the templates it
+     * customizes.
      */
     private function resolveViewPath(string $view): string
     {
@@ -75,7 +76,14 @@ trait RenderTrait
             return $this->config->viewPath;
         }
 
-        return ViewsPackageHelper::viewsPath();
+        if ($this->config->viewsPackagePaths === []) {
+            throw new RuntimeException(
+                'No views package is installed. Require a package that announces itself via the '
+                . '"viewsPackagePaths" param, e.g. "yiirocks/voyti-views-bootstrap5".',
+            );
+        }
+
+        return $this->config->viewsPackagePaths[0];
     }
 
     /**

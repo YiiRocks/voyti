@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Support;
 
+use Composer\InstalledVersions;
 use ReflectionClass;
 use YiiRocks\Voyti\VoytiConfig;
 
@@ -24,6 +25,11 @@ final class VoytiConfigFactory
     private static function defaults(): array
     {
         $params = require dirname(__DIR__, 2) . '/config/params.php';
+
+        // Replicate yiisoft/config's auto-merge of the views package's viewsPackagePaths param.
+        $viewsPackageInstallPath = InstalledVersions::getInstallPath('yiirocks/voyti-views-bootstrap5');
+        $viewsPackageParams = require $viewsPackageInstallPath . '/config/params.php';
+        $params['yiirocks/voyti'] = array_merge($params['yiirocks/voyti'], $viewsPackageParams['yiirocks/voyti']);
 
         // Keep only keys that map to a VoytiConfig constructor parameter, in case config/params.php
         // carries params VoytiConfig does not accept.
