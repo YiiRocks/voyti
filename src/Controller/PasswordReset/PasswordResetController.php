@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Controller\PasswordReset;
 
-use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -40,7 +39,6 @@ final readonly class PasswordResetController
         private UrlGeneratorInterface $url,
         private RecoveryService $passwordRecoveryService,
         private ResetService $resetPasswordService,
-        private EventDispatcherInterface $eventDispatcher,
         private VoytiConfig $config,
         private FormHydrator $formHydrator,
         private ResponseFactoryInterface $responseFactory,

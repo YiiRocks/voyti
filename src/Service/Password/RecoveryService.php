@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Service\Password;
 
-use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Factory\UserTokenFactory;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\MailService;
@@ -24,7 +23,6 @@ final readonly class RecoveryService
         private MailService $mailService,
         private VoytiConfig $config,
         private TranslatorInterface $translator,
-        private EventDispatcherInterface $eventDispatcher,
     ) {}
 
     public function run(string $email): ServiceResult
