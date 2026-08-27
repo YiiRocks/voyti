@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use Psr\Clock\ClockInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
-use Psr\Log\LoggerInterface;
 use YiiRocks\Voyti\Adapter\IdentityAdapter;
 use YiiRocks\Voyti\Clock\SystemClock;
 use YiiRocks\Voyti\Controller\Registration\RegistrationController;
@@ -156,18 +155,14 @@ return [
     // Cookie encryption middleware for remember-me cookies
     CookieEncryptor::class => static fn() => new CookieEncryptor($cookieSecretKey()),
     CookieSigner::class => static fn() => new CookieSigner($cookieSecretKey()),
-    CookieMiddleware::class => fn(
-        LoggerInterface $logger,
-        CookieEncryptor $encryptor,
-        CookieSigner $signer,
-    ) => new CookieMiddleware(
-        $logger,
-        $encryptor,
-        $signer,
-        [
-            'autoLogin' => CookieMiddleware::ENCRYPT,
+    CookieMiddleware::class => [
+        'class' => CookieMiddleware::class,
+        '__construct()' => [
+            'cookiesSettings' => [
+                'autoLogin' => CookieMiddleware::ENCRYPT,
+            ],
         ],
-    ),
+    ],
 
     // Auditing.
     AuditLogService::class => AuditLogService::class,
