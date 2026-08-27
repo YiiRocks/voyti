@@ -6,7 +6,7 @@
 >
 > "to enter" or "to log in"
 
-Highly customizable and extensible user management, authentication, and authorization extension for [Yii Framework 3](https://www.yiiframework.com/).
+Highly customizable and extensible user management, authentication, and authorization extension for [Yii3](https://www.yiiframework.com/).
 
 Originally ported from [Usuario](https://github.com/2amigos/yii2-usuario), Voyti has since been rebuilt around modern PSR standards and Yiisoft components. It has been extensively redesigned to provide a flexible, modular foundation that adapts to a wide range of authentication and authorization requirements.
 
