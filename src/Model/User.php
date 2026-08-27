@@ -21,10 +21,9 @@ use Yiisoft\User\Login\Cookie\CookieLoginIdentityInterface;
  * enforced by MySQL/PostgreSQL by default, but a host running on SQLite without
  * `PRAGMA foreign_keys=ON` (a per-connection setting only the host, not this library, can set) would
  * otherwise get orphaned rows. `UserAuditLog` is deliberately excluded: it has no FK to `user` and
- * should outlive the deleted user as a historical record. Tables owned by optional packages (e.g.
- * `user_social_account` from `yiirocks/voyti-social-auth`, `yiirocks/voyti-2fa`'s tables) are
- * deliberately excluded too — core has no compile-time knowledge of those packages, so their cleanup
- * relies solely on their own migrations' `ON DELETE CASCADE` foreign keys.
+ * should outlive the deleted user as a historical record. Tables owned by optional packages are
+ * deliberately excluded too — core has no compile-time knowledge of those packages, so their
+ * cleanup relies solely on their own migrations' `ON DELETE CASCADE` foreign keys.
  */
 final class User extends ActiveRecord implements IdentityInterface, CookieLoginIdentityInterface
 {

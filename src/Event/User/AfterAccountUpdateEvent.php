@@ -7,7 +7,7 @@ namespace YiiRocks\Voyti\Event\User;
 use YiiRocks\Voyti\Model\User;
 
 /**
- * Dispatched in `AccountController::update()` after account-level fields (username, email, password)
+ * Dispatched by `UserUpdateHelper::apply()` after account-level fields (username, email, password)
  * are saved, carrying the updated `User` and the list of field names that changed. Distinct from
  * {@see UserProfileEvent}, which covers cosmetic profile fields.
  */

@@ -25,9 +25,9 @@ use Yiisoft\User\CurrentUser;
  * Finalizes an authenticated login once every check (password, and any login challenge such as
  * two-factor) has passed: establishes the session, records login metadata, runs every
  * {@see PostLoginHookInterface} (collected via the `voyti.post-login-hook` tag - e.g. connecting a
- * pending social account from `yiirocks/voyti-social-auth`), dispatches {@see AfterLoginEvent}, and
- * redirects home with an optional remember-me cookie. Shared by the plain login flow and by challenge
- * handlers that complete login after their own step.
+ * pending social account), dispatches {@see AfterLoginEvent}, and redirects home with an optional
+ * remember-me cookie. Shared by the plain login flow and by challenge handlers that complete login
+ * after their own step.
  *
  * {@see self::checkBeforeLogin()} and {@see self::finalize()} split {@see self::complete()} in two so
  * callers can gate a further step (e.g. a two-factor challenge) behind the lockout check without

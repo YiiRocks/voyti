@@ -31,7 +31,7 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
  * Handles new-account registration: the registration form, email confirmation, and resending the
  * confirmation email. A successful registration is followed by a
  * {@see PostRegistrationHookInterface} sweep (collected via the `voyti.post-registration-hook` tag -
- * e.g. connecting a pending social account from `yiirocks/voyti-social-auth`), so core needs no
+ * e.g. connecting a pending social account), so core needs no
  * knowledge of what packages hook into it.
  */
 final readonly class RegistrationController

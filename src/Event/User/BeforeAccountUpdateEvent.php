@@ -8,8 +8,8 @@ use YiiRocks\Voyti\Exception\ActionPreventedException;
 use YiiRocks\Voyti\Model\User;
 
 /**
- * Dispatched in `AccountController::update()` before account-level fields (username, email,
- * password) are saved, carrying the `User` and the list of field names about to change. Distinct from
+ * Dispatched by `UserUpdateHelper::apply()` before account-level fields (username, email, password)
+ * are saved, carrying the `User` and the list of field names about to change. Distinct from
  * {@see UserProfileEvent}, which covers cosmetic profile fields. Cancellable: a listener may throw
  * {@see ActionPreventedException} to reject the update (e.g. compliance validation).
  */

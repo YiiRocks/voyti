@@ -17,8 +17,8 @@ use Psr\Http\Server\RequestHandlerInterface;
  * instead of adding the sub-middlewares individually. Remember-me runs first (so a cookie-restored
  * user is present for the checks that follow), then every enforcement middleware collected via the
  * `voyti.enforce-middleware` DI tag - core contributes session-revocation and password-age, and
- * installed packages (e.g. `yiirocks/voyti-2fa`) contribute their own with no host wiring. Each
- * sub-middleware checks its own feature flag internally, so disabled features become no-ops.
+ * installed extension packages contribute their own with no host wiring. Each sub-middleware checks
+ * its own feature flag internally, so disabled features become no-ops.
  */
 final readonly class VoytiMiddleware implements MiddlewareInterface
 {

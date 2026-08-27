@@ -38,6 +38,7 @@ use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\CreateService;
 use YiiRocks\Voyti\Service\User\RegisterService;
 use YiiRocks\Voyti\Service\User\UserCreationHelper;
+use YiiRocks\Voyti\Service\User\UserUpdateHelper;
 use YiiRocks\Voyti\Service\UserSession\TerminateUserSessionsService;
 use YiiRocks\Voyti\Service\UserSession\UserSessionDecorator;
 use YiiRocks\Voyti\Validator\Rbac\ItemsValidator;
@@ -134,8 +135,8 @@ return [
     IdentityRepositoryInterface::class => IdentityAdapter::class,
 
     // PSR-15 middleware: VoytiMiddleware chains remember-me plus every enforcement middleware tagged
-    // `voyti.enforce-middleware`. Core tags session-revocation and password-age (below); packages
-    // such as yiirocks/voyti-2fa tag their own, joining the chain with no host wiring.
+    // `voyti.enforce-middleware`. Core tags session-revocation and password-age (below); extension
+    // packages tag their own, joining the chain with no host wiring.
     SessionRevocationEnforceMiddleware::class => [
         'class' => SessionRevocationEnforceMiddleware::class,
         'tags' => ['voyti.enforce-middleware'],
@@ -219,6 +220,7 @@ return [
     ) => new MailService($mailer, $config->mailPath, $view, $translator, $url, $config->appName),
     UserTokenFactory::class => UserTokenFactory::class,
     UserCreationHelper::class => UserCreationHelper::class,
+    UserUpdateHelper::class => UserUpdateHelper::class,
     CreateService::class => CreateService::class,
     RegisterService::class => RegisterService::class,
     ConfirmationService::class => fn(
@@ -236,7 +238,7 @@ return [
         TerminateUserSessionsService $terminateUserSessionsService,
     ) => new BlockService($eventDispatcher, $terminateUserSessionsService),
 
-    // Sessions and identity: login persistence, switching, API tokens, session tracking.
+    // Sessions and identity: login persistence, switching, session tracking.
     RememberMeCookieService::class => static fn(
         VoytiConfig $config,
         ClockInterface $clock,
@@ -261,8 +263,8 @@ return [
     TerminateUserSessionsService::class => TerminateUserSessionsService::class,
 
     // Login challenges: steps that may interrupt a password login before the session is established
-    // (e.g. two-factor from yiirocks/voyti-2fa). Packages tag their challenge with
-    // `voyti.login-challenge`; SessionController consults them all, in registration order.
+    // (e.g. a two-factor step). Extension packages tag their challenge with `voyti.login-challenge`;
+    // SessionController consults them all, in registration order.
     SessionController::class => [
         'class' => SessionController::class,
         '__construct()' => [
@@ -271,7 +273,7 @@ return [
     ],
 
     // Post-registration hooks: side effects run against a newly registered user (e.g. connecting a
-    // pending social account from yiirocks/voyti-social-auth). Packages tag their hook with
+    // pending social account). Packages tag their hook with
     // `voyti.post-registration-hook`; RegistrationController consults them all, in registration order.
     RegistrationController::class => [
         'class' => RegistrationController::class,
@@ -281,7 +283,7 @@ return [
     ],
 
     // Post-login hooks: side effects run against a user whose login has just completed (e.g.
-    // connecting a pending social account from yiirocks/voyti-social-auth). Packages tag their hook
+    // connecting a pending social account). Packages tag their hook
     // with `voyti.post-login-hook`; LoginCompletionService consults them all, in registration order.
     LoginCompletionService::class => [
         'class' => LoginCompletionService::class,

@@ -12,9 +12,9 @@ use Yiisoft\Session\SessionMiddleware;
 
 /**
  * Route-config helper, callable from `config/routes.php`. Exposes the web-middleware stack so
- * extension packages that contribute their own top-level route group (e.g. `yiirocks/voyti-2fa`,
- * which owns the login-confirmation route outside the `settings/` group) can wrap their routes in
- * the same stack the core group uses, instead of re-declaring — or drifting from — it.
+ * extension packages that contribute their own top-level route group (e.g. one owning a
+ * login-confirmation route outside the `settings/` group) can wrap their routes in the same stack
+ * the core group uses, instead of re-declaring — or drifting from — it.
  */
 final class VoytiRoutes
 {

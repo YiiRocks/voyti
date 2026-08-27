@@ -4,14 +4,11 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\Controller\Account;
 
-use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use YiiRocks\Voyti\Controller\RedirectTrait;
 use YiiRocks\Voyti\Controller\RenderTrait;
-use YiiRocks\Voyti\Event\User\AfterAccountUpdateEvent;
-use YiiRocks\Voyti\Event\User\BeforeAccountUpdateEvent;
 use YiiRocks\Voyti\Exception\ActionPreventedException;
 use YiiRocks\Voyti\Helper\Views\MenuView;
 use YiiRocks\Voyti\Model\Form\Settings\SettingsForm;
@@ -19,6 +16,7 @@ use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Service\EmailChangeService;
 use YiiRocks\Voyti\Service\FlashNotifier;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
+use YiiRocks\Voyti\Service\User\UserUpdateHelper;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\FormModel\FormHydrator;
 use Yiisoft\Router\HydratorAttribute\RouteArgument;
@@ -47,7 +45,7 @@ final readonly class AccountController
         private ResponseFactoryInterface $responseFactory,
         private FlashNotifier $flashNotifier,
         private PasswordHistoryService $passwordHistoryService,
-        private EventDispatcherInterface $eventDispatcher,
+        private UserUpdateHelper $userUpdateHelper,
     ) {}
 
     public function confirm(#[RouteArgument] string $code): ResponseInterface
@@ -86,33 +84,30 @@ final readonly class AccountController
                     ['password'],
                 );
             } else {
-                $changedFields = $this->changedAccountFields($form, $user);
+                $changedFields = $this->userUpdateHelper->changedFields(
+                    $user,
+                    $form->username,
+                    $form->email,
+                    $form->password,
+                );
 
                 try {
-                    if ($changedFields !== []) {
-                        $this->eventDispatcher->dispatch(new BeforeAccountUpdateEvent($user, $changedFields));
-                    }
+                    $this->userUpdateHelper->apply(
+                        $user,
+                        $changedFields,
+                        function (User $user) use ($form): void {
+                            $user->setUsername($form->username);
 
-                    $user->setUsername($form->username);
-
-                    if ($form->email !== $user->getEmail()) {
-                        $form->setUser($user);
-                        $this->emailChangeService->initiate(
-                            $this->config->emailChangeConfirmation,
-                            $form,
-                        );
-                    }
-
-                    if ($form->password !== '') {
-                        $this->passwordHistoryService->applyPasswordChange($user, $form->password);
-                    } else {
-                        $user->setUpdatedAt(time());
-                        $user->save();
-                    }
-
-                    if ($changedFields !== []) {
-                        $this->eventDispatcher->dispatch(new AfterAccountUpdateEvent($user, $changedFields));
-                    }
+                            if ($form->email !== $user->getEmail()) {
+                                $form->setUser($user);
+                                $this->emailChangeService->initiate(
+                                    $this->config->emailChangeConfirmation,
+                                    $form,
+                                );
+                            }
+                        },
+                        $form->password,
+                    );
 
                     return $this->redirectWithFlash(
                         $this->url->generate('voyti/user-account'),
@@ -131,25 +126,5 @@ final readonly class AccountController
                 'formSubmitUrl' => $this->url->generate('voyti/user-account'),
             ],
         ]);
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function changedAccountFields(SettingsForm $form, User $user): array
-    {
-        $changedFields = [];
-
-        if ($form->username !== $user->getUsername()) {
-            $changedFields[] = 'username';
-        }
-        if ($form->email !== $user->getEmail()) {
-            $changedFields[] = 'email';
-        }
-        if ($form->password !== '') {
-            $changedFields[] = 'password';
-        }
-
-        return $changedFields;
     }
 }

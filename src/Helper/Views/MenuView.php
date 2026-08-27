@@ -29,8 +29,8 @@ final class MenuView
             self::link($translator->translate('voyti.menu.sessions'), $url->generate('voyti/user-account-sessions')),
         ];
 
-        // Packages (e.g. yiirocks/voyti-2fa, yiirocks/voyti-social-auth) contribute account-menu
-        // links via the accountMenuItems config, so core needs no knowledge of them.
+        // Extension packages contribute account-menu links via the accountMenuItems config, so core
+        // needs no knowledge of them.
         foreach ($config->accountMenuItems as $item) {
             $items[] = self::link(
                 $translator->translate($item['label'], category: $item['category']),

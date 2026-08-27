@@ -40,15 +40,15 @@ use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 /**
  * Handles login and logout. A successful password login can be interrupted by a
- * {@see LoginChallengeInterface} (collected via the `voyti.login-challenge` tag - e.g. the two-factor
- * step from `yiirocks/voyti-2fa`) before the session is established. The social-auth redirect/callback
- * flow itself is handled entirely by `yiirocks/voyti-social-auth` (its `AuthAction`/callback-service
+ * {@see LoginChallengeInterface} (collected via the `voyti.login-challenge` tag - e.g. a two-factor
+ * step) before the session is established. The social-auth redirect/callback
+ * flow itself is handled entirely by an extension package (its `AuthAction`/callback-service
  * wiring), reached via the `voyti/session-auth` route contributed by that package - core has no
  * compile-time knowledge of it.
  *
  * @psalm-suppress UndefinedClass Collection comes from yiisoft/yii-auth-client, a peer dependency
  * core has no compile-time knowledge of at all - $clientCollection only resolves non-null when
- * yiirocks/voyti-social-auth is installed (it binds Collection via its own config/di.php).
+ * a social-auth extension package is installed (it binds Collection via its own config/di.php).
  */
 final readonly class SessionController
 {
@@ -205,9 +205,9 @@ final readonly class SessionController
         }
 
         // @codeCoverageIgnoreStart
-        // $clientCollection only resolves non-null when yiirocks/voyti-social-auth is installed (it
-        // binds Collection via its own config/di.php) - core's own test suite has no way to exercise
-        // this branch, only that package's test suite (which constructs a real Collection) can.
+        // $clientCollection only resolves non-null when a social-auth extension package is installed
+        // (it binds Collection via its own config/di.php) - core's own test suite has no way to
+        // exercise this branch, only that package's test suite (which constructs a real Collection) can.
         return AuthChoice::widget()
             ->authRoute('voyti/session-auth')
             ->linkAttributes(['class' => LinkButtonHelper::submitButtonClass()]);
