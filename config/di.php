@@ -49,6 +49,7 @@ use Yiisoft\Cookies\CookieEncryptor;
 use Yiisoft\Cookies\CookieMiddleware;
 use Yiisoft\Cookies\CookieSigner;
 use Yiisoft\Definitions\Reference;
+use Yiisoft\Di\Reference\TagReference;
 use Yiisoft\Input\Http\HydratorAttributeParametersResolver;
 use Yiisoft\Input\Http\RequestInputParametersResolver;
 use Yiisoft\Mailer\MailerInterface;
@@ -149,7 +150,7 @@ return [
         'class' => VoytiMiddleware::class,
         '__construct()' => [
             'rememberMe' => Reference::to(RememberMeMiddleware::class),
-            'enforcementMiddlewares' => Reference::to('tag@voyti.enforce-middleware'),
+            'enforcementMiddlewares' => TagReference::to('voyti.enforce-middleware'),
         ],
     ],
 
@@ -268,7 +269,7 @@ return [
     SessionController::class => [
         'class' => SessionController::class,
         '__construct()' => [
-            'loginChallenges' => Reference::to('tag@voyti.login-challenge'),
+            'loginChallenges' => TagReference::to('voyti.login-challenge'),
         ],
     ],
 
@@ -278,7 +279,7 @@ return [
     RegistrationController::class => [
         'class' => RegistrationController::class,
         '__construct()' => [
-            'postRegistrationHooks' => Reference::to('tag@voyti.post-registration-hook'),
+            'postRegistrationHooks' => TagReference::to('voyti.post-registration-hook'),
         ],
     ],
 
@@ -288,7 +289,7 @@ return [
     LoginCompletionService::class => [
         'class' => LoginCompletionService::class,
         '__construct()' => [
-            'postLoginHooks' => Reference::to('tag@voyti.post-login-hook'),
+            'postLoginHooks' => TagReference::to('voyti.post-login-hook'),
         ],
     ],
 
