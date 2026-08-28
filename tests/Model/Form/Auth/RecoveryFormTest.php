@@ -6,10 +6,8 @@ namespace YiiRocks\Voyti\tests\Model\Form\Auth;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
-use YiiRocks\Recaptcha\RecaptchaRegistry;
 use YiiRocks\Voyti\Enum\RecaptchaVersion;
 use YiiRocks\Voyti\Model\Form\Auth\RecoveryForm;
-use YiiRocks\Voyti\tests\Support\RecaptchaRegistryTrait;
 use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use Yiisoft\Validator\Rule\CompareType;
@@ -21,13 +19,7 @@ use Yiisoft\Validator\Rule\Required;
 #[AllowMockObjectsWithoutExpectations]
 final class RecoveryFormTest extends TestCase
 {
-    use RecaptchaRegistryTrait;
     use TranslatorMockTrait;
-
-    protected function tearDown(): void
-    {
-        RecaptchaRegistry::reset();
-    }
 
     public static function constructScenarioProvider(): iterable
     {
@@ -44,8 +36,9 @@ final class RecoveryFormTest extends TestCase
         $this->assertArrayHasKey('passwordRepeat', $labels);
     }
 
-    public function testGetRulesForRequestScenario(): void
+    public function testGetRules(): void
     {
+        // Request scenario: email rules only
         $form = new RecoveryForm(VoytiConfigFactory::create(), $this->createTranslator(), RecoveryForm::SCENARIO_REQUEST);
         $rules = $form->getRules();
         $this->assertArrayHasKey('email', $rules);
@@ -59,10 +52,8 @@ final class RecoveryFormTest extends TestCase
         $this->assertSame(255, $rules['email'][2]->getMax());
         $this->assertArrayNotHasKey('password', $rules);
         $this->assertArrayNotHasKey('passwordRepeat', $rules);
-    }
 
-    public function testGetRulesForResetScenario(): void
-    {
+        // Reset scenario: password rules only
         $form = new RecoveryForm(VoytiConfigFactory::create(), $this->createTranslator(), RecoveryForm::SCENARIO_RESET);
         $rules = $form->getRules();
         $this->assertArrayNotHasKey('email', $rules);
@@ -83,7 +74,6 @@ final class RecoveryFormTest extends TestCase
 
     public function testGetRulesWithRecaptchaV2OnRequest(): void
     {
-        $this->configureRecaptchaRegistry();
         $config = VoytiConfigFactory::create(recaptchaVersion: RecaptchaVersion::V2);
         $form = new RecoveryForm($config, $this->createTranslator(), RecoveryForm::SCENARIO_REQUEST);
         $rules = $form->getRules();

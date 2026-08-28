@@ -217,14 +217,6 @@ final class DashboardServiceTest extends DatabaseTestCase
         self::assertNull($stats['userUnconfirmed']);
     }
 
-    private function createLog(string $action, int $createdAt): void
-    {
-        $log = new UserAuditLog();
-        $log->setAction($action);
-        $log->setCreatedAt($createdAt);
-        $log->save();
-    }
-
     private function createService(?VoytiConfig $config = null, string $locale = 'en'): DashboardService
     {
         $config ??= VoytiConfigFactory::create();

@@ -17,6 +17,7 @@ use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
+use YiiRocks\Voyti\tests\Support\RecaptchaRegistryTrait;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
@@ -29,6 +30,7 @@ use Yiisoft\Validator\ValidatorInterface;
 #[AllowMockObjectsWithoutExpectations]
 final class RegistrationControllerTest extends DatabaseTestCase
 {
+    use RecaptchaRegistryTrait;
     use TestContainerTrait;
     use UserFactoryTrait;
     use ValidatorMockTrait;
@@ -122,6 +124,7 @@ final class RegistrationControllerTest extends DatabaseTestCase
         self::assertStringContainsString('Email already exists', $html);
 
         // POST with validation errors: re-renders form and dispatches RegisterFormValidationFailedEvent
+        $this->configureRecaptchaRegistry();
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['register' => ['username' => '', 'email' => '', 'password' => '', 'passwordRepeat' => '']]);
         $realValidationContainer = $this->getTestContainer($this->baseOverrides());
         $html = (string) $realValidationContainer->get(RegistrationController::class)->register($request)->getBody();

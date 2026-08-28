@@ -125,8 +125,14 @@ final class UserProfileTest extends TestCase
         self::assertSame($expected, $entity->getBioParsed());
     }
 
-    public function testGetGravatarIdFallsBackToUserEmail(): void
+    public function testGetGravatarId(): void
     {
+        // Trims and lowercases the gravatar email
+        $entity = new UserProfile();
+        $entity->setGravatarEmail('  Test@Example.com  ');
+        self::assertSame(hash('sha256', 'test@example.com'), $entity->getGravatarId());
+
+        // Falls back to the linked user's email
         $this->connection->createCommand()->insert('user', [
             'username' => 'gravataruser',
             'email' => 'useremail@example.com',
@@ -142,19 +148,17 @@ final class UserProfileTest extends TestCase
         $entity = new UserProfile();
         $entity->setUserId((int) $user->getId());
 
-        $expected = hash('sha256', strtolower(trim('useremail@example.com')));
-        self::assertSame($expected, $entity->getGravatarId());
+        self::assertSame(hash('sha256', 'useremail@example.com'), $entity->getGravatarId());
     }
 
-    public function testGetGravatarIdReturnsNullWhenNoEmailAndUserTableMissing(): void
+    public function testGetGravatarIdReturnsNullWhenEmailUnavailable(): void
     {
+        // No user row, although the table exists
         $entity = new UserProfile();
         $entity->setUserId(1);
         self::assertNull($entity->getGravatarId());
-    }
 
-    public function testGetGravatarIdReturnsNullWhenUserTableDropped(): void
-    {
+        // User table dropped from the schema
         $schema = $this->connection->getSchema();
         $schema->getTableSchema('{{%user}}', true);
 
@@ -162,14 +166,6 @@ final class UserProfileTest extends TestCase
         $entity = new UserProfile();
         $entity->setUserId(1);
         self::assertNull($entity->getGravatarId());
-    }
-
-    public function testGetGravatarIdTrimsEmail(): void
-    {
-        $entity = new UserProfile();
-        $entity->setGravatarEmail('  Test@Example.com  ');
-        $expected = hash('sha256', 'test@example.com');
-        self::assertSame($expected, $entity->getGravatarId());
     }
 
     public function testGetGravatarUrlUsesDefaultSize(): void

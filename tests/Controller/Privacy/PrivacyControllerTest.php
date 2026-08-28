@@ -6,6 +6,7 @@ namespace YiiRocks\Voyti\tests\Controller\Privacy;
 
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Controller\Privacy\PrivacyController;
@@ -43,6 +44,12 @@ final class PrivacyControllerTest extends DatabaseTestCase
         $this->eventDispatcher = new EventCaptureDispatcher();
         $this->flash = $this->createMock(FlashInterface::class);
         $this->passwordHasher = TestPasswordHasherFactory::create();
+    }
+
+    public static function accountDeleteToggleProvider(): iterable
+    {
+        yield 'enabled shows delete link' => [true, true];
+        yield 'disabled omits delete link' => [false, false];
     }
 
     public function testDeleteGetShowsForm(): void
@@ -94,29 +101,22 @@ final class PrivacyControllerTest extends DatabaseTestCase
         self::assertFalse($this->eventDispatcher->hasEvent(UserEvent::class));
     }
 
-    public function testIndexOmitsDeleteLinkWhenAccountDeleteDisabled(): void
+    #[DataProvider('accountDeleteToggleProvider')]
+    public function testIndexAccountDeleteLink(bool $allowAccountDelete, bool $expectDeleteLink): void
     {
         $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
         $this->currentUser->login($user);
 
         $html = (string) $this->createController([
-            VoytiConfig::class => VoytiConfigFactory::create(allowAccountDelete: false),
+            VoytiConfig::class => VoytiConfigFactory::create(allowAccountDelete: $allowAccountDelete),
         ])->index()->getBody();
 
-        self::assertStringNotContainsString('Delete my account', $html);
-    }
-
-    public function testIndexShowsDeleteLink(): void
-    {
-        $user = $this->createUser(passwordHash: $this->passwordHasher->hash('secret'), confirmedAt: time());
-        $this->currentUser->login($user);
-
-        $html = (string) $this->createController([
-            VoytiConfig::class => VoytiConfigFactory::create(allowAccountDelete: true),
-        ])->index()->getBody();
-
-        self::assertStringContainsString('Delete my account', $html);
-        self::assertStringContainsString('user-privacy-delete', $html);
+        if ($expectDeleteLink) {
+            self::assertStringContainsString('Delete my account', $html);
+            self::assertStringContainsString('user-privacy-delete', $html);
+        } else {
+            self::assertStringNotContainsString('Delete my account', $html);
+        }
     }
 
     public function testIndexShowsPrivacyLinksContributedByPackages(): void

@@ -47,7 +47,29 @@ final class UserAuditLogTest extends TestCase
     public static function getterSetterProvider(): iterable
     {
         yield 'action' => ['setAction', 'getAction', 'user.create'];
+        yield 'actorIp' => ['setActorIp', 'getActorIp', '203.0.113.5'];
+        yield 'actorUserAgent' => ['setActorUserAgent', 'getActorUserAgent', 'curl/8.0'];
+        yield 'actorUserId' => ['setActorUserId', 'getActorUserId', 5];
+        yield 'context' => ['setContext', 'getContext', '{"foo":"bar"}'];
         yield 'createdAt' => ['setCreatedAt', 'getCreatedAt', 5000];
+        yield 'targetName' => ['setTargetName', 'getTargetName', 'editor'];
+        yield 'targetUserId' => ['setTargetUserId', 'getTargetUserId', 7];
+    }
+
+    public static function searchFilterProvider(): iterable
+    {
+        yield 'by action' => [
+            [[1, 2, 'user.create'], [1, 2, 'user.delete']],
+            ['action' => 'create'],
+        ];
+        yield 'by actor user id' => [
+            [[1, 2, 'user.create'], [3, 2, 'user.create']],
+            ['actor_user_id' => 1],
+        ];
+        yield 'by target user id' => [
+            [[1, 2, 'user.create'], [1, 3, 'user.create']],
+            ['target_user_id' => 2],
+        ];
     }
 
     public function testDefaultValues(): void
@@ -64,34 +86,6 @@ final class UserAuditLogTest extends TestCase
         self::assertNull($entity->getTargetUserId());
     }
 
-    public function testGetSetActorIp(): void
-    {
-        $entity = new UserAuditLog();
-        $entity->setActorIp('203.0.113.5');
-        self::assertSame('203.0.113.5', $entity->getActorIp());
-    }
-
-    public function testGetSetActorUserAgent(): void
-    {
-        $entity = new UserAuditLog();
-        $entity->setActorUserAgent('curl/8.0');
-        self::assertSame('curl/8.0', $entity->getActorUserAgent());
-    }
-
-    public function testGetSetActorUserId(): void
-    {
-        $entity = new UserAuditLog();
-        $entity->setActorUserId(5);
-        self::assertSame(5, $entity->getActorUserId());
-    }
-
-    public function testGetSetContext(): void
-    {
-        $entity = new UserAuditLog();
-        $entity->setContext('{"foo":"bar"}');
-        self::assertSame('{"foo":"bar"}', $entity->getContext());
-    }
-
     #[DataProvider('getterSetterProvider')]
     public function testGetSetProperty(string $setter, string $getter, int|string $value): void
     {
@@ -100,57 +94,22 @@ final class UserAuditLogTest extends TestCase
         self::assertSame($value, $entity->$getter());
     }
 
-    public function testGetSetTargetName(): void
-    {
-        $entity = new UserAuditLog();
-        $entity->setTargetName('editor');
-        self::assertSame('editor', $entity->getTargetName());
-    }
-
-    public function testGetSetTargetUserId(): void
-    {
-        $entity = new UserAuditLog();
-        $entity->setTargetUserId(7);
-        self::assertSame(7, $entity->getTargetUserId());
-    }
-
     public function testPrimaryKey(): void
     {
         $entity = new UserAuditLog();
         self::assertSame(['id'], $entity->primaryKey());
     }
 
-    public function testSearchFiltersByAction(): void
+    #[DataProvider('searchFilterProvider')]
+    public function testSearchFilters(array $rows, array $filter): void
     {
-        $this->createLog(1, 2, 'user.create');
-        $this->createLog(1, 2, 'user.delete');
+        foreach ($rows as [$actorUserId, $targetUserId, $action]) {
+            $this->createLog($actorUserId, $targetUserId, $action);
+        }
 
-        $found = UserAuditLog::search(['action' => 'create'])->all();
+        $found = UserAuditLog::search($filter)->all();
 
         self::assertCount(1, $found);
-        self::assertSame('user.create', $found[0]->getAction());
-    }
-
-    public function testSearchFiltersByActorUserId(): void
-    {
-        $this->createLog(1, 2, 'user.create');
-        $this->createLog(3, 2, 'user.create');
-
-        $found = UserAuditLog::search(['actor_user_id' => 1])->all();
-
-        self::assertCount(1, $found);
-        self::assertSame(1, $found[0]->getActorUserId());
-    }
-
-    public function testSearchFiltersByTargetUserId(): void
-    {
-        $this->createLog(1, 2, 'user.create');
-        $this->createLog(1, 3, 'user.create');
-
-        $found = UserAuditLog::search(['target_user_id' => 2])->all();
-
-        self::assertCount(1, $found);
-        self::assertSame(2, $found[0]->getTargetUserId());
     }
 
     public function testSearchWithoutFiltersOrdersByCreatedAtDescending(): void

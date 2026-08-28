@@ -29,19 +29,4 @@ trait RecaptchaRegistryTrait
             $this->createStub(StreamFactoryInterface::class),
         ));
     }
-
-    private function configureRecaptchaRegistryWithoutSecret(): void
-    {
-        $config = new RecaptchaConfig(
-            siteKeyV2: 'v2-site-key',
-            siteKeyV3: 'v3-site-key',
-        );
-
-        RecaptchaRegistry::configure(new RecaptchaClient(
-            $config,
-            $this->createStub(ClientInterface::class),
-            $this->createStub(RequestFactoryInterface::class),
-            $this->createStub(StreamFactoryInterface::class),
-        ));
-    }
 }

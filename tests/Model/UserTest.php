@@ -155,6 +155,19 @@ final class UserTest extends TestCase
         yield 'same user' => [false, true, true];
     }
 
+    public static function searchQueryStatusProvider(): iterable
+    {
+        yield 'blocked' => [true, false, 'blocked', ['alice']];
+        yield 'confirmed' => [false, true, 'confirmed', ['alice']];
+        yield 'unconfirmed' => [false, true, 'unconfirmed', ['bob']];
+    }
+
+    public static function searchQueryTextFilterProvider(): iterable
+    {
+        yield 'by email' => [['email' => 'example.com'], 'bob@other.com', ['alice']];
+        yield 'by username' => [['username' => 'ali'], 'bob@example.com', ['alice']];
+    }
+
     #[DataProvider('booleanFlagProvider')]
     public function testBooleanFlags(string $setter, string $getter): void
     {
@@ -186,8 +199,9 @@ final class UserTest extends TestCase
         self::assertNull($entity->getDataProcessingConsentDate());
     }
 
-    public function testDeleteCascadesRelatedRows(): void
+    public function testDelete(): void
     {
+        // Cascades to related rows
         $user = $this->createUser('alice', 'alice@example.com', createdAt: time());
         $userId = (int) $user->getId();
 
@@ -198,20 +212,18 @@ final class UserTest extends TestCase
         self::assertCount(0, UserToken::findByUserId($userId));
         self::assertCount(0, UserSessions::findByUserId($userId));
         self::assertCount(0, UserPasswordHistory::findByUserId($userId));
-    }
 
-    public function testDeleteRemovesUserAndProfile(): void
-    {
-        $user = $this->createUser('alice', 'alice@example.com', createdAt: time());
+        // Removes user and profile
+        $user = $this->createUser('carol', 'carol@example.com', createdAt: time());
 
         $profile = new UserProfile();
         $profile->setUserId((int) $user->getId());
-        $profile->setName('Alice');
+        $profile->setName('Carol');
         $profile->save();
 
         $user->delete();
 
-        self::assertNull(User::findByUsername('alice'));
+        self::assertNull(User::findByUsername('carol'));
         self::assertNull(UserProfile::findByUserId((int) $user->getId()));
     }
 
@@ -263,34 +275,16 @@ final class UserTest extends TestCase
         self::assertSame($value, $entity->$getter());
     }
 
-    public function testGetTokensReturnsEmptyArrayWhenNone(): void
+    public function testGetTokens(): void
     {
-        $entity = new User();
-        $entity->setUsername('token_test_empty');
-        $entity->setEmail('token_test_empty@example.com');
-        $entity->setPasswordHash('hash');
-        $entity->setAuthKey('key');
-        $entity->setCreatedAt(1000);
-        $entity->setUpdatedAt(1000);
-        $entity->save();
+        // Returns empty array when none exist
+        $empty = $this->createUser('token_empty', 'token_empty@example.com', createdAt: time());
+        $loadedEmpty = User::query()->where(['username' => 'token_empty'])->one();
+        self::assertNotNull($loadedEmpty);
+        self::assertSame([], $loadedEmpty->getTokens());
 
-        $loaded = User::query()->where(['username' => 'token_test_empty'])->one();
-        self::assertNotNull($loaded);
-
-        self::assertSame([], $loaded->getTokens());
-    }
-
-    public function testGetTokensReturnsTokensWhenExist(): void
-    {
-        $entity = new User();
-        $entity->setUsername('token_test');
-        $entity->setEmail('token_test@example.com');
-        $entity->setPasswordHash('hash');
-        $entity->setAuthKey('key');
-        $entity->setCreatedAt(1000);
-        $entity->setUpdatedAt(1000);
-        $entity->save();
-
+        // Returns tokens when present
+        $entity = $this->createUser('token_user', 'token_user@example.com', createdAt: time());
         $userId = (int) $entity->getId();
 
         $token = new UserToken();
@@ -300,7 +294,7 @@ final class UserTest extends TestCase
         $token->setCreatedAt(1000);
         $token->save();
 
-        $loaded = User::query()->where(['username' => 'token_test'])->one();
+        $loaded = User::query()->where(['username' => 'token_user'])->one();
         self::assertNotNull($loaded);
 
         $tokens = $loaded->getTokens();
@@ -331,63 +325,40 @@ final class UserTest extends TestCase
         self::assertSame($expected, $user->isSwitchDisabledFor($targetId));
     }
 
-    public function testSearchQueryCountReflectsStatusFilter(): void
+    #[DataProvider('searchQueryStatusProvider')]
+    public function testSearchQueryStatusFilter(bool $aliceBlocked, bool $aliceConfirmed, string $status, array $expectedUsernames): void
     {
-        $blocked = $this->createUser('alice', 'alice@example.com', createdAt: time());
-        $blocked->setBlockedAt(time());
-        $blocked->save();
+        $alice = $this->createUser(
+            'alice',
+            'alice@example.com',
+            createdAt: time(),
+            confirmedAt: $aliceConfirmed ? time() : null,
+            blockedAt: $aliceBlocked ? time() : null,
+        );
+        self::assertNotNull($alice);
         $this->createUser('bob', 'bob@example.com', createdAt: time());
 
-        self::assertSame(1, User::searchQuery(['status' => 'blocked'])->count());
+        $result = User::searchQuery(['status' => $status])->all();
+
         self::assertSame(2, User::searchQuery()->count());
+        self::assertSame(
+            $expectedUsernames,
+            array_map(static fn(User $user): string => $user->getUsername(), $result),
+        );
     }
 
-    public function testSearchQueryWithConfirmedStatusFilter(): void
-    {
-        $confirmed = $this->createUser('alice', 'alice@example.com', createdAt: time());
-        $confirmed->setConfirmedAt(time());
-        $confirmed->save();
-        $this->createUser('bob', 'bob@example.com', createdAt: time());
-
-        $result = User::searchQuery(['status' => 'confirmed'])->all();
-
-        self::assertCount(1, $result);
-        self::assertSame('alice', $result[0]->getUsername());
-    }
-
-    public function testSearchQueryWithEmailFilter(): void
+    #[DataProvider('searchQueryTextFilterProvider')]
+    public function testSearchQueryTextFilter(array $filter, string $bobEmail, array $expectedUsernames): void
     {
         $this->createUser('alice', 'alice@example.com', createdAt: time());
-        $this->createUser('bob', 'bob@other.com', createdAt: time());
+        $this->createUser('bob', $bobEmail, createdAt: time());
 
-        $result = User::searchQuery(['email' => 'example.com'])->all();
+        $result = User::searchQuery($filter)->all();
 
-        self::assertCount(1, $result);
-        self::assertSame('alice', $result[0]->getUsername());
-    }
-
-    public function testSearchQueryWithUnconfirmedStatusFilter(): void
-    {
-        $confirmed = $this->createUser('alice', 'alice@example.com', createdAt: time());
-        $confirmed->setConfirmedAt(time());
-        $confirmed->save();
-        $this->createUser('bob', 'bob@example.com', createdAt: time());
-
-        $result = User::searchQuery(['status' => 'unconfirmed'])->all();
-
-        self::assertCount(1, $result);
-        self::assertSame('bob', $result[0]->getUsername());
-    }
-
-    public function testSearchQueryWithUsernameFilter(): void
-    {
-        $this->createUser('alice', 'alice@example.com', createdAt: time());
-        $this->createUser('bob', 'bob@example.com', createdAt: time());
-
-        $result = User::searchQuery(['username' => 'ali'])->all();
-
-        self::assertCount(1, $result);
-        self::assertSame('alice', $result[0]->getUsername());
+        self::assertSame(
+            $expectedUsernames,
+            array_map(static fn(User $user): string => $user->getUsername(), $result),
+        );
     }
 
     public function testValidateAuthKeyReturnsFalse(): void

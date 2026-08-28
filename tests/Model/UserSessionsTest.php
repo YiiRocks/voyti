@@ -115,24 +115,16 @@ final class UserSessionsTest extends TestCase
         self::assertSame(['user_id', 'session_id'], $entity->primaryKey());
     }
 
-    public function testSearchWithIpFilter(): void
+    public function testSearch(): void
     {
+        // Filters by IP
         $this->createUserSession(1, 'sess-1', '203.0.113.1');
         $this->createUserSession(1, 'sess-2', '198.51.100.1');
+        self::assertCount(1, UserSessions::search(['ip' => '203.0.113']));
 
-        $sessions = UserSessions::search(['ip' => '203.0.113']);
-
-        self::assertCount(1, $sessions);
-    }
-
-    public function testSearchWithUserIdAndIpFiltersCombinesBoth(): void
-    {
-        $this->createUserSession(1, 'sess-1', '203.0.113.1');
-        $this->createUserSession(1, 'sess-2', '198.51.100.1');
+        // Combines user id and IP filters
         $this->createUserSession(2, 'sess-3', '203.0.113.1');
-
         $sessions = UserSessions::search(['user_id' => 1, 'ip' => '203.0.113']);
-
         self::assertCount(1, $sessions);
         self::assertSame('sess-1', $sessions[0]->getSessionId());
     }

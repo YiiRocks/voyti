@@ -32,6 +32,7 @@ use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
 use YiiRocks\Voyti\tests\Support\EventCaptureDispatcher;
 use YiiRocks\Voyti\tests\Support\FakeSession;
 use YiiRocks\Voyti\tests\Support\MailAssertionsTrait;
+use YiiRocks\Voyti\tests\Support\RecaptchaRegistryTrait;
 use YiiRocks\Voyti\tests\Support\TestContainerTrait;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
 use YiiRocks\Voyti\tests\Support\UserFactoryTrait;
@@ -51,6 +52,7 @@ final class SessionControllerTest extends DatabaseTestCase
 {
     use CurrentUserTrait;
     use MailAssertionsTrait;
+    use RecaptchaRegistryTrait;
     use TestContainerTrait;
     use UserFactoryTrait;
     use ValidatorMockTrait;
@@ -309,6 +311,7 @@ final class SessionControllerTest extends DatabaseTestCase
     {
         // Real validation (blank required fields) fails: dispatches LoginFormValidationFailedEvent
         // with the validator's error messages, plus FailedLoginEvent with reason 'validation_failed'.
+        $this->configureRecaptchaRegistry();
         $container = $this->getTestContainer(array_merge(
             array_diff_key($this->mockOverrides(), [ValidatorInterface::class => null]),
             [CurrentUser::class => $this->createCurrentUser()],

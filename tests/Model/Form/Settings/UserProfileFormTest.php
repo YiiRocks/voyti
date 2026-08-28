@@ -6,6 +6,7 @@ namespace YiiRocks\Voyti\tests\Model\Form\Settings;
 
 use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\DataProvider;
 use YiiRocks\Voyti\Model\Form\Settings\UserProfileForm;
 use YiiRocks\Voyti\Model\UserProfile;
 use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
@@ -14,6 +15,23 @@ use Yiisoft\Translator\TranslatorInterface;
 #[AllowMockObjectsWithoutExpectations]
 final class UserProfileFormTest extends DatabaseTestCase
 {
+    public static function birthdayProvider(): array
+    {
+        return [
+            'past' => ['1990-05-15', true],
+            'future' => [(new DateTimeImmutable('+1 year'))->format('Y-m-d'), false],
+        ];
+    }
+
+    public static function noHtmlTagsProvider(): array
+    {
+        return [
+            'emptyString' => ['', true],
+            'htmlTags' => ['<script>alert(1)</script>', false],
+            'nonStringValue' => [123, true],
+        ];
+    }
+
     public function testFromProfileMapsEveryFieldThrough(): void
     {
         $profile = new UserProfile();
@@ -65,42 +83,26 @@ final class UserProfileFormTest extends DatabaseTestCase
         $this->assertArrayHasKey('birthday', $labels);
     }
 
-    public function testValidateBirthdayNotInFutureWithFutureDate(): void
+    #[DataProvider('birthdayProvider')]
+    public function testValidateBirthdayNotInFuture(string $birthday, bool $expectedValid): void
     {
         $form = new UserProfileForm($this->createTranslator());
-        $futureDate = (new DateTimeImmutable('+1 year'))->format('Y-m-d');
-        $result = $form->validateBirthdayNotInFuture($futureDate);
-        $this->assertFalse($result->isValid());
-        $this->assertNotEmpty($result->getErrors());
+        $result = $form->validateBirthdayNotInFuture($birthday);
+        $this->assertSame($expectedValid, $result->isValid());
+        if (!$expectedValid) {
+            $this->assertNotEmpty($result->getErrors());
+        }
     }
 
-    public function testValidateBirthdayNotInFutureWithPastDate(): void
+    #[DataProvider('noHtmlTagsProvider')]
+    public function testValidateNoHtmlTags(mixed $value, bool $expectedValid): void
     {
         $form = new UserProfileForm($this->createTranslator());
-        $result = $form->validateBirthdayNotInFuture('1990-05-15');
-        $this->assertTrue($result->isValid());
-    }
-
-    public function testValidateNoHtmlTagsWithEmptyString(): void
-    {
-        $form = new UserProfileForm($this->createTranslator());
-        $result = $form->validateNoHtmlTags('');
-        $this->assertTrue($result->isValid());
-    }
-
-    public function testValidateNoHtmlTagsWithHtmlTags(): void
-    {
-        $form = new UserProfileForm($this->createTranslator());
-        $result = $form->validateNoHtmlTags('<script>alert(1)</script>');
-        $this->assertFalse($result->isValid());
-        $this->assertNotEmpty($result->getErrors());
-    }
-
-    public function testValidateNoHtmlTagsWithNonStringValue(): void
-    {
-        $form = new UserProfileForm($this->createTranslator());
-        $result = $form->validateNoHtmlTags(123);
-        $this->assertTrue($result->isValid());
+        $result = $form->validateNoHtmlTags($value);
+        $this->assertSame($expectedValid, $result->isValid());
+        if (!$expectedValid) {
+            $this->assertNotEmpty($result->getErrors());
+        }
     }
 
     public function testValidateTimezoneWithEmptyString(): void

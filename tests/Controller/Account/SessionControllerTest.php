@@ -71,8 +71,9 @@ final class SessionControllerTest extends DatabaseTestCase
         self::assertStringNotContainsString('sessionId=current-session', $html);
     }
 
-    public function testTerminateCurrentSessionLogsOutAndRedirectsToLogin(): void
+    public function testTerminate(): void
     {
+        // Current session: logs out, redirects to login, and dispatches SessionEvent
         $user = $this->createUser(username: 'sessionuser', email: 'sessionuser@example.com');
         $this->authenticateAs($user);
         $this->createUserSession($user->getIdOrZero(), 'current-session', '203.0.113.1');
@@ -89,29 +90,24 @@ final class SessionControllerTest extends DatabaseTestCase
         $this->assertTrue($this->currentUser->isGuest());
         $event = $this->eventDispatcher->getEvent(SessionEvent::class);
         $this->assertInstanceOf(SessionEvent::class, $event);
-        // The event carries the termination type in its data.
         $this->assertSame(SessionEvent::SESSION_TERMINATED, $event->getData()['type'] ?? null);
-    }
 
-    public function testTerminateOtherSessionRevokesItAndRedirects(): void
-    {
-        $user = $this->createUser(username: 'sessionuser', email: 'sessionuser@example.com');
-        $this->authenticateAs($user);
-        $this->createUserSession($user->getIdOrZero(), 'other-session', '203.0.113.1');
+        // Other user's session: revokes it and redirects back
+        $other = $this->createUser(username: 'sessionuser2', email: 'sessionuser2@example.com');
+        $this->authenticateAs($other);
+        $this->createUserSession($other->getIdOrZero(), 'other-session', '203.0.113.1');
 
         $result = $this->createController()->terminate('other-session');
 
         $this->assertSame(302, $result->getStatusCode());
         $this->assertStringContainsString('user-account-sessions', $result->getHeaderLine('Location'));
-        $revoked = UserSessions::findByUserIdAndSessionId($user->getIdOrZero(), 'other-session');
+        $revoked = UserSessions::findByUserIdAndSessionId($other->getIdOrZero(), 'other-session');
         $this->assertNotNull($revoked);
         $this->assertTrue($revoked->isRevoked());
-    }
 
-    public function testTerminateUnknownSessionShowsError(): void
-    {
-        $user = $this->createUser(username: 'sessionuser', email: 'sessionuser@example.com');
-        $this->authenticateAs($user);
+        // Unknown session: shows error
+        $another = $this->createUser(username: 'sessionuser3', email: 'sessionuser3@example.com');
+        $this->authenticateAs($another);
 
         $html = (string) $this->createController()->terminate('unknown-session')->getBody();
 

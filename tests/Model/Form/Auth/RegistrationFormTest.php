@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Model\Form\Auth;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use YiiRocks\Recaptcha\RecaptchaRegistry;
 use YiiRocks\Recaptcha\RecaptchaV2Rule;
 use YiiRocks\Voyti\Enum\RecaptchaVersion;
 use YiiRocks\Voyti\Model\Form\Auth\RegistrationForm;
-use YiiRocks\Voyti\tests\Support\RecaptchaRegistryTrait;
 use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use Yiisoft\Validator\Rule\Regex;
@@ -19,12 +18,14 @@ use Yiisoft\Validator\Rule\TrueValue;
 #[AllowMockObjectsWithoutExpectations]
 final class RegistrationFormTest extends TestCase
 {
-    use RecaptchaRegistryTrait;
     use TranslatorMockTrait;
 
-    protected function tearDown(): void
+    public static function passwordComplexityProvider(): array
     {
-        RecaptchaRegistry::reset();
+        return [
+            'disabled' => [false, 2],
+            'enabled' => [true, 3],
+        ];
     }
 
     public function testGetPropertyLabels(): void
@@ -49,26 +50,20 @@ final class RegistrationFormTest extends TestCase
         $this->assertTrue($rule->getTrueValue());
     }
 
-    public function testGetRulesWithPasswordComplexityDisabled(): void
+    #[DataProvider('passwordComplexityProvider')]
+    public function testGetRulesWithPasswordComplexity(bool $enabled, int $expectedCount): void
     {
-        $config = VoytiConfigFactory::create(enablePasswordComplexity: false);
+        $config = VoytiConfigFactory::create(enablePasswordComplexity: $enabled);
         $form = new RegistrationForm($config, $this->createTranslator());
         $rules = $form->getRules();
-        $this->assertCount(2, $rules['password']);
-    }
-
-    public function testGetRulesWithPasswordComplexityEnabled(): void
-    {
-        $config = VoytiConfigFactory::create(enablePasswordComplexity: true);
-        $form = new RegistrationForm($config, $this->createTranslator());
-        $rules = $form->getRules();
-        $this->assertCount(3, $rules['password']);
-        $this->assertInstanceOf(Regex::class, $rules['password'][2]);
+        $this->assertCount($expectedCount, $rules['password']);
+        if ($enabled) {
+            $this->assertInstanceOf(Regex::class, $rules['password'][2]);
+        }
     }
 
     public function testGetRulesWithRecaptchaV2(): void
     {
-        $this->configureRecaptchaRegistry();
         $config = VoytiConfigFactory::create(recaptchaVersion: RecaptchaVersion::V2);
         $form = new RegistrationForm($config, $this->createTranslator());
         $rules = $form->getRules();

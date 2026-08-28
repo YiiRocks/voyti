@@ -16,36 +16,23 @@ use Yiisoft\Validator\RuleInterface;
 
 /**
  * Renders the reCAPTCHA widget and builds its validation rule for a form, based on
- * `VoytiConfig::$recaptchaVersion`. The optional `yiirocks/recaptcha` package is guarded by
- * `class_exists()` checks so forms degrade to a no-op when it isn't installed, and a form degrades
- * to a no-op the same way when the package is installed but the host hasn't configured a site key
- * and secret for the selected version via `RecaptchaRegistry::configure()`.
+ * `VoytiConfig::$recaptchaVersion`. The optional `yiirocks/recaptcha` package is guarded by a
+ * single `class_exists(RecaptchaRegistry::class)` check so forms degrade to a no-op when it
+ * isn't installed.
  */
 final class RecaptchaHelper
 {
-    // @codeCoverageIgnoreStart Optional dependency always installed in test environments
-    public static function isAvailable(): bool
-    {
-        /**
-         * @infection-ignore-all
-         * Both classes are always present via composer autoload; no test
-         * can make either class_exists() return false, so negating or &&-merging the
-         * sub-expressions never changes the result.
-         */
-        return class_exists(RecaptchaV2Field::class) || class_exists(RecaptchaV3Field::class);
-    }
-    // @codeCoverageIgnoreEnd
-
     public static function render(
         FormModelInterface $form,
         VoytiConfig $config,
         string $attribute = 'gRecaptchaResponse',
     ): string {
-        // @codeCoverageIgnoreStart Optional dependency guards always pass in test environments
-        if (!self::isAvailable() || !self::isConfigured($config->recaptchaVersion)) {
+        // @infection-ignore-all Optional dependency always installed in test environments
+        if (!class_exists(RecaptchaRegistry::class)) {
+            // @codeCoverageIgnoreStart
             return '';
+            // @codeCoverageIgnoreEnd
         }
-        // @codeCoverageIgnoreEnd
 
         if ($config->recaptchaVersion === RecaptchaVersion::V2) {
             return RecaptchaV2Field::field($form, $attribute)->render();
@@ -61,8 +48,11 @@ final class RecaptchaHelper
      */
     public static function rules(VoytiConfig $config, string $formName): array
     {
-        if (!class_exists(RecaptchaV3Rule::class) || !self::isConfigured($config->recaptchaVersion)) {
+        // @infection-ignore-all Optional dependency always installed in test environments
+        if (!class_exists(RecaptchaRegistry::class)) {
+            // @codeCoverageIgnoreStart
             return [];
+            // @codeCoverageIgnoreEnd
         }
 
         $ruleClass = $config->recaptchaVersion === RecaptchaVersion::V2
@@ -76,22 +66,5 @@ final class RecaptchaHelper
         }
 
         return [new $ruleClass(...$params)];
-    }
-
-    /**
-     * Whether a site key and secret are configured for the given version via
-     * `RecaptchaRegistry::configure()`.
-     */
-    private static function isConfigured(RecaptchaVersion $version): bool
-    {
-        $recaptchaConfig = RecaptchaRegistry::client()?->getConfig();
-        if ($recaptchaConfig === null) {
-            return false;
-        }
-
-        return match ($version) {
-            RecaptchaVersion::V2 => $recaptchaConfig->siteKeyV2 !== '' && $recaptchaConfig->secretV2 !== '',
-            RecaptchaVersion::V3 => $recaptchaConfig->siteKeyV3 !== '' && $recaptchaConfig->secretV3 !== '',
-        };
     }
 }

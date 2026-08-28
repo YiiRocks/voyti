@@ -36,10 +36,20 @@ final class RuleControllerTest extends DatabaseTestCase
         $this->itemsStorage = new SimpleItemsStorage();
     }
 
-    public function testCreateGetShowsForm(): void
+    public function testCreate(): void
     {
+        // GET shows the create form
         $html = (string) $this->createController()->create(request: new ServerRequest('GET', '/'))->getBody();
         self::assertStringContainsString('Create rule', $html);
+
+        // POST success creates the rule and audits it
+        $this->validator->method('validate')->willReturn(new Result());
+        $request = new ServerRequest('POST', '/');
+        $result = $this->createController()->create(request: $request, formData: ['name' => 'myRule', 'class' => CompositeRule::class]);
+        $this->assertSame(302, $result->getStatusCode());
+        $logs = UserAuditLog::search(['action' => 'rbac.rule.create'])->all();
+        self::assertNotEmpty($logs);
+        self::assertSame('myRule', $logs[0]->getTargetName());
     }
 
     public function testCreatePostErrors(): void
@@ -62,17 +72,6 @@ final class RuleControllerTest extends DatabaseTestCase
             ValidatorInterface::class => $validator2,
         ])->get(RuleController::class)->create(request: $request)->getBody();
         self::assertStringContainsString('Name is required.', $html);
-    }
-
-    public function testCreatePostSuccessful(): void
-    {
-        $this->validator->method('validate')->willReturn(new Result());
-        $request = new ServerRequest('POST', '/');
-        $result = $this->createController()->create(request: $request, formData: ['name' => 'myRule', 'class' => CompositeRule::class]);
-        $this->assertSame(302, $result->getStatusCode());
-        $logs = UserAuditLog::search(['action' => 'rbac.rule.create'])->all();
-        self::assertNotEmpty($logs);
-        self::assertSame('myRule', $logs[0]->getTargetName());
     }
 
     public function testDelete(): void
@@ -98,11 +97,21 @@ final class RuleControllerTest extends DatabaseTestCase
         self::assertStringContainsString('action="//voyti/admin-rbac-rules-delete?name=myRule"', $html);
     }
 
-    public function testUpdateGetShowsForm(): void
+    public function testUpdate(): void
     {
+        // GET shows the update form prefilled with the rule name
         $html = (string) $this->createController()->update(request: new ServerRequest('GET', '/'), name: 'existingRule')->getBody();
         self::assertStringContainsString('Update rule', $html);
         self::assertStringContainsString('action="//voyti/admin-rbac-rules-update?name=existingRule"', $html);
+
+        // POST success updates the rule and audits it
+        $this->validator->method('validate')->willReturn(new Result());
+        $request = new ServerRequest('POST', '/');
+        $result = $this->createController()->update(request: $request, name: 'oldRule', formData: ['name' => 'updatedRule', 'class' => CompositeRule::class]);
+        $this->assertSame(302, $result->getStatusCode());
+        $logs = UserAuditLog::search(['action' => 'rbac.rule.update'])->all();
+        self::assertNotEmpty($logs);
+        self::assertSame('updatedRule', $logs[0]->getTargetName());
     }
 
     public function testUpdatePostErrors(): void
@@ -125,17 +134,6 @@ final class RuleControllerTest extends DatabaseTestCase
             ValidatorInterface::class => $validator2,
         ])->get(RuleController::class)->update(request: $request, name: 'oldRule')->getBody();
         self::assertStringContainsString('Name is required.', $html);
-    }
-
-    public function testUpdatePostSuccessful(): void
-    {
-        $this->validator->method('validate')->willReturn(new Result());
-        $request = new ServerRequest('POST', '/');
-        $result = $this->createController()->update(request: $request, name: 'oldRule', formData: ['name' => 'updatedRule', 'class' => CompositeRule::class]);
-        $this->assertSame(302, $result->getStatusCode());
-        $logs = UserAuditLog::search(['action' => 'rbac.rule.update'])->all();
-        self::assertNotEmpty($logs);
-        self::assertSame('updatedRule', $logs[0]->getTargetName());
     }
 
     private function createController(): RuleController

@@ -19,8 +19,6 @@ use YiiRocks\Voyti\Helper\LoginMetadataHelper;
 use YiiRocks\Voyti\Helper\RecaptchaHelper;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\tests\Support\RecaptchaRegistryTrait;
-use YiiRocks\Voyti\tests\Support\SimpleAssignmentsStorage;
-use YiiRocks\Voyti\tests\Support\SimpleItemsStorage;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Auth\IdentityRepositoryInterface;
@@ -28,11 +26,9 @@ use Yiisoft\Form\Field\ResetButton;
 use Yiisoft\Form\Field\SubmitButton;
 use Yiisoft\Form\Theme\ThemeContainer;
 use Yiisoft\FormModel\FormModel;
-use Yiisoft\FormModel\FormModelInterface;
 use Yiisoft\Rbac\Assignment;
 use Yiisoft\Rbac\AssignmentsStorageInterface;
 use Yiisoft\Rbac\ItemsStorageInterface;
-use Yiisoft\Rbac\Manager;
 use Yiisoft\Rbac\ManagerInterface;
 use Yiisoft\Rbac\Permission;
 use Yiisoft\Rbac\Role;
@@ -71,6 +67,7 @@ final class HelperTest extends TestCase
         yield 'birthday is exactly today' => ['-10 years', 10];
         yield 'birthday not yet reached this year' => ['-10 years +1 day', 9];
         yield 'future birthday' => ['+10 years', null];
+        yield 'null birthday' => [null, null];
     }
 
     public static function authGetRuleNamesProvider(): iterable
@@ -100,12 +97,6 @@ final class HelperTest extends TestCase
         yield 'role exists' => [['admin' => new Role('admin'), 'editor' => new Role('editor')], true];
     }
 
-    public static function authIsAdminWithGivenUserIdProvider(): iterable
-    {
-        yield 'user is admin' => [3, ['admin' => new Permission('admin')], true];
-        yield 'user not admin' => [2, [], false];
-    }
-
     public static function buttonClassProvider(): iterable
     {
         yield 'submit button ignores trailing arguments' => [SubmitButton::class, ['btn', 'btn-primary'], 'btn'];
@@ -114,18 +105,6 @@ final class HelperTest extends TestCase
         yield 'reset button without theme' => [ResetButton::class, null, ''];
         yield 'reset button themed' => [ResetButton::class, ['btn btn-outline-primary'], 'btn btn-outline-primary'];
         yield 'submit button themed' => [SubmitButton::class, ['btn btn-primary'], 'btn btn-primary'];
-    }
-
-    public static function recaptchaRenderConfiguredProvider(): iterable
-    {
-        yield 'v2' => [RecaptchaVersion::V2, 'data-sitekey="v2-site-key"', 'grecaptcha.execute', null];
-        yield 'v3' => [RecaptchaVersion::V3, 'grecaptcha.execute', 'data-sitekey="v2-site-key"', '"action":"voyti_recaptchaTestForm"'];
-    }
-
-    public static function recaptchaRenderWithoutConfiguredKeyProvider(): iterable
-    {
-        yield 'v2' => [RecaptchaVersion::V2];
-        yield 'v3' => [RecaptchaVersion::V3];
     }
 
     public static function remoteAddrProvider(): iterable
@@ -137,15 +116,10 @@ final class HelperTest extends TestCase
     }
 
     #[DataProvider('ageCalculateProvider')]
-    public function testAgeCalculate(string $birthdayModifier, ?int $expected): void
+    public function testAgeCalculate(?string $birthdayModifier, ?int $expected): void
     {
-        $birthday = (new DateTimeImmutable())->modify($birthdayModifier);
+        $birthday = $birthdayModifier === null ? null : (new DateTimeImmutable())->modify($birthdayModifier);
         self::assertSame($expected, AgeHelper::calculate($birthday));
-    }
-
-    public function testAgeCalculateReturnsNullForNull(): void
-    {
-        self::assertNull(AgeHelper::calculate(null));
     }
 
     #[DataProvider('authGetRuleNamesProvider')]
@@ -237,38 +211,38 @@ final class HelperTest extends TestCase
         self::assertSame($expected, LoginMetadataHelper::userAgent($serverParams));
     }
 
-    public function testRecaptchaIsAvailableReturnsTrue(): void
+    public function testRecaptchaRender(): void
     {
-        self::assertTrue(RecaptchaHelper::isAvailable());
-    }
-
-    #[DataProvider('recaptchaRenderWithoutConfiguredKeyProvider')]
-    public function testRecaptchaRenderReturnsEmptyStringWhenSecretMissing(RecaptchaVersion $version): void
-    {
-        $this->configureRecaptchaRegistryWithoutSecret();
-
-        $config = VoytiConfigFactory::create(recaptchaVersion: $version);
-        $form = $this->createMock(FormModelInterface::class);
-
-        self::assertSame('', RecaptchaHelper::render($form, $config));
-    }
-
-    #[DataProvider('recaptchaRenderConfiguredProvider')]
-    public function testRecaptchaRenderWithConfiguredKey(RecaptchaVersion $version, string $shouldContain, string $shouldNotContain, ?string $alsoContains): void
-    {
-        $this->configureRecaptchaRegistry();
-
-        $config = VoytiConfigFactory::create(recaptchaVersion: $version);
         $form = new RecaptchaTestForm();
 
-        $html = RecaptchaHelper::render($form, $config);
+        // Scenario: registry not configured
+        self::assertSame('', RecaptchaHelper::render($form, VoytiConfigFactory::create()));
 
-        self::assertStringContainsString($shouldContain, $html);
-        self::assertStringNotContainsString($shouldNotContain, $html);
+        $this->configureRecaptchaRegistry();
 
-        if ($alsoContains !== null) {
-            self::assertStringContainsString($alsoContains, $html);
-        }
+        // Scenario: v2 configured
+        $htmlV2 = RecaptchaHelper::render($form, VoytiConfigFactory::create(recaptchaVersion: RecaptchaVersion::V2));
+        self::assertStringContainsString('data-sitekey="v2-site-key"', $htmlV2);
+        self::assertStringNotContainsString('grecaptcha.execute', $htmlV2);
+
+        // Scenario: v3 configured
+        $htmlV3 = RecaptchaHelper::render($form, VoytiConfigFactory::create(recaptchaVersion: RecaptchaVersion::V3));
+        self::assertStringContainsString('grecaptcha.execute', $htmlV3);
+        self::assertStringNotContainsString('data-sitekey="v2-site-key"', $htmlV3);
+        self::assertStringContainsString('"action":"voyti_recaptchaTestForm"', $htmlV3);
+    }
+
+    public function testTimezoneFormatLocalizedFallbackBehavior(): void
+    {
+        $timestamp = 1700000000;
+
+        // Scenario: invalid locale falls back to RFC1123
+        self::assertSame(date(DATE_RFC1123, $timestamp), TimezoneHelper::formatLocalized($timestamp, 'not-a-locale'));
+
+        // Scenario: invalid timezone is ignored
+        $withInvalidTimezone = TimezoneHelper::formatLocalized($timestamp, 'en', 'Invalid/Timezone');
+        $withoutTimezone = TimezoneHelper::formatLocalized($timestamp, 'en');
+        self::assertSame($withoutTimezone, $withInvalidTimezone);
     }
 
     #[DataProvider('timezoneLocalizedDateFormatProvider')]
@@ -279,20 +253,6 @@ final class HelperTest extends TestCase
         self::assertStringEndsWith('22:13:20', $formatted);
     }
 
-    public function testTimezoneFormatLocalizedWithInvalidLocaleFallsBackToRfc1123(): void
-    {
-        $timestamp = 1700000000;
-        self::assertSame(date(DATE_RFC1123, $timestamp), TimezoneHelper::formatLocalized($timestamp, 'not-a-locale'));
-    }
-
-    public function testTimezoneFormatLocalizedWithInvalidTimezoneIsIgnored(): void
-    {
-        $timestamp = 1700000000;
-        $withInvalidTimezone = TimezoneHelper::formatLocalized($timestamp, 'en', 'Invalid/Timezone');
-        $withoutTimezone = TimezoneHelper::formatLocalized($timestamp, 'en');
-        self::assertSame($withoutTimezone, $withInvalidTimezone);
-    }
-
     public function testTimezoneFormatLocalizedWithRegionalLocaleUsesTimezoneRegionFormat(): void
     {
         $formatted = TimezoneHelper::formatLocalized(1700000000, 'en_GB', 'America/New_York');
@@ -300,15 +260,7 @@ final class HelperTest extends TestCase
         self::assertMatchesRegularExpression('/PM$/u', $formatted);
     }
 
-    public function testTimezoneGetAllFormatsNegativeHalfHourOffsetCorrectly(): void
-    {
-        $timezones = TimezoneHelper::getAll();
-
-        self::assertArrayHasKey('Pacific/Marquesas', $timezones);
-        self::assertStringStartsWith('(GMT-9:30)', $timezones['Pacific/Marquesas']);
-    }
-
-    public function testTimezoneGetAllReturnsWellFormedTimezoneList(): void
+    public function testTimezoneGetAll(): void
     {
         $timezones = TimezoneHelper::getAll();
 
@@ -318,6 +270,10 @@ final class HelperTest extends TestCase
         self::assertArrayHasKey('UTC', $timezones);
         self::assertStringContainsString('UTC', $timezones['UTC']);
         self::assertStringContainsString('GMT', $timezones['UTC']);
+
+        // Scenario: negative half-hour offset is formatted correctly
+        self::assertArrayHasKey('Pacific/Marquesas', $timezones);
+        self::assertStringStartsWith('(GMT-9:30)', $timezones['Pacific/Marquesas']);
 
         $sorted = $timezones;
         asort($sorted);
@@ -380,18 +336,6 @@ final class HelperTest extends TestCase
             $assignmentsStorage ?? $this->createMock(AssignmentsStorageInterface::class),
             $config ?? VoytiConfigFactory::create(),
             $currentUser,
-        );
-    }
-
-    private function createAuthHelperWithRealManager(
-        SimpleItemsStorage $itemsStorage,
-        SimpleAssignmentsStorage $assignmentsStorage,
-    ): AuthHelper {
-        return $this->createAuthHelper(
-            authManager: new Manager($itemsStorage, $assignmentsStorage),
-            itemsStorage: $itemsStorage,
-            assignmentsStorage: $assignmentsStorage,
-            config: VoytiConfigFactory::create(administratorPermissionName: 'admin'),
         );
     }
 }

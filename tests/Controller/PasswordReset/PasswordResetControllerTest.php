@@ -38,18 +38,15 @@ final class PasswordResetControllerTest extends DatabaseTestCase
         $this->validator = $this->mockValidValidator();
     }
 
-    public function testRequestGetShowsForm(): void
+    public function testRequest(): void
     {
+        // GET shows the request form
         $html = (string) $this->createController()->request(new ServerRequest('GET', '/'))->getBody();
-
         self::assertStringContainsString('Recover password', $html);
-    }
 
-    public function testRequestPostSuccessful(): void
-    {
+        // POST success issues a recovery token and redirects
         $user = $this->createUser(username: 'recoveryuser', email: 'test@example.com');
 
-        // The service's outcome message is surfaced as a success toast.
         $this->flash->expects($this->once())->method('add')->with('toast.success', 'Recovery message sent');
 
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['recovery' => ['email' => 'test@example.com']]);
@@ -71,21 +68,16 @@ final class PasswordResetControllerTest extends DatabaseTestCase
         self::assertStringContainsString('Password recovery is disabled', $html);
     }
 
-    public function testResetGetWithValidTokenShowsForm(): void
+    public function testReset(): void
     {
         $user = $this->createUser(username: 'recoveryuser', email: 'recoveryuser@example.com');
         $this->createRecoveryToken((int) $user->getId(), 'valid', time());
 
+        // GET with a valid token shows the reset form
         $html = (string) $this->createController()->confirm(new ServerRequest('GET', '/'), (int) $user->getId(), 'valid')->getBody();
-
         self::assertStringContainsString('Reset password', $html);
-    }
 
-    public function testResetPostSuccessful(): void
-    {
-        $user = $this->createUser(username: 'recoveryuser', email: 'recoveryuser@example.com');
-        $this->createRecoveryToken((int) $user->getId(), 'valid', time());
-
+        // POST success changes the password and redirects
         $originalHash = $user->getPasswordHash();
 
         $request = (new ServerRequest('POST', '/'))->withParsedBody(['recovery' => ['password' => 'newpass123', 'passwordRepeat' => 'newpass123']]);
@@ -151,15 +143,6 @@ final class PasswordResetControllerTest extends DatabaseTestCase
             ValidatorInterface::class => $this->validator,
             ...$overrides,
         ])->get(PasswordResetController::class);
-    }
-
-    /**
-     * Uses the real ValidatorInterface instead of the fast valid-by-default mock, for tests that assert on real
-     * rule-generated validation messages.
-     */
-    private function createControllerWithRealValidation(): PasswordResetController
-    {
-        return $this->getTestContainer($this->baseOverrides())->get(PasswordResetController::class);
     }
 
     private function createRecoveryToken(int $userId, string $code, int $createdAt): UserToken

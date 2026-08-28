@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Console;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\Console\Tester\CommandTester;
 use YiiRocks\Voyti\Console\CreateUserCommand;
 use YiiRocks\Voyti\Model\User;
@@ -29,6 +30,19 @@ final class CreateUserCommandTest extends DatabaseTestCase
     use MailServiceFactoryTrait;
     use UserFactoryTrait;
 
+    public static function missingArgumentsProvider(): array
+    {
+        return [
+            // Neither argument given: the `is_string` guards trip.
+            'bothMissing' => [[]],
+            // Empty-string email with a valid username: the `$rawEmail === ''` term trips.
+            'emptyEmailWithUsername' => [['email' => '', 'username' => 'testuser']],
+            // Email omitted (null) while username is a valid non-empty string: the missing-argument
+            // guard must still fire (kills the `||`-to-`&&` mutant that only trips when both are non-strings).
+            'usernameOnly' => [['username' => 'validuser']],
+        ];
+    }
+
     public function testConfigureSetsCommandMetadata(): void
     {
         $command = $this->createCommand();
@@ -39,15 +53,6 @@ final class CreateUserCommandTest extends DatabaseTestCase
         self::assertTrue($command->getDefinition()->hasArgument('username'));
         self::assertTrue($command->getDefinition()->hasOption('password'));
         self::assertTrue($command->getDefinition()->hasOption('role'));
-    }
-
-    public function testExecuteWithEmptyEmail(): void
-    {
-        $tester = new CommandTester($this->createCommand());
-        $result = $tester->execute(['email' => '', 'username' => 'testuser']);
-
-        self::assertSame(ExitCode::USAGE, $result);
-        self::assertStringContainsString('Missing required arguments.', $tester->getDisplay());
     }
 
     public function testExecuteWithFailure(): void
@@ -61,10 +66,11 @@ final class CreateUserCommandTest extends DatabaseTestCase
         self::assertStringContainsString('Email already exists', $tester->getDisplay());
     }
 
-    public function testExecuteWithMissingArguments(): void
+    #[DataProvider('missingArgumentsProvider')]
+    public function testExecuteWithMissingArguments(array $arguments): void
     {
         $tester = new CommandTester($this->createCommand());
-        $result = $tester->execute([]);
+        $result = $tester->execute($arguments);
 
         self::assertSame(ExitCode::USAGE, $result);
         $display = $this->normalizeLineEndings($tester->getDisplay());
@@ -75,17 +81,6 @@ final class CreateUserCommandTest extends DatabaseTestCase
         self::assertStringContainsString("username   Username\n\nOptions:", $display);
         self::assertStringContainsString('-p, --password   Password (auto-generated if omitted)', $display);
         self::assertStringContainsString('-r, --role       Role to assign', $display);
-    }
-
-    public function testExecuteWithMissingEmailButUsernameGiven(): void
-    {
-        // email argument omitted (null) while username is a valid non-empty string: the missing-argument
-        // guard must still fire (kills the `||`-to-`&&` mutant that only trips when both are non-strings).
-        $tester = new CommandTester($this->createCommand());
-        $result = $tester->execute(['username' => 'validuser']);
-
-        self::assertSame(ExitCode::USAGE, $result);
-        self::assertStringContainsString('Missing required arguments.', $tester->getDisplay());
     }
 
     public function testExecuteWithRoleAssignment(): void

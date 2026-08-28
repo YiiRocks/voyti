@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Model\Form\Settings;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use YiiRocks\Voyti\Model\Form\Settings\SettingsForm;
 use YiiRocks\Voyti\Model\User;
@@ -16,6 +17,14 @@ use Yiisoft\Validator\Rule\Regex;
 final class SettingsFormTest extends TestCase
 {
     use TranslatorMockTrait;
+
+    public static function passwordComplexityProvider(): array
+    {
+        return [
+            'disabled' => [false, 1],
+            'enabled' => [true, 2],
+        ];
+    }
 
     public function testConstruct(): void
     {
@@ -41,20 +50,16 @@ final class SettingsFormTest extends TestCase
         $this->assertArrayHasKey('currentPassword', $labels);
     }
 
-    public function testGetRulesWithPasswordComplexityDisabled(): void
+    #[DataProvider('passwordComplexityProvider')]
+    public function testGetRulesWithPasswordComplexity(bool $enabled, int $expectedCount): void
     {
-        $form = new SettingsForm(VoytiConfigFactory::create(), $this->createTranslator());
-        $rules = $form->getRules();
-        $this->assertCount(1, $rules['password']);
-    }
-
-    public function testGetRulesWithPasswordComplexityEnabled(): void
-    {
-        $config = VoytiConfigFactory::create(enablePasswordComplexity: true);
+        $config = VoytiConfigFactory::create(enablePasswordComplexity: $enabled);
         $form = new SettingsForm($config, $this->createTranslator());
         $rules = $form->getRules();
-        $this->assertCount(2, $rules['password']);
-        $this->assertInstanceOf(Regex::class, $rules['password'][1]);
+        $this->assertCount($expectedCount, $rules['password']);
+        if ($enabled) {
+            $this->assertInstanceOf(Regex::class, $rules['password'][1]);
+        }
     }
 
     public function testGetValidationPropertyLabels(): void

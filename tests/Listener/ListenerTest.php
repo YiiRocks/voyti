@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Listener;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\DataProvider;
 use YiiRocks\Voyti\Event\Auth\AfterLoginEvent;
 use YiiRocks\Voyti\Event\Auth\AfterRegisterEvent;
 use YiiRocks\Voyti\Helper\FlashType;
@@ -30,20 +31,18 @@ final class ListenerTest extends DatabaseTestCase
     use MailServiceFactoryTrait;
     use UserSessionFactoryTrait;
 
-    public function testAdminNotificationDoesNotSendEmailWhenNull(): void
+    public static function adminNotificationProvider(): array
     {
-        $config = VoytiConfigFactory::create(mailAdminOnRegister: null);
-
-        $mailCapture = new MailCapture();
-        $listener = new AdminNotificationListener($this->createMailService($mailCapture), $config);
-        $listener->onAfterRegister(new AfterRegisterEvent(new User()));
-
-        self::assertNull($mailCapture->getLastMessage());
+        return [
+            'disabled' => [null, false],
+            'enabled' => ['admin@example.com', true],
+        ];
     }
 
-    public function testAdminNotificationSendsEmailWhenConfigured(): void
+    #[DataProvider('adminNotificationProvider')]
+    public function testAdminNotification(?string $adminEmail, bool $sent): void
     {
-        $config = VoytiConfigFactory::create(mailAdminOnRegister: 'admin@example.com');
+        $config = VoytiConfigFactory::create(mailAdminOnRegister: $adminEmail);
 
         $mailCapture = new MailCapture();
         $listener = new AdminNotificationListener($this->createMailService($mailCapture), $config);
@@ -53,42 +52,37 @@ final class ListenerTest extends DatabaseTestCase
         $listener->onAfterRegister(new AfterRegisterEvent($user));
 
         $message = $mailCapture->getLastMessage();
-        self::assertNotNull($message);
-        self::assertSame('admin@example.com', $message->getTo());
+        if ($sent) {
+            self::assertNotNull($message);
+            self::assertSame('admin@example.com', $message->getTo());
+        } else {
+            self::assertNull($message);
+        }
     }
 
-    public function testPasswordExpirationDoesNotFlashWhenPasswordNotExpired(): void
+    public function testPasswordExpiration(): void
     {
+        // Not expired: no flash warning
         $expireService = new ExpireService(VoytiConfigFactory::create(maxPasswordAge: 90));
-
         $flash = $this->createMock(FlashInterface::class);
         $flash->expects(self::never())->method('set');
-
         $listener = new PasswordExpirationListener($expireService, $this->createTranslator(), $flash);
         $user = new User();
         $user->setPasswordChangedAt(time());
-
         $listener->onAfterLogin(new AfterLoginEvent($user));
-    }
 
-    public function testPasswordExpirationFlashesWarningWhenPasswordExpired(): void
-    {
+        // Expired: flashes a warning
         $expireService = new ExpireService(VoytiConfigFactory::create(maxPasswordAge: 90));
-
         $flash = $this->createMock(FlashInterface::class);
         $flash->expects(self::once())->method('set')->with(
             FlashType::WARNING,
             'Your password has expired. Please set a new one.',
         );
-
         $listener = new PasswordExpirationListener($expireService, $this->createTranslator(), $flash);
         $listener->onAfterLogin(new AfterLoginEvent(new User()));
-    }
 
-    public function testPasswordExpirationWorksWithoutFlashService(): void
-    {
+        // No flash service wired: the listener still completes without error
         $expireService = new ExpireService(VoytiConfigFactory::create(maxPasswordAge: 90));
-
         $listener = new PasswordExpirationListener($expireService, $this->createTranslator());
         $listener->onAfterLogin(new AfterLoginEvent(new User()));
 

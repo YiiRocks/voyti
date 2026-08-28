@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\tests\Model\Form\Auth;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
-use YiiRocks\Recaptcha\RecaptchaRegistry;
 use YiiRocks\Recaptcha\RecaptchaV3Rule;
 use YiiRocks\Voyti\Enum\RecaptchaVersion;
 use YiiRocks\Voyti\Model\Form\Auth\LoginForm;
@@ -20,11 +19,6 @@ final class LoginFormTest extends TestCase
 {
     use RecaptchaRegistryTrait;
 
-    protected function tearDown(): void
-    {
-        RecaptchaRegistry::reset();
-    }
-
     public function testGetPropertyLabels(): void
     {
         $form = new LoginForm(VoytiConfigFactory::create(), $this->createTranslator());
@@ -34,9 +28,10 @@ final class LoginFormTest extends TestCase
         $this->assertArrayHasKey('rememberMe', $labels);
     }
 
-    public function testGetRulesReturnsLoginRules(): void
+    public function testGetRules(): void
     {
-        $form = new LoginForm(VoytiConfigFactory::create(), $this->createTranslator());
+        $config = VoytiConfigFactory::create(recaptchaVersion: RecaptchaVersion::V3);
+        $form = new LoginForm($config, $this->createTranslator());
         $rules = $form->getRules();
         $this->assertIsArray($rules);
         $this->assertArrayHasKey('login', $rules);
@@ -44,16 +39,7 @@ final class LoginFormTest extends TestCase
         // The password rule is Required on the non-2FA login step.
         $this->assertCount(1, $rules['password']);
         $this->assertInstanceOf(Required::class, $rules['password'][0]);
-        $this->assertArrayNotHasKey('gRecaptchaResponse', $rules);
         $this->assertArrayNotHasKey('twoFactorAuthenticationCode', $rules);
-    }
-
-    public function testGetRulesWithRecaptchaV3(): void
-    {
-        $this->configureRecaptchaRegistry();
-        $config = VoytiConfigFactory::create(recaptchaVersion: RecaptchaVersion::V3);
-        $form = new LoginForm($config, $this->createTranslator());
-        $rules = $form->getRules();
         $this->assertArrayHasKey('gRecaptchaResponse', $rules);
         $this->assertCount(1, $rules['gRecaptchaResponse']);
         $rule = $rules['gRecaptchaResponse'][0];
@@ -64,6 +50,7 @@ final class LoginFormTest extends TestCase
 
     public function testValidationErrorMessageUsesPropertyLabelNotRawPropertyName(): void
     {
+        $this->configureRecaptchaRegistry();
         $form = new LoginForm(VoytiConfigFactory::create(), $this->createTranslator());
         $result = (new Validator())->validate($form);
 

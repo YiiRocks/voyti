@@ -234,16 +234,14 @@ final class UserTokenTest extends TestCase
         self::assertSame($expected, $lifespan === null ? $entity->isExpired() : $entity->isExpired($lifespan));
     }
 
-    public function testGetUserReturnsNullWhenNoUser(): void
+    public function testGetUser(): void
     {
+        // Returns null when no matching user exists
         $entity = new UserToken();
         $entity->setUserId(999);
-
         self::assertNull($entity->getUser());
-    }
 
-    public function testGetUserReturnsUserWhenLinked(): void
-    {
+        // Returns the linked user when present
         $this->connection->createCommand()->insert('user', [
             'username' => 'tokenuser',
             'email' => 'tokenuser@example.com',
