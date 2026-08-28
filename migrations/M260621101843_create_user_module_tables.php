@@ -140,11 +140,6 @@ final class M260621101843_create_user_module_tables implements RevertibleMigrati
 
     private function seedDefaultAdmin(MigrationBuilder $b): void
     {
-        $userCount = (int) $b->getDb()->createCommand('SELECT COUNT(*) FROM {{%user}}')->queryScalar();
-        if ($userCount > 0) {
-            return;
-        }
-
         $now = time();
         $password = Random::string(20);
 
