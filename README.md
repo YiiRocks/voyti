@@ -37,7 +37,8 @@ Stats for Nerds
 - **GDPR Data Handling** — Data export and account anonymization
 - **Password Policies** — Minimum complexity requirements, max age enforcement via middleware
 - **Email Change Confirmation** — Three modes: immediate, confirm new address, confirm both old and new
-- **REST API** — JSON user CRUD (Bearer-token auth)
+- **REST API** — JSON user CRUD (Bearer-token auth), with optional per-user rate limiting
+- **SPA API** — Credential login, account/session self-service, admin RBAC/audit-log, and dynamic 2FA/social-login/GDPR bridges over JSON, for browser-based SPA clients
 - **Bot Protection** — Google reCAPTCHA v2/v3 for registration and login forms
 - **Brute-Force Protection** — Exponential backoff delays for failed login and registration attempts, tracked per IP address
 - **i18n** — Built-in translations for multiple languages
