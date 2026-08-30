@@ -20,6 +20,13 @@ final class UserToken extends ActiveRecord
     use PrivatePropertiesTrait;
     // Used by yiirocks/voyti-api for bearer-token authentication
     public const int TYPE_API_ACCESS = 4;
+    // Used by yiirocks/voyti-api-spa's 2FA bridge: a short-lived, single-use pending-login marker
+    // issued between a password check and a 2FA verification step, when no bearer token exists yet.
+    public const int TYPE_API_CHALLENGE = 5;
+    // Used by yiirocks/voyti-api-spa's social-auth bridge: a short-lived, single-use code handed to
+    // the SPA via redirect after a successful OAuth2 popup flow, exchanged for a real bearer token
+    // server-side so the token itself never appears in a URL or browser history entry.
+    public const int TYPE_API_SOCIAL_EXCHANGE = 6;
     public const int TYPE_CONFIRM_NEW_EMAIL = 2;
     public const int TYPE_CONFIRM_OLD_EMAIL = 3;
     public const int TYPE_CONFIRMATION = 0;
