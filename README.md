@@ -30,15 +30,15 @@ Stats for Nerds
 - **User Management** — Registration, email confirmation, login/logout with remember-me, password recovery, password expiration
 - **Profile Management** — User profiles with gravatar, timezone, bio, and a personal website link
 - **Social Authentication** — OAuth2 login via Google, GitHub, Facebook, and more
-- **Two-Factor Authentication** — Email codes, TOTP (authenticator app) with QR provisioning, or WebAuthn/passkeys - with enforced-per-permission support and one-time backup codes for account recovery
+- **Two-Factor Authentication** — Email codes, TOTP (authenticator app) with QR provisioning, or WebAuthn/passkeys, with enforced-per-permission support and one-time backup codes for account recovery
 - **RBAC Management** — Full admin UI for roles, permissions, and rules with parent-child hierarchy, assignment management, and filtering
 - **Identity Switching** — Admins can temporarily switch into another user's identity for support or debugging, then restore their own session with one click
 - **Session Management** — Session tracking and termination
 - **GDPR Data Handling** — Data export and account anonymization
 - **Password Policies** — Minimum complexity requirements, max age enforcement via middleware
 - **Email Change Confirmation** — Three modes: immediate, confirm new address, confirm both old and new
-- **REST API** — JSON user CRUD (Bearer-token auth), with optional per-user rate limiting
-- **SPA API** — Credential login, account/session self-service, admin RBAC/audit-log, and dynamic 2FA/social-login/GDPR bridges over JSON, for browser-based SPA clients
+- **REST API: User Management** — JSON user CRUD (Bearer-token auth), with optional per-user request throttling (429 responses, X-Rate-Limit-* headers)
+- **REST API: Client Login & Self-Service** — Credential login, account/session self-service, admin RBAC/audit-log, and dynamic 2FA/social-login/GDPR bridges over JSON, for a browser-based single-page application (SPA) or any other stateless client
 - **Bot Protection** — Google reCAPTCHA v2/v3 for registration and login forms
 - **Brute-Force Protection** — Exponential backoff delays for failed login and registration attempts, tracked per IP address
 - **i18n** — Built-in translations for multiple languages
