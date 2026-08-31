@@ -76,6 +76,11 @@ return [
     'voyti.recovery.message_sent_if_exists' => "Si l'e-mail existe, un message de récupération a été envoyé",
     'voyti.recovery.message_sent' => 'Message de récupération envoyé',
 
+    // UserCreationHelper
+    'voyti.user.email_already_exists' => 'L\'e-mail existe déjà',
+    'voyti.user.username_already_exists' => 'Le nom d\'utilisateur existe déjà',
+    'voyti.user.email_or_username_already_exists' => 'Un utilisateur avec cet e-mail ou ce nom d\'utilisateur existe déjà.',
+
     'voyti.validator.password_complexity' => 'Le mot de passe doit contenir au moins une majuscule, une minuscule, un chiffre et un caractère spécial.',
 
     // Mail subjects
@@ -150,6 +155,7 @@ return [
     'voyti.view.delete_account.warning' => 'Attention : cette action supprime définitivement votre compte et toutes les données associées. Cela ne peut pas être annulé.',
     'voyti.view.delete_account.confirm_label' => 'Je comprends que cette action est irréversible',
     'voyti.view.delete_account.button' => 'Supprimer mon compte',
+    'voyti.view.delete_account.invalid_password' => 'Mot de passe incorrect',
 
     // Admin views
     'voyti.view.admin.title' => 'Utilisateurs',

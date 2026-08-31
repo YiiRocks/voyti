@@ -17,6 +17,7 @@ use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Db\Exception\IntegrityException;
 use Yiisoft\Security\PasswordHasher;
 use Yiisoft\Security\Random;
+use Yiisoft\Translator\TranslatorInterface;
 
 /**
  * Shared user-persistence logic for account creation: builds a {@see User} with a hashed password,
@@ -37,6 +38,7 @@ final readonly class UserCreationHelper
         private PasswordHasher $passwordHasher,
         private VoytiConfig $config,
         private PasswordHistoryService $passwordHistoryService,
+        private TranslatorInterface $translator,
     ) {}
 
     public function buildUser(string $email, string $username, string $password): User
@@ -54,11 +56,11 @@ final readonly class UserCreationHelper
     public function findUniquenessConflict(string $email, string $username): ?string
     {
         if (User::findByEmail($email) !== null) {
-            return 'Email already exists';
+            return $this->translator->translate('voyti.user.email_already_exists', category: 'voyti');
         }
 
         if (User::findByUsername($username) !== null) {
-            return 'Username already exists';
+            return $this->translator->translate('voyti.user.username_already_exists', category: 'voyti');
         }
 
         return null;
@@ -125,7 +127,11 @@ final readonly class UserCreationHelper
         try {
             $save();
         } catch (IntegrityException) {
-            $conflict = $this->findUniquenessConflict($user->getEmail(), $user->getUsername()) ?? 'A user with this email or username already exists.';
+            $fallbackMessage = $this->translator->translate(
+                'voyti.user.email_or_username_already_exists',
+                category: 'voyti',
+            );
+            $conflict = $this->findUniquenessConflict($user->getEmail(), $user->getUsername()) ?? $fallbackMessage;
             throw new RuntimeException($conflict);
         }
     }

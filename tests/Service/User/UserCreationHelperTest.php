@@ -61,6 +61,7 @@ final class UserCreationHelperTest extends DatabaseTestCase
             $passwordHasher,
             $config,
             new PasswordHistoryService($passwordHasher, $config),
+            $this->createTranslator(),
         );
 
         $user = $helper->buildUser('skip-confirm@example.com', 'skipconfirm', 'password123');
@@ -117,6 +118,7 @@ final class UserCreationHelperTest extends DatabaseTestCase
             $passwordHasher,
             $config,
             new PasswordHistoryService($passwordHasher, $config),
+            $this->createTranslator(),
         );
     }
 }

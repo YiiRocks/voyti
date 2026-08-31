@@ -76,6 +76,11 @@ return [
     'voyti.recovery.message_sent_if_exists' => 'Als het e-mailadres bestaat, is er een herstelbericht verzonden',
     'voyti.recovery.message_sent' => 'Herstelbericht verzonden',
 
+    // UserCreationHelper
+    'voyti.user.email_already_exists' => 'E-mail bestaat al',
+    'voyti.user.username_already_exists' => 'Gebruikersnaam bestaat al',
+    'voyti.user.email_or_username_already_exists' => 'Er bestaat al een gebruiker met deze e-mail of gebruikersnaam.',
+
     'voyti.validator.password_complexity' => 'Het wachtwoord moet minstens één hoofdletter, één kleine letter, één cijfer en één speciaal teken bevatten.',
 
     // Mail subjects
@@ -150,6 +155,7 @@ return [
     'voyti.view.delete_account.warning' => 'Waarschuwing: Deze actie verwijdert uw account en alle bijbehorende gegevens permanent. Dit kan niet ongedaan worden gemaakt.',
     'voyti.view.delete_account.confirm_label' => 'Ik begrijp dat deze actie onomkeerbaar is',
     'voyti.view.delete_account.button' => 'Mijn account verwijderen',
+    'voyti.view.delete_account.invalid_password' => 'Onjuist wachtwoord',
 
     // Admin views
     'voyti.view.admin.title' => 'Gebruikers',

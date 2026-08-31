@@ -40,7 +40,7 @@ final class CreateServiceTest extends DatabaseTestCase
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $passwordHasher = TestPasswordHasherFactory::create();
         $config = VoytiConfigFactory::create();
-        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
+        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config), $this->createTranslator());
         $service = new CreateService($userCreationHelper);
         $result = $service->run('existing@example.com', 'testuser', 'password123');
         self::assertTrue($result->isFailure());
@@ -55,6 +55,7 @@ final class CreateServiceTest extends DatabaseTestCase
             $passwordHasher,
             $config,
             new PasswordHistoryService($passwordHasher, $config),
+            $this->createTranslator(),
         );
         $service = new CreateService($userCreationHelper);
         $result = $service->run('race@example.com', 'raceuser', 'password123');
@@ -70,7 +71,7 @@ final class CreateServiceTest extends DatabaseTestCase
         $eventDispatcher = new EventCaptureDispatcher();
         $passwordHasher = TestPasswordHasherFactory::create();
         $config = VoytiConfigFactory::create(enableEmailConfirmation: false);
-        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
+        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config), $this->createTranslator());
         $service = new CreateService($userCreationHelper);
         $result = $service->run('disabled@example.com', 'testuser1', 'password123');
         self::assertTrue($result->isSuccess());
@@ -95,7 +96,7 @@ final class CreateServiceTest extends DatabaseTestCase
         $eventDispatcher = new EventCaptureDispatcher();
         $passwordHasher = TestPasswordHasherFactory::create();
         $config = VoytiConfigFactory::create(enableEmailConfirmation: true);
-        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config));
+        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config), $this->createTranslator());
         $service = new CreateService($userCreationHelper);
         $result = $service->run('enabled@example.com', 'testuser2', 'password123');
         self::assertTrue($result->isSuccess());

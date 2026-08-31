@@ -76,6 +76,11 @@ return [
     'voyti.recovery.message_sent_if_exists' => 'If the email exists, a recovery message has been sent',
     'voyti.recovery.message_sent' => 'Recovery message sent',
 
+    // UserCreationHelper
+    'voyti.user.email_already_exists' => 'Email already exists',
+    'voyti.user.username_already_exists' => 'Username already exists',
+    'voyti.user.email_or_username_already_exists' => 'A user with this email or username already exists.',
+
     'voyti.validator.password_complexity' => 'Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character.',
 
     // Mail subjects
@@ -150,6 +155,7 @@ return [
     'voyti.view.delete_account.warning' => 'Warning: This action permanently deletes your account and all associated data. This cannot be undone.',
     'voyti.view.delete_account.confirm_label' => 'I understand this action is irreversible',
     'voyti.view.delete_account.button' => 'Delete my account',
+    'voyti.view.delete_account.invalid_password' => 'Incorrect password',
 
     // Admin views
     'voyti.view.admin.title' => 'Users',

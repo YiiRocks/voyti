@@ -76,6 +76,11 @@ return [
     'voyti.recovery.message_sent_if_exists' => 'Если указанный email существует, сообщение для восстановления отправлено',
     'voyti.recovery.message_sent' => 'Сообщение для восстановления отправлено',
 
+    // UserCreationHelper
+    'voyti.user.email_already_exists' => 'Email уже существует',
+    'voyti.user.username_already_exists' => 'Имя пользователя уже существует',
+    'voyti.user.email_or_username_already_exists' => 'Пользователь с таким email или именем пользователя уже существует.',
+
     'voyti.validator.password_complexity' => 'Пароль должен содержать хотя бы одну заглавную букву, одну строчную букву, одну цифру и один специальный символ.',
 
     // Mail subjects
@@ -150,6 +155,7 @@ return [
     'voyti.view.delete_account.warning' => 'Внимание: Это действие безвозвратно удалит ваш аккаунт и все связанные данные. Это действие необратимо.',
     'voyti.view.delete_account.confirm_label' => 'Я понимаю, что это действие необратимо',
     'voyti.view.delete_account.button' => 'Удалить мой аккаунт',
+    'voyti.view.delete_account.invalid_password' => 'Неверный пароль',
 
     // Admin views
     'voyti.view.admin.title' => 'Пользователи',

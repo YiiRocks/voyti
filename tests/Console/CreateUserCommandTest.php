@@ -171,6 +171,7 @@ final class CreateUserCommandTest extends DatabaseTestCase
                 $passwordHasher,
                 $config,
                 new PasswordHistoryService($passwordHasher, $config),
+                $this->createTranslator(),
             ),
         );
     }

@@ -66,6 +66,11 @@ final readonly class PrivacyController
                     ],
                 ]);
             }
+
+            $form->addError(
+                $this->translator->translate('voyti.view.delete_account.invalid_password', category: 'voyti'),
+                ['password'],
+            );
         }
 
         return $this->renderView('privacy/delete', [

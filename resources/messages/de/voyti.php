@@ -76,6 +76,11 @@ return [
     'voyti.recovery.message_sent_if_exists' => 'Falls die E-Mail existiert, wurde eine Wiederherstellungsnachricht gesendet',
     'voyti.recovery.message_sent' => 'Wiederherstellungsnachricht gesendet',
 
+    // UserCreationHelper
+    'voyti.user.email_already_exists' => 'E-Mail existiert bereits',
+    'voyti.user.username_already_exists' => 'Benutzername existiert bereits',
+    'voyti.user.email_or_username_already_exists' => 'Ein Benutzer mit dieser E-Mail oder diesem Benutzernamen existiert bereits.',
+
     'voyti.validator.password_complexity' => 'Das Passwort muss mindestens einen Großbuchstaben, einen Kleinbuchstaben, eine Ziffer und ein Sonderzeichen enthalten.',
 
     // Mail subjects
@@ -150,6 +155,7 @@ return [
     'voyti.view.delete_account.warning' => 'Warnung: Diese Aktion löscht Ihr Konto und alle zugehörigen Daten endgültig. Dies kann nicht rückgängig gemacht werden.',
     'voyti.view.delete_account.confirm_label' => 'Ich verstehe, dass diese Aktion nicht rückgängig gemacht werden kann',
     'voyti.view.delete_account.button' => 'Mein Konto löschen',
+    'voyti.view.delete_account.invalid_password' => 'Falsches Passwort',
 
     // Admin views
     'voyti.view.admin.title' => 'Benutzer',
