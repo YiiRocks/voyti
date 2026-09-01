@@ -65,7 +65,7 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
     }
 
     /**
-     * @psalm-return list<User>
+     * @return list<User>
      */
     public static function findAllUsers(): array
     {
@@ -91,7 +91,7 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
     /**
      * @param list<int> $ids
      *
-     * @psalm-return list<User>
+     * @return list<User>
      */
     public static function findByIds(array $ids): array
     {
@@ -209,9 +209,7 @@ final class User extends ActiveRecord implements IdentityInterface, CookieLoginI
     }
 
     /**
-     * @return (ActiveRecordInterface|array)[]
-     *
-     * @psalm-return array<ActiveRecordInterface|array>
+     * @return array<ActiveRecordInterface|array>
      */
     public function getTokens(): array
     {

@@ -43,9 +43,7 @@ final class RecoveryForm extends FormModel implements LabelsProviderInterface, R
     ) {}
 
     /**
-     * @return string
-     *
-     * @psalm-return 'recovery'
+     * @return 'recovery'
      */
     #[Override]
     public function getFormName(): string
@@ -54,9 +52,7 @@ final class RecoveryForm extends FormModel implements LabelsProviderInterface, R
     }
 
     /**
-     * @return string[]
-     *
-     * @psalm-return array{email: string, password: string, passwordRepeat: string}
+     * @return array{email: string, password: string, passwordRepeat: string}
      */
     #[Override]
     public function getPropertyLabels(): array

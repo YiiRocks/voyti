@@ -26,7 +26,7 @@ final class UserPasswordHistory extends ActiveRecord
     }
 
     /**
-     * @psalm-return list<UserPasswordHistory>
+     * @return list<UserPasswordHistory>
      */
     public static function findByUserId(int $userId): array
     {
@@ -51,7 +51,7 @@ final class UserPasswordHistory extends ActiveRecord
     }
 
     /**
-     * @psalm-return list{'user_id', 'password_hash'}
+     * @return list{'user_id', 'password_hash'}
      */
     #[Override]
     public function primaryKey(): array

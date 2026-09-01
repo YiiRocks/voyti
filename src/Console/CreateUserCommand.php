@@ -43,9 +43,7 @@ final class CreateUserCommand extends Command
     }
 
     /**
-     * @return int
-     *
-     * @psalm-return 0|1|64
+     * @return 0|1|64
      */
     #[Override]
     protected function execute(InputInterface $input, OutputInterface $output): int

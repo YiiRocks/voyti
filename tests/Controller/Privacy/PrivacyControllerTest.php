@@ -97,7 +97,7 @@ final class PrivacyControllerTest extends DatabaseTestCase
         $html = (string) $this->createController()->delete($request)->getBody();
 
         self::assertStringContainsString('Delete my account', $html);
-        self::assertStringContainsString('Incorrect password', $html);
+        self::assertSame(2, substr_count($html, 'Incorrect password'));
         self::assertNotNull(User::findById($userId));
         self::assertFalse($this->eventDispatcher->hasEvent(UserEvent::class));
     }

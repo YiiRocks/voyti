@@ -54,7 +54,7 @@ final class UserToken extends ActiveRecord
     }
 
     /**
-     * @psalm-return list<UserToken>
+     * @return list<UserToken>
      */
     public static function findByUserId(int $userId): array
     {
@@ -105,20 +105,16 @@ final class UserToken extends ActiveRecord
 
     public function isExpired(?int $lifespan = null): bool
     {
-        if ($lifespan === null) {
-            $lifespan = match ($this->type) {
-                self::TYPE_RECOVERY => 21600,
-                default => 86400,
-            };
-        }
+        $lifespan ??= match ($this->type) {
+            self::TYPE_RECOVERY => 21600,
+            default => 86400,
+        };
 
         return (time() - $this->created_at) > $lifespan;
     }
 
     /**
-     * @return string[]
-     *
-     * @psalm-return list{'user_id', 'code', 'type'}
+     * @return list{'user_id', 'code', 'type'}
      */
     #[Override]
     public function primaryKey(): array

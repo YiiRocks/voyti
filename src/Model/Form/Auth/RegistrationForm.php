@@ -51,9 +51,7 @@ final class RegistrationForm extends FormModel implements LabelsProviderInterfac
     ) {}
 
     /**
-     * @return string
-     *
-     * @psalm-return 'register'
+     * @return 'register'
      */
     #[Override]
     public function getFormName(): string
@@ -62,9 +60,7 @@ final class RegistrationForm extends FormModel implements LabelsProviderInterfac
     }
 
     /**
-     * @return string[]
-     *
-     * @psalm-return array{
+     * @return array{
      *     username: string,
      *     email: string,
      *     password: string,

@@ -68,7 +68,7 @@ trait UserLookupTrait
      * Exit code for a {@see findUserFromInput} lookup that returned `null`: distinguishes a usage
      * error (no identifying option given) from a genuine not-found (option given, no matching user).
      *
-     * @psalm-return 64|67
+     * @return 64|67
      */
     private function getLookupFailureExitCode(): int
     {

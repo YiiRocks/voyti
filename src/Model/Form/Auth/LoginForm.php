@@ -33,9 +33,7 @@ final class LoginForm extends FormModel implements LabelsProviderInterface, Rule
     ) {}
 
     /**
-     * @return string
-     *
-     * @psalm-return 'login'
+     * @return 'login'
      */
     #[Override]
     public function getFormName(): string
@@ -44,9 +42,7 @@ final class LoginForm extends FormModel implements LabelsProviderInterface, Rule
     }
 
     /**
-     * @return string[]
-     *
-     * @psalm-return array{login: string, password: string, rememberMe: string}
+     * @return array{login: string, password: string, rememberMe: string}
      */
     #[Override]
     public function getPropertyLabels(): array

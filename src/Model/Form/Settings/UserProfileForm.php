@@ -82,9 +82,7 @@ final class UserProfileForm extends FormModel implements LabelsProviderInterface
     }
 
     /**
-     * @return string
-     *
-     * @psalm-return 'userProfile'
+     * @return 'userProfile'
      */
     #[Override]
     public function getFormName(): string
@@ -105,9 +103,7 @@ final class UserProfileForm extends FormModel implements LabelsProviderInterface
     }
 
     /**
-     * @return string[]
-     *
-     * @psalm-return array{
+     * @return array{
      *     name: string,
      *     publicEmail: string,
      *     gravatarEmail: string,

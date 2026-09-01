@@ -48,9 +48,7 @@ final class SettingsForm extends FormModel implements LabelsProviderInterface, R
     ) {}
 
     /**
-     * @return string
-     *
-     * @psalm-return 'settings'
+     * @return 'settings'
      */
     #[Override]
     public function getFormName(): string
@@ -59,9 +57,7 @@ final class SettingsForm extends FormModel implements LabelsProviderInterface, R
     }
 
     /**
-     * @return string[]
-     *
-     * @psalm-return array{
+     * @return array{
      *     username: string,
      *     email: string,
      *     password: string,

@@ -44,9 +44,7 @@ final readonly class AuthHelper
     }
 
     /**
-     * @return (Permission|Role)[]
-     *
-     * @psalm-return array<string, Permission|Role>
+     * @return array<string, Permission|Role>
      */
     public function getUnassignedItems(int $userId): array
     {

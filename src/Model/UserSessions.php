@@ -50,9 +50,7 @@ final class UserSessions extends ActiveRecord
     }
 
     /**
-     * @return UserSessions[]
-     *
-     * @psalm-return list<UserSessions>
+     * @return list<UserSessions>
      */
     public static function findAllSessions(): array
     {
@@ -62,9 +60,7 @@ final class UserSessions extends ActiveRecord
     }
 
     /**
-     * @return UserSessions[]
-     *
-     * @psalm-return list<UserSessions>
+     * @return list<UserSessions>
      */
     public static function findByUserId(int $userId): array
     {
@@ -121,7 +117,7 @@ final class UserSessions extends ActiveRecord
     }
 
     /**
-     * @psalm-return list{'user_id', 'session_id'}
+     * @return list{'user_id', 'session_id'}
      */
     #[Override]
     public function primaryKey(): array
@@ -130,9 +126,7 @@ final class UserSessions extends ActiveRecord
     }
 
     /**
-     * @return (array|object)[]
-     *
-     * @psalm-return array<array|object>
+     * @return array<array|object>
      */
     public static function search(array $filters = []): array
     {

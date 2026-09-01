@@ -136,7 +136,7 @@ final class UserProfile extends ActiveRecord
     }
 
     /**
-     * @psalm-return list{'user_id'}
+     * @return list{'user_id'}
      */
     #[Override]
     public function primaryKey(): array

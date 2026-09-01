@@ -46,9 +46,7 @@ final class AuthItemForm extends FormModel implements LabelsProviderInterface, R
     }
 
     /**
-     * @return string[]
-     *
-     * @psalm-return array{name: string, description: string, children: string, rule: string}
+     * @return array{name: string, description: string, children: string, rule: string}
      */
     #[Override]
     public function getPropertyLabels(): array

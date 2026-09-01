@@ -73,7 +73,7 @@ final class UserAuditLog extends ActiveRecord
     }
 
     /**
-     * @psalm-return list{'id'}
+     * @return list{'id'}
      */
     #[Override]
     public function primaryKey(): array

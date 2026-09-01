@@ -34,9 +34,7 @@ final class ResendForm extends FormModel implements LabelsProviderInterface, Rul
     ) {}
 
     /**
-     * @return string
-     *
-     * @psalm-return 'resend'
+     * @return 'resend'
      */
     #[Override]
     public function getFormName(): string
@@ -45,9 +43,7 @@ final class ResendForm extends FormModel implements LabelsProviderInterface, Rul
     }
 
     /**
-     * @return string[]
-     *
-     * @psalm-return array{email: string}
+     * @return array{email: string}
      */
     #[Override]
     public function getPropertyLabels(): array

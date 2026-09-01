@@ -29,9 +29,7 @@ final class RuleForm extends FormModel implements LabelsProviderInterface, Rules
     ) {}
 
     /**
-     * @return string
-     *
-     * @psalm-return 'rule'
+     * @return 'rule'
      */
     #[Override]
     public function getFormName(): string
@@ -40,9 +38,7 @@ final class RuleForm extends FormModel implements LabelsProviderInterface, Rules
     }
 
     /**
-     * @return string[]
-     *
-     * @psalm-return array{name: string, class: string}
+     * @return array{name: string, class: string}
      */
     #[Override]
     public function getPropertyLabels(): array
