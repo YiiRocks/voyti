@@ -88,6 +88,47 @@ final class UserTokenTest extends TestCase
         yield 'custom lifespan not expired' => [0, UserToken::TYPE_CONFIRMATION, 86400, false];
     }
 
+    public function testConsumeIsSingleUseAcrossLoadedInstances(): void
+    {
+        $token = new UserToken();
+        $token->setUserId(1);
+        $token->setCode(hash('sha256', 'one-time'));
+        $token->setType(UserToken::TYPE_API_CHALLENGE);
+        $token->setCreatedAt(time());
+        $token->save();
+
+        $sameUserDifferentCode = new UserToken();
+        $sameUserDifferentCode->setUserId(1);
+        $sameUserDifferentCode->setCode(hash('sha256', 'different-code'));
+        $sameUserDifferentCode->setType(UserToken::TYPE_API_CHALLENGE);
+        $sameUserDifferentCode->setCreatedAt(time());
+        $sameUserDifferentCode->save();
+
+        $sameUserDifferentType = new UserToken();
+        $sameUserDifferentType->setUserId(1);
+        $sameUserDifferentType->setCode(hash('sha256', 'one-time'));
+        $sameUserDifferentType->setType(UserToken::TYPE_API_SOCIAL_EXCHANGE);
+        $sameUserDifferentType->setCreatedAt(time());
+        $sameUserDifferentType->save();
+
+        $otherUserSameToken = new UserToken();
+        $otherUserSameToken->setUserId(2);
+        $otherUserSameToken->setCode(hash('sha256', 'one-time'));
+        $otherUserSameToken->setType(UserToken::TYPE_API_CHALLENGE);
+        $otherUserSameToken->setCreatedAt(time());
+        $otherUserSameToken->save();
+
+        $first = UserToken::findByUserIdAndCodeAndType(1, 'one-time', UserToken::TYPE_API_CHALLENGE);
+        $second = UserToken::findByUserIdAndCodeAndType(1, 'one-time', UserToken::TYPE_API_CHALLENGE);
+        self::assertNotNull($first);
+        self::assertNotNull($second);
+
+        self::assertTrue($first->consume());
+        self::assertFalse($second->consume());
+        self::assertCount(2, UserToken::findByUserId(1));
+        self::assertCount(1, UserToken::findByUserId(2));
+    }
+
     public function testDeleteAllByUserIdAndTypeRemovesOnlyMatchingTypeForThatUser(): void
     {
         $confirmationToken = new UserToken();

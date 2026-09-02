@@ -36,6 +36,18 @@ final class UserToken extends ActiveRecord
     private int $type = 0;
     private int $user_id = 0;
 
+    /**
+     * Atomically consumes this one-time token. Returns false when another request already consumed it.
+     */
+    public function consume(): bool
+    {
+        return $this->deleteAll([
+            'user_id' => $this->user_id,
+            'code' => $this->code,
+            'type' => $this->type,
+        ]) === 1;
+    }
+
     public static function deleteAllByUserId(int $userId): void
     {
         (new self())->deleteAll(['user_id' => $userId]);
