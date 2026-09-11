@@ -81,12 +81,12 @@ return [
     'voyti.user.username_already_exists' => 'Username already exists',
     'voyti.user.email_or_username_already_exists' => 'A user with this email or username already exists.',
 
-    'voyti.validator.password_min_length' => 'Password must contain at least {minimum} {minimum, plural, one{character} other{characters}}.',
-    'voyti.validator.password_max_length' => 'Password must contain at most {minimum} {minimum, plural, one{character} other{characters}}.',
-    'voyti.validator.password_min_uppercase' => 'Password must contain at least {minimum} uppercase {minimum, plural, one{character} other{characters}}.',
-    'voyti.validator.password_min_lowercase' => 'Password must contain at least {minimum} lowercase {minimum, plural, one{character} other{characters}}.',
-    'voyti.validator.password_min_digits' => 'Password must contain at least {minimum} {minimum, plural, one{digit} other{digits}}.',
-    'voyti.validator.password_min_symbols' => 'Password must contain at least {minimum} {minimum, plural, one{symbol} other{symbols}}.',
+    'voyti.validator.password_min_length' => 'Password must contain at least {minimum, plural, one{# character} other{# characters}}.',
+    'voyti.validator.password_max_length' => 'Password must contain at most {minimum, plural, one{# character} other{# characters}}.',
+    'voyti.validator.password_min_uppercase' => 'Password must contain at least {minimum, plural, one{# uppercase character} other{# uppercase characters}}.',
+    'voyti.validator.password_min_lowercase' => 'Password must contain at least {minimum, plural, one{# lowercase character} other{# lowercase characters}}.',
+    'voyti.validator.password_min_digits' => 'Password must contain at least {minimum, plural, one{# digit} other{# digits}}.',
+    'voyti.validator.password_min_symbols' => 'Password must contain at least {minimum, plural, one{# symbol} other{# symbols}}.',
 
     // Mail subjects
     'voyti.mail.welcome_subject' => 'Welcome to {app}',

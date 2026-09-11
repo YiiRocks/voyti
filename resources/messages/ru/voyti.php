@@ -81,12 +81,12 @@ return [
     'voyti.user.username_already_exists' => 'Имя пользователя уже существует',
     'voyti.user.email_or_username_already_exists' => 'Пользователь с таким email или именем пользователя уже существует.',
 
-    'voyti.validator.password_min_length' => 'Пароль должен содержать не менее {minimum} {minimum, plural, one{символа} other{символов}}.',
-    'voyti.validator.password_max_length' => 'Пароль должен содержать не более {minimum} {minimum, plural, one{символа} other{символов}}.',
-    'voyti.validator.password_min_uppercase' => 'Пароль должен содержать не менее {minimum} {minimum, plural, one{заглавной буквы} other{заглавных букв}}.',
-    'voyti.validator.password_min_lowercase' => 'Пароль должен содержать не менее {minimum} {minimum, plural, one{строчной буквы} other{строчных букв}}.',
-    'voyti.validator.password_min_digits' => 'Пароль должен содержать не менее {minimum} {minimum, plural, one{цифры} other{цифр}}.',
-    'voyti.validator.password_min_symbols' => 'Пароль должен содержать не менее {minimum} {minimum, plural, one{специального символа} other{специальных символов}}.',
+    'voyti.validator.password_min_length' => 'Пароль должен содержать не менее {minimum, plural, one{# символа} few{# символа} many{# символов} other{# символа}}.',
+    'voyti.validator.password_max_length' => 'Пароль должен содержать не более {minimum, plural, one{# символа} few{# символа} many{# символов} other{# символа}}.',
+    'voyti.validator.password_min_uppercase' => 'Пароль должен содержать не менее {minimum, plural, one{# заглавной буквы} few{# заглавных буквы} many{# заглавных букв} other{# заглавной буквы}}.',
+    'voyti.validator.password_min_lowercase' => 'Пароль должен содержать не менее {minimum, plural, one{# строчной буквы} few{# строчных буквы} many{# строчных букв} other{# строчной буквы}}.',
+    'voyti.validator.password_min_digits' => 'Пароль должен содержать не менее {minimum, plural, one{# цифры} few{# цифры} many{# цифр} other{# цифры}}.',
+    'voyti.validator.password_min_symbols' => 'Пароль должен содержать не менее {minimum, plural, one{# специального символа} few{# специальных символа} many{# специальных символов} other{# специального символа}}.',
 
     // Mail subjects
     'voyti.mail.welcome_subject' => 'Добро пожаловать в {app}',

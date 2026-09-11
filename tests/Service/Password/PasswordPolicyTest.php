@@ -56,6 +56,24 @@ final class PasswordPolicyTest extends TestCase
         );
     }
 
+    #[DataProvider('russianPluralProvider')]
+    public function testRussianMessagesUseRussianPluralCategories(int $minimum, string $expected): void
+    {
+        $policy = new PasswordPolicy(
+            new PasswordPolicyConfig(minLength: 1, minSymbols: $minimum),
+            $this->createTranslator('ru'),
+        );
+
+        self::assertSame($expected, $policy->validate('a')->getErrorMessages()[0]);
+    }
+
+    public static function russianPluralProvider(): iterable
+    {
+        yield [1, 'Пароль должен содержать не менее 1 специального символа.'];
+        yield [2, 'Пароль должен содержать не менее 2 специальных символа.'];
+        yield [5, 'Пароль должен содержать не менее 5 специальных символов.'];
+    }
+
     public function testReportsAllViolationsAndThrowsTypedException(): void
     {
         $policy = $this->policy();
