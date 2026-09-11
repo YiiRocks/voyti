@@ -9,5 +9,9 @@ namespace YiiRocks\Voyti\Service\Password;
  */
 interface PasswordGeneratorInterface
 {
+    /**
+     * Generates a password that satisfies the configured password policy. The requested length is
+     * adjusted when necessary to fit the policy's minimum and maximum lengths.
+     */
     public function generate(int $length): string;
 }

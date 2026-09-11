@@ -152,10 +152,12 @@ final class CreateUserCommandTest extends DatabaseTestCase
         ?ManagerInterface $authManager = null,
         ?PasswordGeneratorInterface $passwordGenerator = null,
     ): CreateUserCommand {
+        $config = VoytiConfigFactory::create();
+
         return new CreateUserCommand(
             $userCreateService ?? $this->createCreateService(),
             $authManager ?? $this->createMock(ManagerInterface::class),
-            $passwordGenerator ?? new RandomPasswordGenerator(),
+            $passwordGenerator ?? new RandomPasswordGenerator($config),
         );
     }
 
@@ -170,7 +172,7 @@ final class CreateUserCommandTest extends DatabaseTestCase
                 new EventCaptureDispatcher(),
                 $passwordHasher,
                 $config,
-                new PasswordHistoryService($passwordHasher, $config),
+                new PasswordHistoryService($passwordHasher, $config, $this->createTranslator()),
                 $this->createTranslator(),
             ),
         );

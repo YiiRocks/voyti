@@ -141,8 +141,12 @@ final class PasswordCommandTest extends DatabaseTestCase
         $passwordHasher = TestPasswordHasherFactory::create();
 
         return new PasswordCommand(
-            $passwordGenerator ?? new RandomPasswordGenerator(),
-            new PasswordHistoryService($passwordHasher, $config ?? VoytiConfigFactory::create()),
+            $passwordGenerator ?? new RandomPasswordGenerator($config ?? VoytiConfigFactory::create()),
+            new PasswordHistoryService(
+                $passwordHasher,
+                $config ?? VoytiConfigFactory::create(),
+                $this->createTranslator(),
+            ),
         );
     }
 }

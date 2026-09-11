@@ -18,6 +18,7 @@ use YiiRocks\Voyti\Middleware\PasswordAgeEnforceMiddleware;
 use YiiRocks\Voyti\Middleware\RememberMeMiddleware;
 use YiiRocks\Voyti\Middleware\SessionRevocationEnforceMiddleware;
 use YiiRocks\Voyti\Middleware\VoytiMiddleware;
+use YiiRocks\Voyti\PasswordPolicyConfig;
 use YiiRocks\Voyti\Service\Admin\DashboardService;
 use YiiRocks\Voyti\Service\AuditLogService;
 use YiiRocks\Voyti\Service\Auth\LoginCompletionService;
@@ -108,7 +109,7 @@ return [
         recaptchaVersion: $params['yiirocks/voyti']['recaptchaVersion'] ?? RecaptchaVersion::V3,
         // Session & Security
         maxPasswordAge: $params['yiirocks/voyti']['maxPasswordAge'] ?? 0,
-        enablePasswordComplexity: $params['yiirocks/voyti']['enablePasswordComplexity'] ?? false,
+        passwordPolicy: new PasswordPolicyConfig(...($params['yiirocks/voyti']['passwordPolicy'] ?? [])),
         passwordHistoryLimit: $params['yiirocks/voyti']['passwordHistoryLimit'] ?? 10,
         administratorPermissionName: $params['yiirocks/voyti']['administratorPermissionName'] ?? 'voyti-admin',
         profileVisibility: $params['yiirocks/voyti']['profileVisibility'] ?? ProfileVisibility::USERS,

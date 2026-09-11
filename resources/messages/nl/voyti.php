@@ -81,7 +81,12 @@ return [
     'voyti.user.username_already_exists' => 'Gebruikersnaam bestaat al',
     'voyti.user.email_or_username_already_exists' => 'Er bestaat al een gebruiker met deze e-mail of gebruikersnaam.',
 
-    'voyti.validator.password_complexity' => 'Het wachtwoord moet minstens één hoofdletter, één kleine letter, één cijfer en één speciaal teken bevatten.',
+    'voyti.validator.password_min_length' => 'Het wachtwoord moet minstens {minimum} {minimum, plural, one{teken} other{tekens}} bevatten.',
+    'voyti.validator.password_max_length' => 'Het wachtwoord mag maximaal {minimum} {minimum, plural, one{teken} other{tekens}} bevatten.',
+    'voyti.validator.password_min_uppercase' => 'Het wachtwoord moet minstens {minimum} hoofdletter{minimum, plural, one{} other{s}} bevatten.',
+    'voyti.validator.password_min_lowercase' => 'Het wachtwoord moet minstens {minimum} kleine letter{minimum, plural, one{} other{s}} bevatten.',
+    'voyti.validator.password_min_digits' => 'Het wachtwoord moet minstens {minimum} {minimum, plural, one{cijfer} other{cijfers}} bevatten.',
+    'voyti.validator.password_min_symbols' => 'Het wachtwoord moet minstens {minimum} {minimum, plural, one{symbool} other{symbolen}} bevatten.',
 
     // Mail subjects
     'voyti.mail.welcome_subject' => 'Welkom bij {app}',

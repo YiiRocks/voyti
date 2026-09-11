@@ -8,6 +8,8 @@ on:
       - 'phpunit.xml.dist'
 
   push:
+    branches:
+      - main
     paths-ignore:
       - 'README.md'
       - '.gitignore'

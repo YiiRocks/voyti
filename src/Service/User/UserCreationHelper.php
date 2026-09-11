@@ -13,6 +13,7 @@ use YiiRocks\Voyti\Model\UserProfile;
 use YiiRocks\Voyti\Model\UserToken;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
+use YiiRocks\Voyti\Service\Password\PasswordPolicy;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Db\Exception\IntegrityException;
 use Yiisoft\Security\PasswordHasher;
@@ -32,6 +33,8 @@ use Yiisoft\Translator\TranslatorInterface;
  */
 final readonly class UserCreationHelper
 {
+    private PasswordPolicy $passwordPolicy;
+
     public function __construct(
         private MailService $mailService,
         private EventDispatcherInterface $eventDispatcher,
@@ -39,10 +42,14 @@ final readonly class UserCreationHelper
         private VoytiConfig $config,
         private PasswordHistoryService $passwordHistoryService,
         private TranslatorInterface $translator,
-    ) {}
+    ) {
+        $this->passwordPolicy = new PasswordPolicy($config->passwordPolicy, $translator);
+    }
 
     public function buildUser(string $email, string $username, string $password): User
     {
+        $this->passwordPolicy->assertValid($password);
+
         $user = new User();
         $user->setUsername($username);
         $user->setEmail($email);

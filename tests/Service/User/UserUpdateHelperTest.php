@@ -145,7 +145,7 @@ final class UserUpdateHelperTest extends DatabaseTestCase
         return new UserUpdateHelper(
             $clock ?? new SystemClock(),
             $dispatcher ?? new EventCaptureDispatcher(),
-            new PasswordHistoryService($passwordHasher, $config),
+            new PasswordHistoryService($passwordHasher, $config, $this->createTranslator()),
         );
     }
 }

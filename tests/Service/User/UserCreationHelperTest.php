@@ -60,7 +60,7 @@ final class UserCreationHelperTest extends DatabaseTestCase
             $this->createMock(EventDispatcherInterface::class),
             $passwordHasher,
             $config,
-            new PasswordHistoryService($passwordHasher, $config),
+            new PasswordHistoryService($passwordHasher, $config, $this->createTranslator()),
             $this->createTranslator(),
         );
 
@@ -117,7 +117,7 @@ final class UserCreationHelperTest extends DatabaseTestCase
             $this->createMock(EventDispatcherInterface::class),
             $passwordHasher,
             $config,
-            new PasswordHistoryService($passwordHasher, $config),
+            new PasswordHistoryService($passwordHasher, $config, $this->createTranslator()),
             $this->createTranslator(),
         );
     }

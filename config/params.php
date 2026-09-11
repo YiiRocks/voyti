@@ -28,7 +28,14 @@ return [
         'recaptchaVersion' => RecaptchaVersion::V3,
         // Session & Security
         'maxPasswordAge' => 0,
-        'enablePasswordComplexity' => false,
+        'passwordPolicy' => [
+            'minLength' => 6,
+            'maxLength' => 72,
+            'minUppercase' => 0,
+            'minLowercase' => 0,
+            'minDigits' => 0,
+            'minSymbols' => 0,
+        ],
         'passwordHistoryLimit' => 10,
         'administratorPermissionName' => 'voyti-admin',
         'profileVisibility' => ProfileVisibility::USERS,

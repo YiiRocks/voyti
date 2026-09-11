@@ -21,6 +21,18 @@ final readonly class VoytiConfig
 {
     public const string DEFAULT_MAIL_PATH = __DIR__ . '/../resources/mail';
 
+    public PasswordPolicyConfig $passwordPolicy;
+
+    /**
+     * @param PasswordPolicyConfig|array{
+     *     minLength?: int,
+     *     maxLength?: int,
+     *     minUppercase?: int,
+     *     minLowercase?: int,
+     *     minDigits?: int,
+     *     minSymbols?: int,
+     * } $passwordPolicy
+     */
     public function __construct(
         // General
         public string $appName,
@@ -40,7 +52,7 @@ final readonly class VoytiConfig
         public RecaptchaVersion $recaptchaVersion,
         // Session & Security
         public int $maxPasswordAge,
-        public bool $enablePasswordComplexity,
+        PasswordPolicyConfig|array $passwordPolicy,
         public int $passwordHistoryLimit,
         public string $administratorPermissionName,
         public ProfileVisibility $profileVisibility,
@@ -62,7 +74,11 @@ final readonly class VoytiConfig
          * @psalm-var list<string>
          */
         public array $viewsPackagePaths,
-    ) {}
+    ) {
+        $this->passwordPolicy = is_array($passwordPolicy)
+            ? new PasswordPolicyConfig(...$passwordPolicy)
+            : $passwordPolicy;
+    }
 
     /**
      * @throws LogicException if homeRoute is not registered

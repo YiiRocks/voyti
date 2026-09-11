@@ -81,7 +81,12 @@ return [
     'voyti.user.username_already_exists' => 'Benutzername existiert bereits',
     'voyti.user.email_or_username_already_exists' => 'Ein Benutzer mit dieser E-Mail oder diesem Benutzernamen existiert bereits.',
 
-    'voyti.validator.password_complexity' => 'Das Passwort muss mindestens einen Großbuchstaben, einen Kleinbuchstaben, eine Ziffer und ein Sonderzeichen enthalten.',
+    'voyti.validator.password_min_length' => 'Das Passwort muss mindestens {minimum} {minimum, plural, one{Zeichen} other{Zeichen}} enthalten.',
+    'voyti.validator.password_max_length' => 'Das Passwort darf höchstens {minimum} {minimum, plural, one{Zeichen} other{Zeichen}} enthalten.',
+    'voyti.validator.password_min_uppercase' => 'Das Passwort muss mindestens {minimum} {minimum, plural, one{Großbuchstaben} other{Großbuchstaben}} enthalten.',
+    'voyti.validator.password_min_lowercase' => 'Das Passwort muss mindestens {minimum} {minimum, plural, one{Kleinbuchstaben} other{Kleinbuchstaben}} enthalten.',
+    'voyti.validator.password_min_digits' => 'Das Passwort muss mindestens {minimum} {minimum, plural, one{Ziffer} other{Ziffern}} enthalten.',
+    'voyti.validator.password_min_symbols' => 'Das Passwort muss mindestens {minimum} {minimum, plural, one{Sonderzeichen} other{Sonderzeichen}} enthalten.',
 
     // Mail subjects
     'voyti.mail.welcome_subject' => 'Willkommen bei {app}',
