@@ -81,12 +81,12 @@ return [
     'voyti.user.username_already_exists' => 'Le nom d\'utilisateur existe déjà',
     'voyti.user.email_or_username_already_exists' => 'Un utilisateur avec cet e-mail ou ce nom d\'utilisateur existe déjà.',
 
-    'voyti.validator.password_min_length' => 'Le mot de passe doit contenir au moins {minimum} {minimum, plural, one{caractère} other{caractères}}.',
-    'voyti.validator.password_max_length' => 'Le mot de passe doit contenir au maximum {minimum} {minimum, plural, one{caractère} other{caractères}}.',
-    'voyti.validator.password_min_uppercase' => 'Le mot de passe doit contenir au moins {minimum} {minimum, plural, one{majuscule} other{majuscules}}.',
-    'voyti.validator.password_min_lowercase' => 'Le mot de passe doit contenir au moins {minimum} {minimum, plural, one{minuscule} other{minuscules}}.',
-    'voyti.validator.password_min_digits' => 'Le mot de passe doit contenir au moins {minimum} {minimum, plural, one{chiffre} other{chiffres}}.',
-    'voyti.validator.password_min_symbols' => 'Le mot de passe doit contenir au moins {minimum} {minimum, plural, one{symbole} other{symboles}}.',
+    'voyti.validator.password_min_length' => 'Le mot de passe doit contenir au moins {minimum, plural, one{# caractère} other{# caractères}}.',
+    'voyti.validator.password_max_length' => 'Le mot de passe doit contenir au maximum {minimum, plural, one{# caractère} other{# caractères}}.',
+    'voyti.validator.password_min_uppercase' => 'Le mot de passe doit contenir au moins {minimum, plural, one{# majuscule} other{# majuscules}}.',
+    'voyti.validator.password_min_lowercase' => 'Le mot de passe doit contenir au moins {minimum, plural, one{# minuscule} other{# minuscules}}.',
+    'voyti.validator.password_min_digits' => 'Le mot de passe doit contenir au moins {minimum, plural, one{# chiffre} other{# chiffres}}.',
+    'voyti.validator.password_min_symbols' => 'Le mot de passe doit contenir au moins {minimum, plural, one{# symbole} other{# symboles}}.',
 
     // Mail subjects
     'voyti.mail.welcome_subject' => 'Bienvenue sur {app}',

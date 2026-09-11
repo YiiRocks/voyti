@@ -65,7 +65,7 @@ use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Session\SessionInterface;
 use Yiisoft\Translator\CategorySource;
 use Yiisoft\Translator\Message\Php\MessageSource;
-use Yiisoft\Translator\SimpleMessageFormatter;
+use Yiisoft\Translator\IntlMessageFormatter;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
 use Yiisoft\View\View;
@@ -304,7 +304,7 @@ return [
         'definition' => static fn() => new CategorySource(
             'voyti',
             new MessageSource(dirname(__DIR__) . '/resources/messages'),
-            new SimpleMessageFormatter(),
+            new IntlMessageFormatter(),
         ),
         'tags' => ['translation.categorySource'],
     ],
