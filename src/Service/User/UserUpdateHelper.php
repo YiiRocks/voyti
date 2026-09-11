@@ -50,7 +50,7 @@ final readonly class UserUpdateHelper
 
         if ($password !== '') {
             $this->passwordHistoryService->applyPasswordChange($user, $password);
-        } else {
+        } elseif ($changedFields !== []) {
             $user->setUpdatedAt($this->clock->now()->getTimestamp());
             $user->save();
         }
