@@ -11,6 +11,7 @@ use YiiRocks\Voyti\Model\Form\Auth\RecoveryForm;
 use YiiRocks\Voyti\tests\Support\TranslatorMockTrait;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use Yiisoft\Validator\Rule\CompareType;
+use Yiisoft\Validator\Rule\Callback;
 use Yiisoft\Validator\Rule\Email;
 use Yiisoft\Validator\Rule\Equal;
 use Yiisoft\Validator\Rule\Length;
@@ -60,9 +61,7 @@ final class RecoveryFormTest extends TestCase
         $this->assertArrayHasKey('password', $rules);
         $this->assertCount(2, $rules['password']);
         $this->assertInstanceOf(Required::class, $rules['password'][0]);
-        $this->assertInstanceOf(Length::class, $rules['password'][1]);
-        $this->assertSame(6, $rules['password'][1]->getMin());
-        $this->assertSame(72, $rules['password'][1]->getMax());
+        $this->assertInstanceOf(Callback::class, $rules['password'][1]);
         $this->assertArrayHasKey('passwordRepeat', $rules);
         $this->assertCount(2, $rules['passwordRepeat']);
         $this->assertInstanceOf(Required::class, $rules['passwordRepeat'][0]);

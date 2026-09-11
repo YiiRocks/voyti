@@ -74,7 +74,11 @@ final class ResetServiceTest extends DatabaseTestCase
         $config ??= VoytiConfigFactory::create();
         $passwordHasher = TestPasswordHasherFactory::create();
 
-        return new ResetService($config, $eventDispatcher, new PasswordHistoryService($passwordHasher, $config));
+        return new ResetService(
+            $config,
+            $eventDispatcher,
+            new PasswordHistoryService($passwordHasher, $config, $this->createTranslator()),
+        );
     }
 
     private function createUserToken(int $userId, string $code): UserToken

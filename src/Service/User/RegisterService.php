@@ -43,11 +43,10 @@ final readonly class RegisterService
             return ServiceResult::failure($conflict, [$conflict]);
         }
 
-        $user = $this->userCreationHelper->buildUser($email, $username, $password);
-        $user->setRegistrationIp(LoginMetadataHelper::remoteAddr($serverParams));
-        $user->setDataProcessingConsentDate(time());
-
         try {
+            $user = $this->userCreationHelper->buildUser($email, $username, $password);
+            $user->setRegistrationIp(LoginMetadataHelper::remoteAddr($serverParams));
+            $user->setDataProcessingConsentDate(time());
             $this->eventDispatcher->dispatch(new BeforeRegisterEvent($data, $user));
             $emailConfirmationRequired = $this->userCreationHelper->persistAndNotify($user);
         } catch (ActionPreventedException $exception) {

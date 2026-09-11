@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace YiiRocks\Voyti\tests\Service\Password;
 
+use YiiRocks\Voyti\Exception\PasswordPolicyViolationException;
 use YiiRocks\Voyti\Model\UserPasswordHistory;
+use YiiRocks\Voyti\PasswordPolicyConfig;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\tests\Support\DatabaseTestCase;
 use YiiRocks\Voyti\tests\Support\TestPasswordHasherFactory;
@@ -14,6 +16,24 @@ use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 final class PasswordHistoryServiceTest extends DatabaseTestCase
 {
     use UserFactoryTrait;
+
+    public function testApplyPasswordChangeRejectsPolicyViolationWithoutMutation(): void
+    {
+        $config = VoytiConfigFactory::create(
+            passwordPolicy: new PasswordPolicyConfig(minUppercase: 1),
+        );
+        $passwordHasher = TestPasswordHasherFactory::create();
+        $user = $this->createUser(passwordHash: $passwordHasher->hash('original-password'));
+        $originalHash = $user->getPasswordHash();
+        $service = new PasswordHistoryService($passwordHasher, $config, $this->createTranslator());
+
+        try {
+            $service->applyPasswordChange($user, 'lowercase-only');
+            self::fail('Exception was not thrown.');
+        } catch (PasswordPolicyViolationException) {
+            self::assertSame($originalHash, $user->getPasswordHash());
+        }
+    }
 
     public function testRecord(): void
     {
@@ -25,7 +45,7 @@ final class PasswordHistoryServiceTest extends DatabaseTestCase
             email: 'disabledhistory@example.com',
             passwordHash: $passwordHasher->hash('currentpass'),
         );
-        $service = new PasswordHistoryService($passwordHasher, $config);
+        $service = new PasswordHistoryService($passwordHasher, $config, $this->createTranslator());
         $service->record($disabledUser);
         self::assertCount(0, UserPasswordHistory::findByUserId($disabledUser->getIdOrZero()));
 
@@ -37,7 +57,7 @@ final class PasswordHistoryServiceTest extends DatabaseTestCase
             email: 'storehistory@example.com',
             passwordHash: $passwordHasher->hash('currentpass'),
         );
-        $service = new PasswordHistoryService($passwordHasher, $config);
+        $service = new PasswordHistoryService($passwordHasher, $config, $this->createTranslator());
         $beforeRecord = time();
         $service->record($storeUser);
         $history = UserPasswordHistory::findByUserId($storeUser->getIdOrZero());
@@ -53,7 +73,7 @@ final class PasswordHistoryServiceTest extends DatabaseTestCase
             email: 'prunehistory@example.com',
             passwordHash: $passwordHasher->hash('pass0'),
         );
-        $service = new PasswordHistoryService($passwordHasher, $config);
+        $service = new PasswordHistoryService($passwordHasher, $config, $this->createTranslator());
         $service->record($pruneUser);
         $pruneUser->setPasswordHash($passwordHasher->hash('pass1'));
         $pruneUser->save();
@@ -68,7 +88,7 @@ final class PasswordHistoryServiceTest extends DatabaseTestCase
         $passwordHasher = TestPasswordHasherFactory::create();
         $user1 = $this->createUser(username: 'pruneuser1', email: 'prune1@example.com');
         $user2 = $this->createUser(username: 'pruneuser2', email: 'prune2@example.com');
-        $service = new PasswordHistoryService($passwordHasher, $config);
+        $service = new PasswordHistoryService($passwordHasher, $config, $this->createTranslator());
         $user2History = new UserPasswordHistory();
         $user2History->setUserId($user2->getIdOrZero());
         $user2History->setPasswordHash('shared-hash');
@@ -101,7 +121,7 @@ final class PasswordHistoryServiceTest extends DatabaseTestCase
             email: 'disabledwasused@example.com',
             passwordHash: $passwordHasher->hash('currentpass'),
         );
-        $service = new PasswordHistoryService($passwordHasher, $config);
+        $service = new PasswordHistoryService($passwordHasher, $config, $this->createTranslator());
         self::assertFalse($service->wasUsedRecently($disabledUser, 'currentpass'));
 
         // Matches current hash
@@ -112,7 +132,7 @@ final class PasswordHistoryServiceTest extends DatabaseTestCase
             email: 'currenthashuser@example.com',
             passwordHash: $passwordHasher->hash('currentpass'),
         );
-        $service = new PasswordHistoryService($passwordHasher, $config);
+        $service = new PasswordHistoryService($passwordHasher, $config, $this->createTranslator());
         self::assertTrue($service->wasUsedRecently($currentHashUser, 'currentpass'));
 
         // Checks history entries
@@ -123,7 +143,7 @@ final class PasswordHistoryServiceTest extends DatabaseTestCase
             email: 'historyuser@example.com',
             passwordHash: $passwordHasher->hash('originalpass'),
         );
-        $service = new PasswordHistoryService($passwordHasher, $config);
+        $service = new PasswordHistoryService($passwordHasher, $config, $this->createTranslator());
         $service->record($historyUser);
         $historyUser->setPasswordHash($passwordHasher->hash('secondpass'));
         $historyUser->save();

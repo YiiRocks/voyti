@@ -6,7 +6,7 @@ namespace YiiRocks\Voyti\Model\Form\Settings;
 
 use Override;
 use YiiRocks\Voyti\Model\User;
-use YiiRocks\Voyti\Validator\PasswordComplexityRule;
+use YiiRocks\Voyti\Service\Password\PasswordPolicy;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\FormModel\FormModel;
 use Yiisoft\Translator\TranslatorInterface;
@@ -18,7 +18,6 @@ use Yiisoft\Validator\Rule\Equal;
 use Yiisoft\Validator\Rule\Length;
 use Yiisoft\Validator\Rule\Regex;
 use Yiisoft\Validator\Rule\Required;
-use Yiisoft\Validator\RuleInterface;
 use Yiisoft\Validator\RulesProviderInterface;
 
 /**
@@ -31,7 +30,6 @@ final class SettingsForm extends FormModel implements LabelsProviderInterface, R
     #[Email(checkDns: true, enableIdn: true, skipOnEmpty: true)]
     #[Length(max: 255, skipOnEmpty: true)]
     public string $email = '';
-    #[Length(min: 6, max: 72, skipOnEmpty: true)]
     public string $password = '';
     #[Equal(targetProperty: 'password', strict: true, type: CompareType::STRING, skipOnEmpty: true)]
     public string $passwordRepeat = '';
@@ -89,12 +87,7 @@ final class SettingsForm extends FormModel implements LabelsProviderInterface, R
         $parser = new ObjectParser($this);
         $rules = $parser->getRules();
 
-        /** @var list<RuleInterface> $passwordRules */
-        $passwordRules = $rules['password'];
-        $rules['password'] = array_merge(
-            $passwordRules,
-            PasswordComplexityRule::rules($this->config, $this->translator),
-        );
+        $rules['password'] = [(new PasswordPolicy($this->config->passwordPolicy, $this->translator))->rule()];
 
         return $rules;
     }

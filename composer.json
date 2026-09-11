@@ -150,7 +150,8 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-main": "1.0.x-dev"
+            "dev-main": "1.0.x-dev",
+            "dev-test/configurable-password-policy": "1.0.x-dev"
         },
         "config-plugin-options": {
             "source-directory": "config"

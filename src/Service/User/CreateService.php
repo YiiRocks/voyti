@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace YiiRocks\Voyti\Service\User;
 
 use RuntimeException;
+use YiiRocks\Voyti\Exception\PasswordPolicyViolationException;
 use YiiRocks\Voyti\Service\ServiceResult;
 
 /**
@@ -25,9 +26,11 @@ final readonly class CreateService
             return ServiceResult::failure($conflict);
         }
 
-        $user = $this->userCreationHelper->buildUser($email, $username, $password);
         try {
+            $user = $this->userCreationHelper->buildUser($email, $username, $password);
             $this->userCreationHelper->persistAndNotify($user);
+        } catch (PasswordPolicyViolationException $exception) {
+            return ServiceResult::failure($exception->getMessage(), $exception->getErrors());
         } catch (RuntimeException $exception) {
             return ServiceResult::failure($exception->getMessage());
         }

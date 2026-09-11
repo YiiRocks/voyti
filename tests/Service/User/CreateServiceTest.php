@@ -9,6 +9,7 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserToken;
+use YiiRocks\Voyti\PasswordPolicyConfig;
 use YiiRocks\Voyti\Service\MailService;
 use YiiRocks\Voyti\Service\Password\PasswordHistoryService;
 use YiiRocks\Voyti\Service\User\CreateService;
@@ -40,11 +41,33 @@ final class CreateServiceTest extends DatabaseTestCase
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $passwordHasher = TestPasswordHasherFactory::create();
         $config = VoytiConfigFactory::create();
-        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config), $this->createTranslator());
+        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config, $this->createTranslator()), $this->createTranslator());
         $service = new CreateService($userCreationHelper);
         $result = $service->run('existing@example.com', 'testuser', 'password123');
         self::assertTrue($result->isFailure());
         self::assertSame('Email already exists', $result->getMessage());
+
+        // Password policy violations expose every validation message and persist nothing.
+        $config = VoytiConfigFactory::create(
+            passwordPolicy: new PasswordPolicyConfig(minUppercase: 1, minDigits: 1),
+        );
+        $passwordHasher = TestPasswordHasherFactory::create();
+        $userCreationHelper = new UserCreationHelper(
+            $mailService,
+            $eventDispatcher,
+            $passwordHasher,
+            $config,
+            new PasswordHistoryService($passwordHasher, $config, $this->createTranslator()),
+            $this->createTranslator(),
+        );
+        $result = (new CreateService($userCreationHelper))->run(
+            'invalid-password@example.com',
+            'invalid-password',
+            'lowercase',
+        );
+        self::assertTrue($result->isFailure());
+        self::assertCount(2, $result->getErrors());
+        self::assertNull(User::findByEmail('invalid-password@example.com'));
 
         // Race condition: uniqueness passes but persistence fails
         $passwordHasher = TestPasswordHasherFactory::create();
@@ -54,7 +77,7 @@ final class CreateServiceTest extends DatabaseTestCase
             new ThrowingEventDispatcher('Email already exists'),
             $passwordHasher,
             $config,
-            new PasswordHistoryService($passwordHasher, $config),
+            new PasswordHistoryService($passwordHasher, $config, $this->createTranslator()),
             $this->createTranslator(),
         );
         $service = new CreateService($userCreationHelper);
@@ -71,7 +94,7 @@ final class CreateServiceTest extends DatabaseTestCase
         $eventDispatcher = new EventCaptureDispatcher();
         $passwordHasher = TestPasswordHasherFactory::create();
         $config = VoytiConfigFactory::create(enableEmailConfirmation: false);
-        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config), $this->createTranslator());
+        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config, $this->createTranslator()), $this->createTranslator());
         $service = new CreateService($userCreationHelper);
         $result = $service->run('disabled@example.com', 'testuser1', 'password123');
         self::assertTrue($result->isSuccess());
@@ -96,7 +119,7 @@ final class CreateServiceTest extends DatabaseTestCase
         $eventDispatcher = new EventCaptureDispatcher();
         $passwordHasher = TestPasswordHasherFactory::create();
         $config = VoytiConfigFactory::create(enableEmailConfirmation: true);
-        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config), $this->createTranslator());
+        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config, $this->createTranslator()), $this->createTranslator());
         $service = new CreateService($userCreationHelper);
         $result = $service->run('enabled@example.com', 'testuser2', 'password123');
         self::assertTrue($result->isSuccess());

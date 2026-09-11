@@ -8,6 +8,7 @@ use YiiRocks\Voyti\Model\User;
 use YiiRocks\Voyti\Model\UserPasswordHistory;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Security\PasswordHasher;
+use Yiisoft\Translator\TranslatorInterface;
 
 /**
  * Reuse prevention only matters if passwords are ever forced to change, so this piggybacks on
@@ -16,13 +17,20 @@ use Yiisoft\Security\PasswordHasher;
  */
 final readonly class PasswordHistoryService
 {
+    private PasswordPolicy $passwordPolicy;
+
     public function __construct(
         private PasswordHasher $passwordHasher,
         private VoytiConfig $config,
-    ) {}
+        TranslatorInterface $translator,
+    ) {
+        $this->passwordPolicy = new PasswordPolicy($config->passwordPolicy, $translator);
+    }
 
     public function applyPasswordChange(User $user, string $plainPassword): void
     {
+        $this->passwordPolicy->assertValid($plainPassword);
+
         $user->setPasswordHash($this->passwordHasher->hash($plainPassword));
         $user->setPasswordChangedAt(time());
         $user->setUpdatedAt(time());

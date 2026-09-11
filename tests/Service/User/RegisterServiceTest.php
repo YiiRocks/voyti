@@ -44,7 +44,7 @@ final class RegisterServiceTest extends DatabaseTestCase
                 return $event;
             }
         };
-        $userCreationHelper = new UserCreationHelper($mailService, $cancellingDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config), $this->createTranslator());
+        $userCreationHelper = new UserCreationHelper($mailService, $cancellingDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config, $this->createTranslator()), $this->createTranslator());
         $service = new RegisterService($cancellingDispatcher, $userCreationHelper, $config);
         $result = $service->run(['email' => 'blocked@example.com', 'username' => 'blockeduser', 'password' => 'password123']);
         self::assertTrue($result->isFailure());
@@ -64,7 +64,7 @@ final class RegisterServiceTest extends DatabaseTestCase
                 return $event;
             }
         };
-        $userCreationHelper2 = new UserCreationHelper($mailService, $cancellingDispatcherNoDetails, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config), $this->createTranslator());
+        $userCreationHelper2 = new UserCreationHelper($mailService, $cancellingDispatcherNoDetails, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config, $this->createTranslator()), $this->createTranslator());
         $service2 = new RegisterService($cancellingDispatcherNoDetails, $userCreationHelper2, $config);
         $result2 = $service2->run(['email' => 'blocked2@example.com', 'username' => 'blockeduser2', 'password' => 'password123']);
         self::assertTrue($result2->isFailure());
@@ -79,7 +79,7 @@ final class RegisterServiceTest extends DatabaseTestCase
 
         // Consent always stored when provided
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config), $this->createTranslator());
+        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config, $this->createTranslator()), $this->createTranslator());
         $service = new RegisterService($eventDispatcher, $userCreationHelper, $config);
         $result = $service->run(['email' => 'consent@example.com', 'username' => 'consentuser', 'password' => 'mypassword', 'dataProcessingConsent' => '1']);
         self::assertTrue($result->isSuccess());
@@ -104,7 +104,7 @@ final class RegisterServiceTest extends DatabaseTestCase
         $existing->setUpdatedAt(time());
         $existing->save();
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config), $this->createTranslator());
+        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config, $this->createTranslator()), $this->createTranslator());
         $service = new RegisterService($eventDispatcher, $userCreationHelper, $config);
         $result = $service->run(['email' => 'existing@example.com', 'username' => 'testuser']);
         self::assertTrue($result->isFailure());
@@ -121,7 +121,7 @@ final class RegisterServiceTest extends DatabaseTestCase
         $existing2->setUpdatedAt(time());
         $existing2->save();
         $eventDispatcher2 = $this->createMock(EventDispatcherInterface::class);
-        $userCreationHelper2 = new UserCreationHelper($mailService, $eventDispatcher2, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config), $this->createTranslator());
+        $userCreationHelper2 = new UserCreationHelper($mailService, $eventDispatcher2, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config, $this->createTranslator()), $this->createTranslator());
         $service2 = new RegisterService($eventDispatcher2, $userCreationHelper2, $config);
         $result2 = $service2->run(['email' => 'new@example.com', 'username' => 'existinguser']);
         self::assertTrue($result2->isFailure());
@@ -134,7 +134,7 @@ final class RegisterServiceTest extends DatabaseTestCase
             $eventDispatcher3,
             $passwordHasher,
             $config,
-            new PasswordHistoryService($passwordHasher, $config),
+            new PasswordHistoryService($passwordHasher, $config, $this->createTranslator()),
             $this->createTranslator(),
         );
         $service3 = new RegisterService($eventDispatcher3, $userCreationHelper3, $config);
@@ -152,7 +152,7 @@ final class RegisterServiceTest extends DatabaseTestCase
 
         // User-provided password: records in history and creates profile
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config), $this->createTranslator());
+        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config, $this->createTranslator()), $this->createTranslator());
         $service = new RegisterService($eventDispatcher, $userCreationHelper, $config);
         $result = $service->run(['email' => 'userpass@example.com', 'username' => 'userpassuser', 'password' => 'userpassword123'], ['REMOTE_ADDR' => '203.0.113.9']);
         self::assertTrue($result->isSuccess());
@@ -170,7 +170,7 @@ final class RegisterServiceTest extends DatabaseTestCase
         $passwordHasher = TestPasswordHasherFactory::create();
         $config = VoytiConfigFactory::create(enableEmailConfirmation: true);
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
-        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config), $this->createTranslator());
+        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config, $this->createTranslator()), $this->createTranslator());
         $service = new RegisterService($eventDispatcher, $userCreationHelper, $config);
 
         // None of username/email/password keys are present: each must default to '' rather than
@@ -178,10 +178,9 @@ final class RegisterServiceTest extends DatabaseTestCase
         // isset()||is_string() check, since the guarded key is never dereferenced when absent).
         $result = $service->run([]);
 
-        self::assertTrue($result->isSuccess());
-        $saved = User::findByEmail('');
-        self::assertNotNull($saved);
-        self::assertSame('', $saved->getUsername());
+        self::assertFalse($result->isSuccess());
+        self::assertSame('Password must contain at least 6 characters.', $result->getMessage());
+        self::assertNull(User::findByEmail(''));
     }
 
     public function testRunWithoutEmailConfirmation(): void
@@ -191,7 +190,7 @@ final class RegisterServiceTest extends DatabaseTestCase
         $passwordHasher = TestPasswordHasherFactory::create();
         $config = VoytiConfigFactory::create(enableEmailConfirmation: false, maxPasswordAge: 90);
 
-        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config), $this->createTranslator());
+        $userCreationHelper = new UserCreationHelper($mailService, $eventDispatcher, $passwordHasher, $config, new PasswordHistoryService($passwordHasher, $config, $this->createTranslator()), $this->createTranslator());
         $service = new RegisterService($eventDispatcher, $userCreationHelper, $config);
 
         $result = $service->run(['email' => 'noconfirm@example.com', 'username' => 'noconfirmuser', 'password' => 'mypassword']);
