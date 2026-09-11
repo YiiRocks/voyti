@@ -70,9 +70,11 @@ final class UserUpdateHelperTest extends DatabaseTestCase
         self::assertInstanceOf(AfterAccountUpdateEvent::class, $after);
         self::assertSame(['username'], $after->getChangedFields());
 
-        // With no changed fields, the mutation and save still happen, but no events fire.
+        // With no changed fields, the mutation still runs, but the user is not persisted and no
+        // events fire.
         $dispatcher = new EventCaptureDispatcher();
         $user = $this->createUser(username: 'untouched', email: 'untouched@example.com');
+        $updatedAt = $user->getUpdatedAt();
         $ran = false;
 
         $this->createHelper($dispatcher, $clock)->apply(
@@ -85,6 +87,7 @@ final class UserUpdateHelperTest extends DatabaseTestCase
         );
 
         self::assertTrue($ran);
+        self::assertSame($updatedAt, User::findById((int) $user->getId())?->getUpdatedAt());
         self::assertFalse($dispatcher->hasEvent(BeforeAccountUpdateEvent::class));
         self::assertFalse($dispatcher->hasEvent(AfterAccountUpdateEvent::class));
 
