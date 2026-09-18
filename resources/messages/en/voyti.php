@@ -255,9 +255,6 @@ return [
     // Pagination
     'voyti.view.filter_button' => 'Filter',
     'voyti.view.per_page_label' => 'Per page',
-    'voyti.view.pagination_navigation' => 'Page navigation',
-    'voyti.view.previous' => 'Previous',
-    'voyti.view.next' => 'Next',
 
     // Common view labels
     'voyti.view.username_label' => 'Username',

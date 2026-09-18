@@ -254,9 +254,6 @@ return [
     // Pagination
     'voyti.view.filter_button' => 'Filteren',
     'voyti.view.per_page_label' => 'Per pagina',
-    'voyti.view.pagination_navigation' => 'Pagina navigatie',
-    'voyti.view.previous' => 'Vorige',
-    'voyti.view.next' => 'Volgende',
 
     // Common view labels
     'voyti.view.username_label' => 'Gebruikersnaam',

@@ -22,6 +22,28 @@ use Yiisoft\Yii\View\Renderer\CsrfViewInjection;
 trait RenderTrait
 {
     /**
+     * Uses the configured `viewPath` if it has an override for `$view`, otherwise falls back to
+     * the first views package's bundled views - announced via the `viewsPackagePaths` param, see
+     * {@see VoytiConfig::$viewsPackagePaths} - so a host only needs to provide the templates it
+     * customizes.
+     */
+    private function resolveViewPath(string $view): string
+    {
+        if ($this->config->viewPath !== null && is_file($this->config->viewPath . '/' . $view . '.php')) {
+            return $this->config->viewPath;
+        }
+
+        if ($this->config->viewsPackagePaths === []) {
+            throw new RuntimeException(
+                'No views package is installed. Require a package that announces itself via the '
+                . '"viewsPackagePaths" param, e.g. "yiirocks/voyti-views-bootstrap5".',
+            );
+        }
+
+        return $this->config->viewsPackagePaths[0];
+    }
+
+    /**
      * @psalm-suppress UndefinedThisPropertyFetch
      */
     private function homeUrl(): string
@@ -62,28 +84,6 @@ trait RenderTrait
             ->withAddedInjections(CsrfViewInjection::class, VoytiCommonParametersInjection::class)
             ->withViewPath($this->resolveViewPath($view))
             ->render($view, $params);
-    }
-
-    /**
-     * Uses the configured `viewPath` if it has an override for `$view`, otherwise falls back to
-     * the first views package's bundled views - announced via the `viewsPackagePaths` param, see
-     * {@see VoytiConfig::$viewsPackagePaths} - so a host only needs to provide the templates it
-     * customizes.
-     */
-    private function resolveViewPath(string $view): string
-    {
-        if ($this->config->viewPath !== null && is_file($this->config->viewPath . '/' . $view . '.php')) {
-            return $this->config->viewPath;
-        }
-
-        if ($this->config->viewsPackagePaths === []) {
-            throw new RuntimeException(
-                'No views package is installed. Require a package that announces itself via the '
-                . '"viewsPackagePaths" param, e.g. "yiirocks/voyti-views-bootstrap5".',
-            );
-        }
-
-        return $this->config->viewsPackagePaths[0];
     }
 
     /**

@@ -16,12 +16,14 @@ use YiiRocks\Voyti\Helper\AgeHelper;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Helper\LinkButtonHelper;
 use YiiRocks\Voyti\Helper\LoginMetadataHelper;
+use YiiRocks\Voyti\Helper\MappedPaginatedDataReader;
 use YiiRocks\Voyti\Helper\RecaptchaHelper;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\tests\Support\RecaptchaRegistryTrait;
 use YiiRocks\Voyti\tests\Support\VoytiConfigFactory;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Auth\IdentityRepositoryInterface;
+use Yiisoft\Data\Reader\Iterable\IterableDataReader;
 use Yiisoft\Form\Field\ResetButton;
 use Yiisoft\Form\Field\SubmitButton;
 use Yiisoft\Form\Theme\ThemeContainer;
@@ -317,6 +319,59 @@ final class HelperTest extends TestCase
         yield 'missing' => [[], null];
         yield 'not string' => [['HTTP_USER_AGENT' => 12345], null];
         yield 'valid' => [['HTTP_USER_AGENT' => 'TestAgent'], 'TestAgent'];
+    }
+
+    public function testMappedPaginatedDataReaderPreservesReaderKeys(): void
+    {
+        $reader = new MappedPaginatedDataReader(
+            new IterableDataReader([
+                'first' => ['value' => 'one'],
+                'second' => ['value' => 'two'],
+            ]),
+            static fn(array $item, mixed $context): array => ['value' => strtoupper($item['value'])],
+        );
+
+        self::assertSame(
+            ['first' => ['value' => 'ONE'], 'second' => ['value' => 'TWO']],
+            iterator_to_array($reader->read()),
+        );
+    }
+
+    public function testMappedPaginatedDataReaderReadOne(): void
+    {
+        $reader = new MappedPaginatedDataReader(
+            new IterableDataReader([['value' => 'one']]),
+            static fn(array $item, mixed $context): array => ['value' => strtoupper($item['value'])],
+        );
+
+        self::assertSame(['value' => 'ONE'], $reader->readOne());
+    }
+
+    public function testMappedPaginatedDataReaderReadOneReturnsNullForEmptyReader(): void
+    {
+        $reader = new MappedPaginatedDataReader(
+            new IterableDataReader([]),
+            static fn(array $item, mixed $context): array => ['value' => strtoupper($item['value'])],
+        );
+
+        self::assertNull($reader->readOne());
+    }
+
+    public function testMappedPaginatedDataReaderForwardsOffsetAndLimit(): void
+    {
+        $reader = new MappedPaginatedDataReader(
+            new IterableDataReader([
+                ['value' => 'one'],
+                ['value' => 'two'],
+            ]),
+            static fn(array $item, mixed $context): array => ['value' => strtoupper($item['value'])],
+        );
+
+        $reader = $reader->withLimit(1)->withOffset(1);
+
+        self::assertSame(1, $reader->getLimit());
+        self::assertSame(1, $reader->getOffset());
+        self::assertSame([['value' => 'TWO']], iterator_to_array($reader->read(), false));
     }
 
     private function createAuthHelper(

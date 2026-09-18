@@ -101,7 +101,7 @@ final class UserControllerTest extends DatabaseTestCase
             ['perPage' => 0],
             static function (string $html): void {
                 self::assertSame(1, substr_count($html, self::USER_ROW));
-                self::assertStringContainsString('page-item', $html);
+                self::assertStringContainsString('<nav aria-label="Pagination">', $html);
             },
         ];
         yield 'custom per-page' => [
@@ -113,7 +113,7 @@ final class UserControllerTest extends DatabaseTestCase
             ['perPage' => 2],
             static function (string $html): void {
                 self::assertSame(2, substr_count($html, self::USER_ROW));
-                self::assertStringContainsString('page-item', $html);
+                self::assertStringContainsString('<nav aria-label="Pagination">', $html);
                 self::assertStringContainsString('perPage=2&amp;page=1', $html);
                 self::assertStringContainsString('perPage=2&amp;page=2', $html);
                 self::assertStringNotContainsString('0%5B', $html);

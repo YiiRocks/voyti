@@ -14,6 +14,7 @@ use YiiRocks\Voyti\Controller\RenderTrait;
 use YiiRocks\Voyti\Event\User\UserEvent;
 use YiiRocks\Voyti\Helper\AuthHelper;
 use YiiRocks\Voyti\Helper\FlashType;
+use YiiRocks\Voyti\Helper\MappedPaginatedDataReader;
 use YiiRocks\Voyti\Helper\TimezoneHelper;
 use YiiRocks\Voyti\Helper\UserStatusHelper;
 use YiiRocks\Voyti\Helper\Views\AssignableItemRowView;
@@ -39,6 +40,7 @@ use YiiRocks\Voyti\Service\User\ConfirmationService;
 use YiiRocks\Voyti\Service\User\CreateService;
 use YiiRocks\Voyti\VoytiConfig;
 use Yiisoft\Data\Db\QueryDataReader;
+use Yiisoft\Data\Db\QueryDataReaderInterface;
 use Yiisoft\Data\Paginator\OffsetPaginator;
 use Yiisoft\FormModel\FormHydrator;
 use Yiisoft\Http\Method;
@@ -51,7 +53,6 @@ use Yiisoft\Router\HydratorAttribute\RouteArgument;
 use Yiisoft\Router\UrlGeneratorInterface;
 use Yiisoft\Translator\TranslatorInterface;
 use Yiisoft\User\CurrentUser;
-use Yiisoft\Yii\DataView\Pagination\PaginationContext;
 use Yiisoft\Yii\View\Renderer\WebViewRenderer;
 
 /**
@@ -262,18 +263,19 @@ final readonly class UserController
             'status' => $status,
         ];
 
-        $reader = new QueryDataReader(User::searchQuery($filters));
+        $isSwitched = $this->switchIdentityService->isSwitched();
+        $currentUserId = (int) $this->currentUser->getIdentity()->getId();
+        /** @psalm-var QueryDataReaderInterface<int, User> $source */
+        $source = new QueryDataReader(User::searchQuery($filters));
+        $reader = new MappedPaginatedDataReader(
+            $source,
+            fn(User $user, null $context): array => $this->buildUserRow($user, $isSwitched, $currentUserId),
+        );
         $pageSize = min(max(1, $perPage), self::MAX_PER_PAGE);
         $sizedPaginator = (new OffsetPaginator($reader))->withPageSize($pageSize);
         $currentPage = min(max(1, $page), max(1, $sizedPaginator->getTotalPages()));
         $paginator = $sizedPaginator->withCurrentPage($currentPage);
 
-        /** @infection-ignore-all — iterator keys are already 0-indexed, preserve_keys has no effect */
-        /** @var list<User> $users */
-        $users = iterator_to_array($paginator->read(), false);
-
-        $isSwitched = $this->switchIdentityService->isSwitched();
-        $currentUserId = (int) $this->currentUser->getIdentity()->getId();
         $normalizedFilters = [
             'username' => $filters['username'] ?? '',
             'email' => $filters['email'] ?? '',
@@ -289,17 +291,19 @@ final readonly class UserController
                 'filterActionUrl' => $this->url->generate('voyti/admin-users'),
                 'filters' => $normalizedFilters,
                 'perPage' => $pageSize,
-                'users' => array_map(
-                    fn(User $user) => $this->buildUserRow($user, $isSwitched, $currentUserId),
-                    $users,
-                ),
                 'paginator' => $paginator,
-                'pageUrlPattern' => $this->url->generate(
-                    'voyti/admin-users',
-                    [],
-                    [...$preservedQuery, 'page' => PaginationContext::URL_PLACEHOLDER],
-                ),
-                'firstPageUrl' => $this->url->generate('voyti/admin-users', [], [...$preservedQuery, 'page' => '1']),
+                'itemView' => $this->resolveViewPath('admin/user/_item') . '/admin/user/_item',
+                'urlCreator' => function (array $arguments, array $query) use ($preservedQuery): string {
+                    /** @var mixed $page */
+                    $page = $query['page'] ?? '1';
+                    $page = is_scalar($page) ? $page : '1';
+
+                    return $this->url->generate(
+                        'voyti/admin-users',
+                        [],
+                        [...$preservedQuery, 'page' => strval($page)],
+                    );
+                },
             ],
         ]);
     }
