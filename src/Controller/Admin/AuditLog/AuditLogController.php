@@ -102,7 +102,6 @@ final readonly class AuditLogController
                 'filterActionUrl' => $this->url->generate('voyti/admin-audit-log'),
                 'filters' => $normalizedFilters,
                 'paginator' => $paginator,
-                'itemView' => $this->resolveViewPath('admin/audit-log/_item') . '/admin/audit-log/_item',
                 'urlCreator' => function (array $arguments, array $query) use ($normalizedFilters): string {
                     /** @var mixed $page */
                     $page = $query['page'] ?? '1';
