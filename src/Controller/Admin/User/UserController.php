@@ -292,7 +292,6 @@ final readonly class UserController
                 'filters' => $normalizedFilters,
                 'perPage' => $pageSize,
                 'paginator' => $paginator,
-                'itemView' => $this->resolveViewPath('admin/user/_item') . '/admin/user/_item',
                 'urlCreator' => function (array $arguments, array $query) use ($preservedQuery): string {
                     /** @var mixed $page */
                     $page = $query['page'] ?? '1';
